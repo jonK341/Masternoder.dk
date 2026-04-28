@@ -1,0 +1,22 @@
+{
+  "name": "Core Rules & Foundation",
+  "version": "V1",
+  "description": "Grundlæggende mekanikker, profiler og onboarding.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v1-core.png",
+  "image_alt": "Core Rules V1",
+  "agent_prompt": "Always use user_id (game_user_id) for all user-specific operations. Use user_index for generation and account control. Profiles are created per user via onboarding.",
+  "tech_spec": "user_id: string; user_index: SHA256(user_id) mod 1000000; GET /api/user/index?user_id=; GET /api/user/account-control?user_id=; user_onboarding.get_user_profile(user_id)",
+  "user_guide": "Din profil bruger game_user_id. Bruger-index bruges til generation. Profil oprettes ved første besøg.",
+  "manual": "Agent manual V1: Resolve user_id from request context. Use user_index when passing to generator or account-control APIs. Fuld shop-SKU- og månedskatalog: rulebook_v9_shop.json (cross_rulebook_routing + monthly_theme_catalog).",
+  "rules": [
+    {"id": "profile", "name": "Brugerprofil", "text": "Hver bruger har en profil med preferences, scraped_info og assigned_agent_ids."},
+    {"id": "onboarding", "name": "Onboarding", "text": "Nye brugere gennemgår onboarding. Profil oprettes ved første besøg."},
+    {"id": "user_id", "name": "Bruger-ID", "text": "Stabil bruger-ID (game_user_id) bruges til points, trophies og alle bruger-specifikke data."},
+    {"id": "user_index", "name": "Bruger-index", "text": "Numerisk index afledt af user_id for generation og account control."},
+    {"id": "shop_themes_fair_use", "name": "Shop-temaer og tredjeparter", "text": "Nye UI-temaer (fx D&D, MTG, film-noir) er kosmetiske fan-tributes; varemærker tilhører rettighedshavere. Katalogtekster må ikke præsentere officiel partnerskab."},
+    {"id": "mn2_5d_wallet_monitor", "name": "MN2 5-dags wallet-monitor", "text": "Profile MN2-kortet viser de seneste 5 UTC-dage som ind/ud-søjler. Shop-SKUer med tag mn2_5d knyttes narrativt til den overflade; de ændrer ikke on-chain saldi alene."},
+    {"id": "single_profile_truth", "name": "Én aktiv profil pr. browser", "text": "game_user_id driver køb, points og wallet-visning; skift af ID starter en separat datastreng — dokumentér for brugeren før de skifter."},
+    {"id": "shop_canonical_v9", "name": "Shop-katalog kanon", "text": "Alle faste shop-item lister (wave v6/v7 temaer, mn2-5d-*, monthly theme-january … theme-december) dokumenteres i rulebook_v9_shop.json. V1 beskriver profil/MN2-overflade og fair use — ikke dupliker fuld SKU-matrix her."}
+  ]
+}

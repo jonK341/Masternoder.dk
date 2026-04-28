@@ -1,0 +1,429 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Test Dashboard - 12 Categories</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --danger: #ff3366;
+            --dark: #0a0a0f;
+            --card: #151520;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .category-card {
+            background: var(--card);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .category-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+            transform: translateY(-5px);
+        }
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .category-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .category-count {
+            background: rgba(0, 255, 136, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .category-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        }
+        .btn-test-all {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        .points-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .point-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .point-name {
+            font-size: 0.9rem;
+        }
+        .point-value {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        .test-url {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Category Test Dashboard</h1>
+            <p>Test URLs for all 12 Point System Categories</p>
+        </div>
+
+        <div class="category-grid" id="categoryGrid">
+            <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">Loading categories...</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const userId = localStorage.getItem('game_user_id') || 'test_user';
+
+        const categories = {
+            'Core Engagement': {
+                point_types: ['xp', 'activity', 'theme', 'chat', 'trophy', 'achievement', 'stats', 'watch_time', 'scroll_depth', 'interaction_quality', 'return_visitor', 'session_duration', 'page_depth', 'content_consumption', 'search', 'filter', 'share', 'bookmark', 'comment', 'rating'],
+                color: '#00ff88'
+            },
+            'Battle & Combat': {
+                point_types: ['battle', 'pvp_battle', 'pve_battle', 'team_battle', 'guild_battle', 'arena_battle', 'tournament', 'ranked_battle', 'casual_battle', 'victory', 'defeat', 'perfect_victory', 'comeback', 'streak_battle', 'first_blood', 'multi_kill', 'assist', 'defense', 'offense', 'tactical', 'strategy', 'combo', 'ultimate', 'death_portal_teleport'],
+                color: '#ff3366'
+            },
+            'Content Creation': {
+                point_types: ['generation', 'video_generation', 'clip_generation', 'image_generation', 'audio_generation', 'text_generation', 'template_usage', 'custom_creation', 'quality', 'innovation', 'trending', 'viral', 'collaboration', 'remix', 'edit', 'publish', 'schedule', 'series', 'playlist', 'collection', 'production_mastery', 'production_10x'],
+                color: '#00d4ff'
+            },
+            'Social & Community': {
+                point_types: ['social', 'friend', 'follow', 'follower', 'message', 'group', 'community', 'event', 'meetup', 'discussion', 'forum', 'help', 'mentor', 'apprentice', 'referral', 'invite', 'gift', 'thank_you', 'recognition', 'celebration', 'community_mastery'],
+                color: '#ffaa00'
+            },
+            'Progression & Leveling': {
+                point_types: ['level_up', 'skill', 'mastery', 'prestige', 'rank', 'tier', 'badge', 'medal', 'title', 'achievement_chain', 'milestone', 'progress', 'completion', 'teleport_skillset', 'skillset_mastery', 'death_portal_mastery'],
+                color: '#9d4edd'
+            },
+            'Economy & Trading': {
+                point_types: ['shop', 'rewards', 'purchase', 'sale', 'trade', 'auction', 'market', 'currency', 'investment', 'profit', 'deal', 'negotiation', 'collection_value', 'asset', 'wealth', 'production_economy', 'teleport_trade'],
+                color: '#ffd60a'
+            },
+            'Exploration & Discovery': {
+                point_types: ['exploration', 'discovery', 'unlock', 'reveal', 'map', 'location', 'hidden', 'secret', 'easter_egg', 'landmark', 'path', 'route'],
+                color: '#06ffa5'
+            },
+            'Learning & Education': {
+                point_types: ['learning', 'course', 'lesson', 'quiz', 'test', 'certification', 'knowledge', 'skill_development', 'practice', 'study', 'research', 'education'],
+                color: '#4cc9f0'
+            },
+            'Events & Special Occasions': {
+                point_types: ['event_participation', 'holiday', 'seasonal', 'limited_time', 'special_event', 'anniversary', 'festival', 'competition', 'death_portal_event'],
+                color: '#f72585'
+            },
+            'Customization & Personalization': {
+                point_types: ['customization', 'avatar', 'theme_custom', 'layout', 'style', 'personalization', 'preference', 'settings', 'design', 'aesthetic'],
+                color: '#7209b7'
+            },
+            'Innovation & Creativity': {
+                point_types: ['creativity', 'experiment', 'invention', 'design_creative', 'artistic', 'originality', 'uniqueness'],
+                color: '#fb8500'
+            },
+            'Meta & System': {
+                point_types: ['system', 'meta', 'feedback', 'bug_report', 'feature_request', 'beta_test', 'quality_assurance', 'system_contribution'],
+                color: '#8e9aaf'
+            }
+        };
+
+        async function loadCategoryData() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/list`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const pointTypesMap = {};
+                    data.point_types.forEach(pt => {
+                        pointTypesMap[pt.point_type] = pt;
+                    });
+                    
+                    renderCategories(pointTypesMap);
+                }
+            } catch (error) {
+                console.error('Error loading category data:', error);
+            }
+        }
+
+        function renderCategories(pointTypesMap) {
+            const grid = document.getElementById('categoryGrid');
+            
+            grid.innerHTML = Object.entries(categories).map(([categoryName, categoryData]) => {
+                const categoryPoints = categoryData.point_types
+                    .filter(pt => pointTypesMap[pt])
+                    .map(pt => pointTypesMap[pt]);
+                
+                const totalValue = categoryPoints.reduce((sum, pt) => sum + pt.value, 0);
+                const testUrl = `${BASE_URL}/api/test/points/batch`;
+                
+                return `
+                    <div class="category-card">
+                        <div class="category-header">
+                            <div class="category-name">${categoryName}</div>
+                            <div class="category-count">${categoryPoints.length} types</div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>Total Value:</strong> <span style="color: var(--primary);">${totalValue}</span>
+                        </div>
+                        <div class="points-list">
+                            ${categoryPoints.slice(0, 5).map(pt => `
+                                <div class="point-item">
+                                    <span class="point-name">${pt.point_type}</span>
+                                    <span class="point-value">${pt.value}</span>
+                                </div>
+                            `).join('')}
+                            ${categoryPoints.length > 5 ? `<div style="text-align: center; padding: 5px; color: rgba(255,255,255,0.5);">+${categoryPoints.length - 5} more...</div>` : ''}
+                        </div>
+                        <div class="test-url">
+                            Test URL: ${testUrl}
+                        </div>
+                        <div class="category-actions">
+                            <button class="btn btn-test-all" onclick="testCategory('${categoryName}', ${JSON.stringify(categoryData.point_types).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-play"></i> Test All
+                            </button>
+                            <a href="${testUrl}?category=${encodeURIComponent(categoryName)}" target="_blank" class="btn">
+                                <i class="fas fa-external-link-alt"></i> Open URL
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function testCategory(categoryName, pointTypes) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        point_types: pointTypes,
+                        multiplier: 1.0
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Tested ${categoryName}!\nAwarded points for ${data.total_awarded} point types`);
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+            }
+        }
+
+        loadCategoryData();
+    </script>
+    <script src="/static/js/error-manager.js"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                // Cache version changed - force reload
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                window.location.reload(true);
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // AGGRESSIVE CACHE-BUSTING FOR MAIN CONTENT
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || Date.now().toString();
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            const contentVersion = sessionStorage.getItem('contentCacheVersion');
+            
+            // Force reload if version changed
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.clear();
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+                window.location.href = window.location.href.split('?')[0] + '?v=' + currentVersion + '&_=' + Date.now();
+                return;
+            }
+            
+            // Store versions
+            sessionStorage.setItem('pageCacheVersion', currentVersion);
+            if (!contentVersion || contentVersion !== currentVersion) {
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+            }
+            
+            // Force reload main content area on every load
+            function forceReloadContent() {
+                const mainContent = document.querySelector('.container') || document.querySelector('main') || document.querySelector('#main') || document.body;
+                if (mainContent) {
+                    // Add timestamp to force re-render
+                    mainContent.setAttribute('data-version', currentVersion);
+                    mainContent.setAttribute('data-timestamp', Date.now());
+                    
+                    // Force style recalculation
+                    const display = window.getComputedStyle(mainContent).display;
+                    mainContent.style.display = 'none';
+                    mainContent.offsetHeight; // Trigger reflow
+                    mainContent.style.display = display;
+                    
+                    // Add comment to force HTML change detection
+                    const comment = document.createComment(' FORCED REFRESH ' + Date.now() + ' ');
+                    mainContent.insertBefore(comment, mainContent.firstChild);
+                }
+            }
+            
+            // Run immediately and on DOM ready
+            forceReloadContent();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceReloadContent);
+            } else {
+                setTimeout(forceReloadContent, 100);
+            }
+            
+            // Add cache-busting to all links and forms
+            function addCacheBusting() {
+                const links = document.querySelectorAll('a[href^="/"], a[href^="/"]');
+                links.forEach(link => {
+                    const url = new URL(link.href, window.location.origin);
+                    if (!url.searchParams.has('v')) {
+                        url.searchParams.set('v', currentVersion);
+                        url.searchParams.set('_', Date.now());
+                        link.href = url.toString();
+                    }
+                });
+                
+                // Add to forms
+                const forms = document.querySelectorAll('form[action]');
+                forms.forEach(form => {
+                    const action = form.getAttribute('action');
+                    if (action && !action.includes('v=')) {
+                        const separator = action.includes('?') ? '&' : '?';
+                        form.setAttribute('action', action + separator + 'v=' + currentVersion + '&_=' + Date.now());
+                    }
+                });
+            }
+            
+            // Run on DOM ready and periodically
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', addCacheBusting);
+            } else {
+                addCacheBusting();
+            }
+            
+            // Periodic check for content updates
+            setInterval(function() {
+                const stored = sessionStorage.getItem('contentCacheVersion');
+                if (stored && stored !== currentVersion) {
+                    window.location.reload(true);
+                }
+            }, 5000);
+            
+            // Intercept fetch/XHR to add cache-busting
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (typeof args[0] === 'string' && args[0].startsWith('/')) {
+                    const url = new URL(args[0], window.location.origin);
+                    url.searchParams.set('_', Date.now());
+                    args[0] = url.toString();
+                }
+                return originalFetch.apply(this, args);
+            };
+        })();
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

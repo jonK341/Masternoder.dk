@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics & Analytics - MasterNoder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats-enhanced.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/worker-skills.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats/game-mode.css') }}?v=1.0.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-monetization.css') }}?v=1.0.0">
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <header class="stats-header">
+        <h1>📊 Statistics & Analytics</h1>
+        <p class="subtitle">Comprehensive analysis, trophies, milestones, and frame extraction</p>
+    </header>
+    
+    <!-- User Profile Section -->
+    <section class="stats-section user-profile-section">
+        <div class="section-header">
+            <h2><i class="fas fa-user-circle"></i> User Profile</h2>
+        </div>
+        <div class="profile-grid">
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="profile-info">
+                    <h3 id="user-name">User</h3>
+                    <p id="user-title">Novice Creator</p>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Level</span>
+                            <span class="stat-value" id="user-level">1</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">XP</span>
+                            <span class="stat-value" id="user-xp">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">High Score</span>
+                            <span class="stat-value" id="user-high-score">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Trophy Hunter Section (Weekly Context) -->
+    <section class="stats-section trophy-hunter-section">
+        <div class="section-header">
+            <h2><i class="fas fa-trophy"></i> Trophy Hunter</h2>
+            <div class="week-selector">
+                <button class="btn-week" id="prev-week"><i class="fas fa-chevron-left"></i></button>
+                <span id="current-week">Week of <span id="week-date"></span></span>
+                <button class="btn-week" id="next-week"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+        
+        <div class="trophy-grid">
+            <div class="trophy-category">
+                <h3>This Week</h3>
+                <div id="weekly-trophies" class="trophies-list">
+                    <!-- Weekly trophies will be loaded here -->
+                </div>
+            </div>
+            <div class="trophy-category">
+                <h3>All Time</h3>
+                <div id="all-time-trophies" class="trophies-list">
+                    <!-- All-time trophies will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Service Worker Skills Section -->
+    <section class="stats-section worker-skills-section">
+        <div class="section-header">
+            <h2><i class="fas fa-cog"></i> Service Worker Skills</h2>
+            <button class="btn-refresh" id="refresh-worker-skills" title="Refresh worker skills">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+        <div class="worker-skills-container">
+            <div class="skills-overview">
+                <div class="skill-card">
+                    <h3>Web Research</h3>
+                    <div class="skill-stats" id="web-research-stats">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                <div class="skill-card">
+                    <h3>Search Intelligence</h3>
+                    <div class="skill-stats" id="search-intelligence-stats">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                <div class="skill-card">
+                    <h3>Image Intelligence</h3>
+                    <div class="skill-stats" id="image-intelligence-stats">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                <div class="skill-card">
+                    <h3>Sound Intelligence</h3>
+                    <div class="skill-stats" id="sound-intelligence-stats">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="skills-details" id="skills-details">
+                <!-- Detailed skills breakdown will be loaded here -->
+            </div>
+        </div>
+    </section>
+    
+    <!-- Calendar Plans Section -->
+    <section class="stats-section calendar-section">
+        <div class="section-header">
+            <h2><i class="fas fa-calendar-alt"></i> Hunting Calendar</h2>
+        </div>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button id="prev-month" class="btn-nav"><i class="fas fa-chevron-left"></i></button>
+                <h3 id="current-month"></h3>
+                <button id="next-month" class="btn-nav"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Calendar will be generated here -->
+            </div>
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <span class="legend-color completed"></span>
+                    <span>Completed</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color planned"></span>
+                    <span>Planned</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color milestone"></span>
+                    <span>Milestone</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Milestones Section -->
+    <section class="stats-section milestones-section">
+        <div class="section-header">
+            <h2><i class="fas fa-flag-checkered"></i> Milestones</h2>
+        </div>
+        <div class="milestones-container">
+            <div class="milestone-track">
+                <div class="milestone-progress" id="milestone-progress">
+                    <!-- Progress bar -->
+                </div>
+                <div id="milestones-list" class="milestones-list">
+                    <!-- Milestones will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- XP Points & High Scores Section -->
+    <section class="stats-section xp-scores-section">
+        <div class="section-header">
+            <h2><i class="fas fa-star"></i> XP Points & High Scores</h2>
+        </div>
+        <div class="scores-grid">
+            <div class="score-card xp-card">
+                <h3>Experience Points</h3>
+                <div class="score-value" id="total-xp">0</div>
+                <div class="score-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">From Generations</span>
+                        <span class="breakdown-value" id="xp-generations">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">From Trophies</span>
+                        <span class="breakdown-value" id="xp-trophies">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">From Milestones</span>
+                        <span class="breakdown-value" id="xp-milestones">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="score-card highscore-card">
+                <h3>High Scores</h3>
+                <div class="highscore-list">
+                    <div class="highscore-item">
+                        <span class="highscore-label">Best Quality</span>
+                        <span class="highscore-value" id="highscore-quality">0.0</span>
+                    </div>
+                    <div class="highscore-item">
+                        <span class="highscore-label">Longest Video</span>
+                        <span class="highscore-value" id="highscore-duration">0s</span>
+                    </div>
+                    <div class="highscore-item">
+                        <span class="highscore-label">Most Clips</span>
+                        <span class="highscore-value" id="highscore-clips">0</span>
+                    </div>
+                    <div class="highscore-item">
+                        <span class="highscore-label">Fastest Generation</span>
+                        <span class="highscore-value" id="highscore-speed">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Generation Statistics Section -->
+    <section class="stats-section">
+        <div class="section-header">
+            <h2><i class="fas fa-chart-bar"></i> Generation Statistics</h2>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-value" id="total-documentaries">--</div>
+                <div class="stat-label">Total Documentaries</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="total-duration">--</div>
+                <div class="stat-label">Total Duration</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="avg-quality">--</div>
+                <div class="stat-label">Average Quality</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="total-trophies">--</div>
+                <div class="stat-label">Trophies Earned</div>
+            </div>
+        </div>
+    </section>
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/stats-frame-extractor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stats-enhanced.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stats-worker-skills.js') }}?v=1.0.0"></script>
+<script src="{{ url_for('static', filename='js/stats/game-mode.js') }}?v=1.0.0"></script>
+<script src="{{ url_for('static', filename='js/stats/calendar-enhanced.js') }}?v=1.0.0"></script>
+{% endblock %}
+

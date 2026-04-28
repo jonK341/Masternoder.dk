@@ -1,0 +1,52 @@
+{
+  "name": "Sync Mechanisms",
+  "version": "V16",
+  "description": "Unified sync device, domain sync, status API, and dashboard integration. All systems that write data call record_domain_sync for consistent status across dashboards.",
+  "updated_at": "2026-02-25",
+  "image_url": "/vidgenerator/static/img/rulebook-v7-unified-points.png",
+  "image_alt": "Sync Mechanisms V16",
+  "agent_prompt": "Sync device: unified_points_sync_device. Use record_domain_sync(domain) when your system writes data. Domains: unified_points, users, profiles, aggregator, trophies, achievements, battle, shop, quests, leaderboards, analytics, compendium, generator, gallery, stats, social, agent_skillsets, agent_knowledge, game, paypal, login, onboarding, communication_psychology, dna, game_save, agent_activity, referral, notifications, auto_save, templates. State in DB (sync_state, sync_domain_state); audit in sync_audit; health in sync_health.",
+  "tech_spec": "GET /api/sync/status, POST /api/sync/now. unified_points_sync_device.record_domain_sync(domain, count?, extra?). SYNC_DOMAINS in unified_points_sync.py.",
+  "user_guide": "Sync status vises på dashboards (unified, profile, stats). Points, users, profiles, rulebooks, agents og knowledge er synkroniseret.",
+  "manual": "Agent manual V16: When implementing a new feature that writes data, add record_domain_sync(domain) after successful write. Use domains from SYNC_DOMAINS. Sync status widget fetches /vidgenerator/api/sync/status.",
+  "documentation": "Sync mechanisms ensure all important systems report their last sync time and optional counts. The Unified Points Sync Device (unified_points_sync.py) is the single source of truth. Every add_points call triggers record_points_activity. Domain-specific sync is recorded in: quests, achievements, compendium, social (chat), gallery, agent_knowledge, paypal, game (hunters), agent_skillsets, login, leaderboards, analytics, onboarding.",
+  "finish_lines": [
+    "Unified Points Sync Device: backend/services/unified_points_sync.py. State in logs/unified_points_sync/sync_state.json.",
+    "record_domain_sync(domain, count?, extra?): Call after successful write. Domain must be in SYNC_DOMAINS.",
+    "record_points_activity(): Called automatically from add_points in unified_points_database and unified_points_database_enhanced.",
+    "GET /api/sync/status: Returns unified_points, users, profiles, domains, rulebooks, agent_skillsets, agent_knowledge.",
+    "POST /api/sync/now: Triggers sync_now(user_id?). Returns updated status. Dashboard Sync now button uses this.",
+    "Sync status widget: vidgenerator/static/js/sync-status-widget.js. Renders on unified_dashboard, profile, stats."
+  ],
+  "sync_domains": [
+    {"id": "unified_points", "source": "add_points (auto)", "description": "Point awards; updated by record_points_activity"},
+    {"id": "users", "source": "GET /api/sync/status", "description": "User count from DB or logs/user_profiles"},
+    {"id": "profiles", "source": "GET /api/sync/status", "description": "Profile count from player_levels or user_profiles"},
+    {"id": "aggregator", "source": "intelligence_aggregator_routes", "description": "After get_all_intelligence"},
+    {"id": "trophies", "source": "trophies_db_service.award_trophy", "description": "After trophy unlock"},
+    {"id": "achievements", "source": "user_engagement.check_and_unlock_achievements", "description": "After achievement unlock"},
+    {"id": "battle", "source": "battle_routes.battle_quick", "description": "After quick battle"},
+    {"id": "shop", "source": "shop_routes.shop_purchase", "description": "After purchase (coins or unified_points)"},
+    {"id": "quests", "source": "quest_routes, user_engagement.claim_quest_reward", "description": "Quest complete and claim"},
+    {"id": "leaderboards", "source": "missing_endpoints.monetization_top50", "description": "After Top50 query"},
+    {"id": "analytics", "source": "scripts/analytics_jobs.run_all_jobs", "description": "After analytics jobs complete"},
+    {"id": "compendium", "source": "compendium_routes.award_points", "description": "After page read"},
+    {"id": "generator", "source": "video_generator_service", "description": "After video generation points"},
+    {"id": "gallery", "source": "gallery_db_service.upsert_gallery_item", "description": "After gallery item upsert"},
+    {"id": "social", "source": "chat_db_service.save_message", "description": "After chat message saved"},
+    {"id": "agent_skillsets", "source": "agent_skillset.save_skillsets", "description": "After skillset save"},
+    {"id": "agent_knowledge", "source": "rulebook_routes.post_agent_knowledge", "description": "After agent-knowledge append"},
+    {"id": "game", "source": "hunters_game.award_game_points", "description": "Trophy Hunters game points"},
+    {"id": "paypal", "source": "paypal_routes.capture handler", "description": "After PayPal capture success"},
+    {"id": "login", "source": "user_engagement.record_login", "description": "After login streak update"},
+    {"id": "onboarding", "source": "user_onboarding.create_new_user", "description": "After new user creation"}
+  ],
+  "rules": [
+    {"id": "sync_device", "name": "Unified Points Sync Device", "text": "unified_points_sync_device in backend/services/unified_points_sync.py. get_canonical, register_award, sync_now, record_domain_sync, record_points_activity, get_sync_status."},
+    {"id": "domain_sync", "name": "Domain Sync", "text": "Call record_domain_sync(domain, count?, extra?) after successful write. Domain must be in SYNC_DOMAINS."},
+    {"id": "points_activity", "name": "Points Activity", "text": "add_points in unified_points_database and unified_points_database_enhanced automatically calls record_points_activity."},
+    {"id": "sync_status_api", "name": "Sync Status API", "text": "GET /api/sync/status and /vidgenerator/api/sync/status. Returns unified_points, users, profiles, domains, rulebooks, agent_skillsets, agent_knowledge."},
+    {"id": "sync_now_api", "name": "Sync Now API", "text": "POST /api/sync/now and /vidgenerator/api/sync/now. Optional body: {user_id}. Triggers sync_now, returns updated status."},
+    {"id": "dashboard_widget", "name": "Dashboard Widget", "text": "sync-status-widget.js fetches status and renders Points, Users, Profiles, Rulebooks, Agents, Knowledge. Sync now button triggers POST sync/now."}
+  ]
+}

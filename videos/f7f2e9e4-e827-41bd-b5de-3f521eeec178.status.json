@@ -1,0 +1,12 @@
+{
+  "id": "f7f2e9e4-e827-41bd-b5de-3f521eeec178",
+  "status": "completed",
+  "message": "Complete",
+  "error_message": "",
+  "progress": 100,
+  "video_url": "/vidgenerator/api/documentary/video/f7f2e9e4-e827-41bd-b5de-3f521eeec178",
+  "updated_at": "2026-03-09T05:00:34.575099Z",
+  "expires_at": "2026-03-09T05:05:34.575099Z",
+  "title": "min gode dag i dag",
+  "prompt": "2026"
+}

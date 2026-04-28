@@ -1,0 +1,578 @@
+{
+  "shop-1": {
+    "image_url": "/static/shop/items/shop-1.jpg",
+    "poster_url": "/static/shop/items/shop-1.jpg",
+    "prompt_image": "Premium game shop item, themes, Galaxy Dark, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Dark space theme for UI",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:07Z",
+    "sound_url": "/static/shop/sounds/shop-1.wav",
+    "sound_generated_at": "2026-03-23T19:47:43Z"
+  },
+  "shop-2": {
+    "image_url": "/static/shop/items/shop-2.jpg",
+    "poster_url": "/static/shop/items/shop-2.jpg",
+    "prompt_image": "Premium game shop item, themes, Neon Green, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Neon green accent theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:09Z"
+  },
+  "shop-3": {
+    "image_url": "/static/shop/items/shop-3.jpg",
+    "poster_url": "/static/shop/items/shop-3.jpg",
+    "prompt_image": "Premium game shop item, themes, Ocean Blue, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Calm ocean blue theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:11Z"
+  },
+  "shop-4": {
+    "image_url": "/static/shop/items/shop-4.jpg",
+    "poster_url": "/static/shop/items/shop-4.jpg",
+    "prompt_image": "Premium game shop item, themes, Sunset Purple, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Purple gradient theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:13Z",
+    "sound_url": "/static/shop/sounds/shop-4.wav",
+    "sound_generated_at": "2026-03-23T19:47:43Z"
+  },
+  "shop-5": {
+    "image_url": "/static/shop/items/shop-5.jpg",
+    "poster_url": "/static/shop/items/shop-5.jpg",
+    "prompt_image": "Premium game shop item, themes, Electric Magnet, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Electric Magnet tech theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:15Z"
+  },
+  "shop-6": {
+    "image_url": "/static/shop/items/shop-6.jpg",
+    "poster_url": "/static/shop/items/shop-6.jpg",
+    "prompt_image": "Premium game shop item, themes, Star Map, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Star map background theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:17Z"
+  },
+  "shop-7": {
+    "image_url": "/static/shop/items/shop-7.jpg",
+    "poster_url": "/static/shop/items/shop-7.jpg",
+    "prompt_image": "Premium game shop item, themes, Trophy Gold, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Gold trophy hunter theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:18Z"
+  },
+  "shop-8": {
+    "image_url": "/static/shop/items/shop-8.jpg",
+    "poster_url": "/static/shop/items/shop-8.jpg",
+    "prompt_image": "Premium game shop item, themes, Debugger Pro, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Debugger-style dark theme",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:20Z"
+  },
+  "shop-9": {
+    "image_url": "/static/shop/items/shop-9.jpg",
+    "poster_url": "/static/shop/items/shop-9.jpg",
+    "prompt_image": "Premium game shop item, boosts, XP Booster 1h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: +20% XP for 1 hour",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:22Z"
+  },
+  "shop-10": {
+    "image_url": "/static/shop/items/shop-10.jpg",
+    "poster_url": "/static/shop/items/shop-10.jpg",
+    "prompt_image": "Premium game shop item, boosts, XP Booster 2h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: +20% XP for 2 hours",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:24Z",
+    "sound_url": "/static/shop/sounds/shop-10.wav",
+    "sound_generated_at": "2026-03-23T19:47:44Z"
+  },
+  "shop-11": {
+    "image_url": "/static/shop/items/shop-11.jpg",
+    "poster_url": "/static/shop/items/shop-11.jpg",
+    "prompt_image": "Premium game shop item, boosts, XP Booster 24h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: +20% XP for 24 hours",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:26Z"
+  },
+  "shop-12": {
+    "image_url": "/static/shop/items/shop-12.jpg",
+    "poster_url": "/static/shop/items/shop-12.jpg",
+    "prompt_image": "Premium game shop item, boosts, Game Time +30m, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 30 min game session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:28Z"
+  },
+  "shop-13": {
+    "image_url": "/static/shop/items/shop-13.jpg",
+    "poster_url": "/static/shop/items/shop-13.jpg",
+    "prompt_image": "Premium game shop item, boosts, Game Time +1h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 1 hour game session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:30Z"
+  },
+  "shop-14": {
+    "image_url": "/static/shop/items/shop-14.jpg",
+    "poster_url": "/static/shop/items/shop-14.jpg",
+    "prompt_image": "Premium game shop item, boosts, Game Time +2h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 2h game session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:32Z"
+  },
+  "shop-15": {
+    "image_url": "/static/shop/items/shop-15.jpg",
+    "poster_url": "/static/shop/items/shop-15.jpg",
+    "prompt_image": "Premium game shop item, boosts, Game Time +4h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 4h game session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:34Z",
+    "sound_url": "/static/shop/sounds/shop-15.wav",
+    "sound_generated_at": "2026-03-23T19:47:44Z"
+  },
+  "shop-16": {
+    "image_url": "/static/shop/items/shop-16.jpg",
+    "poster_url": "/static/shop/items/shop-16.jpg",
+    "prompt_image": "Premium game shop item, boosts, Weekend Pass, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 48h extended game time (weekend)",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:36Z"
+  },
+  "shop-17": {
+    "image_url": "/static/shop/items/shop-17.jpg",
+    "poster_url": "/static/shop/items/shop-17.jpg",
+    "prompt_image": "Premium game shop item, boosts, Clickthrough Bonus, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Boost clickthrough rewards",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:39Z"
+  },
+  "shop-18": {
+    "image_url": "/static/shop/items/shop-18.jpg",
+    "poster_url": "/static/shop/items/shop-18.jpg",
+    "prompt_image": "Premium game shop item, boosts, Generation Speed, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Faster video generation",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:41Z"
+  },
+  "shop-19": {
+    "image_url": "/static/shop/items/shop-19.jpg",
+    "poster_url": "/static/shop/items/shop-19.jpg",
+    "prompt_image": "Premium game shop item, boosts, Battle Power 1h, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Temporary battle boost 1 hour",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:43Z"
+  },
+  "shop-20": {
+    "image_url": "/static/shop/items/shop-20.jpg",
+    "poster_url": "/static/shop/items/shop-20.jpg",
+    "prompt_image": "Premium game shop item, boosts, Quest Booster, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: +25% quest rewards for 24h",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:45Z",
+    "sound_url": "/static/shop/sounds/shop-20.wav",
+    "sound_generated_at": "2026-03-23T19:47:45Z"
+  },
+  "shop-21": {
+    "image_url": "/static/shop/items/shop-21.jpg",
+    "poster_url": "/static/shop/items/shop-21.jpg",
+    "prompt_image": "Premium game shop item, boosts, Progression Boost, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Faster progression",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:47Z"
+  },
+  "shop-22": {
+    "image_url": "/static/shop/items/shop-22.jpg",
+    "poster_url": "/static/shop/items/shop-22.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Booster 1h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 2x investigation points for 1 hour on Star Map 25",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:49Z"
+  },
+  "shop-23": {
+    "image_url": "/static/shop/items/shop-23.jpg",
+    "poster_url": "/static/shop/items/shop-23.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Booster 6h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 2x investigation points for 6 hours",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:51Z"
+  },
+  "shop-24": {
+    "image_url": "/static/shop/items/shop-24.jpg",
+    "poster_url": "/static/shop/items/shop-24.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Booster 24h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 2x investigation points for 24 hours",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:53Z"
+  },
+  "shop-25": {
+    "image_url": "/static/shop/items/shop-25.jpg",
+    "poster_url": "/static/shop/items/shop-25.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Game Time +30m, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 30 min Hunter game + Star Map 25 session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:55Z",
+    "clip_url": "/static/shop/clips/shop-25.mp4",
+    "gif_url": "/static/shop/clips/shop-25.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:39:23Z",
+    "sound_url": "/static/shop/sounds/shop-25.wav",
+    "sound_generated_at": "2026-03-23T19:47:40Z"
+  },
+  "shop-26": {
+    "image_url": "/static/shop/items/shop-26.jpg",
+    "poster_url": "/static/shop/items/shop-26.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Game Time +1h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 1h Hunter game + Star Map 25 session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:57Z",
+    "clip_url": "/static/shop/clips/shop-26.mp4",
+    "gif_url": "/static/shop/clips/shop-26.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:39:17Z",
+    "sound_url": "/static/shop/sounds/shop-26.wav",
+    "sound_generated_at": "2026-03-23T19:47:41Z"
+  },
+  "shop-27": {
+    "image_url": "/static/shop/items/shop-27.jpg",
+    "poster_url": "/static/shop/items/shop-27.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Game Time +2h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extra 2h Hunter game + Star Map 25 session",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:31:59Z",
+    "clip_url": "/static/shop/clips/shop-27.mp4",
+    "gif_url": "/static/shop/clips/shop-27.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:39:09Z",
+    "sound_url": "/static/shop/sounds/shop-27.wav",
+    "sound_generated_at": "2026-03-23T19:47:41Z"
+  },
+  "shop-28": {
+    "image_url": "/static/shop/items/shop-28.jpg",
+    "poster_url": "/static/shop/items/shop-28.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 — Terra Trophy, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Trophy: First investigation (Terra)",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:01Z"
+  },
+  "shop-29": {
+    "image_url": "/static/shop/items/shop-29.jpg",
+    "poster_url": "/static/shop/items/shop-29.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 — Segmentum Clear, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Trophy: All 5 Segmentum fortresses investigated",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:03Z"
+  },
+  "shop-30": {
+    "image_url": "/static/shop/items/shop-30.jpg",
+    "poster_url": "/static/shop/items/shop-30.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 — Full Clear Trophy, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Trophy: All 25 points investigated",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:05Z"
+  },
+  "shop-31": {
+    "image_url": "/static/shop/items/shop-31.jpg",
+    "poster_url": "/static/shop/items/shop-31.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 — Lore Master, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Trophy: Unlock all 25 lore entries",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:07Z"
+  },
+  "shop-32": {
+    "image_url": "/static/shop/items/shop-32.jpg",
+    "poster_url": "/static/shop/items/shop-32.jpg",
+    "prompt_image": "Premium game shop item, starmap25, System Level Skip Token, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Unlock one system to next level (max 5)",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:09Z",
+    "clip_url": "/static/shop/clips/shop-32.mp4",
+    "gif_url": "/static/shop/clips/shop-32.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:38:59Z",
+    "sound_url": "/static/shop/sounds/shop-32.wav",
+    "sound_generated_at": "2026-03-23T19:47:41Z"
+  },
+  "shop-33": {
+    "image_url": "/static/shop/items/shop-33.jpg",
+    "poster_url": "/static/shop/items/shop-33.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Daily Reset Bonus 24h, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 2x buildup collect for 24h after next daily reset",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:11Z",
+    "clip_url": "/static/shop/clips/shop-33.mp4",
+    "gif_url": "/static/shop/clips/shop-33.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:38:56Z",
+    "sound_url": "/static/shop/sounds/shop-33.wav",
+    "sound_generated_at": "2026-03-23T19:47:41Z"
+  },
+  "shop-34": {
+    "image_url": "/static/shop/items/shop-34.jpg",
+    "poster_url": "/static/shop/items/shop-34.jpg",
+    "prompt_image": "Premium game shop item, starmap25, High-Level Structure Unlock, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Unlock one Orbital Fortress / Cathedral / Primarch's Gate without level",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:13Z",
+    "clip_url": "/static/shop/clips/shop-34.mp4",
+    "gif_url": "/static/shop/clips/shop-34.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:38:47Z",
+    "sound_url": "/static/shop/sounds/shop-34.wav",
+    "sound_generated_at": "2026-03-23T19:47:42Z"
+  },
+  "shop-35": {
+    "image_url": "/static/shop/items/shop-35.jpg",
+    "poster_url": "/static/shop/items/shop-35.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Calendar Slot — Agent Task, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Schedule one agent/AI appointment (content, learning, analytics)",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:15Z",
+    "clip_url": "/static/shop/clips/shop-35.mp4",
+    "gif_url": "/static/shop/clips/shop-35.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:38:42Z",
+    "sound_url": "/static/shop/sounds/shop-35.wav",
+    "sound_generated_at": "2026-03-23T19:47:42Z"
+  },
+  "shop-36": {
+    "image_url": "/static/shop/items/shop-36.jpg",
+    "poster_url": "/static/shop/items/shop-36.jpg",
+    "prompt_image": "Premium game shop item, starmap25, Star Map 25 Level Pack, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Bundle: 1 level skip + 1 daily reset bonus",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:17Z",
+    "clip_url": "/static/shop/clips/shop-36.mp4",
+    "gif_url": "/static/shop/clips/shop-36.gif",
+    "clip_duration_s": 3.0,
+    "clip_generated_at": "2026-03-23T19:38:30Z",
+    "sound_url": "/static/shop/sounds/shop-36.wav",
+    "sound_generated_at": "2026-03-23T19:47:42Z"
+  },
+  "shop-37": {
+    "image_url": "/static/shop/items/shop-37.jpg",
+    "poster_url": "/static/shop/items/shop-37.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Avatar Frame Gold, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Gold avatar frame",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:20Z"
+  },
+  "shop-38": {
+    "image_url": "/static/shop/items/shop-38.jpg",
+    "poster_url": "/static/shop/items/shop-38.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Avatar Frame Neon, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Neon avatar frame",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:21Z"
+  },
+  "shop-39": {
+    "image_url": "/static/shop/items/shop-39.jpg",
+    "poster_url": "/static/shop/items/shop-39.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Profile Badge Star, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Star profile badge",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:23Z"
+  },
+  "shop-40": {
+    "image_url": "/static/shop/items/shop-40.jpg",
+    "poster_url": "/static/shop/items/shop-40.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Profile Badge Trophy, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Trophy profile badge",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:25Z"
+  },
+  "shop-41": {
+    "image_url": "/static/shop/items/shop-41.jpg",
+    "poster_url": "/static/shop/items/shop-41.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Chat Bubble Glow, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Glowing chat bubble",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:27Z"
+  },
+  "shop-42": {
+    "image_url": "/static/shop/items/shop-42.jpg",
+    "poster_url": "/static/shop/items/shop-42.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, Cursor Trail, common rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Custom cursor trail",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:29Z"
+  },
+  "shop-43": {
+    "image_url": "/static/shop/items/shop-43.jpg",
+    "poster_url": "/static/shop/items/shop-43.jpg",
+    "prompt_image": "Premium game shop item, tech, Electric Magnet Module, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Agent tech: verification, DNA, star map",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:31Z"
+  },
+  "shop-44": {
+    "image_url": "/static/shop/items/shop-44.jpg",
+    "poster_url": "/static/shop/items/shop-44.jpg",
+    "prompt_image": "Premium game shop item, tech, Event Tracker, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Track new tasks and events",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:33Z"
+  },
+  "shop-45": {
+    "image_url": "/static/shop/items/shop-45.jpg",
+    "poster_url": "/static/shop/items/shop-45.jpg",
+    "prompt_image": "Premium game shop item, tech, 3D Monitor Plugin, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: 3D visual effects monitor",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:35Z"
+  },
+  "shop-46": {
+    "image_url": "/static/shop/items/shop-46.jpg",
+    "poster_url": "/static/shop/items/shop-46.jpg",
+    "prompt_image": "Premium game shop item, tech, Lab Access, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Unlock Lab experiments",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:37Z"
+  },
+  "shop-47": {
+    "image_url": "/static/shop/items/shop-47.jpg",
+    "poster_url": "/static/shop/items/shop-47.jpg",
+    "prompt_image": "Premium game shop item, tech, API Scanner Pro, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Extended API scanning",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:39Z"
+  },
+  "shop-48": {
+    "image_url": "/static/shop/items/shop-48.jpg",
+    "poster_url": "/static/shop/items/shop-48.jpg",
+    "prompt_image": "Premium game shop item, tech, Path Corrector, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Intelligent path correction",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:41Z"
+  },
+  "shop-49": {
+    "image_url": "/static/shop/items/shop-49.jpg",
+    "poster_url": "/static/shop/items/shop-49.jpg",
+    "prompt_image": "Premium game shop item, battle, Battle Ticket, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: One battle entry",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:43Z"
+  },
+  "shop-50": {
+    "image_url": "/static/shop/items/shop-50.jpg",
+    "poster_url": "/static/shop/items/shop-50.jpg",
+    "prompt_image": "Premium game shop item, battle, Strength Potion, rare rarity, dark sci-fi UI, glowing accents, high detail product art, no text, centered icon-style illustration, concept: Temp battle strength",
+    "source": "picsum",
+    "generated_at": "2026-03-23T19:32:45Z"
+  },
+  "theme-magic-the-gathering": {
+    "image_url": "/static/shop/items/shop-5.jpg",
+    "poster_url": "/static/shop/items/shop-5.jpg",
+    "prompt_image": "Premium game shop item, themes, Magic the Gathering style, legendary rarity, dark fantasy UI, mana gem glow, duels and spell cards mood, high detail product art, no logos, no text, centered icon-style illustration, concept: Trading card game inspired chrome",
+    "source": "placeholder",
+    "generated_at": "2026-04-20T12:00:00Z"
+  },
+  "theme-d6d": {
+    "image_url": "/static/shop/items/shop-7.jpg",
+    "poster_url": "/static/shop/items/shop-7.jpg",
+    "prompt_image": "Deprecated catalog id — merged into theme-dnd; same art as D&D theme for legacy inventory rows.",
+    "source": "merged_into_theme-dnd",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-dnd": {
+    "image_url": "/static/shop/items/shop-7.jpg",
+    "poster_url": "/static/shop/items/shop-7.jpg",
+    "prompt_image": "Premium game shop item, themes, Dungeons and Dragons fantasy dungeon TTRPG, legendary rarity, dragon gold treasure map polyhedral dice scroll torch medieval tavern mood, high detail product art, no logos, no Wizards marks, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-mafia": {
+    "image_url": "/static/shop/items/shop-1.jpg",
+    "poster_url": "/static/shop/items/shop-1.jpg",
+    "prompt_image": "Premium game shop item, themes, film noir mafia speakeasy, epic rarity, fedora smoke venetian blinds rain street lamp mood, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-ai-core": {
+    "image_url": "/static/shop/items/shop-2.jpg",
+    "poster_url": "/static/shop/items/shop-2.jpg",
+    "prompt_image": "Premium game shop item, themes, futuristic AI neural network hologram HUD, epic rarity, cyan violet circuits glass panels, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-christmas": {
+    "image_url": "/static/shop/items/shop-3.jpg",
+    "poster_url": "/static/shop/items/shop-3.jpg",
+    "prompt_image": "Premium game shop item, themes, Christmas holiday UI, rare rarity, pine garland candy cane frost window warm lights cozy snow, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-home-base": {
+    "image_url": "/static/shop/items/shop-4.jpg",
+    "poster_url": "/static/shop/items/shop-4.jpg",
+    "prompt_image": "Premium game shop item, themes, cozy home office desk lamp wood shelves plants neutral palette, rare rarity, calm workspace mood, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-january": {
+    "image_url": "/static/shop/items/shop-1.jpg",
+    "poster_url": "/static/shop/items/shop-1.jpg",
+    "prompt_image": "Premium game shop item, themes, January arctic aurora UI, icy blue neon, crisp winter atmosphere, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-february": {
+    "image_url": "/static/shop/items/shop-2.jpg",
+    "poster_url": "/static/shop/items/shop-2.jpg",
+    "prompt_image": "Premium game shop item, themes, February velvet hearts UI, warm crimson highlights, romantic winter mood, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-march": {
+    "image_url": "/static/shop/items/shop-3.jpg",
+    "poster_url": "/static/shop/items/shop-3.jpg",
+    "prompt_image": "Premium game shop item, themes, March clover rain UI, spring greens and mist, fresh contrast, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-april": {
+    "image_url": "/static/shop/items/shop-4.jpg",
+    "poster_url": "/static/shop/items/shop-4.jpg",
+    "prompt_image": "Premium game shop item, themes, April blossom rain UI, pastel petals and rainy light, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-may": {
+    "image_url": "/static/shop/items/shop-5.jpg",
+    "poster_url": "/static/shop/items/shop-5.jpg",
+    "prompt_image": "Premium game shop item, themes, May meadow UI, bright greens floral accents and long day calm, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-june": {
+    "image_url": "/static/shop/items/shop-6.jpg",
+    "poster_url": "/static/shop/items/shop-6.jpg",
+    "prompt_image": "Premium game shop item, themes, June solstice UI, golden sunset and summer sky tones, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-july": {
+    "image_url": "/static/shop/items/shop-7.jpg",
+    "poster_url": "/static/shop/items/shop-7.jpg",
+    "prompt_image": "Premium game shop item, themes, July fireworks UI, festive neon sparks night sky, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-august": {
+    "image_url": "/static/shop/items/shop-8.jpg",
+    "poster_url": "/static/shop/items/shop-8.jpg",
+    "prompt_image": "Premium game shop item, themes, August sunset coast UI, amber and ocean haze, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-september": {
+    "image_url": "/static/shop/items/shop-9.jpg",
+    "poster_url": "/static/shop/items/shop-9.jpg",
+    "prompt_image": "Premium game shop item, themes, September harvest UI, golden field tones and structured autumn focus, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-october": {
+    "image_url": "/static/shop/items/shop-10.jpg",
+    "poster_url": "/static/shop/items/shop-10.jpg",
+    "prompt_image": "Premium game shop item, themes, October midnight ember UI, moonlit shadows and orange noir accents, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-november": {
+    "image_url": "/static/shop/items/shop-11.jpg",
+    "poster_url": "/static/shop/items/shop-11.jpg",
+    "prompt_image": "Premium game shop item, themes, November hearth UI, warm wood and low-light comfort palette, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "theme-december": {
+    "image_url": "/static/shop/items/shop-12.jpg",
+    "poster_url": "/static/shop/items/shop-12.jpg",
+    "prompt_image": "Premium game shop item, themes, December snowlight UI, festive lights and winter glass shimmer, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "mn2-5d-dual-bar-pro": {
+    "image_url": "/static/shop/items/shop-8.jpg",
+    "poster_url": "/static/shop/items/shop-8.jpg",
+    "prompt_image": "Premium game shop item, tech, dual bar financial chart neon green cyan stacks, rare rarity, dark UI glowing bars five columns abstract, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "mn2-5d-utc-rail-skin": {
+    "image_url": "/static/shop/items/shop-9.jpg",
+    "poster_url": "/static/shop/items/shop-9.jpg",
+    "prompt_image": "Premium game shop item, cosmetic, UTC clock rail midnight tick marks minimalist dark panel, rare rarity, subtle cyan accents, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "mn2-5d-net-flow-24h": {
+    "image_url": "/static/shop/items/shop-10.jpg",
+    "poster_url": "/static/shop/items/shop-10.jpg",
+    "prompt_image": "Premium game shop item, boosts, net flow arrow pulse chart emerald, rare rarity, energy surge abstract, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "mn2-5d-deep-stack-ledger": {
+    "image_url": "/static/shop/items/shop-11.jpg",
+    "poster_url": "/static/shop/items/shop-11.jpg",
+    "prompt_image": "Premium game shop item, inventory, leather ledger book stacked papers wax seal, rare rarity, warm desk lamp mood, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  },
+  "mn2-5d-withdrawal-beacon": {
+    "image_url": "/static/shop/items/shop-12.jpg",
+    "poster_url": "/static/shop/items/shop-12.jpg",
+    "prompt_image": "Premium game shop item, tech, radar beacon satellite dish safety signal cyan, rare rarity, dark sky grid, high detail product art, no text, centered illustration",
+    "source": "placeholder",
+    "generated_at": "2026-04-22T12:00:00Z"
+  }
+}

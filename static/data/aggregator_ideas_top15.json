@@ -1,0 +1,17 @@
+[
+  {"id": 1, "title": "Live PvP shard bridge", "tech": "WebSocket + Redis presence", "blurb": "Route quick-match tokens from monitor grid to real opponent queues."},
+  {"id": 2, "title": "Battle replay VOD", "tech": "IndexedDB + HLS snippets", "blurb": "Capture last N RPS rounds as shareable clips from the holodeck."},
+  {"id": 3, "title": "Cross-page streak sync", "tech": "Service worker + unified points file", "blurb": "Single streak counter visible on Battle, Game, and Aggregator HUD."},
+  {"id": 4, "title": "Intel-to-loadout pipeline", "tech": "Aggregator JSON + skill graph", "blurb": "Promote trending intel topics into suggested battle stances."},
+  {"id": 5, "title": "Seasonal ladder snapshots", "tech": "SQLite battle_matches + cron", "blurb": "Freeze weekly ELO from existing migration-friendly tables."},
+  {"id": 6, "title": "Nexus ↔ monitor coordinates", "tech": "Shared geo_ref + grid hash", "blurb": "Map Star Map nodes to monitor cells for quest credit."},
+  {"id": 7, "title": "Encoder marketplace", "tech": "Base64 lists + signed URLs", "blurb": "Let creators sell curated link packs; decode verifies signature."},
+  {"id": 8, "title": "Voice commander (opt-in)", "tech": "Web Speech API", "blurb": "Issue move commands and explorer chat without typing."},
+  {"id": 9, "title": "Booster telemetry loop", "tech": "Shop tab hooks + fantasy resources API", "blurb": "When boosters purchased, bump monitor energy meter in real time."},
+  {"id": 10, "title": "Agent co-pilot duel", "tech": "LLM + agent_skillset", "blurb": "Attach one agent to suggest RPS counter based on last outcomes."},
+  {"id": 11, "title": "Tournament brackets export", "tech": "CSV + ICS from social store", "blurb": "Download join history for offline league tools."},
+  {"id": 12, "title": "Accessibility contrast profiles", "tech": "CSS env + prefers-contrast", "blurb": "High-contrast holodeck palette for competitive readability."},
+  {"id": 13, "title": "Risk-budget betting (cosmetic)", "tech": "Virtual coins only", "blurb": "Stake cosmetic shards on predicted RPS distribution."},
+  {"id": 14, "title": "Progress reader webhooks", "tech": "Outgoing POST on level-up", "blurb": "Notify Discord/Telegram when Hunter level ticks from monitor battles."},
+  {"id": 15, "title": "Federated intel mirrors", "tech": "Edge cache + ETag", "blurb": "Read-only mirrors of /api/aggregators/intelligence/all for low-latency regions."}
+]

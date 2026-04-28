@@ -1,0 +1,108 @@
+/**
+ * Page Layout Metrics — Theme-based skabelon for all pages
+ * Standard: header-to-main spacing, no misdirection, consistent offsets.
+ * Use on every page that uses the fixed nav-toolbar.
+ * Add class="layout-standard" to body to opt in.
+ *
+ * Cascade: all rules live in @layer layout-metrics so page CSS can override with unlayered
+ * rules if needed, or use @layer page { } with later import order.
+ */
+@layer layout-metrics {
+
+:root {
+    --header-height: 64px;
+    --main-offset-top: 24px;
+    --page-top-padding: calc(var(--header-height) + var(--main-offset-top));
+    --page-bottom-padding: clamp(32px, 5vw, 48px);
+    --page-side-padding: clamp(12px, 3vw, 24px);
+    --content-max-width: 1400px;
+}
+
+html {
+    scrollbar-gutter: stable;
+}
+
+body.layout-standard {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Apply to main content container. Nav is fixed; this reserves space. */
+body.layout-standard .page-main,
+body.layout-standard .page-main-wrap,
+body.layout-standard .trophies-container,
+body.layout-standard .shop-page,
+body.layout-standard .gallery-page,
+body.layout-standard .profile-page,
+body.layout-standard .profile-container,
+body.layout-standard .dashboard-container,
+body.layout-standard .generator-container,
+body.layout-standard .generator-page,
+body.layout-standard .debugger-main,
+body.layout-standard .battle-page,
+body.layout-standard .battle-arena,
+body.layout-standard .social-page,
+body.layout-standard .unified-dashboard,
+body.layout-standard .lab-page,
+[data-page-layout="standard"] {
+    padding-top: var(--page-top-padding) !important;
+    padding-bottom: var(--page-bottom-padding) !important;
+    padding-inline: var(--page-side-padding) !important;
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Extra breathing room when a visible error strip is inside standard main (no JS). */
+body.layout-standard .page-main:has(.status.error),
+body.layout-standard .page-main-wrap:has(.status.error),
+[data-page-layout="standard"]:has(.status.error) {
+    padding-bottom: calc(var(--page-bottom-padding) + 12px) !important;
+}
+
+/* Narrow main-offset for dense layouts (optional) */
+.page-layout-dense {
+    --main-offset-top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --page-bottom-padding: 40px;
+    }
+}
+
+@media (prefers-contrast: more) {
+    :root {
+        --main-offset-top: 28px;
+    }
+}
+
+/**
+ * Aggregator hub — layout metrics + technology footprint (surfaces wired on /aggregator)
+ */
+body.layout-aggregator-tech {
+    --agg-tech-bar-gap: 8px;
+    --agg-points-hud-min-height: 44px;
+    --agg-tech-surface-count: 8;
+    /* 5D story monitor: x₁,x₂,x₃ spatial drift, τ chroniton, σ narrative (see story-monitor-5d.css) */
+    --story-monitor-dimensions: 5;
+    --story-monitor-audio: optional-webaudio;
+}
+
+body.layout-aggregator-tech .agg-tech-row {
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-inline: var(--page-side-padding);
+}
+
+body.layout-aggregator-tech .agg-main-wrap.agg-page {
+    padding-inline: var(--page-side-padding);
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+} /* end @layer layout-metrics */

@@ -1,0 +1,448 @@
+{
+  "info": {
+    "name": "MasterNoder.dk API",
+    "description": "Complete API collection for MasterNoder.dk video generation platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "masternoder-api-v1"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://masternoder.dk/vidgenerator/api",
+      "type": "string"
+    },
+    {
+      "key": "local_url",
+      "value": "http://localhost:5000/vidgenerator/api",
+      "type": "string"
+    },
+    {
+      "key": "video_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batch_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Video Generation",
+      "item": [
+        {
+          "name": "Create Video",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"A documentary about space exploration\",\n  \"title\": \"Space Exploration\",\n  \"description\": \"An in-depth look at space exploration\",\n  \"theme\": \"sci-fi\",\n  \"quality\": \"high\",\n  \"category\": \"nature\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/generator/create",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create AI Clips",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"A beautiful sunset over mountains\",\n  \"meta\": {\n    \"duration\": 10\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/generator/ai-clips",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "ai-clips"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check AI Clip Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.job_id) {",
+                  "        pm.collectionVariables.set('job_id', jsonData.job_id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/generator/ai-clips/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "ai-clips", "{{job_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Create Videos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"videos\": [\n    {\n      \"prompt\": \"Nature documentary\",\n      \"title\": \"Nature Video 1\",\n      \"theme\": \"nature\",\n      \"quality\": \"medium\"\n    },\n    {\n      \"prompt\": \"Space exploration\",\n      \"title\": \"Space Video 1\",\n      \"theme\": \"sci-fi\",\n      \"quality\": \"high\"\n    }\n  ],\n  \"user_id\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/generator/batch/create",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "batch", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/generator/batch/{{batch_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "batch", "{{batch_id}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Route",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/generator/test",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debug Routes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/generator/debug-routes",
+              "host": ["{{base_url}}"],
+              "path": ["generator", "debug-routes"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Gallery",
+      "item": [
+        {
+          "name": "List Videos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gallery/list?search=&category=&status=completed&sort=newest",
+              "host": ["{{base_url}}"],
+              "path": ["gallery", "list"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search in title, description, or prompt"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "description": "Filter by status: completed, queued, processing, failed, all"
+                },
+                {
+                  "key": "sort",
+                  "value": "newest",
+                  "description": "Sort order: newest, oldest, title, duration"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Video Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/gallery/{{video_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["gallery", "{{video_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Game System",
+      "item": [
+        {
+          "name": "Get Achievements",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/game/achievements",
+              "host": ["{{base_url}}"],
+              "path": ["game", "achievements"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Milestones",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/game/milestones",
+              "host": ["{{base_url}}"],
+              "path": ["game", "milestones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stats Points",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/game/stats-points",
+              "host": ["{{base_url}}"],
+              "path": ["game", "stats-points"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update XP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user123\",\n  \"action\": \"video_created\",\n  \"points\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/game/xp",
+              "host": ["{{base_url}}"],
+              "path": ["game", "xp"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Get Statistics Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/stats/summary",
+              "host": ["{{base_url}}"],
+              "path": ["stats", "summary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Detailed Statistics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/stats/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["stats", "detailed"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Debugger",
+      "item": [
+        {
+          "name": "Scan for Errors",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/debug/errors/scan",
+              "host": ["{{base_url}}"],
+              "path": ["debug", "errors", "scan"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Fixes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fix_type\": \"database\",\n  \"auto_fix\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/debug/fix",
+              "host": ["{{base_url}}"],
+              "path": ["debug", "fix"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Routes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/debug/routes",
+              "host": ["{{base_url}}"],
+              "path": ["debug", "routes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get System Information",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/debug/system",
+              "host": ["{{base_url}}"],
+              "path": ["debug", "system"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/list",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "list"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Metrics",
+      "item": [
+        {
+          "name": "System Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health/system",
+              "host": ["{{base_url}}"],
+              "path": ["health", "system"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health/database",
+              "host": ["{{base_url}}"],
+              "path": ["health", "database"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Performance Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,239 @@
+{
+  "timestamp": "2026-01-05T14:07:25.509203",
+  "results": [
+    {
+      "url": "/vidgenerator/battle",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "size": 493979,
+      "content_type": "text/html; charset=utf-8; charset=utf-8"
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/test",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "size": 381,
+      "content_type": "application/json"
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/stats?user_id=test_user",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "size": 474,
+      "content_type": "application/json"
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/create",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "size": 1635,
+      "content_type": "application/json",
+      "response": {
+        "result": {
+          "battle": {
+            "created_at": "2026-01-05T13:07:26.186244",
+            "difficulty": "balanced",
+            "id": "quick_test_user_123_1767618446184",
+            "intelligence": {
+              "focus": "speed",
+              "mode": "quick",
+              "recommendations": [
+                "Fast decision-making",
+                "Aggressive opening",
+                "Quick resource allocation"
+              ],
+              "stats": {
+                "avg_duration": 0,
+                "quick_battles": 0,
+                "success_rate": 0
+              }
+            },
+            "opponent_type": "ai",
+            "points_awarded": false,
+            "status": "active",
+            "type": "quick",
+            "user_id": "test_user_123",
+            "user_stats": {
+              "counter": {
+                "active_battles": 0,
+                "completed_battles": 0,
+                "losses": 0,
+                "total_battles": 0,
+                "win_rate": 0.0,
+                "wins": 0
+              },
+              "intelligence": {
+                "focus": "speed",
+                "mode": "quick",
+                "recommendations": [
+                  "Fast decision-making",
+                  "Aggressive opening",
+                  "Quick resource allocation"
+                ],
+                "stats": {
+                  "avg_duration": 0,
+                  "quick_battles": 0,
+                  "success_rate": 0
+                }
+              },
+              "streak": {
+                "best_streak": 0,
+                "current_streak": 0,
+                "streak_type": "none"
+              },
+              "total_points": {
+                "activity_points": 0,
+                "battle_points": 0,
+                "total": 0,
+                "xp": 0
+              }
+            }
+          },
+          "battle_id": "quick_test_user_123_1767618446184",
+          "intelligence": {
+            "focus": "speed",
+            "mode": "quick",
+            "recommendations": [
+              "Fast decision-making",
+              "Aggressive opening",
+              "Quick resource allocation"
+            ],
+            "stats": {
+              "avg_duration": 0,
+              "quick_battles": 0,
+              "success_rate": 0
+            }
+          },
+          "stats": {
+            "counter": {
+              "active_battles": 0,
+              "completed_battles": 0,
+              "losses": 0,
+              "total_battles": 0,
+              "win_rate": 0.0,
+              "wins": 0
+            },
+            "intelligence": {
+              "focus": "speed",
+              "mode": "quick",
+              "recommendations": [
+                "Fast decision-making",
+                "Aggressive opening",
+                "Quick resource allocation"
+              ],
+              "stats": {
+                "avg_duration": 0,
+                "quick_battles": 0,
+                "success_rate": 0
+              }
+            },
+            "streak": {
+              "best_streak": 0,
+              "current_streak": 0,
+              "streak_type": "none"
+            },
+            "total_points": {
+              "activity_points": 0,
+              "battle_points": 0,
+              "total": 0,
+              "xp": 0
+            }
+          },
+          "success": true
+        },
+        "success": true
+      }
+    },
+    {
+      "url": "/vidgenerator/api/battle/quick",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "size": 516,
+      "content_type": "application/json",
+      "response": {
+        "battle": {
+          "battle_type": "quick",
+          "clan1_id": "quick_clan_test_user_123_1767618446.435019",
+          "clan1_name": "Player test_user_123",
+          "clan1_power": 100,
+          "clan1_score": 0,
+          "clan2_id": "quick_opponent_1767618446.435038",
+          "clan2_name": "AI Opponent Balanced",
+          "clan2_power": 200,
+          "clan2_score": 0,
+          "created_at": "2026-01-05T13:07:26.435108",
+          "difficulty": "balanced",
+          "id": "quick_battle_1767618446.435101",
+          "is_quick_battle": true,
+          "rewards": {
+            "experience": 100,
+            "gold": 50
+          },
+          "status": "active",
+          "user_id": "test_user_123",
+          "winner": null
+        },
+        "success": true
+      }
+    },
+    {
+      "url": "/vidgenerator/api/battle/battles",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "size": 354,
+      "content_type": "application/json",
+      "response": {
+        "battle": {
+          "battle_type": "standard",
+          "clan1_id": "test_clan_1",
+          "clan1_name": "Clan test_clan_1",
+          "clan1_power": 100,
+          "clan1_score": 0,
+          "clan2_id": "test_clan_2",
+          "clan2_name": "Clan test_clan_2",
+          "clan2_power": 100,
+          "clan2_score": 0,
+          "created_at": "2026-01-05T13:07:26.616503",
+          "id": "battle_1767618446.616497",
+          "rewards": {},
+          "status": "active",
+          "winner": null
+        },
+        "success": true
+      }
+    },
+    {
+      "url": "/vidgenerator/api/battle/battles",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "size": 30,
+      "content_type": "application/json"
+    },
+    {
+      "url": "/vidgenerator/api/battle/history",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "size": 30,
+      "content_type": "application/json"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "successful": 8,
+    "failed": 0
+  },
+  "analysis": {
+    "quick_battle_system": "QuickBattleSystem integrated with BattleSystem",
+    "battle_system": "BattleSystem is single source of truth",
+    "integration_status": "\u2705 COMPLETE - Quick battles create battles in main battle system",
+    "deployment_status": "\u2705 DEPLOYED"
+  }
+}

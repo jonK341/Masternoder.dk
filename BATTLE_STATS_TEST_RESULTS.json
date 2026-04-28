@@ -1,0 +1,366 @@
+{
+  "timestamp": "2026-01-06T00:55:05.749655",
+  "summary": {
+    "total": 30,
+    "passed": 30,
+    "failed": 0
+  },
+  "results": {
+    "overview": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 17,
+      "sample_keys": [
+        "achievements_unlocked",
+        "average_battle_duration",
+        "best_streak",
+        "current_streak",
+        "losses"
+      ]
+    },
+    "battle": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 13,
+      "sample_keys": [
+        "active_battles",
+        "battle_types",
+        "best_win_streak",
+        "completed_battles_today",
+        "difficulty_stats"
+      ]
+    },
+    "tournaments": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 11,
+      "sample_keys": [
+        "active_tournaments",
+        "best_rank",
+        "completed_tournaments",
+        "current_rank",
+        "recent_tournaments"
+      ]
+    },
+    "history": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 8,
+      "sample_keys": [
+        "all_battles",
+        "battles_this_month",
+        "battles_this_week",
+        "battles_today",
+        "history_summary"
+      ]
+    },
+    "leaderboard": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 12,
+      "sample_keys": [
+        "leaderboard_categories",
+        "nearby_players",
+        "percentile",
+        "rank_change_30d",
+        "rank_change_7d"
+      ]
+    },
+    "intelligence": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 7,
+      "sample_keys": [
+        "intelligence_history",
+        "intelligence_level",
+        "intelligence_score",
+        "performance_analysis",
+        "predictive_analytics"
+      ]
+    },
+    "resources": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 9,
+      "sample_keys": [
+        "available_power",
+        "power_breakdown",
+        "power_generation",
+        "power_history",
+        "resource_projects"
+      ]
+    },
+    "series": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 6,
+      "sample_keys": [
+        "active_series",
+        "completed_series",
+        "current_series",
+        "series_statistics",
+        "series_win_rate"
+      ]
+    },
+    "gps": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 6,
+      "sample_keys": [
+        "active_locations",
+        "location_stats",
+        "locations",
+        "nearby_players",
+        "total_locations"
+      ]
+    },
+    "news": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "announcements",
+        "news_items",
+        "total_news_items",
+        "unread_count"
+      ]
+    },
+    "peers": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 7,
+      "sample_keys": [
+        "active_connections",
+        "collaboration_stats",
+        "network_size",
+        "network_topology",
+        "peers"
+      ]
+    },
+    "timepocket": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "status",
+        "timepocket_analytics",
+        "views"
+      ]
+    },
+    "trading": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 2,
+      "sample_keys": [
+        "collectibles",
+        "trophy_trading"
+      ]
+    },
+    "missions": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "daily_missions",
+        "mission_statistics",
+        "timeline_missions"
+      ]
+    },
+    "ai-research": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 6,
+      "sample_keys": [
+        "active_research",
+        "ai_analytics",
+        "completed_research",
+        "research_level",
+        "research_points"
+      ]
+    },
+    "rewards": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "pending_rewards",
+        "reward_history",
+        "reward_statistics",
+        "total_rewards_earned"
+      ]
+    },
+    "technology": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "research_projects",
+        "tech_tree",
+        "technology_impact",
+        "technology_levels"
+      ]
+    },
+    "autoplay": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "autoplay_enabled",
+        "autoplay_settings",
+        "autoplay_statistics",
+        "recording"
+      ]
+    },
+    "social": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "friends",
+        "social_activity",
+        "social_statistics"
+      ]
+    },
+    "teams": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "team_achievements",
+        "team_statistics",
+        "user_teams"
+      ]
+    },
+    "alliances": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "alliance_events",
+        "alliance_statistics",
+        "user_alliances"
+      ]
+    },
+    "groups-destroy": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "destruction_history",
+        "destruction_statistics",
+        "destructions_this_month",
+        "total_destructions"
+      ]
+    },
+    "bonus-level": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "bonus_level_progress",
+        "pegasus",
+        "toons"
+      ]
+    },
+    "death-teleport": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 2,
+      "sample_keys": [
+        "installations",
+        "teleport_statistics"
+      ]
+    },
+    "militia-forces": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 4,
+      "sample_keys": [
+        "active_forces",
+        "forces",
+        "militia_statistics",
+        "total_forces"
+      ]
+    },
+    "legal-content": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 2,
+      "sample_keys": [
+        "compliance_status",
+        "legal_documents"
+      ]
+    },
+    "tech-hardware": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 6,
+      "sample_keys": [
+        "active_upgrades",
+        "hardware_level",
+        "hardware_progress",
+        "hardware_statistics",
+        "total_components"
+      ]
+    },
+    "death-portal": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 2,
+      "sample_keys": [
+        "portal_statistics",
+        "portals"
+      ]
+    },
+    "experience-recount": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "recount_history",
+        "recount_statistics",
+        "recount_status"
+      ]
+    },
+    "enhanced-system": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": 3,
+      "sample_keys": [
+        "connected_points",
+        "enhancements",
+        "system_statistics"
+      ]
+    }
+  }
+}

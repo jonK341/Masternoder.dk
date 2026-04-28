@@ -1,0 +1,46 @@
+{
+  "appointments": {},
+  "monsters": {
+    "dragon": {
+      "name": "Dragon",
+      "type": "legendary",
+      "appointment_types": [
+        "training",
+        "feeding",
+        "bonding",
+        "combat"
+      ],
+      "default_duration": 60
+    },
+    "griffin": {
+      "name": "Griffin",
+      "type": "mythical",
+      "appointment_types": [
+        "flying",
+        "hunting",
+        "care"
+      ],
+      "default_duration": 45
+    },
+    "phoenix": {
+      "name": "Phoenix",
+      "type": "immortal",
+      "appointment_types": [
+        "rebirth",
+        "fire_training",
+        "meditation"
+      ],
+      "default_duration": 90
+    },
+    "kraken": {
+      "name": "Kraken",
+      "type": "aquatic",
+      "appointment_types": [
+        "diving",
+        "feeding",
+        "exploration"
+      ],
+      "default_duration": 120
+    }
+  }
+}

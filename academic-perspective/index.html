@@ -1,0 +1,340 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Point of Perspective - MasterNoder.dk</title>
+    <link rel="stylesheet" href="/static/css/sci-fi.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0a2a 0%, #2d1b4e 50%, #1a0a2a 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(138, 43, 226, 0.5);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(90deg, #8A2BE2, #FF1493, #00BFFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .barriers-section, .walls-section {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(138, 43, 226, 0.3);
+        }
+        
+        .section-title {
+            font-size: 2.5em;
+            color: #8A2BE2;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .barriers-grid, .walls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .barrier-card, .wall-card {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .barrier-card:hover, .wall-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(138, 43, 226, 0.8);
+            box-shadow: 0 10px 30px rgba(138, 43, 226, 0.5);
+        }
+        
+        .barrier-card.broken, .wall-card.penetrated {
+            border-color: rgba(0, 255, 127, 0.8);
+            background: rgba(0, 50, 0, 0.3);
+        }
+        
+        .barrier-card h3, .wall-card h3 {
+            color: #8A2BE2;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .barrier-card.broken h3, .wall-card.penetrated h3 {
+            color: #00FF7F;
+        }
+        
+        .barrier-card p, .wall-card p {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .break-button, .penetrate-button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #8A2BE2, #FF1493);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .break-button:hover, .penetrate-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(138, 43, 226, 0.5);
+        }
+        
+        .synergy-section {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(0, 255, 127, 0.3);
+        }
+        
+        .synergy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .synergy-card {
+            background: rgba(0, 50, 0, 0.3);
+            border: 2px solid rgba(0, 255, 127, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .synergy-card h4 {
+            color: #00FF7F;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8A2BE2, #FF1493);
+            transition: width 0.3s;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Academic Point of Perspective</h1>
+            <p style="font-size: 1.3em; color: #aaa;">12 Religion Barriers & Walls | System Synergies</p>
+        </div>
+        
+        <!-- 12 Religion Barriers -->
+        <div class="barriers-section">
+            <h2 class="section-title">🛡️ 12 Religion Barriers</h2>
+            <div class="barriers-grid" id="barriers-grid">
+                <!-- Barriers will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- 12 Religion Walls -->
+        <div class="walls-section">
+            <h2 class="section-title">🧱 12 Religion Walls</h2>
+            <div class="walls-grid" id="walls-grid">
+                <!-- Walls will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Synergies Section -->
+        <div class="synergy-section">
+            <h2 class="section-title" style="color: #00FF7F;">✨ System Synergies</h2>
+            <div class="synergy-grid" id="synergy-grid">
+                <!-- Synergies will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/" style="display: inline-block; padding: 15px 30px; background: rgba(138, 43, 226, 0.3); border: 2px solid rgba(138, 43, 226, 0.5); border-radius: 10px; color: #8A2BE2; text-decoration: none; font-weight: bold;">🏠 Home</a>
+        </div>
+    </div>
+    
+    <script>
+        // Load barriers
+        async function loadBarriers() {
+            try {
+                const response = await fetch('/api/academic/barriers');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const grid = document.getElementById('barriers-grid');
+                    grid.innerHTML = Object.entries(data.barriers).map(([id, barrier]) => `
+                        <div class="barrier-card" id="barrier-${id}">
+                            <h3>${barrier.name}</h3>
+                            <p>${barrier.description}</p>
+                            <p style="color: #8A2BE2; margin-top: 10px;"><strong>Strength:</strong> ${barrier.strength}</p>
+                            <p style="color: #00BFFF; font-size: 0.9em;"><strong>Synergy Systems:</strong> ${barrier.synergy_systems.join(', ')}</p>
+                            <button class="break-button" onclick="breakBarrier('${id}')">Break Barrier</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading barriers:', error);
+            }
+        }
+        
+        // Load walls
+        async function loadWalls() {
+            try {
+                const response = await fetch('/api/academic/walls');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const grid = document.getElementById('walls-grid');
+                    grid.innerHTML = Object.entries(data.walls).map(([id, wall]) => `
+                        <div class="wall-card" id="wall-${id}">
+                            <h3>${wall.name}</h3>
+                            <p>${wall.description}</p>
+                            <p style="color: #8A2BE2; margin-top: 10px;"><strong>Height:</strong> ${wall.height}</p>
+                            <p style="color: #00BFFF; font-size: 0.9em;"><strong>Synergy Systems:</strong> ${wall.synergy_systems.join(', ')}</p>
+                            <button class="penetrate-button" onclick="penetrateWall('${id}')">Penetrate Wall</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading walls:', error);
+            }
+        }
+        
+        // Break barrier
+        async function breakBarrier(barrierId) {
+            try {
+                const response = await fetch('/api/academic/break-barrier', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: 'default',
+                        barrier_id: barrierId,
+                        method: 'understanding'
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const card = document.getElementById(`barrier-${barrierId}`);
+                    card.classList.add('broken');
+                    card.querySelector('.break-button').textContent = '✓ Broken';
+                    card.querySelector('.break-button').disabled = true;
+                    alert(`Barrier broken! Earned ${data.points_earned} points!`);
+                }
+            } catch (error) {
+                console.error('Error breaking barrier:', error);
+            }
+        }
+        
+        // Penetrate wall
+        async function penetrateWall(wallId) {
+            try {
+                const response = await fetch('/api/academic/penetrate-wall', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: 'default',
+                        wall_id: wallId,
+                        approach: 'analysis'
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const card = document.getElementById(`wall-${wallId}`);
+                    card.classList.add('penetrated');
+                    card.querySelector('.penetrate-button').textContent = '✓ Penetrated';
+                    card.querySelector('.penetrate-button').disabled = true;
+                    alert(`Wall penetrated! Earned ${data.points_earned} points!`);
+                }
+            } catch (error) {
+                console.error('Error penetrating wall:', error);
+            }
+        }
+        
+        // Load on page load
+        window.addEventListener('load', () => {
+            loadBarriers();
+            loadWalls();
+        });
+    </script>
+    <!-- Enhanced Point Counters -->
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/intelligent_point_middleware_frontend.js"></script>
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+</body>
+</html>
+

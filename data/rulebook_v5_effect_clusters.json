@@ -1,0 +1,46 @@
+{
+  "name": "Effect Clusters",
+  "version": "V5.0",
+  "shop_ui_alignment": "Shop UI V.9 — cluster language maps to how the shop groups power-ups, battle, and utility SKUs in the catalog filters.",
+  "description": "5 effektklynger der aligner med Hunters rulebook V2 sektorer. V5.0 tilføjer konkrete guides til spillere og agenter.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v5-effect-clusters.png",
+  "image_alt": "Effect Clusters V5",
+  "agent_prompt": "Effect clusters (V5.0): Galactic, Verification, Combat, Support, Utility. Align with Hunters rulebook V2 sectors. Use guides[] + monthly_cluster_hints for månedstema→cluster-sprog. Fuld måned/SKU-liste: rulebook_v9_shop.json.",
+  "tech_spec": "GET /api/game/hunters/effect-clusters; clusters: galactic, verification, combat, support, utility",
+  "user_guide": "Effektklynger grupperer spells i 5 sektorer. V5.0 guides: shop-kategorier, agent-forklaring, points-link. Se guides i JSON.",
+  "manual": "Agent manual V5.0: Effect clusters map to Hunters sectors. Cite `guides` + `monthly_cluster_hints` (pædagogik; ikke nye spells). Fuld shop-månedliste: rulebook_v9_shop.json.",
+  "guides": [
+    {"id": "guide_cluster_nav", "title": "Find dit cluster i Shop", "steps": ["Åbn /shop → Catalog.", "Brug kategori-filter (fx Power-ups, Battle).", "Match effekt til cluster: Galactic=stjerner/kort, Verification=DNA/integrity, Combat=angreb, Support=heal/buff, Utility=session/geo."]},
+    {"id": "guide_agent_explain", "title": "Forklar effekt til bruger", "steps": ["Spørg om brugeren vil høre Galactic, Verification, Combat, Support eller Utility.", "Nævn én spell eller shop-linje pr. sektor så det ikke overvælder.", "Henvis til Hunters rulebook V2 for fuld spell-liste."]},
+    {"id": "guide_points_link", "title": "Cluster og unified points", "steps": ["Boosts og themes i shop kan ændre XP/game points (se rulebook V7).", "Efter køb: Profile viser opdateret inventory (Shop V.9 shadow merge).", "Brug ikke client-only hacks; server styrer belønninger."]},
+    {"id": "guide_monthly_theme_clusters", "title": "Månedstemaer og clusters (pædagogik)", "steps": ["Brug monthly_cluster_hints som fortælle-mappe — ikke nye Hunters-spells.", "Henvis til rulebook_v9_shop.json monthly_theme_catalog for item_id pr. måned.", "Behold V2 spell-navne i kamp; temaer er kosmetik og metafor."]}
+  ],
+  "monthly_cluster_hints": [
+    {"month": 1, "item_id": "theme-january", "primary_cluster": "utility", "hint": "Nyår / session-rytme — ro og fokus."},
+    {"month": 2, "item_id": "theme-february", "primary_cluster": "support", "hint": "Varme og nærvær — buff/heal-sprog."},
+    {"month": 3, "item_id": "theme-march", "primary_cluster": "utility", "hint": "Forår / setup — checkpoint og flow."},
+    {"month": 4, "item_id": "theme-april", "primary_cluster": "galactic", "hint": "Vækst lys — stjerne-/horisont-metafor."},
+    {"month": 5, "item_id": "theme-may", "primary_cluster": "support", "hint": "Eng ro — støtte og restitution."},
+    {"month": 6, "item_id": "theme-june", "primary_cluster": "galactic", "hint": "Soltop / himmel — Galactic-visuals."},
+    {"month": 7, "item_id": "theme-july", "primary_cluster": "combat", "hint": "Fest og intensitet — Combat-energi (ikke PvP-skade)."},
+    {"month": 8, "item_id": "theme-august", "primary_cluster": "galactic", "hint": "Horisont kyst — bred oversigt."},
+    {"month": 9, "item_id": "theme-september", "primary_cluster": "verification", "hint": "Høst / orden — integritet og struktur."},
+    {"month": 10, "item_id": "theme-october", "primary_cluster": "combat", "hint": "Mørke kontraster — noir / showdown-sprog."},
+    {"month": 11, "item_id": "theme-november", "primary_cluster": "support", "hint": "Hygge og basecamp — støttefokus."},
+    {"month": 12, "item_id": "theme-december", "primary_cluster": "galactic", "hint": "Vinterlys / aurora — himmel-metafor."}
+  ],
+  "rules": [
+    {"id": "mafia_combat_cluster", "name": "Noir / Mafia og Combat", "text": "Mafia-noir tema mappes narrativt til Combat-cluster (pres, intimidation, showdown); brug stadig Hunters V2 spell-navne i kamp."},
+    {"id": "ai_utility_cluster", "name": "AI-tema og Utility", "text": "AI Core-tema understøtter Utility-cluster (session, checkpoint, aggregator) i forklaringer — ikke nye effekter uden backend."},
+    {"id": "seasonal_support_cluster", "name": "Jul og Support", "text": "Christmas / Home Base-temaer kan kobles til Support-cluster (buff, heal, ro) i guide-sprog; shop-køb erstatter ikke spell-unlocks."},
+    {"id": "monthly_hints_not_spells", "name": "Månedlige hints", "text": "monthly_cluster_hints er pædagogik til agenter og spillere; de tilføjer ikke nye effekter i GET /api/game/hunters/effect-clusters. Kanoniske theme-* id'er ligger i rulebook_v9_shop.json."}
+  ],
+  "clusters": [
+    {"id": "galactic", "name": "Galactic", "effects": ["view_star_map", "proxima_b_beacon", "sirius_b_pulse", "earth_b_shield"]},
+    {"id": "verification", "name": "Verification", "effects": ["run_verification", "run_dna_test", "integrity_scan"]},
+    {"id": "combat", "name": "Combat", "effects": ["trophy_strike", "hunter_fury", "precision_shot"]},
+    {"id": "support", "name": "Support", "effects": ["heal_trophy", "buff_creativity", "buff_knowledge"]},
+    {"id": "utility", "name": "Utility", "effects": ["clickthrough", "extend_session", "checkpoint", "aggregator_fill", "geo_reference", "speaker_ruler"]}
+  ]
+}

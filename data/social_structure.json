@@ -1,0 +1,77 @@
+{
+  "friends": {},
+  "crews": [],
+  "user_crews": {},
+  "activity_feed": [
+    {
+      "id": "75cd922a",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: lost (-3 pts)",
+      "ts": "2026-04-19T18:10:51.472182Z",
+      "extra": {
+        "result": "loss",
+        "points_delta": -3
+      }
+    },
+    {
+      "id": "786c774d",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: lost (-3 pts)",
+      "ts": "2026-04-19T17:58:23.023089Z",
+      "extra": {
+        "result": "loss",
+        "points_delta": -3
+      }
+    },
+    {
+      "id": "311fa1c7",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: lost (-3 pts)",
+      "ts": "2026-04-19T17:51:04.154102Z",
+      "extra": {
+        "result": "loss",
+        "points_delta": -3
+      }
+    },
+    {
+      "id": "0c361bd7",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: lost (-3 pts)",
+      "ts": "2026-04-19T17:50:19.774425Z",
+      "extra": {
+        "result": "loss",
+        "points_delta": -3
+      }
+    },
+    {
+      "id": "716f30db",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: won (+10 pts)",
+      "ts": "2026-04-19T17:48:48.604953Z",
+      "extra": {
+        "result": "win",
+        "points_delta": 10
+      }
+    },
+    {
+      "id": "98454bcb",
+      "user_id": "user_b4984c3befca47a7",
+      "action_type": "battle",
+      "label": "Quick battle: won (+10 pts)",
+      "ts": "2026-04-19T17:48:06.177215Z",
+      "extra": {
+        "result": "win",
+        "points_delta": 10
+      }
+    }
+  ],
+  "challenges": [],
+  "max_activity_items": 500,
+  "max_friends_per_user": 100,
+  "max_crew_members": 50
+}

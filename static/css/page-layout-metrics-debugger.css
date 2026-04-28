@@ -1,0 +1,37 @@
+/**
+ * Debugger-only layout metrics (Production Debugger /debugger, /debugger/flask).
+ * Loaded after page-layout-metrics.css. Keeps shared tokens in page-layout-metrics.css.
+ */
+@layer layout-metrics-debugger {
+
+/* Reserve space under fixed nav; aligns with --main-offset-top token */
+.debugger-main .container,
+.debugger .container,
+.container[data-page="debugger"] {
+    margin-top: var(--main-offset-top);
+}
+
+.container[data-page="debugger"] {
+    padding-top: var(--main-offset-top);
+    scroll-margin-top: var(--page-top-padding);
+}
+
+/* In-page anchors: hash targets clear sticky/fixed chrome */
+.container[data-page="debugger"] .tab-content {
+    scroll-margin-top: calc(var(--header-height) + 12px);
+}
+
+/* 4D ops video slot */
+#ops-video-preview {
+    aspect-ratio: 16 / 9;
+    max-height: min(40vh, 360px);
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* Error state in debugger shell: subtle layout cue */
+.container[data-page="debugger"]:has(#debugger-tech-stack.status.error) {
+    padding-top: calc(var(--main-offset-top) + 4px);
+}
+
+} /* end @layer layout-metrics-debugger */

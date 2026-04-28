@@ -1,0 +1,2597 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window._pageLoadStart = performance.now();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Arena - MasterNoder</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=2">
+    <link rel="stylesheet" href="/static/css/cooldown-timer.css?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+        <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
+        <script src="/static/js/error-manager.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+    <style>
+        :root {
+            --battle-primary: #00ff88;
+            --battle-secondary: #00d4ff;
+            --battle-danger: #ff3366;
+            --battle-warning: #ffaa00;
+            --battle-success: #00ff88;
+            --battle-dark: #0a0a0f;
+            --battle-card: #151520;
+            --battle-border: rgba(0, 255, 136, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .battle-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 51, 102, 0.05) 0%, transparent 50%);
+            animation: bgPulse 20s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Battle Arena Container */
+        .battle-arena {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Competitive Header */
+        .arena-header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .arena-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--battle-primary), transparent);
+            animation: headerGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes headerGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .arena-title {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin: 0;
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary), var(--battle-primary));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleShimmer 3s ease-in-out infinite;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes titleShimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .arena-subtitle {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        /* Competitive Stats Dashboard */
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.9), rgba(15, 15, 25, 0.9));
+            border: 2px solid var(--battle-border);
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--battle-primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--battle-primary);
+            margin: 10px 0;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-change.positive {
+            color: var(--battle-success);
+        }
+
+        .stat-change.negative {
+            color: var(--battle-danger);
+        }
+
+        /* Competitive Tab Navigation */
+        .arena-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(21, 21, 32, 0.6);
+            padding: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--battle-border);
+        }
+
+        .arena-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arena-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.2), transparent);
+            transition: left 0.3s ease;
+        }
+
+        .arena-tab:hover::before {
+            left: 100%;
+        }
+
+        .arena-tab:hover {
+            color: var(--battle-primary);
+            border-color: var(--battle-border);
+            transform: translateY(-2px);
+        }
+
+        .arena-tab.active {
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary));
+            color: #000;
+            border-color: var(--battle-primary);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+            font-weight: 700;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Competitive Action Cards */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .action-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--battle-border);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .action-card:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--battle-primary);
+            box-shadow: 0 15px 50px rgba(0, 255, 136, 0.4);
+        }
+
+        .action-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5));
+        }
+
+        .action-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--battle-primary);
+        }
+
+        .action-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .action-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary));
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.5);
+        }
+
+        /* Competitive Leaderboard */
+        .leaderboard-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--battle-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--battle-border);
+        }
+
+        .leaderboard-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--battle-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .leaderboard-item {
+            display: grid;
+            grid-template-columns: 60px 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid var(--battle-border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: translateX(5px);
+            border-color: var(--battle-primary);
+        }
+
+        .rank-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary));
+            color: #000;
+        }
+
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+        }
+
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #c0c0c0, #808080);
+        }
+
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #cd7f32, #8b4513);
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .player-stats {
+            text-align: right;
+        }
+
+        .player-score {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--battle-primary);
+        }
+
+        /* Quick Battle Interface */
+        .quick-battle-arena {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--battle-border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .player-card {
+            flex: 1;
+            max-width: 300px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid var(--battle-border);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .player-card:hover {
+            transform: scale(1.05);
+            border-color: var(--battle-primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .player-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            border: 4px solid var(--battle-primary);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+        }
+
+        .vs-text {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--battle-danger);
+            text-shadow: 0 0 20px rgba(255, 51, 102, 0.5);
+        }
+
+        .quick-battle-controls {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 26px;
+        }
+
+        .battle-select,
+        .battle-input,
+        .battle-textarea {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--battle-border);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font: inherit;
+        }
+
+        .battle-textarea {
+            min-height: 96px;
+            resize: vertical;
+        }
+
+        .battle-status-panel {
+            margin-top: 24px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--battle-border);
+            background: rgba(0, 0, 0, 0.32);
+            text-align: left;
+            color: rgba(255, 255, 255, 0.86);
+            min-height: 54px;
+        }
+
+        .battle-status-panel.good {
+            border-color: rgba(0, 255, 136, 0.45);
+            background: rgba(0, 255, 136, 0.08);
+        }
+
+        .battle-status-panel.bad {
+            border-color: rgba(255, 51, 102, 0.55);
+            background: rgba(255, 51, 102, 0.09);
+        }
+
+        .battle-system-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .battle-system-card {
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid var(--battle-border);
+            background: rgba(0, 255, 136, 0.06);
+        }
+
+        .battle-system-card .k {
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .battle-system-card .v {
+            color: var(--battle-primary);
+            font-weight: 800;
+            font-size: 1.6rem;
+        }
+
+        .battle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .battle-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        /* Navigation */
+        .page-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid var(--battle-border);
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
+
+        .nav-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--battle-primary);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--battle-primary), var(--battle-secondary));
+            color: #000;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .arena-title {
+                font-size: 2.5rem;
+            }
+            
+            .stats-dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .skeleton-loader {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+            background-size: 200% 100%;
+            animation: skeletonLoad 1.5s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes skeletonLoad {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css" media="print" onload="this.media='all'">
+</head>
+<body class="layout-standard">
+
+    <!-- Top 50 Monetization Frame -->
+    <div id="top50-monetization-frame-container" style="position: fixed; top: 100px; right: 20px; z-index: 9999; max-width: 350px;">
+        <div id="top50-monetization-frame"></div>
+    </div>
+
+    <div class="battle-bg"></div>
+    
+    <!-- Navigation -->
+    <nav class="page-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-link">🏠 Home</a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/game" class="nav-link">Game</a>
+            <a href="/profile?tab=points" class="nav-item" title="Profile hub — points & stats">💎</a>
+                <a href="/battle" class="nav-link active">Battle</a>
+                <a href="/aggregator" class="nav-link">Aggregator</a>
+                <a href="/gallery" class="nav-link">Gallery</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="battle-arena">
+        <!-- Competitive Header -->
+        <header class="arena-header">
+            <h1 class="arena-title">⚔️ Competitive Battle Arena</h1>
+            <p class="arena-subtitle">Ranked Matches • Clans • Tournaments</p>
+        </header>
+        <section id="battle-at-a-glance" style="margin-bottom:20px;padding:16px 18px;background:rgba(0,0,0,0.4);border:1px solid var(--battle-border);border-radius:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;align-items:center;">
+            <div><strong style="color:var(--battle-primary);">Battle readiness</strong><p style="margin:4px 0 0;font-size:0.85rem;opacity:0.8;">From unified points</p></div>
+            <div>Level <span id="battle-overview-level" style="font-weight:700;">—</span></div>
+            <div>Battle pts <span id="battle-overview-bp" style="font-weight:700;">—</span></div>
+            <div>XP <span id="battle-overview-xp" style="font-weight:700;">—</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                <a href="/profile?tab=points" style="color:var(--battle-secondary);font-size:0.9rem;">Profile hub</a>
+                <a href="/game" style="color:var(--battle-secondary);font-size:0.9rem;">Hunter Game</a>
+                <a href="/shop" style="color:var(--battle-secondary);font-size:0.9rem;">Shop</a>
+                <a href="/aggregator" style="color:var(--battle-secondary);font-size:0.9rem;">Aggregator</a>
+            </div>
+        </section>
+        <div style="max-width:1600px;margin:0 auto 16px;padding:0 8px;" id="battle-cooldown-wrap" aria-label="Action cooldown">
+            <div
+                id="battle-cooldown-timer"
+                data-cd-timer
+                data-cd-label="Action cooldown"
+                data-cd-scope="battle"
+                data-cd-id="page_action"
+                data-cd-theme="battle"
+                data-cd-bar="1"
+            ></div>
+        </div>
+        <section data-mn-game-battle-bridge data-variant="battle" style="max-width:1600px;margin:0 auto 20px;" aria-label="Battle and game profile bridge"></section>
+        <section
+            style="margin-bottom:20px;"
+            data-story-monitor-5d
+            data-story-context="battle"
+            data-tech-label="Chroniton resonance driver · Web Audio × σ-phase (arena tension field)"
+            aria-label="Five dimensional battle story monitor"
+        ></section>
+        <section class="aggregator-ideas-embed" aria-labelledby="battle-agg-ideas-h" style="margin-bottom:20px;padding:16px 18px;background:rgba(0,0,0,0.35);border:1px solid var(--battle-border);border-radius:14px;">
+            <h2 id="battle-agg-ideas-h" style="margin:0 0 10px;font-size:1.05rem;color:var(--battle-primary);">Top 15 new aggregator ideas</h2>
+            <div data-aggregator-ideas="list"></div>
+        </section>
+        <script>
+        (function(){
+          var u = localStorage.getItem('game_user_id') || 'default_user';
+          fetch('/api/points/all?user_id=' + encodeURIComponent(u)).then(function(r){ return r.json(); }).then(function(d){
+            var p = (d && d.points) ? d.points : {};
+            function el(id, v){ var x = document.getElementById(id); if (x) x.textContent = v; }
+            el('battle-overview-level', (p.level != null ? p.level : 1).toString());
+            el('battle-overview-bp', (p.battle_points != null ? p.battle_points : 0).toLocaleString());
+            el('battle-overview-xp', (p.xp_total != null ? p.xp_total : 0).toLocaleString());
+          }).catch(function(){});
+        })();
+        </script>
+        <div class="leaderboard-card" style="margin-bottom: 20px;">
+            <div class="leaderboard-header">
+                <h2 class="leaderboard-title">👩 Active Female Agent</h2>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                <div style="padding: 12px; background: rgba(0,255,136,0.08); border: 1px solid var(--battle-border); border-radius: 10px;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Selected</div>
+                    <div id="battle-active-agent-name" style="font-weight: 700; color: var(--battle-primary);">None</div>
+                </div>
+                <div style="padding: 12px; background: rgba(0,255,136,0.08); border: 1px solid var(--battle-border); border-radius: 10px;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Battle Power</div>
+                    <div id="battle-active-agent-power" style="font-weight: 700; color: var(--battle-primary);">0</div>
+                </div>
+                <div style="padding: 12px; background: rgba(0,255,136,0.08); border: 1px solid var(--battle-border); border-radius: 10px;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.65);">Unlocked Female Agents</div>
+                    <div id="battle-unlocked-agent-count" style="font-weight: 700; color: var(--battle-secondary);">0</div>
+                </div>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                <button class="action-btn" style="padding: 10px 16px; font-size: 0.85rem;" onclick="window.location.href='/game'">🌿 Go Hunt Now</button>
+            </div>
+        </div>
+
+        <!-- Competitive Stats Dashboard -->
+        <div class="stats-dashboard" id="battle-stats-dashboard">
+            <div class="stat-card">
+                <span class="stat-icon">⚔️</span>
+                <div class="stat-value" id="stat-total-battles">0</div>
+                <div class="stat-label">Total Battles</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> <span id="battles-change">+0</span> today
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🏆</span>
+                <div class="stat-value" id="stat-wins">0</div>
+                <div class="stat-label">Victories</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-trophy"></i> <span id="win-rate">0%</span> win rate
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🔥</span>
+                <div class="stat-value" id="stat-streak">0</div>
+                <div class="stat-label">Win Streak</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-fire"></i> On fire!
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📊</span>
+                <div class="stat-value" id="stat-rank">#0</div>
+                <div class="stat-label">Global Rank</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-chart-line"></i> Climbing
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">💎</span>
+                <div class="stat-value" id="stat-points">0</div>
+                <div class="stat-label">Battle Points</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-gem"></i> Earning
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🎯</span>
+                <div class="stat-value" id="stat-accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-bullseye"></i> Precise
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitive Tab Navigation -->
+        <div class="arena-tabs" id="arena-tabs">
+            <button class="arena-tab active" data-tab="overview">📊 Overview</button>
+            <button class="arena-tab" data-tab="quick-battle">⚔️ Quick Battle</button>
+            <button class="arena-tab" data-tab="tournaments">🏰 Tournaments</button>
+            <button class="arena-tab" data-tab="clans">🛡️ Clans</button>
+            <button class="arena-tab" data-tab="seasons">📅 Seasons</button>
+            <button class="arena-tab" data-tab="leaderboard">🏆 Leaderboard</button>
+            <button class="arena-tab" data-tab="history">📜 History</button>
+            <button class="arena-tab" data-tab="points">📊 Points</button>
+            <button class="arena-tab" data-tab="system">🖥️ System</button>
+            <button class="arena-tab" data-tab="lab-tech">🧪 Lab Tech</button>
+            <button class="arena-tab" data-tab="profiles">👤 Profiles</button>
+            <button class="arena-tab" data-tab="intelligence">🧠 Intelligence</button>
+            <button class="arena-tab" data-tab="resources">💎 Resources</button>
+            <button class="arena-tab" data-tab="crypto">₿ Crypto Earn</button>
+            <button class="arena-tab" data-tab="rulebooks">📚 Rulebooks</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="action-grid">
+                <div class="action-card" onclick="switchTab('quick-battle')">
+                    <span class="action-icon">⚔️</span>
+                    <h3 class="action-title">Ranked Quick Match</h3>
+                    <p class="action-desc">Enter competitive matchmaking and fight for position on the ladder.</p>
+                    <button class="action-btn">Queue Match</button>
+                </div>
+                <div class="action-card" onclick="switchTab('tournaments')">
+                    <span class="action-icon">🏰</span>
+                    <h3 class="action-title">Tournaments</h3>
+                    <p class="action-desc">Join competitive brackets, advance rounds, and secure top placements.</p>
+                    <button class="action-btn">Join Tournament</button>
+                </div>
+                <div class="action-card" onclick="switchTab('clans')">
+                    <span class="action-icon">🛡️</span>
+                    <h3 class="action-title">Agent Clans</h3>
+                    <p class="action-desc">Form competitive squads and coordinate agent builds for ranked battles.</p>
+                    <button class="action-btn">Open Clans</button>
+                </div>
+                <div class="action-card" onclick="switchTab('intelligence')">
+                    <span class="action-icon">🧠</span>
+                    <h3 class="action-title">Battle Intelligence</h3>
+                    <p class="action-desc">Review performance, evaluate counters, and optimize your competitive play.</p>
+                    <button class="action-btn">View Intelligence</button>
+                </div>
+                <div class="action-card" onclick="switchTab('leaderboard')">
+                    <span class="action-icon">🏆</span>
+                    <h3 class="action-title">Leaderboard</h3>
+                    <p class="action-desc">Track rank movement and challenge the highest-performing competitors.</p>
+                    <button class="action-btn">View Rankings</button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">Recent Battles</h2>
+                </div>
+                <div id="recent-battles">
+                    <div class="skeleton-loader" style="height: 200px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">👩 Elite Female Agents</h2>
+                </div>
+                <div id="female-agents-battle-list">
+                    <div class="skeleton-loader" style="height: 140px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 140px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Battle Tab -->
+        <div class="tab-content" id="tab-quick-battle">
+            <div class="quick-battle-arena">
+                <h2 style="font-size: 2rem; margin-bottom: 30px; color: var(--battle-primary);">⚔️ Ranked Match Arena</h2>
+                <div class="vs-divider">
+                    <div class="player-card">
+                        <div class="player-avatar">👤</div>
+                        <h3 style="color: var(--battle-primary); margin-bottom: 10px;">You</h3>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--battle-primary);" id="player-power">Power: 0</div>
+                        <div style="color: rgba(255, 255, 255, 0.7); margin-top: 5px;" id="player-level">Level 1</div>
+                    </div>
+                    <div class="vs-text">VS</div>
+                    <div class="player-card">
+                        <div class="player-avatar">🤖</div>
+                        <h3 style="color: var(--battle-secondary); margin-bottom: 10px;">Opponent</h3>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--battle-secondary);" id="opponent-power">Power: 0</div>
+                        <div style="color: rgba(255, 255, 255, 0.7); margin-top: 5px;" id="opponent-level">Finding...</div>
+                    </div>
+                </div>
+                <div style="margin-top: 28px; text-align: center;">
+                    <div style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin-bottom: 10px;">
+                        Opening duel (rock / paper / scissors) — used for <strong>vs AI</strong> and for <strong>Queue opponent</strong> when you pick a stance. No pick = quick skirmish (difficulty affects odds).
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" class="action-btn" id="rps-rock" onclick="setQuickBattleStance('rock')" style="padding: 10px 18px;">🪨 Rock</button>
+                        <button type="button" class="action-btn" id="rps-paper" onclick="setQuickBattleStance('paper')" style="padding: 10px 18px;">📄 Paper</button>
+                        <button type="button" class="action-btn" id="rps-scissors" onclick="setQuickBattleStance('scissors')" style="padding: 10px 18px;">✂️ Scissors</button>
+                        <button type="button" class="action-btn" onclick="setQuickBattleStance(null)" style="padding: 10px 14px; opacity: 0.85;">Clear stance</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px; justify-content: center; margin-top: 40px;">
+                    <label style="display:flex;flex-direction:column;gap:6px;text-align:left;color:rgba(255,255,255,0.72);font-size:0.85rem;">
+                        Difficulty
+                        <select id="quick-battle-difficulty" class="battle-select">
+                            <option value="easy">Easy</option>
+                            <option value="balanced" selected>Balanced</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </label>
+                    <button class="action-btn" onclick="findOpponent()" style="padding: 15px 40px; font-size: 1.1rem;">
+                        🔍 Queue Opponent
+                    </button>
+                    <button class="action-btn" onclick="startQuickBattle()" style="padding: 15px 40px; font-size: 1.1rem; background: linear-gradient(135deg, var(--battle-danger), #ff6699);">
+                        ⚔️ Start Ranked Battle
+                    </button>
+                </div>
+                <div id="quick-battle-status" class="battle-status-panel" aria-live="polite">
+                    Pick a stance or start a one-click skirmish. Results, points, and Hunter XP will appear here.
+                </div>
+            </div>
+        </div>
+
+        <!-- System Interface Tab -->
+        <div class="tab-content" id="tab-system">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <div>
+                        <h2 class="leaderboard-title">🖥️ Battle System Interface</h2>
+                        <p style="color: rgba(255,255,255,0.72); font-size: 0.92rem; margin-top: 6px;">
+                            One control surface for battle, profile, points, health, and lab readiness.
+                        </p>
+                    </div>
+                    <button type="button" class="action-btn" onclick="loadSystemInterface()" style="padding: 10px 16px; font-size: 0.85rem;">Refresh</button>
+                </div>
+                <div id="system-interface-grid" class="battle-system-grid">
+                    <div class="skeleton-loader" style="height: 120px;"></div>
+                    <div class="skeleton-loader" style="height: 120px;"></div>
+                    <div class="skeleton-loader" style="height: 120px;"></div>
+                </div>
+                <div id="system-interface-details" class="battle-status-panel" style="margin-top:18px;">Loading system channels…</div>
+            </div>
+        </div>
+
+        <!-- Lab Tech Tab -->
+        <div class="tab-content" id="tab-lab-tech">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <div>
+                        <h2 class="leaderboard-title">🧪 Lab Tech Forge</h2>
+                        <p style="color: rgba(255,255,255,0.72); font-size: 0.92rem; margin-top: 6px;">
+                            Draft battle technologies into the shared Lab profile system.
+                        </p>
+                    </div>
+                    <a href="/lab" class="action-btn" style="display:inline-block;text-decoration:none;padding:10px 16px;font-size:0.85rem;">Open Lab</a>
+                </div>
+                <div class="battle-form-grid">
+                    <input id="battle-lab-tech-name" class="battle-input" type="text" maxlength="120" placeholder="Technology name">
+                    <select id="battle-lab-tech-category" class="battle-select">
+                        <option value="battle">Battle</option>
+                        <option value="agents">Agents</option>
+                        <option value="debugger">Debugger</option>
+                        <option value="general">General</option>
+                    </select>
+                    <input id="battle-lab-tech-agent" class="battle-input" type="text" maxlength="80" value="battle_lab_agent" placeholder="Partner agent id">
+                </div>
+                <textarea id="battle-lab-tech-pitch" class="battle-textarea" placeholder="Describe what this tech does, who benefits, and one acceptance test."></textarea>
+                <div class="quick-battle-controls" style="justify-content:flex-start;">
+                    <button type="button" class="action-btn" onclick="createBattleLabTechnology()">Save Lab Tech Draft</button>
+                    <button type="button" class="action-btn" onclick="loadLabTech()" style="background:rgba(0,212,255,0.2);color:var(--battle-secondary);border:1px solid rgba(0,212,255,0.35);">Reload</button>
+                </div>
+                <div id="battle-lab-tech-status" class="battle-status-panel">Drafts use the same profile ID as battle and Profile.</div>
+                <div id="battle-lab-tech-list" class="battle-list" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- User Profiles Tab -->
+        <div class="tab-content" id="tab-profiles">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <div>
+                        <h2 class="leaderboard-title">👤 User Profiles</h2>
+                        <p style="color: rgba(255,255,255,0.72); font-size: 0.92rem; margin-top: 6px;">
+                            Switch local battle profiles while keeping the Profile hub as the source of truth.
+                        </p>
+                    </div>
+                    <a href="/profile?tab=points" class="action-btn" style="display:inline-block;text-decoration:none;padding:10px 16px;font-size:0.85rem;">Profile Hub</a>
+                </div>
+                <div class="battle-form-grid">
+                    <input id="battle-profile-id" class="battle-input" type="text" maxlength="80" placeholder="profile id, e.g. commander_jane">
+                    <input id="battle-profile-name" class="battle-input" type="text" maxlength="80" placeholder="display name">
+                    <button type="button" class="action-btn" onclick="saveBattleProfileSlot()">Add / Switch Profile</button>
+                </div>
+                <div id="battle-profile-summary" class="battle-status-panel">Loading current profile…</div>
+                <div id="battle-profile-list" class="battle-list" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- Tournaments Tab -->
+        <div class="tab-content" id="tab-tournaments">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🏰 Active Tournaments</h2>
+                </div>
+                <div id="tournaments-list">
+                    <div class="skeleton-loader" style="height: 150px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clans Tab -->
+        <div class="tab-content" id="tab-clans">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🛡️ Agent Clans</h2>
+                </div>
+                <div id="clans-list">
+                    <div class="skeleton-loader" style="height: 150px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Tab -->
+        <div class="tab-content" id="tab-leaderboard">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🏆 Global Leaderboard</h2>
+                </div>
+                <div id="leaderboard-list">
+                    <div class="skeleton-loader" style="height: 80px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 80px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 80px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 80px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div class="tab-content" id="tab-history">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">📜 Battle History</h2>
+                </div>
+                <div id="battle-history">
+                    <div class="skeleton-loader" style="height: 100px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 100px; margin-bottom: 15px;"></div>
+                    <div class="skeleton-loader" style="height: 100px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intelligence Tab -->
+        <div class="tab-content" id="tab-intelligence">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🧠 Battle Intelligence</h2>
+                </div>
+                <div id="intelligence-data">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seasons Tab -->
+        <div class="tab-content" id="tab-seasons">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">📅 Competitive Seasons</h2>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 5px;">
+                        Compete in seasonal leaderboards and earn exclusive rewards
+                    </p>
+                </div>
+                <div id="seasons-list">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Tab -->
+        <div class="tab-content" id="tab-resources">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">💎 Battle Resources</h2>
+                </div>
+                <div id="resources-data">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crypto Earn Tab -->
+        <div class="tab-content" id="tab-crypto">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <div>
+                        <h2 class="leaderboard-title">₿ Battle Crypto Earn</h2>
+                        <p style="color: rgba(255,255,255,0.72); font-size: 0.92rem; margin-top: 6px;">
+                            Earn internal MN2 balance from Battle progress. Wallet deposits and withdrawals stay in Profile.
+                        </p>
+                    </div>
+                    <a href="/profile#profile-mn2-wallet-card" class="action-btn" style="display:inline-block;text-decoration:none;padding:10px 16px;font-size:0.85rem;">MN2 Wallet</a>
+                </div>
+                <div id="battle-crypto-summary" class="battle-status-panel">Loading crypto earning options…</div>
+                <div id="battle-crypto-options" class="battle-list" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <!-- Rulebooks (canonical docs + compendium) -->
+        <div class="tab-content" id="tab-rulebooks">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">📚 Rulebooks &amp; canon</h2>
+                    <p style="color: rgba(255,255,255,0.75); font-size: 0.95rem; margin-top: 8px;">
+                        Competitive play uses the same unified profile and points as the rest of the site. Full reference lives in the repo under <code>docs/RULEBOOK_CANON.md</code> (includes <strong>Lab</strong>) and the Compendium HTML viewers. Lab APIs and profile keys: <code>docs/LAB.md</code>.
+                    </p>
+                </div>
+                <ul style="line-height:1.8; color: rgba(255,255,255,0.9); padding-left: 1.2rem;">
+                    <li><strong>Fair play:</strong> one <code>user_id</code> per browser session for points, shop, lab research, and battles unless you explicitly switch accounts in Profile.</li>
+                    <li><strong>Scoring:</strong> battle and activity events feed the unified points file + database snapshots (see Profile hub for totals).</li>
+                    <li><strong>Lab:</strong> research nodes, exploration pulse, and co-tech drafts use the same identity; optional HUD lab tier from battle-bridge snapshot when enabled.</li>
+                    <li><strong>Deep rules:</strong> use Compendium wiki pages and Hunters rulebook for lore and extended mechanics.</li>
+                </ul>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;">
+                    <a href="/compendium/hunters-rulebook" class="action-btn" style="display:inline-block;text-decoration:none;">Hunters rulebook</a>
+                    <a href="/compendium/rulebook-v1" class="action-btn" style="display:inline-block;text-decoration:none;">Rulebook viewer</a>
+                    <a href="/lab" class="action-btn" style="display:inline-block;text-decoration:none;">Lab</a>
+                    <a href="/profile?tab=points" class="action-btn" style="display:inline-block;text-decoration:none;">Profile — points</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comprehensive Points Tab -->
+        <div class="tab-content" id="tab-points">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">📊 Comprehensive Points</h2>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 5px;">
+                        All points from all unified categories
+                    </p>
+                </div>
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table class="leaderboard-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: rgba(0,255,136,0.1);">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--battle-primary);">Category</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--battle-primary);">Type</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid var(--battle-primary);">Value</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid var(--battle-primary);">Icon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="battle-points-table-body">
+                            <tr><td colspan="4" style="text-align: center; padding: 20px;">Loading comprehensive points...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="battle-points-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">Loading points grid...</div>
+                </div>
+            </div>
+        </div>
+        <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+            <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+            <div id="intelligence-content">
+                <div class="intelligence-subtabs">
+                    <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                    <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                    <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+                </div>
+                <div id="intelligence-panels"></div>
+                <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Hardcoded API base URLs - no dynamic changes
+        const BASE_URL = window.location.origin;
+        const API_BASE = `${BASE_URL}/api`;
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const toNumber = (value, fallback = 0) => {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        };
+
+        async function safeFetchJson(url, options = undefined) {
+            try {
+                const response = await fetch(url, options);
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (_error) {
+                    data = null;
+                }
+                if (!response.ok) {
+                    return { success: false, error: (data && data.error) || `HTTP ${response.status}` };
+                }
+                if (!data || typeof data !== 'object') {
+                    return { success: false, error: 'Invalid API response' };
+                }
+                return data;
+            } catch (error) {
+                return { success: false, error: error.message || 'Network error' };
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
+
+        function setQuickBattleStatus(message, tone = '') {
+            const el = document.getElementById('quick-battle-status');
+            if (!el) return;
+            el.classList.remove('good', 'bad');
+            if (tone) el.classList.add(tone);
+            el.innerHTML = message;
+        }
+
+        function getQuickBattleDifficulty() {
+            const el = document.getElementById('quick-battle-difficulty');
+            const value = el && el.value ? el.value : 'balanced';
+            return ['easy', 'balanced', 'hard'].includes(value) ? value : 'balanced';
+        }
+
+        function normalizeBattleStats(rawStats) {
+            const stats = (rawStats && typeof rawStats === 'object') ? rawStats : {};
+            return {
+                battle_points: toNumber(stats.battle_points, 0),
+                wins: toNumber(stats.wins, 0),
+                losses: toNumber(stats.losses, 0),
+                total_battles: toNumber(stats.total_battles, 0),
+                win_streak: toNumber(stats.win_streak, 0),
+                rank: toNumber(stats.rank, 0),
+                accuracy: toNumber(stats.accuracy, 0),
+                win_rate: toNumber(stats.win_rate, 0),
+                power: toNumber(stats.power, 0),
+                level: Math.max(1, toNumber(stats.level, 1)),
+            };
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.arena-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetTab = document.getElementById(`tab-${tabName}`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+                loadTabContent(tabName);
+            }
+        }
+
+        // Load tab content
+        async function loadTabContent(tabName) {
+            switch(tabName) {
+                case 'overview':
+                    await loadOverview();
+                    break;
+                case 'quick-battle':
+                    await loadQuickBattle();
+                    break;
+                case 'tournaments':
+                    await loadTournaments();
+                    break;
+                case 'clans':
+                    await loadClans();
+                    break;
+                case 'seasons':
+                    await loadSeasons();
+                    break;
+                case 'leaderboard':
+                    await loadLeaderboard();
+                    break;
+                case 'history':
+                    await loadHistory();
+                    break;
+                case 'points':
+                    await loadBattlePoints();
+                    break;
+                case 'system':
+                    await loadSystemInterface();
+                    break;
+                case 'lab-tech':
+                    await loadLabTech();
+                    break;
+                case 'profiles':
+                    await loadUserProfiles();
+                    break;
+                case 'intelligence':
+                    await loadIntelligence();
+                    break;
+                case 'resources':
+                    await loadResources();
+                    break;
+                case 'crypto':
+                    await loadBattleCrypto();
+                    break;
+            }
+        }
+
+        // Load Overview
+        async function loadOverview() {
+            try {
+                const [stats, history] = await Promise.all([
+                    safeFetchJson(`${API_BASE}/battle/stats?user_id=${encodeURIComponent(userId)}`),
+                    safeFetchJson(`${API_BASE}/battle/history?user_id=${encodeURIComponent(userId)}&limit=5`)
+                ]);
+
+                if (stats.success && stats.stats) {
+                    updateStats(normalizeBattleStats(stats.stats));
+                }
+
+                if (history.success && Array.isArray(history.history)) {
+                    displayRecentBattles(history.history);
+                }
+                loadFemaleBattleAgents();
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+
+        function defaultFemaleBattleAgents() {
+            return [
+                {
+                    id: 'aurora_strike',
+                    name: 'Aurora Strike',
+                    role: 'Duel Strategist',
+                    battle_power: 980,
+                    sales_power: 720,
+                    focus: 'match pacing and close-out execution',
+                    price_coins: 1200,
+                },
+                {
+                    id: 'nova_vale',
+                    name: 'Nova Vale',
+                    role: 'Clan Captain',
+                    battle_power: 940,
+                    sales_power: 760,
+                    focus: 'team coordination and resource pressure',
+                    price_coins: 1450,
+                },
+                {
+                    id: 'lyra_quant',
+                    name: 'Lyra Quant',
+                    role: 'Tournament Analyst',
+                    battle_power: 910,
+                    sales_power: 810,
+                    focus: 'counter-picks and bracket optimization',
+                    price_coins: 1650,
+                },
+            ];
+        }
+
+        function getUnlockedFemaleBattleAgents() {
+            try {
+                const raw = localStorage.getItem(`battle_unlocked_female_agents_${userId}`) || '[]';
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_error) {
+                return [];
+            }
+        }
+
+        function setUnlockedFemaleBattleAgents(ids) {
+            localStorage.setItem(`battle_unlocked_female_agents_${userId}`, JSON.stringify(ids));
+        }
+
+        function renderBattleAgentStatusPanel(preferredAgent = null, unlockedIds = null) {
+            const preferred = preferredAgent || (() => {
+                try {
+                    return JSON.parse(localStorage.getItem(`battle_preferred_female_agent_${userId}`) || 'null');
+                } catch (_error) {
+                    return null;
+                }
+            })();
+            const unlocked = unlockedIds || getUnlockedFemaleBattleAgents();
+
+            const nameEl = document.getElementById('battle-active-agent-name');
+            const powerEl = document.getElementById('battle-active-agent-power');
+            const unlockedEl = document.getElementById('battle-unlocked-agent-count');
+            if (nameEl) nameEl.textContent = preferred && preferred.name ? preferred.name : 'None';
+            if (powerEl) powerEl.textContent = preferred ? toNumber(preferred.battle_power, 0).toLocaleString() : '0';
+            if (unlockedEl) unlockedEl.textContent = String(unlocked.length || 0);
+        }
+
+        function savePreferredFemaleBattleAgent(agent) {
+            if (!agent || !agent.id) return;
+            localStorage.setItem(`battle_preferred_female_agent_${userId}`, JSON.stringify(agent));
+            renderBattleAgentStatusPanel(agent);
+        }
+
+        async function getBattleCoinsBalance() {
+            const byCurrency = await safeFetchJson(`${API_BASE}/shop/currency?user_id=${encodeURIComponent(userId)}`);
+            if (byCurrency.success && typeof byCurrency.currency !== 'undefined') {
+                return toNumber(byCurrency.currency, 0);
+            }
+            const byPoints = await safeFetchJson(`${API_BASE}/points/all?user_id=${encodeURIComponent(userId)}`);
+            return toNumber(byPoints?.points?.coins, 0);
+        }
+
+        async function unlockFemaleBattleAgent(agentId, agentName, priceCoins) {
+            const unlocked = getUnlockedFemaleBattleAgents();
+            if (unlocked.includes(agentId)) return true;
+            const balance = await getBattleCoinsBalance();
+            if (balance < priceCoins) {
+                alert(`Need ${priceCoins.toLocaleString()} coins to unlock ${agentName}. Current balance: ${balance.toLocaleString()}.`);
+                return false;
+            }
+            unlocked.push(agentId);
+            setUnlockedFemaleBattleAgents(unlocked);
+            alert(`${agentName} unlocked for battle strategy.`);
+            renderBattleAgentStatusPanel(null, unlocked);
+            return true;
+        }
+
+        function activateFemaleBattleAgent(agent) {
+            savePreferredFemaleBattleAgent(agent);
+            window.selectedBattleAgents = {
+                a: { id: agent.id, name: agent.name, power: toNumber(agent.battle_power, 0) },
+                b: (window.selectedBattleAgents && window.selectedBattleAgents.b) ? window.selectedBattleAgents.b : { id: 'opponent_default', name: 'Opponent', power: 900 }
+            };
+            const playerPowerEl = document.getElementById('player-power');
+            const playerLevelEl = document.getElementById('player-level');
+            if (playerPowerEl) playerPowerEl.textContent = `${agent.name}: ${toNumber(agent.battle_power, 0)}`;
+            if (playerLevelEl) playerLevelEl.textContent = `${agent.role}`;
+            renderBattleAgentStatusPanel(agent);
+        }
+
+        async function loadFemaleBattleAgents() {
+            const container = document.getElementById('female-agents-battle-list');
+            if (!container) return;
+
+            const skillData = await safeFetchJson(`${API_BASE}/agents/skillsets/all`);
+            let agents = [];
+            if (skillData.success) {
+                const allAgents = (skillData.skillsets && skillData.skillsets.agents) || skillData.agents || {};
+                agents = Object.entries(allAgents).map(([id, a]) => ({
+                    id,
+                    name: a.name || id,
+                    role: a.role || 'Battle Specialist',
+                    battle_power: toNumber(a.battle_skill_power_total, 0),
+                    sales_power: toNumber(a.sales_skill_power_total, 0),
+                    focus: a.business_focus || 'conversion, retention, and growth',
+                    price_coins: Math.max(900, Math.floor(toNumber(a.sales_skill_power_total, 0) * 1.5) || 1200),
+                }));
+            }
+
+            const femalePattern = /(ava|luna|sophia|nora|mia|emma|olivia|zoe|sara|elena|female|woman|queen|her)/i;
+            let femaleAgents = agents.filter(a => femalePattern.test(`${a.id} ${a.name}`));
+            if (!femaleAgents.length) femaleAgents = defaultFemaleBattleAgents();
+
+            femaleAgents = femaleAgents
+                .sort((a, b) => (b.battle_power + b.sales_power) - (a.battle_power + a.sales_power))
+                .slice(0, 3);
+
+            const unlocked = getUnlockedFemaleBattleAgents();
+            const preferredRaw = localStorage.getItem(`battle_preferred_female_agent_${userId}`);
+            const preferred = preferredRaw ? JSON.parse(preferredRaw) : null;
+            renderBattleAgentStatusPanel(preferred, unlocked);
+
+            container.innerHTML = femaleAgents.map(agent => `
+                <div class="leaderboard-item" style="grid-template-columns: 1fr auto auto; margin-bottom: 12px;">
+                    <div>
+                        <div class="player-name">${agent.name}</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">${agent.role} - Focus: ${agent.focus}</div>
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-top: 4px;">Price: ${toNumber(agent.price_coins, 1200).toLocaleString()} coins</div>
+                    </div>
+                    <div class="player-stats">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Battle</div>
+                        <div style="color: var(--battle-primary); font-weight: 700;">${toNumber(agent.battle_power, 0).toLocaleString()}</div>
+                    </div>
+                    <div class="player-stats">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Business</div>
+                        <div style="color: var(--battle-secondary); font-weight: 700;">${toNumber(agent.sales_power, 0).toLocaleString()}</div>
+                        <div style="margin-top: 8px;">
+                            ${unlocked.includes(agent.id)
+                                ? `<button class="action-btn" style="padding:6px 10px; font-size:0.78rem;" onclick="selectFemaleBattleAgent('${agent.id}')">${preferred && preferred.id === agent.id ? 'Active' : 'Select'}</button>`
+                                : `<button class="action-btn" style="padding:6px 10px; font-size:0.78rem;" onclick="buyFemaleBattleAgent('${agent.id}')">Unlock</button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            window.femaleBattleAgentCatalog = {};
+            femaleAgents.forEach(agent => {
+                window.femaleBattleAgentCatalog[agent.id] = agent;
+            });
+        }
+
+        async function buyFemaleBattleAgent(agentId) {
+            const agent = window.femaleBattleAgentCatalog && window.femaleBattleAgentCatalog[agentId];
+            if (!agent) return;
+            const ok = await unlockFemaleBattleAgent(agent.id, agent.name, toNumber(agent.price_coins, 1200));
+            if (ok) {
+                activateFemaleBattleAgent(agent);
+                loadFemaleBattleAgents();
+            }
+        }
+
+        function selectFemaleBattleAgent(agentId) {
+            const agent = window.femaleBattleAgentCatalog && window.femaleBattleAgentCatalog[agentId];
+            if (!agent) return;
+            activateFemaleBattleAgent(agent);
+            loadFemaleBattleAgents();
+        }
+
+        // Update Stats
+        function updateStats(stats) {
+            document.getElementById('stat-total-battles').textContent = stats.total_battles || 0;
+            document.getElementById('stat-wins').textContent = stats.wins || 0;
+            document.getElementById('stat-streak').textContent = stats.win_streak || 0;
+            document.getElementById('stat-rank').textContent = `#${stats.rank || 0}`;
+            document.getElementById('stat-points').textContent = (stats.battle_points || 0).toLocaleString();
+            document.getElementById('stat-accuracy').textContent = `${(stats.accuracy || 0).toFixed(0)}%`;
+            document.getElementById('win-rate').textContent = `${(stats.win_rate || 0).toFixed(1)}%`;
+        }
+
+        // Display Recent Battles
+        function displayRecentBattles(battles) {
+            const container = document.getElementById('recent-battles');
+            if (!battles || battles.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">No battles yet. Start your first battle!</div>';
+                return;
+            }
+
+            container.innerHTML = battles.map(battle => `
+                <div class="leaderboard-item">
+                    <div class="rank-badge">${battle.won ? '✓' : '✗'}</div>
+                    <div>
+                        <div class="player-name">${battle.opponent_name || 'Opponent'}</div>
+                        <div style="color: rgba(255, 255, 255, 0.5); font-size: 0.9rem;">${battle.timestamp ? new Date(battle.timestamp).toLocaleString() : 'Unknown time'}</div>
+                    </div>
+                    <div class="player-stats">
+                        <div style="color: ${battle.won ? 'var(--battle-success)' : 'var(--battle-danger)'}; font-weight: 700;">
+                            ${battle.won ? 'VICTORY' : 'DEFEAT'}
+                        </div>
+                    </div>
+                    <div class="player-score">${battle.points_earned || 0}</div>
+                </div>
+            `).join('');
+        }
+
+        window.quickBattleStance = null;
+        function setQuickBattleStance(move) {
+            window.quickBattleStance = move;
+            ['rock', 'paper', 'scissors'].forEach(function (x) {
+                var el = document.getElementById('rps-' + x);
+                if (!el) return;
+                el.style.outline = (move === x) ? '2px solid var(--battle-primary)' : 'none';
+                el.style.boxShadow = (move === x) ? '0 0 12px rgba(0,255,136,0.35)' : 'none';
+            });
+        }
+
+        // Load Quick Battle
+        async function loadQuickBattle() {
+            try {
+                const stats = await safeFetchJson(`${API_BASE}/battle/stats?user_id=${encodeURIComponent(userId)}`);
+                
+                if (stats.success && stats.stats) {
+                    const normalizedStats = normalizeBattleStats(stats.stats);
+                    document.getElementById('player-power').textContent = `Power: ${normalizedStats.power}`;
+                    document.getElementById('player-level').textContent = `Level ${normalizedStats.level}`;
+                }
+
+                try {
+                    const preferredRaw = localStorage.getItem(`battle_preferred_female_agent_${userId}`);
+                    if (preferredRaw) {
+                        const preferred = JSON.parse(preferredRaw);
+                        if (preferred && preferred.id) {
+                            activateFemaleBattleAgent(preferred);
+                        }
+                    }
+                } catch (_error) {}
+
+                // Load top two agents with battle skill power for action-focused battles
+                const skillData = await safeFetchJson(`${API_BASE}/agents/skillsets/all`);
+                if (skillData.success && skillData.skillsets && skillData.skillsets.agents) {
+                    const agents = Object.entries(skillData.skillsets.agents).map(([id, a]) => ({
+                        id,
+                        name: a.name || id,
+                        power: a.battle_skill_power_total || 0,
+                    })).sort((a, b) => b.power - a.power);
+
+                    if (agents.length >= 2) {
+                        window.selectedBattleAgents = { a: agents[0], b: agents[1] };
+                        document.getElementById('player-power').textContent = `${agents[0].name}: ${agents[0].power}`;
+                        document.getElementById('player-level').textContent = `Battle skills: 15`;
+                        document.getElementById('opponent-power').textContent = `${agents[1].name}: ${agents[1].power}`;
+                        document.getElementById('opponent-level').textContent = `Battle skills: 15`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading quick battle:', error);
+            }
+        }
+
+        // Find Opponent (Join Matchmaking Queue)
+        async function findOpponent() {
+            try {
+                document.getElementById('opponent-level').textContent = 'Searching for opponent...';
+                setQuickBattleStatus('Queueing an instant ranked opponent through the current battle API…');
+                
+                const qBody = {
+                    user_id: userId,
+                    difficulty: getQuickBattleDifficulty(),
+                    opponent_type: 'player'
+                };
+                if (window.quickBattleStance) qBody.player_move = window.quickBattleStance;
+                const data = await safeFetchJson(`${API_BASE}/battle/quick`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(qBody)
+                });
+                
+                if (data.success) {
+                    if (window.battleActionCooldown) {
+                        try { window.battleActionCooldown.start(25000); } catch (_e) {}
+                    }
+                    const oppPick = data.opponent_move || data.ai_move;
+                    let duel = '';
+                    if (data.player_move && oppPick) {
+                        duel = '\nOpening duel: you ' + data.player_move + ' vs opponent ' + oppPick + ' → ' + (data.result || '').toUpperCase();
+                        duel += ' (' + (data.points_delta >= 0 ? '+' : '') + data.points_delta + ' pts)';
+                        if (data.hunter_xp && data.hunter_xp.xp_awarded) duel += '\nHunter XP: +' + data.hunter_xp.xp_awarded;
+                    }
+                    if (data.status === 'matched' && data.battle_id) {
+                        // Opponent found, battle created
+                        document.getElementById('opponent-power').textContent = `Opponent Found!`;
+                        document.getElementById('opponent-level').textContent = `Battle ID: ${data.battle_id}`;
+                        setQuickBattleStatus(
+                            '<strong style="color:var(--battle-primary);">Opponent found.</strong> Ranked battle created.' +
+                            '<br>Battle ID: <code>' + escapeHtml(data.battle_id) + '</code>' +
+                            (duel ? '<br>' + escapeHtml(duel).replace(/\n/g, '<br>') : '') +
+                            (data.ai_commentary ? '<br><br>' + escapeHtml(data.ai_commentary) : ''),
+                            'good'
+                        );
+                        loadOverview();
+                    } else if (data.status === 'queued' || data.status === 'waiting') {
+                        // In queue, waiting for opponent
+                        document.getElementById('opponent-power').textContent = `In Queue...`;
+                        document.getElementById('opponent-level').textContent = `Waiting for opponent (${data.queue_size || 0} in queue)`;
+                        
+                        // Poll for match
+                        pollForMatch();
+                    } else {
+                        document.getElementById('opponent-level').textContent = data.message || 'Searching...';
+                        setQuickBattleStatus(escapeHtml(data.message || 'Searching…'));
+                    }
+                } else {
+                    document.getElementById('opponent-level').textContent = 'Error: ' + (data.error || 'Unknown error');
+                    setQuickBattleStatus('Queue failed: ' + escapeHtml(data.error || 'Unknown error'), 'bad');
+                }
+            } catch (error) {
+                console.error('Error finding opponent:', error);
+                document.getElementById('opponent-level').textContent = 'Error finding opponent';
+                setQuickBattleStatus('Queue failed: ' + escapeHtml(error.message || 'Network error'), 'bad');
+            }
+        }
+        
+        // Poll for match
+        async function pollForMatch() {
+            let attempts = 0;
+            const maxAttempts = 20; // 20 attempts = 1 minute (3 seconds each)
+            
+            const pollInterval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    // Check battle status instead of queue status
+                    const data = await safeFetchJson(`${API_BASE}/battle/stats?user_id=${encodeURIComponent(userId)}`);
+                    
+                    if (data.success) {
+                        if (data.matched && data.opponent_id) {
+                            // Match found!
+                            clearInterval(pollInterval);
+                            document.getElementById('opponent-power').textContent = `Opponent Found!`;
+                            document.getElementById('opponent-level').textContent = `Matched with: ${data.opponent_id}`;
+                            alert('Opponent found. Ranked battle created.');
+                            loadOverview();
+                        } else if (data.in_queue) {
+                            // Still waiting
+                            document.getElementById('opponent-level').textContent = `Waiting... (${Math.floor(data.wait_time)}s)`;
+                        } else {
+                            // Left queue
+                            clearInterval(pollInterval);
+                            document.getElementById('opponent-level').textContent = 'Not in queue';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling for match:', error);
+                }
+                
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    document.getElementById('opponent-level').textContent = 'Timeout - No opponent found';
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+
+        // Start Quick Battle (with matchmaking)
+        async function startQuickBattle() {
+            try {
+                setQuickBattleStatus('Starting ranked battle…');
+                const qbBody = {
+                    user_id: userId,
+                    difficulty: getQuickBattleDifficulty(),
+                    opponent_type: 'ai'
+                };
+                if (window.quickBattleStance) qbBody.player_move = window.quickBattleStance;
+                const data = await safeFetchJson(`${API_BASE}/battle/quick`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(qbBody)
+                });
+                
+                if (data.success) {
+                    if (window.battleActionCooldown) {
+                        try { window.battleActionCooldown.start(20000); } catch (_e) {}
+                    }
+                    const resultMsg = (data.result === 'win') ? 'Victory!' : (data.result === 'loss') ? 'Defeat.' : 'Draw.';
+                    const pts = (data.points_delta || 0) >= 0 ? '+' + data.points_delta : String(data.points_delta);
+                    const oppPick = data.opponent_move || data.ai_move;
+                    const oppLabel = data.opponent_type === 'player' ? 'Opponent' : 'AI';
+                    let duel = '';
+                    if (data.player_move && oppPick) duel = '\nYou: ' + data.player_move + ' · ' + oppLabel + ': ' + oppPick;
+                    let hx = '';
+                    if (data.hunter_xp && data.hunter_xp.xp_awarded) hx = '\nHunter XP: +' + data.hunter_xp.xp_awarded + (data.hunter_xp.leveled_up ? ' (LEVEL UP!)' : '');
+                    setQuickBattleStatus(
+                        '<strong style="color:var(--battle-primary);">' + escapeHtml(resultMsg) + '</strong> Battle points: <strong>' + escapeHtml(pts) + '</strong>' +
+                        (duel ? '<br>' + escapeHtml(duel).replace(/\n/g, '<br>') : '') +
+                        (hx ? '<br>' + escapeHtml(hx).replace(/\n/g, '<br>') : '') +
+                        (data.ai_commentary ? '<br><br>' + escapeHtml(data.ai_commentary) : '') +
+                        (data.strategy_tip ? '<br><span style="color:var(--battle-secondary);">Tip: ' + escapeHtml(data.strategy_tip) + '</span>' : ''),
+                        data.result === 'loss' ? 'bad' : 'good'
+                    );
+                    loadOverview();
+                    loadQuickBattle();
+                } else {
+                    setQuickBattleStatus('Battle failed: ' + escapeHtml(data.error || 'Could not start battle'), 'bad');
+                }
+            } catch (error) {
+                console.error('Error starting battle:', error);
+                setQuickBattleStatus('Battle failed: ' + escapeHtml(error.message || 'Network error'), 'bad');
+            }
+        }
+
+        // Load Tournaments
+        async function loadTournaments() {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/fantasy/tournaments`);
+                
+                const container = document.getElementById('tournaments-list');
+                if (data.success && data.tournaments && data.tournaments.length > 0) {
+                    container.innerHTML = data.tournaments.map(t => `
+                        <div class="action-card" style="margin-bottom: 20px;">
+                            <h3 class="action-title">${t.name || 'Tournament'}</h3>
+                            <p class="action-desc">${t.description || 'Join now!'}</p>
+                            <button class="action-btn" onclick="joinTournament('${t.id}')">Join</button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">No active tournaments</div>';
+                }
+            } catch (error) {
+                console.error('Error loading tournaments:', error);
+            }
+        }
+
+        // Load Clans
+        async function loadClans() {
+            try {
+                const [clansData, skillsData] = await Promise.all([
+                    safeFetchJson(`${API_BASE}/battle/clans`),
+                    safeFetchJson(`${API_BASE}/agents/skillsets/all`),
+                ]);
+
+                const container = document.getElementById('clans-list');
+                if (!clansData.success) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">No clans available</div>';
+                    return;
+                }
+
+                let topAgent = null;
+                if (skillsData.success && skillsData.skillsets && skillsData.skillsets.agents) {
+                    const sorted = Object.entries(skillsData.skillsets.agents).map(([id, a]) => ({
+                        id,
+                        name: a.name || id,
+                        power: a.battle_skill_power_total || 0,
+                    })).sort((a, b) => b.power - a.power);
+                    topAgent = sorted[0] || null;
+                }
+
+                container.innerHTML = (clansData.clans || []).map(clan => `
+                    <div class="action-card" style="margin-bottom: 20px;">
+                        <h3 class="action-title">${clan.name}</h3>
+                        <p class="action-desc">Focus: ${clan.focus} | Members: ${clan.member_count}</p>
+                        <button class="action-btn" onclick="joinClan('${clan.id}', '${(topAgent && topAgent.id) || userId}')">
+                            Join with ${(topAgent && topAgent.name) || 'Agent'}
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading clans:', error);
+            }
+        }
+
+        async function joinClan(clanId, agentId) {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/clans/${clanId}/join`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ agent_id: agentId })
+                });
+                if (data.success) {
+                    alert(`Joined clan! Members: ${data.member_count}`);
+                    loadClans();
+                } else {
+                    alert(`Join failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error joining clan:', error);
+            }
+        }
+
+        // Load Leaderboard
+        async function loadLeaderboard() {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/leaderboard?limit=10`);
+                
+                const container = document.getElementById('leaderboard-list');
+                if (data.success && data.leaderboard && data.leaderboard.length > 0) {
+                    container.innerHTML = data.leaderboard.map((player, index) => {
+                        const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+                        return `
+                            <div class="leaderboard-item">
+                                <div class="rank-badge ${rankClass}">${index + 1}</div>
+                                <div>
+                                    <div class="player-name">${player.name || 'Player'}</div>
+                                    <div style="color: rgba(255, 255, 255, 0.5); font-size: 0.9rem;">${player.wins || 0} wins</div>
+                                </div>
+                                <div class="player-stats">
+                                    <div style="color: rgba(255, 255, 255, 0.7);">Win Rate</div>
+                                    <div style="color: var(--battle-primary); font-weight: 700;">${(player.win_rate || 0).toFixed(1)}%</div>
+                                </div>
+                                <div class="player-score">${(player.score || 0).toLocaleString()}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">Leaderboard loading...</div>';
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        // Load History
+        async function loadHistory() {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/history?user_id=${encodeURIComponent(userId)}&limit=20`);
+                
+                const container = document.getElementById('battle-history');
+                if (data.success && data.history && data.history.length > 0) {
+                    displayRecentBattles(data.history);
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">No battle history</div>';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        // Load Intelligence
+        async function loadIntelligence() {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/intelligence/statistics?user_id=${encodeURIComponent(userId)}`);
+                
+                const container = document.getElementById('intelligence-data');
+                if (data.success) {
+                    container.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            <div class="stat-card">
+                                <span class="stat-icon">📈</span>
+                                <div class="stat-value">${data.stats?.win_rate || 0}%</div>
+                                <div class="stat-label">Win Rate</div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-icon">⚡</span>
+                                <div class="stat-value">${data.stats?.avg_duration || 0}s</div>
+                                <div class="stat-label">Avg Duration</div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-icon">🎯</span>
+                                <div class="stat-value">${data.stats?.accuracy || 0}%</div>
+                                <div class="stat-label">Accuracy</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading intelligence:', error);
+            }
+        }
+
+        // Load Resources
+        async function loadResources() {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/fantasy/resources?user_id=${encodeURIComponent(userId)}`);
+                
+                const container = document.getElementById('resources-data');
+                if (!container) return;
+                if (data.success) {
+                    const r = data.resources || {};
+                    const ledger = Array.isArray(data.ledger) ? data.ledger.slice(-8).reverse() : [];
+                    container.innerHTML = `
+                        <div class="battle-system-grid">
+                            <div class="battle-system-card"><div class="k">Energy</div><div class="v">${toNumber(r.energy, 0).toLocaleString()}</div><div style="margin-top:8px;color:rgba(255,255,255,0.66);font-size:0.86rem;">Earned from quick battle results</div></div>
+                            <div class="battle-system-card"><div class="k">Shards</div><div class="v">${toNumber(r.shards, 0).toLocaleString()}</div><div style="margin-top:8px;color:rgba(255,255,255,0.66);font-size:0.86rem;">Used for future battle crafting</div></div>
+                            <div class="battle-system-card"><div class="k">Boost Tokens</div><div class="v">${toNumber(r.boost_tokens, 0).toLocaleString()}</div><div style="margin-top:8px;color:rgba(255,255,255,0.66);font-size:0.86rem;">Reserved for v2 battle boosts</div></div>
+                        </div>
+                        <div class="battle-status-panel" style="margin-top:16px;">
+                            <strong style="color:var(--battle-primary);">Resource ledger</strong>
+                            <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+                                ${ledger.length ? ledger.map(row => `
+                                    <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:8px;">
+                                        <span>${escapeHtml(row.type || 'resource_event')} · ${escapeHtml(row.result || '')}</span>
+                                        <span style="color:var(--battle-secondary);">${Object.entries(row.delta || {}).map(([k,v]) => `${escapeHtml(k)} ${toNumber(v, 0) >= 0 ? '+' : ''}${escapeHtml(v)}`).join(' · ')}</span>
+                                    </div>
+                                `).join('') : '<span style="color:rgba(255,255,255,0.62);">No resource events yet. Play Quick Battle to start earning resources.</span>'}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="battle-status-panel bad">Could not load battle resources.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading resources:', error);
+            }
+        }
+
+        async function loadBattleCrypto() {
+            const summary = document.getElementById('battle-crypto-summary');
+            const list = document.getElementById('battle-crypto-options');
+            if (!summary || !list) return;
+            summary.textContent = 'Loading crypto earning options…';
+            const data = await safeFetchJson(`${API_BASE}/battle/crypto?user_id=${encodeURIComponent(userId)}`);
+            if (!data.success) {
+                summary.classList.remove('good');
+                summary.classList.add('bad');
+                summary.textContent = data.error || 'Battle crypto options are unavailable.';
+                list.innerHTML = '';
+                return;
+            }
+            summary.classList.remove('bad');
+            summary.classList.add('good');
+            const progress = data.progress || {};
+            summary.innerHTML = `
+                <strong style="color:var(--battle-primary);">${toNumber(data.mn2_balance, 0).toFixed(8)} MN2 balance</strong>
+                · ${toNumber(data.total_mn2_earned, 0).toFixed(8)} MN2 earned from Battle
+                <br><span style="color:rgba(255,255,255,0.72);">Matches ${toNumber(progress.matches, 0)} · Season score ${toNumber(progress.season_score, 0)} · Shards ${toNumber(progress.shards, 0)}</span>
+            `;
+            const options = Array.isArray(data.options) ? data.options : [];
+            list.innerHTML = options.map((option) => {
+                const req = option.requires || {};
+                const reqText = Object.entries(req).map(([k, v]) => `${k}: ${v}`).join(' · ') || 'No requirement';
+                const cd = toNumber(option.cooldown_remaining_sec, 0);
+                const state = option.ready ? 'Ready' : (option.unlocked ? `Cooldown ${Math.ceil(cd / 60)} min` : `Locked · ${reqText}`);
+                return `
+                    <div class="battle-system-card">
+                        <div class="k">${escapeHtml(state)}</div>
+                        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                            <div>
+                                <div style="font-weight:800;color:#fff;font-size:1.05rem;">${escapeHtml(option.name || option.id)}</div>
+                                <div style="margin-top:8px;color:rgba(255,255,255,0.72);font-size:0.88rem;">${escapeHtml(option.description || '')}</div>
+                                <div style="margin-top:10px;color:var(--battle-secondary);font-size:0.82rem;">Reward: ${toNumber(option.reward_mn2, 0).toFixed(8)} MN2 · ${escapeHtml(reqText)}</div>
+                            </div>
+                            <button type="button" class="action-btn" style="padding:8px 12px;font-size:0.8rem;${option.ready ? '' : 'opacity:0.55;'}" ${option.ready ? '' : 'disabled'} onclick="claimBattleCrypto('${escapeHtml(option.id)}')">Claim</button>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<div class="battle-status-panel">No crypto earning options available.</div>';
+        }
+
+        async function claimBattleCrypto(optionId) {
+            const summary = document.getElementById('battle-crypto-summary');
+            if (summary) {
+                summary.classList.remove('good', 'bad');
+                summary.textContent = 'Claiming Battle MN2…';
+            }
+            const data = await safeFetchJson(`${API_BASE}/battle/crypto/claim`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, option_id: optionId })
+            });
+            if (summary) {
+                summary.classList.remove('good', 'bad');
+                summary.classList.add(data.success ? 'good' : 'bad');
+                summary.textContent = data.success
+                    ? `Claimed ${toNumber(data.claim && data.claim.amount_mn2, 0).toFixed(8)} MN2.`
+                    : (data.error || 'Claim failed.');
+            }
+            await loadBattleCrypto();
+            await loadSystemInterface();
+        }
+
+        // Load Battle Points
+        async function loadBattlePoints() {
+            try {
+                // Try comprehensive points API first
+                let data = await safeFetchJson(`${API_BASE}/points/comprehensive?user_id=${encodeURIComponent(userId)}`);
+                const tableBody = document.getElementById('battle-points-table-body');
+                const grid = document.getElementById('battle-points-grid');
+                
+                // Fallback to points/all with same API_BASE
+                if (!data.success || (!data.categories && !data.flat_list)) {
+                    const rootPoints = await safeFetchJson(`${API_BASE}/points/all?user_id=${encodeURIComponent(userId)}`);
+                    if (rootPoints.success && rootPoints.points) {
+                        const p = rootPoints.points || {};
+                        data = {
+                            success: true,
+                            categories: {
+                                BATTLE: {
+                                    name: 'Battle',
+                                    icon: '⚔️',
+                                    total: toNumber(p.battle_points, 0),
+                                    points: {
+                                        battle_points: { label: 'Battle Points', value: toNumber(p.battle_points, 0), icon: '⚔️' },
+                                        trophy_points: { label: 'Trophy Points', value: toNumber(p.trophy_points, 0), icon: '🏆' },
+                                        stats_points_total: { label: 'Stats Points', value: toNumber(p.stats_points_total, 0), icon: '📊' }
+                                    }
+                                }
+                            },
+                            flat_list: [
+                                { category_name: 'Battle', category_icon: '⚔️', label: 'Battle Points', value: toNumber(p.battle_points, 0) },
+                                { category_name: 'Battle', category_icon: '🏆', label: 'Trophy Points', value: toNumber(p.trophy_points, 0) },
+                                { category_name: 'Battle', category_icon: '📊', label: 'Stats Points', value: toNumber(p.stats_points_total, 0) }
+                            ]
+                        };
+                    }
+                }
+
+                // Final fallback to battle stats only
+                if (!data.success || (!data.categories && !data.flat_list)) {
+                    const battleStats = await safeFetchJson(`${API_BASE}/battle/stats?user_id=${encodeURIComponent(userId)}`);
+                    data = {
+                        success: !!battleStats.success,
+                        categories: {
+                            BATTLE: {
+                                name: 'Battle',
+                                icon: '⚔️',
+                                total: toNumber(battleStats?.stats?.battle_points, 0),
+                                points: {
+                                    battle_points: { label: 'Battle Points', value: toNumber(battleStats?.stats?.battle_points, 0), icon: '⚔️' },
+                                    wins: { label: 'Wins', value: toNumber(battleStats?.stats?.wins, 0), icon: '🏆' }
+                                }
+                            }
+                        },
+                        flat_list: [
+                            { category_name: 'Battle', category_icon: '⚔️', label: 'Battle Points', value: toNumber(battleStats?.stats?.battle_points, 0) },
+                            { category_name: 'Battle', category_icon: '🏆', label: 'Wins', value: toNumber(battleStats?.stats?.wins, 0) }
+                        ]
+                    };
+                }
+
+                if (tableBody) {
+                    const flat = Array.isArray(data.flat_list) ? data.flat_list : [];
+                    tableBody.innerHTML = flat.length ? flat.map(item => `
+                        <tr>
+                            <td><strong>${item.category_icon || '⚔️'} ${item.category_name || 'Battle'}</strong></td>
+                            <td>${item.icon || ''} ${item.label || item.type || 'Points'}</td>
+                            <td class="stat-value">${toNumber(item.value, 0).toLocaleString()}</td>
+                            <td style="text-align: center;">${item.icon || item.category_icon || '📊'}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="4" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6);">No battle points data available</td></tr>';
+                }
+
+                if (grid) {
+                    const categories = data.categories && typeof data.categories === 'object' ? data.categories : {};
+                    const keys = Object.keys(categories);
+                    grid.innerHTML = keys.length ? keys.map(key => {
+                        const cat = categories[key] || {};
+                        const points = cat.points || {};
+                        const items = Object.entries(points).map(([pointKey, point]) => `
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+                                <span style="color:rgba(255,255,255,0.75);">${point.icon || ''} ${point.label || pointKey}</span>
+                                <span style="font-weight:700;color:var(--battle-primary);">${toNumber(point.value, 0).toLocaleString()}</span>
+                            </div>
+                        `).join('');
+                        return `
+                            <div class="stat-card">
+                                <span class="stat-icon">${cat.icon || '📊'}</span>
+                                <div class="stat-value">${toNumber(cat.total, 0).toLocaleString()}</div>
+                                <div class="stat-label">${cat.name || key} Total</div>
+                                <div style="margin-top:10px;">${items || '<div style="color:rgba(255,255,255,0.6);">No points</div>'}</div>
+                            </div>
+                        `;
+                    }).join('') : '<div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5);">No categories available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading battle points:', error);
+                const tableBody = document.getElementById('battle-points-table-body');
+                const grid = document.getElementById('battle-points-grid');
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ff4444;">Error: ${error.message}</td></tr>`;
+                if (grid) grid.innerHTML = `<div style="text-align: center; padding: 40px; color: #ff4444;">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSystemInterface() {
+            const grid = document.getElementById('system-interface-grid');
+            const details = document.getElementById('system-interface-details');
+            if (!grid || !details) return;
+            details.textContent = 'Refreshing system channels…';
+            const [progressData, health, systemHealth, points] = await Promise.all([
+                safeFetchJson(`${API_BASE}/battle/progress?user_id=${encodeURIComponent(userId)}&history_limit=6`),
+                safeFetchJson(`${API_BASE}/health`),
+                safeFetchJson(`${API_BASE}/health/system`),
+                safeFetchJson(`${API_BASE}/points/all?user_id=${encodeURIComponent(userId)}`),
+            ]);
+
+            const progress = progressData.progress || {};
+            const b = normalizeBattleStats((progress.stats || {}));
+            const p = (points && points.points) ? points.points : {};
+            const social = progress.social || {};
+            const labProgress = progress.lab || {};
+            const season = (progress.season && progress.season.current) ? progress.season.current : {};
+            const crypto = progress.crypto || {};
+            const resources = (progress.resources && progress.resources.balances) ? progress.resources.balances : {};
+            const cards = [
+                ['API Health', health.success ? 'Online' : 'Fallback', health.success ? 'Core API responding' : (health.error || 'Health endpoint unavailable')],
+                ['Battle Power', b.power.toLocaleString(), `${b.total_battles.toLocaleString()} battles · ${b.win_rate.toFixed(1)}% win rate`],
+                ['Unified Points', toNumber(p.battle_points, b.battle_points).toLocaleString(), 'battle_points for this profile'],
+                ['Hunter Level', toNumber(p.level, b.level).toLocaleString(), `${toNumber(p.xp_total, 0).toLocaleString()} total XP`],
+                ['Battle v2 Progress', `${toNumber(progress.completion_percent, 0)}%`, `${toNumber(progress.completion_done, 0)} of ${toNumber(progress.completion_total, 0)} progress lanes tied to user id`],
+                ['Season Score', toNumber(season.score, 0).toLocaleString(), `${toNumber(season.matches, 0)} matches in ${season.season_id || 'current season'}`],
+                ['Battle Shards', toNumber(resources.shards, 0).toLocaleString(), `${toNumber(resources.energy, 0).toLocaleString()} energy · ${toNumber(resources.boost_tokens, 0).toLocaleString()} boosts`],
+                ['MN2 Earned', toNumber(crypto.total_mn2_earned, 0).toFixed(8), `${toNumber(crypto.mn2_balance, 0).toFixed(8)} MN2 balance`],
+                ['Lab Tier', labProgress.tier || 'Novice', `${toNumber(labProgress.researched_count, 0)} researched · ${toNumber(labProgress.total, 0)} nodes`],
+                ['Tournaments', toNumber((social.joined_tournaments || []).length, 0).toLocaleString(), 'joined by this user id'],
+                ['Clans', toNumber((social.joined_clans || []).length, 0).toLocaleString(), 'membership stored as user id + agent'],
+            ];
+
+            grid.innerHTML = cards.map(([label, value, note]) => `
+                <div class="battle-system-card">
+                    <div class="k">${escapeHtml(label)}</div>
+                    <div class="v">${escapeHtml(value)}</div>
+                    <div style="margin-top:8px;color:rgba(255,255,255,0.66);font-size:0.86rem;">${escapeHtml(note)}</div>
+                </div>
+            `).join('');
+
+            const sys = systemHealth.success ? (systemHealth.system || systemHealth) : {};
+            const missing = Array.isArray(progressData.missing_for_v2) ? progressData.missing_for_v2 : [];
+            details.innerHTML = `
+                <strong style="color:var(--battle-primary);">Current profile:</strong> <code>${escapeHtml(userId)}</code>
+                <br><strong style="color:var(--battle-secondary);">System:</strong> ${escapeHtml(sys.status || sys.health || (systemHealth.success ? 'available' : 'limited'))}
+                <br><strong>Battle progress API:</strong> ${progressData.success ? 'ready' : escapeHtml(progressData.error || 'limited')}
+                · <strong>Points API:</strong> ${points.success ? 'ready' : escapeHtml(points.error || 'limited')}
+                <br><br><strong>Missing for v2.0:</strong>
+                <ul style="margin:8px 0 0;padding-left:1.1rem;color:rgba(255,255,255,0.78);">
+                    ${missing.slice(0, 6).map(item => `<li>${escapeHtml(item)}</li>`).join('') || '<li>No v2.0 gaps reported by the progress contract.</li>'}
+                </ul>
+            `;
+        }
+
+        async function loadLabTech() {
+            const list = document.getElementById('battle-lab-tech-list');
+            const status = document.getElementById('battle-lab-tech-status');
+            if (!list || !status) return;
+            status.textContent = 'Loading lab technologies…';
+            const data = await safeFetchJson(`${API_BASE}/lab/technologies?user_id=${encodeURIComponent(userId)}`);
+            if (!data.success) {
+                status.classList.remove('good');
+                status.classList.add('bad');
+                status.textContent = data.message || data.error || 'Lab technologies are not available.';
+                list.innerHTML = '';
+                return;
+            }
+            status.classList.remove('bad');
+            status.classList.add('good');
+            const cooldown = toNumber(data.draft_cooldown_remaining_sec, 0);
+            status.innerHTML = cooldown > 0
+                ? `Draft cooldown: <strong>${Math.ceil(cooldown / 60)} min</strong> remaining for <code>${escapeHtml(userId)}</code>.`
+                : `Lab tech drafting is ready for <code>${escapeHtml(userId)}</code>.`;
+
+            const techs = Array.isArray(data.technologies) ? data.technologies : [];
+            list.innerHTML = techs.length ? techs.slice(0, 8).map((tech) => `
+                <div class="battle-system-card">
+                    <div class="k">${escapeHtml(tech.category || 'general')} · ${escapeHtml(tech.status || 'draft')}</div>
+                    <div style="font-weight:800;color:#fff;font-size:1.05rem;">${escapeHtml(tech.name || tech.id || 'Lab technology')}</div>
+                    <div style="margin-top:8px;color:rgba(255,255,255,0.72);font-size:0.88rem;">${escapeHtml(tech.pitch || 'No pitch recorded.')}</div>
+                    <div style="margin-top:10px;color:var(--battle-secondary);font-size:0.8rem;">Agent: ${escapeHtml(tech.co_agent_id || 'lab_agent')}</div>
+                </div>
+            `).join('') : '<div class="battle-status-panel">No lab tech drafts yet. Save the first battle technology above.</div>';
+        }
+
+        async function createBattleLabTechnology() {
+            const nameEl = document.getElementById('battle-lab-tech-name');
+            const pitchEl = document.getElementById('battle-lab-tech-pitch');
+            const categoryEl = document.getElementById('battle-lab-tech-category');
+            const agentEl = document.getElementById('battle-lab-tech-agent');
+            const status = document.getElementById('battle-lab-tech-status');
+            const name = (nameEl && nameEl.value || '').trim();
+            const pitch = (pitchEl && pitchEl.value || '').trim();
+            if (!name || pitch.length < 8) {
+                if (status) {
+                    status.classList.remove('good');
+                    status.classList.add('bad');
+                    status.textContent = 'Add a technology name and a pitch of at least 8 characters.';
+                }
+                return;
+            }
+            const data = await safeFetchJson(`${API_BASE}/lab/technologies`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userId,
+                    name,
+                    pitch,
+                    category: categoryEl && categoryEl.value ? categoryEl.value : 'battle',
+                    co_agent_id: agentEl && agentEl.value ? agentEl.value : 'battle_lab_agent'
+                })
+            });
+            if (status) {
+                status.classList.remove('good', 'bad');
+                status.classList.add(data.success ? 'good' : 'bad');
+                status.textContent = data.success ? 'Lab technology draft saved.' : (data.message || data.error || 'Could not save lab technology.');
+            }
+            if (data.success) {
+                if (nameEl) nameEl.value = '';
+                if (pitchEl) pitchEl.value = '';
+                await loadLabTech();
+            }
+        }
+
+        function getBattleProfileSlots() {
+            try {
+                const raw = localStorage.getItem('battle_user_profiles') || '[]';
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed.filter(p => p && p.id) : [];
+            } catch (_error) {
+                return [];
+            }
+        }
+
+        function setBattleProfileSlots(slots) {
+            localStorage.setItem('battle_user_profiles', JSON.stringify(slots.slice(0, 12)));
+        }
+
+        async function loadUserProfiles() {
+            const summary = document.getElementById('battle-profile-summary');
+            const list = document.getElementById('battle-profile-list');
+            if (!summary || !list) return;
+            const [profileData, pointsData, battleData] = await Promise.all([
+                safeFetchJson(`${API_BASE}/user/profile/${encodeURIComponent(userId)}/aggregated`),
+                safeFetchJson(`${API_BASE}/points/all?user_id=${encodeURIComponent(userId)}`),
+                safeFetchJson(`${API_BASE}/battle/stats?user_id=${encodeURIComponent(userId)}`),
+            ]);
+            const points = pointsData.points || {};
+            const stats = normalizeBattleStats(battleData.stats || {});
+            const display = profileData.profile || profileData.display || {};
+            const displayName = display.display_name || display.username || display.name || userId;
+            summary.innerHTML = `
+                <strong style="color:var(--battle-primary);">${escapeHtml(displayName)}</strong>
+                <br><code>${escapeHtml(userId)}</code>
+                <br>Level ${escapeHtml(toNumber(points.level, stats.level))} · ${escapeHtml(toNumber(points.battle_points, stats.battle_points).toLocaleString())} battle points · ${escapeHtml(stats.total_battles.toLocaleString())} battles
+            `;
+
+            const slots = getBattleProfileSlots();
+            const withCurrent = [{ id: userId, name: displayName }, ...slots.filter(p => p.id !== userId)];
+            list.innerHTML = withCurrent.map((profile) => `
+                <div class="battle-system-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div>
+                        <div class="k">${profile.id === userId ? 'Active profile' : 'Saved profile'}</div>
+                        <div style="font-weight:800;color:#fff;">${escapeHtml(profile.name || profile.id)}</div>
+                        <code style="font-size:0.82rem;color:rgba(255,255,255,0.68);">${escapeHtml(profile.id)}</code>
+                    </div>
+                    ${profile.id === userId
+                        ? '<span style="color:var(--battle-primary);font-weight:700;">Active</span>'
+                        : `<button type="button" class="action-btn" style="padding:8px 12px;font-size:0.8rem;" onclick="switchBattleProfile(decodeURIComponent('${encodeURIComponent(profile.id)}'))">Switch</button>`}
+                </div>
+            `).join('');
+        }
+
+        function saveBattleProfileSlot() {
+            const idEl = document.getElementById('battle-profile-id');
+            const nameEl = document.getElementById('battle-profile-name');
+            const id = (idEl && idEl.value || '').trim().replace(/[^\w.-]/g, '_');
+            const name = (nameEl && nameEl.value || '').trim();
+            if (!id) {
+                const summary = document.getElementById('battle-profile-summary');
+                if (summary) {
+                    summary.classList.add('bad');
+                    summary.textContent = 'Enter a profile id first.';
+                }
+                return;
+            }
+            const slots = getBattleProfileSlots().filter(p => p.id !== id);
+            slots.unshift({ id, name: name || id, saved_at: new Date().toISOString() });
+            setBattleProfileSlots(slots);
+            switchBattleProfile(id);
+        }
+
+        function switchBattleProfile(profileId) {
+            if (!profileId) return;
+            localStorage.setItem('game_user_id', profileId);
+            localStorage.setItem('user_id', profileId);
+            window.location.reload();
+        }
+
+        async function loadSeasons() {
+            const container = document.getElementById('seasons-list');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; padding: 30px; color: rgba(255, 255, 255, 0.7);">Season mode is preparing. Quick Battle, Clans, and Tournaments are available now.</div>';
+        }
+
+        // Join Tournament
+        async function joinTournament(tournamentId) {
+            try {
+                const data = await safeFetchJson(`${API_BASE}/battle/fantasy/tournaments/${tournamentId}/join`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId})
+                });
+                
+                if (data.success) {
+                    alert('Joined tournament!');
+                    loadTournaments();
+                } else {
+                    alert('Join failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error joining tournament:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab click handlers
+            document.querySelectorAll('.arena-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            // Load initial data
+            loadOverview();
+            renderBattleAgentStatusPanel();
+        });
+    </script>
+    <script src="/static/js/enhanced-game-mechanics.js" defer></script>
+    <script src="/static/js/stats-achievements-tracker.js" defer></script>
+    <script src="/static/js/image-support.js" defer></script>
+    <script src="/static/js/template-effects.js" defer></script>
+    <script src="/static/js/template-services.js" defer></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+    <script src="/static/js/template-engine-core.js" defer></script>
+    <!-- Additional Feature Scripts -->
+    <script src="/static/js/unified-point-counters.js" defer></script>
+    <script src="/static/js/comprehensive-api-integration.js" defer></script>
+    <script src="/static/js/toast-notifications.js" defer></script>
+    <script src="/static/js/epic-gaming-experience.js" defer></script>
+    <script src="/static/js/quick-battle-frontend.js" defer></script>
+    <script src="/static/js/progression-display.js" defer></script>
+
+    <!-- System Aggregator Integration -->
+    <script>
+        // Hardcoded aggregator API URL
+        const AGGREGATOR_API = `${API_BASE}/aggregator`;
+        
+        // Unified data loader using aggregator
+        async function loadAllSystemData(userId) {
+            try {
+                const response = await fetch(`${AGGREGATOR_API}/frontend?user_id=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Aggregator API failed, falling back to individual endpoints:', error);
+            }
+            return null;
+        }
+        
+        // Update page-specific data
+        async function updatePageData(userId) {
+            const allData = await loadAllSystemData(userId);
+            if (!allData) return;
+            
+            // Update based on page type
+            if (allData.dashboard) {
+                updateDashboardData(allData.dashboard);
+            }
+            if (allData.battle) {
+                updateBattleData(allData.battle);
+            }
+            if (allData.shop) {
+                updateShopData(allData.shop);
+            }
+            if (allData.quest) {
+                updateQuestData(allData.quest);
+            }
+            if (allData.points) {
+                updatePointsData(allData.points);
+            }
+        }
+        
+        // Helper functions for each page type
+        function updateDashboardData(data) {
+            if (data.points && data.points.total !== undefined) {
+                const pointsEl = document.getElementById('total-points');
+                if (pointsEl) pointsEl.textContent = data.points.total;
+            }
+        }
+        
+        function updateBattleData(data) {
+            if (data.battles && Array.isArray(data.battles)) {
+                const battlesEl = document.getElementById('battle-list');
+                if (battlesEl) {
+                    battlesEl.innerHTML = data.battles.map(b => 
+                        `<div class="battle-item">${b.name || 'Battle'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateShopData(data) {
+            if (data.items && Array.isArray(data.items)) {
+                const itemsEl = document.getElementById('shop-items');
+                if (itemsEl) {
+                    itemsEl.innerHTML = data.items.map(item => 
+                        `<div class="shop-item">${item.name || 'Item'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateQuestData(data) {
+            if (data.active_quests && Array.isArray(data.active_quests)) {
+                const questsEl = document.getElementById('active-quests');
+                if (questsEl) {
+                    questsEl.innerHTML = data.active_quests.map(q => 
+                        `<div class="quest-item">${q.name || 'Quest'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updatePointsData(data) {
+            // Update points displays across the page
+            const pointsElements = document.querySelectorAll('[data-points]');
+            pointsElements.forEach(el => {
+                const pointType = el.getAttribute('data-points');
+                if (data[pointType] !== undefined) {
+                    el.textContent = data[pointType];
+                }
+            });
+        }
+        
+        // Auto-update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            updatePageData(userId);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => updatePageData(userId), 30000);
+        });
+    </script>
+    
+
+    <!-- Production Debugger Integration -->
+    <script>
+        // Hardcoded debugger API URL
+        const DEBUGGER_API = `${API_BASE}/debug`;
+        
+        // Debug function (only in development)
+        function debugSystem(systemName) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                fetch(`${DEBUGGER_API}/system/${systemName}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`[Debug] ${systemName}:`, data);
+                    })
+                    .catch(e => console.error(`[Debug] Error debugging ${systemName}:`, e));
+            }
+        }
+        
+        // Auto-debug on errors (development only)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.addEventListener('error', (event) => {
+                console.error('[Debug] Page error detected:', event.error);
+                // Optionally send to debugger API
+            });
+        }
+    </script>
+    
+<script src="/static/js/navigation-toolbar.js?v=20260115" defer></script>
+
+    <script>
+        // Simple cache version tracking (no forced reloads)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only store version, don't force reload
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+<script src="/static/js/energy-regeneration-timers.js"></script>
+<script src="/static/js/top50-monetization-frame.js"></script>
+<script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+        window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+    }
+});
+</script>
+<script src="/static/js/cooldown-timer.js?v=1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('battle-cooldown-timer');
+  if (el && el.cooldownTimer) window.battleActionCooldown = el.cooldownTimer;
+});
+</script>
+<script src="/static/js/story-monitor-5d.js?v=1"></script>
+<script src="/static/js/aggregator-ideas.js"></script>
+<script src="/static/js/game-battle-bridge.js?v=20260420" defer></script>
+</body>
+</html>

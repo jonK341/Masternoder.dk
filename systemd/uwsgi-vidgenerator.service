@@ -1,0 +1,29 @@
+[Unit]
+Description=uWSGI vidgenerator app
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+# Load .env so MN2_RPC_USER, MN2_RPC_PASSWORD, etc. are set (fixes deposit-address 401)
+EnvironmentFile=-/var/www/html/.env
+# PRODUCTION=true: disables heavy AI path correction middleware (fixes recursion/OOM worker kills)
+# LITE_APP=1: registers only ~25 core blueprints (faster startup, less RAM, more room for workers)
+Environment=PRODUCTION=true
+Environment=FLASK_ENV=production
+Environment=LITE_APP=1
+# Single config: uwsgi.ini at project root (no uwsgi-vidgenerator.ini)
+ExecStart=/usr/bin/uwsgi --ini /var/www/html/uwsgi.ini
+# Allow up to 5 min for workers to load (126 blueprints); avoid systemd killing the process ~10–90s after start
+TimeoutStartSec=300
+# Graceful stop: wait 2 min for uWSGI to exit on SIGTERM (avoids "Main process exited, code=killed, status=9")
+TimeoutStopSec=120
+KillSignal=SIGTERM
+KillMode=mixed
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

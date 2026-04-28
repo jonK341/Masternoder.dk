@@ -1,0 +1,8 @@
+{
+  "name": "3D Monitor",
+  "description": "Placeholder for 3D visual effects in vidgenerator. Plug into rulebook/effect IDs.",
+  "enabled": false,
+  "placeholder": true,
+  "effect_ids": ["checkpoint", "view_star_map", "geo_reference"],
+  "updated_at": "2026-01-27"
+}

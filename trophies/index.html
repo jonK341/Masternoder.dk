@@ -1,0 +1,1384 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trophies - MasterNoder</title>
+    <meta name="cache-version" content="20260221c">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <style>
+        :root {
+            --trophy-primary: #FFD700;
+            --trophy-secondary: #FFA500;
+            --trophy-danger: #ff3366;
+            --trophy-warning: #ffaa00;
+            --trophy-success: #00ff88;
+            --trophy-dark: #0a0a0f;
+            --trophy-card: #151520;
+            --trophy-border: rgba(255, 215, 0, 0.2);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .trophies-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 5;
+        }
+
+        .trophies-header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+        }
+
+        .trophies-header h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 0;
+            background: linear-gradient(135deg, var(--trophy-primary), var(--trophy-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.9), rgba(15, 15, 25, 0.9));
+            border: 2px solid var(--trophy-border);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--trophy-primary);
+            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--trophy-primary);
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .trophies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .trophy-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--trophy-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trophy-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .trophy-card.unlocked {
+            border-color: var(--trophy-primary);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .trophy-card.locked {
+            opacity: 0.5;
+        }
+
+        .trophy-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .trophy-card.unlocked .trophy-icon {
+            animation: trophyGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes trophyGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); }
+        }
+
+        .trophy-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--trophy-primary);
+            margin: 15px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .trophy-description {
+            color: rgba(255, 255, 255, 0.7);
+            margin: 10px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .trophy-reward {
+            color: var(--trophy-success);
+            font-weight: 700;
+            margin-top: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .trophy-requirement {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(21, 21, 32, 0.6);
+            border: 2px solid var(--trophy-border);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 11;
+            pointer-events: auto;
+        }
+        button.tab { pointer-events: auto; cursor: pointer; }
+
+        .tab:hover {
+            border-color: var(--trophy-primary);
+            color: var(--trophy-primary);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--trophy-primary), var(--trophy-secondary));
+            color: #000;
+            border-color: var(--trophy-primary);
+            font-weight: 700;
+        }
+        .tab-category-select {
+            padding: 10px 18px;
+            background: rgba(21, 21, 32, 0.6);
+            border: 2px solid var(--trophy-border);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .tab-category-select:hover, .tab-category-select:focus { border-color: var(--trophy-primary); outline: none; }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Table: checklist style — unchecked (☐) for locked, checked (☑) for unlocked */
+        .trophies-container .table .col-check { width: 2em; text-align: center; font-size: 1.2em; color: rgba(255,255,255,0.5); }
+        .trophies-container .table tr td.col-check.checked { color: var(--trophy-success); }
+        .trophies-container .table .col-icon { width: 48px; text-align: center; font-size: 1.5em; }
+        .trophies-container .table .col-name { font-weight: 700; color: var(--trophy-primary); }
+        .trophies-container .table .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .trophies-container .table .badge.unlocked { background: rgba(0, 255, 136, 0.2); color: var(--trophy-success); }
+        .trophies-container .table .badge.locked { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
+        .trophies-container .table .rarity-common { color: rgba(255, 255, 255, 0.5); }
+        .trophies-container .table .rarity-rare { color: rgba(0, 150, 255, 0.9); }
+        .trophies-container .table .rarity-epic { color: rgba(150, 0, 255, 0.9); }
+        .trophies-container .table .rarity-legendary { color: rgba(255, 215, 0, 0.95); }
+
+        /* Communication Psychology tab — special effects */
+        .comm-psych-section {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            overflow: hidden;
+        }
+        .comm-psych-bg-effects {
+            position: absolute;
+            inset: -50%;
+            background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse 40% 60% at 80% 80%, rgba(0, 255, 136, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .comm-psych-title {
+            position: relative;
+            color: var(--trophy-primary);
+            margin-bottom: 24px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .comm-psych-progress-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .comm-psych-ring {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        .comm-psych-ring svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.4));
+        }
+        .comm-psych-ring .ring-fill {
+            transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .comm-psych-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--trophy-primary);
+        }
+        .comm-psych-stats-inline {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .comm-psych-points { color: var(--trophy-success); font-weight: 600; }
+        .comm-psych-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            position: relative;
+        }
+        .comm-psych-theory-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid rgba(255, 215, 0, 0.25);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .comm-psych-theory-card::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background: linear-gradient(45deg, transparent 40%, rgba(255, 215, 0, 0.06) 50%, transparent 60%);
+            animation: comm-psych-shine 4s ease-in-out infinite;
+        }
+        @keyframes comm-psych-shine {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(10%, 10%) rotate(180deg); }
+        }
+        .comm-psych-theory-card.unlocked {
+            border-color: rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 24px rgba(0, 255, 136, 0.2);
+        }
+        .comm-psych-theory-card.unlocked .theory-icon { filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.6)); }
+        .comm-psych-theory-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(255, 215, 0, 0.15);
+        }
+        .theory-icon { font-size: 2.2em; margin-bottom: 10px; position: relative; z-index: 1; }
+        .theory-name { font-weight: 700; color: var(--trophy-primary); margin-bottom: 6px; position: relative; z-index: 1; }
+        .theory-short { font-size: 0.9em; opacity: 0.85; margin-bottom: 12px; position: relative; z-index: 1; }
+        .theory-study-btn {
+            position: relative;
+            z-index: 1;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.15));
+            color: var(--trophy-primary);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .theory-study-btn:hover { background: rgba(255, 215, 0, 0.35); box-shadow: 0 0 16px rgba(255, 215, 0, 0.4); }
+        .theory-study-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .theory-study-btn.unlocked { border-color: var(--trophy-success); background: rgba(0, 255, 136, 0.2); color: var(--trophy-success); }
+        .comm-psych-activity {
+            margin-top: 28px;
+            padding: 16px;
+            background: rgba(21, 21, 32, 0.6);
+            border-radius: 12px;
+            border: 1px solid var(--trophy-border);
+        }
+        .comm-psych-activity h4 { margin-top: 0; }
+        #comm-psych-activity-list { font-size: 0.9em; opacity: 0.9; max-height: 120px; overflow-y: auto; }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+</head>
+<body class="layout-standard">
+    <div id="navigation-toolbar"></div>
+
+    <div class="trophies-container">
+        <div class="trophies-header">
+            <h1>🏆 Trophy Collection</h1>
+            <p>Unlock trophies by completing achievements and milestones</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Trophies</div>
+                <div class="stat-value" id="total-trophies">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unlocked</div>
+                <div class="stat-value" id="unlocked-trophies">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Locked</div>
+                <div class="stat-value" id="locked-trophies">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Trophy Points</div>
+                <div class="stat-value" id="trophy-points">0</div>
+            </div>
+        </div>
+
+        <!-- Tabs: Table view first, then categories, then extras -->
+        <div class="tabs" id="trophies-tabs">
+            <button type="button" class="tab active" data-tab="table">Table</button>
+            <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
+            <button type="button" class="tab" data-tab="locked">Locked</button>
+            <select class="tab-category-select" id="tab-category" title="Filter by category">
+                <option value="">All categories</option>
+                <option value="generation">Generation</option>
+                <option value="achievements">Achievements</option>
+                <option value="battle">Battle</option>
+                <option value="points">Points</option>
+                <option value="social">Social</option>
+                <option value="content">Content</option>
+                <option value="milestones">Milestones</option>
+                <option value="special">Special</option>
+            </select>
+            <button type="button" class="tab" data-tab="star-map">Star Map</button>
+            <button type="button" class="tab" data-tab="comm-psych">Comm. Psychology</button>
+            <button type="button" class="tab" data-tab="rulebook">Rulebook</button>
+            <button type="button" class="tab" data-tab="compendium">Compendium V2.1</button>
+            <button type="button" class="tab" data-tab="effect-clusters">Effect Clusters</button>
+            <button type="button" class="tab" data-tab="stories">📜 Stories</button>
+        </div>
+
+        <!-- Main content: table view (same layout as Game / Points tables) -->
+        <div class="tab-content active" id="content-table">
+            <section class="stats-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Trophy list</h2>
+                        <p style="color: var(--text-secondary); margin-top: var(--spacing-xs);">All trophies — filter with tabs or category dropdown</p>
+                    </div>
+                    <div class="table-responsive stats-table">
+                        <table class="table table-striped" id="trophies-data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-check" title="Obtained">✓</th>
+                                    <th>Icon</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Reward</th>
+                                    <th>Requirement</th>
+                                    <th>Rarity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trophy-tbody">
+                                <tr><td class="col-check">☐</td><td class="col-icon">🎬</td><td class="col-name">First Video</td><td>generation</td><td><span class="badge locked">Locked</span></td><td>100</td><td>Generate 1 video</td><td class="rarity-common">common</td></tr>
+                                <tr><td class="col-check">☐</td><td class="col-icon">⚔️</td><td class="col-name">First Battle</td><td>battle</td><td><span class="badge locked">Locked</span></td><td>100</td><td>1 battle</td><td class="rarity-common">common</td></tr>
+                                <tr><td class="col-check">☐</td><td class="col-icon">🏆</td><td class="col-name">Trophy Collector</td><td>milestones</td><td><span class="badge locked">Locked</span></td><td>100</td><td>1 trophy</td><td class="rarity-common">common</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Extra tabs (Star Map, Comm. Psych, Rulebook, Effect Clusters) -->
+        <div class="tab-content" id="content-star-map">
+            <div class="star-map-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">7 Nearest Stars &amp; Star Map 25</h3>
+                <div class="specials-row" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <button type="button" class="special-btn" id="btn-download-electric-magnet">Download Electric Magnet Tech</button>
+                    <button type="button" class="special-btn" id="btn-run-verification">Run Verification</button>
+                    <button type="button" class="special-btn" id="btn-run-dna-test">Run DNA Test</button>
+                    <button type="button" class="special-btn" id="btn-view-star-map">View Star Map</button>
+                    <a href="/starmap25/" class="special-btn" style="text-decoration: none; display: inline-flex; align-items: center;">Star Map 25 Monitor (25 points)</a>
+                </div>
+                <div id="em-download-status" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
+                <div id="star-map-grid" class="trophies-grid"><div class="loading">Loading star map…</div></div>
+                <div class="star-map-info" style="margin-top: 20px; padding: 16px; background: rgba(21,21,32,0.6); border-radius: 12px;"><strong style="color: var(--trophy-primary);">Info</strong><p id="star-map-info-slot" style="margin: 8px 0 0;">—</p></div>
+                <div class="star-map-flyers" style="margin-top: 12px; padding: 16px; background: rgba(21,21,32,0.6); border-radius: 12px;"><strong style="color: var(--trophy-primary);">Flyers</strong><div id="star-map-flyers-slot" style="margin-top: 8px;">—</div></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-comm-psych">
+            <div class="comm-psych-section">
+                <div class="comm-psych-bg-effects"></div>
+                <h3 class="comm-psych-title">🧠 Communication Psychology — 25 Theories</h3>
+                <div class="comm-psych-progress-wrap">
+                    <div class="comm-psych-ring" id="comm-psych-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="ring-bg" cx="50" cy="50" r="45" fill="none" stroke="rgba(255,215,0,0.2)" stroke-width="8"/>
+                            <circle class="ring-fill" id="comm-psych-ring-fill" cx="50" cy="50" r="45" fill="none" stroke="url(#comm-psych-gradient)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                            <defs><linearGradient id="comm-psych-gradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#00ff88"/></linearGradient></defs>
+                        </svg>
+                        <div class="comm-psych-ring-text"><span id="comm-psych-count">0</span>/25</div>
+                    </div>
+                    <div class="comm-psych-stats-inline">
+                        <span class="comm-psych-points"><span id="comm-psych-points-val">0</span> Comm-Psych Points</span>
+                    </div>
+                </div>
+                <div class="comm-psych-grid" id="comm-psych-grid">
+                    <div class="loading">Loading theories...</div>
+                </div>
+                <div class="comm-psych-activity" id="comm-psych-activity">
+                    <h4 style="color: var(--trophy-primary); margin-bottom: 10px;">Recent activity</h4>
+                    <div id="comm-psych-activity-list">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-rulebook">
+            <div class="rulebook-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">Rulebook V.2</h3>
+                <div id="rulebook-content" class="loading">Loading rulebook…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-compendium">
+            <div class="compendium-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">Compendium — Rulebook V1–V15</h3>
+                <p style="margin-bottom: 16px; opacity: 0.9;">25 kommunikationspsykologier, Hunters rulebook, og alle V1–V15. Læsning giver <strong>compendium_points</strong>.</p>
+                <p style="margin-bottom: 16px;"><a href="/compendium/" target="_blank" rel="noopener" style="color: var(--trophy-primary); font-weight: 600;">Åbn Compendium (ny fane) →</a> · <a href="/game#walkthrough" style="color: var(--trophy-primary);">Walkthrough</a> · <a href="/game#guides" style="color: var(--trophy-primary);">Guides</a></p>
+                <div id="compendium-pages-list" class="loading">Loading pages…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-effect-clusters">
+            <div class="effect-clusters-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">Effect Clusters</h3>
+                <div id="effect-clusters-content" class="loading">Loading effect clusters…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-stories">
+            <div class="stories-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">📜 Hunters Stories — Time Reversal, Medieval, Power Combos</h3>
+                <p style="margin-bottom: 16px; opacity: 0.9;">Campaign and one-shot stories. Buy story unlocks and trophies in the <a href="/shop" style="color: var(--trophy-primary);">Shop</a> (Trophies &amp; Stories).</p>
+                <div id="stories-content" class="loading">Loading stories…</div>
+            </div>
+        </div>
+    </div>
+
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        const API_BASE = '/api';
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const EM_BASE = '/api/agent-tech/agent_electric_magnet';
+
+        // Console diagnostics (open F12 → Console to see)
+        const DEBUG_TROPHIES = false;
+        function logTrophy(msg, data) {
+            if (DEBUG_TROPHIES && typeof console !== 'undefined') console.log('[Trophies]', msg, data !== undefined ? data : '');
+        }
+
+        // Cached trophy data (single load), current filter for table view ('all' | 'unlocked' | 'locked' | category)
+        let cachedAllTrophies = [];
+        let currentFilter = 'all';
+
+        // Tab switching: table view shows all/unlocked/locked; extras load their own content
+        function showView(tabName) {
+            document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.remove('active'));
+            const tabBtn = document.querySelector('.tab[data-tab="' + tabName + '"]');
+            if (tabBtn) tabBtn.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            const tableViews = ['table', 'unlocked', 'locked'];
+            if (tableViews.includes(tabName)) {
+                currentFilter = tabName === 'table' ? 'all' : tabName;
+                const catSelect = document.getElementById('tab-category');
+                if (catSelect) catSelect.value = '';
+                const contentTable = document.getElementById('content-table');
+                if (contentTable) contentTable.classList.add('active');
+                renderTable(cachedAllTrophies, currentFilter);
+            } else {
+                const contentId = 'content-' + tabName;
+                const el = document.getElementById(contentId);
+                if (el) el.classList.add('active');
+                if (tabName === 'star-map') loadStarMap();
+                else if (tabName === 'comm-psych') loadCommPsych();
+                else if (tabName === 'rulebook') loadRulebook();
+                else if (tabName === 'compendium') loadCompendium();
+                else if (tabName === 'effect-clusters') loadEffectClusters();
+                else if (tabName === 'stories') loadStories();
+            }
+        }
+
+        function setupTabsAndLoad() {
+            try { fillTableSync(); } catch (err) { console.warn('fillTableSync:', err); }
+            function onTabClick(e) {
+                var tab = e.target && e.target.closest ? e.target.closest('button.tab[data-tab]') : null;
+                if (!tab) return;
+                e.preventDefault();
+                e.stopPropagation();
+                var tabName = tab.getAttribute('data-tab');
+                if (tabName) showView(tabName);
+            }
+            var tabsContainer = document.querySelector('.trophies-container');
+            if (tabsContainer) tabsContainer.addEventListener('click', onTabClick, true);
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.getAttribute && e.target.getAttribute('data-tab') && e.target.classList && e.target.classList.contains('tab')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showView(e.target.getAttribute('data-tab'));
+                }
+            }, true);
+            var tabButtons = document.querySelectorAll('button.tab[data-tab]');
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].addEventListener('click', onTabClick, true);
+            }
+            var catSelect = document.getElementById('tab-category');
+            if (catSelect) {
+                catSelect.addEventListener('change', function() {
+                    currentFilter = this.value || 'all';
+                    document.querySelectorAll('.tab[data-tab]').forEach(function(t) { t.classList.remove('active'); });
+                    var tableBtn = document.querySelector('.tab[data-tab="table"]');
+                    if (tableBtn) tableBtn.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+                    var ct = document.getElementById('content-table');
+                    if (ct) ct.classList.add('active');
+                    renderTable(cachedAllTrophies, currentFilter);
+                });
+            }
+            if (window.location.hash === '#stories') showView('stories');
+            initTrophiesPage();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupTabsAndLoad);
+        } else {
+            setupTabsAndLoad();
+        }
+
+        // Specials (Electric Magnet): verification, DNA test, view star map
+        document.getElementById('btn-run-verification')?.addEventListener('click', async () => {
+            const slot = document.getElementById('star-map-info-slot');
+            try {
+                const r = await fetch(`${EM_BASE}/run_verification`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                const d = await r.json();
+                if (slot) slot.textContent = d.verification_passed ? 'Verification passed. ' + (d.checks?.length ? d.checks.length + ' checks.' : '') : (d.error || 'Verification failed.');
+            } catch (e) { if (slot) slot.textContent = 'Verification error: ' + (e.message || 'Unknown'); }
+        });
+        document.getElementById('btn-run-dna-test')?.addEventListener('click', async () => {
+            const slot = document.getElementById('star-map-info-slot');
+            try {
+                const r = await fetch(`${EM_BASE}/run_dna_test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                const d = await r.json();
+                if (slot) slot.textContent = d.dna_test_passed ? 'DNA test passed. ' + (d.dna_system_available ? 'DNA system OK.' : 'DNA system not invoked.') : (d.error || 'DNA test failed.');
+            } catch (e) { if (slot) slot.textContent = 'DNA test error: ' + (e.message || 'Unknown'); }
+        });
+        document.getElementById('btn-view-star-map')?.addEventListener('click', () => { loadStarMap(); });
+
+        // Download Electric Magnet Technology
+        document.getElementById('btn-download-electric-magnet')?.addEventListener('click', async () => {
+            const btn = document.getElementById('btn-download-electric-magnet');
+            const statusDiv = document.getElementById('em-download-status');
+            if (!btn || !statusDiv) return;
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Downloading...';
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = 'rgba(255,215,0,0.1)';
+            statusDiv.style.border = '1px solid rgba(255,215,0,0.3)';
+            statusDiv.style.color = '#FFD700';
+            statusDiv.textContent = 'Downloading Electric Magnet technology...';
+            
+            try {
+                const response = await fetch(`${EM_BASE}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.downloaded) {
+                    statusDiv.style.background = 'rgba(0,255,136,0.1)';
+                    statusDiv.style.border = '1px solid rgba(0,255,136,0.3)';
+                    statusDiv.style.color = '#00ff88';
+                    statusDiv.innerHTML = `✅ <strong>Electric Magnet Technology Downloaded!</strong><br>Specials: ${(data.specials || []).join(', ')}`;
+                    btn.textContent = '✅ Downloaded';
+                    btn.style.background = 'rgba(0,255,136,0.2)';
+                    btn.style.borderColor = 'rgba(0,255,136,0.6)';
+                    btn.style.color = '#00ff88';
+                } else {
+                    throw new Error(data.error || 'Download failed');
+                }
+            } catch (error) {
+                statusDiv.style.background = 'rgba(255,51,102,0.1)';
+                statusDiv.style.border = '1px solid rgba(255,51,102,0.3)';
+                statusDiv.style.color = '#ff3366';
+                statusDiv.textContent = `❌ Error: ${error.message || 'Download failed'}`;
+                btn.disabled = false;
+                btn.textContent = '🧲 Download Electric Magnet Tech';
+            }
+        });
+
+        function confettiBurst() {
+            const colors = ['#FFD700', '#00ff88', '#FFA500'];
+            const el = document.querySelector('.comm-psych-section');
+            if (!el) return;
+            for (let i = 0; i < 24; i++) {
+                const p = document.createElement('div');
+                p.style.cssText = 'position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;' +
+                    'left:' + (40 + Math.random() * 40) + '%;top:30%;background:' + colors[Math.floor(Math.random() * colors.length)] + ';' +
+                    'animation: comm-psych-confetti 1.2s ease-out forwards;' +
+                    '--tx:' + (Math.random() * 120 - 60) + 'px;--ty:' + (Math.random() * 80 + 20) + 'px;';
+                el.appendChild(p);
+                setTimeout(() => p.remove(), 1200);
+            }
+        }
+        document.head.insertAdjacentHTML('beforeend', '<style>@keyframes comm-psych-confetti{to{transform:translate(var(--tx),var(--ty));opacity:0;}}</style>');
+
+        async function loadCommPsych() {
+            const grid = document.getElementById('comm-psych-grid');
+            const ringFill = document.getElementById('comm-psych-ring-fill');
+            const countEl = document.getElementById('comm-psych-count');
+            const pointsEl = document.getElementById('comm-psych-points-val');
+            const activityList = document.getElementById('comm-psych-activity-list');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loading">Loading theories...</div>';
+            try {
+                const [theoryRes, progressRes, activityRes] = await Promise.all([
+                    fetch(`${API_BASE}/communication-psychology/theories`),
+                    fetch(`${API_BASE}/communication-psychology/progress?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${API_BASE}/communication-psychology/activity?user_id=${encodeURIComponent(userId)}&limit=15`)
+                ]);
+                const theoryData = theoryRes.ok ? await theoryRes.json() : {};
+                const progressData = progressRes.ok ? await progressRes.json() : {};
+                const activityData = activityRes.ok ? await activityRes.json() : {};
+                const theories = theoryData.theories || [];
+                const unlocked = new Set(progressData.unlocked_theory_ids || []);
+                const points = Number(progressData.communication_psychology_points) || 0;
+                const total = theories.length;
+                const count = unlocked.size;
+                if (ringFill) {
+                    const circ = 2 * Math.PI * 45;
+                    ringFill.setAttribute('stroke-dashoffset', Math.max(0, circ - (count / total) * circ));
+                }
+                if (countEl) countEl.textContent = count;
+                if (pointsEl) pointsEl.textContent = Math.round(points);
+                function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+                grid.innerHTML = theories.map(t => {
+                    const isUnlocked = unlocked.has(t.id);
+                    const name = esc(t.name || t.id);
+                    const short = esc(t.short || t.description || '');
+                    const id = esc(t.id);
+                    return '<div class="comm-psych-theory-card ' + (isUnlocked ? 'unlocked' : '') + '" data-theory-id="' + id + '">' +
+                        '<div class="theory-icon">' + (t.icon || '\uD83E\uDDE0') + '</div>' +
+                        '<div class="theory-name">' + name + '</div>' +
+                        '<div class="theory-short">' + short + '</div>' +
+                        '<button type="button" class="theory-study-btn ' + (isUnlocked ? 'unlocked' : '') + '" data-theory-id="' + id + '" ' + (isUnlocked ? 'disabled' : '') + '>' +
+                        (isUnlocked ? '\u2713 Studied' : 'Study (+' + (t.point_value || 0) + ' pts)') + '</button></div>';
+                }).join('') || '<div class="info-message">No theories loaded.</div>';
+                grid.querySelectorAll('.theory-study-btn:not(.unlocked)').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const tid = btn.dataset.theoryId;
+                        if (!tid) return;
+                        btn.disabled = true;
+                        btn.textContent = '...';
+                        try {
+                            const r = await fetch(`${API_BASE}/communication-psychology/study`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: userId, theory_id: tid })
+                            });
+                            const d = await r.json();
+                            if (d.success && !d.already_unlocked) {
+                                confettiBurst();
+                                loadCommPsych();
+                            } else if (d.success && d.already_unlocked) {
+                                loadCommPsych();
+                            } else {
+                                btn.disabled = false;
+                                btn.textContent = 'Study';
+                            }
+                        } catch (e) {
+                            btn.disabled = false;
+                            btn.textContent = 'Study';
+                        }
+                    });
+                });
+                if (activityList && activityData.activities && activityData.activities.length) {
+                    activityList.innerHTML = activityData.activities.slice(0, 10).map(a => {
+                        const when = a.created_at ? new Date(a.created_at).toLocaleString() : '';
+                        return `<div style="margin:6px 0;">${a.activity_type === 'study' ? '📋' : '⭐'} ${a.activity_type} ${a.amount ? '+' + a.amount + ' pts' : ''} ${a.theory_id || ''} <span style="opacity:0.7">${when}</span></div>`;
+                    }).join('');
+                } else {
+                    activityList.textContent = 'No recent activity.';
+                }
+            } catch (e) {
+                grid.innerHTML = '<div class="loading">Error loading Communication Psychology: ' + (e.message || 'Unknown') + '</div>';
+            }
+        }
+
+        async function loadStarMap() {
+            const el = document.getElementById('star-map-grid');
+            if (!el) return;
+            let data = {};
+            var urls = [API_BASE + '/star-map', '/api/star-map', API_BASE + '/game/hunters/star-map'];
+            for (var ui = 0; ui < urls.length; ui++) {
+                var url = urls[ui];
+                try {
+                    const r = await fetch(url);
+                    if (r.ok) { data = await r.json(); break; }
+                } catch (_) {}
+            }
+            const starMap = (data.star_map || data) || {};
+            const stars = starMap.stars || [];
+            const globalInfo = starMap.info || starMap.description || 'Proxima b, Sirius b, Sun-Earth b. Electric Magnet specials: verification, DNA test, view_star_map.';
+            const globalFlyers = starMap.flyers || [];
+            const infoEl = document.getElementById('star-map-info-slot');
+            const flyersEl = document.getElementById('star-map-flyers-slot');
+            if (infoEl) infoEl.textContent = globalInfo;
+            if (flyersEl) {
+                if (globalFlyers.length) {
+                    flyersEl.innerHTML = globalFlyers.map(f => {
+                        const t = f.title || f.id || '';
+                        const sum = f.summary ? ' - ' + f.summary : '';
+                        const u = f.url ? ' <a href="' + f.url + '" class="nav-link" style="font-size:0.9em">&rarr;</a>' : '';
+                        return '<span style="display:inline-block;margin:4px 8px 4px 0;padding:6px 12px;background:rgba(255,215,0,0.1);border-radius:8px;border:1px solid var(--trophy-border)">' + t + sum + u + '</span>';
+                    }).join('');
+                } else flyersEl.textContent = 'Electric Magnet Tech, Trophy Hunters — see Lab & Trophies.';
+            }
+            const pl = (arr) => Array.isArray(arr) && arr.length ? arr.slice(0, 5).join(', ') + (arr.length > 5 ? '…' : '') : null;
+            el.innerHTML = stars.map(s => {
+                const planets = pl(s.planets);
+                const inf = s.info ? ' · ' + s.info : '';
+                return `<div class="trophy-card unlocked" style="text-align:left">
+                    <div class="trophy-icon">${s.id === 'sun' ? '☀️' : '🌟'}</div>
+                    <div class="trophy-name">${s.name || s.id}</div>
+                    <div class="trophy-description">${s.life_label || s.life_bearing || '—'}</div>
+                    <div class="trophy-requirement">${s.distance_ly !== undefined ? s.distance_ly + ' ly' : ''}${inf}</div>
+                    ${planets ? `<div style="margin-top:8px;font-size:0.85em;opacity:0.85">Planets: ${planets}</div>` : ''}
+                </div>`;
+            }).join('') || '<div class="info-message">No star data.</div>';
+        }
+
+        async function loadCompendium() {
+            const el = document.getElementById('compendium-pages-list');
+            if (!el) return;
+            el.innerHTML = '<div class="loading">Loading compendium pages…</div>';
+            try {
+                const API_BASE = '/api';
+                const r = await fetch(API_BASE + '/compendium/pages');
+                const d = r.ok ? await r.json() : {};
+                if (d.success && d.pages && d.pages.length) {
+                    var sections = d.sections || [];
+                    var html = '';
+                    if (sections.length > 0) {
+                        sections.forEach(function(sec) {
+                            html += '<h4 style="color: var(--trophy-primary); margin: 16px 0 8px;">' + (sec.name || '') + '</h4>';
+                            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
+                            (sec.pages || []).forEach(function(p) {
+                                html += '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (p.number <= 10 ? 'Side ' + p.number : '') + (p.number === 11 ? 'Hunters Rulebook' : '') + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                            });
+                            html += '</div>';
+                        });
+                    } else {
+                        html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">' +
+                            d.pages.map(function(p) {
+                                return '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>Side ' + p.number + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                            }).join('') + '</div>';
+                    }
+                    el.innerHTML = html + '<p style="margin-top: 16px;"><a href="/compendium/" style="color: var(--trophy-primary);">Åbn fuld Compendium →</a></p>';
+                } else {
+                    el.innerHTML = '<p>Could not load pages. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+                }
+            } catch (e) {
+                el.innerHTML = '<p>Error loading compendium. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+            }
+        }
+
+        async function loadRulebook() {
+            const el = document.getElementById('rulebook-content');
+            if (!el) return;
+            el.innerHTML = '<div class="loading">Loading rulebook…</div>';
+            try {
+                var urls = [API_BASE + '/game/hunters/rulebook', '/api/game/hunters/rulebook', '/api/game/hunters/rulebook'];
+                var res = {};
+                for (var ui = 0; ui < urls.length; ui++) {
+                    var r = await fetch(urls[ui]).catch(function() { return null; });
+                    if (r && r.ok) {
+                        try { res = await r.json(); } catch (_) {}
+                        break;
+                    }
+                }
+                var rb = res.rulebook || res || {};
+                var sectors = rb.sectors || {};
+                var entries = typeof sectors === 'object' && sectors !== null ? Object.entries(sectors) : [];
+                if (entries.length === 0) {
+                    el.innerHTML = '<div class="info-message">No rulebook data. Rulebook V.2 loads from the game API.</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < entries.length; i++) {
+                    var k = entries[i][0], v = entries[i][1];
+                    if (!v || typeof v !== 'object') continue;
+                    var name = (v.name != null && v.name !== '') ? String(v.name) : k;
+                    var spells = Array.isArray(v.spells) ? v.spells : [];
+                    var spellHtml = '';
+                    for (var s = 0; s < spells.length; s++) {
+                        var sp = spells[s];
+                        var spName = (sp && sp.name != null) ? String(sp.name) : '';
+                        var spCost = (sp && sp.cost != null) ? String(sp.cost) : '';
+                        var spIcon = (sp && sp.icon != null) ? String(sp.icon) : '';
+                        spellHtml += '<span style="padding: 6px 12px; background: rgba(255,215,0,0.1); border-radius: 8px;">' + spIcon + ' ' + spName + ' (' + spCost + ')</span>';
+                    }
+                    html += '<div style="margin-bottom: 20px;"><h4 style="color: var(--trophy-secondary);">' + name + '</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;">' + spellHtml + '</div></div>';
+                }
+                el.innerHTML = html || '<div class="info-message">No rulebook data.</div>';
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to load rulebook. ' + (e && e.message ? e.message : '') + '</div>';
+            }
+        }
+
+        async function loadEffectClusters() {
+            const el = document.getElementById('effect-clusters-content');
+            if (!el) return;
+            try {
+                let r = await fetch(`${API_BASE}/game/hunters/effect-clusters`).catch(() => null);
+                if (!r || !r.ok) r = await fetch('/api/game/hunters/effect-clusters').catch(() => null);
+                const res = r?.ok ? await r.json() : {};
+                const clusters = res.effect_clusters || {};
+                el.innerHTML = Object.entries(clusters).map(([name, effects]) => `
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: var(--trophy-primary);">${name}</strong>
+                        <div style="opacity: 0.9;">${(effects || []).join(', ')}</div>
+                    </div>
+                `).join('') || '<div class="info-message">No effect clusters.</div>';
+            } catch (e) { el.innerHTML = '<div class="error">Failed to load effect clusters.</div>'; }
+        }
+
+        async function loadStories() {
+            const el = document.getElementById('stories-content');
+            if (!el) return;
+            try {
+                let r = await fetch(API_BASE + '/game/hunters/stories').catch(() => null);
+                if (!r || !r.ok) r = await fetch('/api/game/hunters/stories').catch(() => null);
+                const res = r?.ok ? await r.json() : {};
+                const data = res.stories || {};
+                const stories = (data.stories || []);
+                if (stories.length === 0) {
+                    el.innerHTML = '<div class="info-message">No stories yet. Unlock Winter Wedding in the Shop.</div>';
+                    return;
+                }
+                el.innerHTML = stories.map(function(s) {
+                    var settingLines = (s.setting && s.setting.lines || []).map(function(l) { return '<p style="margin: 6px 0 0 1.2em;">' + l + '</p>'; }).join('');
+                    var atmosLines = (s.atmosphere && s.atmosphere.lines || []).map(function(l) { return '<p style="margin: 6px 0 0 1.2em;">' + l + '</p>'; }).join('');
+                    var rolesHtml = (s.party_roles || []).map(function(r) {
+                        return '<div style="margin: 10px 0; padding: 12px; background: rgba(21,21,32,0.8); border-radius: 10px; border-left: 4px solid var(--trophy-primary);"><strong>' + (r.name || '') + '</strong> (' + (r.class || '') + ')<br><span style="opacity: 0.9;">' + (r.agenda || '') + '</span></div>';
+                    }).join('');
+                    var conflictsHtml = (s.conflicts || []).map(function(c) {
+                        return '<div style="margin: 10px 0;"><strong style="color: var(--trophy-primary);">' + (c.title || '') + '</strong><p style="margin: 6px 0; opacity: 0.9;">' + (c.summary || '') + '</p><span style="font-size: 0.85em; opacity: 0.8;">' + (c.skills || []).join(', ') + '</span></div>';
+                    }).join('');
+                    var npcsHtml = (s.npcs || []).map(function(n) {
+                        return '<div style="margin: 8px 0;"><strong>' + (n.name || '') + '</strong> — ' + (n.role || '') + '. ' + (n.traits || '') + '</div>';
+                    }).join('');
+                    var twistLines = (s.twist && s.twist.lines || []).map(function(l) { return '<p style="margin: 6px 0 0 1.2em;">' + l + '</p>'; }).join('');
+                    var combosHtml = (s.power_combos || []).map(function(c) {
+                        return '<div style="margin: 8px 0; padding: 8px; background: rgba(0,255,136,0.08); border-radius: 8px;"><strong>' + (c.combo || '') + '</strong><br><span style="opacity: 0.9;">' + (c.effect || '') + '</span></div>';
+                    }).join('');
+                    var tagsHtml = (s.tags && s.tags.length) ? '<div style="margin-bottom: 12px;">' + s.tags.map(function(t) { return '<span style="display: inline-block; padding: 4px 10px; margin-right: 6px; margin-bottom: 6px; background: rgba(255,215,0,0.2); border-radius: 20px; font-size: 0.8em;">' + t + '</span>'; }).join('') + '</div>' : '';
+                    return '<article class="card" style="margin-bottom: 24px; padding: 24px; border: 2px solid var(--trophy-border); border-radius: 16px;">' +
+                        '<h4 style="color: var(--trophy-primary); margin-bottom: 8px;">' + (s.icon || '') + ' ' + (s.title || '') + '</h4>' +
+                        tagsHtml +
+                        '<p style="opacity: 0.9; margin-bottom: 12px;">' + (s.subtitle || '') + '</p>' +
+                        '<p style="margin-bottom: 12px;"><strong>Hook:</strong> ' + (s.hook || '') + '</p>' +
+                        '<section style="margin: 16px 0;"><strong>Setting: ' + (s.setting && s.setting.name || '') + '</strong>' + settingLines + '</section>' +
+                        '<section style="margin: 16px 0;"><strong>Atmosphere</strong>' + atmosLines + '</section>' +
+                        '<section style="margin: 16px 0;"><strong>Party roles</strong>' + rolesHtml + '</section>' +
+                        '<section style="margin: 16px 0;"><strong>Conflicts</strong>' + conflictsHtml + '</section>' +
+                        '<section style="margin: 16px 0;"><strong>NPCs</strong>' + npcsHtml + '</section>' +
+                        '<section style="margin: 16px 0;"><strong>Twist</strong>' + twistLines + '</section>' +
+                        (s.time_reversal_rules ? '<section style="margin: 16px 0;"><strong>Time reversal</strong><p style="margin: 6px 0; opacity: 0.9;">' + s.time_reversal_rules + '</p></section>' : '') +
+                        (combosHtml ? '<section style="margin: 16px 0;"><strong>Power combos</strong>' + combosHtml + '</section>' : '') +
+                        (s.session_start_options && s.session_start_options.length ? '<section style="margin: 16px 0;"><strong>Session start</strong><ul style="margin: 6px 0 0 1.2em;">' + s.session_start_options.map(function(o) { return '<li><strong>' + (o.label || '') + '</strong>: ' + (o.description || '') + '</li>'; }).join('') + '</ul></section>' : '') +
+                        (s.acts && s.acts.length ? '<section style="margin: 16px 0;"><strong>Campaign acts</strong>' + s.acts.map(function(a) { return '<div style="margin: 12px 0; padding: 12px; background: rgba(21,21,32,0.9); border-radius: 10px; border-left: 4px solid var(--trophy-secondary);"><strong>' + (a.title || '') + '</strong><p style="margin: 6px 0; opacity: 0.9;">' + (a.summary || '') + '</p>' + (a.key_beats && a.key_beats.length ? '<ul style="margin: 6px 0 0 1.2em; font-size: 0.9em;">' + a.key_beats.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>' : '') + '</div>'; }).join('') + '</section>' : '') +
+                        (s.climax && (s.climax.title || s.climax.description) ? '<section style="margin: 16px 0; padding: 12px; background: rgba(255,100,100,0.08); border-radius: 10px; border: 1px solid rgba(255,100,100,0.3);"><strong>' + (s.climax.title || 'Climax') + '</strong><p style="margin: 6px 0 0; opacity: 0.9;">' + (s.climax.description || '') + '</p></section>' : '') +
+                        (s.endings && s.endings.length ? '<section style="margin: 16px 0;"><strong>Endings</strong>' + s.endings.map(function(e) { return '<div style="margin: 10px 0; padding: 12px; background: rgba(0,255,136,0.06); border-radius: 10px; border-left: 4px solid var(--trophy-success);"><strong>' + (e.title || '') + '</strong><p style="margin: 6px 0; opacity: 0.9;">' + (e.description || '') + '</p><p style="margin: 6px 0; font-size: 0.9em;"><strong>Consequence:</strong> ' + (e.consequence || '') + '</p><p style="margin: 6px 0; font-size: 0.9em;"><strong>Reward:</strong> ' + (e.reward_modifier || '') + '</p></div>'; }).join('') + '</section>' : '') +
+                        (s.gm_notes && typeof s.gm_notes === 'object' ? '<section style="margin: 16px 0; padding: 12px; background: rgba(100,100,255,0.08); border-radius: 10px; border: 1px solid rgba(100,100,255,0.3);"><strong>GM notes</strong>' + Object.keys(s.gm_notes).map(function(k) { var v = s.gm_notes[k]; return '<p style="margin: 8px 0 0;"><strong>' + k.replace(/_/g, ' ') + ':</strong> ' + (typeof v === 'string' ? v : JSON.stringify(v)) + '</p>'; }).join('') + '</section>' : '') +
+                        (s.epilogue ? '<section style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.08); border-radius: 10px;"><strong>Epilogue</strong><p style="margin: 6px 0 0; opacity: 0.9;">' + s.epilogue + '</p></section>' : '') +
+                        (s.rewards && (s.rewards.game_points || s.rewards.xp_bonus || s.rewards.trophy_id) ? '<section style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.1); border-radius: 10px;"><strong>Rewards</strong><p style="margin: 6px 0 0;">' + (s.rewards.trophy_id ? 'Trophy: ' + s.rewards.trophy_id + '. ' : '') + (s.rewards.game_points ? 'Game points: ' + s.rewards.game_points + '. ' : '') + (s.rewards.xp_bonus ? 'XP bonus: ' + s.rewards.xp_bonus + '. ' : '') + (s.rewards.completion_note || '') + '</p></section>' : '') +
+                        '</article>';
+                }).join('');
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to load stories.</div>';
+            }
+        }
+
+        // Comprehensive trophy definitions (10x expanded)
+        const TROPHY_DEFINITIONS = {
+            generation: [
+                {id: 'first_video', name: 'First Video', description: 'Generate your first video', icon: '🎬', reward: 100, requirement: 'Generate 1 video', rarity: 'common'},
+                {id: 'video_creator', name: 'Video Creator', description: 'Generate 10 videos', icon: '🎥', reward: 500, requirement: 'Generate 10 videos', rarity: 'common'},
+                {id: 'video_master', name: 'Video Master', description: 'Generate 50 videos', icon: '🏆', reward: 2000, requirement: 'Generate 50 videos', rarity: 'rare'},
+                {id: 'video_legend', name: 'Video Legend', description: 'Generate 100 videos', icon: '👑', reward: 5000, requirement: 'Generate 100 videos', rarity: 'epic'},
+                {id: 'video_grandmaster', name: 'Video Grandmaster', description: 'Generate 500 videos', icon: '💎', reward: 25000, requirement: 'Generate 500 videos', rarity: 'legendary'},
+                {id: 'first_clip', name: 'First Clip', description: 'Generate your first quick clip', icon: '✂️', reward: 50, requirement: 'Generate 1 clip', rarity: 'common'},
+                {id: 'clip_master', name: 'Clip Master', description: 'Generate 100 clips', icon: '🎞️', reward: 1000, requirement: 'Generate 100 clips', rarity: 'rare'},
+                {id: 'magic_generator', name: 'Magic Generator', description: 'Use Magic Generate 10 times', icon: '✨', reward: 300, requirement: 'Use Magic Generate 10 times', rarity: 'common'},
+                {id: 'ai_clips_master', name: 'AI Clips Master', description: 'Generate 50 AI clips', icon: '🤖', reward: 1500, requirement: 'Generate 50 AI clips', rarity: 'rare'},
+                {id: 'content_category_explorer', name: 'Content Category Explorer', description: 'Generate videos in 5 different categories', icon: '🗺️', reward: 400, requirement: 'Use 5 categories', rarity: 'common'},
+                {id: 'long_form_creator', name: 'Long Form Creator', description: 'Generate 10 videos over 90 seconds', icon: '📹', reward: 800, requirement: '10 long videos', rarity: 'rare'},
+                {id: 'rapid_creator', name: 'Rapid Creator', description: 'Generate 5 videos in one day', icon: '⚡', reward: 600, requirement: '5 videos in 24h', rarity: 'common'},
+            ],
+            points: [
+                {id: 'generation_points_1k', name: 'Generation Points Collector', description: 'Earn 1,000 generation points', icon: '⭐', reward: 200, requirement: '1,000 gen points', rarity: 'common'},
+                {id: 'generation_points_10k', name: 'Generation Points Master', description: 'Earn 10,000 generation points', icon: '💎', reward: 2000, requirement: '10,000 gen points', rarity: 'rare'},
+                {id: 'generation_points_100k', name: 'Generation Points Legend', description: 'Earn 100,000 generation points', icon: '🌟', reward: 20000, requirement: '100,000 gen points', rarity: 'epic'},
+                {id: 'points_milestone_1k', name: 'Points Milestone', description: 'Reach 1,000 total points', icon: '📊', reward: 150, requirement: '1,000 total points', rarity: 'common'},
+                {id: 'points_milestone_10k', name: 'Points Master', description: 'Reach 10,000 total points', icon: '📈', reward: 1500, requirement: '10,000 total points', rarity: 'rare'},
+                {id: 'points_milestone_100k', name: 'Points Legend', description: 'Reach 100,000 total points', icon: '📉', reward: 15000, requirement: '100,000 total points', rarity: 'epic'},
+                {id: 'xp_level_5', name: 'Level 5', description: 'Reach XP Level 5', icon: '🎯', reward: 100, requirement: 'Level 5', rarity: 'common'},
+                {id: 'xp_level_10', name: 'Level 10', description: 'Reach XP Level 10', icon: '🎯', reward: 500, requirement: 'Level 10', rarity: 'common'},
+                {id: 'xp_level_25', name: 'Level 25', description: 'Reach XP Level 25', icon: '🎯', reward: 2000, requirement: 'Level 25', rarity: 'rare'},
+                {id: 'xp_level_50', name: 'Level 50', description: 'Reach XP Level 50', icon: '🎯', reward: 10000, requirement: 'Level 50', rarity: 'epic'},
+            ],
+            battle: [
+                {id: 'first_battle', name: 'First Battle', description: 'Complete your first battle', icon: '⚔️', reward: 100, requirement: '1 battle', rarity: 'common'},
+                {id: 'first_victory', name: 'First Victory', description: 'Win your first battle', icon: '🏅', reward: 150, requirement: '1 victory', rarity: 'common'},
+                {id: 'battle_veteran', name: 'Battle Veteran', description: 'Win 10 battles', icon: '🛡️', reward: 500, requirement: '10 victories', rarity: 'common'},
+                {id: 'battle_champion', name: 'Battle Champion', description: 'Win 50 battles', icon: '👑', reward: 2000, requirement: '50 victories', rarity: 'rare'},
+                {id: 'battle_legend', name: 'Battle Legend', description: 'Win 100 battles', icon: '💀', reward: 5000, requirement: '100 victories', rarity: 'epic'},
+                {id: 'perfect_victory', name: 'Perfect Victory', description: 'Win a battle without losing', icon: '⭐', reward: 300, requirement: 'Perfect win', rarity: 'rare'},
+                {id: 'comeback_king', name: 'Comeback King', description: 'Win after being behind', icon: '🔥', reward: 400, requirement: 'Comeback win', rarity: 'rare'},
+                {id: 'streak_master', name: 'Streak Master', description: 'Win 10 battles in a row', icon: '🔥', reward: 1000, requirement: '10 win streak', rarity: 'rare'},
+                {id: 'first_blood', name: 'First Blood', description: 'Get first kill in battle', icon: '🩸', reward: 200, requirement: 'First blood', rarity: 'common'},
+                {id: 'multi_kill', name: 'Multi Kill', description: 'Get 5 kills in one battle', icon: '⚡', reward: 500, requirement: '5 kills', rarity: 'rare'},
+            ],
+            social: [
+                {id: 'first_friend', name: 'First Friend', description: 'Add your first friend', icon: '👥', reward: 50, requirement: '1 friend', rarity: 'common'},
+                {id: 'social_butterfly', name: 'Social Butterfly', description: 'Add 10 friends', icon: '🦋', reward: 300, requirement: '10 friends', rarity: 'common'},
+                {id: 'community_leader', name: 'Community Leader', description: 'Add 50 friends', icon: '👑', reward: 1500, requirement: '50 friends', rarity: 'rare'},
+                {id: 'first_follower', name: 'First Follower', description: 'Get your first follower', icon: '👤', reward: 50, requirement: '1 follower', rarity: 'common'},
+                {id: 'influencer', name: 'Influencer', description: 'Get 100 followers', icon: '📱', reward: 1000, requirement: '100 followers', rarity: 'rare'},
+                {id: 'first_message', name: 'First Message', description: 'Send your first message', icon: '💬', reward: 25, requirement: '1 message', rarity: 'common'},
+                {id: 'chat_master', name: 'Chat Master', description: 'Send 100 messages', icon: '💭', reward: 200, requirement: '100 messages', rarity: 'common'},
+                {id: 'group_creator', name: 'Group Creator', description: 'Create your first group', icon: '👨‍👩‍👧‍👦', reward: 100, requirement: 'Create group', rarity: 'common'},
+            ],
+            content: [
+                {id: 'first_image', name: 'First Image', description: 'Generate your first image', icon: '🖼️', reward: 50, requirement: 'Generate 1 image', rarity: 'common'},
+                {id: 'image_master', name: 'Image Master', description: 'Generate 50 images', icon: '🎨', reward: 1000, requirement: 'Generate 50 images', rarity: 'rare'},
+                {id: 'first_audio', name: 'First Audio', description: 'Generate your first audio', icon: '🎵', reward: 50, requirement: 'Generate 1 audio', rarity: 'common'},
+                {id: 'audio_master', name: 'Audio Master', description: 'Generate 50 audio files', icon: '🎶', reward: 1000, requirement: 'Generate 50 audio', rarity: 'rare'},
+                {id: 'template_user', name: 'Template User', description: 'Use 10 templates', icon: '📋', reward: 200, requirement: 'Use 10 templates', rarity: 'common'},
+                {id: 'template_master', name: 'Template Master', description: 'Use 50 templates', icon: '📑', reward: 1500, requirement: 'Use 50 templates', rarity: 'rare'},
+                {id: 'quality_creator', name: 'Quality Creator', description: 'Create 10 high-quality pieces', icon: '✨', reward: 500, requirement: '10 quality items', rarity: 'rare'},
+                {id: 'viral_creator', name: 'Viral Creator', description: 'Create viral content', icon: '🔥', reward: 2000, requirement: 'Viral content', rarity: 'epic'},
+            ],
+            milestones: [
+                {id: 'first_login', name: 'Welcome', description: 'First login', icon: '👋', reward: 10, requirement: 'Login once', rarity: 'common'},
+                {id: 'daily_streak_7', name: 'Week Warrior', description: 'Login 7 days in a row', icon: '📅', reward: 200, requirement: '7 day streak', rarity: 'common'},
+                {id: 'daily_streak_30', name: 'Month Master', description: 'Login 30 days in a row', icon: '📆', reward: 1000, requirement: '30 day streak', rarity: 'rare'},
+                {id: 'first_achievement', name: 'Achievement Unlocked', description: 'Unlock your first achievement', icon: '🎖️', reward: 50, requirement: '1 achievement', rarity: 'common'},
+                {id: 'achievement_collector', name: 'Achievement Collector', description: 'Unlock 10 achievements', icon: '🏅', reward: 500, requirement: '10 achievements', rarity: 'common'},
+                {id: 'achievement_master', name: 'Achievement Master', description: 'Unlock 25 achievements', icon: '👑', reward: 2000, requirement: '25 achievements', rarity: 'rare'},
+                {id: 'first_trophy', name: 'Trophy Collector', description: 'Earn your first trophy', icon: '🏆', reward: 100, requirement: '1 trophy', rarity: 'common'},
+                {id: 'trophy_master', name: 'Trophy Master', description: 'Earn 10 trophies', icon: '🏆', reward: 1000, requirement: '10 trophies', rarity: 'rare'},
+                {id: 'trophy_legend', name: 'Trophy Legend', description: 'Earn 50 trophies', icon: '🏆', reward: 10000, requirement: '50 trophies', rarity: 'epic'},
+            ],
+            special: [
+                {id: 'beta_tester', name: 'Beta Tester', description: 'Participate in beta testing', icon: '🧪', reward: 500, requirement: 'Beta access', rarity: 'rare'},
+                {id: 'early_adopter', name: 'Early Adopter', description: 'Join during early access', icon: '🚀', reward: 1000, requirement: 'Early access', rarity: 'epic'},
+                {id: 'bug_hunter', name: 'Bug Hunter', description: 'Report a critical bug', icon: '🐛', reward: 300, requirement: 'Report bug', rarity: 'common'},
+                {id: 'suggestion_master', name: 'Suggestion Master', description: 'Submit 10 suggestions', icon: '💡', reward: 400, requirement: '10 suggestions', rarity: 'common'},
+                {id: 'community_helper', name: 'Community Helper', description: 'Help 10 users', icon: '🤝', reward: 500, requirement: 'Help 10 users', rarity: 'rare'},
+                {id: 'content_moderator', name: 'Content Moderator', description: 'Moderate content', icon: '🛡️', reward: 1000, requirement: 'Moderation', rarity: 'epic'},
+            ]
+        };
+
+        // Fetch with timeout so we never hang forever
+        function fetchWithTimeout(url, ms) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), ms || 8000);
+            return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+        }
+
+        // Build trophy list from definitions only (sync, no API) - guarantees table shows immediately
+        function buildTrophiesFromDefinitions(trophiesList, userStats) {
+            const list = [];
+            Object.keys(TROPHY_DEFINITIONS).forEach(category => {
+                (TROPHY_DEFINITIONS[category] || []).forEach(function(trophy) {
+                    const isUnlocked = trophiesList && trophiesList.trophies && trophiesList.trophies.some(t => t.id === trophy.id);
+                    let dynamicUnlocked = false;
+                    if (userStats && userStats.systems) {
+                        const genPoints = userStats.systems.generation_points || 0;
+                        const totalVideos = Math.floor(genPoints / 25);
+                        if (category === 'generation') {
+                            if (trophy.id === 'first_video' && totalVideos >= 1) dynamicUnlocked = true;
+                            else if (trophy.id === 'video_creator' && totalVideos >= 10) dynamicUnlocked = true;
+                            else if (trophy.id === 'video_master' && totalVideos >= 50) dynamicUnlocked = true;
+                            else if (trophy.id === 'video_legend' && totalVideos >= 100) dynamicUnlocked = true;
+                            else if (trophy.id === 'generation_points_1k' && genPoints >= 1000) dynamicUnlocked = true;
+                            else if (trophy.id === 'generation_points_10k' && genPoints >= 10000) dynamicUnlocked = true;
+                            else if (trophy.id === 'generation_points_100k' && genPoints >= 100000) dynamicUnlocked = true;
+                        }
+                        if (category === 'points') {
+                            if (trophy.id === 'generation_points_1k' && genPoints >= 1000) dynamicUnlocked = true;
+                            else if (trophy.id === 'generation_points_10k' && genPoints >= 10000) dynamicUnlocked = true;
+                            else if (trophy.id === 'generation_points_100k' && genPoints >= 100000) dynamicUnlocked = true;
+                        }
+                    }
+                    list.push(Object.assign({}, trophy, { category: category, unlocked: isUnlocked || dynamicUnlocked }));
+                });
+            });
+            return list;
+        }
+
+        function updateStatsAndTable(allTrophies) {
+            const unlocked = allTrophies.filter(t => t.unlocked).length;
+            const locked = allTrophies.length - unlocked;
+            const totalPoints = allTrophies.filter(t => t.unlocked).reduce((sum, t) => sum + (t.reward || 0), 0);
+            const totalEl = document.getElementById('total-trophies');
+            const unlockedEl = document.getElementById('unlocked-trophies');
+            const lockedEl = document.getElementById('locked-trophies');
+            const pointsEl = document.getElementById('trophy-points');
+            if (totalEl) totalEl.textContent = String(allTrophies.length);
+            if (unlockedEl) unlockedEl.textContent = String(unlocked);
+            if (lockedEl) lockedEl.textContent = String(locked);
+            if (pointsEl) pointsEl.textContent = String(totalPoints).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            cachedAllTrophies = allTrophies;
+            renderTable(allTrophies, currentFilter);
+        }
+
+        // Build trophy list from API response (definitions + earned trophies) — connects backend to page
+        function buildTrophiesFromApi(definitions, earnedTrophyIds) {
+            if (!definitions || typeof definitions !== 'object') return [];
+            const earned = new Set((earnedTrophyIds || []).map(String));
+            return Object.keys(definitions).map(function(id) {
+                const d = definitions[id];
+                if (!d || !d.id) return null;
+                return {
+                    id: d.id,
+                    name: d.name || d.id,
+                    description: d.description || '',
+                    icon: d.icon || '🏆',
+                    category: d.category || 'special',
+                    reward: d.reward != null ? d.reward : 100,
+                    requirement: d.requirement || d.description || '—',
+                    rarity: d.rarity || 'common',
+                    unlocked: earned.has(String(d.id))
+                };
+            }).filter(Boolean);
+        }
+
+        // Load trophies: show built-in list first, then connect to API — use backend definitions when available
+        async function loadTrophies() {
+            const tbody = document.getElementById('trophy-tbody');
+            // 1) Show list immediately from built-in definitions (no loading)
+            let allTrophies = [];
+            try {
+                allTrophies = buildTrophiesFromDefinitions(null, null);
+            } catch (e) { allTrophies = []; }
+            if (allTrophies.length === 0 && typeof FALLBACK_TROPHIES !== 'undefined')
+                allTrophies = FALLBACK_TROPHIES.slice();
+            if (allTrophies.length > 0) {
+                updateStatsAndTable(allTrophies);
+            }
+
+            // 2) Fetch trophies API (and related) — connect backend definitions to page
+            try {
+                const [achievementsRes, battleRes, listRes] = await Promise.all([
+                    fetch(`${API_BASE}/game/achievements?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+                    fetch(`${API_BASE}/battle/pvp/trophies?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+                    fetch(`${API_BASE}/trophies/list?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+                ]);
+                const earnedIds = new Set();
+                (achievementsRes.achievements || []).forEach(a => { if (a.unlocked || a.earned) earnedIds.add(String(a.id || a.name)); });
+                (battleRes.trophies || []).forEach(t => { if (t.unlocked) earnedIds.add(String(t.id || t.name)); });
+                (listRes.trophies || []).forEach(t => earnedIds.add(String(t.id || t.name)));
+
+                const apiDefs = listRes.definitions && typeof listRes.definitions === 'object' ? listRes.definitions : null;
+                const apiDefCount = apiDefs ? Object.keys(apiDefs).length : 0;
+
+                if (apiDefCount > 0) {
+                    var apiList = buildTrophiesFromApi(apiDefs, Array.from(earnedIds));
+                    if (apiList.length > 0) {
+                        apiList = apiList.map(function(t) { return { ...t, unlocked: t.unlocked || earnedIds.has(String(t.id)) }; });
+                        updateStatsAndTable(apiList);
+                    }
+                } else if (earnedIds.size > 0 && cachedAllTrophies.length > 0) {
+                    var merged = cachedAllTrophies.map(function(t) { return Object.assign({}, t, { unlocked: t.unlocked || earnedIds.has(String(t.id)) }); });
+                    updateStatsAndTable(merged);
+                }
+            } catch (_) {
+                // Keep current list
+            }
+        }
+
+        function renderTable(trophies, filter) {
+            const tbody = document.getElementById('trophy-tbody');
+            if (!tbody) return;
+            let filtered = trophies;
+            if (filter === 'unlocked') filtered = trophies.filter(t => t.unlocked);
+            else if (filter === 'locked') filtered = trophies.filter(t => !t.unlocked);
+            else if (filter && filter !== 'all') filtered = trophies.filter(t => t.category === filter);
+
+            const rarityClass = (r) => r || 'common';
+            const rarityCls = (r) => 'rarity-' + rarityClass(r);
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No trophies in this view</td></tr>';
+                return;
+            }
+            const check = (u) => u ? '<td class="col-check checked">☑</td>' : '<td class="col-check">☐</td>';
+            const safe = (v, d) => (v == null || v === '') ? (d || '—') : String(v);
+            tbody.innerHTML = filtered.map(t => {
+                const status = t.unlocked ? '<span class="badge unlocked">Unlocked</span>' : '<span class="badge locked">Locked</span>';
+                const req = safe(t.requirement, '—').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return '<tr>' +
+                    check(t.unlocked) +
+                    '<td class="col-icon">' + safe(t.icon, '\uD83C\uDFC6') + '</td>' +
+                    '<td class="col-name">' + safe(t.name, '—').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</td>' +
+                    '<td>' + safe(t.category, '—') + '</td>' +
+                    '<td>' + status + '</td>' +
+                    '<td>' + (t.unlocked ? '+' : '') + safe(t.reward, 0) + '</td>' +
+                    '<td>' + req + '</td>' +
+                    '<td class="' + rarityCls(t.rarity) + '">' + safe(rarityClass(t.rarity), 'common') + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        // Minimal fallback rows so table is never empty even if definitions fail
+        var FALLBACK_TROPHIES = [
+            { id: 'first_video', name: 'First Video', description: 'Generate your first video', icon: '\uD83C\uDFAC', category: 'generation', reward: 100, requirement: 'Generate 1 video', rarity: 'common', unlocked: false },
+            { id: 'first_battle', name: 'First Battle', description: 'Complete your first battle', icon: '\u2694\uFE0F', category: 'battle', reward: 100, requirement: '1 battle', rarity: 'common', unlocked: false },
+            { id: 'first_trophy', name: 'Trophy Collector', description: 'Earn your first trophy', icon: '\uD83C\uDFC6', category: 'milestones', reward: 100, requirement: '1 trophy', rarity: 'common', unlocked: false }
+        ];
+
+        function initTrophiesPage() {
+            loadTrophies();
+        }
+
+        // Fill table synchronously as soon as script runs (DOM already has tbody - script is in body)
+        function fillTableSync() {
+            var tbody = document.getElementById('trophy-tbody');
+            if (!tbody) return false;
+            var list = [];
+            try {
+                if (typeof buildTrophiesFromDefinitions === 'function' && typeof TROPHY_DEFINITIONS !== 'undefined') {
+                    list = buildTrophiesFromDefinitions(null, null);
+                }
+            } catch (e) { list = []; }
+            if (list.length === 0 && typeof FALLBACK_TROPHIES !== 'undefined' && FALLBACK_TROPHIES.length > 0) {
+                list = FALLBACK_TROPHIES;
+            }
+            if (list.length > 0) {
+                cachedAllTrophies = list;
+                currentFilter = 'all';
+                renderTable(list, 'all');
+                var totalEl = document.getElementById('total-trophies');
+                if (totalEl) totalEl.textContent = String(list.length);
+                var unlockedEl = document.getElementById('unlocked-trophies');
+                var lockedEl = document.getElementById('locked-trophies');
+                var u = list.filter(function(t) { return t.unlocked; }).length;
+                if (unlockedEl) unlockedEl.textContent = String(u);
+                if (lockedEl) lockedEl.textContent = String(list.length - u);
+                return true;
+            }
+            return false;
+        }
+        fillTableSync();
+
+        // Run fill again after full page load (catches case where another script ran after us)
+        window.addEventListener('load', function() {
+            var tb = document.getElementById('trophy-tbody');
+            if (tb && (cachedAllTrophies.length === 0 || tb.innerHTML.indexOf('Loading') !== -1 || tb.innerHTML.indexOf('No trophy') !== -1)) {
+                fillTableSync();
+            }
+        });
+
+        // If table appears later (e.g. injected by another script), fill it when it shows up
+        (function() {
+            var filledByObserver = false;
+            function tryFillWhenTableAppears() {
+                if (filledByObserver) return;
+                var tbody = document.getElementById('trophy-tbody');
+                if (!tbody) return;
+                var needsFill = tbody.innerHTML.indexOf('Loading') !== -1 || tbody.innerHTML.indexOf('No trophy') !== -1 || cachedAllTrophies.length === 0;
+                if (needsFill && fillTableSync()) filledByObserver = true;
+            }
+            if (document.body) {
+                var obs = new MutationObserver(function() { tryFillWhenTableAppears(); });
+                obs.observe(document.body, { childList: true, subtree: true });
+                tryFillWhenTableAppears();
+            }
+            setTimeout(tryFillWhenTableAppears, 1500);
+        })();
+    </script>
+    
+    
+    <script src="/static/js/stats-achievements-tracker.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    <script>
+        // Unified cache version check and reload handler (fixes loops)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            const reloadKey = 'trophyPageReloaded';
+            const hasReloaded = sessionStorage.getItem(reloadKey) === 'true';
+            
+            // Only reload once per version change, and only on Ctrl+F5 or explicit refresh
+            if (!hasReloaded && storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                sessionStorage.setItem(reloadKey, 'true');
+                // Only reload if not already in reload loop
+                if (window.location.search.indexOf('v=') === -1 && !window.performance.navigation.type === 1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version on first visit
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Reset reload flag after page load completes
+            window.addEventListener('load', function() {
+                setTimeout(() => {
+                    sessionStorage.removeItem(reloadKey);
+                }, 1000);
+            });
+            
+            // Handle Ctrl+F5 explicitly
+            window.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'F5') {
+                    sessionStorage.removeItem(reloadKey);
+                    sessionStorage.removeItem('pageCacheVersion');
+                }
+            });
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "user_d98d5e3ec8354406": {
+    "user_id": "user_d98d5e3ec8354406",
+    "created_at": "2026-01-10T11:07:52.338211",
+    "last_seen": "2026-01-12T19:50:56.176785",
+    "first_ip": "127.0.0.1",
+    "last_ip": "127.0.0.1",
+    "ips": [
+      "127.0.0.1"
+    ],
+    "mac_address": null,
+    "user_agent": "Werkzeug/3.1.4",
+    "login_count": 1,
+    "is_active": true
+  }
+}

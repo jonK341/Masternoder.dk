@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-01-21T23:26:15.573590",
+  "issues": {
+    "Connection Errors": [
+      "/vidgenerator/api/points/all?user_id=default_user: HTTPSConnectionPool(host='masternoder.dk', port=44",
+      "/vidgenerator/api/stats/summary?user_id=default_user: HTTPSConnectionPool(host='masternoder.dk', port=44",
+      "/vidgenerator/api/game/stats?user_id=default_user: HTTPSConnectionPool(host='masternoder.dk', port=44",
+      "/vidgenerator/api/battle/stats?user_id=default_user: HTTPSConnectionPool(host='masternoder.dk', port=44",
+      "/vidgenerator/api/user/profile/default_user/display: HTTPSConnectionPool(host='masternoder.dk', port=44",
+      "/vidgenerator/api/user/profile/default_user/stats: HTTPSConnectionPool(host='masternoder.dk', port=44"
+    ],
+    "404 Errors": [
+      "131/200 requests returned 404"
+    ],
+    "Console Errors": [
+      "1 unique console errors found"
+    ]
+  },
+  "warnings": {
+    "User Management": [
+      "default_user is still being used - consider migrating to proper user IDs"
+    ],
+    "Hardcoded Values": [
+      "backend-connector.js contains 'default_user'"
+    ],
+    "Code Quality": [
+      "Found 6 TODO/FIXME comments in backend code"
+    ],
+    "Console Errors": [
+      "SyntaxError: Failed to execute 'json' on 'Response': Unexpected token '<', \"<!do"
+    ]
+  },
+  "recommendations": [
+    "Fix 404 errors by implementing missing routes or updating frontend calls",
+    "Implement proper user identification system (IP, fingerprint, email-based)",
+    "Replace hardcoded 'default_user' with dynamic user identification",
+    "Fix JavaScript console errors to improve user experience",
+    "Add comprehensive error logging and monitoring",
+    "Implement rate limiting for API endpoints",
+    "Add API response caching where appropriate",
+    "Create automated testing for critical endpoints"
+  ],
+  "endpoint_status": {
+    "/vidgenerator/api/game/achievements?user_id=default_user": 200,
+    "/vidgenerator/api/shop/currency?user_id=default_user": 200
+  },
+  "summary": {
+    "total_issues": 8,
+    "total_warnings": 4,
+    "total_recommendations": 8
+  }
+}

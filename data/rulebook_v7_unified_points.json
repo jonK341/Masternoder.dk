@@ -1,0 +1,29 @@
+{
+  "name": "Unified Points",
+  "version": "V7",
+  "description": "Alle pointtyper og triggers i det forenede pointsystem.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v7-unified-points.png",
+  "image_alt": "Unified Points V7",
+  "agent_prompt": "Unified points: xp_points, game_points, trophy_points, dna_manipulation_points, dna_cloning_points, communication_psychology_points, compendium_points. Use add_points for awards. Shop månedstema (theme-*) giver ikke point medmindre eksplicit koblet — se rules.monthly_theme_points.",
+  "tech_spec": "unified_points_db.add_points(user_id, point_type, amount, source, metadata); unified_points_trigger_integration; triggers map activities to point types",
+  "user_guide": "Forenede points: XP, game, trophy, DNA, comm. psych, compendium. Aktiviteter giver point.",
+  "manual": "Agent manual V7: When awarding points, use add_points. Include source and metadata. Triggers fire on video_gen, study_theory, compendium_view.",
+  "point_types": [
+    "xp_points",
+    "game_points",
+    "trophy_points",
+    "dna_manipulation_points",
+    "dna_cloning_points",
+    "communication_psychology_points",
+    "compendium_points"
+  ],
+  "rules": [
+    {"id": "add_points", "name": "Add Points", "text": "unified_points_db.add_points(user_id, point_type, amount, source, metadata)."},
+    {"id": "triggers", "name": "Triggers", "text": "unified_points_trigger_integration mappes til aktiviteter (video_gen, study_theory, compendium_view, osv.)."},
+    {"id": "profile_display", "name": "Profile Display", "text": "get_profile_display inkluderer alle pointtyper fra unified points."},
+    {"id": "mn2_separate_ledger", "name": "MN2 vs points", "text": "MN2 on-chain / in-wallet balance er et separat spor fra coins og unified points; 5-dags chart opsummerer bevægelse og påvirker ikke XP/game_points direkte."},
+    {"id": "boost_narrative_only", "name": "Shop-boosts og server", "text": "Nye narrative boosts (fx 5D Monitor — Net Flow Pulse) skal stadig mappes til add_points eller eksisterende services når servereffekt tilføjes — ellers katalog-only."},
+    {"id": "monthly_theme_points", "name": "Månedstema og point", "text": "Køb af theme-january … theme-december (og øvrige wave v7 theme-SKUer) udløser ikke automatisk add_points; metadata/kilde skal angives hvis det implementeres. Kanonisk shop-liste: rulebook_v9_shop.json."}
+  ]
+}

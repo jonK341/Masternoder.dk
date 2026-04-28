@@ -1,0 +1,376 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Control Dashboard</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --accent: #ff6b9d;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(20, 20, 30, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --border-glow: rgba(0, 255, 136, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 2px solid var(--border-glow);
+        }
+
+        .dashboard-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+        }
+
+        .control-panel h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .control-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .control-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-indicator.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .status-indicator.inactive {
+            background: #666;
+        }
+
+        .stats-display {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stats-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stats-value {
+            color: var(--primary);
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+
+</head>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+<body>
+    <div class="dashboard-header">
+        <h1>🎛️ Master Control Dashboard</h1>
+        <p>Complete System Control & Monitoring</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Advanced Calculator Control -->
+        <div class="control-panel">
+            <h2>🧠 Advanced Calculator</h2>
+            <div class="stats-display">
+                <div class="stats-label">Status</div>
+                <div class="stats-value">
+                    <span class="status-indicator" id="calc-status"></span>
+                    <span id="calc-status-text">Checking...</span>
+                </div>
+            </div>
+            <button class="control-button" onclick="startCalculator()">Start Calculator Automation</button>
+            <button class="control-button" onclick="stopCalculator()">Stop Calculator Automation</button>
+            <button class="control-button" onclick="calculateNow()">Calculate Now (All Users)</button>
+            <div class="stats-display" id="calc-stats" style="display: none;">
+                <div class="stats-label">Users Calculated</div>
+                <div class="stats-value" id="calc-users-count">0</div>
+            </div>
+        </div>
+
+        <!-- Behavior Pattern Monitor -->
+        <div class="control-panel">
+            <h2>📊 Behavior Pattern Monitor</h2>
+            <div class="stats-display">
+                <div class="stats-label">Monitoring</div>
+                <div class="stats-value">
+                    <span class="status-indicator active"></span>
+                    Active
+                </div>
+            </div>
+            <button class="control-button" onclick="viewBehaviorPatterns()">View Behavior Patterns</button>
+            <button class="control-button" onclick="exportBehaviorData()">Export Behavior Data</button>
+            <div class="stats-display" id="behavior-stats" style="display: none;">
+                <div class="stats-label">Changes Detected</div>
+                <div class="stats-value" id="behavior-changes-count">0</div>
+            </div>
+        </div>
+
+        <!-- Encrypted JSON Storage -->
+        <div class="control-panel">
+            <h2>🔒 Encrypted JSON Storage</h2>
+            <div class="stats-display">
+                <div class="stats-label">Encryption</div>
+                <div class="stats-value">
+                    <span class="status-indicator active"></span>
+                    Active
+                </div>
+            </div>
+            <button class="control-button" onclick="verifyIntegrity()">Verify File Integrity</button>
+            <button class="control-button" onclick="viewStorageStats()">View Storage Stats</button>
+        </div>
+
+        <!-- Agent Listeners/Handlers -->
+        <div class="control-panel">
+            <h2>🤖 Agent Systems</h2>
+            <div class="stats-display">
+                <div class="stats-label">Agents</div>
+                <div class="stats-value" id="agent-count">Loading...</div>
+            </div>
+            <button class="control-button" onclick="viewAgents()">View All Agents</button>
+            <button class="control-button" onclick="attachListeners()">Attach Listeners to Agents</button>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="control-panel">
+            <h2>📈 System Statistics</h2>
+            <div class="stats-display">
+                <div class="stats-label">Total Calculations</div>
+                <div class="stats-value" id="total-calculations">0</div>
+            </div>
+            <div class="stats-display">
+                <div class="stats-label">Behavior Changes</div>
+                <div class="stats-value" id="total-behavior-changes">0</div>
+            </div>
+            <div class="stats-display">
+                <div class="stats-label">Encrypted Files</div>
+                <div class="stats-value" id="encrypted-files-count">0</div>
+            </div>
+            <div class="stats-display">
+                <div class="stats-label">Trophy Points</div>
+                <div class="stats-value" id="stat-trophies">0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+
+        // Load dashboard data
+        async function loadDashboard() {
+            await loadCalculatorStatus();
+            await loadBehaviorStats();
+            await loadSystemStats();
+        }
+
+        // Calculator functions
+        async function loadCalculatorStatus() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/calculator-automation/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.status;
+                    const indicator = document.getElementById('calc-status');
+                    const text = document.getElementById('calc-status-text');
+                    
+                    if (status.is_running) {
+                        indicator.classList.add('active');
+                        text.textContent = 'Running';
+                    } else {
+                        indicator.classList.remove('active');
+                        text.textContent = 'Stopped';
+                    }
+                    
+                    document.getElementById('calc-users-count').textContent = status.users_calculated || 0;
+                    document.getElementById('calc-stats').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading calculator status:', error);
+            }
+        }
+
+        async function startCalculator() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/calculator-automation/start`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert(data.message || 'Calculator started');
+                loadCalculatorStatus();
+            } catch (error) {
+                alert('Error starting calculator: ' + error);
+            }
+        }
+
+        async function stopCalculator() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/calculator-automation/stop`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert(data.message || 'Calculator stopped');
+                loadCalculatorStatus();
+            } catch (error) {
+                alert('Error stopping calculator: ' + error);
+            }
+        }
+
+        async function calculateNow() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/calculator-automation/calculate-now`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert(data.message || 'Calculation triggered');
+                loadCalculatorStatus();
+            } catch (error) {
+                alert('Error triggering calculation: ' + error);
+            }
+        }
+
+        // Behavior pattern functions
+        async function loadBehaviorStats() {
+            // Load behavior statistics
+        }
+
+        async function viewBehaviorPatterns() {
+            window.location.href = `${BASE_URL}/dashboard/behavior-patterns`;
+        }
+
+        async function exportBehaviorData() {
+            alert('Export functionality coming soon');
+        }
+
+        // Storage functions
+        async function verifyIntegrity() {
+            alert('Integrity verification coming soon');
+        }
+
+        async function viewStorageStats() {
+            alert('Storage stats coming soon');
+        }
+
+        // Agent functions
+        async function viewAgents() {
+            window.location.href = `${BASE_URL}/dashboard/agents`;
+        }
+
+        async function attachListeners() {
+            alert('Attach listeners functionality coming soon');
+        }
+
+        // System stats
+        async function loadSystemStats() {
+            // Load system statistics
+        }
+
+        // Initialize
+        loadDashboard();
+        setInterval(loadDashboard, 30000); // Refresh every 30 seconds
+    </script>
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

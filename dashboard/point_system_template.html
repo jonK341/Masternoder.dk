@@ -1,0 +1,593 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{system_name}} Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --accent: #ff6b9d;
+            --bg-dark: #1a1a2e;
+            --bg-darker: #0f0f1e;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --card-bg: rgba(40, 40, 55, 0.8);
+            --border-color: rgba(0, 255, 136, 0.3);
+            --system-color: #00ff88;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+            backdrop-filter: blur(20px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .system-icon-large {
+            font-size: 4em;
+        }
+
+        .header-info h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            color: var(--system-color);
+        }
+
+        .header-info .system-category {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--system-color);
+        }
+
+        .progress-section {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .progress-section h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .milestone-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--system-color);
+        }
+
+        .milestone-item.completed {
+            background: rgba(0, 255, 136, 0.2);
+            border-left-color: var(--primary);
+        }
+
+        .milestone-item.current {
+            background: rgba(0, 255, 136, 0.3);
+            border-left-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .abilities-section {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .abilities-section h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .abilities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .ability-card {
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ability-card:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .ability-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .ability-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ability-description {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .history-section {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+        }
+
+        .history-section h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .history-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--system-color);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+
+</head>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+<body>
+    <div class="dashboard-header">
+        <div class="header-left">
+            <div class="system-icon-large" id="system-icon">🎮</div>
+            <div class="header-info">
+                <h1 id="system-name">Loading...</h1>
+                <div class="system-category" id="system-category">System Dashboard</div>
+            </div>
+        </div>
+        <a href="/dashboard/points" class="back-button">← Back to Control Board</a>
+    </div>
+
+    <div class="stats-grid" id="stats-grid">
+        <div class="loading">Loading dashboard data...</div>
+    </div>
+
+    <div class="progress-section" id="progress-section" style="display: none;">
+        <h2>Progress & Milestones</h2>
+        <div id="milestones-container"></div>
+    </div>
+
+    <div class="abilities-section" id="abilities-section" style="display: none;">
+        <h2>Available Abilities</h2>
+        <div class="abilities-grid" id="abilities-grid"></div>
+    </div>
+
+    <div class="history-section" id="history-section" style="display: none;">
+        <h2>Recent History</h2>
+        <div id="history-container"></div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const SYSTEM_ID = window.location.pathname.split('/').pop();
+
+        async function loadSystemDashboard() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/points/control-board/system/${SYSTEM_ID}`);
+                const data = await response.json();
+                
+                if (data.success && data.dashboard) {
+                    renderDashboard(data.dashboard);
+                } else {
+                    showError('Failed to load dashboard data');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Error loading dashboard: ' + error.message);
+            }
+        }
+
+        function renderDashboard(dashboard) {
+            const systemInfo = dashboard.system_info;
+            const stats = dashboard.stats;
+            const abilities = dashboard.abilities;
+            const progress = dashboard.progress;
+            const history = dashboard.history;
+
+            // Update header
+            document.getElementById('system-icon').textContent = systemInfo.icon;
+            document.getElementById('system-name').textContent = systemInfo.name;
+            document.getElementById('system-category').textContent = systemInfo.category;
+            document.documentElement.style.setProperty('--system-color', systemInfo.color);
+
+            // Render stats
+            renderStats(stats);
+
+            // Render progress
+            if (progress) {
+                renderProgress(progress);
+            }
+
+            // Render abilities
+            if (abilities && abilities.length > 0) {
+                renderAbilities(abilities);
+            }
+
+            // Render history
+            if (history && history.length > 0) {
+                renderHistory(history);
+            }
+        }
+
+        function renderStats(stats) {
+            const grid = document.getElementById('stats-grid');
+            grid.innerHTML = '';
+
+            const statCards = [
+                { label: 'Current Points', value: stats.current_points || 0, color: 'var(--system-color)' },
+                { label: 'Total Earned', value: stats.total_earned || 0, color: 'var(--primary)' },
+                { label: 'Rank', value: stats.rank || 'N/A', color: 'var(--secondary)' },
+                { label: 'Percentile', value: stats.percentile ? `${stats.percentile}%` : 'N/A', color: 'var(--accent)' }
+            ];
+
+            // Add system-specific stats
+            if (stats.level) {
+                statCards.push({ label: 'Level', value: stats.level, color: 'var(--primary)' });
+            }
+            if (stats.wins !== undefined) {
+                statCards.push({ label: 'Wins', value: stats.wins, color: '#00ff88' });
+            }
+            if (stats.trophies_earned !== undefined) {
+                statCards.push({ label: 'Trophies', value: stats.trophies_earned, color: '#ffa500' });
+            }
+
+            statCards.forEach(stat => {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.innerHTML = `
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-value" style="color: ${stat.color}">${formatNumber(stat.value)}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderProgress(progress) {
+            const section = document.getElementById('progress-section');
+            const container = document.getElementById('milestones-container');
+            section.style.display = 'block';
+            container.innerHTML = '';
+
+            if (progress.milestones) {
+                progress.milestones.forEach((milestone, index) => {
+                    const item = document.createElement('div');
+                    const isCompleted = progress.current_points >= milestone.points;
+                    const isCurrent = progress.next_milestone && 
+                                     progress.current_points < progress.next_milestone.points &&
+                                     progress.current_points >= milestone.points;
+
+                    item.className = `milestone-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`;
+                    item.innerHTML = `
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 5px;">${milestone.name}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9em;">
+                                ${formatNumber(milestone.points)} points
+                                ${milestone.reward ? `• Reward: ${milestone.reward}` : ''}
+                            </div>
+                        </div>
+                        <div style="font-size: 1.5em;">
+                            ${isCompleted ? '✓' : isCurrent ? '→' : '○'}
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+        }
+
+        function renderAbilities(abilities) {
+            const section = document.getElementById('abilities-section');
+            const grid = document.getElementById('abilities-grid');
+            section.style.display = 'block';
+            grid.innerHTML = '';
+
+            abilities.forEach(ability => {
+                const card = document.createElement('div');
+                card.className = 'ability-card';
+                card.onclick = () => {
+                    if (ability.action) {
+                        window.location.href = ability.action;
+                    }
+                };
+                card.innerHTML = `
+                    <div class="ability-icon">${ability.icon}</div>
+                    <div class="ability-name">${ability.name}</div>
+                    <div class="ability-description">${ability.description}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderHistory(history) {
+            const section = document.getElementById('history-section');
+            const container = document.getElementById('history-container');
+            section.style.display = 'block';
+            container.innerHTML = '';
+
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 5px;">${item.action}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9em;">${item.description}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: var(--system-color); font-weight: bold; font-size: 1.2em;">
+                                ${item.points > 0 ? '+' : ''}${formatNumber(item.points)}
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.8em;">
+                                ${new Date(item.timestamp).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(historyItem);
+            });
+        }
+
+        function formatNumber(num) {
+            if (typeof num === 'string') return num;
+            return new Intl.NumberFormat().format(num);
+        }
+
+        function showError(message) {
+            const grid = document.getElementById('stats-grid');
+            grid.innerHTML = `<div style="color: #ff4444; padding: 20px;">${message}</div>`;
+        }
+
+        // Load dashboard on page load
+        loadSystemDashboard();
+        setInterval(loadSystemDashboard, 30000); // Auto-refresh every 30 seconds
+    </script>
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                // Cache version changed - force reload
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                window.location.reload(true);
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // AGGRESSIVE CACHE-BUSTING FOR MAIN CONTENT
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || Date.now().toString();
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            const contentVersion = sessionStorage.getItem('contentCacheVersion');
+            
+            // Force reload if version changed
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.clear();
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+                window.location.href = window.location.href.split('?')[0] + '?v=' + currentVersion + '&_=' + Date.now();
+                return;
+            }
+            
+            // Store versions
+            sessionStorage.setItem('pageCacheVersion', currentVersion);
+            if (!contentVersion || contentVersion !== currentVersion) {
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+            }
+            
+            // Force reload main content area on every load
+            function forceReloadContent() {
+                const mainContent = document.querySelector('.container') || document.querySelector('main') || document.querySelector('#main') || document.body;
+                if (mainContent) {
+                    // Add timestamp to force re-render
+                    mainContent.setAttribute('data-version', currentVersion);
+                    mainContent.setAttribute('data-timestamp', Date.now());
+                    
+                    // Force style recalculation
+                    const display = window.getComputedStyle(mainContent).display;
+                    mainContent.style.display = 'none';
+                    mainContent.offsetHeight; // Trigger reflow
+                    mainContent.style.display = display;
+                    
+                    // Add comment to force HTML change detection
+                    const comment = document.createComment(' FORCED REFRESH ' + Date.now() + ' ');
+                    mainContent.insertBefore(comment, mainContent.firstChild);
+                }
+            }
+            
+            // Run immediately and on DOM ready
+            forceReloadContent();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceReloadContent);
+            } else {
+                setTimeout(forceReloadContent, 100);
+            }
+            
+            // Add cache-busting to all links and forms
+            function addCacheBusting() {
+                const links = document.querySelectorAll('a[href^="/"], a[href^="/"]');
+                links.forEach(link => {
+                    const url = new URL(link.href, window.location.origin);
+                    if (!url.searchParams.has('v')) {
+                        url.searchParams.set('v', currentVersion);
+                        url.searchParams.set('_', Date.now());
+                        link.href = url.toString();
+                    }
+                });
+                
+                // Add to forms
+                const forms = document.querySelectorAll('form[action]');
+                forms.forEach(form => {
+                    const action = form.getAttribute('action');
+                    if (action && !action.includes('v=')) {
+                        const separator = action.includes('?') ? '&' : '?';
+                        form.setAttribute('action', action + separator + 'v=' + currentVersion + '&_=' + Date.now());
+                    }
+                });
+            }
+            
+            // Run on DOM ready and periodically
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', addCacheBusting);
+            } else {
+                addCacheBusting();
+            }
+            
+            // Periodic check for content updates
+            setInterval(function() {
+                const stored = sessionStorage.getItem('contentCacheVersion');
+                if (stored && stored !== currentVersion) {
+                    window.location.reload(true);
+                }
+            }, 5000);
+            
+            // Intercept fetch/XHR to add cache-busting
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (typeof args[0] === 'string' && args[0].startsWith('/')) {
+                    const url = new URL(args[0], window.location.origin);
+                    url.searchParams.set('_', Date.now());
+                    args[0] = url.toString();
+                }
+                return originalFetch.apply(this, args);
+            };
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

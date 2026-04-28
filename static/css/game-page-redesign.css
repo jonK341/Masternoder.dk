@@ -1,0 +1,818 @@
+/**
+ * Game page — debugger-adjacent clarity: max width, calmer chrome, smooth scroll.
+ * Loads after hunter-game-index.css to override local noise.
+ */
+
+.hunter-game-app {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.08);
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.hunter-game-hero {
+  border-radius: 12px 12px 0 0;
+}
+
+/* Readable hero (inline styles were tuned for marketing scale) */
+.hunter-game-hero h1 {
+  font-size: clamp(1.35rem, 4vw, 2.1rem) !important;
+  line-height: 1.2 !important;
+}
+
+.hunter-game-hero .tagline {
+  font-size: clamp(0.88rem, 2vw, 1rem) !important;
+}
+
+/* Tone down unused legacy hero block if present */
+.game-header h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem) !important;
+}
+
+.game-header .subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.2rem) !important;
+}
+
+.game-page {
+  padding-top: 24px !important;
+}
+
+#game-at-a-glance {
+  max-width: 100% !important;
+  margin-left: 1rem !important;
+  margin-right: 1rem !important;
+  border-radius: 10px !important;
+  background: rgba(0, 0, 0, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(8px);
+}
+
+body {
+  min-width: 0;
+}
+
+.bg-animated,
+.particles {
+  pointer-events: none;
+}
+
+.page-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.22);
+}
+
+.page-nav .nav-container {
+  max-width: 1400px;
+}
+
+.hunter-game-layout {
+  min-height: 720px;
+}
+
+.hunter-game-main {
+  background: rgba(4, 6, 12, 0.4);
+}
+
+.hunter-game-main .game-tab-content {
+  min-width: 0;
+}
+
+.hunter-game-main .card,
+.hunter-game-main .stat-box,
+.hunter-game-main .achievement-card,
+.hunter-game-main .reward-card,
+.hunter-game-main .leaderboard-item {
+  min-width: 0;
+}
+
+.champion-pulse {
+  width: calc(100% - 2rem);
+  max-width: calc(100% - 2rem);
+  margin: 0 1rem 20px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
+  gap: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 212, 255, 0.38);
+  background:
+    linear-gradient(135deg, rgba(0, 255, 136, 0.12), rgba(0, 212, 255, 0.06)),
+    rgba(0, 0, 0, 0.46);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.season-loop-panel {
+  width: calc(100% - 2rem);
+  max-width: calc(100% - 2rem);
+  margin: 0 1rem 20px;
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: center;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 0, 0.28);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.09), rgba(0, 212, 255, 0.05)), rgba(0, 0, 0, 0.38);
+}
+
+.season-loop-panel h2 {
+  margin: 10px 0 6px;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+}
+
+.season-loop-panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
+}
+
+.season-loop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.season-loop-grid div {
+  padding: 11px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.season-loop-grid span {
+  display: block;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+}
+
+.season-loop-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #fff3a0;
+  text-transform: capitalize;
+}
+
+.crypto-earn-panel {
+  width: calc(100% - 2rem);
+  max-width: calc(100% - 2rem);
+  margin: 0 1rem 20px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(255, 215, 0, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(0, 255, 136, 0.08), rgba(255, 215, 0, 0.06)),
+    rgba(0, 0, 0, 0.44);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.crypto-earn-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.crypto-earn-head h2 {
+  margin: 10px 0 6px;
+  font-size: clamp(1.35rem, 3vw, 2.2rem);
+}
+
+.crypto-earn-head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
+}
+
+.crypto-balance-card {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 0, 0.38);
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.crypto-balance-card span,
+.crypto-balance-card small,
+.crypto-progress-grid span,
+.crypto-requirements,
+.crypto-history-row span {
+  display: block;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.78rem;
+}
+
+.crypto-balance-card strong {
+  display: block;
+  margin: 5px 0;
+  color: #ffd700;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.crypto-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.crypto-progress-grid div {
+  padding: 11px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.crypto-progress-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #fff;
+}
+
+.crypto-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.crypto-option-card {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(8, 10, 16, 0.72);
+  min-width: 0;
+}
+
+.crypto-option-card.ready {
+  border-color: rgba(0, 255, 136, 0.58);
+  box-shadow: 0 0 22px rgba(0, 255, 136, 0.12);
+}
+
+.crypto-option-card.cooldown {
+  border-color: rgba(0, 212, 255, 0.34);
+}
+
+.crypto-option-card.locked {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.crypto-option-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.crypto-option-top strong {
+  color: #fff;
+}
+
+.crypto-option-top span {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #06100c;
+  background: linear-gradient(135deg, #ffd700, #00ff88);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.crypto-option-card p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.crypto-reward {
+  margin: 10px 0 6px;
+  color: #ffd700;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.crypto-claim-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #06100c;
+  font-weight: 900;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ffd700, #00ff88);
+}
+
+.crypto-claim-btn:disabled {
+  cursor: not-allowed;
+  color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.crypto-claim-history {
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.crypto-claim-history summary {
+  cursor: pointer;
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.crypto-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.crypto-history-row strong {
+  color: #9fffd0;
+  font-variant-numeric: tabular-nums;
+}
+
+.crypto-empty {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.champion-eyebrow,
+.champion-level-kicker {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.42);
+  background: rgba(0, 255, 136, 0.1);
+  color: #9fffd0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.champion-pulse h2 {
+  margin: 10px 0 6px;
+  font-size: clamp(1.5rem, 4vw, 2.8rem);
+  line-height: 1;
+  color: #fff;
+}
+
+.champion-pulse-copy p {
+  max-width: 72ch;
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.5;
+}
+
+.champion-timestamp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.champion-timestamp-grid div,
+.champion-level-card {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.champion-timestamp-grid span,
+.champion-level-meta,
+.champion-action span,
+.champion-level-main small {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.78rem;
+}
+
+.champion-timestamp-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #fff;
+  font-size: 0.98rem;
+}
+
+.champion-level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.champion-level-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#champion-level-number {
+  width: 70px;
+  height: 70px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  color: #06100c;
+  font-weight: 900;
+  font-size: 1.35rem;
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  box-shadow: 0 10px 28px rgba(0, 255, 136, 0.24);
+}
+
+.champion-level-main strong {
+  display: block;
+  color: #fff;
+  font-size: 1.08rem;
+}
+
+.champion-level-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#champion-level-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00ff88, #00d4ff, #ffd700);
+  transition: width 0.45s ease;
+}
+
+.champion-level-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.champion-action-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.champion-action {
+  min-height: 58px;
+  padding: 9px 10px;
+  border: 1px solid rgba(0, 212, 255, 0.34);
+  border-radius: 10px;
+  background: rgba(0, 212, 255, 0.1);
+  color: #dffcff;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.champion-action strong,
+.champion-action span {
+  display: block;
+}
+
+.champion-action:hover,
+.champion-action:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 136, 0.7);
+  background: rgba(0, 255, 136, 0.14);
+  outline: none;
+}
+
+@media (max-width: 980px) {
+  .champion-pulse {
+    grid-template-columns: 1fr;
+  }
+
+  .season-loop-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .crypto-earn-head {
+    grid-template-columns: 1fr;
+  }
+
+  .champion-timestamp-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .season-loop-grid,
+  .crypto-progress-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .hunter-game-layout {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .hunter-game-hero {
+    padding-inline: 1rem;
+  }
+
+  #game-at-a-glance,
+  .champion-pulse,
+  .season-loop-panel,
+  .crypto-earn-panel {
+    width: calc(100% - 1rem) !important;
+    max-width: calc(100% - 1rem) !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+  }
+
+  .champion-timestamp-grid,
+  .champion-action-row,
+  .season-loop-grid,
+  .crypto-progress-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crypto-history-row {
+    display: block;
+  }
+
+  .hunter-game-tabs-row {
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+  }
+}
+
+.hunter-game-main .game-tab-content {
+  scroll-behavior: smooth;
+}
+
+/* Nexus arc */
+.nexus-arc-shell {
+  border: 1px solid rgba(76, 175, 80, 0.35);
+  background: linear-gradient(160deg, rgba(30, 60, 114, 0.35) 0%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+.nexus-sub {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.85));
+  font-size: 0.95rem;
+  margin-top: 0.35rem;
+  max-width: 70ch;
+}
+
+.nexus-campaign-root {
+  padding: 0 0 0.5rem 0;
+}
+
+.nexus-session-banner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 1.25rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+}
+
+@media (min-width: 720px) {
+  .nexus-session-banner {
+    grid-template-columns: 1.2fr 1fr;
+    align-items: start;
+  }
+}
+
+.nexus-session-banner h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.05rem;
+  color: #cfe8ff;
+}
+
+.nexus-session-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+}
+
+.nexus-director-tag {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(76, 175, 80, 0.25);
+  color: #b9f6ca;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.nexus-story-block {
+  padding: 14px 16px;
+  margin-bottom: 1.25rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 4px solid #4caf50;
+}
+
+.nexus-story-block h3 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.nexus-story-block p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.nexus-level-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .nexus-level-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .nexus-level-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.nexus-level-card {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(40, 40, 55, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 180px;
+}
+
+.nexus-level-card.locked {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.nexus-level-card.claimed {
+  border-color: rgba(76, 175, 80, 0.55);
+  background: rgba(27, 94, 32, 0.2);
+}
+
+.nexus-level-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.nexus-level-meta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nexus-level-story {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.nexus-claim-btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: #fff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nexus-claim-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(76, 175, 80, 0.35);
+}
+
+.nexus-claim-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nexus-muted {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.nexus-spin {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Monetization frame — was inline on game page */
+#top50-monetization-frame-container {
+  display: none !important;
+}
+
+/* Nexus feature strip */
+.nexus-feature-strip {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 800px) {
+  .nexus-feature-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nexus-mini-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.nexus-mini-card strong {
+  color: #b9f6ca;
+}
+
+.nexus-faction-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nexus-faction-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.45);
+  background: rgba(0, 212, 255, 0.12);
+  color: #9ee7ff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.nexus-faction-btn:hover {
+  background: rgba(0, 212, 255, 0.22);
+}
+
+.nexus-faction-btn.active {
+  border-color: #00ff88;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.15);
+}
+
+.nexus-blurb {
+  font-size: 0.82rem;
+  color: rgba(200, 230, 255, 0.95);
+  font-style: italic;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.nexus-copilot-go {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border: 1px solid rgba(0, 255, 136, 0.4);
+  cursor: pointer;
+}
+
+.nexus-shop-links a {
+  color: #7fdbff;
+  margin-right: 12px;
+  font-size: 0.88rem;
+}

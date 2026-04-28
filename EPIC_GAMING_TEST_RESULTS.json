@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-01-07T10:42:09.926607",
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "results": {
+    "Get Progress": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": [
+        "created_at",
+        "current_level",
+        "last_activity",
+        "level_info",
+        "level_name",
+        "story_chapters",
+        "success",
+        "timeline",
+        "top_activities",
+        "total_activities",
+        "total_xp",
+        "user_id"
+      ]
+    },
+    "Get Story": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": [
+        "chapters",
+        "current_chapter",
+        "success"
+      ]
+    },
+    "Get Timeline": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": [
+        "count",
+        "success",
+        "timeline"
+      ]
+    },
+    "Get Level Info": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": [
+        "level_info",
+        "level_name",
+        "success",
+        "total_xp"
+      ]
+    },
+    "Track Activity": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true,
+      "data_keys": [
+        "level_info",
+        "level_name",
+        "level_up",
+        "level_up_bonus",
+        "new_level",
+        "old_level",
+        "story_chapters_unlocked",
+        "success",
+        "total_xp",
+        "xp_awarded"
+      ]
+    }
+  }
+}

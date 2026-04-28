@@ -1,0 +1,7 @@
+{
+  "name": "Agent & AI calendar",
+  "description": "Scheduled appointments for agents and AIs (content_generator_agent, learning_agent, analytics_agent). Daily reset aligns with starmap25.",
+  "updated_at": "2026-03-18",
+  "appointments": [],
+  "agents": ["content_generator_agent", "learning_agent", "analytics_agent"]
+}

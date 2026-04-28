@@ -1,0 +1,259 @@
+/**
+ * Hunter Game — Full-Page Index System
+ * Positive game changer: uses whole page, all tabs visible, both spaces.
+ * Industry-leading layout: sidebar nav + full-height content.
+ */
+
+/* -------------------------------------------------------------------------
+   Layout: full viewport, sidebar + main
+   ------------------------------------------------------------------------- */
+.hunter-game-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, #0a0a0f);
+  color: var(--text-primary, #fff);
+}
+
+.hunter-game-hero {
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.12), rgba(0, 212, 255, 0.08));
+  border-bottom: 2px solid rgba(0, 255, 136, 0.35);
+  text-align: center;
+}
+
+.hunter-game-hero h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.hunter-game-hero .tagline {
+  margin: 0;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.9));
+  font-weight: 500;
+}
+
+.hunter-game-hero .manifesto {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.75));
+  max-width: 56ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hunter-game-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+}
+
+.hunter-game-sidebar {
+  flex-shrink: 0;
+  background: rgba(20, 22, 32, 0.98);
+  border-right: 2px solid rgba(0, 255, 136, 0.25);
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.hunter-game-sidebar .game-tab {
+  width: 100%;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  text-align: left;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hunter-game-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hunter-game-main .game-tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  animation: hunterFadeIn 0.35s ease-out;
+}
+
+@keyframes hunterFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Horizontal tabs (shown only when sidebar hidden, e.g. mobile) */
+.hunter-game-tabs-row {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(20, 22, 32, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  overflow-x: auto;
+}
+
+.hunter-game-tabs-row .game-tab {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Content uses full space */
+.hunter-game-app .stats-section {
+  margin-bottom: 1.25rem;
+}
+
+.hunter-game-app .stats-section:last-child {
+  margin-bottom: 0;
+}
+
+.hunter-game-app .card {
+  width: 100%;
+  max-width: 100%;
+}
+
+.hunter-game-app .stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+/* Section titles and cards fill width */
+.hunter-game-app .game-tab-content .card-header,
+.hunter-game-app .game-tab-content .card-title {
+  width: 100%;
+}
+
+/* Positive emphasis: progress, rewards, community */
+.hunter-game-app .stat-box {
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hunter-game-app .stat-box:hover {
+  border-color: rgba(0, 255, 136, 0.45);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+
+/* Industry-changer badge / pill */
+.hunter-game-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 212, 255, 0.2));
+  color: #00ff88;
+  border-radius: 999px;
+  margin-top: 0.5rem;
+}
+
+/* Responsive: sidebar collapses to top tabs */
+@media (max-width: 900px) {
+  .hunter-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hunter-game-sidebar {
+    display: none;
+  }
+
+  .hunter-game-tabs-row {
+    display: flex;
+  }
+
+  .hunter-game-main .game-tab-content {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 901px) {
+  .hunter-game-tabs-row {
+    display: none;
+  }
+}
+
+/* Ensure container doesn't limit width when inside hunter-game-app */
+.hunter-game-app .container {
+  max-width: none;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.hunter-game-app .game-page {
+  padding: 0;
+  min-height: 0;
+  display: contents;
+}
+
+/* Tab content panels: use full available height for scroll */
+.hunter-game-app .game-tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Achievement grid uses space well */
+.hunter-game-app .achievement-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.hunter-game-app .rewards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+/* Leaderboard and lists full width */
+.hunter-game-app .leaderboard-list,
+.hunter-game-app .xp-history-list {
+  max-width: 100%;
+}
+
+/* Sidebar: all tabs visible, scroll if needed */
+.hunter-game-sidebar .game-tab.active {
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  color: #0a0a0f;
+  border-color: #00ff88;
+  font-weight: 700;
+}
+
+/* Main content: use full width, comfortable reading */
+.hunter-game-main .game-tab-content {
+  max-width: 100%;
+}
+
+/* Quest and challenge cards use grid space */
+.hunter-game-app .stats-section .card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Positive tone: success states */
+.hunter-game-app .achievement-card.earned .achievement-icon,
+.hunter-game-app .reward-card.unlocked .reward-icon {
+  filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5));
+}

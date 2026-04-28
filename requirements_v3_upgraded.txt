@@ -1,0 +1,115 @@
+# Phase 1: Core Foundation
+# Flask 2.2.5 and Werkzeug 2.2.3 are compatible and stable
+Flask==2.2.5
+click>=8.0.0  # Required for Flask 2.2.5 - ParameterSource import
+Flask-SQLAlchemy==3.0.5
+SQLAlchemy==1.4.23
+requests==2.31.0
+python-dotenv>=1.0.1
+Werkzeug==2.2.3
+
+# For testing and debugging
+urllib3>=1.26.0
+
+# For production deployment
+gunicorn>=21.2.0
+uwsgi>=2.0.23  # uWSGI for production
+paramiko>=3.3.0  # For SFTP/SSH deployment
+scp>=0.14.0  # For SCP file transfers
+
+# For video processing (Phase 1 basic)
+moviepy>=1.0.3
+ffmpeg-python>=0.2.0
+Pillow>=10.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# For web scraping (Phase 2 - Enhanced)
+beautifulsoup4>=4.12.0
+duckduckgo-search>=5.3.1
+lxml>=4.9.0  # Faster HTML parsing
+
+# For AI generation (Phase 1 basic)
+openai>=1.52.0
+tenacity>=8.2.3
+
+# For TTS (Phase 1 basic)
+elevenlabs>=0.2.26
+
+# For configuration
+configparser>=5.3.0
+
+# Encryption & Security (NEW)
+cryptography>=41.0.0  # For encrypted JSON storage
+
+# Data Science & Analytics (NEW)
+pandas>=2.0.0  # For data analysis
+scikit-learn>=1.3.0  # For machine learning features
+
+# Advanced Calculations (NEW)
+scipy>=1.11.0  # Scientific computing
+sympy>=1.12  # Symbolic mathematics
+
+# Neural Networks & AI (NEW)
+tensorflow>=2.13.0  # Optional - for advanced neural networks
+torch>=2.0.0  # Optional - PyTorch for neural networks
+
+# Quantum Computing Libraries (NEW)
+qiskit>=0.44.0  # Optional - for quantum-inspired algorithms
+
+# Performance & Caching (NEW)
+redis>=5.0.0  # For caching and performance
+celery>=5.3.0  # For async task processing
+
+# Monitoring & Analytics (NEW)
+prometheus-client>=0.18.0  # For metrics
+statsd>=4.0.0  # For statistics
+
+# Database Enhancements (NEW)
+psycopg2-binary>=2.9.9  # PostgreSQL adapter (if using PostgreSQL)
+pymongo>=4.5.0  # MongoDB adapter (if using MongoDB)
+
+# API Enhancements (NEW)
+flask-restx>=1.1.0  # REST API framework
+flask-cors>=4.0.0  # CORS support
+flask-limiter>=3.5.0  # Rate limiting
+
+# Real-time Features (NEW)
+flask-socketio>=5.3.0  # WebSocket support
+python-socketio>=5.9.0  # Socket.IO client
+
+# Image Processing (NEW)
+Pillow>=10.0.0  # Already included, but ensuring latest
+imageio>=2.31.0  # Image I/O
+imageio-ffmpeg>=0.4.9  # FFmpeg for images
+
+# Video Processing Enhancements (NEW)
+opencv-python-headless>=4.8.0  # Headless OpenCV
+ffmpeg-python>=0.2.0  # Already included
+
+# Audio Processing (NEW)
+pydub>=0.25.1  # Audio manipulation
+librosa>=0.10.0  # Audio analysis
+
+# Natural Language Processing (NEW)
+nltk>=3.8.1  # NLP toolkit
+spacy>=3.6.0  # Advanced NLP
+
+# Data Validation (NEW)
+marshmallow>=3.20.0  # Data validation
+cerberus>=1.3.5  # Schema validation
+
+# Testing (NEW)
+pytest>=7.4.0  # Testing framework
+pytest-cov>=4.1.0  # Coverage
+pytest-flask>=1.2.0  # Flask testing
+
+# Development Tools (NEW)
+black>=23.9.0  # Code formatting
+flake8>=6.1.0  # Linting
+mypy>=1.6.0  # Type checking
+
+# Documentation (NEW)
+sphinx>=7.2.0  # Documentation generator
+sphinx-rtd-theme>=1.3.0  # Read the Docs theme
+

@@ -1,0 +1,93 @@
+{
+  "name": "Trophy Hunters Rulebook",
+  "version": "V2.2",
+  "description": "Theme-based spells and sectors for Hunters game. Includes Galactic, Verification, Combat, Support, Utility, Medieval, Time Reversal; power combos.",
+  "updated_at": "2026-03-09",
+  "compendium_part": "II",
+  "image_url": "/vidgenerator/static/img/rulebook-v2-hunters.png",
+  "image_alt": "Trophy Hunters V2",
+  "agent_prompt": "Trophy Hunters: spells in sectors Galactic, Verification, Combat, Support, Utility, Medieval, Time Reversal. Power combos. Stories: Winter Wedding (1017).",
+  "tech_spec": "GET /api/game/hunters/rulebook; sectors I–VII; all_spell_ids; power_combos; GET /api/game/hunters/stories",
+  "user_guide": "Spells i 7 sektorer inkl. Medieval og Time Reversal. Power combos. Stories: Winter Wedding.",
+  "manual": "Agent manual V2: Hunters rulebook. List spells by sector. Explain cost and effect. Link to star map, verification, stories.",
+  "sectors": {
+    "I_galactic": {
+      "name": "Galactic",
+      "spells": [
+        {"id": "spell_star_map", "name": "Star Map", "effect": "view_star_map", "cost": 10, "icon": "🌟"},
+        {"id": "spell_proxima_b", "name": "Proxima B Beacon", "effect": "proxima_b_beacon", "cost": 25, "icon": "🪐"},
+        {"id": "spell_sirius_b", "name": "Sirius B Pulse", "effect": "sirius_b_pulse", "cost": 30, "icon": "⚡"},
+        {"id": "spell_earth_b", "name": "Earth B Shield", "effect": "earth_b_shield", "cost": 15, "icon": "🛡️"}
+      ]
+    },
+    "II_verification": {
+      "name": "Verification",
+      "spells": [
+        {"id": "spell_run_verification", "name": "Run Verification", "effect": "run_verification", "cost": 20, "icon": "✔️"},
+        {"id": "spell_dna_test", "name": "DNA Test", "effect": "run_dna_test", "cost": 25, "icon": "🧬"},
+        {"id": "spell_integrity_scan", "name": "Integrity Scan", "effect": "integrity_scan", "cost": 18, "icon": "🔍"}
+      ]
+    },
+    "III_combat": {
+      "name": "Combat",
+      "spells": [
+        {"id": "spell_trophy_strike", "name": "Trophy Strike", "effect": "trophy_strike", "cost": 22, "icon": "🏆"},
+        {"id": "spell_hunter_fury", "name": "Hunter Fury", "effect": "hunter_fury", "cost": 35, "icon": "🔥"},
+        {"id": "spell_precision_shot", "name": "Precision Shot", "effect": "precision_shot", "cost": 12, "icon": "🎯"}
+      ]
+    },
+    "IV_support": {
+      "name": "Support",
+      "spells": [
+        {"id": "spell_heal_trophy", "name": "Heal Trophy", "effect": "heal_trophy", "cost": 20, "icon": "💚"},
+        {"id": "spell_buff_creativity", "name": "Buff Creativity", "effect": "buff_creativity", "cost": 15, "icon": "🎨"},
+        {"id": "spell_buff_knowledge", "name": "Buff Knowledge", "effect": "buff_knowledge", "cost": 15, "icon": "📚"}
+      ]
+    },
+    "V_utility": {
+      "name": "Utility",
+      "spells": [
+        {"id": "spell_clickthrough", "name": "Clickthrough", "effect": "clickthrough", "cost": 5, "icon": "👆"},
+        {"id": "spell_extend_session", "name": "Extend Session", "effect": "extend_session", "cost": 28, "icon": "⏱️"},
+        {"id": "spell_checkpoint", "name": "Checkpoint", "effect": "checkpoint", "cost": 40, "icon": "📌"},
+        {"id": "spell_aggregator_fill", "name": "Aggregator Fill", "effect": "aggregator_fill", "cost": 32, "icon": "📦"},
+        {"id": "spell_geo_ref", "name": "Geo Reference", "effect": "geo_reference", "cost": 18, "icon": "📍"},
+        {"id": "spell_speaker_ruler", "name": "Speaker Ruler", "effect": "speaker_ruler", "cost": 50, "icon": "🗣️"}
+      ]
+    },
+    "VI_medieval": {
+      "name": "Medieval",
+      "spells": [
+        {"id": "spell_winter_wedding_aura", "name": "Winter Wedding Aura", "effect": "winter_wedding_aura", "cost": 38, "icon": "💒"},
+        {"id": "spell_contract_seal", "name": "Contract Seal", "effect": "contract_seal", "cost": 42, "icon": "📜"},
+        {"id": "spell_jarls_fury", "name": "Jarl's Fury", "effect": "jarls_fury", "cost": 45, "icon": "🪓"},
+        {"id": "spell_skald_chant", "name": "Skald Chant", "effect": "skald_chant", "cost": 28, "icon": "🎵"}
+      ]
+    },
+    "VII_time_reversal": {
+      "name": "Time Reversal",
+      "spells": [
+        {"id": "spell_rewind_turn", "name": "Rewind Turn", "effect": "rewind_turn", "cost": 45, "icon": "⏪"},
+        {"id": "spell_narrative_rewind", "name": "Narrative Rewind", "effect": "narrative_rewind", "cost": 50, "icon": "🔄"}
+      ]
+    }
+  },
+  "power_combos": {
+    "description": "Cast two or more effects in one scene to unlock combo bonuses.",
+    "combos": [
+      {"id": "combo_contract_jarl", "name": "Contract Seal + Jarl's Fury", "effect": "+2 Intimidation and Persuasion vs rival faction for the scene", "cost_combined": 87},
+      {"id": "combo_poison_son", "name": "Poison Revealed + Son Smuggled", "effect": "Emma grants Boon: reroll one future check", "cost_combined": 0},
+      {"id": "combo_infiltrator_knight_berserker", "name": "Infiltrator + Knight + Berserker", "effect": "Unlock Winter Wedding Triumph trophy, +50 game_points", "cost_combined": 0}
+    ]
+  },
+  "all_spell_ids": [
+    "spell_star_map", "spell_proxima_b", "spell_sirius_b", "spell_earth_b",
+    "spell_run_verification", "spell_dna_test", "spell_integrity_scan",
+    "spell_trophy_strike", "spell_hunter_fury", "spell_precision_shot",
+    "spell_heal_trophy", "spell_buff_creativity", "spell_buff_knowledge",
+    "spell_clickthrough", "spell_extend_session", "spell_checkpoint",
+    "spell_aggregator_fill", "spell_geo_ref", "spell_speaker_ruler",
+    "spell_winter_wedding_aura", "spell_contract_seal", "spell_jarls_fury", "spell_skald_chant",
+    "spell_rewind_turn", "spell_narrative_rewind"
+  ]
+}

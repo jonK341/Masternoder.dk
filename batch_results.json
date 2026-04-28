@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Batch Video 2 - Ocean Waves",
+    "doc_id": "49e83886-6a46-456f-90d5-67aefc480c06",
+    "status": "completed",
+    "quality": "premium",
+    "quality_score": 0.0,
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\49e83886-6a46-456f-90d5-67aefc480c06.mp4"
+  },
+  {
+    "title": "Batch Video 1 - Mountain Scene",
+    "doc_id": "45ca5d97-39a4-49aa-bd90-5315942ed77c",
+    "status": "completed",
+    "quality": "high",
+    "quality_score": 0.0,
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\45ca5d97-39a4-49aa-bd90-5315942ed77c.mp4"
+  },
+  {
+    "title": "Batch Video 3 - Forest Path",
+    "doc_id": "57f8decd-47df-44e5-a353-1ea2fbba4efd",
+    "status": "completed",
+    "quality": "medium",
+    "quality_score": 0.0,
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\57f8decd-47df-44e5-a353-1ea2fbba4efd.mp4"
+  },
+  {
+    "title": "Batch Video 4 - City Lights",
+    "doc_id": "2013a94c-2b29-4517-8d83-d8a2bb59a7be",
+    "status": "completed",
+    "quality": "high",
+    "quality_score": 0.0,
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\2013a94c-2b29-4517-8d83-d8a2bb59a7be.mp4"
+  },
+  {
+    "title": "Batch Video 5 - Desert Sunset",
+    "doc_id": "590ab266-2edc-4276-a16a-b44a7316f740",
+    "status": "completed",
+    "quality": "ultra",
+    "quality_score": 0.0,
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\590ab266-2edc-4276-a16a-b44a7316f740.mp4"
+  }
+]

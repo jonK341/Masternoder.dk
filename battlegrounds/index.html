@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guild vs Clan BattleGrounds - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <style>
+        .battlegrounds-page {
+            min-height: 100vh;
+            padding: 100px 20px 40px;
+        }
+        
+        .battleground-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            transition: all var(--transition-base);
+        }
+        
+        .battleground-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ff0088;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .gps-map {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-md) 0;
+            position: relative;
+        }
+        
+        .online-counter {
+            display: flex;
+            gap: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+        }
+        
+        .counter-box {
+            flex: 1;
+            padding: var(--spacing-md);
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        
+        .counter-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .payment-ticket {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            margin: var(--spacing-lg) 0;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="battlegrounds-page">
+        <div class="container">
+            <h1>🗺️ Guild vs Clan BattleGrounds</h1>
+            <p class="subtitle">Live GPS Tracking • Online Counters • Real-time Battles</p>
+            
+            <!-- Payment Ticket Section -->
+            <div class="payment-ticket">
+                <h2>💳 Access Ticket - $1</h2>
+                <p>Purchase a ticket to access battlegrounds and participate in Guild vs Clan battles</p>
+                <button class="btn" onclick="purchaseTicket()">
+                    <i class="fas fa-ticket-alt"></i> Buy Ticket ($1)
+                </button>
+            </div>
+            
+            <!-- Active BattleGrounds -->
+            <div id="battlegroundsList"></div>
+            
+            <!-- Live GPS Map -->
+            <div id="gpsMapContainer" style="display: none;">
+                <h2>📍 Live GPS Tracking</h2>
+                <div class="gps-map" id="gpsMap">
+                    <p style="text-align: center; padding-top: 180px; color: var(--text-secondary);">
+                        Loading map...
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Online Counters -->
+            <div id="onlineCounters" style="display: none;">
+                <h2>👥 Online Players</h2>
+                <div class="online-counter">
+                    <div class="counter-box">
+                        <div class="counter-value" id="guildOnline">0</div>
+                        <div>Guild Players</div>
+                    </div>
+                    <div class="counter-box">
+                        <div class="counter-value" id="clanOnline">0</div>
+                        <div>Clan Players</div>
+                    </div>
+                    <div class="counter-box">
+                        <div class="counter-value" id="totalOnline">0</div>
+                        <div>Total Online</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        const API_BASE = window.location.origin;
+        
+        async function loadBattlegrounds() {
+            try {
+                // Load active battlegrounds
+                const container = document.getElementById('battlegroundsList');
+                container.innerHTML = '<p>Loading battlegrounds...</p>';
+                
+                // For now, show example battleground
+                container.innerHTML = `
+                    <div class="battleground-card">
+                        <h3><span class="live-indicator"></span>Active Battle: Guild Alpha vs Clan Beta</h3>
+                        <p>Scenario: Champions League Match</p>
+                        <p>Guild Score: <strong id="guildScore">0</strong> | Clan Score: <strong id="clanScore">0</strong></p>
+                        <button class="btn" onclick="joinBattleground('bg_001')">Join Battle</button>
+                        <button class="btn" onclick="viewLiveData('bg_001')">View Live Data</button>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading battlegrounds:', error);
+            }
+        }
+        
+        async function purchaseTicket() {
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const ticketId = 'ticket_' + Date.now();
+                
+                const response = await fetch(`${API_BASE}/api/payment/ticket/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ticket_id: ticketId,
+                        user_id: userId,
+                        amount: 1.0,
+                        currency: 'USD',
+                        type: 'battleground_access'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Ticket created! Redirecting to payment...');
+                    // Redirect to payment processing
+                    window.location.href = data.payment_url;
+                }
+            } catch (error) {
+                console.error('Error purchasing ticket:', error);
+                alert('Error creating ticket');
+            }
+        }
+        
+        async function joinBattleground(bgId) {
+            try {
+                // Update online status
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                await fetch(`${API_BASE}/api/battlegrounds/${bgId}/online`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        team: 'guild',
+                        is_online: true
+                    })
+                });
+                
+                // Request GPS permission and update location
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        await fetch(`${API_BASE}/api/battlegrounds/${bgId}/location`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude,
+                                team: 'guild'
+                            })
+                        });
+                    });
+                }
+                
+                alert('Joined battleground!');
+                viewLiveData(bgId);
+            } catch (error) {
+                console.error('Error joining battleground:', error);
+            }
+        }
+        
+        async function viewLiveData(bgId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/battlegrounds/${bgId}/live`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show GPS map
+                    document.getElementById('gpsMapContainer').style.display = 'block';
+                    document.getElementById('onlineCounters').style.display = 'block';
+                    
+                    // Update online counters
+                    const online = data.online_players;
+                    document.getElementById('guildOnline').textContent = online.guild || 0;
+                    document.getElementById('clanOnline').textContent = online.clan || 0;
+                    document.getElementById('totalOnline').textContent = online.total || 0;
+                    
+                    // Update scores
+                    document.getElementById('guildScore').textContent = data.battleground.guild_score || 0;
+                    document.getElementById('clanScore').textContent = data.battleground.clan_score || 0;
+                    
+                    // Update GPS map (simplified - would use actual map library)
+                    const mapDiv = document.getElementById('gpsMap');
+                    const players = data.live_gps.players || [];
+                    mapDiv.innerHTML = `
+                        <p style="text-align: center; padding-top: 180px; color: var(--text-secondary);">
+                            ${players.length} players tracked<br>
+                            <small>GPS coordinates: ${players.map(p => `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join(' | ')}</small>
+                        </p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading live data:', error);
+            }
+        }
+        
+        // Auto-refresh live data
+        setInterval(() => {
+            const bgId = 'bg_001'; // Current battleground
+            if (document.getElementById('gpsMapContainer').style.display !== 'none') {
+                viewLiveData(bgId);
+            }
+        }, 5000); // Every 5 seconds
+        
+        // Load on page load
+        window.addEventListener('load', () => {
+            loadBattlegrounds();
+        });
+    </script>
+    
+    
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    <script>
+        // Simple cache version check (no forced reloads)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed and not already reloading
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,475 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Achievement Guides - Masternoder.dk</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        .guides-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        .guides-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border-radius: 20px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .guides-header h1 {
+            font-size: var(--font-size-4xl);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: rgba(40, 40, 55, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .category-tab:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2));
+            border-color: var(--primary);
+        }
+
+        .category-content {
+            display: none;
+        }
+
+        .category-content.active {
+            display: block;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .achievement-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: var(--spacing-lg);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+
+        .achievement-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .achievement-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .achievement-icon {
+            font-size: 3rem;
+        }
+
+        .achievement-title {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .achievement-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .achievement-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 8px;
+            font-size: var(--font-size-sm);
+        }
+
+        .meta-item.points {
+            color: var(--primary);
+        }
+
+        .meta-item.time {
+            color: var(--secondary);
+        }
+
+        .meta-item.difficulty {
+            color: #ffaa00;
+        }
+
+        .achievement-tips {
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tips-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .tips-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tips-list li {
+            padding: var(--spacing-xs) 0;
+            color: var(--text-secondary);
+            padding-left: var(--spacing-md);
+            position: relative;
+        }
+
+        .tips-list li:before {
+            content: '💡';
+            position: absolute;
+            left: 0;
+        }
+
+        .achievement-rewards {
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .rewards-title {
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .rewards-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-xs);
+        }
+
+        .reward-badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            font-size: var(--font-size-sm);
+            color: var(--secondary);
+        }
+
+        .recommended-section {
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(255, 215, 0, 0.1));
+            border-radius: 20px;
+            border: 2px solid rgba(255, 170, 0, 0.3);
+        }
+
+        .recommended-title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: #ffaa00;
+            margin-bottom: var(--spacing-lg);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <!-- Navigation -->
+    <nav class="page-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-link nav-home">🏠 Home</a>
+            <div class="nav-links">
+                <a href="/game" class="nav-link">Game</a>
+            <a href="/points" class="nav-item" title="Points & Rewards">💎</a>
+                <a href="/battle" class="nav-link">Battle</a>
+                <a href="/social" class="nav-link">Social</a>
+                <a href="/profile" class="nav-link">Profile</a>
+                <a href="/stats" class="nav-link">Stats</a>
+                <a href="/time-achievement-guides" class="nav-link active">Achievement Guides</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container guides-page">
+        <!-- Header -->
+        <div class="guides-header">
+            <h1>⏱️ Time Achievement Guides</h1>
+            <p style="color: var(--text-secondary); font-size: var(--font-size-lg);">
+                Master time-based achievements and maximize your rewards
+            </p>
+        </div>
+
+        <!-- Recommended Section -->
+        <div class="recommended-section" id="recommended-section" style="display: none;">
+            <h2 class="recommended-title">⭐ Recommended for You</h2>
+            <div class="achievements-grid" id="recommended-grid"></div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="category-tabs"></div>
+
+        <!-- Category Content -->
+        <div id="category-content"></div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+
+        let allGuides = null;
+        let currentCategory = null;
+
+        // Load all guides
+        async function loadAllGuides() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/time-achievement-guides/all`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allGuides = data.guides;
+                    renderCategoryTabs();
+                    loadRecommended();
+                }
+            } catch (error) {
+                console.error('Error loading guides:', error);
+            }
+        }
+
+        // Load recommended achievements
+        async function loadRecommended() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/time-achievement-guides/user/${userId}/recommended`);
+                const data = await response.json();
+                
+                if (data.success && data.recommended && data.recommended.length > 0) {
+                    document.getElementById('recommended-section').style.display = 'block';
+                    renderAchievements(data.recommended, 'recommended-grid', true);
+                }
+            } catch (error) {
+                console.error('Error loading recommended:', error);
+            }
+        }
+
+        // Render category tabs
+        function renderCategoryTabs() {
+            const tabsContainer = document.getElementById('category-tabs');
+            tabsContainer.innerHTML = '';
+            
+            Object.keys(allGuides).forEach((category, index) => {
+                const guide = allGuides[category];
+                const tab = document.createElement('div');
+                tab.className = `category-tab ${index === 0 ? 'active' : ''}`;
+                tab.style.borderColor = guide.color;
+                tab.innerHTML = `
+                    <span style="font-size: 1.5em;">${guide.icon}</span>
+                    <span>${guide.title}</span>
+                `;
+                tab.onclick = () => showCategory(category);
+                tabsContainer.appendChild(tab);
+            });
+            
+            // Show first category by default
+            if (Object.keys(allGuides).length > 0) {
+                showCategory(Object.keys(allGuides)[0]);
+            }
+        }
+
+        // Show category
+        function showCategory(category) {
+            currentCategory = category;
+            
+            // Update active tab
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.category-tab').classList.add('active');
+            
+            // Render category content
+            const guide = allGuides[category];
+            const contentContainer = document.getElementById('category-content');
+            contentContainer.innerHTML = `
+                <div class="category-content active">
+                    <h2 style="font-size: var(--font-size-2xl); color: ${guide.color}; margin-bottom: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <span style="font-size: 2em;">${guide.icon}</span>
+                        ${guide.title}
+                    </h2>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-xl);">${guide.description}</p>
+                    <div class="achievements-grid" id="achievements-grid-${category}"></div>
+                </div>
+            `;
+            
+            renderAchievements(guide.achievements.map(a => ({
+                achievement: a,
+                category: category,
+                category_info: {
+                    title: guide.title,
+                    icon: guide.icon,
+                    color: guide.color
+                }
+            })), `achievements-grid-${category}`);
+        }
+
+        // Render achievements
+        function renderAchievements(achievements, containerId, isRecommended = false) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = achievements.map(item => {
+                const achievement = item.achievement || item;
+                const categoryInfo = item.category_info || allGuides[item.category] || {};
+                const difficultyColors = {
+                    'Easy': '#00ff88',
+                    'Medium': '#00d4ff',
+                    'Hard': '#ffaa00',
+                    'Very Hard': '#ff4444',
+                    'Extreme': '#ff00ff'
+                };
+                
+                return `
+                    <div class="achievement-card" style="border-color: ${categoryInfo.color || '#00ff88'};">
+                        <div class="achievement-header">
+                            <div class="achievement-icon">${categoryInfo.icon || '🏆'}</div>
+                            <div>
+                                <div class="achievement-title">${achievement.name}</div>
+                            </div>
+                        </div>
+                        <div class="achievement-description">${achievement.description}</div>
+                        <div class="achievement-meta">
+                            <div class="meta-item points">${achievement.points} Points</div>
+                            <div class="meta-item time">⏱️ ${achievement.time_requirement}</div>
+                            <div class="meta-item difficulty" style="color: ${difficultyColors[achievement.difficulty] || '#ffffff'};">${achievement.difficulty}</div>
+                        </div>
+                        <div class="achievement-tips">
+                            <div class="tips-title">💡 Tips:</div>
+                            <ul class="tips-list">
+                                ${achievement.tips.map(tip => `<li>${tip}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="achievement-rewards">
+                            <div class="rewards-title">🎁 Rewards:</div>
+                            <div class="rewards-list">
+                                ${achievement.rewards.map(reward => `<span class="reward-badge">${reward}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initialize particles
+        function initParticles() {
+            const particlesEl = document.getElementById('particles');
+            if (!particlesEl) return;
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: var(--primary);
+                    border-radius: 50%;
+                    opacity: 0.5;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation: float ${5 + Math.random() * 10}s infinite ease-in-out;
+                    animation-delay: ${Math.random() * 5}s;
+                `;
+                particlesEl.appendChild(particle);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            loadAllGuides();
+        });
+    </script>
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/toast-notifications.js"></script>
+    <script src="/static/js/theme-toggle.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    
+
+    
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,21 @@
+# Example systemd unit for MasterNoder2 daemon using the deployed project config dir.
+# Copy to /etc/systemd/system/masternoder2d.service, adjust ExecStart path to your binary,
+# then: sudo systemctl daemon-reload && sudo systemctl enable --now masternoder2d
+#
+# This matches docs/MN2_CONFIG_AND_PASSWORD_STEPS.md: daemon reads
+# /var/www/html/config/masternoder2.conf (same rpcuser/rpcpassword as app .env).
+
+[Unit]
+Description=MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+After=network.target
+
+[Service]
+Type=simple
+# Run as user that owns the wallet/datadir if you prefer (chown /var/www/html/config first).
+User=root
+ExecStart=/opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

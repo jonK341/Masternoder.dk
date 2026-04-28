@@ -1,0 +1,188 @@
+{
+  "name": "Hunters Stories",
+  "version": "1.0",
+  "description": "Campaign and one-shot stories for Trophy Hunters. Time reversal, medieval, power combos.",
+  "updated_at": "2026-03-09",
+  "stories": [
+    {
+      "id": "winter_wedding_1017",
+      "title": "The Winter Wedding in London",
+      "subtitle": "Knud & Emma — 1017",
+      "theme": "medieval",
+      "tags": ["time_reversal", "medieval", "power_combos", "political_intrigue", "one_shot"],
+      "icon": "💒",
+      "hook": "Use Knud & Emma's wedding in 1017 as the turning point for a D&D campaign — not monsters, but words and poison.",
+      "setting": {
+        "name": "The Winter Wedding in London",
+        "lines": [
+          "The city is occupied by Viking fleets.",
+          "Anglo-Saxon nobles are forced to attend the wedding of their new conqueror.",
+          "The air is thick with distrust."
+        ]
+      },
+      "atmosphere": {
+        "name": "Atmosphere",
+        "lines": [
+          "Heavy ale, smoke from oil lamps.",
+          "The rustle of ringmail under fine silk gowns.",
+          "Skalds trying to sing in two languages at once."
+        ]
+      },
+      "party_roles": [
+        {
+          "id": "infiltrator",
+          "name": "The Infiltrator",
+          "class": "Rogue / Bard",
+          "agenda": "Sent by Normandy to ensure Emma is not murdered before the signing."
+        },
+        {
+          "id": "disgraced_knight",
+          "name": "The Disgraced Knight",
+          "class": "Paladin / Fighter",
+          "agenda": "Former loyalist to the dead King Æthelred. Must decide: kneel to Cnut or draw his sword."
+        },
+        {
+          "id": "viking_berserker",
+          "name": "The Viking Berserker",
+          "class": "Barbarian",
+          "agenda": "One of Cnut's own — has discovered a plot against the king from rival jarls."
+        }
+      ],
+      "conflicts": [
+        {
+          "id": "contract_in_shadow",
+          "title": "The Contract in the Shadow",
+          "summary": "Emma and Cnut must sign the marriage pact (securing her children's claim to the throne). Factions loyal to Cnut's first wife, Ælfgifu, try to steal or destroy the document before it is sealed.",
+          "skills": ["Stealth", "Persuasion", "Sleight of Hand"]
+        },
+        {
+          "id": "poison_in_horn",
+          "title": "The Poison in the Horn",
+          "summary": "During the great toast, the party must spot an assassin trying to poison either bride or groom. Heavy use of Perception and Insight.",
+          "skills": ["Perception", "Insight", "Investigation"]
+        },
+        {
+          "id": "forgotten_son",
+          "title": "The Forgotten Son",
+          "summary": "One of Emma's sons from her previous marriage hides in the crowd. If he is discovered, the peace shatters. The party must either smuggle him out or hand him over to Cnut.",
+          "skills": ["Deception", "Survival", "Charisma"]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "knud",
+          "name": "Cnut",
+          "role": "King",
+          "traits": "Charismatic but cold. Passive Perception 20. He knows everything in the room."
+        },
+        {
+          "id": "emma",
+          "name": "Emma",
+          "role": "Bride",
+          "traits": "The cleverest in the hall. High Charisma; can manipulate the party into her dirty work (e.g. silencing a political rival)."
+        },
+        {
+          "id": "thorkill",
+          "name": "Thorkill the Tall",
+          "role": "Enforcer",
+          "traits": "Cnut's giant Viking jarl. The enforcer if the party starts a fight."
+        }
+      ],
+      "twist": {
+        "title": "Game Master Twist",
+        "lines": [
+          "Just as the couple say \"I do\", the doors burst open.",
+          "It is not monsters — it is news: Ælfgifu (the scorned wife) has gathered a fleet in the north.",
+          "The party must choose: fight for the new realm, or let it burn?"
+        ]
+      },
+      "session_start_options": [
+        {
+          "id": "arrival",
+          "label": "Arrival with the fleet",
+          "description": "Start at arrival in London with the fleet."
+        },
+        {
+          "id": "wedding_morning",
+          "label": "Wedding morning hangover",
+          "description": "Wake with a hangover on the wedding morning and discover a dead guard in the corridor."
+        }
+      ],
+      "time_reversal_rules": "Once per session, a player may spend 10 game_points to rewind one in-world decision or failed check (narrative time reversal). The table votes on the new outcome.",
+      "power_combos": [
+        {
+          "combo": "Contract Seal + Jarl's Fury",
+          "effect": "If the marriage document is secured and Thorkill is allied, grant +2 to all Intimidation and Persuasion vs. Ælfgifu's faction."
+        },
+        {
+          "combo": "Poison Revealed + Forgotten Son Smuggled",
+          "effect": "If the assassin is exposed and Emma's son is safely away, Emma grants the party a Boon (reroll one future check)."
+        },
+        {
+          "combo": "Infiltrator + Knight + Berserker",
+          "effect": "If all three party agendas align in one scene, unlock the 'Winter Wedding Triumph' trophy and +50 game_points."
+        }
+      ],
+      "acts": [
+        {
+          "id": "act1",
+          "title": "Act I — Arrival & the Hall",
+          "summary": "Party arrives (fleet or wedding morning). Establish allegiances, meet key NPCs. One conflict surfaces (contract, poison, or son).",
+          "key_beats": ["Choose session start (fleet or morning).", "Enter the hall; describe atmosphere.", "Each PC has one private moment with an NPC tied to their agenda.", "Introduce one of the three conflicts — e.g. a whispered rumour about the contract or a nervous servant."]
+        },
+        {
+          "id": "act2",
+          "title": "Act II — The Feast & the Three Tasks",
+          "summary": "During the feast, run the three conflicts. Order can vary; at least two must be resolved (or failed with consequence) before the vows.",
+          "key_beats": ["Contract in the Shadow: intercept theft or forge/seal the document.", "Poison in the Horn: Perception/Insight to spot the assassin during the great toast.", "The Forgotten Son: find Emma's son, then smuggle out or hand over — choice has lasting consequence."]
+        },
+        {
+          "id": "act3",
+          "title": "Act III — The Vows & the Twist",
+          "summary": "The couple says \"I do\". Doors burst open: news of Ælfgifu's fleet. Final choice and climax.",
+          "key_beats": ["Ceremony reaches the vows.", "Doors open — messenger (or fleeing guard) reports Ælfgifu's fleet in the north.", "Cnut and Emma demand a response; Thorkill readies the hall.", "Party chooses side and one ending plays out."]
+        }
+      ],
+      "climax": {
+        "title": "The Choice",
+        "description": "When Ælfgifu's fleet is announced, the party must decide: stand with Cnut and Emma (defend the new order), side with or aid Ælfgifu's faction (undermine the wedding), or broker a third path (e.g. negotiate, escape with the son, or flee). The GM resolves the chosen ending and awards the campaign rewards."
+      },
+      "endings": [
+        {
+          "id": "ending_cnut",
+          "title": "For the New Realm",
+          "description": "The party fights or schemes for Cnut and Emma. The contract holds; the wedding is secured.",
+          "consequence": "Cnut remembers their loyalty. Emma may call in a favour later.",
+          "reward_modifier": "Full rewards (trophy + 75 game_points + 100 XP). Optional: Thorkill's Favor (one free Intimidation assist in a future session)."
+        },
+        {
+          "id": "ending_elfgifu",
+          "title": "For the Scorned Queen",
+          "description": "The party aids Ælfgifu's cause — sabotage, information, or opening the gates.",
+          "consequence": "The wedding is disrupted; Cnut's grip weakens. The party becomes enemies of the court.",
+          "reward_modifier": "Half game_points (37); no Winter Wedding trophy; instead unlock 'Shadow of Ælfgifu' trophy. XP 50."
+        },
+        {
+          "id": "ending_third_way",
+          "title": "Third Path",
+          "description": "The party brokers peace, smuggles the son to safety without betraying Emma, or escapes the hall without picking a side.",
+          "consequence": "Uncertain future: neither side fully trusts them, but they have options.",
+          "reward_modifier": "Full trophy + 75 game_points; XP 100. If son smuggled and poison revealed: +25 bonus game_points (Emma's Boon)."
+        }
+      ],
+      "gm_notes": {
+        "pacing": "Keep Act I to 20–30 min, Act II to 45–60 min, Act III to 20–30 min. Trigger the twist when at least two conflicts are resolved or failed.",
+        "suggested_dcs": "Contract (Stealth/Sleight of Hand): DC 14. Poison (Perception/Insight): DC 15. Son (Deception/Persuasion): DC 13. Climax Persuasion/Intimidation: DC 16.",
+        "when_to_trigger_twist": "Right as the officiant says 'Do you take...' or when the last signature is set on the contract — then the doors burst open.",
+        "thorkill": "If the party draws steel in the hall, Thorkill intervenes (hard encounter). Use him as a timer or a wall, not an automatic TPK — Cnut may still want to use the party."
+      },
+      "epilogue": "After the chosen ending, describe the aftermath: who holds London, whether the contract survived, and what the party did with Emma's son. Award the Winter Wedding trophy and game_points (or the variant trophy for the Ælfgifu ending). If using Hunters game integration, grant +75 game_points and +100 XP for a completed run (or the modified amounts per ending).",
+      "rewards": {
+        "trophy_id": "trophy_winter_wedding",
+        "game_points": 75,
+        "xp_bonus": 100,
+        "completion_note": "Award after epilogue based on chosen ending."
+      }
+    }
+  ]
+}

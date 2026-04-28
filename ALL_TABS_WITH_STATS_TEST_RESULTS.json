@@ -1,0 +1,521 @@
+{
+  "timestamp": "2026-01-05T22:51:25.643678",
+  "summary": {
+    "total_tabs": 30,
+    "original_ok": 30,
+    "stats_ok": 30,
+    "both_ok": 30
+  },
+  "results": {
+    "overview": {
+      "name": "Overview",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "battle": {
+      "name": "Battle",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "tournaments": {
+      "name": "Tournaments",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "history": {
+      "name": "History",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "leaderboard": {
+      "name": "Leaderboard",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "intelligence": {
+      "name": "Intelligence",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "resources": {
+      "name": "Resources",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "series": {
+      "name": "Series",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "gps": {
+      "name": "GPS",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "news": {
+      "name": "News",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "peers": {
+      "name": "Peers & Network",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "timepocket": {
+      "name": "Timepocket Real-Time",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "trading": {
+      "name": "Trophy Trading & Collectibles",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "missions": {
+      "name": "Missions & Quests",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "ai-research": {
+      "name": "AI Research",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "rewards": {
+      "name": "Rewards",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "technology": {
+      "name": "Technology & Science",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "autoplay": {
+      "name": "Autoplay & Recording",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "social": {
+      "name": "Social",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "teams": {
+      "name": "Teams & Groups",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "alliances": {
+      "name": "Alliances",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "groups-destroy": {
+      "name": "Group Destruction",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "bonus-level": {
+      "name": "Bonus Level",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "death-teleport-install": {
+      "name": "Death Teleport Install",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "militia-forces": {
+      "name": "Militia Forces",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "legal-content": {
+      "name": "Legal Content",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "tech-hardware": {
+      "name": "Tech & Hardware",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "death-portal": {
+      "name": "Death Portal",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "experience-recount": {
+      "name": "Experience Recount",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    },
+    "enhanced-system": {
+      "name": "Enhanced Battle System",
+      "original": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": false
+      },
+      "stats": {
+        "status": "OK",
+        "status_code": 200,
+        "has_data": true,
+        "success": true,
+        "has_stats": true
+      }
+    }
+  }
+}

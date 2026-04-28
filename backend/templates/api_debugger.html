@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Debugger - MasterNoder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            min-height: 100px;
+        }
+
+        .endpoint-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .endpoint-item.success {
+            border-left-color: #28a745;
+        }
+
+        .endpoint-item.error {
+            border-left-color: #dc3545;
+        }
+
+        .method-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .method-get {
+            background: #28a745;
+            color: white;
+        }
+
+        .method-post {
+            background: #007bff;
+            color: white;
+        }
+
+        .method-put {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .method-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .status-ok {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            flex: 1;
+            user-select: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 API Debugger</h1>
+            <p>Test, debug og administrer alle API endpoints</p>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                <strong>URL:</strong> <span id="currentUrl"></span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="testing" onclick="showTab('testing', event)">🧪 API Testing</button>
+            <button class="tab" data-tab="rettigheder" onclick="showTab('rettigheder', event)">⚖️ Rettigheder</button>
+            <button class="tab" data-tab="builder" onclick="showTab('builder', event)">🛠️ Debugger Builder</button>
+            <button class="tab" data-tab="ai" onclick="showTab('ai', event)">🤖 AI Debugger</button>
+        </div>
+
+        <!-- API Testing Tab -->
+        <div id="testing" class="tab-content active">
+            <div class="section">
+                <h2>🧪 API Endpoint Testing</h2>
+                <div class="stats" id="testStats">
+                    <div class="stat-card">
+                        <h3 id="totalTests">0</h3>
+                        <p>Total Tests</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="successTests">0</h3>
+                        <p>Successful</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="failedTests">0</h3>
+                        <p>Failed</p>
+                    </div>
+                </div>
+                <button class="btn" onclick="runAllTests()">▶️ Kør Alle Tests</button>
+                <button class="btn btn-success" onclick="testCustomEndpoint()">➕ Test Custom Endpoint</button>
+                <div class="results" id="testResults">
+                    <p style="color: #666; text-align: center;">Klik på "Kør Alle Tests" for at starte</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rettigheder Tab -->
+        <div id="rettigheder" class="tab-content">
+            <div class="section">
+                <h2>⚖️ Rettigheder Administration</h2>
+                <div class="input-group">
+                    <label>Valgte rettigheder: <strong id="selectedCount">0</strong></label>
+                </div>
+                <div class="grid" id="rettighederGrid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <button class="btn btn-success" onclick="slaaRettigheder()">✅ Slå Rettigheder</button>
+                <div id="rettighederMessage"></div>
+            </div>
+        </div>
+
+        <!-- Debugger Builder Tab -->
+        <div id="builder" class="tab-content">
+            <div class="section">
+                <h2>🛠️ Debugger Builder</h2>
+                <p style="margin-bottom: 20px;">Byg din egen custom debugger og download som pakke. Giver points til Hunters Game!</p>
+                
+                <div class="input-group">
+                    <label for="debuggerName">Debugger Navn:</label>
+                    <input type="text" id="debuggerName" placeholder="fx: my_custom_debugger">
+                </div>
+
+                <div class="input-group">
+                    <label for="debuggerType">Type:</label>
+                    <select id="debuggerType">
+                        <option value="python">Python</option>
+                        <option value="bash">Bash</option>
+                        <option value="powershell">PowerShell</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Endpoints at teste:</label>
+                    <div id="endpointInputs">
+                        <input type="text" class="endpoint-input" placeholder="fx: https://masternoder.dk/vidgenerator/api/gallery/list" style="margin-bottom: 10px;">
+                    </div>
+                    <button class="btn" onclick="addEndpointInput()">➕ Tilføj Endpoint</button>
+                </div>
+
+                <div class="input-group">
+                    <label for="userId">User ID (for points):</label>
+                    <input type="text" id="userId" placeholder="fx: user123">
+                </div>
+
+                <button class="btn btn-success" onclick="buildDebugger()" style="width: 100%;">🛠️ Byg Debugger & Download Pakke</button>
+                <div id="builderMessage"></div>
+            </div>
+        </div>
+
+        <!-- AI Debugger Tab -->
+        <div id="ai" class="tab-content">
+            <div class="section">
+                <h2>🤖 AI-Powered Debugger</h2>
+                <p style="margin-bottom: 20px;">Intelligent debugging med AI, pattern recognition, og automatisk fejlretning</p>
+
+                <div class="input-group">
+                    <label for="aiErrorInput">🔍 Error Analysis</label>
+                    <textarea id="aiErrorInput" placeholder="Indtast fejlbesked eller stack trace..."></textarea>
+                    <button class="btn" onclick="analyzeError()">🤖 Analyser med AI</button>
+                    <div class="results" id="aiAnalysisResult" style="display: none;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="codebasePath">📊 Codebase Analysis</label>
+                    <input type="text" id="codebasePath" value="/var/www/html/vidgenerator" placeholder="Path to codebase">
+                    <button class="btn" onclick="analyzeCodebase()">📊 Analyser Codebase</button>
+                    <div class="results" id="codebaseResult" style="display: none;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="optimizeEndpoint">⚡ Performance Optimization</label>
+                    <input type="text" id="optimizeEndpoint" placeholder="fx: /api/gallery/list">
+                    <button class="btn" onclick="optimizePerformance()">⚡ Få Optimering Forslag</button>
+                    <div class="results" id="optimizeResult" style="display: none;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="predictEndpoint">🔮 Predictive Debugging</label>
+                    <input type="text" id="predictEndpoint" placeholder="fx: /api/generator/create">
+                    <select id="predictMethod" style="margin-top: 10px;">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <button class="btn" onclick="predictErrors()">🔮 Forudsig Fejl</button>
+                    <div class="results" id="predictResult" style="display: none;"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="autoFixInput">🔧 Auto-Fix</label>
+                    <textarea id="autoFixInput" placeholder="Indtast fejlbesked for auto-fix..."></textarea>
+                    <button class="btn btn-success" onclick="autoFix()">🔧 Auto-Fix</button>
+                    <div class="results" id="autoFixResult" style="display: none;"></div>
+                </div>
+
+                <button class="btn" onclick="checkAIStatus()">📊 AI Status</button>
+                <div class="results" id="aiStatus" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const BASE_URL = window.location.origin + '/vidgenerator';
+        const rettigheder = [
+            'Musik', 'TV', 'Sex', 'Porn', 'ID', 'EGO', 'Commercials', 
+            'Girls', 'Woman', 'Baby', 'Familie', 'Født', 'Garanti', 
+            'Boks', 'Fodbold', 'Fisse', 'Kusse', 'Pussy', 'Jon. Køhrsen', 'ASE'
+        ];
+
+        const testEndpoints = [
+            { url: '/api/gallery/list', method: 'GET' },
+            { url: '/api/debug/errors/scan', method: 'GET' },
+            { url: '/api/rettigheder/list', method: 'GET' },
+            { url: '/api/rettigheder/status', method: 'GET' },
+            { url: '/api/generator/create', method: 'POST' },
+            { url: '/api/game/xp', method: 'POST' },
+        ];
+
+        // Tab Management
+        function showTab(tabName, evt) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const target = evt?.currentTarget || evt?.target;
+            if (target) {
+                target.classList.add('active');
+            } else {
+                const fallbackBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+                if (fallbackBtn) fallbackBtn.classList.add('active');
+            }
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Utility Functions
+        function updateStats(total, success, failed) {
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('successTests').textContent = success;
+            document.getElementById('failedTests').textContent = failed;
+        }
+
+        function showMessage(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+
+        // API Testing
+        async function testEndpoint(url, method = 'GET') {
+            try {
+                const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
+                const options = { method: method };
+                
+                if (method === 'POST' || method === 'PUT') {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify({});
+                }
+                
+                const response = await fetch(fullUrl, options);
+                return {
+                    success: response.ok || response.status === 405,
+                    status: response.status,
+                    method: method,
+                    url: url
+                };
+            } catch (e) {
+                return { success: false, error: e.message, method: method, url: url };
+            }
+        }
+
+        async function runAllTests() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<p class="loading">Tester...</p>';
+            
+            let total = 0, success = 0, failed = 0;
+            let html = '';
+            
+            for (const ep of testEndpoints) {
+                total++;
+                const result = await testEndpoint(ep.url, ep.method);
+                
+                if (result.success) {
+                    success++;
+                } else {
+                    failed++;
+                }
+                
+                const statusClass = result.success ? 'success' : 'error';
+                const statusBadge = result.success ? 'status-ok' : 'status-error';
+                const methodClass = `method-${ep.method.toLowerCase()}`;
+                
+                html += `
+                    <div class="endpoint-item ${statusClass}">
+                        <div>
+                            <span class="method-badge ${methodClass}">${ep.method}</span>
+                            <span style="margin-left: 10px; font-weight: 600;">${ep.url}</span>
+                        </div>
+                        <span class="status-badge ${statusBadge}">${result.status || 'ERROR'}</span>
+                    </div>
+                `;
+            }
+            
+            updateStats(total, success, failed);
+            resultsDiv.innerHTML = html;
+        }
+
+        function testCustomEndpoint() {
+            const url = prompt('Indtast endpoint URL:', '/api/status');
+            if (url) {
+                const method = prompt('HTTP Method:', 'GET');
+                testEndpoint(url, method).then(result => {
+                    alert(`Status: ${result.status}\nSuccess: ${result.success ? 'Yes' : 'No'}`);
+                });
+            }
+        }
+
+        // Rettigheder
+        function initRettigheder() {
+            const grid = document.getElementById('rettighederGrid');
+            grid.innerHTML = '';
+            
+            rettigheder.forEach(rettighed => {
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `rett-${rettighed}`;
+                checkbox.value = rettighed;
+                checkbox.addEventListener('change', updateSelectedCount);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `rett-${rettighed}`;
+                label.textContent = rettighed;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                grid.appendChild(item);
+            });
+            
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#rettighederGrid input[type="checkbox"]:checked');
+            document.getElementById('selectedCount').textContent = checkboxes.length;
+        }
+
+        async function slaaRettigheder() {
+            const checkboxes = document.querySelectorAll('#rettighederGrid input[type="checkbox"]:checked');
+            const selected = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selected.length === 0) {
+                showMessage('rettighederMessage', 'Vælg mindst én rettighed først!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/rettigheder/slaa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rettigheder: selected })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('rettighederMessage', `✅ ${data.message}`, 'success');
+                } else {
+                    showMessage('rettighederMessage', `Fejl: ${data.error || 'Ukendt fejl'}`, 'error');
+                }
+            } catch (error) {
+                showMessage('rettighederMessage', `Fejl: ${error.message}`, 'error');
+            }
+        }
+
+        // Debugger Builder
+        function addEndpointInput() {
+            const container = document.getElementById('endpointInputs');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'endpoint-input';
+            input.placeholder = 'fx: https://masternoder.dk/vidgenerator/api/gallery/list';
+            input.style.cssText = 'margin-bottom: 10px;';
+            container.appendChild(input);
+        }
+
+        async function buildDebugger() {
+            const name = document.getElementById('debuggerName').value.trim();
+            const type = document.getElementById('debuggerType').value;
+            const userId = document.getElementById('userId').value.trim() || 'anonymous';
+            
+            if (!name) {
+                showMessage('builderMessage', 'Indtast et navn til debuggeren!', 'error');
+                return;
+            }
+            
+            const endpointInputs = document.querySelectorAll('.endpoint-input');
+            const endpoints = Array.from(endpointInputs)
+                .map(input => input.value.trim())
+                .filter(url => url.length > 0);
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger-builder/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        type: type,
+                        features: endpoints,
+                        user_id: userId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('builderMessage', `✅ Debugger "${name}" oprettet! Download starter...`, 'success');
+                    setTimeout(() => {
+                        window.location.href = BASE_URL + `/api/debugger-builder/download/${name}`;
+                    }, 1000);
+                } else {
+                    showMessage('builderMessage', `Fejl: ${data.error || 'Ukendt fejl'}`, 'error');
+                }
+            } catch (error) {
+                showMessage('builderMessage', `Fejl: ${error.message}`, 'error');
+            }
+        }
+
+        // AI Debugger
+        async function analyzeError() {
+            const errorInput = document.getElementById('aiErrorInput').value.trim();
+            const resultDiv = document.getElementById('aiAnalysisResult');
+            
+            if (!errorInput) {
+                alert('Indtast en fejlbesked!');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="loading">Analyserer...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ error_message: errorInput })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const analysis = data.advanced_analysis || data.analysis;
+                    resultDiv.innerHTML = `
+                        <h3>Analysis Result</h3>
+                        <p><strong>Error Type:</strong> ${analysis.error_type || 'Unknown'}</p>
+                        <p><strong>Severity:</strong> ${analysis.severity || 'Unknown'}</p>
+                        <p><strong>Confidence:</strong> ${((analysis.confidence || 0) * 100).toFixed(1)}%</p>
+                        ${analysis.suggestions ? `<h4>Suggestions:</h4><ul>${analysis.suggestions.map(s => `<li>${s}</li>`).join('')}</ul>` : ''}
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">Fejl: ${data.error || 'Ukendt fejl'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Fejl: ${error.message}</p>`;
+            }
+        }
+
+        async function analyzeCodebase() {
+            const path = document.getElementById('codebasePath').value.trim() || '/var/www/html/vidgenerator';
+            const resultDiv = document.getElementById('codebaseResult');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="loading">Analyserer...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/analyze-codebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const analysis = data.analysis;
+                    resultDiv.innerHTML = `
+                        <h3>Codebase Analysis</h3>
+                        <p><strong>Total Files:</strong> ${analysis.metrics?.total_files || 0}</p>
+                        <p><strong>Total Lines:</strong> ${analysis.metrics?.total_lines || 0}</p>
+                        <p><strong>Issues Found:</strong> ${analysis.summary?.total_issues || 0}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">Fejl: ${data.error || 'Ukendt fejl'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Fejl: ${error.message}</p>`;
+            }
+        }
+
+        async function optimizePerformance() {
+            const endpoint = document.getElementById('optimizeEndpoint').value.trim();
+            const resultDiv = document.getElementById('optimizeResult');
+            
+            if (!endpoint) {
+                alert('Indtast et endpoint!');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="loading">Analyserer...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: endpoint })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<h3>Optimization Suggestions</h3><pre class="code-block">${JSON.stringify(data.suggestions, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">Fejl: ${data.error || 'Ukendt fejl'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Fejl: ${error.message}</p>`;
+            }
+        }
+
+        async function predictErrors() {
+            const endpoint = document.getElementById('predictEndpoint').value.trim();
+            const method = document.getElementById('predictMethod').value;
+            const resultDiv = document.getElementById('predictResult');
+            
+            if (!endpoint) {
+                alert('Indtast et endpoint!');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="loading">Forudsiger...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: endpoint, method: method })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<h3>Predicted Errors</h3><pre class="code-block">${JSON.stringify(data.predictions, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">Fejl: ${data.error || 'Ukendt fejl'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Fejl: ${error.message}</p>`;
+            }
+        }
+
+        async function autoFix() {
+            const errorInput = document.getElementById('autoFixInput').value.trim();
+            const resultDiv = document.getElementById('autoFixResult');
+            
+            if (!errorInput) {
+                alert('Indtast en fejlbesked!');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p class="loading">Genererer fix...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/auto-fix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ error_message: errorInput })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<h3>Auto-Fix Suggestion</h3><pre class="code-block">${JSON.stringify(data.fix_suggestion, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">Fejl: ${data.error || 'Ukendt fejl'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Fejl: ${error.message}</p>`;
+            }
+        }
+
+        async function checkAIStatus() {
+            const statusDiv = document.getElementById('aiStatus');
+            statusDiv.innerHTML = '<p class="loading">Tjekker...</p>';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/debugger/ai/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <h3>AI Status</h3>
+                        <p><strong>Available:</strong> ${data.available ? 'Yes' : 'No'}</p>
+                        <p><strong>Engines:</strong> ${data.engines?.join(', ') || 'N/A'}</p>
+                        <p><strong>Version:</strong> ${data.version || 'N/A'}</p>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<p style="color: red;">Could not check AI status</p>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Initialize
+        function displayCurrentUrl() {
+            document.getElementById('currentUrl').textContent = window.location.href;
+        }
+
+        // Make functions globally available
+        window.showTab = showTab;
+        window.runAllTests = runAllTests;
+        window.testCustomEndpoint = testCustomEndpoint;
+        window.slaaRettigheder = slaaRettigheder;
+        window.addEndpointInput = addEndpointInput;
+        window.buildDebugger = buildDebugger;
+        window.analyzeError = analyzeError;
+        window.analyzeCodebase = analyzeCodebase;
+        window.optimizePerformance = optimizePerformance;
+        window.predictErrors = predictErrors;
+        window.autoFix = autoFix;
+        window.checkAIStatus = checkAIStatus;
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            displayCurrentUrl();
+            initRettigheder();
+            checkAIStatus();
+        });
+    </script>
+</body>
+</html>

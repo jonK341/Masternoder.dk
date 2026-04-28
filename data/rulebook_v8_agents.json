@@ -1,0 +1,21 @@
+{
+  "name": "Agents & Skillsets",
+  "version": "V8",
+  "description": "Agent specials, skillsets, Electric Magnet integration.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v8-agents.png",
+  "image_alt": "Agents V8",
+  "agent_prompt": "Agents use specials (run_verification, run_dna_test, view_star_map) and skillsets. Skillsets are additive. Debugger shows tech and skills. Ved shop-/tema-spørgsmål: brug rulebook_v9_shop.json (monthly_theme_catalog, cross_rulebook_routing); fabriker ikke SKU-lister.",
+  "tech_spec": "logs/agent_skillsets/skillsets.json; specials additive to skills; agent_electric_magnet, agent_event_tracker; debugger agent tab",
+  "user_guide": "Agenter har specials og skills. Debugger viser agent tech og skills.",
+  "manual": "Agent manual V8: You are an agent. Use this rulebook as context. Follow specials and skillsets. Debugger exposes your capabilities.",
+  "specials": ["run_verification", "run_dna_test", "view_star_map"],
+  "rules": [
+    {"id": "skillsets", "name": "Skillsets", "text": "logs/agent_skillsets/skillsets.json. Specials additive til skills."},
+    {"id": "agent_tech", "name": "Agent Tech", "text": "agent_electric_magnet, agent_event_tracker. Specials deles på tværs."},
+    {"id": "debugger", "name": "Debugger", "text": "Tech og skills eksponeres i debugger. Skills feature til agent-valg."},
+    {"id": "ai_theme_agent_voice", "name": "AI-tema og agentstemme", "text": "Når brugeren kører AI Core-tema, hold agent-svar korte og tool-grounded — tema ændrer ikke sandhedskrav eller safety."},
+    {"id": "wallet_context_agents", "name": "Wallet-kontekst", "text": "Agenter må ikke påstå MN2-saldi uden at hente balance-endpoint; henvis til Profile 5-dags chart som orientering, ikke som autoritativ ledger."},
+    {"id": "shop_help_routing", "name": "Shop-hjælp routing", "text": "Når brugeren spørger efter månedstema, wave v6-temaer eller mn2-5d-SKUer: cite rulebook_v9_shop.json (og V5 monthly_cluster_hints kun som metafor). Ingen server-køb uden eksplicit tool."}
+  ]
+}

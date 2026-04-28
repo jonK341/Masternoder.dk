@@ -1,0 +1,300 @@
+/* Battle Graphics - Advanced Visual Effects */
+
+/* Particle System */
+.battle-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.battle-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: particleFloat 10s linear infinite;
+}
+
+@keyframes particleFloat {
+    0% {
+        transform: translateY(100vh) translateX(0) scale(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.6;
+    }
+    90% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-100px) translateX(100px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Victory Celebration Effects */
+.victory-effect {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10000;
+}
+
+.victory-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--primary);
+    animation: confettiFall 3s ease-out forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(500px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Power-up Animations */
+.power-up-effect {
+    position: relative;
+    overflow: visible;
+}
+
+.power-up-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.5), transparent);
+    animation: powerUpPulse 1s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes powerUpPulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0.8;
+    }
+}
+
+/* Screen Shake Effect */
+@keyframes screenShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.screen-shake {
+    animation: screenShake 0.5s ease-in-out;
+}
+
+/* Flash Effect */
+@keyframes flash {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+.flash-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    z-index: 9999;
+    animation: flash 0.2s ease-in-out;
+}
+
+/* Critical Hit Effect */
+.critical-hit {
+    position: relative;
+    overflow: visible;
+}
+
+.critical-hit::before {
+    content: 'CRITICAL!';
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2em;
+    font-weight: 900;
+    color: #ff4444;
+    text-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+    animation: criticalHitText 1s ease-out forwards;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+@keyframes criticalHitText {
+    0% {
+        transform: translateX(-50%) translateY(0) scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(-50%) translateY(-30px) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-50%) translateY(-60px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* 3D Card Flip */
+.card-3d {
+    perspective: 1000px;
+}
+
+.card-3d-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.card-3d:hover .card-3d-inner {
+    transform: rotateY(180deg);
+}
+
+.card-3d-front,
+.card-3d-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+}
+
+.card-3d-back {
+    transform: rotateY(180deg);
+}
+
+/* Light Trails */
+.light-trail {
+    position: absolute;
+    width: 2px;
+    height: 100px;
+    background: linear-gradient(to bottom, 
+        rgba(0, 255, 136, 0.8),
+        rgba(0, 255, 136, 0)
+    );
+    pointer-events: none;
+    animation: lightTrailMove 2s ease-out forwards;
+}
+
+@keyframes lightTrailMove {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-200px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Glow Effects */
+.glow-effect {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5),
+                0 0 40px rgba(0, 255, 136, 0.3),
+                0 0 60px rgba(0, 255, 136, 0.1);
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5),
+                    0 0 40px rgba(0, 255, 136, 0.3),
+                    0 0 60px rgba(0, 255, 136, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.8),
+                    0 0 60px rgba(0, 255, 136, 0.5),
+                    0 0 90px rgba(0, 255, 136, 0.2);
+    }
+}
+
+/* Battle Energy Waves */
+.energy-wave {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(0, 255, 136, 0.6),
+        rgba(0, 212, 255, 0.6),
+        transparent
+    );
+    animation: energyWaveMove 3s linear infinite;
+}
+
+@keyframes energyWaveMove {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Slow Motion Effect */
+.slow-motion {
+    animation-duration: 3s !important;
+    animation-timing-function: ease-in-out !important;
+}
+
+/* Battle Impact Effect */
+.battle-impact {
+    position: relative;
+}
+
+.battle-impact::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border: 3px solid rgba(255, 68, 68, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: impactRipple 0.6s ease-out;
+    pointer-events: none;
+}
+
+@keyframes impactRipple {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 0.8;
+    }
+    100% {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+    }
+}
+

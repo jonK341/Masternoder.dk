@@ -1,0 +1,436 @@
+{
+  "timestamp": "2026-01-05T16:28:55.934149",
+  "summary": {
+    "total": 25,
+    "passed": 0,
+    "failed": 25,
+    "success_rate": "0%"
+  },
+  "results": [
+    {
+      "endpoint": {
+        "name": "Game Battle Stats",
+        "url": "/vidgenerator/api/game/battle/stats?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "500"
+      },
+      "result": {
+        "status": 500,
+        "status_match": false,
+        "has_data": true,
+        "has_json": true,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Fantasy History",
+        "url": "/vidgenerator/api/battle/fantasy/history?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "500"
+      },
+      "result": {
+        "status": 500,
+        "status_match": false,
+        "has_data": true,
+        "has_json": true,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Battle Series",
+        "url": "/vidgenerator/api/battle/series",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "500"
+      },
+      "result": {
+        "status": 500,
+        "status_match": false,
+        "has_data": true,
+        "has_json": true,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Battle News",
+        "url": "/vidgenerator/api/battle/news",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "500"
+      },
+      "result": {
+        "status": 500,
+        "status_match": false,
+        "has_data": true,
+        "has_json": true,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Battle Peers",
+        "url": "/vidgenerator/api/battle/peers?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "500"
+      },
+      "result": {
+        "status": 500,
+        "status_match": false,
+        "has_data": true,
+        "has_json": true,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Rule Books",
+        "url": "/vidgenerator/api/battle/rulebooks",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "GPS",
+        "url": "/vidgenerator/api/battle/gps",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Timepocket Realtime",
+        "url": "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Trophy Trading",
+        "url": "/vidgenerator/api/battle/trophy-trading?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Collectibles",
+        "url": "/vidgenerator/api/battle/collectibles?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Missions Daily",
+        "url": "/vidgenerator/api/missions/daily?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Missions Timeline",
+        "url": "/vidgenerator/api/missions/timeline?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "AI Research",
+        "url": "/vidgenerator/api/ai-research?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Tech Tree All",
+        "url": "/vidgenerator/api/battle/tech-tree/all?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Autoplay Status",
+        "url": "/vidgenerator/api/autoplay/status?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Teams User",
+        "url": "/vidgenerator/api/teams/user?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Alliances User",
+        "url": "/vidgenerator/api/alliances/user?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Groups Destruction History",
+        "url": "/vidgenerator/api/groups/destruction-history?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Bonus Levels",
+        "url": "/vidgenerator/api/bonus-levels?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Death Teleport Status",
+        "url": "/vidgenerator/api/death-teleport/status/test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Militia Forces",
+        "url": "/vidgenerator/api/militia/forces?user_id=test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Legal Content",
+        "url": "/vidgenerator/api/legal/content",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Tech Hardware Progress",
+        "url": "/vidgenerator/api/tech-hardware/progress/test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Death Portal Status",
+        "url": "/vidgenerator/api/death-portal/status",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    },
+    {
+      "endpoint": {
+        "name": "Experience Recount Status",
+        "url": "/vidgenerator/api/experience/recount-status/test",
+        "expected_status": 200,
+        "was_failing": true,
+        "error_type": "404"
+      },
+      "result": {
+        "status": 404,
+        "status_match": false,
+        "has_data": true,
+        "has_json": false,
+        "is_success": false,
+        "error": null
+      }
+    }
+  ]
+}

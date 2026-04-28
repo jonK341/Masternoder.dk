@@ -1,0 +1,20 @@
+{
+  "agents": [
+    {
+      "id": "mn2_scout",
+      "name": "MN2 Scout",
+      "role": "Explores the catalog and buys small coin-priced boosts with MN2 balance.",
+      "default_item_hint": "Pick any coin-priced item from GET /api/shop/items or shop UI.",
+      "bound_user_id": null,
+      "notes": "Set bound_user_id to a real game_user_id that holds MN2, or pass user_id in execute-mn2-purchase."
+    },
+    {
+      "id": "mn2_curator",
+      "name": "MN2 Curator",
+      "role": "Maintains inventory themes; uses execute-mn2-purchase with your configured user_id.",
+      "default_item_hint": "themes / cosmetics categories",
+      "bound_user_id": null,
+      "notes": "Requires AGENT_MN2_SHOP_SECRET on the server and sufficient mn2_balance for the target user."
+    }
+  ]
+}

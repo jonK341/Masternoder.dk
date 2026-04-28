@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "Single source for Shop V.9 API line checks (shop page Run checks + scripts/shop_v4_production_smoke.py --full-line). Filename retains v4 for script compatibility. path_template uses {{user_id}} for query params.",
+  "checks": [
+    { "label": "GET /api/shop/config", "path_template": "/api/shop/config", "kind": "success_not_false" },
+    { "label": "GET /api/monetization/config", "path_template": "/api/monetization/config", "kind": "success_not_false" },
+    { "label": "GET /api/game/shop/items", "path_template": "/api/game/shop/items", "kind": "shop_items_ok" },
+    { "label": "GET /api/shop/coin-packs", "path_template": "/api/shop/coin-packs", "kind": "success_not_false" },
+    { "label": "GET /api/shop/payment-health", "path_template": "/api/shop/payment-health", "kind": "payment_health_ok" },
+    { "label": "GET /api/game/shop/currency", "path_template": "/api/game/shop/currency?user_id={{user_id}}", "kind": "success_not_false" },
+    { "label": "GET /api/mn2/balance", "path_template": "/api/mn2/balance?user_id={{user_id}}", "kind": "success_true" },
+    { "label": "GET /api/shop/inventory", "path_template": "/api/shop/inventory?user_id={{user_id}}", "kind": "success_not_false" },
+    { "label": "GET /api/shop/purchases", "path_template": "/api/shop/purchases?user_id={{user_id}}&limit=5", "kind": "success_not_false" },
+    { "label": "GET /api/points/comprehensive", "path_template": "/api/points/comprehensive?user_id={{user_id}}", "kind": "success_not_false" }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "description": "Agent-learned technology and knowledge. Wired to rulebooks and compendium. Agents with knowledge skills can append entries.",
+  "updated_at": "2026-02-25",
+  "entries": [
+    {
+      "id": "sync_device",
+      "source": "system",
+      "title": "Unified Points Sync Device",
+      "text": "Single source of truth for the point system. All point reads/writes flow through unified_points_sync_device. Use get_canonical(user_id), register_award(), sync_now().",
+      "rulebook_ref": ["v7", "v10"],
+      "created_at": "2026-02-25"
+    },
+    {
+      "id": "battle_skill_set",
+      "source": "system",
+      "title": "Agent Battle Skill Set",
+      "text": "Battle skills are applied to all agents via ensure_battle_skills_per_agent. Export for rulebooks via get_battle_skill_set_for_rulebook(). Wire to Hunters rulebook and battle V10.",
+      "rulebook_ref": ["v2", "v10"],
+      "created_at": "2026-02-25"
+    },
+    {
+      "id": "synchronization",
+      "source": "system",
+      "title": "Synchronization",
+      "text": "Platform-wide sync mechanisms. unified_points_sync_device.record_domain_sync(domain) after writes. Domains: unified_points, users, profiles, aggregator, trophies, achievements, battle, shop, quests, leaderboards, analytics, compendium, generator, gallery, social, agent_skillsets, agent_knowledge, game, paypal, login, onboarding. GET /api/sync/status, POST /api/sync/now. Rulebook V16.",
+      "rulebook_ref": ["v16", "v7"],
+      "created_at": "2026-02-25"
+    }
+  ]
+}

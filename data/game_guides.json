@@ -1,0 +1,80 @@
+{
+  "name": "Trophy Hunters Guides",
+  "version": "V15",
+  "description": "Guides aligned with rulebooks V1–V15.",
+  "updated_at": "2026-02-21",
+  "guides": [
+    {
+      "id": "guide_start",
+      "title": "Getting Started",
+      "rulebook": "V1",
+      "icon": "📜",
+      "summary": "Profile, user_id, onboarding.",
+      "steps": ["Complete onboarding", "Get user_id from localStorage (game_user_id)", "Profile is created automatically"],
+      "link": "/vidgenerator/compendium/rulebook-v1.html"
+    },
+    {
+      "id": "guide_spells",
+      "title": "19 Spells Guide",
+      "rulebook": "V2",
+      "icon": "🏆",
+      "summary": "Galactic, Verification, Combat, Support, Utility.",
+      "steps": ["Open Hunters Rulebook", "5 sectors: Galactic (4), Verification (3), Combat (3), Support (3), Utility (6)", "Each spell has cost and effect. Earn game_points to unlock."],
+      "link": "/vidgenerator/compendium/hunters-rulebook.html"
+    },
+    {
+      "id": "guide_star_map",
+      "title": "Star Map & Verification",
+      "rulebook": "V4",
+      "icon": "🌟",
+      "summary": "7 stars, run_verification, run_dna_test.",
+      "steps": ["Trophies → Star Map tab", "View Star Map shows 7 nearest stars", "Run Verification and Run DNA Test are Electric Magnet specials"],
+      "link": "/vidgenerator/compendium/rulebook-v4.html"
+    },
+    {
+      "id": "guide_comm_psych",
+      "title": "25 Theories",
+      "rulebook": "V3",
+      "icon": "🧠",
+      "summary": "Study theories, earn communication_psychology_points.",
+      "steps": ["Trophies → Comm. Psychology tab", "Click Study on locked theories", "Compendium pages 1–10 cover all 25 theories"],
+      "link": "/vidgenerator/compendium/page-1.html"
+    },
+    {
+      "id": "guide_points",
+      "title": "Unified Points",
+      "rulebook": "V7",
+      "icon": "💎",
+      "summary": "All point types and how to earn them.",
+      "steps": ["xp_points: general activity", "game_points: Hunters specials, star map", "communication_psychology_points: study theories", "compendium_points: read compendium pages", "dna_manipulation_points: DNA test"],
+      "link": "/vidgenerator/compendium/rulebook-v7.html"
+    },
+    {
+      "id": "guide_compendium",
+      "title": "Compendium V1–V15",
+      "rulebook": "V15",
+      "icon": "📚",
+      "summary": "All rulebooks in one place.",
+      "steps": ["Open /vidgenerator/compendium/", "Part I: Communication Psychology (10 pages)", "Part II: Hunters Rulebook", "Rulebooks V1–V15 with pictures and agent context"],
+      "link": "/vidgenerator/compendium/"
+    },
+    {
+      "id": "guide_effect_clusters",
+      "title": "Effect Clusters",
+      "rulebook": "V5",
+      "icon": "⚡",
+      "summary": "5 clusters align with Hunters sectors.",
+      "steps": ["Galactic, Verification, Combat, Support, Utility", "Trophies → Effect Clusters tab", "Maps to rulebook V2 sectors"],
+      "link": "/vidgenerator/compendium/rulebook-v5.html"
+    },
+    {
+      "id": "guide_stories",
+      "title": "Hunters Stories",
+      "rulebook": "V2",
+      "icon": "📜",
+      "summary": "Winter Wedding (1017), time reversal, medieval, power combos.",
+      "steps": ["Trophies -> Stories tab", "Winter Wedding: Knud & Emma, party roles, conflicts, NPCs, twist", "Shop -> Trophies & Stories: unlock story, buy trophies and boosters", "Rulebook: Medieval + Time Reversal sectors; power_combos"],
+      "link": "/vidgenerator/trophies"
+    }
+  ]
+}

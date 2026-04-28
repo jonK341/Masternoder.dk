@@ -1,0 +1,256 @@
+{
+  "timestamp": "2026-01-13T20:14:25.175898",
+  "base_url": "https://masternoder.dk/vidgenerator",
+  "results": {
+    "endpoints": {
+      "total": 19,
+      "success": 14,
+      "failed": 5,
+      "details": [
+        {
+          "endpoint": "/api/unified-dashboard/data?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.9486498832702637
+        },
+        {
+          "endpoint": "/api/monetization/top50?limit=6",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6199414730072021
+        },
+        {
+          "endpoint": "/api/monetization/cash?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.7710661888122559
+        },
+        {
+          "endpoint": "/api/tech-tree/knowledge?user_id=default_user",
+          "success": false,
+          "status": "404 (HTML)",
+          "code": 404,
+          "elapsed": 0.648364782333374
+        },
+        {
+          "endpoint": "/api/agent/get-all?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6492657661437988
+        },
+        {
+          "endpoint": "/api/agent/recommendations?user_id=default_user&context=general",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.5962526798248291
+        },
+        {
+          "endpoint": "/api/points/statistics?user_id=default_user&days=30",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.5414257049560547
+        },
+        {
+          "endpoint": "/api/points/history/analytics?user_id=default_user&days=30",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.5827727317810059
+        },
+        {
+          "endpoint": "/api/points/calculator/predict?user_id=default_user&activity_type=general&base_points=100&days=7",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6310968399047852
+        },
+        {
+          "endpoint": "/api/leaderboard/all?limit=1000&timeframe=all",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.7534265518188477
+        },
+        {
+          "endpoint": "/api/leaderboard/stats",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.56400465965271
+        },
+        {
+          "endpoint": "/api/leaderboard/system/1?limit=100",
+          "success": false,
+          "status": "404 (HTML)",
+          "code": 404,
+          "elapsed": 0.6503324508666992
+        },
+        {
+          "endpoint": "/api/leaderboard/system/2?limit=100",
+          "success": false,
+          "status": "404 (HTML)",
+          "code": 404,
+          "elapsed": 0.6124758720397949
+        },
+        {
+          "endpoint": "/api/points/summary?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6033327579498291
+        },
+        {
+          "endpoint": "/api/points/analytics/statistics?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6373579502105713
+        },
+        {
+          "endpoint": "/api/battle/status?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6404509544372559
+        },
+        {
+          "endpoint": "/api/battle/history?user_id=default_user",
+          "success": true,
+          "status": "200 (JSON)",
+          "code": 200,
+          "elapsed": 0.6053011417388916
+        },
+        {
+          "endpoint": "/api/shop/items",
+          "success": false,
+          "status": "404 (HTML)",
+          "code": 404,
+          "elapsed": 0.7505545616149902
+        },
+        {
+          "endpoint": "/api/shop/purchase?user_id=default_user&item_id=1",
+          "success": false,
+          "status": "404 (HTML)",
+          "code": 404,
+          "elapsed": 0.6595020294189453
+        }
+      ]
+    },
+    "static_files": {
+      "total": 8,
+      "success": 8,
+      "failed": 0,
+      "details": [
+        {
+          "file": "/static/css/modern-design-system.css",
+          "success": true,
+          "status": "200 (23709 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/css/navigation-toolbar.css",
+          "success": true,
+          "status": "200 (5688 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/css/dashboard.css",
+          "success": true,
+          "status": "200 (3706 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/js/navigation-toolbar.js",
+          "success": true,
+          "status": "200 (11102 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/js/comprehensive-auto-save.js",
+          "success": true,
+          "status": "200 (7894 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/js/enhanced-frontpage-stats.js",
+          "success": true,
+          "status": "200 (12636 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/js/top50-monetization-frame.js",
+          "success": true,
+          "status": "200 (8315 bytes)",
+          "code": 200
+        },
+        {
+          "file": "/static/js/energy-regeneration-timers.js",
+          "success": true,
+          "status": "200 (6594 bytes)",
+          "code": 200
+        }
+      ]
+    },
+    "frontend_pages": {
+      "total": 7,
+      "success": 7,
+      "failed": 0,
+      "details": [
+        {
+          "page": "/unified_dashboard",
+          "success": true,
+          "status": "200 (50519 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/leaderboards",
+          "success": true,
+          "status": "200 (69341 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/dashboard",
+          "success": true,
+          "status": "200 (46791 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/battle",
+          "success": true,
+          "status": "200 (57273 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/shop",
+          "success": true,
+          "status": "200 (27365 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/profile",
+          "success": true,
+          "status": "200 (143281 bytes)",
+          "code": 200
+        },
+        {
+          "page": "/quests",
+          "success": true,
+          "status": "200 (13984 bytes)",
+          "code": 200
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total": 34,
+    "success": 29,
+    "failed": 5,
+    "success_rate": 85.29411764705883
+  }
+}

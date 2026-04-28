@@ -1,0 +1,306 @@
+{
+  "timestamp": "2026-01-14T09:41:16.618452",
+  "status": "complete",
+  "sections": {
+    "blueprints": [
+      {
+        "message": "Scanning for blueprints...",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.618452"
+      },
+      {
+        "message": "Found 22 blueprints",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:16.941088"
+      },
+      {
+        "message": "agent_ai_intelligence already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.941088"
+      },
+      {
+        "message": "agent_automation already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_controller already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_error_handler already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_judge already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_point_creator already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_python_executor already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_research already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_support already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "agent_tracker already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "api_monitoring_agent already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "api_scanner already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.955194"
+      },
+      {
+        "message": "debugger_builder already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "debugger_download already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "enhanced_tracker already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "hunters_game already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "intelligence_aggregator already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "manager_secretary already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "master_fix_agent already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "new_agents already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "trophies already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "unified_points_trigger already registered",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      },
+      {
+        "message": "All blueprints already registered!",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:16.971225"
+      }
+    ],
+    "agents": {
+      "agents": [
+        "backend\\services\\agent_ability_tracker.py",
+        "backend\\services\\agent_activation_system.py",
+        "backend\\services\\agent_activity_generator.py",
+        "backend\\services\\agent_ai_intelligence.py",
+        "backend\\services\\agent_analytics.py",
+        "backend\\services\\agent_automation.py",
+        "backend\\services\\agent_battle_strategy.py",
+        "backend\\services\\agent_content_generator.py",
+        "backend\\services\\agent_controller.py",
+        "backend\\services\\agent_error_handler.py",
+        "backend\\services\\agent_groups.py",
+        "backend\\services\\agent_integration.py",
+        "backend\\services\\agent_judge.py",
+        "backend\\services\\agent_manager.py",
+        "backend\\services\\agent_performance_optimizer.py",
+        "backend\\services\\agent_point_creator.py",
+        "backend\\services\\agent_python_executor.py",
+        "backend\\services\\agent_research_tracker.py",
+        "backend\\services\\agent_secretary.py",
+        "backend\\services\\agent_security.py",
+        "backend\\services\\agent_skillset.py",
+        "backend\\services\\agent_social_engagement.py",
+        "backend\\services\\agent_support_service.py",
+        "backend\\services\\agent_trigger_system.py",
+        "backend\\services\\agent_user_experience.py",
+        "backend\\services\\api_monitoring_agent.py",
+        "backend\\services\\master_fix_agent_skills.py"
+      ],
+      "services": [
+        "backend\\services\\api_scanner.py",
+        "backend\\services\\enhanced_point_tracker.py",
+        "backend\\services\\expanded_triggers_system.py",
+        "backend\\services\\unified_points_trigger_integration.py",
+        "backend\\services\\aggregators\\intelligence_aggregator.py"
+      ],
+      "total": 32
+    },
+    "database": [
+      {
+        "message": "Running database migration...",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:16.987381"
+      },
+      {
+        "message": "Database migration had issues",
+        "status": "warning",
+        "timestamp": "2026-01-14T09:41:21.696908"
+      },
+      {
+        "message": "Populating initial rewards...",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:21.696908"
+      },
+      {
+        "message": "Rewards populated successfully",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:27.096704"
+      }
+    ],
+    "navigation": [
+      {
+        "message": "Adding navigation links...",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:27.098695"
+      },
+      {
+        "message": "No navigation updates needed",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:27.190896"
+      }
+    ],
+    "scanner": {
+      "blueprints": 22,
+      "routes": 354,
+      "services": 32,
+      "missing_methods": 195
+    },
+    "monitoring": {
+      "enabled": true,
+      "auto_generate_enabled": false,
+      "scan_count": 2,
+      "alerts_count": 2
+    },
+    "agent_skills": {
+      "total_skills": 47,
+      "skills_run": 13,
+      "successful": 13,
+      "results": {
+        "check_blueprints": {
+          "success": true
+        },
+        "verify_database": {
+          "success": true
+        },
+        "check_file_integrity": {
+          "success": true
+        },
+        "check_navigation": {
+          "success": true
+        },
+        "scan_missing_methods": {
+          "success": true
+        },
+        "check_service_health": {
+          "success": true
+        },
+        "analyze_code_quality": {
+          "success": true
+        },
+        "check_dependencies": {
+          "success": true
+        },
+        "verify_endpoints": {
+          "success": true
+        },
+        "monitor_api_structure": {
+          "success": true
+        },
+        "monitor_system_health": {
+          "success": true
+        },
+        "monitor_performance": {
+          "success": true
+        },
+        "monitor_changes": {
+          "success": true
+        },
+        "full_diagnostic": {
+          "success": true
+        }
+      }
+    },
+    "verification": [
+      {
+        "message": "Verifying endpoints...",
+        "status": "info",
+        "timestamp": "2026-01-14T09:41:35.812480"
+      },
+      {
+        "message": "Found 5/5 hunters endpoints",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:37.697690"
+      },
+      {
+        "message": "Found 8/4 scanner endpoints",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:37.697690"
+      },
+      {
+        "message": "Found 8/3 monitoring agent endpoints",
+        "status": "success",
+        "timestamp": "2026-01-14T09:41:37.698750"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "195 missing API methods detected"
+  ],
+  "fixed": [
+    "Initial rewards populated",
+    "API Monitoring Agent initialized",
+    "Agent skills executed: 13/13 successful",
+    "API Scanner endpoints verified",
+    "API Monitoring Agent endpoints verified"
+  ],
+  "summary": {
+    "total_fixed": 5,
+    "total_errors": 0,
+    "total_warnings": 1,
+    "sections_completed": 8
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "name": "The 13 Systemic Protocols",
+  "version": "V3.2",
+  "description": "Pointgiving subversion under Communication Psychology (V3). Thirteen protocols for personal and collective system optimisation, from biology and environment to economics and boundaries.",
+  "updated_at": "2026-03-05",
+  "agent_prompt": "V3.2 Systemic Protocols: 13 protocols. Use when discussing personal systems, boundaries, usecase responsibility, flow monitoring, or integration of shadow sides. Awards or aligns with communication_psychology_points where relevant.",
+  "tech_spec": "GET /api/rulebooks/v3.2; data/rulebook_v3_2_systemic_protocols.json; protocols[].id, name, text",
+  "user_guide": "13 protokoller for systemoptimering. Punktgivende under V3.",
+  "manual": "Agent manual V3.2: When user asks about personal systems, boundaries, usecase responsibility, or the 13 protocols, cite this rulebook. Link to Communication Psychology (V3) and compendium.",
+  "documentation": "V3.2 is a pointgiving subversion of V3 Communication Psychology. Protocols support agent context and compendium display.",
+  "finish_lines": [
+    "V3.2 data file: data/rulebook_v3_2_systemic_protocols.json",
+    "Compendium: docs/COMPENDIUM_RULEBOOK_V1_V15.md § V3.2"
+  ],
+  "protocols": [
+    {
+      "id": "biological_integration",
+      "name": "Biological integration",
+      "text": "Optimise your personal network through meditation, biological balance, and meeting the body's needs in work and life."
+    },
+    {
+      "id": "environmental_syntax",
+      "name": "Environmental syntax",
+      "text": "Build networks around external environments, social structures, and learning frameworks. All variables (the punctuation marks) define the system's starting point."
+    },
+    {
+      "id": "cognitive_visualisation",
+      "name": "Cognitive visualisation",
+      "text": "Align the brain's visual cortex with like-minded nodes to maximise collective support and capacity."
+    },
+    {
+      "id": "kinesthetic_calibration",
+      "name": "Kinesthetic calibration",
+      "text": "A sequence of 360-degree system resets: physical and mental movement to loosen old patterns and reset the operator."
+    },
+    {
+      "id": "data_sorting_id_filtering",
+      "name": "Data sorting and ID filtering",
+      "text": "Filter all inputs rationally. Sort into noise vs archive. Adjust decibel levels, vocabulary, and group formation to a stable, functional level."
+    },
+    {
+      "id": "usecase_responsibility",
+      "name": "Usecase responsibility",
+      "text": "Build self-reflection into group dynamics. Recognise that misuse of systemic rights (ID + account) leads to loss of rights and lawlessness."
+    },
+    {
+      "id": "algorithmic_guarding",
+      "name": "Algorithmic guarding",
+      "text": "Use the 51% rule as the basis for a new kind of 57.68% full guard within your personal craft."
+    },
+    {
+      "id": "architecture_intelligence",
+      "name": "Architecture intelligence",
+      "text": "Create a new agent network based on robust error handling (try/catch), data handling, and systemic overview."
+    },
+    {
+      "id": "galactic_anthropology",
+      "name": "Galactic anthropology",
+      "text": "Final analysis of DNA-development patterns in a universal perspective."
+    },
+    {
+      "id": "socio_digital_analysis",
+      "name": "Socio-digital analysis",
+      "text": "A report on the overlap of AI, social subcultures, and human behaviour; freedom analysed through systemic codes and behavioural psychology."
+    },
+    {
+      "id": "economic_flow_monitoring",
+      "name": "Economic flow monitoring",
+      "text": "Analyse money flows and behaviour on masternodes. Replace vigilante action with transparency in digital transactions and social contracts."
+    },
+    {
+      "id": "interface_protection",
+      "name": "Interface protection",
+      "text": "Define personal boundaries and rights over your own output. Protect the private sphere from external manipulation and unwanted intrusion."
+    },
+    {
+      "id": "integration_shadow_sides",
+      "name": "Integration of shadow sides",
+      "text": "Handle antisocial behaviour and complex psychological impulses through systemic control. Turn threats and destructive patterns into a stable, good living-room mood through structured self-insight."
+    }
+  ]
+}

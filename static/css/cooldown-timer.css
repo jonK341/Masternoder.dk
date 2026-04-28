@@ -1,0 +1,106 @@
+/**
+ * Cooldown timer — shared on Game + Battle. Override with page-specific vars.
+ */
+/* Wrap on game/battle: full width in column, avoid horizontal jump */
+#game-cooldown-wrap,
+#battle-cooldown-wrap {
+  width: 100%;
+  box-sizing: border-box;
+  contain: layout;
+}
+
+#game-cooldown-wrap .cd-timer,
+#battle-cooldown-wrap .cd-timer {
+  max-width: 100%;
+}
+
+.cd-timer {
+  --cd-bg: rgba(0, 0, 0, 0.35);
+  --cd-border: rgba(0, 255, 136, 0.28);
+  --cd-text: rgba(255, 255, 255, 0.85);
+  --cd-muted: rgba(200, 220, 230, 0.65);
+  --cd-accent: #00ff88;
+  --cd-bar-track: rgba(0, 255, 136, 0.12);
+  --cd-bar-fill: linear-gradient(90deg, #00d4ff, #00ff88);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  border: 1px solid var(--cd-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--cd-bg);
+  max-width: 420px;
+  min-height: 5.5rem; /* Steady block height: Ready vs counting */
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cd-timer--active {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.45);
+}
+
+.cd-timer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cd-timer-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cd-muted);
+}
+
+.cd-timer-remaining {
+  display: inline-block;
+  min-width: 5.5ch;
+  min-height: 1.35em; /* Stops "Ready" / time string line dance */
+  font-family: ui-monospace, monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cd-text);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+
+.cd-timer--active .cd-timer-remaining {
+  color: var(--cd-accent);
+}
+
+.cd-timer-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--cd-bar-track);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.cd-timer-bar-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--cd-bar-fill);
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-timer-bar-fill {
+    transition: none;
+  }
+}
+
+/* Battle */
+.cd-timer--theme-battle {
+  --cd-border: rgba(0, 255, 136, 0.28);
+  --cd-accent: var(--battle-primary, #00ff88);
+  --cd-bar-fill: linear-gradient(90deg, var(--battle-secondary, #00d4ff), var(--battle-primary, #00ff88));
+}
+
+/* Game (Hunter) */
+.cd-timer--theme-game {
+  --cd-border: rgba(0, 255, 136, 0.25);
+  --cd-accent: #00ff88;
+  --cd-bar-fill: linear-gradient(90deg, #00a8ff, #00ff88);
+}

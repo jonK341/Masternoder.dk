@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Map 25 — Imperium Investigation Monitor</title>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --accent: #ff6b9d;
+            --gold: #FFD700;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(20, 20, 30, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.75);
+            --border-glow: rgba(0, 255, 136, 0.4);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .starmap-header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding: 28px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 2px solid var(--border-glow);
+        }
+        .starmap-header h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .starmap-header p { color: var(--text-secondary); font-size: 1rem; }
+        .progress-bar-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .progress-stat {
+            background: rgba(0, 255, 136, 0.12);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+        }
+        .progress-stat .label { font-size: 0.85em; color: var(--text-secondary); }
+        .progress-stat .value { font-size: 1.6em; font-weight: bold; color: var(--primary); }
+        .nav-links {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            color: var(--secondary);
+            text-decoration: none;
+            padding: 8px 14px;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            border-radius: 8px;
+        }
+        .nav-links a:hover { background: rgba(0, 212, 255, 0.15); }
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+            color: var(--primary);
+            margin-left: 12px;
+        }
+        .live-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: livePulse 1.5s ease-in-out infinite; }
+        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .view-toggles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+        .view-toggles button {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .view-toggles button.active { background: rgba(0, 255, 136, 0.2); }
+        #canvas-3d-wrap {
+            width: 100%;
+            height: 380px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0a0a12;
+            border: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        #canvas-3d-wrap canvas { display: block; width: 100%; height: 100%; }
+        .monitor-panel {
+            background: var(--bg-card);
+            border: 2px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .monitor-panel h3 { font-size: 1.1em; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(25, 1fr);
+            gap: 4px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .monitor-cell {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+        }
+        .monitor-cell.done { background: rgba(255, 215, 0, 0.35); color: var(--gold); }
+        .monitor-cell.secured {
+            background: rgba(0, 212, 255, 0.35);
+            color: var(--secondary);
+            border: 1px solid rgba(0, 212, 255, 0.55);
+        }
+        .monitor-cell.event {
+            outline: 2px solid rgba(255, 107, 157, 0.75);
+            box-shadow: 0 0 12px rgba(255, 107, 157, 0.25);
+        }
+        .monitor-cell:hover { transform: scale(1.1); cursor: pointer; }
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .monitor-tools {
+            margin: 14px 0 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+        .monitor-tools label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .monitor-tools select,
+        .monitor-tools button {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: #101018;
+            color: var(--text-primary);
+        }
+        .monitor-tools button {
+            cursor: pointer;
+            font-weight: 700;
+            color: #0a0a0f;
+            border: 0;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        .monitor-result-line {
+            margin-top: 10px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .segment-group { margin-bottom: 26px; }
+        .segment-heading {
+            margin: 0 0 12px;
+            padding: 10px 12px;
+            border-left: 4px solid var(--secondary);
+            border-radius: 8px;
+            background: rgba(0, 212, 255, 0.08);
+            color: var(--secondary);
+            font-size: 1rem;
+        }
+        .point-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .point-card:hover { border-color: var(--border-glow); box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
+        .point-card.investigated { border-color: rgba(255, 215, 0, 0.4); background: rgba(255, 215, 0, 0.06); }
+        .point-card.secured { border-color: rgba(0, 212, 255, 0.55); box-shadow: 0 0 18px rgba(0, 212, 255, 0.14); }
+        .point-card.event { box-shadow: 0 0 20px rgba(255, 107, 157, 0.16); }
+        .point-card:focus { outline: 2px solid var(--secondary); outline-offset: 3px; }
+        .point-card .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .point-card .index { font-size: 0.85em; color: var(--text-secondary); }
+        .point-card .segmentum {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--secondary);
+        }
+        .point-card .name { font-weight: 600; font-size: 1.05em; margin-bottom: 4px; }
+        .point-card .life-label { font-size: 0.9em; color: var(--text-secondary); margin-bottom: 6px; }
+        .point-card .info { font-size: 0.85em; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.35; }
+        .point-card .lore {
+            font-size: 0.85em;
+            color: var(--gold);
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            display: none;
+        }
+        .point-card .lore.visible { display: block; }
+        .lore-long {
+            display: none;
+            margin-top: 8px;
+            padding: 9px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+            line-height: 1.4;
+        }
+        .lore-long.visible { display: block; }
+        .read-more-btn {
+            margin-top: 8px;
+            padding: 7px 9px;
+            border-radius: 7px;
+            border: 1px solid rgba(255,215,0,0.35);
+            background: rgba(255,215,0,0.09);
+            color: var(--gold);
+            cursor: pointer;
+        }
+        .point-card .btn-investigate {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 8px;
+            color: #0a0a0f;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        .point-card .btn-investigate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        .point-card .btn-investigate:disabled {
+            background: #444;
+            color: #999;
+            cursor: default;
+        }
+        .point-card .badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--gold);
+        }
+        .point-card .badge.secured {
+            background: rgba(0, 212, 255, 0.18);
+            color: var(--secondary);
+        }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .error { color: #ff6b9d; padding: 12px; background: rgba(255, 107, 157, 0.1); border-radius: 8px; margin-bottom: 16px; }
+        .walkthrough-panel {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0, 212, 255, 0.06);
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            border-radius: 12px;
+            text-align: left;
+        }
+        .walkthrough-panel h4 { color: var(--secondary); margin-bottom: 10px; font-size: 1rem; }
+        .walkthrough-track {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .wt-step {
+            font-size: 0.72rem;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            max-width: 140px;
+            color: var(--text-secondary);
+        }
+        .wt-step.done { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.08); }
+        .wt-step.current { border-color: var(--primary); box-shadow: 0 0 12px rgba(0,255,136,0.25); }
+        .reward-stat-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            font-size: 0.82rem;
+        }
+        .reward-stat-box .formula { font-family: ui-monospace, monospace; color: var(--primary); }
+        .planet-row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .planet-chip {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(0, 212, 255, 0.12);
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            color: var(--secondary);
+            cursor: pointer;
+        }
+        .planet-chip:hover { background: rgba(0, 212, 255, 0.22); }
+        .point-card.flash { animation: cardFlash 0.8s ease; }
+        @keyframes cardFlash {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: 0 0 24px rgba(0, 255, 136, 0.5); }
+        }
+        #canvas-3d-wrap .hud-label {
+            position: absolute;
+            left: 12px;
+            bottom: 10px;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.65);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            pointer-events: none;
+            max-width: 85%;
+        }
+        #planet-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #planet-modal-backdrop.open { display: flex; }
+        #planet-modal {
+            background: var(--bg-card);
+            border: 2px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 20px;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        #planet-modal h3 { color: var(--secondary); margin-bottom: 12px; }
+        .depth-level {
+            margin-bottom: 12px;
+            padding: 10px;
+            border-left: 3px solid var(--accent);
+            background: rgba(0,0,0,0.25);
+            border-radius: 0 8px 8px 0;
+        }
+        .depth-level .dt { font-size: 0.75rem; color: var(--gold); margin-bottom: 4px; }
+        .ai-guide-panel {
+            margin-top: 18px;
+            padding: 16px;
+            background: rgba(255, 107, 157, 0.06);
+            border: 1px solid rgba(255, 107, 157, 0.35);
+            border-radius: 12px;
+            text-align: left;
+        }
+        .ai-guide-panel h4 { color: var(--accent); margin-bottom: 8px; }
+        .ai-guide-narrative { font-size: 0.92rem; line-height: 1.45; color: var(--text-secondary); white-space: pre-wrap; }
+        .proof-doc {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            border-left: 3px solid var(--secondary);
+        }
+        .proof-doc .pid { color: var(--gold); font-weight: 600; }
+        .proof-doc .refs { opacity: 0.85; margin-top: 4px; font-family: ui-monospace, monospace; font-size: 0.72rem; }
+        .buildup-panel {
+            text-align: left;
+            border-color: rgba(255, 215, 0, 0.35);
+            background: linear-gradient(135deg, rgba(255,215,0,0.07), rgba(0,255,136,0.05)), var(--bg-card);
+        }
+        .buildup-panel h3 { color: var(--gold); }
+        .buildup-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .buildup-metric {
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.25);
+        }
+        .buildup-metric .k { font-size: 0.72rem; color: var(--text-secondary); }
+        .buildup-metric .v { margin-top: 4px; color: var(--primary); font-weight: 700; }
+        .buildup-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+        .buildup-field label {
+            display: block;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .buildup-field select {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: #101018;
+            color: var(--text-primary);
+        }
+        .buildup-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .buildup-actions button {
+            flex: 1 1 120px;
+            padding: 10px 12px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--gold), var(--primary));
+            color: #0a0a0f;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .buildup-actions button.secondary { background: linear-gradient(135deg, var(--secondary), var(--primary)); }
+        .buildup-actions button:disabled { background: #444; color: #999; cursor: default; }
+        .buildup-status {
+            margin-top: 10px;
+            min-height: 20px;
+            font-size: 0.86rem;
+            color: var(--text-secondary);
+        }
+        .buildup-status.ok { color: var(--primary); }
+        .buildup-status.err { color: var(--accent); }
+        .placement-list {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 8px;
+        }
+        .placement-item {
+            padding: 9px 10px;
+            border-radius: 9px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .placement-item strong { color: var(--text-primary); }
+        .events-panel {
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 157, 0.4);
+            background: rgba(255, 107, 157, 0.07);
+            text-align: left;
+        }
+        .events-panel h4 { color: var(--accent); margin-bottom: 8px; }
+        .event-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px;
+        }
+        .event-card {
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.28);
+            border-left: 3px solid var(--accent);
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+        .event-card strong { color: var(--text-primary); }
+        .economy-panel {
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            background: rgba(255, 215, 0, 0.06);
+            text-align: left;
+        }
+        .economy-panel h4 { color: var(--gold); margin-bottom: 8px; }
+        .economy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .economy-card {
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.84rem;
+        }
+        .economy-card .k { color: var(--text-secondary); font-size: 0.75rem; }
+        .economy-card .v { color: var(--primary); font-weight: 700; margin-top: 4px; }
+        .trophy-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .trophy-pill {
+            padding: 5px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+            font-size: 0.76rem;
+        }
+        .trophy-pill.done {
+            border-color: rgba(255, 215, 0, 0.45);
+            background: rgba(255, 215, 0, 0.12);
+            color: var(--gold);
+        }
+        .shop-hint {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .shop-hint a { color: var(--secondary); }
+        .crypto-panel {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: rgba(0, 212, 255, 0.06);
+        }
+        .crypto-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .crypto-option {
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .crypto-option strong { color: var(--secondary); }
+        .crypto-option.locked { opacity: 0.7; }
+        .crypto-option.ready { border-color: rgba(0, 255, 136, 0.45); box-shadow: 0 0 12px rgba(0,255,136,0.12); }
+        .crypto-option button {
+            margin-top: 8px;
+            width: 100%;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: #0a0a0f;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .crypto-option button:disabled { background: #444; color: #999; cursor: default; }
+        .crypto-status { margin-top: 8px; min-height: 18px; font-size: 0.8rem; color: var(--text-secondary); }
+        .crypto-status.ok { color: var(--primary); }
+        .crypto-status.err { color: var(--accent); }
+        @media print {
+            body { background: #fff; color: #111; padding: 0; }
+            .ai-guide-panel,
+            .events-panel,
+            .economy-panel,
+            .crypto-panel,
+            .buildup-panel,
+            .view-toggles,
+            .nav-links,
+            .monitor-tools,
+            .btn-investigate,
+            .theme-sound-toggle,
+            script { display: none !important; }
+            .starmap-header,
+            .monitor-panel,
+            .point-card {
+                background: #fff !important;
+                color: #111 !important;
+                border-color: #bbb !important;
+                box-shadow: none !important;
+            }
+            .point-card .lore,
+            .lore-long { display: block !important; color: #111 !important; }
+            .points-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="starmap-header">
+        <h1>Star Map 25 — Imperium Investigation Grid</h1>
+        <p>25 star systems across the Segmentae Majoris. Investigate each point to earn game_points and unlock lore. Warhammer 40,000 themed.</p>
+        <p style="font-size:0.95em;color:var(--gold);margin-top:10px;">Season 2: +20% investigation rewards · system levels 1–5 · daily reset 2× bonus window</p>
+        <div class="progress-bar-wrap">
+            <div class="progress-stat">
+                <div class="label">Investigated</div>
+                <div class="value" id="progress-count">0</div>/25
+            </div>
+            <div class="progress-stat">
+                <div class="label">Points earned (this map)</div>
+                <div class="value" id="progress-points">0</div>
+            </div>
+            <div class="progress-stat">
+                <div class="label">Investigation multiplier</div>
+                <div class="value" id="progress-multiplier">1.2</div>
+            </div>
+            <div class="progress-stat">
+                <div class="label">Game points balance</div>
+                <div class="value" id="progress-balance">0</div>
+            </div>
+            <div class="progress-stat">
+                <div class="label">Star Map booster</div>
+                <div class="value" id="progress-booster">x1</div>
+            </div>
+            <span class="live-indicator" id="live-indicator" title="Live status">
+                <span class="dot"></span> Live
+            </span>
+            <span class="live-indicator" style="color: var(--text-secondary);" id="last-updated">—</span>
+        </div>
+        <div class="walkthrough-panel" id="walkthrough-panel">
+            <h4>Profile walkthrough — 10 levels (tutorial game)</h4>
+            <p id="walkthrough-summary" style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:8px;">Loading…</p>
+            <div class="walkthrough-track" id="walkthrough-track"></div>
+        </div>
+        <div class="ai-guide-panel" id="ai-guide-panel">
+            <h4>AI field guide — unknown features &amp; proofs</h4>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Grounded on server proof docs; refreshes your next unlocks and cites canonical APIs.</p>
+            <button type="button" class="btn-investigate" id="btn-ai-guide-refresh" style="max-width:280px;">Refresh AI guide</button>
+            <p id="ai-guide-status" style="font-size:0.8rem;color:var(--text-secondary);margin-top:8px;"></p>
+            <div class="ai-guide-narrative" id="ai-guide-narrative">Loading…</div>
+            <div id="ai-guide-proofs"></div>
+        </div>
+        <div class="events-panel" id="events-panel" style="display:none;">
+            <h4>Temporary Star Map events</h4>
+            <div class="event-list" id="events-list"></div>
+        </div>
+        <div class="economy-panel" id="economy-panel">
+            <h4>Economy, trophies, and quests</h4>
+            <div class="economy-grid">
+                <div class="economy-card"><div class="k">Spendable game_points</div><div class="v" id="economy-balance">0 pts</div></div>
+                <div class="economy-card"><div class="k">Active Star Map boosters</div><div class="v" id="economy-boosters">None</div></div>
+                <div class="economy-card"><div class="k">Trophies complete</div><div class="v" id="economy-trophy-count">0 / 4</div></div>
+                <div class="economy-card"><div class="k">Quest hooks</div><div class="v">Investigate + buildup</div></div>
+                <div class="economy-card"><div class="k">MN2 app balance</div><div class="v" id="economy-mn2">0 MN2</div></div>
+            </div>
+            <div class="trophy-list" id="starmap25-trophy-list"></div>
+            <div class="shop-hint" id="economy-shop-hint">Need boosters or more game_points? <a href="/shop?category=starmap25">Open Star Map shop</a>.</div>
+            <div class="crypto-panel" id="crypto-panel">
+                <h4>Star Map crypto relay</h4>
+                <p style="font-size:0.82rem;color:var(--text-secondary);">Earn internal MN2 from map progress. Claims are tied to your user ID and use cooldowns; wallet deposits and withdrawals stay separate.</p>
+                <div class="economy-grid" style="margin-top:10px;">
+                    <div class="economy-card"><div class="k">Crypto MN2 earned here</div><div class="v" id="crypto-total-earned">0 MN2</div></div>
+                    <div class="economy-card"><div class="k">Map progress inputs</div><div class="v" id="crypto-progress">0 systems</div></div>
+                </div>
+                <div class="crypto-options" id="crypto-options"></div>
+                <div class="crypto-status" id="crypto-status"></div>
+            </div>
+        </div>
+        <div class="view-toggles">
+            <button type="button" class="active" id="btn-view-grid">Grid</button>
+            <button type="button" id="btn-view-3d">3D Map</button>
+            <button type="button" id="btn-view-4d">4D Map</button>
+        </div>
+        <div id="canvas-3d-wrap" style="display: none;"><div class="hud-label" id="hud-3d">Hover a system — click to jump to card</div></div>
+        <div class="monitor-panel" id="monitor-panel">
+            <h3>Coordinated monitoring — 25 points</h3>
+            <div class="monitor-grid" id="monitor-grid"></div>
+            <div class="monitor-tools" aria-label="Map and monitor controls">
+                <div>
+                    <label for="filter-segmentum">Segmentum</label>
+                    <select id="filter-segmentum">
+                        <option value="all">All segmentums</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-state">State</label>
+                    <select id="filter-state">
+                        <option value="all">All states</option>
+                        <option value="open">Open</option>
+                        <option value="investigated">Investigated</option>
+                        <option value="secured">Secured</option>
+                        <option value="event">Event active</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-level">Level</label>
+                    <select id="filter-level">
+                        <option value="all">All levels</option>
+                        <option value="0">Level 0</option>
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                        <option value="4">Level 4</option>
+                        <option value="5">Level 5</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-tag">Tag</label>
+                    <select id="filter-tag">
+                        <option value="all">All tags</option>
+                        <option value="event">Event active</option>
+                        <option value="fortress">Fortress</option>
+                        <option value="forge">Forge</option>
+                        <option value="legion">Legion</option>
+                        <option value="naval">Naval</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-points">Sort</label>
+                    <select id="sort-points">
+                        <option value="index">Index</option>
+                        <option value="name">Name</option>
+                        <option value="point_value">Point value</option>
+                        <option value="segmentum">Segmentum</option>
+                        <option value="level">Level</option>
+                    </select>
+                </div>
+                <div><button type="button" id="share-progress-btn">Share progress</button></div>
+                <div><button type="button" id="print-map-btn">Print map</button></div>
+            </div>
+            <div class="monitor-result-line" id="monitor-result-line">Showing all systems.</div>
+        </div>
+        <div class="monitor-panel buildup-panel" id="buildup-panel">
+            <h3>Buildup command — build, deploy, collect</h3>
+            <div class="buildup-summary">
+                <div class="buildup-metric"><div class="k">Pending buildup</div><div class="v" id="buildup-pending">0 pts</div></div>
+                <div class="buildup-metric"><div class="k">Placements</div><div class="v" id="buildup-placements-count">0</div></div>
+                <div class="buildup-metric"><div class="k">Secured systems</div><div class="v" id="buildup-invaded-count">0 / 25</div></div>
+                <div class="buildup-metric"><div class="k">Max-level systems</div><div class="v" id="buildup-max-levels">0</div></div>
+                <div class="buildup-metric"><div class="k">Daily reset</div><div class="v" id="buildup-reset">—</div></div>
+            </div>
+            <div class="buildup-controls">
+                <div class="buildup-field">
+                    <label for="buildup-system">Investigated system</label>
+                    <select id="buildup-system"></select>
+                </div>
+                <div class="buildup-field">
+                    <label for="buildup-planet">Planet</label>
+                    <select id="buildup-planet"></select>
+                </div>
+                <div class="buildup-field">
+                    <label for="buildup-building">Building</label>
+                    <select id="buildup-building"></select>
+                </div>
+                <div class="buildup-field">
+                    <label for="buildup-unit">Unit</label>
+                    <select id="buildup-unit"></select>
+                </div>
+                <div class="buildup-actions">
+                    <button type="button" id="buildup-build-btn">Build</button>
+                    <button type="button" class="secondary" id="buildup-deploy-btn">Deploy</button>
+                    <button type="button" class="secondary" id="buildup-invade-btn">Invade</button>
+                    <button type="button" id="buildup-collect-btn">Collect</button>
+                </div>
+            </div>
+            <div class="buildup-status" id="buildup-status">Investigate a system, then build or deploy on one of its planets.</div>
+            <div class="shop-hint" id="buildup-shop-hint">Short on game_points or want a booster? <a href="/shop?category=starmap25">Open Star Map shop</a>.</div>
+            <div class="placement-list" id="buildup-placements"></div>
+        </div>
+        <div class="nav-links">
+            <a href="/trophies">Trophies &amp; Star Map</a>
+            <a href="/shop?category=starmap25">Star Map Shop</a>
+            <a href="/api/star-map">Star Map API (7 stars)</a>
+            <a href="/game">Game</a>
+            <a href="/">Home</a>
+        </div>
+    </div>
+
+    <div id="error-box" class="error" style="display: none;"></div>
+    <div id="content">
+        <div class="loading">Loading Star Map 25…</div>
+    </div>
+
+    <div id="planet-modal-backdrop" aria-hidden="true">
+        <div id="planet-modal">
+            <h3 id="planet-modal-title">Planet</h3>
+            <div id="planet-modal-body">Loading…</div>
+            <button type="button" id="planet-modal-close" class="btn-investigate" style="margin-top:14px;background:#333;color:#eee;">Close</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const API_BASE = '/api';
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        var lastStatusData = null;
+        var lastMapData = null;
+        var lastLevelsData = null;
+        var lastBuildupData = null;
+        var lastEventsData = null;
+        var starmapBuildings = [];
+        var starmapUnits = [];
+        var monitorFilters = { segmentum: 'all', state: 'all', level: 'all', tag: 'all', sort: 'index' };
+        var refreshInterval = null;
+        var scene3d = null;
+        var renderer3d = null;
+        var camera3d = null;
+        var meshPoints = [];
+        var animFrame3d = null;
+        var viewMode3d = 'grid';
+        var mapMode4d = false;
+        var raycaster3d = null;
+        var pointer3d = null;
+        var hoveredMesh = null;
+        var starPointsParticles = null;
+
+        function showError(msg) {
+            var el = document.getElementById('error-box');
+            if (el) { el.textContent = msg; el.style.display = 'block'; }
+        }
+        function hideError() {
+            var el = document.getElementById('error-box');
+            if (el) el.style.display = 'none';
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            var t = String(s);
+            return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function updateLastUpdated() {
+            var el = document.getElementById('last-updated');
+            if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+        }
+
+        function setBuildupStatus(msg, kind) {
+            var el = document.getElementById('buildup-status');
+            if (!el) return;
+            el.textContent = msg || '';
+            el.className = 'buildup-status' + (kind ? ' ' + kind : '');
+        }
+
+        function formatBuildupPoints(value) {
+            var n = Number(value || 0);
+            return (Math.round(n * 100) / 100).toLocaleString() + ' pts';
+        }
+
+        function formatMn2(value) {
+            var n = Number(value || 0);
+            return n.toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' MN2';
+        }
+
+        function formatDuration(seconds) {
+            var sec = Math.max(0, Number(seconds || 0));
+            if (sec <= 0) return 'Ready';
+            var h = Math.floor(sec / 3600);
+            var m = Math.floor((sec % 3600) / 60);
+            var s = Math.floor(sec % 60);
+            if (h > 0) return h + 'h ' + m + 'm';
+            if (m > 0) return m + 'm ' + s + 's';
+            return s + 's';
+        }
+
+        function findStarMapPoint(pointId) {
+            var points = (lastMapData && lastMapData.points) || [];
+            for (var i = 0; i < points.length; i++) {
+                if (points[i].id === pointId) return points[i];
+            }
+            return null;
+        }
+
+        function levelName(level) {
+            var rules = (lastLevelsData && lastLevelsData.level_rules) || [];
+            for (var i = 0; i < rules.length; i++) {
+                if (Number(rules[i].level) === Number(level)) return rules[i].name || ('Level ' + level);
+            }
+            return level > 0 ? ('Level ' + level) : 'Locked';
+        }
+
+        function activeEventsForPoint(point) {
+            var events = (lastEventsData && lastEventsData.active_events) || [];
+            return events.filter(function(ev) {
+                if (ev.target_point_id && ev.target_point_id !== point.id) return false;
+                if (ev.target_segmentum && ev.target_segmentum !== point.segmentum) return false;
+                return true;
+            });
+        }
+
+        function renderEventPanel() {
+            var panel = document.getElementById('events-panel');
+            var list = document.getElementById('events-list');
+            if (!panel || !list) return;
+            var events = (lastEventsData && lastEventsData.active_events) || [];
+            if (!events.length) {
+                panel.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+            panel.style.display = 'block';
+            list.innerHTML = events.map(function(ev) {
+                var target = ev.target_point_id || ev.target_segmentum || 'All systems';
+                var ends = ev.end_ts ? new Date(ev.end_ts).toLocaleString() : 'open-ended';
+                var reward = 'x' + (ev.reward_multiplier || 1) + (ev.flat_bonus ? ' +' + ev.flat_bonus : '');
+                return '<div class="event-card"><strong>' + escapeHtml(ev.name || ev.id) + '</strong><br>' +
+                    escapeHtml(ev.description || '') +
+                    '<br><span>Target: ' + escapeHtml(target) + ' · Actions: ' + escapeHtml((ev.actions || []).join(', ')) + ' · Reward: ' + escapeHtml(reward) + '</span>' +
+                    '<br><span>Ends: ' + escapeHtml(ends) + '</span></div>';
+            }).join('');
+        }
+
+        function renderEconomyPanel() {
+            var status = lastStatusData || {};
+            var balance = Number(status.game_points_balance || 0);
+            var boosterMult = Number(status.starmap25_booster_multiplier || 1);
+            var boosters = status.active_starmap25_boosters || [];
+            var trophies = status.trophies || [];
+            var crypto = status.crypto || {};
+            var balanceText = Math.round(balance * 100) / 100;
+            var progressBalance = document.getElementById('progress-balance');
+            var progressBooster = document.getElementById('progress-booster');
+            var economyBalance = document.getElementById('economy-balance');
+            var economyBoosters = document.getElementById('economy-boosters');
+            var economyMn2 = document.getElementById('economy-mn2');
+            var trophyCount = document.getElementById('economy-trophy-count');
+            var trophyList = document.getElementById('starmap25-trophy-list');
+            var shopHint = document.getElementById('economy-shop-hint');
+            if (progressBalance) progressBalance.textContent = balanceText.toLocaleString();
+            if (progressBooster) progressBooster.textContent = 'x' + boosterMult;
+            if (economyBalance) economyBalance.textContent = balanceText.toLocaleString() + ' pts';
+            if (economyBoosters) {
+                economyBoosters.textContent = boosters.length
+                    ? boosters.map(function(b) { return b.name || b.id || 'Booster'; }).join(', ')
+                    : 'None active';
+            }
+            if (economyMn2) economyMn2.textContent = formatMn2(crypto.mn2_balance || status.mn2_balance || 0);
+            if (trophyCount) {
+                var done = trophies.filter(function(t) { return t.completed || t.awarded; }).length;
+                trophyCount.textContent = done + ' / ' + (trophies.length || 4);
+            }
+            if (trophyList) {
+                trophyList.innerHTML = trophies.length ? trophies.map(function(t) {
+                    var doneClass = (t.completed || t.awarded) ? ' done' : '';
+                    var reward = t.reward ? ' · +' + t.reward + ' trophy pts' : '';
+                    return '<span class="trophy-pill' + doneClass + '" title="' + escapeHtml(t.description || '') + '">' + escapeHtml(t.name || t.id) + reward + '</span>';
+                }).join('') : '<span class="trophy-pill">Trophy status loading</span>';
+            }
+            if (shopHint) {
+                shopHint.innerHTML = boosters.length
+                    ? 'Booster active. Need more points or another window? <a href="/shop?category=starmap25">Open Star Map shop</a>.'
+                    : 'No Star Map booster active. <a href="/shop?category=starmap25">Open Star Map shop</a> for boosters and point help.';
+            }
+            renderCryptoPanel(crypto);
+        }
+
+        function renderCryptoPanel(crypto) {
+            crypto = crypto || {};
+            var progress = crypto.progress || {};
+            var options = crypto.options || [];
+            var totalEl = document.getElementById('crypto-total-earned');
+            var progressEl = document.getElementById('crypto-progress');
+            var optionsEl = document.getElementById('crypto-options');
+            var statusEl = document.getElementById('crypto-status');
+            if (totalEl) totalEl.textContent = formatMn2(crypto.total_mn2_earned || 0);
+            if (progressEl) {
+                progressEl.textContent = (progress.investigated || 0) + ' investigated · ' +
+                    (progress.secured || 0) + ' secured · ' +
+                    (progress.placements || 0) + ' placements';
+            }
+            if (!optionsEl) return;
+            optionsEl.innerHTML = options.length ? options.map(function(opt) {
+                var cls = 'crypto-option' + (opt.ready ? ' ready' : '') + (!opt.unlocked ? ' locked' : '');
+                var req = opt.requires || {};
+                var reqText = Object.keys(req).map(function(k) { return k + ' ' + req[k]; }).join(', ') || 'none';
+                var actionText = opt.ready ? 'Claim ' + formatMn2(opt.reward_mn2 || 0) : (!opt.unlocked ? 'Locked' : formatDuration(opt.cooldown_remaining_sec));
+                return '<div class="' + cls + '">' +
+                    '<strong>' + escapeHtml(opt.name || opt.id) + '</strong><br>' +
+                    escapeHtml(opt.description || '') +
+                    '<br><span>Reward: ' + escapeHtml(formatMn2(opt.reward_mn2 || 0)) + ' · Cooldown: ' + escapeHtml(formatDuration(opt.cooldown_sec || 0)) + '</span>' +
+                    '<br><span>Requires: ' + escapeHtml(reqText) + ' · Claims: ' + escapeHtml(opt.claims_count || 0) + '</span>' +
+                    '<button type="button" data-crypto-option="' + escapeHtml(opt.id) + '" ' + (!opt.ready ? 'disabled' : '') + '>' + escapeHtml(actionText) + '</button>' +
+                    '</div>';
+            }).join('') : '<div class="crypto-option">Crypto relay loading.</div>';
+            optionsEl.querySelectorAll('button[data-crypto-option]:not([disabled])').forEach(function(btn) {
+                btn.addEventListener('click', function() { claimCryptoOption(btn.getAttribute('data-crypto-option'), btn); });
+            });
+            if (statusEl && !statusEl.textContent) statusEl.textContent = 'Progress and cooldowns are stored under user ID: ' + userId;
+        }
+
+        async function claimCryptoOption(optionId, btnEl) {
+            var statusEl = document.getElementById('crypto-status');
+            if (btnEl) btnEl.disabled = true;
+            if (statusEl) {
+                statusEl.textContent = 'Claiming crypto relay...';
+                statusEl.className = 'crypto-status';
+            }
+            try {
+                var r = await fetch(API_BASE + '/star-map/25/crypto/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, option_id: optionId })
+                });
+                var d = await r.json();
+                if (!d.success) throw new Error(d.error === 'cooldown' ? ('Cooldown: ' + formatDuration(d.cooldown_remaining_sec)) : (d.error || 'Claim failed'));
+                if (statusEl) {
+                    statusEl.textContent = 'Claimed ' + formatMn2((d.claim || {}).amount_mn2 || 0) + '.';
+                    statusEl.className = 'crypto-status ok';
+                }
+                await loadStarMap25();
+            } catch (e) {
+                if (statusEl) {
+                    statusEl.textContent = e.message || 'Crypto claim failed.';
+                    statusEl.className = 'crypto-status err';
+                }
+                if (btnEl) btnEl.disabled = false;
+            }
+        }
+
+        function pointHasTag(point, tag) {
+            if (tag === 'all') return true;
+            if (tag === 'event') return activeEventsForPoint(point).length > 0;
+            var tags = point.tags || [];
+            if (tags.indexOf(tag) !== -1) return true;
+            var haystack = ((point.name || '') + ' ' + (point.info || '') + ' ' + (point.lore || '') + ' ' + (point.segmentum || '')).toLowerCase();
+            if (tag === 'forge') return haystack.indexOf('forge') !== -1 || haystack.indexOf('mechanicus') !== -1;
+            if (tag === 'naval') return haystack.indexOf('naval') !== -1 || haystack.indexOf('fleet') !== -1;
+            return haystack.indexOf(tag) !== -1;
+        }
+
+        function getPointLevel(pointId) {
+            var levels = (lastLevelsData && lastLevelsData.system_levels) || {};
+            return Number(levels[pointId] || 0);
+        }
+
+        function pointMatchesFilters(point) {
+            var id = point.id || '';
+            var investigated = new Set((lastStatusData && lastStatusData.investigated_ids) || []);
+            var invaded = new Set((lastStatusData && lastStatusData.invaded_ids) || []);
+            var hasEvent = activeEventsForPoint(point).length > 0;
+            if (monitorFilters.segmentum !== 'all' && point.segmentum !== monitorFilters.segmentum) return false;
+            if (monitorFilters.level !== 'all' && String(getPointLevel(id)) !== monitorFilters.level) return false;
+            if (!pointHasTag(point, monitorFilters.tag)) return false;
+            if (monitorFilters.state === 'open' && investigated.has(id)) return false;
+            if (monitorFilters.state === 'investigated' && !investigated.has(id)) return false;
+            if (monitorFilters.state === 'secured' && !invaded.has(id)) return false;
+            if (monitorFilters.state === 'event' && !hasEvent) return false;
+            return true;
+        }
+
+        function sortPoints(points) {
+            return points.slice().sort(function(a, b) {
+                if (monitorFilters.sort === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+                if (monitorFilters.sort === 'point_value') return Number(b.point_value || 0) - Number(a.point_value || 0);
+                if (monitorFilters.sort === 'segmentum') return String(a.segmentum || '').localeCompare(String(b.segmentum || '')) || Number(a.index || 0) - Number(b.index || 0);
+                if (monitorFilters.sort === 'level') return getPointLevel(b.id) - getPointLevel(a.id) || Number(a.index || 0) - Number(b.index || 0);
+                return Number(a.index || 0) - Number(b.index || 0);
+            });
+        }
+
+        function bindMonitorControls() {
+            var controls = [
+                ['filter-segmentum', 'segmentum'],
+                ['filter-state', 'state'],
+                ['filter-level', 'level'],
+                ['filter-tag', 'tag'],
+                ['sort-points', 'sort']
+            ];
+            controls.forEach(function(pair) {
+                var el = document.getElementById(pair[0]);
+                if (!el || el.dataset.bound) return;
+                el.dataset.bound = '1';
+                el.addEventListener('change', function() {
+                    monitorFilters[pair[1]] = el.value;
+                    renderPointCards();
+                });
+            });
+            var shareBtn = document.getElementById('share-progress-btn');
+            if (shareBtn && !shareBtn.dataset.bound) {
+                shareBtn.dataset.bound = '1';
+                shareBtn.addEventListener('click', shareProgress);
+            }
+            var printBtn = document.getElementById('print-map-btn');
+            if (printBtn && !printBtn.dataset.bound) {
+                printBtn.dataset.bound = '1';
+                printBtn.addEventListener('click', function() { window.print(); });
+            }
+        }
+
+        function populateSegmentumFilter(points) {
+            var el = document.getElementById('filter-segmentum');
+            if (!el) return;
+            var current = el.value || 'all';
+            var segmentums = Array.from(new Set((points || []).map(function(p) { return p.segmentum || 'Unknown'; }))).sort();
+            el.innerHTML = '<option value="all">All segmentums</option>' + segmentums.map(function(seg) {
+                return '<option value="' + escapeHtml(seg) + '">' + escapeHtml(seg) + '</option>';
+            }).join('');
+            if (segmentums.indexOf(current) !== -1) el.value = current;
+            monitorFilters.segmentum = el.value;
+        }
+
+        function shareProgress() {
+            var status = lastStatusData || {};
+            var total = status.total_points || 25;
+            var text = 'Star Map 25: ' + ((status.investigated_ids || []).length) + '/' + total + ' investigated, ' + ((status.invaded_ids || []).length) + '/' + total + ' secured on MasterNoder.dk';
+            var done = function() {
+                var line = document.getElementById('monitor-result-line');
+                if (line) line.textContent = 'Share text copied: ' + text;
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text + ' ' + window.location.href).then(done).catch(done);
+            } else {
+                done();
+            }
+        }
+
+        function renderPointCards() {
+            var content = document.getElementById('content');
+            if (!content || !lastMapData || !lastStatusData) return;
+            var points = lastMapData.points || [];
+            var statusData = lastStatusData || {};
+            var investigatedSet = new Set(statusData.investigated_ids || []);
+            var invadedSet = new Set(statusData.invaded_ids || []);
+            var baseMult = statusData.investigation_reward_multiplier != null ? statusData.investigation_reward_multiplier : 1.2;
+            var boosterMult = statusData.starmap25_booster_multiplier != null ? statusData.starmap25_booster_multiplier : 1;
+            var mult = baseMult * boosterMult;
+            var filtered = sortPoints(points.filter(pointMatchesFilters));
+            var resultLine = document.getElementById('monitor-result-line');
+            if (resultLine) resultLine.textContent = 'Showing ' + filtered.length + ' of ' + points.length + ' systems.';
+            if (!filtered.length) {
+                content.innerHTML = '<div class="loading">No systems match the current filters.</div>';
+                return;
+            }
+
+            var groups = {};
+            filtered.forEach(function(point) {
+                var seg = point.segmentum || 'Unknown';
+                if (!groups[seg]) groups[seg] = [];
+                groups[seg].push(point);
+            });
+            var groupNames = Object.keys(groups).sort();
+            var html = '';
+            groupNames.forEach(function(seg) {
+                html += '<section class="segment-group" aria-label="' + escapeHtml(seg) + ' systems">';
+                html += '<h3 class="segment-heading">' + escapeHtml(seg) + ' · ' + groups[seg].length + ' systems</h3>';
+                html += '<div class="points-grid">';
+                groups[seg].forEach(function(p) {
+                    var id = p.id || '';
+                    var name = escapeHtml(p.name || id);
+                    var segmentum = escapeHtml(p.segmentum || '-');
+                    var lifeLabel = escapeHtml(p.life_label || p.life_bearing || '');
+                    var info = escapeHtml(p.info || '');
+                    var lore = escapeHtml(p.lore || '');
+                    var loreLong = escapeHtml(p.lore_long || '');
+                    var invasionBlurb = statusData.invasion_blurbs && statusData.invasion_blurbs[id] ? escapeHtml(statusData.invasion_blurbs[id]) : '';
+                    var pointEvents = activeEventsForPoint(p);
+                    var icon = p.icon || '🌟';
+                    var baseVal = p.point_value != null ? p.point_value : 10;
+                    var awarded = Math.round(baseVal * mult);
+                    var isDone = investigatedSet.has(id);
+                    var isSecured = invadedSet.has(id);
+                    var level = getPointLevel(id);
+                    var cardClass = 'point-card' + (isDone ? ' investigated' : '') + (isSecured ? ' secured' : '') + (pointEvents.length ? ' event' : '');
+                    html += '<article class="' + cardClass + '" data-point-id="' + escapeHtml(id) + '" tabindex="0" role="article" aria-label="' + name + '">';
+                    html += '<div class="row"><span class="index">#' + (p.index || '') + ' · L' + level + '</span>';
+                    if (isSecured) html += '<span class="badge secured">Secured</span>';
+                    else if (isDone) html += '<span class="badge">Investigated</span>';
+                    else html += '<span class="segmentum">' + segmentum + '</span>';
+                    html += '</div>';
+                    html += '<div class="name">' + icon + ' ' + name + '</div>';
+                    if (lifeLabel) html += '<div class="life-label">' + lifeLabel + '</div>';
+                    if (info) html += '<div class="info">' + info + '</div>';
+                    if (lore) html += '<div class="lore' + (isDone ? ' visible' : '') + '" id="lore-' + escapeHtml(id) + '">' + lore + '</div>';
+                    if (loreLong) {
+                        html += '<button type="button" class="read-more-btn" data-lore-target="lore-long-' + escapeHtml(id) + '">Read full lore</button>';
+                        html += '<div class="lore-long" id="lore-long-' + escapeHtml(id) + '">' + loreLong + '</div>';
+                    }
+                    if (pointEvents.length) html += '<div class="reward-stat-box"><div style="font-size:0.75rem;color:var(--accent);">Active event</div><div>' + pointEvents.map(function(ev) { return escapeHtml(ev.name || ev.id); }).join('<br>') + '</div></div>';
+                    if (invasionBlurb) html += '<div class="reward-stat-box"><div style="font-size:0.75rem;color:var(--secondary);">Invasion record</div><div>' + invasionBlurb + '</div></div>';
+                    html += '<div class="reward-stat-box"><div style="font-size:0.75rem;color:rgba(255,255,255,0.55);">Investigation reward (status API)</div>';
+                    html += '<div class="formula">' + baseVal + ' x ' + baseMult + ' x ' + boosterMult + ' = ' + awarded + ' pts</div>';
+                    html += '<div style="font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:4px;">Boosters apply when active. <a href="/shop?category=starmap25" style="color:var(--secondary);">Need a Star Map booster?</a></div></div>';
+                    html += '<button type="button" class="btn-investigate" data-point-id="' + escapeHtml(id) + '" ' + (isDone ? ' disabled' : '') + '>';
+                    html += isDone ? '✓ Investigated (+' + awarded + ' pts)' : 'Investigate (+' + awarded + ' pts)';
+                    html += '</button>';
+                    var pl = p.planets || [];
+                    if (pl.length) {
+                        html += '<div class="planet-row">';
+                        for (var pi = 0; pi < pl.length; pi++) {
+                            html += '<span class="planet-chip" tabindex="0" data-point-id="' + escapeHtml(id) + '" data-planet="' + escapeHtml(pl[pi]) + '">🪐 ' + escapeHtml(pl[pi]) + '</span>';
+                        }
+                        html += '</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.45);margin-top:4px;">Planets: click for 5-level intel (xenos tier includes the catalog line).</div>';
+                    }
+                    html += '</article>';
+                });
+                html += '</div></section>';
+            });
+            content.innerHTML = html;
+            bindPointCardEvents(content);
+        }
+
+        function bindPointCardEvents(content) {
+            content.querySelectorAll('.btn-investigate:not([disabled])').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var pid = btn.getAttribute('data-point-id');
+                    if (pid) investigatePoint(pid, btn);
+                });
+            });
+            content.querySelectorAll('.read-more-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    var target = document.getElementById(btn.getAttribute('data-lore-target'));
+                    if (target) target.classList.toggle('visible');
+                });
+            });
+            content.querySelectorAll('.point-card').forEach(function(card) {
+                card.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('btn-investigate') || e.target.classList.contains('planet-chip') || e.target.classList.contains('read-more-btn')) return;
+                    var loreEl = card.querySelector('.lore');
+                    if (loreEl) loreEl.classList.toggle('visible');
+                });
+                card.addEventListener('keydown', function(e) {
+                    var cards = Array.from(document.querySelectorAll('.point-card'));
+                    var idx = cards.indexOf(card);
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (cards[idx + 1]) cards[idx + 1].focus();
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (cards[idx - 1]) cards[idx - 1].focus();
+                    } else if (e.key === 'Enter') {
+                        var btn = card.querySelector('.btn-investigate:not([disabled])');
+                        if (btn) btn.click();
+                    } else if (e.key.toLowerCase() === 'l') {
+                        var lore = card.querySelector('.lore');
+                        if (lore) lore.classList.toggle('visible');
+                    }
+                });
+            });
+            content.querySelectorAll('.planet-chip').forEach(function(chip) {
+                var open = function(ev) {
+                    ev.stopPropagation();
+                    openPlanetModal(chip.getAttribute('data-point-id'), chip.getAttribute('data-planet'));
+                };
+                chip.addEventListener('click', open);
+                chip.addEventListener('keydown', function(ev) {
+                    if (ev.key === 'Enter' || ev.key === ' ') open(ev);
+                });
+            });
+        }
+
+        function updateBuildupPlanetOptions() {
+            var systemEl = document.getElementById('buildup-system');
+            var planetEl = document.getElementById('buildup-planet');
+            var buildingEl = document.getElementById('buildup-building');
+            if (!systemEl || !planetEl || !buildingEl) return;
+            var point = findStarMapPoint(systemEl.value);
+            var planets = point && point.planets ? point.planets : [];
+            planetEl.innerHTML = planets.map(function(planet) {
+                return '<option value="' + escapeHtml(planet) + '">' + escapeHtml(planet) + '</option>';
+            }).join('');
+
+            var levels = (lastLevelsData && lastLevelsData.system_levels) || {};
+            var currentLevel = levels[systemEl.value] || 0;
+            var available = starmapBuildings.filter(function(b) {
+                return Number(b.min_level || 1) <= currentLevel;
+            });
+            buildingEl.innerHTML = available.length
+                ? available.map(function(b) {
+                    var label = (b.icon || '') + ' ' + (b.name || b.id) + ' · L' + (b.min_level || 1) + ' · ' + (b.build_cost || 0) + ' pts';
+                    return '<option value="' + escapeHtml(b.id) + '">' + escapeHtml(label) + '</option>';
+                }).join('')
+                : '<option value="">No buildings unlocked yet</option>';
+        }
+
+        function renderBuildupPanel(points, investigatedIds) {
+            var pendingEl = document.getElementById('buildup-pending');
+            var countEl = document.getElementById('buildup-placements-count');
+            var invadedCountEl = document.getElementById('buildup-invaded-count');
+            var maxEl = document.getElementById('buildup-max-levels');
+            var resetEl = document.getElementById('buildup-reset');
+            var systemEl = document.getElementById('buildup-system');
+            var planetEl = document.getElementById('buildup-planet');
+            var unitEl = document.getElementById('buildup-unit');
+            var listEl = document.getElementById('buildup-placements');
+            var buildBtn = document.getElementById('buildup-build-btn');
+            var deployBtn = document.getElementById('buildup-deploy-btn');
+            var invadeBtn = document.getElementById('buildup-invade-btn');
+            var collectBtn = document.getElementById('buildup-collect-btn');
+            if (!systemEl || !unitEl || !listEl) return;
+
+            var buildup = lastBuildupData || {};
+            var levelsData = lastLevelsData || {};
+            var placements = buildup.placements || [];
+            var invadedSet = new Set((lastStatusData && lastStatusData.invaded_ids) || []);
+            var levels = levelsData.system_levels || {};
+            var maxLevel = levelsData.max_level || 5;
+            var atMax = Object.keys(levels).filter(function(pid) { return levels[pid] >= maxLevel; }).length;
+            if (pendingEl) pendingEl.textContent = formatBuildupPoints(buildup.pending_points || 0);
+            if (countEl) countEl.textContent = placements.length.toLocaleString();
+            var totalSystems = (lastStatusData && lastStatusData.total_points) || 25;
+            if (invadedCountEl) invadedCountEl.textContent = invadedSet.size + ' / ' + totalSystems;
+            if (maxEl) maxEl.textContent = atMax + ' / ' + totalSystems;
+            if (resetEl) {
+                resetEl.textContent = levelsData.in_daily_reset_bonus_window
+                    ? '2x bonus now'
+                    : (levelsData.next_daily_reset_utc ? new Date(levelsData.next_daily_reset_utc).toLocaleTimeString(void 0, { hour: '2-digit', minute: '2-digit' }) : '-');
+            }
+
+            var doneSet = new Set(investigatedIds || []);
+            var previousSystem = systemEl.value;
+            var previousUnit = unitEl.value;
+            var investigatedPoints = (points || []).filter(function(p) { return doneSet.has(p.id); });
+            systemEl.innerHTML = investigatedPoints.length
+                ? investigatedPoints.map(function(p) {
+                    var lvl = levels[p.id] || 0;
+                    var label = '#' + (p.index || '') + ' ' + (p.name || p.id) + ' · L' + lvl + ' ' + levelName(lvl);
+                    return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(label) + '</option>';
+                }).join('')
+                : '<option value="">Investigate a system first</option>';
+            if (previousSystem && doneSet.has(previousSystem)) systemEl.value = previousSystem;
+            systemEl.disabled = !investigatedPoints.length;
+            var previousPlanet = planetEl ? planetEl.value : '';
+
+            var allUnits = starmapUnits || [];
+            unitEl.innerHTML = allUnits.length
+                ? allUnits.map(function(u) {
+                    var label = (u.icon || '') + ' ' + (u.name || u.id) + ' · ' + (u.deploy_cost || 0) + ' pts · +' + (u.points_per_day || 0) + '/day';
+                    return '<option value="' + escapeHtml(u.id) + '">' + escapeHtml(label) + '</option>';
+                }).join('')
+                : '<option value="">No units available</option>';
+            if (previousUnit) {
+                var hasPreviousUnit = Array.prototype.some.call(unitEl.options, function(opt) { return opt.value === previousUnit; });
+                if (hasPreviousUnit) unitEl.value = previousUnit;
+            }
+            unitEl.disabled = !allUnits.length || !investigatedPoints.length;
+            updateBuildupPlanetOptions();
+            if (planetEl && previousPlanet) {
+                var hasPreviousPlanet = Array.prototype.some.call(planetEl.options, function(opt) { return opt.value === previousPlanet; });
+                if (hasPreviousPlanet) planetEl.value = previousPlanet;
+            }
+            var hasUnlockedBuilding = !!document.getElementById('buildup-building') && !!document.getElementById('buildup-building').value;
+            if (buildBtn) buildBtn.disabled = !investigatedPoints.length || !hasUnlockedBuilding;
+            if (deployBtn) deployBtn.disabled = !investigatedPoints.length || !allUnits.length;
+            var selectedSystem = systemEl.value;
+            var selectedUnit = unitEl.value;
+            var hasMatchingDeployment = placements.some(function(pl) {
+                return pl.type === 'unit' && pl.point_id === selectedSystem && pl.id === selectedUnit;
+            });
+            if (invadeBtn) invadeBtn.disabled = !selectedSystem || !selectedUnit || !hasMatchingDeployment || invadedSet.has(selectedSystem);
+            if (collectBtn) collectBtn.disabled = Number(buildup.pending_points || 0) <= 0;
+
+            var byId = {};
+            starmapBuildings.forEach(function(b) { byId['building:' + b.id] = b; });
+            allUnits.forEach(function(u) { byId['unit:' + u.id] = u; });
+            listEl.innerHTML = placements.length ? placements.slice().reverse().map(function(pl) {
+                var point = findStarMapPoint(pl.point_id) || {};
+                var meta = byId[(pl.type || '') + ':' + pl.id] || {};
+                var secured = invadedSet.has(pl.point_id) ? ' · secured' : '';
+                return '<div class="placement-item"><strong>' + escapeHtml((meta.icon || '') + ' ' + (meta.name || pl.id)) + '</strong><br>' +
+                    escapeHtml(point.name || pl.point_id || 'Unknown system') + ' · ' + escapeHtml(pl.planet || 'planet') +
+                    '<br><span>' + escapeHtml(pl.type || 'placement') + ' · +' + escapeHtml(meta.points_per_day || 0) + '/day' + secured + '</span></div>';
+            }).join('') : '<div class="placement-item">No buildings or units yet. Build an Outpost or deploy Guard after your first investigation.</div>';
+        }
+
+        async function runBuildupAction(kind, btnEl) {
+            var systemEl = document.getElementById('buildup-system');
+            var planetEl = document.getElementById('buildup-planet');
+            var buildingEl = document.getElementById('buildup-building');
+            var unitEl = document.getElementById('buildup-unit');
+            if (!systemEl || !planetEl) return;
+            var payload = { user_id: userId, point_id: systemEl.value, planet: planetEl.value };
+            var endpoint = '';
+            if (kind === 'build') {
+                if (!buildingEl || !buildingEl.value) return setBuildupStatus('No building unlocked for this system level yet.', 'err');
+                payload.building_id = buildingEl.value;
+                endpoint = '/star-map/25/build';
+            } else if (kind === 'deploy') {
+                if (!unitEl || !unitEl.value) return setBuildupStatus('No unit available to deploy.', 'err');
+                payload.unit_id = unitEl.value;
+                endpoint = '/star-map/25/deploy';
+            } else if (kind === 'invade') {
+                if (!unitEl || !unitEl.value) return setBuildupStatus('Deploy a unit before invading.', 'err');
+                payload.unit_id = unitEl.value;
+                endpoint = '/star-map/25/invade';
+            } else {
+                endpoint = '/star-map/25/collect';
+                payload = { user_id: userId };
+            }
+            if (btnEl) btnEl.disabled = true;
+            setBuildupStatus(kind === 'collect' ? 'Collecting buildup…' : (kind === 'invade' ? 'Securing system…' : 'Sending command…'), '');
+            try {
+                var r = await fetch(API_BASE + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                var d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Command failed');
+                if (kind === 'collect') {
+                    setBuildupStatus('Collected ' + formatBuildupPoints(d.points_collected || 0) + '.', 'ok');
+                } else if (kind === 'invade') {
+                    setBuildupStatus('System secured: +' + (d.points_awarded || 0) + ' pts. ' + (d.blurb || ''), 'ok');
+                } else {
+                    var eventMsg = d.event_bonus_points ? (' Event/booster bonus: +' + d.event_bonus_points + ' pts.') : '';
+                    setBuildupStatus((kind === 'build' ? 'Building placed. System level may increase.' : 'Unit deployed. Buildup generation increased.') + eventMsg, 'ok');
+                }
+                await loadStarMap25();
+            } catch (e) {
+                var msg = e.message || 'Buildup command failed.';
+                if (msg.toLowerCase().indexOf('not enough game_points') !== -1) {
+                    msg += ' Open /shop?category=starmap25 for Star Map boosters or points.';
+                }
+                setBuildupStatus(msg, 'err');
+                if (btnEl) btnEl.disabled = false;
+            }
+        }
+
+        function bindBuildupControls() {
+            var systemEl = document.getElementById('buildup-system');
+            var unitEl = document.getElementById('buildup-unit');
+            var buildBtn = document.getElementById('buildup-build-btn');
+            var deployBtn = document.getElementById('buildup-deploy-btn');
+            var invadeBtn = document.getElementById('buildup-invade-btn');
+            var collectBtn = document.getElementById('buildup-collect-btn');
+            if (systemEl && !systemEl.dataset.bound) {
+                systemEl.dataset.bound = '1';
+                systemEl.addEventListener('change', function() {
+                    updateBuildupPlanetOptions();
+                    var buildBtn = document.getElementById('buildup-build-btn');
+                    var buildingEl = document.getElementById('buildup-building');
+                    if (buildBtn) buildBtn.disabled = !buildingEl || !buildingEl.value;
+                    if (lastMapData && lastStatusData) renderBuildupPanel(lastMapData.points || [], lastStatusData.investigated_ids || []);
+                });
+            }
+            if (unitEl && !unitEl.dataset.bound) {
+                unitEl.dataset.bound = '1';
+                unitEl.addEventListener('change', function() {
+                    if (lastMapData && lastStatusData) renderBuildupPanel(lastMapData.points || [], lastStatusData.investigated_ids || []);
+                });
+            }
+            if (buildBtn && !buildBtn.dataset.bound) {
+                buildBtn.dataset.bound = '1';
+                buildBtn.addEventListener('click', function() { runBuildupAction('build', buildBtn); });
+            }
+            if (deployBtn && !deployBtn.dataset.bound) {
+                deployBtn.dataset.bound = '1';
+                deployBtn.addEventListener('click', function() { runBuildupAction('deploy', deployBtn); });
+            }
+            if (invadeBtn && !invadeBtn.dataset.bound) {
+                invadeBtn.dataset.bound = '1';
+                invadeBtn.addEventListener('click', function() { runBuildupAction('invade', invadeBtn); });
+            }
+            if (collectBtn && !collectBtn.dataset.bound) {
+                collectBtn.dataset.bound = '1';
+                collectBtn.addEventListener('click', function() { runBuildupAction('collect', collectBtn); });
+            }
+        }
+
+        function fillMonitorGrid(points, investigatedIds, invadedIds) {
+            var grid = document.getElementById('monitor-grid');
+            if (!grid || !points || !points.length) return;
+            var doneSet = new Set(investigatedIds || []);
+            var invadedSet = new Set(invadedIds || []);
+            grid.innerHTML = '';
+            for (var i = 0; i < points.length; i++) {
+                var p = points[i];
+                var id = p.id || ('point_' + (i + 1));
+                var hasEvent = activeEventsForPoint(p).length > 0;
+                var cell = document.createElement('div');
+                cell.className = 'monitor-cell' + (doneSet.has(id) ? ' done' : '') + (invadedSet.has(id) ? ' secured' : '') + (hasEvent ? ' event' : '');
+                cell.title = (p.name || id) + (hasEvent ? ' (event active)' : (invadedSet.has(id) ? ' (secured)' : (doneSet.has(id) ? ' (investigated)' : ''))) + ' — click to scroll';
+                cell.textContent = p.index != null ? p.index : (i + 1);
+                cell.dataset.pointId = id;
+                cell.addEventListener('click', function() {
+                    var pid = this.dataset.pointId;
+                    if (!pid) return;
+                    var card = document.querySelector('.point-card[data-point-id="' + pid + '"]');
+                    if (!card) return;
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.remove('flash');
+                    void card.offsetWidth;
+                    card.classList.add('flash');
+                });
+                grid.appendChild(cell);
+            }
+        }
+
+        function renderWalkthrough(wt) {
+            var track = document.getElementById('walkthrough-track');
+            var summary = document.getElementById('walkthrough-summary');
+            if (!track || !summary) return;
+            var cur = (wt && wt.current_level != null) ? wt.current_level : 0;
+            var levels = (wt && wt.levels) ? wt.levels : [];
+            var next = wt && wt.next;
+            summary.textContent = cur > 0
+                ? ('Tier ' + cur + '/10 — ' + (wt.current_title || '') + (next ? ' · Next: ' + (next.min_investigations || '') + ' investigations for tier ' + (next.level || '') + '.' : ''))
+                : ('Start investigating to begin the walkthrough. ' + (next ? 'First tier at ' + (next.min_investigations || 1) + ' investigation(s).' : ''));
+            track.innerHTML = '';
+            for (var i = 0; i < levels.length; i++) {
+                var L = levels[i];
+                var lvl = L.level != null ? L.level : (i + 1);
+                var minInv = L.min_investigations != null ? L.min_investigations : 0;
+                var done = cur >= lvl;
+                var isCur = cur === lvl && cur > 0;
+                var div = document.createElement('div');
+                div.className = 'wt-step' + (done ? ' done' : '') + (isCur ? ' current' : '');
+                div.textContent = '#' + lvl + ' ' + (L.title || '') + ' — ' + (L.feature || '').slice(0, 60) + (L.feature && L.feature.length > 60 ? '…' : '');
+                div.title = L.feature || L.title || '';
+                track.appendChild(div);
+            }
+        }
+
+        async function openPlanetModal(pointId, planetName) {
+            var back = document.getElementById('planet-modal-backdrop');
+            var body = document.getElementById('planet-modal-body');
+            var title = document.getElementById('planet-modal-title');
+            if (!back || !body || !title) return;
+            title.textContent = planetName + ' — archive';
+            body.innerHTML = '<p class="loading">Loading five-level intel…</p>';
+            back.classList.add('open');
+            back.setAttribute('aria-hidden', 'false');
+            try {
+                var url = API_BASE + '/star-map/25/planet-intel?point_id=' + encodeURIComponent(pointId) + '&planet=' + encodeURIComponent(planetName);
+                var r = await fetch(url);
+                var d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Failed');
+                var intel = d.intel || {};
+                var levels = intel.depth_levels || intel.levels || [];
+                var sys = d.system_name ? '<p style="opacity:0.85;margin-bottom:10px;">System: ' + escapeHtml(d.system_name) + '</p>' : '';
+                var h = sys;
+                for (var j = 0; j < levels.length; j++) {
+                    var lv = levels[j];
+                    var depth = lv.depth != null ? lv.depth : (j + 1);
+                    var t = lv.title || lv.t || ('Level ' + depth);
+                    var txt = lv.body || lv.v || lv.text || '';
+                    h += '<div class="depth-level"><div class="dt">Depth ' + depth + ' — ' + escapeHtml(t) + '</div><div>' + escapeHtml(txt) + '</div></div>';
+                }
+                body.innerHTML = h || '<p>No archive rows.</p>';
+            } catch (e) {
+                body.innerHTML = '<p class="error">Could not load planet intel.</p>';
+            }
+        }
+
+        function closePlanetModal() {
+            var back = document.getElementById('planet-modal-backdrop');
+            if (back) {
+                back.classList.remove('open');
+                back.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function renderAiGuideProofs(proofs) {
+            var el = document.getElementById('ai-guide-proofs');
+            if (!el || !proofs || !proofs.length) {
+                if (el) el.innerHTML = '';
+                return;
+            }
+            var h = '<p style="font-size:0.8rem;color:var(--secondary);margin:12px 0 6px;">Readable documentation (proofs)</p>';
+            for (var i = 0; i < proofs.length; i++) {
+                var pr = proofs[i];
+                var pid = escapeHtml(pr.id || '');
+                var title = escapeHtml(pr.title || '');
+                var body = escapeHtml(pr.body || '');
+                var refs = pr.refs || [];
+                var refStr = refs.map(function(r) { return escapeHtml(r); }).join('<br>');
+                h += '<div class="proof-doc"><span class="pid">(' + pid + ') ' + title + '</span><div style="margin-top:6px;">' + body + '</div>';
+                if (refStr) h += '<div class="refs">' + refStr + '</div>';
+                h += '</div>';
+            }
+            el.innerHTML = h;
+        }
+
+        async function loadAiGuide() {
+            var narrEl = document.getElementById('ai-guide-narrative');
+            var statEl = document.getElementById('ai-guide-status');
+            if (narrEl) narrEl.textContent = '…';
+            if (statEl) statEl.textContent = '';
+            try {
+                var r = await fetch(API_BASE + '/star-map/25/ai-guide?user_id=' + encodeURIComponent(userId));
+                var d = await r.json();
+                if (d.success) {
+                    if (narrEl) narrEl.textContent = d.narrative || (d.hints || []).join('\n');
+                    if (statEl) statEl.textContent = d.provider ? ('Model: ' + d.provider) : 'Heuristic guide (LLM offline)';
+                    renderAiGuideProofs(d.proofs || []);
+                } else {
+                    if (narrEl) narrEl.textContent = d.error || 'Guide failed.';
+                }
+            } catch (e) {
+                if (narrEl) narrEl.textContent = 'Could not load AI guide.';
+            }
+        }
+
+        function startLiveRefresh() {
+            if (refreshInterval) return;
+            refreshInterval = setInterval(function() {
+                fetch(API_BASE + '/star-map/25/status?user_id=' + encodeURIComponent(userId))
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(d) {
+                        if (d && d.success) {
+                            lastStatusData = d;
+                            var countEl = document.getElementById('progress-count');
+                            var pointsEl = document.getElementById('progress-points');
+                            var multEl = document.getElementById('progress-multiplier');
+                            if (countEl) countEl.textContent = (d.investigated_ids || []).length;
+                            if (pointsEl) pointsEl.textContent = Math.round(d.total_points_earned || 0);
+                            if (multEl) multEl.textContent = String((d.investigation_reward_multiplier != null ? d.investigation_reward_multiplier : 1.2) * (d.starmap25_booster_multiplier || 1));
+                            if (d.walkthrough) renderWalkthrough(d.walkthrough);
+                            renderEconomyPanel();
+                            updateLastUpdated();
+                            if (lastMapData && lastMapData.points) fillMonitorGrid(lastMapData.points, d.investigated_ids || [], d.invaded_ids || []);
+                        }
+                    })
+                    .catch(function() {});
+            }, 30000);
+        }
+
+        function stop3dAnim() {
+            if (animFrame3d) {
+                cancelAnimationFrame(animFrame3d);
+                animFrame3d = null;
+            }
+        }
+
+        function init3DView(points, investigatedSet, use4d) {
+            mapMode4d = !!use4d;
+            var wrap = document.getElementById('canvas-3d-wrap');
+            if (!wrap || !window.THREE || !points || !points.length) return;
+            stop3dAnim();
+            wrap.style.display = 'block';
+            wrap.style.position = 'relative';
+            wrap.innerHTML = '<div class="hud-label" id="hud-3d">' + (mapMode4d ? '4D: hue + scale encode warp-time (W). Hover / click systems.' : '3D: hover highlights · click jumps to card · drag rotates') + '</div>';
+            var width = wrap.offsetWidth;
+            var height = wrap.offsetHeight || 380;
+            var scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a12);
+            var camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+            camera.position.set(0, 2, 14);
+            var renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.domElement.style.cursor = 'crosshair';
+            wrap.appendChild(renderer.domElement);
+            var starGeo = new THREE.BufferGeometry();
+            var starCount = 1200;
+            var pos = new Float32Array(starCount * 3);
+            for (var s = 0; s < starCount; s++) {
+                pos[s * 3] = (Math.random() - 0.5) * 80;
+                pos[s * 3 + 1] = (Math.random() - 0.5) * 80;
+                pos[s * 3 + 2] = (Math.random() - 0.5) * 80;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            var starMat = new THREE.PointsMaterial({ color: 0x88ccff, size: 0.06, transparent: true, opacity: 0.35 });
+            starPointsParticles = new THREE.Points(starGeo, starMat);
+            scene.add(starPointsParticles);
+            var geometry = new THREE.SphereGeometry(0.1, 20, 20);
+            var materialDone = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            var materialTodo = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+            meshPoints = [];
+            raycaster3d = new THREE.Raycaster();
+            pointer3d = new THREE.Vector2();
+            for (var i = 0; i < points.length; i++) {
+                var p = points[i];
+                var id = p.id || ('point_' + (i + 1));
+                var coords = p.coordinates || {};
+                var angle = (i / 25) * Math.PI * 2;
+                var radius = 3.2 + (i % 4) * 0.9;
+                var mesh = new THREE.Mesh(geometry, investigatedSet.has(id) ? materialDone.clone() : materialTodo.clone());
+                mesh.position.x = coords.x != null ? Number(coords.x) : Math.cos(angle) * radius;
+                mesh.position.y = coords.y != null ? Number(coords.y) : Math.sin(angle) * radius * 0.55;
+                mesh.position.z = coords.z != null ? Number(coords.z) : (i % 5 - 2) * 0.65;
+                mesh.userDataW = coords.w != null ? Number(coords.w) : ((i % 7) / 6);
+                mesh.userData = { pointId: id, point: p, baseScale: 1, idx: i, baseColor: investigatedSet.has(id) ? 0xffd700 : 0x00ff88 };
+                scene.add(mesh);
+                meshPoints.push(mesh);
+            }
+            var light = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(light);
+            var dirLight = new THREE.DirectionalLight(0x00ff88, 0.55);
+            dirLight.position.set(5, 8, 7);
+            scene.add(dirLight);
+            scene3d = scene;
+            renderer3d = renderer;
+            camera3d = camera;
+            var hudEl = document.getElementById('hud-3d');
+            var t0 = performance.now();
+            function onPointerMove(ev) {
+                var rect = renderer.domElement.getBoundingClientRect();
+                pointer3d.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+                pointer3d.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+            }
+            function onClick() {
+                raycaster3d.setFromCamera(pointer3d, camera);
+                var hits = raycaster3d.intersectObjects(meshPoints);
+                if (!hits.length) return;
+                var pid = hits[0].object.userData.pointId;
+                if (!pid) return;
+                var card = document.querySelector('.point-card[data-point-id="' + pid + '"]');
+                if (card) {
+                    showGridView();
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.remove('flash');
+                    void card.offsetWidth;
+                    card.classList.add('flash');
+                }
+            }
+            renderer.domElement.addEventListener('mousemove', onPointerMove);
+            renderer.domElement.addEventListener('click', onClick);
+            function animate(now) {
+                if (!renderer3d || !scene3d || !camera3d) return;
+                animFrame3d = requestAnimationFrame(animate);
+                var t = ((now != null ? now : performance.now()) - t0) * 0.001;
+                scene.rotation.y += 0.0016;
+                if (starPointsParticles) starPointsParticles.rotation.y -= 0.0004;
+                raycaster3d.setFromCamera(pointer3d, camera);
+                var hits = raycaster3d.intersectObjects(meshPoints);
+                var nextHover = hits.length ? hits[0].object : null;
+                hoveredMesh = nextHover;
+                for (var ri = 0; ri < meshPoints.length; ri++) {
+                    var m = meshPoints[ri];
+                    m.scale.setScalar(1);
+                    if (mapMode4d) {
+                        var w = m.userDataW != null ? m.userDataW : (m.userData.idx / 25);
+                        var c = new THREE.Color().setHSL(0.25 + 0.45 * w + 0.06 * Math.sin(t * 1.1 + w * 4), 0.88, 0.48);
+                        m.material.color.copy(c);
+                    } else {
+                        m.material.color.setHex(m.userData.baseColor);
+                    }
+                }
+                if (hoveredMesh) {
+                    var idx = hoveredMesh.userData.idx || 0;
+                    var pulse = mapMode4d ? (1.2 + 0.25 * Math.sin(t * 3 + idx)) : 1.28;
+                    hoveredMesh.scale.setScalar(pulse);
+                    if (hudEl) {
+                        var pt = hoveredMesh.userData.point;
+                        hudEl.textContent = (pt && pt.name ? pt.name : hoveredMesh.userData.pointId) + (mapMode4d ? ' · W=' + ((hoveredMesh.userDataW || 0) + 0.05 * Math.sin(t + idx)).toFixed(2) : '');
+                    }
+                } else if (hudEl) {
+                    hudEl.textContent = mapMode4d ? '4D view — W encodes warp phase (color + readout)' : 'Hover a system — click to jump to card';
+                }
+                renderer.render(scene, camera);
+            }
+            animFrame3d = requestAnimationFrame(animate);
+        }
+
+        function showGridView() {
+            viewMode3d = 'grid';
+            stop3dAnim();
+            document.getElementById('content').style.display = 'block';
+            var wrap = document.getElementById('canvas-3d-wrap');
+            if (wrap) wrap.style.display = 'none';
+            var bg = document.getElementById('btn-view-grid');
+            var b3 = document.getElementById('btn-view-3d');
+            var b4 = document.getElementById('btn-view-4d');
+            if (bg) bg.classList.add('active');
+            if (b3) b3.classList.remove('active');
+            if (b4) b4.classList.remove('active');
+        }
+
+        function show3DView() {
+            viewMode3d = '3d';
+            document.getElementById('content').style.display = 'none';
+            var wrap = document.getElementById('canvas-3d-wrap');
+            if (wrap) wrap.style.display = 'block';
+            var bg = document.getElementById('btn-view-grid');
+            var b3 = document.getElementById('btn-view-3d');
+            var b4 = document.getElementById('btn-view-4d');
+            if (bg) bg.classList.remove('active');
+            if (b3) b3.classList.add('active');
+            if (b4) b4.classList.remove('active');
+            if (lastMapData && lastStatusData) {
+                var set = new Set(lastStatusData.investigated_ids || []);
+                init3DView(lastMapData.points || [], set, false);
+            }
+        }
+
+        function show4DView() {
+            viewMode3d = '4d';
+            document.getElementById('content').style.display = 'none';
+            var wrap = document.getElementById('canvas-3d-wrap');
+            if (wrap) wrap.style.display = 'block';
+            var bg = document.getElementById('btn-view-grid');
+            var b3 = document.getElementById('btn-view-3d');
+            var b4 = document.getElementById('btn-view-4d');
+            if (bg) bg.classList.remove('active');
+            if (b3) b3.classList.remove('active');
+            if (b4) b4.classList.add('active');
+            if (lastMapData && lastStatusData) {
+                var set = new Set(lastStatusData.investigated_ids || []);
+                init3DView(lastMapData.points || [], set, true);
+            }
+        }
+
+        async function loadStarMap25() {
+            hideError();
+            var content = document.getElementById('content');
+            content.innerHTML = '<div class="loading">Loading Star Map 25…</div>';
+
+            var mapUrl = API_BASE + '/star-map/25';
+            var statusUrl = API_BASE + '/star-map/25/status?user_id=' + encodeURIComponent(userId);
+
+            try {
+                var responses = await Promise.all([
+                    fetch(mapUrl),
+                    fetch(statusUrl),
+                    fetch(API_BASE + '/star-map/25/levels?user_id=' + encodeURIComponent(userId)).catch(function() { return null; }),
+                    fetch(API_BASE + '/star-map/25/buildup?user_id=' + encodeURIComponent(userId)).catch(function() { return null; }),
+                    fetch(API_BASE + '/star-map/25/buildings').catch(function() { return null; }),
+                    fetch(API_BASE + '/star-map/25/units').catch(function() { return null; }),
+                    fetch(API_BASE + '/star-map/25/events').catch(function() { return null; })
+                ]);
+                var resMap = responses[0];
+                var resStatus = responses[1];
+                if (!resMap.ok) throw new Error('Failed to load map');
+                if (!resStatus.ok) throw new Error('Failed to load status');
+
+                var mapData = await resMap.json();
+                var statusData = await resStatus.json();
+                var levelsData = responses[2] && responses[2].ok ? await responses[2].json() : null;
+                var buildupData = responses[3] && responses[3].ok ? await responses[3].json() : null;
+                var buildingsData = responses[4] && responses[4].ok ? await responses[4].json() : null;
+                var unitsData = responses[5] && responses[5].ok ? await responses[5].json() : null;
+                var eventsData = responses[6] && responses[6].ok ? await responses[6].json() : null;
+                if (!mapData.success || !mapData.star_map_25) throw new Error('Invalid map data');
+                if (!statusData.success) throw new Error('Invalid status data');
+
+                lastMapData = mapData.star_map_25;
+                lastStatusData = statusData;
+                lastLevelsData = levelsData && levelsData.success ? levelsData : {};
+                lastBuildupData = buildupData && buildupData.success ? buildupData : {};
+                lastEventsData = eventsData && eventsData.success ? eventsData : {};
+                starmapBuildings = buildingsData && buildingsData.success ? (buildingsData.buildings || []) : [];
+                starmapUnits = unitsData && unitsData.success ? (unitsData.units || []).concat(unitsData.special_units || []) : [];
+                var points = mapData.star_map_25.points || [];
+                var investigated = statusData.investigated_ids || [];
+                var invaded = statusData.invaded_ids || [];
+                var totalEarned = statusData.total_points_earned || 0;
+                var mult = statusData.investigation_reward_multiplier != null ? statusData.investigation_reward_multiplier : 1.2;
+                var boosterMult = statusData.starmap25_booster_multiplier != null ? statusData.starmap25_booster_multiplier : 1;
+                var totalSystems = statusData.total_points || points.length || 25;
+
+                document.getElementById('progress-count').textContent = investigated.length;
+                var progressTotal = document.querySelector('#progress-count');
+                if (progressTotal && progressTotal.parentElement) {
+                    var textNodes = Array.from(progressTotal.parentElement.childNodes).filter(function(node) { return node.nodeType === Node.TEXT_NODE; });
+                    if (textNodes.length) textNodes[textNodes.length - 1].nodeValue = '/' + totalSystems;
+                }
+                document.getElementById('progress-points').textContent = Math.round(totalEarned);
+                var multEl = document.getElementById('progress-multiplier');
+                if (multEl) multEl.textContent = String(mult * boosterMult);
+                renderWalkthrough(statusData.walkthrough || {});
+                renderEventPanel();
+                renderEconomyPanel();
+                updateLastUpdated();
+                fillMonitorGrid(points, investigated, invaded);
+                renderBuildupPanel(points, investigated);
+                bindBuildupControls();
+                if (!refreshInterval) startLiveRefresh();
+
+                fetch(API_BASE + '/star-map/25/sync-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                }).catch(function() {});
+
+                populateSegmentumFilter(points);
+                bindMonitorControls();
+                renderPointCards();
+
+                document.getElementById('btn-view-grid').addEventListener('click', showGridView);
+                document.getElementById('btn-view-3d').addEventListener('click', show3DView);
+                var b4el = document.getElementById('btn-view-4d');
+                if (b4el) b4el.addEventListener('click', show4DView);
+                var pmClose = document.getElementById('planet-modal-close');
+                if (pmClose) pmClose.addEventListener('click', closePlanetModal);
+                var pmBack = document.getElementById('planet-modal-backdrop');
+                if (pmBack) pmBack.addEventListener('click', function(ev) { if (ev.target === pmBack) closePlanetModal(); });
+                var btnAi = document.getElementById('btn-ai-guide-refresh');
+                if (btnAi && !btnAi.dataset.bound) {
+                    btnAi.dataset.bound = '1';
+                    btnAi.addEventListener('click', loadAiGuide);
+                }
+                loadAiGuide();
+            } catch (e) {
+                showError('Error: ' + (e.message || 'Unknown'));
+                content.innerHTML = '<div class="loading">Could not load Star Map 25. Check console.</div>';
+            }
+        }
+
+        async function investigatePoint(pointId, btnEl) {
+            if (!btnEl) return;
+            btnEl.disabled = true;
+            btnEl.textContent = '…';
+            try {
+                var r = await fetch(API_BASE + '/star-map/25/investigate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, point_id: pointId })
+                });
+                var d = await r.json();
+                if (d.success) {
+                    if (d.already_investigated) {
+                        btnEl.textContent = '✓ Investigated';
+                    } else {
+                        btnEl.textContent = '✓ Investigated (+' + (d.points_awarded || 0) + ' pts)';
+                        var card = btnEl.closest('.point-card');
+                        if (card) {
+                            card.classList.add('investigated');
+                            var loreEl = card.querySelector('.lore');
+                            if (loreEl) loreEl.classList.add('visible');
+                        }
+                        loadStarMap25();
+                    }
+                } else {
+                    showError(d.error || 'Investigation failed');
+                    btnEl.disabled = false;
+                    btnEl.textContent = 'Investigate';
+                }
+            } catch (e) {
+                showError('Request failed: ' + (e.message || 'Unknown'));
+                btnEl.disabled = false;
+                btnEl.textContent = 'Investigate';
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadStarMap25);
+        } else {
+            loadStarMap25();
+        }
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

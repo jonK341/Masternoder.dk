@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-12-18T19:26:09.621491",
+  "checks": {
+    "flask": {
+      "status": "healthy",
+      "status_code": 200,
+      "response_time": 2.070384
+    },
+    "api": {
+      "status": "working",
+      "status_code": 202,
+      "response_time": 2.311141
+    },
+    "database": {
+      "status": "healthy",
+      "can_create": true,
+      "can_retrieve": true
+    },
+    "quality_levels": {
+      "low": {
+        "status": "ok",
+        "status_code": 202
+      },
+      "medium": {
+        "status": "ok",
+        "status_code": 202
+      },
+      "high": {
+        "status": "ok",
+        "status_code": 202
+      },
+      "premium": {
+        "status": "ok",
+        "status_code": 202
+      },
+      "ultra": {
+        "status": "ok",
+        "status_code": 202
+      }
+    }
+  }
+}

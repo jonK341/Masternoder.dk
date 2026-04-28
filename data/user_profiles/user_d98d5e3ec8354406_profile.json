@@ -1,0 +1,40 @@
+{
+  "user_id": "user_d98d5e3ec8354406",
+  "username": "user_user_d98",
+  "display_name": "",
+  "profile_picture_url": null,
+  "created_at": "2026-01-10T11:07:52.340218",
+  "last_updated": "2026-01-10T11:07:52.340218",
+  "level": 1,
+  "xp": 0,
+  "coins": 0,
+  "trophy_points": 0,
+  "preferences": {
+    "theme": "dark",
+    "language": "da",
+    "notifications": true
+  },
+  "activity": {
+    "videos_created": 0,
+    "videos_watched": 0,
+    "battles_won": 0,
+    "battles_lost": 0,
+    "login_streak": 0,
+    "last_login": null
+  },
+  "social": {
+    "friends": [],
+    "followers": 0,
+    "following": 0
+  },
+  "skills": {},
+  "abilities": {},
+  "achievements": [],
+  "trophies": [],
+  "settings": {
+    "privacy_level": "public",
+    "content_filter": "standard"
+  },
+  "version": "2.0",
+  "ip_address": "127.0.0.1"
+}

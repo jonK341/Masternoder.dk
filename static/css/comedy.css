@@ -1,0 +1,55 @@
+/**
+ * Comedy Theme
+ * Auto-generated theme CSS
+ */
+
+.theme-comedy {
+    --theme-primary: #ffd700;
+    --theme-secondary: #ffa500;
+    --theme-background: #1a1a0a;
+    --theme-accent: #ffff00;
+}
+
+.theme-comedy .generator-container {
+    background: #1a1a0a;
+    color: #ffd700;
+}
+
+.theme-comedy .module-card {
+    border-color: #ffd700;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.theme-comedy .module-card:hover {
+    border-color: #ffff00;
+    box-shadow: 0 0 20px #ffff0040;
+}
+
+.theme-comedy .btn-primary {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    border-color: #ffd700;
+}
+
+.theme-comedy .btn-primary:hover {
+    background: linear-gradient(135deg, #ffa500, #ffff00);
+    box-shadow: 0 0 15px #ffd70060;
+}
+
+.theme-comedy h1, .theme-comedy h2, .theme-comedy h3 {
+    color: #ffd700;
+    text-shadow: 0 0 10px #ffd70080;
+}
+
+.theme-comedy .progress-bar .progress-fill {
+    background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+
+.theme-comedy .status-display {
+    border-color: #ffd700;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.theme-comedy .phase-frame.active {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px #ffd70040;
+}

@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-01-06T00:54:50.129058",
+  "summary": {
+    "total": 6,
+    "passed": 5,
+    "failed": 1
+  },
+  "results": {
+    "Creative Time Machine - User Projections": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true
+    },
+    "Creative Time Machine - Future Tech": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true
+    },
+    "Technology Intelligence - Downloaded Tech": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true
+    },
+    "Advanced Battle Tech - Available": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true
+    },
+    "Advanced Battle Tech - Impressiveness": {
+      "status": "OK",
+      "status_code": 200,
+      "has_data": true
+    },
+    "Time Disorder - Tech Holes": {
+      "status": "ERROR",
+      "status_code": 404,
+      "has_data": false
+    }
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "entry_id": "test_user_149_1767872164.282647_xp_points",
+    "user_id": "test_user_149",
+    "point_type": "xp_points",
+    "amount": 928,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.282647",
+    "date": "2026-01-08"
+  },
+  {
+    "entry_id": "test_user_149_1767872164.28465_battle_points",
+    "user_id": "test_user_149",
+    "point_type": "battle_points",
+    "amount": 1602,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.284650",
+    "date": "2026-01-08"
+  },
+  {
+    "entry_id": "test_user_149_1767872164.315789_activity_points",
+    "user_id": "test_user_149",
+    "point_type": "activity_points",
+    "amount": 2598,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.315789",
+    "date": "2026-01-08"
+  },
+  {
+    "entry_id": "test_user_149_1767872164.344609_trophy_points",
+    "user_id": "test_user_149",
+    "point_type": "trophy_points",
+    "amount": 111,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.344609",
+    "date": "2026-01-08"
+  },
+  {
+    "entry_id": "test_user_149_1767872164.373007_generation_points",
+    "user_id": "test_user_149",
+    "point_type": "generation_points",
+    "amount": 626,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.373007",
+    "date": "2026-01-08"
+  },
+  {
+    "entry_id": "test_user_149_1767872164.403664_chat_points",
+    "user_id": "test_user_149",
+    "point_type": "chat_points",
+    "amount": 1443,
+    "source": "test_user_generation",
+    "metadata": {},
+    "timestamp": "2026-01-08T12:36:04.403664",
+    "date": "2026-01-08"
+  }
+]

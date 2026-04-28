@@ -1,0 +1,6 @@
+{
+  "name": "Star Map 25 — Buildup state",
+  "description": "Per-user placements of buildings and units on map planets; used to compute and collect game_points over time.",
+  "updated_at": "2026-03-18",
+  "users": {}
+}

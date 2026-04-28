@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victory Tech Tree - MasterNoder</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Giga Animated Background */
+        .giga-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 100, 255, 0.2) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 40%),
+                linear-gradient(135deg, #000000 0%, #0a0a1a 25%, #1a0a2a 50%, #0a1a2a 75%, #000000 100%);
+            background-size: 400% 400%;
+            animation: gigaShift 25s ease infinite;
+        }
+
+        @keyframes gigaShift {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        /* Particle System */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(0, 255, 136, 0.8);
+            border-radius: 50%;
+            animation: float 15s infinite;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(0, 255, 136, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #00ff88, #00d4ff, #ff64ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 136, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Tech Tree Canvas */
+        .tech-tree-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .tech-tree {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 2000px;
+            min-width: 3000px;
+        }
+
+        /* Node Styles */
+        .node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .node::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(15px);
+            opacity: 0.6;
+            z-index: -1;
+        }
+
+        .node:hover {
+            transform: scale(1.2);
+            z-index: 200;
+        }
+
+        .node.active {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+            }
+            50% {
+                box-shadow: 0 0 40px currentColor, 0 0 80px currentColor;
+            }
+        }
+
+        /* Node Types */
+        .node-emblem {
+            border-color: #00ff88;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .node-trophy {
+            border-color: #ffd700;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .node-war {
+            border-color: #ff0066;
+            color: #ff0066;
+            background: rgba(255, 0, 102, 0.1);
+        }
+
+        .node-goliath {
+            border-color: #ff4444;
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .node-ego {
+            border-color: #ff64ff;
+            color: #ff64ff;
+            background: rgba(255, 100, 255, 0.1);
+        }
+
+        .node-frenzy {
+            border-color: #ff0000;
+            color: #ff0000;
+            background: rgba(255, 0, 0, 0.2);
+            animation: frenzyPulse 1s infinite;
+        }
+
+        @keyframes frenzyPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .node-jyske {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .node-monster {
+            border-color: #9d4edd;
+            color: #9d4edd;
+            background: rgba(157, 78, 221, 0.1);
+        }
+
+        /* Connection Lines */
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.3;
+            z-index: 50;
+            transform-origin: left center;
+        }
+
+        .connection.active {
+            opacity: 0.8;
+            animation: flow 2s infinite;
+        }
+
+        @keyframes flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* Node Content */
+        .node-icon {
+            font-size: 2em;
+            z-index: 10;
+        }
+
+        .node-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.7em;
+            font-weight: bold;
+            text-shadow: 0 0 10px currentColor;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .node:hover .node-label {
+            opacity: 1;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            right: -400px;
+            top: 80px;
+            width: 380px;
+            height: calc(100vh - 100px);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 3px solid rgba(0, 255, 136, 0.5);
+            padding: 30px;
+            overflow-y: auto;
+            transition: right 0.4s ease;
+            z-index: 1000;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .info-panel.open {
+            right: 0;
+        }
+
+        .info-panel h2 {
+            color: #00ff88;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid rgba(0, 255, 136, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .info-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 3px solid rgba(0, 255, 136, 0.3);
+            border-radius: 4px;
+        }
+
+        .info-item strong {
+            color: #00ff88;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .stats-panel h3 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(0, 255, 136, 0.4);
+            transform: scale(1.1);
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 255, 136, 0.3);
+            border-top-color: #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.5);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 136, 0.8);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+
+</head>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+<body>
+    <div class="giga-bg"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-trophy"></i> Victory Tech Tree</h1>
+            <div class="header-controls">
+                <a href="/" class="btn" style="text-decoration: none; display: inline-block;">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/danish-divine-tech-tree" class="btn" style="text-decoration: none; display: inline-block;">
+                    <i class="fas fa-flag"></i> Danish Tech Tree
+                </a>
+                <button class="btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn" onclick="toggleInfoPanel()">
+                    <i class="fas fa-info-circle"></i> Info
+                </button>
+            </div>
+        </div>
+
+        <div class="tech-tree-container" id="treeContainer">
+            <div class="tech-tree" id="techTree">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div>Loading Victory Tech Tree...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h2>Node Information</h2>
+        <div id="nodeInfo">
+            <p>Click on a node to see details</p>
+        </div>
+    </div>
+
+    <div class="stats-panel">
+        <h3><i class="fas fa-chart-line"></i> Victory Stats</h3>
+        <div id="statsContent">
+            <div class="stat-item">
+                <span class="stat-label">Loading...</span>
+                <span class="stat-value">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomIn()">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="zoom-btn" onclick="zoomOut()">
+            <i class="fas fa-minus"></i>
+        </button>
+        <button class="zoom-btn" onclick="resetZoom()">
+            <i class="fas fa-home"></i>
+        </button>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = '/api/ofc/victory';
+        const USER_ID = 'default_user'; // Change to actual user ID
+        const BASE_URL = '';
+        let currentZoom = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let nodes = [];
+        let connections = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            loadData();
+            setupPanAndZoom();
+        });
+
+        // Create particle system
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Load data from API
+        async function loadData() {
+            try {
+                const [emblemsRes, trophiesRes, statsRes] = await Promise.all([
+                    fetch(`${API_BASE}/emblems/${USER_ID}`).catch(e => ({ ok: false, json: () => ({ success: false, error: e.message }) })),
+                    fetch(`${API_BASE}/trophies/${USER_ID}`).catch(e => ({ ok: false, json: () => ({ success: false, error: e.message }) })),
+                    fetch(`${API_BASE}/stats/${USER_ID}`).catch(e => ({ ok: false, json: () => ({ success: false, error: e.message }) }))
+                ]);
+
+                const emblems = emblemsRes.ok ? await emblemsRes.json() : { success: false, emblems: [] };
+                const trophies = trophiesRes.ok ? await trophiesRes.json() : { success: false, trophies: [] };
+                const stats = statsRes.ok ? await statsRes.json() : { success: false, stats: {} };
+
+                document.getElementById('loading').style.display = 'none';
+                
+                renderTechTree(emblems, trophies);
+                updateStats(stats);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #ff4444;">Error loading data. Using demo mode.</div>';
+                renderDemoTree();
+            }
+        }
+
+        // Render tech tree
+        function renderTechTree(emblems, trophies) {
+            const tree = document.getElementById('techTree');
+            tree.innerHTML = '';
+            nodes = [];
+            connections = [];
+
+            // Center node - Victory Hub
+            const centerNode = createNode('victory-hub', 'center', 50, 50, '🏆', 'Victory Hub', 'node-trophy');
+            tree.appendChild(centerNode);
+            nodes.push({ id: 'victory-hub', element: centerNode, x: 50, y: 50 });
+
+            // Emblem nodes (left side)
+            if (emblems.success && emblems.emblems) {
+                emblems.emblems.forEach((emblem, index) => {
+                    const angle = (index / emblems.emblems.length) * Math.PI * 2;
+                    const radius = 20;
+                    const x = 50 + Math.cos(angle) * radius;
+                    const y = 50 + Math.sin(angle) * radius;
+                    
+                    const node = createNode(
+                        `emblem-${emblem.id}`,
+                        x, y,
+                        getEmblemIcon(emblem),
+                        emblem.name,
+                        'node-emblem',
+                        emblem
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `emblem-${emblem.id}`, element: node, x, y, data: emblem });
+                    
+                    // Connection to center
+                    createConnection(50, 50, x, y, '#00ff88');
+                });
+            }
+
+            // Trophy nodes (right side)
+            if (trophies.success && trophies.trophies) {
+                trophies.trophies.forEach((trophy, index) => {
+                    const angle = Math.PI + (index / trophies.trophies.length) * Math.PI * 2;
+                    const radius = 25;
+                    const x = 50 + Math.cos(angle) * radius;
+                    const y = 50 + Math.sin(angle) * radius;
+                    
+                    const node = createNode(
+                        `trophy-${trophy.id}`,
+                        x, y,
+                        '🏅',
+                        trophy.name,
+                        'node-trophy',
+                        trophy
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `trophy-${trophy.id}`, element: node, x, y, data: trophy });
+                    
+                    // Connection to center
+                    createConnection(50, 50, x, y, '#ffd700');
+                });
+            }
+
+            // War nodes (top)
+            if (trophies.success && trophies.trophies) {
+                const wars = [...new Set(trophies.trophies.map(t => t.war_id))];
+                wars.forEach((warId, index) => {
+                    const x = 30 + (index * 15);
+                    const y = 20;
+                    
+                    const node = createNode(
+                        `war-${warId}`,
+                        x, y,
+                        '⚔️',
+                        `War ${index + 1}`,
+                        'node-war',
+                        { war_id: warId }
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `war-${warId}`, element: node, x, y });
+                    
+                    // Connection to center
+                    createConnection(50, 50, x, y, '#ff0066');
+                });
+            }
+
+            // Goliath nodes (bottom left)
+            if (trophies.success && trophies.trophies) {
+                const goliaths = trophies.trophies.filter(t => t.opponent_type === 'goliath');
+                goliaths.forEach((trophy, index) => {
+                    const x = 15 + (index * 10);
+                    const y = 80;
+                    
+                    const node = createNode(
+                        `goliath-${trophy.id}`,
+                        x, y,
+                        '👹',
+                        'Goliath',
+                        'node-goliath',
+                        trophy
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `goliath-${trophy.id}`, element: node, x, y, data: trophy });
+                });
+            }
+
+            // EGO nodes (bottom right)
+            if (trophies.success && trophies.trophies) {
+                const egos = trophies.trophies.filter(t => t.opponent_type === 'ego');
+                egos.forEach((trophy, index) => {
+                    const x = 85 - (index * 10);
+                    const y = 80;
+                    
+                    const node = createNode(
+                        `ego-${trophy.id}`,
+                        x, y,
+                        '👑',
+                        'EGO',
+                        'node-ego',
+                        trophy
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `ego-${trophy.id}`, element: node, x, y, data: trophy });
+                });
+            }
+
+            // Viking Frenzy nodes
+            if (emblems.success && emblems.emblems) {
+                const frenzies = emblems.emblems.filter(e => e.viking_blood_frenzy > 0);
+                frenzies.forEach((emblem, index) => {
+                    const x = 70;
+                    const y = 30 + (index * 15);
+                    
+                    const node = createNode(
+                        `frenzy-${emblem.id}`,
+                        x, y,
+                        '⚡',
+                        'Viking Frenzy',
+                        'node-frenzy',
+                        emblem
+                    );
+                    tree.appendChild(node);
+                    nodes.push({ id: `frenzy-${emblem.id}`, element: node, x, y, data: emblem });
+                });
+            }
+
+            // Jyske Lov nodes
+            const jyskeNode = createNode('jyske-lov', 10, 30, '⚖️', 'Jyske Lov', 'node-jyske');
+            tree.appendChild(jyskeNode);
+            nodes.push({ id: 'jyske-lov', element: jyskeNode, x: 10, y: 30 });
+
+            // Monster Hunter nodes
+            if (trophies.success && trophies.trophies) {
+                trophies.trophies.forEach(trophy => {
+                    if (trophy.fantasy_monster_hunters && trophy.fantasy_monster_hunters.length > 0) {
+                        trophy.fantasy_monster_hunters.forEach((hunter, index) => {
+                            const x = 90;
+                            const y = 70 + (index * 5);
+                            
+                            const node = createNode(
+                                `monster-${trophy.id}-${index}`,
+                                x, y,
+                                '🐉',
+                                'Monster Hunter',
+                                'node-monster',
+                                hunter
+                            );
+                            tree.appendChild(node);
+                            nodes.push({ id: `monster-${trophy.id}-${index}`, element: node, x, y, data: hunter });
+                        });
+                    }
+                });
+            }
+
+            // Position all nodes
+            positionNodes();
+        }
+
+        // Create node element
+        function createNode(id, x, y, icon, label, className, data = null) {
+            const node = document.createElement('div');
+            node.className = `node ${className}`;
+            node.id = id;
+            node.dataset.x = x;
+            node.dataset.y = y;
+            
+            node.innerHTML = `
+                <div class="node-icon">${icon}</div>
+                <div class="node-label">${label}</div>
+            `;
+            
+            node.style.left = x + '%';
+            node.style.top = y + '%';
+            
+            if (data) {
+                node.addEventListener('click', () => showNodeInfo(data, label));
+            }
+            
+            return node;
+        }
+
+        // Create connection line
+        function createConnection(x1, y1, x2, y2, color) {
+            const connection = document.createElement('div');
+            connection.className = 'connection';
+            connection.style.color = color;
+            
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const length = Math.sqrt(dx * dx + dy * dy) * 1.5; // Approximate
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            connection.style.width = length + '%';
+            connection.style.left = x1 + '%';
+            connection.style.top = y1 + '%';
+            connection.style.transform = `rotate(${angle}deg)`;
+            connection.style.transformOrigin = '0 50%';
+            
+            document.getElementById('techTree').appendChild(connection);
+            connections.push(connection);
+        }
+
+        // Position nodes with actual pixel coordinates
+        function positionNodes() {
+            const tree = document.getElementById('techTree');
+            const treeRect = tree.getBoundingClientRect();
+            
+            nodes.forEach(node => {
+                const x = (node.x / 100) * treeRect.width;
+                const y = (node.y / 100) * treeRect.height;
+                node.element.style.left = x + 'px';
+                node.element.style.top = y + 'px';
+            });
+        }
+
+        // Get emblem icon based on type
+        function getEmblemIcon(emblem) {
+            const icons = {
+                'goliath': '⚔️',
+                'ego': '👑',
+                'war': '🏆',
+                'strategic': '🎯'
+            };
+            return icons[emblem.victory_type] || '🏆';
+        }
+
+        // Show node info
+        function showNodeInfo(data, title) {
+            const infoPanel = document.getElementById('infoPanel');
+            const nodeInfo = document.getElementById('nodeInfo');
+            
+            infoPanel.classList.add('open');
+            
+            let html = `<h2>${title}</h2>`;
+            
+            if (data.victory_type) {
+                html += `<div class="info-section">
+                    <h3>Emblem Details</h3>
+                    <div class="info-item"><strong>Type:</strong> ${data.victory_type}</div>
+                    <div class="info-item"><strong>Rarity:</strong> ${data.rarity}</div>
+                    <div class="info-item"><strong>Power Level:</strong> ${data.power_level}</div>
+                    <div class="info-item"><strong>Viking Frenzy:</strong> ${(data.viking_blood_frenzy * 100).toFixed(1)}%</div>
+                    <div class="info-item"><strong>Affection:</strong> ${(data.affection_level * 100).toFixed(1)}%</div>
+                </div>`;
+            }
+            
+            if (data.war_id) {
+                html += `<div class="info-section">
+                    <h3>Trophy Details</h3>
+                    <div class="info-item"><strong>War ID:</strong> ${data.war_id}</div>
+                    <div class="info-item"><strong>Opponent:</strong> ${data.opponent_type}</div>
+                    <div class="info-item"><strong>War Duration:</strong> ${data.war_duration_years} years</div>
+                    <div class="info-item"><strong>Victory Method:</strong> ${data.victory_method}</div>
+                    <div class="info-item"><strong>Final Statement:</strong> ${data.final_statement || 'N/A'}</div>
+                </div>`;
+            }
+            
+            if (data.switch_statement) {
+                html += `<div class="info-section">
+                    <h3>Switch Statement</h3>
+                    <div class="info-item">"${data.switch_statement}"</div>
+                </div>`;
+            }
+            
+            nodeInfo.innerHTML = html;
+        }
+
+        // Update stats panel
+        function updateStats(stats) {
+            const statsContent = document.getElementById('statsContent');
+            
+            if (stats.success && stats.stats) {
+                const s = stats.stats;
+                statsContent.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Total Emblems</span>
+                        <span class="stat-value">${s.total_emblems || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Trophies</span>
+                        <span class="stat-value">${s.total_trophies || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Goliath Defeats</span>
+                        <span class="stat-value">${s.goliath_defeats || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">EGO Defeats</span>
+                        <span class="stat-value">${s.ego_defeats || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total War Years</span>
+                        <span class="stat-value">${s.total_war_years || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Max Viking Frenzy</span>
+                        <span class="stat-value">${((s.max_viking_frenzy || 0) * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Toggle info panel
+        function toggleInfoPanel() {
+            document.getElementById('infoPanel').classList.toggle('open');
+        }
+
+        // Refresh data
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            loadData();
+        }
+
+        // Zoom controls
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.2, 3);
+            applyTransform();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.2, 0.5);
+            applyTransform();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            panX = 0;
+            panY = 0;
+            applyTransform();
+        }
+
+        function applyTransform() {
+            const tree = document.getElementById('techTree');
+            tree.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+        }
+
+        // Pan and zoom setup
+        function setupPanAndZoom() {
+            const container = document.getElementById('treeContainer');
+            const tree = document.getElementById('techTree');
+            
+            container.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    isDragging = true;
+                    dragStart.x = e.clientX - panX;
+                    dragStart.y = e.clientY - panY;
+                }
+            });
+            
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    panX = e.clientX - dragStart.x;
+                    panY = e.clientY - dragStart.y;
+                    applyTransform();
+                }
+            });
+            
+            container.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                currentZoom = Math.max(0.5, Math.min(3, currentZoom * delta));
+                applyTransform();
+            });
+        }
+
+        // Demo tree for testing
+        function renderDemoTree() {
+            renderTechTree(
+                { success: true, emblems: [] },
+                { success: true, trophies: [] }
+            );
+        }
+    </script>
+    <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/knowledge-unlock-ui.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    
+
+    
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+

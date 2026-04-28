@@ -1,0 +1,1373 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social - MasterNoder</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <style>
+        .social-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .social-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+        }
+
+        .social-header h1 {
+            font-size: var(--font-size-5xl);
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .social-tabs {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+        }
+
+        .social-tab {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .social-tab:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
+        }
+
+        .social-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .social-tab-content {
+            display: none;
+        }
+
+        .social-tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .friend-card, .guild-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            transition: all var(--transition-base);
+        }
+        
+        .friend-card:hover, .guild-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .btn-action {
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-size: var(--font-size-sm);
+        }
+        
+        .btn-action:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .btn-action.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            border-color: var(--primary);
+        }
+        
+        .btn-action.primary:hover {
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .stat-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Navigation */
+        .page-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-primary);
+            padding: var(--spacing-sm) 0;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: var(--spacing-xs) var(--spacing-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+        }
+
+        .nav-home {
+            font-weight: 700;
+            color: var(--primary);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body class="layout-standard">
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <!-- Navigation -->
+    <nav class="page-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-link nav-home">🏠 Home</a>
+            <div class="nav-links">
+                <a href="/game" class="nav-link">Game</a>
+            <a href="/points" class="nav-item" title="Points & Rewards">💎</a>
+                <a href="/battle" class="nav-link">Battle</a>
+                <a href="/social" class="nav-link active">Social</a>
+                <a href="/shop" class="nav-link">Shop</a>
+                <a href="/stats" class="nav-link">Stats</a>
+                <a href="/gallery" class="nav-link">Gallery</a>
+                <a href="/generator" class="nav-link">Generator</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container social-page">
+        <header class="social-header">
+            <h1>👥 Social</h1>
+            <p class="subtitle">Friends • Guilds • Community</p>
+        </header>
+        
+        <div class="social-tabs">
+            <button class="social-tab active" data-tab="friends">Friends</button>
+            <button class="social-tab" data-tab="guilds">Guilds</button>
+            <button class="social-tab" data-tab="requests">Requests</button>
+            <button class="social-tab" data-tab="intelligence">🧠 Intelligence</button>
+            <button class="social-tab" data-tab="resources">💎 Resources</button>
+        </div>
+        
+        <!-- Friends Tab -->
+        <div class="social-tab-content active" id="tab-friends">
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="card-title">My Friends</h2>
+                    <button class="btn-action primary" onclick="showAddFriendModal()">
+                        <i class="fas fa-user-plus"></i> Add Friend
+                    </button>
+                </div>
+                <div id="friends-list">
+                    <div class="skeleton-loader" style="height: 80px; margin-bottom: var(--spacing-sm);"></div>
+                </div>
+            </div>
+            
+            <!-- Social Feed -->
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">📱 Social Feed</h2>
+                </div>
+                <div id="social-feed">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <!-- Create Post -->
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">✍️ Create Post</h2>
+                </div>
+                <div style="padding: var(--spacing-md);">
+                    <textarea id="post-content" placeholder="What's on your mind?" 
+                        style="width: 100%; min-height: 100px; padding: var(--spacing-sm); border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-primary); resize: vertical; margin-bottom: var(--spacing-sm);"></textarea>
+                    <div style="display: flex; gap: var(--spacing-sm);">
+                        <button class="btn-action primary" onclick="createPost()">
+                            <i class="fas fa-paper-plane"></i> Post
+                        </button>
+                        <button class="btn-action" onclick="document.getElementById('post-content').value = ''">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Guilds Tab -->
+        <div class="social-tab-content" id="tab-guilds">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">My Guild</h2>
+                </div>
+                <div id="my-guild">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">Guild Leaderboard</h2>
+                </div>
+                <div id="guild-leaderboard">
+                    <div class="skeleton-loader" style="height: 80px; margin-bottom: var(--spacing-sm);"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Requests Tab -->
+        <div class="social-tab-content" id="tab-requests">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Friend Requests</h2>
+                </div>
+                <div id="friend-requests">
+                    <div class="skeleton-loader" style="height: 100px; margin-bottom: var(--spacing-sm);"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Intelligence Tab -->
+        <div class="social-tab-content" id="tab-intelligence">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🧠 Player Intelligence Profile</h2>
+                </div>
+                <div id="intelligence-profile">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">⚡ Active Triggers</h2>
+                </div>
+                <div id="active-triggers">
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Intelligence Analytics</h2>
+                </div>
+                <div id="intelligence-analytics">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">🎯 Media Gatherer Intelligence</h2>
+                </div>
+                <div id="media-intelligence">
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resources Tab -->
+        <div class="social-tab-content" id="tab-resources">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🎒 Inventory & Items</h2>
+                </div>
+                <div id="inventory-items">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">🏆 Artifacts Collection</h2>
+                </div>
+                <div id="artifacts-collection">
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">⭐ XP & Stats Resources</h2>
+                </div>
+                <div id="xp-stats-resources">
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">📈 Resource Statistics</h2>
+                </div>
+                <div id="resource-statistics">
+                    <div class="skeleton-loader" style="height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/toast-notifications.js"></script>
+    <script>
+        const BASE_URL = window.location.origin;
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        
+        // Tab switching
+        document.querySelectorAll('.social-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.social-tab-content').forEach(c => c.classList.remove('active'));
+                const content = document.getElementById(`tab-${tabName}`);
+                if (content) content.classList.add('active');
+                
+                if (tabName === 'friends') loadFriends();
+                else if (tabName === 'guilds') loadGuilds();
+                else if (tabName === 'requests') loadFriendRequests();
+                else if (tabName === 'intelligence') loadIntelligence();
+                else if (tabName === 'resources') loadResources();
+            });
+        });
+        
+        async function loadFriends() {
+            try {
+                // Try both API endpoints
+                let response = await fetch(`${BASE_URL}/api/game/social/friends?user_id=${userId}`);
+                let data = await response.json();
+                
+                // Fallback to social network API
+                if (!data.success) {
+                    response = await fetch(`${BASE_URL}/api/social/friends?user_id=${userId}`);
+                    data = await response.json();
+                }
+                
+                const list = document.getElementById('friends-list');
+                if (data.success && data.friends && data.friends.length > 0) {
+                    list.innerHTML = `
+                        <div style="margin-bottom: var(--spacing-md);">
+                            <button class="btn-action primary" onclick="showAddFriendModal()">
+                                <i class="fas fa-user-plus"></i> Add Friend
+                            </button>
+                            <button class="btn-action" onclick="loadFriends()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-md);">
+                            ${data.friends.map(friendId => `
+                                <div class="friend-card">
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 1.5em;">
+                                            ${friendId.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <h3 style="margin: 0; color: var(--primary);">${friendId}</h3>
+                                            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">Friend</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                                        <button class="btn-action" onclick="viewFriendProfile('${friendId}')" style="flex: 1;">
+                                            <i class="fas fa-user"></i> Profile
+                                        </button>
+                                        <button class="btn-action" onclick="removeFriend('${friendId}')" style="background: rgba(255, 0, 0, 0.2); color: #ff4444;">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: var(--spacing-xl);">
+                            <div style="font-size: 4em; margin-bottom: var(--spacing-md);">👥</div>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">No friends yet</p>
+                            <button class="btn-action primary" onclick="showAddFriendModal()">
+                                <i class="fas fa-user-plus"></i> Add Your First Friend
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                const list = document.getElementById('friends-list');
+                list.innerHTML = `<p style="text-align: center; color: #ff4444;">Error loading friends: ${error.message}</p>`;
+            }
+        }
+        
+        function showAddFriendModal() {
+            const friendId = prompt('Enter friend user ID:');
+            if (friendId && friendId.trim()) {
+                sendFriendRequest(friendId.trim());
+            }
+        }
+        
+        async function sendFriendRequest(friendId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/friend-request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from_user_id: userId, to_user_id: friendId })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Friend request sent!');
+                    } else {
+                        alert('Friend request sent!');
+                    }
+                    loadFriendRequests();
+                } else {
+                    if (typeof toast !== 'undefined') {
+                        toast.error(data.error || 'Failed to send request');
+                    } else {
+                        alert(data.error || 'Failed to send request');
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending friend request:', error);
+                if (typeof toast !== 'undefined') {
+                    toast.error('Error sending friend request');
+                } else {
+                    alert('Error sending friend request');
+                }
+            }
+        }
+        
+        async function removeFriend(friendId) {
+            if (!confirm(`Remove ${friendId} from your friends?`)) return;
+            
+            try {
+                // Try both API endpoints
+                let response = await fetch(`${BASE_URL}/api/social/friends/remove`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, friend_id: friendId })
+                });
+                let data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Friend removed');
+                    }
+                    loadFriends();
+                } else {
+                    if (typeof toast !== 'undefined') {
+                        toast.error(data.error || 'Failed to remove friend');
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing friend:', error);
+                if (typeof toast !== 'undefined') {
+                    toast.error('Error removing friend');
+                }
+            }
+        }
+        
+        async function viewFriendProfile(friendId) {
+            // Navigate to friend's profile or show profile modal
+            window.location.href = `/profile?user_id=${friendId}`;
+        }
+        
+        async function loadGuilds() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/guild/my-guild?user_id=${userId}`);
+                const data = await response.json();
+                
+                const guildDiv = document.getElementById('my-guild');
+                if (data.success && data.guild) {
+                    const guild = data.guild;
+                    guildDiv.innerHTML = `
+                        <div class="guild-card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-md);">
+                                <div>
+                                    <h3 style="margin: 0 0 var(--spacing-xs) 0; color: var(--primary);">${guild.name}</h3>
+                                    <p style="margin: 0; color: var(--text-secondary);">${guild.description || 'No description'}</p>
+                                </div>
+                                <button class="btn-action" onclick="leaveGuild('${guild.id}')" style="background: rgba(255, 0, 0, 0.2); color: #ff4444;">
+                                    <i class="fas fa-sign-out-alt"></i> Leave
+                                </button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-sm);">
+                                <div class="stat-box">
+                                    <div class="stat-value">${guild.members_count || 0}</div>
+                                    <div class="stat-label">Members</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-value">${guild.level || 1}</div>
+                                    <div class="stat-label">Level</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-value">${guild.total_xp || 0}</div>
+                                    <div class="stat-label">Total XP</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: var(--spacing-md);">
+                                <button class="btn-action primary" onclick="showInviteToGuildModal('${guild.id}')" style="width: 100%;">
+                                    <i class="fas fa-user-plus"></i> Invite Member
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    guildDiv.innerHTML = `
+                        <div style="text-align: center; padding: var(--spacing-xl);">
+                            <div style="font-size: 4em; margin-bottom: var(--spacing-md);">🏰</div>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">Not in a guild</p>
+                            <button class="btn-action primary" onclick="showCreateGuildModal()">
+                                <i class="fas fa-plus"></i> Create Guild
+                            </button>
+                            <button class="btn-action" onclick="showJoinGuildModal()" style="margin-top: var(--spacing-sm);">
+                                <i class="fas fa-search"></i> Browse Guilds
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                // Load leaderboard
+                const lbResponse = await fetch(`${BASE_URL}/api/game/social/guild/leaderboard`);
+                const lbData = await lbResponse.json();
+                
+                if (lbData.success && lbData.leaderboard) {
+                    const lbDiv = document.getElementById('guild-leaderboard');
+                    lbDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-md);">
+                            ${lbData.leaderboard.map((g, index) => `
+                                <div class="guild-card" style="position: relative;">
+                                    ${index < 3 ? `<div style="position: absolute; top: -10px; right: -10px; background: ${index === 0 ? 'gold' : index === 1 ? 'silver' : '#cd7f32'}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${index + 1}</div>` : ''}
+                                    <h3 style="margin: 0 0 var(--spacing-xs) 0; color: var(--primary);">${g.name}</h3>
+                                    <p style="margin: 0 0 var(--spacing-xs) 0; color: var(--text-secondary);">Level ${g.level || 1}</p>
+                                    <p style="margin: 0; color: var(--text-secondary);">${g.members_count || 0} members</p>
+                                    <button class="btn-action" onclick="requestJoinGuild('${g.id}')" style="width: 100%; margin-top: var(--spacing-sm);">
+                                        <i class="fas fa-sign-in-alt"></i> Join
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading guilds:', error);
+            }
+        }
+        
+        function showCreateGuildModal() {
+            const name = prompt('Guild name:');
+            if (!name || !name.trim()) return;
+            
+            const description = prompt('Guild description (optional):') || '';
+            
+            createGuild(name.trim(), description.trim());
+        }
+        
+        async function createGuild(name, description) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/guild/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, name, description })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Guild created!');
+                    }
+                    loadGuilds();
+                } else {
+                    if (typeof toast !== 'undefined') {
+                        toast.error(data.error || 'Failed to create guild');
+                    }
+                }
+            } catch (error) {
+                console.error('Error creating guild:', error);
+            }
+        }
+        
+        function showJoinGuildModal() {
+            loadGuilds(); // This will show the leaderboard with join buttons
+        }
+        
+        async function requestJoinGuild(guildId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/guild/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, guild_id: guildId })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Guild join request sent!');
+                    }
+                    loadGuilds();
+                } else {
+                    if (typeof toast !== 'undefined') {
+                        toast.error(data.error || 'Failed to join guild');
+                    }
+                }
+            } catch (error) {
+                console.error('Error joining guild:', error);
+            }
+        }
+        
+        async function leaveGuild(guildId) {
+            if (!confirm('Leave this guild?')) return;
+            
+            try {
+                // Note: This endpoint may need to be created
+                if (typeof toast !== 'undefined') {
+                    toast.info('Leave guild functionality coming soon');
+                }
+            } catch (error) {
+                console.error('Error leaving guild:', error);
+            }
+        }
+        
+        function showInviteToGuildModal(guildId) {
+            const friendId = prompt('Enter friend user ID to invite:');
+            if (friendId && friendId.trim()) {
+                // Invite friend to guild
+                if (typeof toast !== 'undefined') {
+                    toast.info('Guild invite functionality coming soon');
+                }
+            }
+        }
+        
+        async function loadFriendRequests() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/friend-requests?user_id=${userId}`);
+                const data = await response.json();
+                
+                const div = document.getElementById('friend-requests');
+                if (data.success && data.requests) {
+                    let html = '';
+                    
+                    if (data.requests.incoming && data.requests.incoming.length > 0) {
+                        html += '<h3 style="margin-bottom: var(--spacing-md); color: var(--primary);">📥 Incoming Requests</h3>';
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">';
+                        html += data.requests.incoming.map(r => `
+                            <div class="friend-card">
+                                <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center;">
+                                        ${r.from_user_id.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <strong>${r.from_user_id}</strong>
+                                        <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">Wants to be friends</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: var(--spacing-sm);">
+                                    <button class="btn-action primary" onclick="respondRequest('${r.id}', true)" style="flex: 1;">
+                                        <i class="fas fa-check"></i> Accept
+                                    </button>
+                                    <button class="btn-action" onclick="respondRequest('${r.id}', false)" style="background: rgba(255, 0, 0, 0.2); color: #ff4444; flex: 1;">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                        html += '</div>';
+                    }
+                    
+                    if (data.requests.outgoing && data.requests.outgoing.length > 0) {
+                        html += '<h3 style="margin-bottom: var(--spacing-md); color: var(--primary);">📤 Outgoing Requests</h3>';
+                        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-md);">';
+                        html += data.requests.outgoing.map(r => `
+                            <div class="friend-card">
+                                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center;">
+                                        ${r.to_user_id.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <strong>${r.to_user_id}</strong>
+                                        <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">Pending...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        html += '</div>';
+                    }
+                    
+                    div.innerHTML = html || '<div style="text-align: center; padding: var(--spacing-xl);"><p style="color: var(--text-secondary);">No friend requests</p></div>';
+                } else {
+                    div.innerHTML = '<div style="text-align: center; padding: var(--spacing-xl);"><p style="color: var(--text-secondary);">No friend requests</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading friend requests:', error);
+                const div = document.getElementById('friend-requests');
+                div.innerHTML = `<p style="text-align: center; color: #ff4444;">Error loading requests: ${error.message}</p>`;
+            }
+        }
+        
+        async function respondRequest(requestId, accept) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/social/respond-request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ request_id: requestId, user_id: userId, accept: accept })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') toast.success(accept ? 'Friend request accepted!' : 'Friend request rejected');
+                    loadFriendRequests();
+                    loadFriends();
+                }
+            } catch (error) {
+                console.error('Error responding to request:', error);
+            }
+        }
+        
+        // Intelligence Functions
+        async function loadIntelligence() {
+            await Promise.all([
+                loadPlayerProfile(),
+                loadActiveTriggers(),
+                loadIntelligenceAnalytics(),
+                loadMediaIntelligence()
+            ]);
+        }
+        
+        async function loadPlayerProfile() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/profiler/profile?user_id=${userId}`);
+                const data = await response.json();
+                
+                const div = document.getElementById('intelligence-profile');
+                if (data.success && data.profile) {
+                    const profile = data.profile;
+                    div.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                            <div class="stat-box">
+                                <div class="stat-value">${profile.total_actions || 0}</div>
+                                <div class="stat-label">Total Actions</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${Math.floor((profile.online_time_seconds || 0) / 3600)}h</div>
+                                <div class="stat-label">Online Time</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${(profile.triggers_activated || []).length}</div>
+                                <div class="stat-label">Triggers Activated</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${Object.keys(profile.stats || {}).length}</div>
+                                <div class="stat-label">Tracked Stats</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: var(--spacing-md);">
+                            <h3>Profile Stats</h3>
+                            <pre style="background: var(--bg-card); padding: var(--spacing-md); border-radius: var(--radius-md); overflow-x: auto;">${JSON.stringify(profile.stats || {}, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No profile data available</p>';
+                }
+            } catch (error) {
+                console.error('Error loading player profile:', error);
+            }
+        }
+        
+        async function loadActiveTriggers() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/profiler/triggers?user_id=${userId}`);
+                const data = await response.json();
+                
+                const div = document.getElementById('active-triggers');
+                if (data.success && data.triggers) {
+                    div.innerHTML = data.triggers.map(t => `
+                        <div class="friend-card">
+                            <h3>${t.name || t.id}</h3>
+                            <p>Condition: ${JSON.stringify(t.condition || {})}</p>
+                            <p>Action: ${t.action?.type || 'N/A'} - ${JSON.stringify(t.action || {})}</p>
+                            <p>One-time: ${t.one_time ? 'Yes' : 'No'}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No triggers available</p>';
+                }
+            } catch (error) {
+                console.error('Error loading triggers:', error);
+            }
+        }
+        
+        async function loadIntelligenceAnalytics() {
+            try {
+                const historyResponse = await fetch(`${BASE_URL}/api/profiler/history?user_id=${userId}&limit=10`);
+                const historyData = await historyResponse.json();
+                
+                const div = document.getElementById('intelligence-analytics');
+                let html = '<h3>Recent Trigger History</h3>';
+                
+                if (historyData.success && historyData.history && historyData.history.length > 0) {
+                    html += historyData.history.map(h => `
+                        <div class="friend-card">
+                            <div><strong>${h.trigger_id}</strong></div>
+                            <div>Triggered: ${new Date(h.triggered_at).toLocaleString()}</div>
+                            <div>Action: ${JSON.stringify(h.action || {})}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    html += '<p style="text-align: center; color: var(--text-secondary);">No trigger history</p>';
+                }
+                
+                div.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading intelligence analytics:', error);
+            }
+        }
+        
+        async function loadMediaIntelligence() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/media/statistics`);
+                const data = await response.json();
+                
+                const div = document.getElementById('media-intelligence');
+                if (data.success && data.statistics) {
+                    const stats = data.statistics;
+                    div.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md);">
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_images || 0}</div>
+                                <div class="stat-label">Images Collected</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_audio || 0}</div>
+                                <div class="stat-label">Audio Files</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value">${stats.total_media || 0}</div>
+                                <div class="stat-label">Total Media</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No media intelligence data</p>';
+                }
+            } catch (error) {
+                console.error('Error loading media intelligence:', error);
+            }
+        }
+        
+        // Resources Functions
+        async function loadResources() {
+            await Promise.all([
+                loadInventory(),
+                loadArtifacts(),
+                loadXPStats(),
+                loadResourceStatistics()
+            ]);
+        }
+        
+        async function loadInventory() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/items/inventory?user_id=${userId}`);
+                const data = await response.json();
+                
+                const div = document.getElementById('inventory-items');
+                if (data.success && data.inventory) {
+                    const items = data.inventory.inventory || [];
+                    if (items.length > 0) {
+                        div.innerHTML = `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                                ${items.map(item => `
+                                    <div class="friend-card">
+                                        <div style="font-size: 2em;">${item.icon || '📦'}</div>
+                                        <h3>${item.name}</h3>
+                                        <p>${item.description}</p>
+                                        <p><strong>Quantity:</strong> ${item.quantity}</p>
+                                        <p><strong>Rarity:</strong> ${item.rarity}</p>
+                                        <p><strong>Type:</strong> ${item.type}</p>
+                                        ${item.equipped ? '<p style="color: var(--primary);">⚡ Equipped</p>' : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Inventory is empty</p>';
+                    }
+                } else {
+                    div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No inventory data</p>';
+                }
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+            }
+        }
+        
+        async function loadArtifacts() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/artifacts/user?user_id=${userId}`);
+                const data = await response.json();
+                
+                const div = document.getElementById('artifacts-collection');
+                if (data.success && data.artifacts) {
+                    const artifacts = data.artifacts || [];
+                    if (artifacts.length > 0) {
+                        div.innerHTML = `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-md);">
+                                ${artifacts.map(artifact => `
+                                    <div class="friend-card">
+                                        <div style="font-size: 3em;">${artifact.icon || '🏆'}</div>
+                                        <h3>${artifact.name}</h3>
+                                        <p><strong>${artifact.description}</strong></p>
+                                        <p style="font-style: italic; color: var(--text-secondary); margin-top: var(--spacing-sm);">${artifact.story || ''}</p>
+                                        <p><strong>Power:</strong> ${artifact.power}</p>
+                                        <p><strong>Rarity:</strong> ${artifact.rarity}</p>
+                                        <p><strong>Effects:</strong> ${JSON.stringify(artifact.effect || {})}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No artifacts discovered yet</p>';
+                    }
+                } else {
+                    div.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No artifacts data</p>';
+                }
+            } catch (error) {
+                console.error('Error loading artifacts:', error);
+            }
+        }
+        
+        async function loadXPStats() {
+            try {
+                const [xpResponse, statsResponse] = await Promise.all([
+                    fetch(`${BASE_URL}/api/game/hunters/level?user_id=${userId}`),
+                    fetch(`${BASE_URL}/api/game/stats-points?user_id=${userId}`)
+                ]);
+                
+                const xpData = await xpResponse.json();
+                const statsData = await statsResponse.json();
+                
+                const div = document.getElementById('xp-stats-resources');
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">';
+                
+                if (xpData.success && xpData.level) {
+                    html += `
+                        <div class="stat-box">
+                            <div class="stat-value">${xpData.level.level || 1}</div>
+                            <div class="stat-label">Current Level</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${xpData.level.xp || 0}</div>
+                            <div class="stat-label">Total XP</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${xpData.level.xp_to_next || 0}</div>
+                            <div class="stat-label">XP to Next Level</div>
+                        </div>
+                    `;
+                }
+                
+                if (statsData.success && statsData.stats) {
+                    const stats = statsData.stats;
+                    html += `
+                        <div class="stat-box">
+                            <div class="stat-value">${stats.stat_creativity || 0}</div>
+                            <div class="stat-label">Creativity</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${stats.stat_quality || 0}</div>
+                            <div class="stat-label">Quality</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${stats.stat_social || 0}</div>
+                            <div class="stat-label">Social</div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                div.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading XP/Stats:', error);
+            }
+        }
+        
+        async function loadResourceStatistics() {
+            try {
+                const [itemsResponse, artifactsResponse] = await Promise.all([
+                    fetch(`${BASE_URL}/api/items/inventory?user_id=${userId}`),
+                    fetch(`${BASE_URL}/api/artifacts/user?user_id=${userId}`)
+                ]);
+                
+                const itemsData = await itemsResponse.json();
+                const artifactsData = await artifactsResponse.json();
+                
+                const div = document.getElementById('resource-statistics');
+                let totalItems = 0;
+                let totalArtifacts = 0;
+                
+                if (itemsData.success && itemsData.inventory) {
+                    totalItems = (itemsData.inventory.inventory || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
+                }
+                
+                if (artifactsData.success && artifactsData.artifacts) {
+                    totalArtifacts = (artifactsData.artifacts || []).length;
+                }
+                
+                div.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                        <div class="stat-box">
+                            <div class="stat-value">${totalItems}</div>
+                            <div class="stat-label">Total Items</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${totalArtifacts}</div>
+                            <div class="stat-label">Artifacts Discovered</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${(itemsData.inventory?.inventory || []).filter(i => i.equipped).length}</div>
+                            <div class="stat-label">Items Equipped</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading resource statistics:', error);
+            }
+        }
+        
+        // Social Feed Functions
+        async function loadSocialFeed() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/social/feed?user_id=${userId}&limit=20`);
+                const data = await response.json();
+                
+                const feedDiv = document.getElementById('social-feed');
+                if (feedDiv) {
+                    if (data.success && data.feed && data.feed.length > 0) {
+                        feedDiv.innerHTML = data.feed.map(post => `
+                            <div class="friend-card" style="margin-bottom: var(--spacing-md);">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-sm);">
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center;">
+                                            ${post.user_id.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <strong>${post.user_id}</strong>
+                                            <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">${new Date(post.created_at).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="margin-bottom: var(--spacing-sm); white-space: pre-wrap;">${post.content}</p>
+                                ${post.media_url ? `<img src="${post.media_url}" style="max-width: 100%; border-radius: var(--radius-md); margin-bottom: var(--spacing-sm);" />` : ''}
+                                <div style="display: flex; gap: var(--spacing-md); border-top: 1px solid var(--border-primary); padding-top: var(--spacing-sm);">
+                                    <button class="btn-action" onclick="likePost('${post.id}')" style="flex: 1;">
+                                        <i class="fas fa-heart"></i> Like (${post.likes_count || 0})
+                                    </button>
+                                    <button class="btn-action" onclick="showCommentModal('${post.id}')" style="flex: 1;">
+                                        <i class="fas fa-comment"></i> Comment (${post.comments_count || 0})
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        feedDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: var(--spacing-xl);">No posts yet. Be the first to post!</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading social feed:', error);
+                const feedDiv = document.getElementById('social-feed');
+                if (feedDiv) {
+                    feedDiv.innerHTML = `<p style="text-align: center; color: #ff4444;">Error loading feed: ${error.message}</p>`;
+                }
+            }
+        }
+        
+        async function createPost() {
+            const contentEl = document.getElementById('post-content');
+            if (!contentEl) return;
+            
+            const content = contentEl.value.trim();
+            if (!content) {
+                if (typeof toast !== 'undefined') {
+                    toast.error('Please enter some content');
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/social/posts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, content, post_type: 'text' })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Post created!');
+                    }
+                    contentEl.value = '';
+                    loadSocialFeed();
+                } else {
+                    if (typeof toast !== 'undefined') {
+                        toast.error(data.error || 'Failed to create post');
+                    }
+                }
+            } catch (error) {
+                console.error('Error creating post:', error);
+                if (typeof toast !== 'undefined') {
+                    toast.error('Error creating post');
+                }
+            }
+        }
+        
+        async function likePost(postId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/social/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadSocialFeed();
+                }
+            } catch (error) {
+                console.error('Error liking post:', error);
+            }
+        }
+        
+        function showCommentModal(postId) {
+            const comment = prompt('Enter your comment:');
+            if (comment && comment.trim()) {
+                commentPost(postId, comment.trim());
+            }
+        }
+        
+        async function commentPost(postId, comment) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/social/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, comment })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Comment added!');
+                    }
+                    loadSocialFeed();
+                }
+            } catch (error) {
+                console.error('Error commenting:', error);
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            // Use unified point counters for A+ accuracy
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+            
+            loadFriends();
+            loadSocialFeed();
+            
+            // Auto-refresh feed every 30 seconds when on friends tab
+            setInterval(() => {
+                const friendsTab = document.getElementById('tab-friends');
+                if (friendsTab && friendsTab.classList.contains('active')) {
+                    loadSocialFeed();
+                }
+            }, 30000);
+        });
+    </script>
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/backend-connector.js?v=20260114120000"></script>
+    <script src="/static/js/page-data-loaders.js?v=20260114120000"></script>
+    <script>
+        // Social Page Data Loader
+        document.addEventListener('DOMContentLoaded', async function() {
+            const loader = new pageDataLoaders.social();
+            const data = await loader.loadAll();
+            
+            // Update social display
+            if (data.social && data.social.success) {
+                console.log('Social data loaded:', data.social);
+            }
+            
+            if (data.profile && data.profile.success) {
+                console.log('Profile loaded:', data.profile);
+            }
+        });
+    </script>
+<script src="/static/js/universal-auto-save-status.js"></script>
+<script src="/static/js/connect-all-point-counters.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+

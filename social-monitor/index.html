@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Network Monitor - MasterNoder.dk</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, rgba(0, 212, 255, 0.18), transparent 34%), linear-gradient(135deg, #070a12 0%, #111827 52%, #070a12 100%);
+            color: #fff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .monitor-shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0 64px;
+        }
+        .monitor-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            color: #00d4ff;
+            letter-spacing: -0.03em;
+        }
+        .muted {
+            color: rgba(255, 255, 255, 0.68);
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .actions a,
+        .actions button {
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            border-radius: 999px;
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            padding: 9px 14px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .stat-card,
+        .panel {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            background: rgba(6, 12, 24, 0.76);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+        }
+        .stat-card {
+            padding: 16px;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #00ff88;
+        }
+        .stat-label {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.62);
+        }
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+        .panel {
+            padding: 16px;
+            min-height: 180px;
+        }
+        .panel h2 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+            color: #ffd700;
+        }
+        .row {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            font-size: 0.9rem;
+        }
+        .row:last-child {
+            border-bottom: 0;
+        }
+        code {
+            color: #00d4ff;
+        }
+        @media (max-width: 720px) {
+            .monitor-top {
+                display: block;
+            }
+            .actions {
+                margin-top: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="monitor-shell">
+        <div class="monitor-top">
+            <div>
+                <h1>Social Network Monitor</h1>
+                <p class="muted">Live operator view for friends, crews, referrals, rewards, activity, and social chat.</p>
+                <p class="muted" id="monitor-generated">Loading...</p>
+            </div>
+            <div class="actions">
+                <button type="button" id="refresh-monitor">Refresh</button>
+                <a href="/game#social">Game social</a>
+                <a href="/profile">Profile</a>
+            </div>
+        </div>
+
+        <section class="stat-grid" id="monitor-stats"></section>
+
+        <section class="panel-grid">
+            <article class="panel">
+                <h2>Top Connectors</h2>
+                <div id="top-connectors">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Crew Leaderboard</h2>
+                <div id="crew-leaderboard">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Recent Activity</h2>
+                <div id="recent-activity">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Social Chat</h2>
+                <div id="recent-chat">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Referrals</h2>
+                <div id="recent-referrals">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Crews</h2>
+                <div id="crew-list">Loading...</div>
+            </article>
+            <article class="panel">
+                <h2>Crew Invites</h2>
+                <div id="crew-invites">Loading...</div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
+
+        function renderRows(id, rows, renderer, emptyText) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = rows && rows.length ? rows.map(renderer).join('') : '<p class="muted">' + escapeHtml(emptyText) + '</p>';
+        }
+
+        async function loadMonitor() {
+            const statsEl = document.getElementById('monitor-stats');
+            const generatedEl = document.getElementById('monitor-generated');
+            if (statsEl) statsEl.innerHTML = '<div class="stat-card"><div class="stat-label">Loading monitor data...</div></div>';
+            try {
+                const res = await fetch('/api/social/monitor');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Monitor failed');
+                const totals = data.totals || {};
+                if (generatedEl) generatedEl.textContent = 'Generated: ' + new Date(data.generated_at).toLocaleString();
+                const stats = [
+                    ['Users', totals.users],
+                    ['Friend edges', totals.friend_edges],
+                    ['Crews', totals.crews],
+                    ['Activity', totals.activity_items],
+                    ['Pending challenges', totals.pending_challenges],
+                    ['Completed challenges', totals.completed_challenges],
+                    ['Pending invites', totals.pending_crew_invites],
+                    ['Chat messages', totals.chat_messages],
+                    ['Referral signups', totals.referral_signups],
+                    ['Reward claims', totals.reward_claims],
+                    ['MN2 claimed', totals.reward_mn2_claimed]
+                ];
+                statsEl.innerHTML = stats.map(([label, value]) => '<div class="stat-card"><div class="stat-value">' + escapeHtml(value == null ? 0 : value) + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div>').join('');
+                renderRows('top-connectors', data.top_connectors || [], (row) => '<div class="row"><strong>' + escapeHtml(row.display_name) + '</strong><br><code>' + escapeHtml(row.user_id) + '</code><div class="muted">' + escapeHtml(row.friends) + ' friends</div></div>', 'No connectors yet.');
+                renderRows('crew-leaderboard', data.crew_leaderboard || [], (row) => '<div class="row"><strong>#' + escapeHtml(row.rank) + ' ' + escapeHtml(row.name || row.id) + '</strong><br><span class="muted">' + escapeHtml(row.member_count) + ' members · ' + escapeHtml(row.social_score) + ' score · ' + escapeHtml(row.completed_challenges) + ' challenges</span></div>', 'No leaderboard yet.');
+                renderRows('recent-activity', data.recent_activity || [], (row) => '<div class="row"><strong>' + escapeHtml(row.action_type) + '</strong><br>' + escapeHtml(row.label) + '<div class="muted">' + escapeHtml(row.user_id) + '</div></div>', 'No activity yet.');
+                renderRows('recent-chat', data.recent_chat || [], (row) => '<div class="row"><strong>' + escapeHtml(row.display_name || row.user_id) + '</strong><br>' + escapeHtml(row.message) + '<div class="muted">' + escapeHtml(row.created_at) + '</div></div>', 'No chat yet.');
+                renderRows('recent-referrals', data.recent_referrals || [], (row) => '<div class="row"><strong>' + escapeHtml(row.referral_code) + '</strong><br><code>' + escapeHtml(row.referrer_user_id) + '</code> referred <code>' + escapeHtml(row.referred_user_id) + '</code></div>', 'No referrals yet.');
+                renderRows('crew-list', data.crews || [], (row) => '<div class="row"><strong>' + escapeHtml(row.name || row.id) + '</strong><br><span class="muted">' + escapeHtml((row.member_ids || []).length) + ' members</span></div>', 'No crews yet.');
+                renderRows('crew-invites', data.recent_crew_invites || [], (row) => '<div class="row"><strong>' + escapeHtml(row.status) + '</strong> invite to ' + escapeHtml(row.crew_name || row.crew_id) + '<br><code>' + escapeHtml(row.from_user_id) + '</code> → <code>' + escapeHtml(row.to_user_id) + '</code></div>', 'No crew invites yet.');
+            } catch (err) {
+                if (statsEl) statsEl.innerHTML = '<div class="stat-card"><div class="stat-value">!</div><div class="stat-label">' + escapeHtml(err.message || err) + '</div></div>';
+            }
+        }
+
+        document.getElementById('refresh-monitor')?.addEventListener('click', loadMonitor);
+        loadMonitor();
+    </script>
+</body>
+</html>

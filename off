@@ -1,0 +1,29 @@
+#!/bin/bash
+# Stop Ncixg service
+# Usage: ./off
+
+echo "=========================================="
+echo "STOPPING NCIXG SERVICE"
+echo "=========================================="
+echo ""
+
+# Try to stop nginx (most likely what "Ncixg" refers to)
+echo "[1/3] Stopping nginx..."
+sudo systemctl stop nginx 2>/dev/null || service nginx stop 2>/dev/null || echo "  [INFO] nginx not found or already stopped"
+
+# Also stop related services
+echo "[2/3] Stopping uwsgi-vidgenerator..."
+sudo systemctl stop uwsgi-vidgenerator.service 2>/dev/null || service uwsgi-vidgenerator stop 2>/dev/null || echo "  [INFO] uwsgi-vidgenerator not found or already stopped"
+
+echo "[3/3] Stopping python-proxy..."
+sudo systemctl stop python-proxy.service 2>/dev/null || service python-proxy stop 2>/dev/null || echo "  [INFO] python-proxy not found or already stopped"
+
+echo ""
+echo "=========================================="
+echo "SERVICE STOPPED"
+echo "=========================================="
+
+# Verify stopped
+echo ""
+echo "Checking service status..."
+sudo systemctl status nginx --no-pager 2>/dev/null | head -3 || echo "  nginx: stopped or not installed"

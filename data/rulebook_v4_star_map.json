@@ -1,0 +1,24 @@
+{
+  "name": "Star Map & Verification",
+  "version": "V4",
+  "shop_ui_alignment": "Shop UI V.9 — same catalog and star-map SKUs as /shop; legacy Shop v4/v5 labels in code refer to this product line.",
+  "description": "7 nærmeste stjerner, host→life-bearing b navngivning, Electric Magnet specials. Aligned with Shop V.9 catalog (themes, Star Map 25, verification-adjacent items).",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v4-star-map.png",
+  "image_alt": "Star Map V4",
+  "agent_prompt": "Star map: 7 nearest stars. Use host→b naming (e.g. Proxima Centauri → Proxima b). Specials: run_verification, run_dna_test, view_star_map.",
+  "tech_spec": "GET /api/star-map; GET /vidgenerator/api/star-map; data/star_map.json; stars[].life_label, life_bearing; specials: run_verification, run_dna_test, view_star_map",
+  "user_guide": "Stjernemap viser 7 nærmeste stjerner. Brug verification og DNA test til integritet.",
+  "manual": "Agent manual V4: When user asks about stars or verification, call star-map API. Offer run_verification and run_dna_test when relevant.",
+  "stars_ref": "data/star_map.json",
+  "rules": [
+    {"id": "host_b", "name": "Host → B navngivning", "text": "Life-bearing planeter navngives som host → b (f.eks. Proxima Centauri → Proxima b)."},
+    {"id": "run_verification", "name": "Run Verification", "text": "Electric Magnet special. Integritetsscan af indhold og platform."},
+    {"id": "run_dna_test", "name": "Run DNA Test", "text": "Electric Magnet special. DNA-verifikation og test."},
+    {"id": "view_star_map", "name": "View Star Map", "text": "Electric Magnet special. Viser 7 nærmeste stjerner og life-bearing b planeter."},
+    {"id": "integrity_scan", "name": "Integrity Scan", "text": "Hunters spell. Relateret til verification."},
+    {"id": "theme_galactic_crosswalk", "name": "Galactic themes i shop", "text": "Galaxy / Star Map-temaer i shop forstærker visuelt Galactic-cluster; de ændrer ikke stjernedata i star_map.json uden serverlogik."},
+    {"id": "verification_skin_consistency", "name": "Verification-UI", "text": "Verification-special forbliver server-drevet; temaer påvirker kun presentation layer i klienten."},
+    {"id": "themes_do_not_mutate_star_map", "name": "UI-temaer og stjernedata", "text": "Shop-temaer (månedlige theme-* m.m.) ændrer ikke data/star_map.json eller star-map API-svar; Galactic-cluster forklares stadig ud fra faktiske stjerner — se V9 for tema-SKU-liste."}
+  ]
+}

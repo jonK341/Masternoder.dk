@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <script>window.APP_BASE = '';</script>
+    <script>window.MN_NAV_PORTAL_VOID = true;</script>
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260428a">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder.dk — AI videogenerering, spil, battle og agenter.">
+    <meta name="content-version" content="20260428a">
+    <title>MasterNoder.dk</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260428a">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260428a">
+</head>
+<body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
+    <a href="#mainContent" class="skip-link">Spring til indhold</a>
+    <div class="frontpage-bg" aria-hidden="true"></div>
+
+    <main id="mainContent" class="fp-main">
+        <section class="fp-hero fp-hero-v20" aria-labelledby="fp-hero-title">
+            <div class="fp-hero-copy">
+                <p class="fp-kicker"><span>System v2.0</span><span>Neural sound online</span></p>
+                <h1 id="fp-hero-title">MasterNoder.dk</h1>
+                <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
+                <p class="fp-hero-text">Et hurtigere kontrolrum til at skabe video, spille, battle, styre agenter og mærke systemet reagere med opt-in lyd.</p>
+                <div class="fp-hero-actions" aria-label="Primære handlinger">
+                    <a class="fp-primary-action" href="/generator">Start generator</a>
+                    <a class="fp-secondary-action" href="/game">Åbn game hub</a>
+                </div>
+            </div>
+            <div class="fp-hero-core" aria-hidden="true">
+                <div class="fp-core-ring fp-core-ring-a"></div>
+                <div class="fp-core-ring fp-core-ring-b"></div>
+                <div class="fp-core-pulse">2.0</div>
+                <div class="fp-core-node fp-core-node-a">AI</div>
+                <div class="fp-core-node fp-core-node-b">SND</div>
+                <div class="fp-core-node fp-core-node-c">XP</div>
+            </div>
+        </section>
+
+        <section class="fp-stats" id="fp-stats" aria-label="Platform oversigt">
+            <div class="fp-stat"><div class="v" id="stat-videos">0</div><div class="l">Videoer</div></div>
+            <div class="fp-stat"><div class="v" id="stat-users">0</div><div class="l">Brugere</div></div>
+            <div class="fp-stat"><div class="v" id="stat-achievements">0</div><div class="l">Achievements</div></div>
+            <div class="fp-stat"><div class="v" id="stat-battles">0</div><div class="l">Battles</div></div>
+            <div class="fp-stat"><div class="v" id="stat-total-xp">0</div><div class="l">Total XP</div></div>
+            <div class="fp-stat"><div class="v" id="stat-level">1</div><div class="l">Level</div></div>
+            <div class="fp-stat"><div class="v" id="stat-points">0</div><div class="l">Stat points</div></div>
+            <div class="fp-stat"><div class="v" id="stat-trophies">0</div><div class="l">Trophies</div></div>
+        </section>
+
+        <section class="fp-v20-upgrade" aria-labelledby="fp-upgrade-title">
+            <div>
+                <p class="fp-kicker"><span>Big upgrade</span><span>v2.0 patch</span></p>
+                <h2 id="fp-upgrade-title">Systemet føles mere levende</h2>
+            </div>
+            <div class="fp-upgrade-grid">
+                <article>
+                    <strong>Sonic engine</strong>
+                    <span>Ambient hum, pulse clicks og battle drive styres direkte fra forsiden.</span>
+                </article>
+                <article>
+                    <strong>Mission control</strong>
+                    <span>De vigtigste veje ind i generator, game hub, agenter og Star Map er samlet.</span>
+                </article>
+                <article>
+                    <strong>Live surface</strong>
+                    <span>Stats, smart links og nyheder loader som et samlet platform-dashboard.</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="fp-sound-console" aria-labelledby="fp-sound-title">
+            <div class="fp-sound-copy">
+                <p class="fp-kicker"><span>Audio deck</span><span>opt-in</span></p>
+                <h2 id="fp-sound-title">MasterNoder Sound System</h2>
+                <p>Aktivér et lavt cyber-ambient lydlag. Vælg rolig fokus, stjernekort-puls eller battle drive.</p>
+            </div>
+            <div class="fp-sound-board" aria-label="Lydkontrol">
+                <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
+                    <span class="fp-sound-led" aria-hidden="true"></span>
+                    Start sound
+                </button>
+                <div class="fp-sound-wave" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
+                    <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus hum</button>
+                    <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Star pulse</button>
+                    <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle drive</button>
+                </div>
+                <label class="fp-sound-volume" for="themeSoundVolume">
+                    Volume
+                    <input id="themeSoundVolume" type="range" min="0" max="100" value="35">
+                </label>
+                <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
+            </div>
+        </section>
+
+        <section class="fp-smartlinks" aria-labelledby="fp-smart-title">
+            <h2 id="fp-smart-title" class="fp-section-title">Smart links</h2>
+            <div id="fp-smart-links"></div>
+        </section>
+
+        <section class="fp-starmap" aria-labelledby="fp-starmap-title">
+            <div class="fp-starmap-head">
+                <h2 id="fp-starmap-title">Star Map 4D</h2>
+                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴ — samme data som Star Map 25.</p>
+            </div>
+            <div class="fp-starmap-controls">
+                <label for="fp-starmap-w">Tidsled <em>w</em>
+                    <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
+                </label>
+                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
+            </div>
+            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
+        </section>
+
+        <div class="fp-split">
+            <section class="fp-panel fp-news" aria-labelledby="fp-news-title">
+                <h2 id="fp-news-title">News updates</h2>
+                <ul id="fp-news-list" class="fp-news-list"></ul>
+            </section>
+            <section class="fp-panel fp-agents" aria-labelledby="fp-agent-title">
+                <h2 id="fp-agent-title">Agent void</h2>
+                <p class="fp-muted">Orkestrér AIs, tickets og værktøj ét sted.</p>
+                <div class="fp-agent-grid">
+                    <a class="fp-agent-card" href="/agents"><span>🤖</span>AI Agents</a>
+                    <a class="fp-agent-card" href="/agent_support"><span>🛠️</span>Agent support</a>
+                    <a class="fp-agent-card" href="/lab"><span>🔬</span>Lab</a>
+                    <a class="fp-agent-card" href="/debugger"><span>🔧</span>Debugger</a>
+                    <a class="fp-agent-card" href="/news"><span>📰</span>News</a>
+                    <a class="fp-agent-card" href="/game"><span>🎮</span>Game hub</a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <button id="themeSoundFloatToggle" class="theme-sound-toggle" type="button" aria-label="Skift temalyd">Sound offline</button>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+
+        async function loadAllStats() {
+            try {
+                const [statsRes, pointsRes, battleRes] = await Promise.all([
+                    fetch(`${BASE_URL || ''}/api/stats/summary`),
+                    fetch(`${BASE_URL || ''}/api/points/all?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL || ''}/api/battle/stats?user_id=${encodeURIComponent(userId)}`)
+                ]);
+                const stats = await statsRes.json();
+                const points = await pointsRes.json();
+                const battle = await battleRes.json();
+
+                if (stats.success && stats.stats) {
+                    const s = stats.stats;
+                    const v = document.getElementById('stat-videos');
+                    const u = document.getElementById('stat-users');
+                    const a = document.getElementById('stat-achievements');
+                    if (v) v.textContent = (s.total_videos || 0).toLocaleString();
+                    if (u) u.textContent = (s.total_users || 0).toLocaleString();
+                    if (a) a.textContent = (s.total_achievements || 0).toLocaleString();
+                }
+                if (battle.success && battle.stats) {
+                    const totalBattles = (battle.stats.wins || 0) + (battle.stats.losses || 0);
+                    const b = document.getElementById('stat-battles');
+                    if (b) b.textContent = totalBattles.toLocaleString();
+                }
+                if (points.success && points.points) {
+                    const p = points.points;
+                    const xp = document.getElementById('stat-total-xp');
+                    const lv = document.getElementById('stat-level');
+                    const pt = document.getElementById('stat-points');
+                    const tr = document.getElementById('stat-trophies');
+                    if (xp) xp.textContent = (p.xp_total || 0).toLocaleString();
+                    if (lv) lv.textContent = p.level || 1;
+                    if (pt) pt.textContent = (p.stats_points_total || 0).toLocaleString();
+                    if (tr) tr.textContent = (p.trophy_points || 0).toLocaleString();
+                }
+            } catch (e) {
+                console.warn('[Frontpage] stats', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const runWhenIdle = (fn) => {
+                if (typeof requestIdleCallback !== 'undefined') {
+                    requestIdleCallback(fn, { timeout: 2200 });
+                } else {
+                    setTimeout(fn, 200);
+                }
+            };
+            runWhenIdle(() => {
+                loadAllStats();
+                setInterval(loadAllStats, 45000);
+            });
+        });
+    </script>
+    <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20260428a" defer></script>
+</body>
+</html>

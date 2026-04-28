@@ -1,0 +1,62 @@
+#!/bin/bash
+# Start Ncixg service
+# Usage: ./on
+
+echo "=========================================="
+echo "STARTING NCIXG SERVICE"
+echo "=========================================="
+echo ""
+
+# Start related services first
+echo "[1/4] Starting python-proxy..."
+sudo systemctl start python-proxy.service 2>/dev/null || service python-proxy start 2>/dev/null || echo "  [INFO] python-proxy not found or already started"
+
+echo "[2/4] Starting uwsgi-vidgenerator..."
+sudo systemctl start uwsgi-vidgenerator.service 2>/dev/null || service uwsgi-vidgenerator start 2>/dev/null || echo "  [INFO] uwsgi-vidgenerator not found or already started"
+
+# Wait a moment for services to initialize
+sleep 2
+
+# Start nginx (main service)
+echo "[3/4] Starting nginx..."
+sudo systemctl start nginx 2>/dev/null || service nginx start 2>/dev/null || echo "  [WARN] nginx start failed"
+
+# Wait for nginx to fully start
+sleep 2
+
+echo "[4/4] Verifying services..."
+echo ""
+
+# Check service status
+echo "Service Status:"
+echo "----------------------------------------"
+
+# Check python-proxy
+if sudo systemctl is-active python-proxy.service >/dev/null 2>&1; then
+    echo "  ✅ python-proxy: active"
+else
+    echo "  ⚠️  python-proxy: inactive"
+fi
+
+# Check uwsgi-vidgenerator
+if sudo systemctl is-active uwsgi-vidgenerator.service >/dev/null 2>&1; then
+    echo "  ✅ uwsgi-vidgenerator: active"
+else
+    echo "  ⚠️  uwsgi-vidgenerator: inactive"
+fi
+
+# Check nginx
+if sudo systemctl is-active nginx >/dev/null 2>&1; then
+    echo "  ✅ nginx: active"
+else
+    echo "  ❌ nginx: inactive"
+    echo ""
+    echo "  [ERROR] nginx failed to start!"
+    echo "  Check logs: sudo journalctl -u nginx -n 20"
+    exit 1
+fi
+
+echo ""
+echo "=========================================="
+echo "SERVICE STARTED"
+echo "=========================================="

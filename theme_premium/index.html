@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Theme - VidGenerator</title>
+    <style>
+        :root {
+            --primary: #ff6b9d;
+            --secondary: #c44569;
+            --accent: #f8b500;
+            --bg-dark: #0a0a0f;
+            --bg-darker: #050508;
+            --bg-card: rgba(20, 20, 30, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --border-glow: rgba(255, 107, 157, 0.5);
+            --gradient-1: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            --gradient-2: linear-gradient(135deg, #f8b500 0%, #ff6b9d 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-darker);
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 157, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(248, 181, 0, 0.1) 0%, transparent 50%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 20s infinite;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid var(--border-glow);
+            padding: 20px 40px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2em;
+            font-weight: bold;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.mn2-badge {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+        .nav-links a.mn2-badge:hover { opacity: 0.9; }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 2px solid var(--border-glow);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            opacity: 0.1;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .hero h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            font-size: 1.5em;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: var(--gradient-1);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 157, 0.5);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+            border-color: var(--primary);
+        }
+
+        .stat-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 107, 157, 0.3);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Drone control block */
+        .drone-control-block {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+            margin-bottom: 40px;
+        }
+        .drone-control-block h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .drone-control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .drone-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border-glow);
+            border-radius: 10px;
+            background: rgba(255,107,157,0.15);
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drone-btn:hover { background: rgba(255,107,157,0.3); border-color: var(--primary); }
+        .drone-status {
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        .drone-status.online { border-left: 4px solid #2ecc71; }
+        .drone-status.offline { border-left: 4px solid #e74c3c; }
+        /* Fire, blood & action themes block */
+        .action-themes-block {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid rgba(231, 76, 60, 0.5);
+            margin-bottom: 40px;
+        }
+        .action-themes-block h2 {
+            font-size: 1.8em;
+            margin-bottom: 16px;
+            color: #e74c3c;
+        }
+        .action-themes-block p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .action-themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .action-theme-card {
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(231, 76, 60, 0.3);
+            background: rgba(231, 76, 60, 0.08);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .action-theme-card:hover {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.15);
+            transform: translateY(-2px);
+        }
+        .action-theme-card a {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .action-theme-card .icon { font-size: 2em; margin-bottom: 8px; }
+
+        /* Premium Bonus Section */
+        .premium-bonus {
+            background: var(--bg-card);
+            padding: 60px;
+            border-radius: 20px;
+            border: 2px solid var(--border-glow);
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-bonus::before {
+            content: '✨';
+            position: absolute;
+            font-size: 20em;
+            opacity: 0.05;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .premium-bonus h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .premium-bonus p {
+            font-size: 1.3em;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-card);
+            padding: 40px;
+            border-top: 2px solid var(--border-glow);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5em; }
+            .nav-links { flex-direction: column; gap: 10px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+
+</head>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg" id="animated-bg"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">🎬 VidGenerator Premium</div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/dashboard/points">Control Board</a></li>
+                    <li><a href="/api/178-systems/leaderboard/all">Leaderboards</a></li>
+                    <li><a href="/game">Game</a></li>
+                    <li><a href="/shop" class="mn2-badge" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>178 Point Systems</h1>
+            <p>Complete Gamification Ecosystem with Death Portal & 10x Production</p>
+            <a href="/dashboard/points" class="cta-button">View Control Board</a>
+        </section>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="total-points">0</div>
+                <div class="stat-label">Total Points</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="total-systems">178</div>
+                <div class="stat-label">Point Systems</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🌀</div>
+                <div class="stat-value" id="death-portal-active">0</div>
+                <div class="stat-label">Death Portal Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚀</div>
+                <div class="stat-value" id="production-10x">0</div>
+                <div class="stat-label">10x Production</div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Complete Dashboards</h3>
+                <p class="feature-description">Individual dashboards for all 178 point systems with stats, progress, and abilities.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <h3 class="feature-title">Leaderboards</h3>
+                <p class="feature-description">Competitive leaderboards for every system with rankings and achievements.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎖️</div>
+                <h3 class="feature-title">Achievements</h3>
+                <p class="feature-description">Unlock achievements across all systems with special rewards and recognition.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛒</div>
+                <h3 class="feature-title">Shop Integration</h3>
+                <p class="feature-description">Use points from all systems in the shop with point counter integration.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌀</div>
+                <h3 class="feature-title">Death Portal</h3>
+                <p class="feature-description">10x production multiplier with teleport skillset and ability control.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3 class="feature-title">10x Production</h3>
+                <p class="feature-description">Enhanced production systems with 10x multiplier for content creation.</p>
+            </div>
+        </div>
+
+        <!-- Drone control block -->
+        <section class="drone-control-block" id="drone-control">
+            <h2>🛸 Drone control</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Take command. Arm, launch, and monitor drone status.</p>
+            <div class="drone-control-panel">
+                <button type="button" class="drone-btn" id="drone-arm" aria-label="Arm drone">Arm</button>
+                <button type="button" class="drone-btn" id="drone-takeoff" aria-label="Take off">Take off</button>
+                <button type="button" class="drone-btn" id="drone-land" aria-label="Land">Land</button>
+                <button type="button" class="drone-btn" id="drone-disarm" aria-label="Disarm">Disarm</button>
+                <span class="drone-status offline" id="drone-status">Status: Offline</span>
+            </div>
+            <p id="drone-message" style="font-size: 0.9rem; color: var(--text-secondary); min-height: 1.5em;"></p>
+        </section>
+
+        <!-- Car chase from themes -->
+        <section class="action-themes-block">
+            <h2>🚗 Car chase (from themes)</h2>
+            <p>Use the Car Chase theme in the generator for high-speed pursuit and vehicular action.</p>
+            <div class="action-themes-grid">
+                <div class="action-theme-card">
+                    <div class="icon">🚗</div>
+                    <a href="/generator?theme=carchase">Car Chase</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fire, blood & action -->
+        <section class="action-themes-block">
+            <h2>🔥 Fire, blood & action</h2>
+            <p>Intense themes for flames, grit, and explosive action. Use in the generator for maximum impact.</p>
+            <div class="action-themes-grid">
+                <div class="action-theme-card">
+                    <div class="icon">🔥</div>
+                    <a href="/generator?theme=fire">Fire</a>
+                </div>
+                <div class="action-theme-card">
+                    <div class="icon">🩸</div>
+                    <a href="/generator?theme=blood">Blood</a>
+                </div>
+                <div class="action-theme-card">
+                    <div class="icon">⚡</div>
+                    <a href="/generator?theme=action">Action</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Premium Bonus Section -->
+        <section class="premium-bonus">
+            <h2>✨ Premium Content Bonus ✨</h2>
+            <p>Exclusive access to premium features and content with enhanced point multipliers</p>
+            <p style="margin-top: 20px; font-size: 1.1em;">Unlock special rewards and exclusive content as you progress through all 178 systems</p>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 VidGenerator Premium Theme - 178 Point Systems</p>
+    </footer>
+
+    <script>
+        // Create animated particles
+        function createParticles() {
+            const bg = document.getElementById('animated-bg');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                bg.appendChild(particle);
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/points/all');
+                const data = await response.json();
+                
+                if (data.success && data.points) {
+                    const points = data.points;
+                    const total = Object.values(points).reduce((sum, val) => {
+                        return sum + (typeof val === 'number' ? val : 0);
+                    }, 0);
+                    
+                    document.getElementById('total-points').textContent = 
+                        new Intl.NumberFormat().format(total);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Drone control
+        (function() {
+            var state = 'offline';
+            var statusEl = document.getElementById('drone-status');
+            var msgEl = document.getElementById('drone-message');
+            function setState(s, msg) {
+                state = s;
+                if (statusEl) {
+                    statusEl.textContent = 'Status: ' + (s === 'online' ? 'Online' : s === 'armed' ? 'Armed' : s === 'flying' ? 'Flying' : 'Offline');
+                    statusEl.className = 'drone-status ' + (s === 'offline' ? 'offline' : 'online');
+                }
+                if (msgEl) msgEl.textContent = msg || '';
+            }
+            function on(id, fn) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('click', fn);
+            }
+            on('drone-arm', function() {
+                if (state === 'offline') setState('armed', 'Drone armed.');
+            });
+            on('drone-takeoff', function() {
+                if (state === 'armed' || state === 'offline') setState('flying', 'Drone in the air.');
+            });
+            on('drone-land', function() {
+                if (state === 'flying') setState('armed', 'Drone landed.');
+            });
+            on('drone-disarm', function() {
+                setState('offline', 'Drone disarmed.');
+            });
+        })();
+
+        // Initialize
+        createParticles();
+        loadStats();
+        setInterval(loadStats, 30000); // Refresh every 30 seconds
+    </script>
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    
+
+    
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

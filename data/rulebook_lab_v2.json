@@ -1,0 +1,77 @@
+{
+  "name": "Lab V2.0",
+  "version": "LAB_V2",
+  "description": "Rulebook for the MasterNoder Lab V2.0: rulebook-grounded research, agent knowledge, user progression, and safe cross-system technology planning.",
+  "updated_at": "2026-04-28",
+  "image_url": "/vidgenerator/static/img/rulebook-lab-v2.png",
+  "image_alt": "Lab V2.0",
+  "agent_prompt": "When working in the Lab, ground recommendations in the user's current Lab status, visible progression, and existing rulebooks. Prefer read-only status checks before proposing actions. Never invent balances, research state, purchases, or agent capabilities. Mutating actions require explicit user intent and the matching API/tool.",
+  "tech_spec": "GET /api/lab/v2/status; data/lab_progression_catalog.json; profile_data keys lab_chapter2_research, lab_exploration, lab_deep_scan, lab_research_projects, lab_technologies, lab_roundtable; cross-links to rulebook_v4_star_map, rulebook_v7_unified_points, rulebook_v8_agents, rulebook_v9_shop, rulebook_v16_sync.",
+  "user_guide": "Lab V2.0 shows what your lab knows, what agents can safely use, and what milestone comes next. Progress comes from research nodes, exploration pulses, deep scans, projects, co-created technologies, and roundtable activity.",
+  "manual": "Lab V2.0 manual: start by reading /api/lab/v2/status. Use the milestones to guide the next small action. Keep agent advice concrete: one next experiment, one risk, one verification. Use rulebook links for cross-system claims.",
+  "pillars": [
+    "rulebook_rule",
+    "agent_knowledge",
+    "user_progression",
+    "supporting_tech"
+  ],
+  "agent_knowledge_topics": [
+    {
+      "id": "lab_status_first",
+      "name": "Read Lab status first",
+      "text": "Use /api/lab/v2/status before giving progression advice. Treat missing DB/profile rows as a new-user state, not an error."
+    },
+    {
+      "id": "safe_agent_actions",
+      "name": "Safe agent actions",
+      "text": "Agents may summarize, plan, and recommend. Agents must not create projects, draft technologies, spend points, or trigger purchases without explicit user instruction."
+    },
+    {
+      "id": "progression_language",
+      "name": "Progression language",
+      "text": "Use the visible tier, next milestone, and readiness flags. Avoid claiming hidden unlocks or future rewards unless they are present in the status response."
+    },
+    {
+      "id": "cross_system_bridges",
+      "name": "Cross-system bridges",
+      "text": "Star Map, shop boosters, unified points, and sync should be described as bridges. Verify each bridge with its own endpoint or rulebook before acting."
+    }
+  ],
+  "rules": [
+    {
+      "id": "lab_v2_status_contract",
+      "name": "Status contract",
+      "text": "The canonical first-read endpoint is GET /api/lab/v2/status. It returns rulebook, progression, milestones, agent_knowledge, and tech blocks."
+    },
+    {
+      "id": "lab_v2_progression",
+      "name": "User progression",
+      "text": "Progression is computed from current profile/catalog state: research nodes, exploration pulses, deep scans, projects, co-tech drafts, and roundtable messages."
+    },
+    {
+      "id": "lab_v2_agent_knowledge",
+      "name": "Agent knowledge",
+      "text": "Lab agent knowledge must be specific, grounded, and tied to current APIs/rulebooks. Do not use generic agent lore as proof of Lab capability."
+    },
+    {
+      "id": "lab_v2_rulebook_safety",
+      "name": "Rulebook safety",
+      "text": "Rulebook guidance does not authorize invisible writes. Any project creation, technology draft, point award, wallet action, shop action, or profile write needs explicit user intent."
+    },
+    {
+      "id": "lab_v2_best_slice",
+      "name": "Best slice first",
+      "text": "Ship the smallest deployable slice first: status, rulebook data, documentation, and tests. UI panels and mutating workflows come after the read-only contract is stable."
+    }
+  ],
+  "milestone_model": [
+    "First research node",
+    "First exploration pulse",
+    "First deep scan",
+    "First research project",
+    "First co-created technology",
+    "First roundtable message",
+    "Ten researched nodes",
+    "Strategist tier"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "race_patterns": {
+    "proxima_b_insectoid": {
+      "race_name": "Proxima B Insectoid",
+      "planet": "Proxima Centauri b",
+      "dna_signature": "INSECT_GIGA_001",
+      "characteristics": {
+        "exoskeleton_strength": 0.95,
+        "adaptability": 0.98,
+        "hive_intelligence": 0.92,
+        "regeneration_rate": 0.88,
+        "energy_efficiency": 0.97
+      },
+      "dna_sequence_pattern": "ATCGGIGAATCGCTAG",
+      "shadow_layer": "INSECT_SHADOW_PROXIMA_B",
+      "special_abilities": [
+        "Rapid adaptation",
+        "Hive mind connectivity",
+        "Exoskeleton enhancement",
+        "Energy storage optimization"
+      ],
+      "technology_level": 12.5,
+      "discovered_at": "2025-12-29T23:17:55.889001"
+    },
+    "andromeda_construct": {
+      "race_name": "Andromeda Construct",
+      "galaxy": "Andromeda",
+      "dna_signature": "CONSTRUCT_GIGA_002",
+      "characteristics": {
+        "mechanical_integration": 0.99,
+        "nano_enhancement": 0.97,
+        "quantum_processing": 0.94,
+        "self_repair": 0.96
+      },
+      "dna_sequence_pattern": "GCTACONSTRUCTATCG",
+      "shadow_layer": "CONSTRUCT_SHADOW_ANDROMEDA",
+      "special_abilities": [
+        "Nano-machine integration",
+        "Quantum DNA processing",
+        "Self-repair mechanisms",
+        "Mechanical enhancement"
+      ],
+      "technology_level": 15.0,
+      "discovered_at": "2025-12-29T23:17:55.889001"
+    },
+    "sirius_crystalline": {
+      "race_name": "Sirius Crystalline",
+      "star_system": "Sirius",
+      "dna_signature": "CRYSTAL_GIGA_003",
+      "characteristics": {
+        "crystal_structure": 0.98,
+        "light_manipulation": 0.95,
+        "energy_storage": 0.99,
+        "durability": 0.97
+      },
+      "dna_sequence_pattern": "TAGCACRYSTALGCTA",
+      "shadow_layer": "CRYSTAL_SHADOW_SIRIUS",
+      "special_abilities": [
+        "Crystalline structure",
+        "Light energy manipulation",
+        "Massive energy storage",
+        "Ultra-durability"
+      ],
+      "technology_level": 14.0,
+      "discovered_at": "2025-12-29T23:17:55.889001"
+    }
+  }
+}

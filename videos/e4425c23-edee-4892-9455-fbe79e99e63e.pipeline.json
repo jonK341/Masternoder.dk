@@ -1,0 +1,35 @@
+{
+  "type": "video_pipeline",
+  "bundle_id": "e4425c23-edee-4892-9455-fbe79e99e63e",
+  "user_id": "user_1772700372863_m445r6yqn",
+  "title": "min natur",
+  "prompt": "år2026",
+  "generation_method": "adaptive_ai_v2",
+  "quality_mode": "auto",
+  "rearranged_segments": [
+    {
+      "title": "min natur",
+      "description": "Introduction: år2026 [AI confidence: 50%] — AI-generated video description for år2026",
+      "duration": 20,
+      "image_path": null,
+      "tagline": "Phase 1: Plan"
+    },
+    {
+      "title": "About: min natur",
+      "description": "år2026 [AI confidence: 50%]",
+      "duration": 20,
+      "image_path": null,
+      "tagline": "Phase 2: Execute"
+    },
+    {
+      "title": "Summary",
+      "description": "Conclusion: min natur. år2026 [AI confidence: 50%]",
+      "duration": 20,
+      "image_path": null,
+      "tagline": "Strategy confidence: 70%"
+    }
+  ],
+  "generated_script": "- min natur: Introduction: år2026 [AI confidence: 50%] — AI-generated video description for år2026\n- About: min natur: år2026 [AI confidence: 50%]\n- Summary: Conclusion: min natur. år2026 [AI confidence: 50%]",
+  "profile_context": "name=user_1772700372863_m445r6yqn; bio=; level=1; generation_points=0",
+  "created_at": "2026-03-05T10:15:32.538198"
+}

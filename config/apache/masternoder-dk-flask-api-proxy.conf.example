@@ -1,0 +1,24 @@
+# Apache 2.4 — forward /api/* to Flask (uWSGI http on 127.0.0.1:5000)
+#
+# Use when public HTTPS returns Apache HTML 404 for /api/health but
+#   curl -sS http://127.0.0.1:5000/api/health
+# returns JSON on the server.
+#
+# ONCE per server:
+#   sudo a2enmod proxy proxy_http
+#   sudo apache2ctl configtest && sudo systemctl reload apache2
+#
+# MERGE the blocks below into the VirtualHost that serves masternoder.dk
+# (often /etc/apache2/sites-enabled/*.conf — verify with:
+#   grep -RIn 'ServerName\|ServerAlias' /etc/apache2/sites-enabled/
+# )
+#
+# If you terminate TLS on Apache (<VirtualHost *:443>), put these inside that vhost.
+# Adjust backend URL if your app listens elsewhere.
+
+    # --- Flask JSON API (required for shop, points, health, debugger APIs) ---
+    ProxyPass        /api/  http://127.0.0.1:5000/api/
+    ProxyPassReverse /api/  http://127.0.0.1:5000/api/
+
+    # Preserve standard proxy headers (Flask uses ProxyFix in src/app/__init__.py)
+    RequestHeader set X-Forwarded-Proto "expr=%{REQUEST_SCHEME}"

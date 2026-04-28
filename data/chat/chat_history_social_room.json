@@ -1,0 +1,53 @@
+{
+  "messages": [
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T00:22:23.928329",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T00:26:17.898240",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T00:28:22.246824",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Gold Seeker",
+      "message": "Scanning my network",
+      "timestamp": "2026-04-29T00:28:22.606980",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T00:38:20.273827",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Gold Seeker",
+      "message": "Scanning my network",
+      "timestamp": "2026-04-29T00:38:20.750972",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Elite Wizard",
+      "message": "cooldown proof",
+      "timestamp": "2026-04-29T00:38:20.907670",
+      "is_ai": false
+    }
+  ]
+}

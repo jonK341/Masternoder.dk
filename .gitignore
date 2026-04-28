@@ -1,0 +1,66 @@
+# Deployment credentials - DO NOT COMMIT
+deploy_credentials.bat
+deploy_credentials.ps1
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+.cursor/settings.json
+.cursor/skills/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local scrape/cache artifacts
+.firecrawl/
+.pytest_cache/
+
+# Backup/runtime artifacts
+*.backup
+*.backup*
+*.server
+backups/
+.uwsgi_touch_reload
+vidgenerator.backup/
+vidgenerator/videos/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Server backups
+server_backup/
+
+# Environment files
+.env
+.env.local
+ny.txt
+
+# MN2 daemon config (contains rpcpassword); use config/masternoder2.conf.example as template
+config/masternoder2.conf
+
+# Downloaded MN2 daemon/wallet binaries (see docs/MN2_DAEMON_SETUP.md)
+tools/mn2-daemon/
+
+# MN2 verified users list (Phase 10); maintain on server or via ops API
+data/mn2_verified_users.json
+

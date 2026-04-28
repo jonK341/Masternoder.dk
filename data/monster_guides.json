@@ -1,0 +1,29 @@
+{
+  "guides": [
+    {
+      "guide_id": "b36bddd0-8cf3-4360-ad15-eacb57a82575",
+      "title": "Dragon Care Guide",
+      "monster_type": "dragon",
+      "content": "Complete guide to caring for dragons...",
+      "sections": [
+        "feeding",
+        "housing",
+        "training",
+        "health"
+      ],
+      "created_at": "2025-12-29T23:17:55.906796"
+    },
+    {
+      "guide_id": "08f7dfce-2351-4bb6-ac9b-9ea9557a0fb5",
+      "title": "Griffin Flying Techniques",
+      "monster_type": "griffin",
+      "content": "Master the art of flying with griffins...",
+      "sections": [
+        "basic_flying",
+        "advanced_maneuvers",
+        "safety"
+      ],
+      "created_at": "2025-12-29T23:17:55.906796"
+    }
+  ]
+}

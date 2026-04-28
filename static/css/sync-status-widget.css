@@ -1,0 +1,73 @@
+/* Sync Status Widget — used on unified dashboard, profile, stats */
+.sync-status-widget {
+    background: var(--bg-card, rgba(255, 255, 255, 0.05));
+    border: 2px solid var(--border-primary, rgba(0, 255, 136, 0.3));
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+
+.sync-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sync-status-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    background: var(--primary, #00ff88);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.sync-status-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.sync-status-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.sync-status-title {
+    font-weight: 600;
+    color: var(--primary, #00ff88);
+    font-size: 1rem;
+}
+
+.sync-status-time {
+    font-size: 0.85rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.sync-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px 20px;
+}
+
+.sync-status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sync-status-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.sync-status-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary, #00ff88);
+}

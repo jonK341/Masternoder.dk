@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Agent Report — MasterNoder.dk</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #0a0a1a; color: #e0e0ff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        .page-container { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+        h1 { font-size: 2rem; background: linear-gradient(135deg, #00ff88, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 4px; }
+        .subtitle { opacity: 0.6; margin: 0 0 28px; font-size: 0.95em; }
+
+        /* Summary bar */
+        .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 30px; }
+        .summary-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 18px; text-align: center; }
+        .summary-card .val { font-size: 2rem; font-weight: 700; color: #00ff88; }
+        .summary-card .lbl { font-size: 0.8em; opacity: 0.6; margin-top: 4px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap; }
+        .tab-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: #ccc; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+        .tab-btn.active { background: rgba(0,255,136,0.15); border-color: #00ff88; color: #00ff88; }
+
+        /* Agent cards */
+        .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .agent-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 18px; transition: transform 0.2s, border-color 0.2s; }
+        .agent-card:hover { transform: translateY(-2px); border-color: rgba(0,255,136,0.3); }
+        .agent-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .agent-icon { font-size: 2rem; }
+        .agent-name { font-size: 1.1em; font-weight: 700; }
+        .agent-meta { font-size: 0.8em; opacity: 0.6; }
+        .level-badge { background: rgba(0,255,136,0.2); color: #00ff88; border-radius: 6px; padding: 2px 8px; font-size: 0.8em; font-weight: 700; }
+        .xp-bar-wrap { background: rgba(255,255,255,0.08); border-radius: 6px; height: 6px; overflow: hidden; margin: 8px 0; }
+        .xp-bar-fill { height: 6px; border-radius: 6px; transition: width 0.8s ease; }
+        .xp-label { font-size: 0.78em; opacity: 0.6; }
+        .agent-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .agent-stat { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px; text-align: center; }
+        .agent-stat .sv { font-size: 1.2em; font-weight: 700; }
+        .agent-stat .sk { font-size: 0.75em; opacity: 0.6; }
+        .skills-list { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .skill-chip { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); color: #00d4ff; border-radius: 12px; padding: 3px 10px; font-size: 0.78em; }
+        .no-agents { text-align: center; padding: 60px 20px; opacity: 0.5; }
+
+        /* Activity feed */
+        .activity-list { display: flex; flex-direction: column; gap: 10px; }
+        .activity-row { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+        .activity-row .ai { font-size: 1.3em; }
+        .activity-row .details { flex: 1; }
+        .activity-row .aname { font-weight: 600; font-size: 0.9em; }
+        .activity-row .alabel { font-size: 0.85em; opacity: 0.75; }
+        .activity-row .axp { color: #00ff88; font-size: 0.85em; font-weight: 600; }
+        .activity-row .atime { font-size: 0.78em; opacity: 0.4; text-align: right; min-width: 90px; }
+
+        /* System agents */
+        .system-agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .sys-agent-row { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; }
+        .sys-agent-row .sname { font-weight: 600; font-size: 0.95em; }
+        .sys-agent-row .smeta { font-size: 0.8em; opacity: 0.6; margin-top: 4px; }
+
+        /* Report section */
+        .report-section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
+        .report-section h3 { margin: 0 0 14px; font-size: 1.1em; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th { text-align: left; padding: 8px 12px; background: rgba(255,255,255,0.06); color: #00ff88; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        tr:last-child td { border-bottom: none; }
+
+        .loading { text-align: center; padding: 40px; opacity: 0.5; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        @media (max-width: 600px) { h1 { font-size: 1.5rem; } .summary-bar { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <nav class="navigation-toolbar">
+        <div class="nav-container">
+            <a href="/" class="nav-item" title="Home">🏠</a>
+            <a href="/generator" class="nav-item" title="Generator">🎬</a>
+            <a href="/gallery" class="nav-item" title="Gallery">🖼️</a>
+            <a href="/game" class="nav-item" title="Game">🎮</a>
+            <a href="/points" class="nav-item" title="Points">💎</a>
+            <a href="/stats" class="nav-item" title="Stats">📊</a>
+            <a href="/profile" class="nav-item" title="Profile">👤</a>
+            <a href="/agents" class="nav-item active" title="Agents">🤖</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <h1>🤖 Agent Report</h1>
+        <p class="subtitle">Your personal AI agents — they follow your actions and win with you. Progress, activity, and capabilities.</p>
+
+        <!-- Connections: Profile, API keys, debugger; all checkpoints in docs/CHECKPOINTS_RECHECK.md -->
+        <div class="report-section" style="margin-bottom: 20px; padding: 14px 20px;">
+            <h3 style="margin: 0 0 10px; font-size: 1em;">Connections</h3>
+            <p style="margin: 0 0 10px; font-size: 0.9em; opacity: 0.85;">Go to your profile and My Agents; add API keys for AI providers in Agent Support (Resources tab). Use Debugger for system health. Full checklist: docs/CHECKPOINTS_RECHECK.md.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <strong style="width:100%;margin-bottom:4px;font-size:0.85em;opacity:0.8;">Connect: Profile · Generator · Agents · Gallery · Aggregator · Themes</strong>
+                <a href="/profile" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #00ff88; text-decoration: none;">Profile</a>
+                <a href="/generator" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #00ff88; text-decoration: none;">Generator</a>
+                <a href="/agents" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; color: #00ff88; text-decoration: none;">Agents</a>
+                <a href="/gallery" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.4); border-radius: 8px; color: #00d4ff; text-decoration: none;">Gallery</a>
+                <a href="/aggregator" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.4); border-radius: 8px; color: #00d4ff; text-decoration: none;">Aggregator</a>
+                <a href="/theme_premium" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.4); border-radius: 8px; color: #00d4ff; text-decoration: none;">Themes</a>
+                <a href="/agent_support" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #ccc; text-decoration: none;">API keys</a>
+                <a href="/debugger" style="padding: 8px 14px; font-size: 0.9rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #ccc; text-decoration: none;">Debugger</a>
+            </div>
+        </div>
+
+        <!-- Summary bar -->
+        <div class="summary-bar">
+            <div class="summary-card"><div class="val" id="sum-agents">—</div><div class="lbl">Assigned Agents</div></div>
+            <div class="summary-card"><div class="val" id="sum-total-xp">—</div><div class="lbl">Total Agent XP</div></div>
+            <div class="summary-card"><div class="val" id="sum-actions">—</div><div class="lbl">Total Actions</div></div>
+            <div class="summary-card"><div class="val" id="sum-skills">—</div><div class="lbl">Total Skills</div></div>
+            <div class="summary-card"><div class="val" id="sum-system">31</div><div class="lbl">System Agents</div></div>
+            <div class="summary-card"><div class="val" id="sum-techs">50</div><div class="lbl">Agent Technologies</div></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="my-agents">My Agents</button>
+            <button class="tab-btn" data-tab="activity">Activity Feed</button>
+            <button class="tab-btn" data-tab="system">System Agents</button>
+            <button class="tab-btn" data-tab="report">Summary Report</button>
+        </div>
+
+        <!-- My Agents Tab -->
+        <div class="tab-content active" id="tab-my-agents">
+            <div id="my-agents-grid" class="agents-grid">
+                <div class="loading">Loading your agents...</div>
+            </div>
+        </div>
+
+        <!-- Activity Feed Tab -->
+        <div class="tab-content" id="tab-activity">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                <label style="opacity:0.7;font-size:0.9em;">Show:</label>
+                <select id="activity-limit" style="background:#1a1a2e;color:#e0e0ff;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;font-size:0.9em;">
+                    <option value="20">Last 20</option>
+                    <option value="50">Last 50</option>
+                    <option value="100">Last 100</option>
+                </select>
+            </div>
+            <div id="activity-list" class="activity-list">
+                <div class="loading">Loading activity...</div>
+            </div>
+        </div>
+
+        <!-- System Agents Tab -->
+        <div class="tab-content" id="tab-system">
+            <p style="opacity:0.7;margin-bottom:16px;font-size:0.9em;">All 31 system agents running on MasterNoder. These agents operate globally across all users.</p>
+            <div id="system-agents-grid" class="system-agents-grid">
+                <div class="loading">Loading system agents...</div>
+            </div>
+        </div>
+
+        <!-- Summary Report Tab -->
+        <div class="tab-content" id="tab-report">
+            <div id="report-content">
+                <div class="loading">Generating report...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+    <script src="/static/js/user-identification.js"></script>
+    <script src="/static/js/backend-connector.js"></script>
+    <script>
+    const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+    const API = '/api';
+
+    async function fetchJsonWithRetry(url, opts, tries) {
+        tries = tries || 3;
+        var lastErr;
+        for (var i = 0; i < tries; i++) {
+            try {
+                var res = await fetch(url, opts);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (e) {
+                lastErr = e;
+                await new Promise(function (r) { setTimeout(r, 250 * (i + 1)); });
+            }
+        }
+        throw lastErr;
+    }
+
+    // --- Tab switching ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            if (btn.dataset.tab === 'activity') loadActivity();
+            if (btn.dataset.tab === 'system') loadSystemAgents();
+            if (btn.dataset.tab === 'report') loadReport();
+        });
+    });
+    document.getElementById('activity-limit').addEventListener('change', loadActivity);
+
+    // --- Helpers ---
+    function fmt(n) { return (n || 0).toLocaleString(); }
+    function fmtDate(s) {
+        if (!s) return '';
+        try {
+            const d = new Date(s);
+            const diff = (Date.now() - d) / 1000;
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+            return d.toLocaleDateString();
+        } catch(e) { return s.slice(0,10); }
+    }
+
+    // --- Load My Agents ---
+    async function loadMyAgents() {
+        const grid = document.getElementById('my-agents-grid');
+        try {
+            const r = await fetch(`${API}/agents/my-agents?user_id=${userId}`).then(x => x.json());
+            if (!r.success || !r.agents || r.agents.length === 0) {
+                grid.innerHTML = `<div class="no-agents"><div style="font-size:3rem;">🤖</div><p>No agents assigned yet.</p><p style="font-size:0.85em;">Generate a video or complete a quest to activate your agents!</p><br><a href="/generator" class="tab-btn active" style="display:inline-block;text-decoration:none;">Go to Generator →</a></div>`;
+                return;
+            }
+            let totalXP = 0, totalActions = 0, totalSkills = 0;
+            grid.innerHTML = r.agents.map(a => {
+                totalXP += a.xp || 0;
+                totalActions += a.total_actions || 0;
+                totalSkills += a.skill_count || 0;
+                const skillsHTML = a.skills && a.skills.length > 0
+                    ? a.skills.slice(0,6).map(s => `<span class="skill-chip">${s.skill}</span>`).join('') + (a.skills.length > 6 ? `<span class="skill-chip">+${a.skills.length - 6} more</span>` : '')
+                    : '<span style="opacity:0.4;font-size:0.85em;">No skills yet</span>';
+                const lastAct = a.last_action ? `Last: ${a.last_action.replace(/_/g,' ')} · ${fmtDate(a.last_action_at)}` : 'No actions yet';
+                return `
+                <div class="agent-card" style="border-left: 3px solid ${a.color || '#00ff88'};">
+                    <div class="agent-card-header">
+                        <span class="agent-icon">${a.icon || '🤖'}</span>
+                        <div style="flex:1;">
+                            <div class="agent-name" style="color:${a.color || '#00ff88'};">${a.name}</div>
+                            <div class="agent-meta">${lastAct}</div>
+                        </div>
+                        <span class="level-badge">Lvl ${a.level}</span>
+                    </div>
+                    <div class="xp-bar-wrap"><div class="xp-bar-fill" style="width:${a.xp_progress_pct || 0}%;background:${a.color || '#00ff88'};"></div></div>
+                    <div class="xp-label">${fmt(a.xp_in_level)} / 500 XP to next level</div>
+                    <div class="agent-stats">
+                        <div class="agent-stat"><div class="sv" style="color:${a.color || '#00ff88'};">${fmt(a.xp)}</div><div class="sk">Total XP</div></div>
+                        <div class="agent-stat"><div class="sv">${fmt(a.total_actions)}</div><div class="sk">Actions</div></div>
+                        <div class="agent-stat"><div class="sv">${a.skill_count}</div><div class="sk">Skills</div></div>
+                        <div class="agent-stat"><div class="sv">${a.is_assigned ? '✅' : '⬜'}</div><div class="sk">Assigned</div></div>
+                    </div>
+                    <div class="skills-list">${skillsHTML}</div>
+                </div>`;
+            }).join('');
+            document.getElementById('sum-agents').textContent = r.agents.length;
+            document.getElementById('sum-total-xp').textContent = fmt(totalXP);
+            document.getElementById('sum-actions').textContent = fmt(totalActions);
+            document.getElementById('sum-skills').textContent = fmt(totalSkills);
+        } catch(e) {
+            grid.innerHTML = '<div class="loading">Could not load agents. Please try again.</div>';
+        }
+    }
+
+    // --- Load Activity ---
+    async function loadActivity() {
+        const list = document.getElementById('activity-list');
+        const limit = document.getElementById('activity-limit').value;
+        list.innerHTML = '<div class="loading">Loading activity...</div>';
+        try {
+            const r = await fetchJsonWithRetry(`${API}/agents/activity-feed?user_id=${userId}&limit=${limit}`);
+            if (!r.success || !r.activities || r.activities.length === 0) {
+                list.innerHTML = '<div class="loading">No agent activity recorded yet.</div>';
+                return;
+            }
+            list.innerHTML = r.activities.map(a => `
+                <div class="activity-row" style="border-left:3px solid ${a.agent_color || '#00ff88'};">
+                    <span class="ai">${a.icon || '⚡'}</span>
+                    <div class="details">
+                        <div class="aname" style="color:${a.agent_color||'#00ff88'};">${a.agent_icon||'🤖'} ${a.agent_name || a.agent_id}</div>
+                        <div class="alabel">${a.label || a.action}</div>
+                    </div>
+                    ${a.xp_gained > 0 ? `<span class="axp">+${a.xp_gained} XP</span>` : ''}
+                    <span class="atime">${fmtDate(a.created_at)}</span>
+                </div>
+            `).join('');
+        } catch(e) {
+            list.innerHTML = '<div class="loading">Could not load activity.</div>';
+        }
+    }
+
+    // --- Load System Agents ---
+    const SYSTEM_AGENTS = [
+        {id:'master_fix_agent',icon:'🔧',name:'Master Fix Agent',role:'Diagnostics & self-repair'},
+        {id:'monitoring_agent',icon:'👁️',name:'Monitoring Agent',role:'System health monitoring'},
+        {id:'scanner_agent',icon:'🔍',name:'Scanner Agent',role:'Vulnerability & network scans'},
+        {id:'tester_agent',icon:'🧪',name:'Tester Agent',role:'Automated testing & QA'},
+        {id:'ai_intelligence_agent',icon:'🤖',name:'AI Intelligence',role:'AI reasoning & predictions'},
+        {id:'error_migration_agent',icon:'🔄',name:'Migration Agent',role:'Error cleanup & migrations'},
+        {id:'master_dashboard_agent',icon:'📊',name:'Dashboard Agent',role:'Dashboard aggregation'},
+        {id:'content_generator_agent',icon:'🎬',name:'Content Generator',role:'Video & content generation'},
+        {id:'analytics_agent',icon:'📈',name:'Analytics Agent',role:'User behavior analytics'},
+        {id:'battle_strategy_agent',icon:'⚔️',name:'Battle Strategy',role:'Game battle strategies'},
+        {id:'social_engagement_agent',icon:'👥',name:'Social Agent',role:'Social coordination'},
+        {id:'security_agent',icon:'🛡️',name:'Security Agent',role:'Security monitoring'},
+        {id:'performance_optimizer_agent',icon:'⚡',name:'Performance Agent',role:'Query & cache optimization'},
+        {id:'user_experience_agent',icon:'✨',name:'UX Agent',role:'UX improvement'},
+        {id:'integration_agent',icon:'🔗',name:'Integration Agent',role:'API integration'},
+        {id:'learning_agent',icon:'🧠',name:'Learning Agent',role:'Skill progression'},
+        {id:'reporter_agent',icon:'📡',name:'Reporter Agent',role:'Broadcast & knowledge-sharing reports'},
+        {id:'workflow_agent',icon:'🔀',name:'Workflow Agent',role:'Workflow orchestration'},
+        {id:'ai_trainer_agent',icon:'🏋️',name:'AI Trainer',role:'Model training & tuning'},
+        {id:'quality_assurance_agent',icon:'✅',name:'QA Agent',role:'Quality checks'},
+        {id:'deployment_agent',icon:'🚀',name:'Deployment Agent',role:'Deploy & release management'},
+        {id:'backup_agent',icon:'💾',name:'Backup Agent',role:'Data backup & recovery'},
+        {id:'resource_manager_agent',icon:'📦',name:'Resource Manager',role:'Resource allocation'},
+        {id:'compliance_agent',icon:'⚖️',name:'Compliance Agent',role:'Policy & compliance checks'},
+        {id:'communication_agent',icon:'💬',name:'Communication Agent',role:'Messaging & notifications'},
+        {id:'research_agent',icon:'🔬',name:'Research Agent',role:'Research & data gathering'},
+        {id:'innovation_agent',icon:'💡',name:'Innovation Agent',role:'New feature ideation'},
+        {id:'collaboration_agent',icon:'🤝',name:'Collaboration Agent',role:'Team coordination'},
+        {id:'data_processor_agent',icon:'⚙️',name:'Data Processor',role:'Data processing & ETL'},
+        {id:'notification_agent',icon:'🔔',name:'Notification Agent',role:'Alerts & notifications'},
+        {id:'agent_judge',icon:'⚖️',name:'Agent Judge',role:'Quality evaluation & rating'},
+    ];
+
+    async function loadSystemAgents() {
+        const grid = document.getElementById('system-agents-grid');
+        // Load value data from point creator
+        let agentValues = {};
+        try {
+            const r = await fetch(`${API}/agent-points/all-value`).then(x => x.json());
+            if (r.success && r.agents) agentValues = r.agents;
+        } catch(e) {}
+        grid.innerHTML = SYSTEM_AGENTS.map(a => {
+            const v = agentValues[a.id] || {};
+            const pts = v.total_points || 0;
+            const acts = v.actions || 0;
+            return `
+            <div class="sys-agent-row">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="font-size:1.3em;">${a.icon}</span>
+                    <div class="sname">${a.name}</div>
+                </div>
+                <div class="smeta">${a.role}</div>
+                ${pts > 0 ? `<div style="margin-top:6px;font-size:0.8em;color:#00ff88;">${fmt(pts)} pts · ${fmt(acts)} actions</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // --- Load Report ---
+    async function loadReport() {
+        const rc = document.getElementById('report-content');
+        rc.innerHTML = '<div class="loading">Generating report...</div>';
+        try {
+            const [agentsRes, pointsRes] = await Promise.all([
+                fetchJsonWithRetry(`${API}/agents/my-agents?user_id=${userId}`),
+                fetchJsonWithRetry(`${API}/agent-points/all-value`),
+            ]);
+
+            const agents = (agentsRes.success && agentsRes.agents) ? agentsRes.agents : [];
+            const sysValue = pointsRes.success ? pointsRes : {};
+            const totalValue = sysValue.total_value_created || 0;
+            const totalPts = sysValue.total_points_awarded || {};
+
+            const topAgents = (sysValue.top_agents || []).slice(0, 5);
+
+            rc.innerHTML = `
+            <div class="report-section">
+                <h3>📋 Your Agent Summary</h3>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Assigned Agents</td><td>${agents.length}</td></tr>
+                    <tr><td>Total Agent XP</td><td>${fmt(agents.reduce((s,a)=>s+a.xp,0))}</td></tr>
+                    <tr><td>Total Actions Taken</td><td>${fmt(agents.reduce((s,a)=>s+a.total_actions,0))}</td></tr>
+                    <tr><td>Total Skills</td><td>${fmt(agents.reduce((s,a)=>s+a.skill_count,0))}</td></tr>
+                    <tr><td>Highest Level Agent</td><td>${agents.length ? agents[0].name + ' (Lvl ' + agents[0].level + ')' : '—'}</td></tr>
+                    <tr><td>Most Active Agent</td><td>${agents.length ? agents.sort((a,b)=>b.total_actions-a.total_actions)[0].name : '—'}</td></tr>
+                </table>
+            </div>
+            <div class="report-section">
+                <h3>⚙️ System-Wide Agent Value Created</h3>
+                <table>
+                    <tr><th>Point Type</th><th>Total Awarded</th></tr>
+                    <tr><td>XP</td><td>${fmt(totalPts.xp)}</td></tr>
+                    <tr><td>Generation Points</td><td>${fmt(totalPts.generation_points)}</td></tr>
+                    <tr><td>Battle Points</td><td>${fmt(totalPts.battle_points)}</td></tr>
+                    <tr><td>Activity Points</td><td>${fmt(totalPts.activity_points)}</td></tr>
+                    <tr><td>Social Points</td><td>${fmt(totalPts.social_points)}</td></tr>
+                    <tr><td><strong>Total Value Created</strong></td><td><strong style="color:#00ff88;">${fmt(totalValue)}</strong></td></tr>
+                </table>
+            </div>
+            ${topAgents.length > 0 ? `
+            <div class="report-section">
+                <h3>🏆 Top System Agents by Value</h3>
+                <table>
+                    <tr><th>Agent</th><th>Actions</th><th>Points Created</th></tr>
+                    ${topAgents.map(a => `<tr><td>${a.agent_id.replace(/_/g,' ')}</td><td>${fmt(a.actions)}</td><td style="color:#00ff88;">${fmt(a.total_points)}</td></tr>`).join('')}
+                </table>
+            </div>` : ''}
+            <div class="report-section">
+                <h3>🔧 Your Assigned Agents — Full Detail</h3>
+                <table>
+                    <tr><th>Agent</th><th>Level</th><th>XP</th><th>Actions</th><th>Skills</th><th>Last Action</th></tr>
+                    ${agents.length > 0 ? agents.map(a => `
+                        <tr>
+                            <td>${a.icon} ${a.name}</td>
+                            <td>${a.level}</td>
+                            <td>${fmt(a.xp)}</td>
+                            <td>${fmt(a.total_actions)}</td>
+                            <td>${a.skill_count}</td>
+                            <td style="opacity:0.7;font-size:0.85em;">${a.last_action ? a.last_action.replace(/_/g,' ') + ' · ' + fmtDate(a.last_action_at) : '—'}</td>
+                        </tr>`).join('') : '<tr><td colspan="6" style="opacity:0.5;text-align:center;">No agents assigned yet</td></tr>'}
+                </table>
+            </div>`;
+        } catch(e) {
+            rc.innerHTML = `<div class="loading">Could not generate report: ${e.message}</div>`;
+        }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        // Sync agent assignments to DB first, then load
+        fetch(`${API}/agents/sync`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: userId})}).catch(()=>{});
+        loadMyAgents();
+    });
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

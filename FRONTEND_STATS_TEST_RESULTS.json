@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-01-05T22:52:29.626574",
+  "page_test": {
+    "status": "OK",
+    "page_loads": true,
+    "has_stats_script": false,
+    "has_stats_class": false,
+    "has_base_url": true,
+    "has_user_id": true,
+    "content_length": 492979
+  },
+  "script_test": {
+    "status": "ERROR",
+    "accessible": false,
+    "status_code": 404
+  },
+  "endpoint_results": {
+    "overview": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 17,
+      "sample_keys": [
+        "achievements_unlocked",
+        "average_battle_duration",
+        "best_streak",
+        "current_streak",
+        "losses"
+      ]
+    },
+    "battle": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 13,
+      "sample_keys": [
+        "active_battles",
+        "battle_types",
+        "best_win_streak",
+        "completed_battles_today",
+        "difficulty_stats"
+      ]
+    },
+    "tournaments": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 11,
+      "sample_keys": [
+        "active_tournaments",
+        "best_rank",
+        "completed_tournaments",
+        "current_rank",
+        "recent_tournaments"
+      ]
+    },
+    "history": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 8,
+      "sample_keys": [
+        "all_battles",
+        "battles_this_month",
+        "battles_this_week",
+        "battles_today",
+        "history_summary"
+      ]
+    },
+    "leaderboard": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 12,
+      "sample_keys": [
+        "leaderboard_categories",
+        "nearby_players",
+        "percentile",
+        "rank_change_30d",
+        "rank_change_7d"
+      ]
+    },
+    "intelligence": {
+      "status": "OK",
+      "has_data": true,
+      "keys_count": 7,
+      "sample_keys": [
+        "intelligence_history",
+        "intelligence_level",
+        "intelligence_score",
+        "performance_analysis",
+        "predictive_analytics"
+      ]
+    }
+  },
+  "all_ok": false
+}

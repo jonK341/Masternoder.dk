@@ -1,0 +1,44 @@
+/* MAGIC Theme - Magic the Gathering theme */
+
+.theme-mtg {
+    --theme-primary: rgb(249, 250, 244);
+    --theme-secondary: rgb(14, 104, 171);
+    --theme-bg: rgb(26, 15, 10);
+    --theme-accent: rgb(211, 32, 42);
+}
+
+.theme-mtg .generator-frame {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-primary) 100%);
+    border: 2px solid var(--theme-primary);
+    box-shadow: 0 0 30px rgba(249, 250, 244, 0.3);
+}
+
+.theme-mtg .matrix-monitor {
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px var(--theme-primary), 0 0 20px var(--theme-primary);
+}
+
+.theme-mtg button {
+    background: var(--theme-primary);
+    color: var(--theme-bg);
+    border: 2px solid var(--theme-secondary);
+    box-shadow: 0 0 15px rgba(249, 250, 244, 0.5);
+}
+
+.theme-mtg button:hover {
+    background: var(--theme-secondary);
+    box-shadow: 0 0 25px var(--theme-primary), 0 0 40px var(--theme-primary);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.theme-mtg input, .theme-mtg textarea {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(26, 15, 10, 0.8);
+}
+
+.theme-mtg input:focus, .theme-mtg textarea:focus {
+    border-color: var(--theme-secondary);
+    box-shadow: 0 0 10px rgba(249, 250, 244, 0.5);
+}

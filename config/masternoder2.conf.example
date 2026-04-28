@@ -1,0 +1,10 @@
+# MasterNoder2 daemon RPC config for Masternoder.dk
+# Copy to masternoder2.conf and set rpcpassword. Copy that file to the daemon data dir
+# (e.g. ~/.masternoder2/masternoder2.conf on Linux). Set the same password in .env as MN2_RPC_PASSWORD.
+
+server=1
+rpcuser=mn2rpc
+rpcpassword=Kp9mN2xL7vQw4jRc8sFb3hYt6nWz1aDg5
+rpcport=9332
+rpcallowip=127.0.0.1
+rpcbind=127.0.0.1

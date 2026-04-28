@@ -1,0 +1,111 @@
+{
+  "name": "Star Map 25 — Buildings",
+  "description": "Buildings users can place on planets in mapped systems. Each generates game_points over time (buildup). min_level: system level required. daily_reset_bonus: 2x points for 12h after daily reset (must-have).",
+  "updated_at": "2026-03-18",
+  "buildings": [
+    {
+      "id": "outpost",
+      "name": "Outpost",
+      "description": "Forward base. Generates 1 game_point per day.",
+      "icon": "🏕️",
+      "points_per_day": 1,
+      "build_cost": 10,
+      "tags": ["ground"],
+      "max_per_planet": 1,
+      "min_level": 1
+    },
+    {
+      "id": "listening_post",
+      "name": "Listening Post",
+      "description": "Intel relay. Generates 2 game_points per day.",
+      "icon": "📡",
+      "points_per_day": 2,
+      "build_cost": 25,
+      "tags": ["intel"],
+      "max_per_planet": 1,
+      "min_level": 1
+    },
+    {
+      "id": "barracks",
+      "name": "Barracks",
+      "description": "Garrison quarters. Generates 2 game_points per day.",
+      "icon": "🏰",
+      "points_per_day": 2,
+      "build_cost": 30,
+      "tags": ["ground", "military"],
+      "max_per_planet": 1,
+      "min_level": 2
+    },
+    {
+      "id": "forge_shrine",
+      "name": "Forge Shrine",
+      "description": "Mechanicus outpost. Generates 3 game_points per day on Forge Worlds.",
+      "icon": "⚙️",
+      "points_per_day": 3,
+      "build_cost": 50,
+      "tags": ["mechanicus", "forge"],
+      "bonus_on_tags": ["forge"],
+      "max_per_planet": 1,
+      "min_level": 3
+    },
+    {
+      "id": "naval_dock",
+      "name": "Naval Dock",
+      "description": "Fleet anchorage. Generates 3 game_points per day on fortress/naval worlds.",
+      "icon": "🚀",
+      "points_per_day": 3,
+      "build_cost": 45,
+      "tags": ["naval", "fortress"],
+      "bonus_on_tags": ["fortress", "naval"],
+      "max_per_planet": 1,
+      "min_level": 3
+    },
+    {
+      "id": "sanctum",
+      "name": "Sanctum",
+      "description": "Inquisition cell. Generates 4 game_points per day; requires life-bearing world.",
+      "icon": "⛪",
+      "points_per_day": 4,
+      "build_cost": 60,
+      "tags": ["inquisition", "life_bearing"],
+      "max_per_planet": 1,
+      "min_level": 4
+    },
+    {
+      "id": "orbital_fortress",
+      "name": "Orbital Fortress",
+      "description": "Heavy bastion. 5 game_points per day. Daily reset: 2x for 12h (must-have).",
+      "icon": "🛸",
+      "points_per_day": 5,
+      "build_cost": 120,
+      "tags": ["fortress", "military"],
+      "max_per_planet": 1,
+      "min_level": 4,
+      "daily_reset_bonus": true
+    },
+    {
+      "id": "cathedral",
+      "name": "Cathedral",
+      "description": "Imperial shrine. 6 game_points per day. Daily reset: 2x for 12h.",
+      "icon": "⛪",
+      "points_per_day": 6,
+      "build_cost": 180,
+      "tags": ["inquisition", "life_bearing"],
+      "max_per_planet": 1,
+      "min_level": 5,
+      "daily_reset_bonus": true
+    },
+    {
+      "id": "primarch_gate",
+      "name": "Primarch's Gate",
+      "description": "Supreme structure. 8 game_points per day. Daily reset: 2x for 12h (must-have).",
+      "icon": "🚪",
+      "points_per_day": 8,
+      "build_cost": 300,
+      "tags": ["fortress", "legendary"],
+      "max_per_planet": 1,
+      "min_level": 5,
+      "daily_reset_bonus": true
+    }
+  ]
+}

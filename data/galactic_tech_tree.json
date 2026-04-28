@@ -1,0 +1,128 @@
+{
+  "technologies": {
+    "proxima_b_insectoid_tech": {
+      "name": "Proxima B Insectoid Technology",
+      "race": "Proxima B Insectoid",
+      "planet": "Proxima Centauri b",
+      "tech_level": 12.5,
+      "category": "biological",
+      "technologies": [
+        {
+          "name": "Hive Mind Network",
+          "description": "Direct neural connection between all members",
+          "power": 15000,
+          "intelligence_required": 10.0
+        },
+        {
+          "name": "Exoskeleton Enhancement",
+          "description": "Self-repairing exoskeleton technology",
+          "power": 12000,
+          "intelligence_required": 8.0
+        },
+        {
+          "name": "Adaptive Evolution Engine",
+          "description": "Rapid biological adaptation to environment",
+          "power": 18000,
+          "intelligence_required": 12.0
+        }
+      ],
+      "unlocked_at": "2025-12-29T23:17:55.920846"
+    },
+    "andromeda_construct_tech": {
+      "name": "Andromeda Construct Technology",
+      "race": "Andromeda Construct",
+      "galaxy": "Andromeda",
+      "tech_level": 15.0,
+      "category": "mechanical",
+      "technologies": [
+        {
+          "name": "Nano-Machine Integration",
+          "description": "Molecular-level machine integration",
+          "power": 25000,
+          "intelligence_required": 15.0
+        },
+        {
+          "name": "Quantum DNA Processing",
+          "description": "Quantum-enhanced genetic computing",
+          "power": 30000,
+          "intelligence_required": 18.0
+        },
+        {
+          "name": "Self-Repair Matrix",
+          "description": "Automatic repair at cellular level",
+          "power": 22000,
+          "intelligence_required": 12.0
+        }
+      ],
+      "unlocked_at": "2025-12-29T23:17:55.920846"
+    },
+    "sirius_crystalline_tech": {
+      "name": "Sirius Crystalline Technology",
+      "race": "Sirius Crystalline",
+      "star_system": "Sirius",
+      "tech_level": 14.0,
+      "category": "energy",
+      "technologies": [
+        {
+          "name": "Crystalline Energy Matrix",
+          "description": "Infinite energy storage in crystal structures",
+          "power": 28000,
+          "intelligence_required": 14.0
+        },
+        {
+          "name": "Light Manipulation Array",
+          "description": "Control over light at quantum level",
+          "power": 26000,
+          "intelligence_required": 16.0
+        },
+        {
+          "name": "Crystal Regeneration",
+          "description": "Self-replicating crystal structures",
+          "power": 24000,
+          "intelligence_required": 13.0
+        }
+      ],
+      "unlocked_at": "2025-12-29T23:17:55.920846"
+    },
+    "electric_magnet_tech": {
+      "name": "Electric Magnet Technology",
+      "source": "Agent Tech",
+      "tech_level": 14.0,
+      "category": "energy",
+      "downloaded": true,
+      "technologies": [
+        {
+          "name": "Electric Magnet",
+          "description": "Magnetic field control with verification & DNA test specials",
+          "power": 22000,
+          "intelligence_required": 12.0
+        }
+      ],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"],
+      "star_map": "data/star_map.json",
+      "unlocked_at": "2026-01-27T00:00:00.000000"
+    }
+  },
+  "races": {
+    "proxima_b_insectoid": {
+      "name": "Proxima B Insectoid",
+      "status": "contacted",
+      "technology_shared": true
+    },
+    "andromeda_construct": {
+      "name": "Andromeda Construct",
+      "status": "contacted",
+      "technology_shared": true
+    },
+    "sirius_crystalline": {
+      "name": "Sirius Crystalline",
+      "status": "contacted",
+      "technology_shared": true
+    },
+    "electric_magnet": {
+      "name": "Electric Magnet",
+      "status": "downloaded",
+      "technology_shared": true
+    }
+  }
+}

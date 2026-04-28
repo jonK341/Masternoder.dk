@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="da" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trophy Hunters Rulebook — Compendium Part II | MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        :root { --cp-primary: #FFD700; --cp-card: #151520; --cp-border: rgba(255,215,0,0.25); --sector-galactic: #6B8CFF; --sector-verification: #4ADE80; --sector-combat: #F87171; --sector-support: #A78BFA; --sector-utility: #FBBF24; --sector-medieval: #C084FC; --sector-time: #22D3EE; }
+        body { margin: 0; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%); color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+        .comp-nav { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--cp-border); }
+        .comp-nav a { color: var(--cp-primary); text-decoration: none; padding: 8px 12px; border-radius: 8px; background: rgba(255,215,0,0.1); }
+        .comp-main { max-width: 900px; margin: 0 auto; padding: 24px; }
+        h1 { color: var(--cp-primary); font-size: 1.6rem; margin-bottom: 8px; }
+        .comp-sub { opacity: 0.9; margin-bottom: 24px; }
+        .sector-block { background: var(--cp-card); border: 1px solid var(--cp-border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .sector-block h2 { margin-top: 0; margin-bottom: 16px; font-size: 1.25rem; }
+        .sector-block.I_galactic h2 { color: var(--sector-galactic); }
+        .sector-block.II_verification h2 { color: var(--sector-verification); }
+        .sector-block.III_combat h2 { color: var(--sector-combat); }
+        .sector-block.IV_support h2 { color: var(--sector-support); }
+        .sector-block.V_utility h2 { color: var(--sector-utility); }
+        .sector-block.VI_medieval h2 { color: var(--sector-medieval); }
+        .sector-block.VII_time_reversal h2 { color: var(--sector-time); }
+        .power-combos-block { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .power-combos-block h2 { color: #00ff88; margin-top: 0; }
+        .spell-card { display: inline-block; padding: 12px 16px; margin: 8px 8px 8px 0; background: rgba(255,255,255,0.05); border-radius: 10px; border-left: 4px solid var(--cp-primary); }
+        .spell-card .icon { font-size: 1.4em; margin-right: 8px; }
+        .spell-card .name { font-weight: 600; color: var(--cp-primary); }
+        .spell-card .effect { font-size: 0.9em; opacity: 0.85; }
+        .spell-card .cost { font-size: 0.85em; opacity: 0.7; }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div id="navigation-toolbar"></div>
+    <nav class="comp-nav">
+        <a href="/compendium/">← Compendium</a>
+        <a href="/trophies">Trophies</a>
+        <a href="/trophies">📜 Stories</a>
+    </nav>
+    <main class="comp-main">
+        <h1>Part II — Trophy Hunters Rulebook</h1>
+        <img src="/static/img/rulebook-v2-hunters.png" alt="Trophy Hunters V2" style="max-width: 100%; border-radius: 12px; border: 2px solid var(--cp-border); margin-bottom: 20px;">
+        <p class="comp-sub">Spells i 7 sektorer (Galactic, Verification, Combat, Support, Utility, Medieval, Time Reversal). Power combos. Hunters Stories: Winter Wedding (1017).</p>
+        <div id="hunters-rulebook-content">
+            <div class="loading">Loading rulebook…</div>
+        </div>
+        <nav class="comp-nav" style="border-bottom: none; margin-top: 24px;"><a href="/compendium/">← Tilbage til Compendium</a></nav>
+    </main>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        (function() {
+            var el = document.getElementById('hunters-rulebook-content');
+            if (!el) return;
+            var urls = ['/api/game/hunters/rulebook', '/api/game/hunters/rulebook'];
+            function tryFetch(i) {
+                if (i >= urls.length) { el.innerHTML = '<p>Kunne ikke hente rulebook.</p>'; return; }
+                fetch(urls[i]).then(function(r) { return r.json(); }).then(function(data) {
+                    var rb = data.rulebook || data;
+                    if (!rb.sectors) { tryFetch(i + 1); return; }
+                    var order = ['I_galactic','II_verification','III_combat','IV_support','V_utility','VI_medieval','VII_time_reversal'];
+                    var html = '';
+                    order.forEach(function(sid) {
+                        var s = rb.sectors[sid];
+                        if (!s) return;
+                        html += '<div class="sector-block ' + sid + '"><h2>' + (s.icon || '') + ' ' + (s.name || sid) + '</h2>';
+                        (s.spells || []).forEach(function(sp) {
+                            html += '<div class="spell-card" data-spell-id="' + (sp.id || '') + '"><span class="icon">' + (sp.icon || '✨') + '</span><span class="name">' + (sp.name || sp.id) + '</span><br><span class="effect">' + (sp.effect || '') + '</span><br><span class="cost">Cost: ' + (sp.cost || 0) + '</span></div>';
+                        });
+                        html += '</div>';
+                    });
+                    if (rb.power_combos && rb.power_combos.combos && rb.power_combos.combos.length) {
+                        html += '<div class="power-combos-block"><h2>Power combos</h2><p class="comp-sub">' + (rb.power_combos.description || '') + '</p>';
+                        rb.power_combos.combos.forEach(function(c) {
+                            html += '<div class="spell-card" style="margin-bottom:8px;"><span class="name">' + (c.name || '') + '</span><br><span class="effect">' + (c.effect || '') + '</span>' + (c.cost_combined ? '<br><span class="cost">Combined cost: ' + c.cost_combined + '</span>' : '') + '</div>';
+                        });
+                        html += '</div>';
+                    }
+                    el.innerHTML = html || '<p>Ingen spells.</p>';
+                }).catch(function() { tryFetch(i + 1); });
+            }
+            tryFetch(0);
+        })();
+    </script>
+    <script src="/static/js/compendium-view-tracker.js"></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

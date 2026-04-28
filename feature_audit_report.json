@@ -1,0 +1,1010 @@
+{
+  "pages": {
+    "/vidgenerator/api_debugger.html/": {
+      "file": "vidgenerator\\api_debugger.html",
+      "exists": true,
+      "size": 35689
+    },
+    "/vidgenerator/": {
+      "file": "vidgenerator\\index.html",
+      "exists": true,
+      "size": 12658
+    },
+    "/vidgenerator/analytics/": {
+      "file": "vidgenerator\\analytics\\index.html",
+      "exists": true,
+      "size": 31955
+    },
+    "/vidgenerator/battle/": {
+      "file": "vidgenerator\\battle\\index.html",
+      "exists": true,
+      "size": 17989
+    },
+    "/vidgenerator/debugger/": {
+      "file": "vidgenerator\\debugger\\index.html",
+      "exists": true,
+      "size": 32499
+    },
+    "/vidgenerator/gallery/": {
+      "file": "vidgenerator\\gallery\\index.html",
+      "exists": true,
+      "size": 40052
+    },
+    "/vidgenerator/game/": {
+      "file": "vidgenerator\\game\\index.html",
+      "exists": true,
+      "size": 52658
+    },
+    "/vidgenerator/generator/": {
+      "file": "vidgenerator\\generator\\index.html",
+      "exists": true,
+      "size": 32816
+    },
+    "/vidgenerator/shop/": {
+      "file": "vidgenerator\\shop\\index.html",
+      "exists": true,
+      "size": 12438
+    },
+    "/vidgenerator/social/": {
+      "file": "vidgenerator\\social\\index.html",
+      "exists": true,
+      "size": 14436
+    },
+    "/vidgenerator/stats/": {
+      "file": "vidgenerator\\stats\\index.html",
+      "exists": true,
+      "size": 41080
+    }
+  },
+  "routes": {
+    "ai_debugger": [
+      "/api/debugger/ai/analyze",
+      "/api/debugger/ai/analyze-codebase",
+      "/api/debugger/ai/predict",
+      "/api/debugger/ai/optimize",
+      "/api/debugger/ai/generate-tests",
+      "/api/debugger/ai/auto-fix",
+      "/api/debugger/ai/status"
+    ],
+    "analytics": [
+      "/analytics",
+      "/analytics/",
+      "/api/analytics/overview",
+      "/api/analytics/trends",
+      "/api/analytics/performance",
+      "/api/analytics/errors",
+      "/api/analytics/quality",
+      "/api/analytics/usage"
+    ],
+    "api_debugger": [
+      "/api/debugger",
+      "/vidgenerator/api/debugger",
+      "/api/debugger/test",
+      "/vidgenerator/api/debugger/test",
+      "/api/debugger/fix-links",
+      "/vidgenerator/api/debugger/fix-links"
+    ],
+    "batch_generator": [
+      "/api/generator/batch/create",
+      "/api/generator/batch/<batch_id>/status"
+    ],
+    "categories": [
+      "/api/categories/list",
+      "/api/categories",
+      "/api/categories/<category_id>/stats",
+      "/api/categories/stats/all"
+    ],
+    "chat": [
+      "/chat",
+      "/chat/"
+    ],
+    "chat_enhanced": [
+      "/chat/enhanced",
+      "/chat/enhanced/",
+      "/chat",
+      "/chat/",
+      "/api/chat/upload-screenshot",
+      "/api/chat/notifications/settings"
+    ],
+    "comprehensive_debugger": [
+      "/debugger/comprehensive",
+      "/debugger/comprehensive/",
+      "/api/debug/comprehensive/analyze",
+      "/api/debug/comprehensive/logs",
+      "/api/debug/comprehensive/migration-report",
+      "/api/debug/comprehensive/fix-themes"
+    ],
+    "daily_activities": [
+      "/api/daily/login",
+      "/api/daily/return-bonus",
+      "/api/daily/streak"
+    ],
+    "debugger_builder": [
+      "/api/debugger-builder/create",
+      "/vidgenerator/api/debugger-builder/create",
+      "/api/debugger-builder/download/<debugger_name>",
+      "/vidgenerator/api/debugger-builder/download/<debugger_name>"
+    ],
+    "debugger_download": [
+      "/download/<tool_type>",
+      "/api/debugger/download/<tool_type>",
+      "/vidgenerator/api/debugger/download/<tool_type>",
+      "/api/fixer/download/<tool_type>",
+      "/vidgenerator/api/fixer/download/<tool_type>",
+      "/download/fixer/<tool_type>",
+      "/vidgenerator/download/fixer/<tool_type>",
+      "/tools/<tool_type>",
+      "/vidgenerator/tools/<tool_type>",
+      "/api/debugger/tools",
+      "/vidgenerator/api/debugger/tools",
+      "/api/fixer/tools",
+      "/vidgenerator/api/fixer/tools"
+    ],
+    "debugger_enhanced": [
+      "/api/debug/errors/scan",
+      "/api/debug/errors/auto-fix",
+      "/api/debug/routes/list"
+    ],
+    "debugger_page": [
+      "/debugger",
+      "/debugger/",
+      "/debugger/enhanced",
+      "/debugger/enhanced/"
+    ],
+    "gallery": [
+      "/gallery",
+      "/gallery/",
+      "/api/gallery/list",
+      "/api/gallery/video/<video_id>"
+    ],
+    "game": [
+      "/static/<path:filename>",
+      "/vidgenerator/static/<path:filename>",
+      "/battle",
+      "/battle/",
+      "/social",
+      "/social/",
+      "/shop",
+      "/shop/",
+      "/game",
+      "/game/",
+      "/api/game/xp",
+      "/api/game/state",
+      "/api/game/categories",
+      "/api/game/achievements",
+      "/api/game/milestones",
+      "/api/game/stats-points",
+      "/api/game/update-stats",
+      "/api/game/hunters/profile",
+      "/api/game/hunters/level",
+      "/api/game/hunters/award-xp",
+      "/api/game/hunters/stats",
+      "/api/game/hunters/allocate-stats",
+      "/api/game/hunters/leaderboard",
+      "/api/game/hunters/xp-history",
+      "/api/game/hunters/rewards",
+      "/api/game/hunters/titles",
+      "/api/game/hunters/prestige",
+      "/api/game/hunters/calculate-level",
+      "/api/game/challenges/daily",
+      "/api/game/challenges/weekly",
+      "/api/game/challenges/update",
+      "/api/game/challenges/summary",
+      "/api/game/battle/create",
+      "/api/game/battle/execute",
+      "/api/game/battle/stats",
+      "/api/game/battle/history",
+      "/api/game/battle/leaderboard",
+      "/api/game/tournament/create",
+      "/api/game/tournament/join",
+      "/api/game/tournament/list",
+      "/api/game/social/friends",
+      "/api/game/social/friend-request",
+      "/api/game/social/friend-requests",
+      "/api/game/social/respond-request",
+      "/api/game/social/guild/create",
+      "/api/game/social/guild/join",
+      "/api/game/social/guild/my-guild",
+      "/api/game/social/guild/leaderboard",
+      "/api/game/social/stats",
+      "/api/game/shop/items",
+      "/api/game/shop/currency",
+      "/api/game/shop/purchase",
+      "/api/game/shop/inventory",
+      "/api/game/events/active",
+      "/api/game/events/upcoming",
+      "/api/game/events/join",
+      "/api/game/events/my-events",
+      "/api/game/events/notifications",
+      "/api/game/stats/advanced/trends",
+      "/api/game/stats/advanced/performance",
+      "/api/game/stats/advanced/compare",
+      "/api/game/stats/advanced/time-series",
+      "/api/game/stats/advanced/global"
+    ],
+    "generator": [
+      "/api/generator/ai-clips",
+      "/api/generator/ai-clips/<job_id>",
+      "/api/generator/test",
+      "/api/generator/debug-routes",
+      "/generator",
+      "/generator/",
+      "/api/generator/create",
+      "/api/generator/status/<video_id>",
+      "/api/documentary/progress/<doc_id>",
+      "/api/documentary/video/<doc_id>",
+      "/api/generator/<path:subpath>"
+    ],
+    "hunters_game": [
+      "/api/game/hunters/profile",
+      "/api/game/hunters/level",
+      "/api/game/hunters/award-xp",
+      "/api/game/hunters/stats",
+      "/api/game/hunters/allocate-stats",
+      "/api/game/hunters/leaderboard",
+      "/api/game/hunters/xp-history",
+      "/api/game/hunters/rewards",
+      "/api/game/hunters/titles",
+      "/api/game/hunters/prestige",
+      "/api/game/hunters/calculate-level"
+    ],
+    "rettigheder": [
+      "/api/rettigheder/slaa",
+      "/vidgenerator/api/rettigheder/slaa",
+      "/api/rettigheder/list",
+      "/vidgenerator/api/rettigheder/list",
+      "/api/rettigheder/status",
+      "/vidgenerator/api/rettigheder/status"
+    ],
+    "social_actions": [
+      "/api/social/share",
+      "/api/social/like",
+      "/api/social/comment",
+      "/api/social/watch"
+    ],
+    "stats": [
+      "/stats",
+      "/stats/",
+      "/api/statistics",
+      "/api/worker-skills",
+      "/api/stats/worker-skills",
+      "/api/stats/profile",
+      "/api/stats/trophies",
+      "/api/stats/milestones",
+      "/api/stats/xp-scores",
+      "/api/stats/user",
+      "/api/stats/frames",
+      "/api/stats/leaderboard"
+    ],
+    "stats_summary": [
+      "/stats/summary",
+      "/stats/summary/",
+      "/api/stats/summary"
+    ],
+    "vidgenerator_main": [
+      "/"
+    ]
+  },
+  "services": {
+    "advanced_stats": {
+      "file": "backend\\services\\advanced_stats.py",
+      "exists": true
+    },
+    "ai_debugger_engine": {
+      "file": "backend\\services\\ai_debugger_engine.py",
+      "exists": true
+    },
+    "ai_debugger_engine_advanced": {
+      "file": "backend\\services\\ai_debugger_engine_advanced.py",
+      "exists": true
+    },
+    "battle_system": {
+      "file": "backend\\services\\battle_system.py",
+      "exists": true
+    },
+    "chat_points": {
+      "file": "backend\\services\\chat_points.py",
+      "exists": true
+    },
+    "daily_challenges": {
+      "file": "backend\\services\\daily_challenges.py",
+      "exists": true
+    },
+    "events_system": {
+      "file": "backend\\services\\events_system.py",
+      "exists": true
+    },
+    "game_achievements": {
+      "file": "backend\\services\\game_achievements.py",
+      "exists": true
+    },
+    "game_shop": {
+      "file": "backend\\services\\game_shop.py",
+      "exists": true
+    },
+    "generation_tracker": {
+      "file": "backend\\services\\generation_tracker.py",
+      "exists": true
+    },
+    "graduation_points": {
+      "file": "backend\\services\\graduation_points.py",
+      "exists": true
+    },
+    "hunters_leveling_system": {
+      "file": "backend\\services\\hunters_leveling_system.py",
+      "exists": true
+    },
+    "social_system": {
+      "file": "backend\\services\\social_system.py",
+      "exists": true
+    },
+    "theme_config": {
+      "file": "backend\\services\\theme_config.py",
+      "exists": true
+    },
+    "theme_debugger_engine": {
+      "file": "backend\\services\\theme_debugger_engine.py",
+      "exists": true
+    },
+    "theme_selector": {
+      "file": "backend\\services\\theme_selector.py",
+      "exists": true
+    },
+    "trophy_system": {
+      "file": "backend\\services\\trophy_system.py",
+      "exists": true
+    },
+    "xp_system": {
+      "file": "backend\\services\\xp_system.py",
+      "exists": true
+    }
+  },
+  "static_files": {
+    "css": [
+      {
+        "file": "vidgenerator\\static\\css\\action.css",
+        "exists": true,
+        "size": 1203
+      },
+      {
+        "file": "vidgenerator\\static\\css\\comedy.css",
+        "exists": true,
+        "size": 1203
+      },
+      {
+        "file": "vidgenerator\\static\\css\\cyberpunk.css",
+        "exists": true,
+        "size": 1366
+      },
+      {
+        "file": "vidgenerator\\static\\css\\fantasy.css",
+        "exists": true,
+        "size": 1216
+      },
+      {
+        "file": "vidgenerator\\static\\css\\game-mode.css",
+        "exists": true,
+        "size": 9345
+      },
+      {
+        "file": "vidgenerator\\static\\css\\graffiti-style.css",
+        "exists": true,
+        "size": 9322
+      },
+      {
+        "file": "vidgenerator\\static\\css\\halo.css",
+        "exists": true,
+        "size": 1309
+      },
+      {
+        "file": "vidgenerator\\static\\css\\halo4.css",
+        "exists": true,
+        "size": 1320
+      },
+      {
+        "file": "vidgenerator\\static\\css\\horror.css",
+        "exists": true,
+        "size": 1203
+      },
+      {
+        "file": "vidgenerator\\static\\css\\loading-states.css",
+        "exists": true,
+        "size": 5605
+      },
+      {
+        "file": "vidgenerator\\static\\css\\matrix.css",
+        "exists": true,
+        "size": 1320
+      },
+      {
+        "file": "vidgenerator\\static\\css\\modern-design-system.css",
+        "exists": true,
+        "size": 18371
+      },
+      {
+        "file": "vidgenerator\\static\\css\\mtg.css",
+        "exists": true,
+        "size": 1315
+      },
+      {
+        "file": "vidgenerator\\static\\css\\nature.css",
+        "exists": true,
+        "size": 1337
+      },
+      {
+        "file": "vidgenerator\\static\\css\\nazi_wwii.css",
+        "exists": true,
+        "size": 1343
+      },
+      {
+        "file": "vidgenerator\\static\\css\\romance.css",
+        "exists": true,
+        "size": 1216
+      },
+      {
+        "file": "vidgenerator\\static\\css\\sci-fi.css",
+        "exists": true,
+        "size": 1328
+      },
+      {
+        "file": "vidgenerator\\static\\css\\style.css",
+        "exists": true,
+        "size": 75
+      },
+      {
+        "file": "vidgenerator\\static\\css\\wwii.css",
+        "exists": true,
+        "size": 1298
+      }
+    ],
+    "js": [
+      {
+        "file": "vidgenerator\\static\\js\\calendar-enhanced.js",
+        "exists": true,
+        "size": 20588
+      },
+      {
+        "file": "vidgenerator\\static\\js\\chat-points.js",
+        "exists": true,
+        "size": 8034
+      },
+      {
+        "file": "vidgenerator\\static\\js\\game-mode.js",
+        "exists": true,
+        "size": 16805
+      },
+      {
+        "file": "vidgenerator\\static\\js\\main.js",
+        "exists": true,
+        "size": 2048
+      },
+      {
+        "file": "vidgenerator\\static\\js\\notification-alarm.js",
+        "exists": true,
+        "size": 14023
+      },
+      {
+        "file": "vidgenerator\\static\\js\\service-worker-gatherer.js",
+        "exists": true,
+        "size": 5842
+      },
+      {
+        "file": "vidgenerator\\static\\js\\toast-notifications.js",
+        "exists": true,
+        "size": 4034
+      }
+    ],
+    "images": [
+      {
+        "file": "vidgenerator\\static\\img\\cyberpunk_bg.jpg",
+        "exists": true,
+        "size": 94691
+      },
+      {
+        "file": "vidgenerator\\static\\img\\halo4_bg.jpg",
+        "exists": true,
+        "size": 75733
+      },
+      {
+        "file": "vidgenerator\\static\\img\\halo_bg.jpg",
+        "exists": true,
+        "size": 75733
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#00177f5c-3279-4eb2-9807-bc34c84e460a.png",
+        "exists": true,
+        "size": 1144541
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#00177f5c-3279-4eb2-9807-bc34c84e460a.webp",
+        "exists": true,
+        "size": 57602
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#085cc279-c943-466c-9a9b-c545f8ee3105.png",
+        "exists": true,
+        "size": 1037548
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#085cc279-c943-466c-9a9b-c545f8ee3105.webp",
+        "exists": true,
+        "size": 54682
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#2a3ae7c0-2a39-4b98-88d6-47ce88a4f655.png",
+        "exists": true,
+        "size": 783476
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#2a3ae7c0-2a39-4b98-88d6-47ce88a4f655.webp",
+        "exists": true,
+        "size": 23644
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#3e101f4d-2873-487b-9ac9-22f36bd32c58.png",
+        "exists": true,
+        "size": 1394227
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#3e101f4d-2873-487b-9ac9-22f36bd32c58.webp",
+        "exists": true,
+        "size": 150600
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#664fb9b7-3b81-4dca-9139-5957f5f490fd.png",
+        "exists": true,
+        "size": 1210317
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#664fb9b7-3b81-4dca-9139-5957f5f490fd.webp",
+        "exists": true,
+        "size": 103224
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#6df65814-3bef-43d9-a893-afd4382824f6.png",
+        "exists": true,
+        "size": 1080588
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#6df65814-3bef-43d9-a893-afd4382824f6.webp",
+        "exists": true,
+        "size": 40644
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#8f49a3e4-90cc-4cb6-ba6f-6ec3c994fb0a.png",
+        "exists": true,
+        "size": 671760
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#8f49a3e4-90cc-4cb6-ba6f-6ec3c994fb0a.webp",
+        "exists": true,
+        "size": 44504
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#94eaea30-99bb-4869-9645-34cfce59ac6b.png",
+        "exists": true,
+        "size": 1041992
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#94eaea30-99bb-4869-9645-34cfce59ac6b.webp",
+        "exists": true,
+        "size": 48752
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#9e3ffb24-0ad9-448c-a53d-38bc7d2c47f8.png",
+        "exists": true,
+        "size": 864720
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#9e3ffb24-0ad9-448c-a53d-38bc7d2c47f8.webp",
+        "exists": true,
+        "size": 29068
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#a1b917e9-d253-4665-a6ad-fa7ef6ff0697.png",
+        "exists": true,
+        "size": 1227734
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#a1b917e9-d253-4665-a6ad-fa7ef6ff0697.webp",
+        "exists": true,
+        "size": 117006
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#bcbbb0bf-ebe7-4fa7-9eb9-5942734a42d6.png",
+        "exists": true,
+        "size": 658038
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#bcbbb0bf-ebe7-4fa7-9eb9-5942734a42d6.webp",
+        "exists": true,
+        "size": 28444
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#cfb5ac57-443d-41a7-a2d9-6b6f51802f3d.png",
+        "exists": true,
+        "size": 885927
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#cfb5ac57-443d-41a7-a2d9-6b6f51802f3d.webp",
+        "exists": true,
+        "size": 39432
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#ed020b5e-8749-433a-bccb-b23d7debc202.png",
+        "exists": true,
+        "size": 1130481
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#ed020b5e-8749-433a-bccb-b23d7debc202.webp",
+        "exists": true,
+        "size": 65662
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#f8427b72-3059-4ec2-b608-a83032c7dedd.png",
+        "exists": true,
+        "size": 921690
+      },
+      {
+        "file": "vidgenerator\\static\\img\\IMAGE#f8427b72-3059-4ec2-b608-a83032c7dedd.webp",
+        "exists": true,
+        "size": 37132
+      },
+      {
+        "file": "vidgenerator\\static\\img\\matrix_bg.jpg",
+        "exists": true,
+        "size": 98519
+      },
+      {
+        "file": "vidgenerator\\static\\img\\mtg_bg.jpg",
+        "exists": true,
+        "size": 77204
+      },
+      {
+        "file": "vidgenerator\\static\\img\\mtg_bg.png",
+        "exists": true,
+        "size": 986794
+      },
+      {
+        "file": "vidgenerator\\static\\img\\mtg_bg.webp",
+        "exists": true,
+        "size": 43416
+      },
+      {
+        "file": "vidgenerator\\static\\img\\nature_bg.jpg",
+        "exists": true,
+        "size": 69783
+      },
+      {
+        "file": "vidgenerator\\static\\img\\nazi_wwii_bg.jpg",
+        "exists": true,
+        "size": 58597
+      },
+      {
+        "file": "vidgenerator\\static\\img\\README.txt",
+        "exists": true,
+        "size": 1356
+      },
+      {
+        "file": "vidgenerator\\static\\img\\sci-fi_bg.jpg",
+        "exists": true,
+        "size": 83915
+      },
+      {
+        "file": "vidgenerator\\static\\img\\stargate_bg.png",
+        "exists": true,
+        "size": 1076282
+      },
+      {
+        "file": "vidgenerator\\static\\img\\stargate_bg.webp",
+        "exists": true,
+        "size": 57770
+      },
+      {
+        "file": "vidgenerator\\static\\img\\wwii_bg.jpg",
+        "exists": true,
+        "size": 58597
+      }
+    ]
+  },
+  "database_models": {
+    "Documentary": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "MovieClip": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ViewerSession": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ViewerInteraction": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "AIModel": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ModelAddon": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ModelFavorite": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ChatRoom": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ChatMessage": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ChatRoomMember": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ThemeUsageTracking": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "RandomImageInjection": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "SidebarMonetization": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "ClipAnalysis": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "Agent": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "UserProfile": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "GenerationStats": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "PlayerLevel": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "XPHistory": {
+      "exists": true,
+      "file": "src/db/models.py"
+    },
+    "DailyActivity": {
+      "exists": true,
+      "file": "src/db/models.py"
+    }
+  },
+  "api_endpoints": {
+    "game": [
+      "/api/game/xp",
+      "/api/game/state",
+      "/api/game/categories",
+      "/api/game/achievements",
+      "/api/game/milestones",
+      "/api/game/stats-points",
+      "/api/game/update-stats",
+      "/api/game/hunters/profile",
+      "/api/game/hunters/level",
+      "/api/game/hunters/award-xp",
+      "/api/game/hunters/stats",
+      "/api/game/hunters/allocate-stats",
+      "/api/game/hunters/leaderboard",
+      "/api/game/hunters/xp-history",
+      "/api/game/hunters/rewards",
+      "/api/game/hunters/titles",
+      "/api/game/hunters/prestige",
+      "/api/game/hunters/calculate-level",
+      "/api/game/tournament/create",
+      "/api/game/tournament/join",
+      "/api/game/tournament/list",
+      "/api/game/stats/advanced/trends",
+      "/api/game/stats/advanced/performance",
+      "/api/game/stats/advanced/compare",
+      "/api/game/stats/advanced/time-series",
+      "/api/game/stats/advanced/global",
+      "/api/game/hunters/profile",
+      "/api/game/hunters/level",
+      "/api/game/hunters/award-xp",
+      "/api/game/hunters/stats",
+      "/api/game/hunters/allocate-stats",
+      "/api/game/hunters/leaderboard",
+      "/api/game/hunters/xp-history",
+      "/api/game/hunters/rewards",
+      "/api/game/hunters/titles",
+      "/api/game/hunters/prestige",
+      "/api/game/hunters/calculate-level"
+    ],
+    "gallery": [
+      "/api/gallery/list",
+      "/api/gallery/video/<video_id>"
+    ],
+    "generator": [
+      "/api/generator/batch/create",
+      "/api/generator/batch/<batch_id>/status",
+      "/api/generator/ai-clips",
+      "/api/generator/ai-clips/<job_id>",
+      "/api/generator/test",
+      "/api/generator/debug-routes",
+      "/api/generator/create",
+      "/api/generator/status/<video_id>",
+      "/api/generator/<path:subpath>"
+    ],
+    "stats": [
+      "/api/categories/<category_id>/stats",
+      "/api/categories/stats/all",
+      "/api/stats/worker-skills",
+      "/api/stats/profile",
+      "/api/stats/trophies",
+      "/api/stats/milestones",
+      "/api/stats/xp-scores",
+      "/api/stats/user",
+      "/api/stats/frames",
+      "/api/stats/leaderboard",
+      "/api/stats/summary"
+    ],
+    "analytics": [
+      "/api/analytics/overview",
+      "/api/analytics/trends",
+      "/api/analytics/performance",
+      "/api/analytics/errors",
+      "/api/analytics/quality",
+      "/api/analytics/usage"
+    ],
+    "social": [
+      "/api/game/social/friends",
+      "/api/game/social/friend-request",
+      "/api/game/social/friend-requests",
+      "/api/game/social/respond-request",
+      "/api/game/social/guild/create",
+      "/api/game/social/guild/join",
+      "/api/game/social/guild/my-guild",
+      "/api/game/social/guild/leaderboard",
+      "/api/game/social/stats"
+    ],
+    "battle": [
+      "/api/game/battle/create",
+      "/api/game/battle/execute",
+      "/api/game/battle/stats",
+      "/api/game/battle/history",
+      "/api/game/battle/leaderboard"
+    ],
+    "shop": [
+      "/api/game/shop/items",
+      "/api/game/shop/currency",
+      "/api/game/shop/purchase",
+      "/api/game/shop/inventory"
+    ],
+    "challenges": [
+      "/api/game/challenges/daily",
+      "/api/game/challenges/weekly",
+      "/api/game/challenges/update",
+      "/api/game/challenges/summary"
+    ],
+    "events": [
+      "/api/game/events/active",
+      "/api/game/events/upcoming",
+      "/api/game/events/join",
+      "/api/game/events/my-events",
+      "/api/game/events/notifications"
+    ],
+    "categories": [],
+    "chat": [
+      "/api/chat/upload-screenshot",
+      "/api/chat/notifications/settings"
+    ],
+    "debugger": [
+      "/api/debugger/ai/analyze",
+      "/api/debugger/ai/analyze-codebase",
+      "/api/debugger/ai/predict",
+      "/api/debugger/ai/optimize",
+      "/api/debugger/ai/generate-tests",
+      "/api/debugger/ai/auto-fix",
+      "/api/debugger/ai/status",
+      "/api/debugger",
+      "/api/debugger/test",
+      "/api/debugger/fix-links",
+      "/api/debug/comprehensive/analyze",
+      "/api/debug/comprehensive/logs",
+      "/api/debug/comprehensive/migration-report",
+      "/api/debug/comprehensive/fix-themes",
+      "/api/debugger-builder/create",
+      "/api/debugger-builder/download/<debugger_name>",
+      "/api/debugger/download/<tool_type>",
+      "/api/debugger/tools",
+      "/api/debug/errors/scan",
+      "/api/debug/errors/auto-fix",
+      "/api/debug/routes/list"
+    ]
+  },
+  "issues": {
+    "missing_pages": [
+      "/vidgenerator/generator",
+      "/vidgenerator/gallery",
+      "/vidgenerator/game",
+      "/vidgenerator/battle",
+      "/vidgenerator/social",
+      "/vidgenerator/shop",
+      "/vidgenerator/stats",
+      "/vidgenerator/analytics",
+      "/vidgenerator/debugger",
+      "/vidgenerator/chat"
+    ],
+    "missing_apis": [],
+    "missing_services": [],
+    "missing_static": [],
+    "incomplete_features": [],
+    "broken_references": [
+      {
+        "page": "/vidgenerator/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/",
+        "missing": "/static/css/modern-design-system.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/analytics/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/battle/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/gallery/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/game/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/shop/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/social/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      },
+      {
+        "page": "/vidgenerator/stats/",
+        "missing": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+        "type": "CSS"
+      }
+    ]
+  },
+  "summary": {
+    "total_pages": 11,
+    "total_routes": 183,
+    "total_services": 18,
+    "total_css": 19,
+    "total_js": 7,
+    "total_models": 20,
+    "total_api_endpoints": 115,
+    "missing_pages": 10,
+    "broken_references": 9
+  }
+}

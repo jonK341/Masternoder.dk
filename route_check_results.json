@@ -1,0 +1,142 @@
+[
+  {
+    "url": "/vidgenerator/",
+    "status": 200,
+    "success": true,
+    "content_type": "text/html; charset=utf-8; charset=utf-8",
+    "size": 64654
+  },
+  {
+    "url": "/vidgenerator/dashboard",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/battle",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/stats",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/social",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/shop",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/chat",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/metal",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/theme-points",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/debugger",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/analytics",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/battlegrounds",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/champions-league",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/victory-tech-tree",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/danish-divine-tech-tree",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/api/debug/routes",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/api/debug/blueprints",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/api/debug/tech-structure",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/api/debugger",
+    "status": 404,
+    "success": false,
+    "content_type": "text/html; charset=utf-8",
+    "size": 207
+  },
+  {
+    "url": "/vidgenerator/api/generator/debug-routes",
+    "status": 200,
+    "success": true,
+    "content_type": "application/json",
+    "size": 28981
+  }
+]

@@ -1,0 +1,164 @@
+/**
+ * 5D story monitor — σ narrative dimension + Web Audio (opt-in)
+ * Used on /aggregator, /battle, /game
+ */
+
+.sm5d-root {
+  --sm5d-primary: var(--primary, #00ff88);
+  --sm5d-secondary: var(--secondary, #00d4ff);
+  --sm5d-border: rgba(0, 255, 136, 0.35);
+  --sm5d-bg: linear-gradient(155deg, rgba(8, 22, 28, 0.96), rgba(6, 10, 28, 0.96));
+  border-radius: 14px;
+  border: 1px solid var(--sm5d-border);
+  background: var(--sm5d-bg);
+  box-shadow:
+    0 0 28px rgba(0, 255, 136, 0.08),
+    inset 0 0 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  margin: 0;
+}
+
+.sm5d-tech {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(0, 212, 255, 0.85);
+  padding: 10px 14px 0;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.sm5d-bezel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 136, 0.5);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.12);
+}
+
+.sm5d-bezel-title {
+  font-family: ui-monospace, monospace;
+  color: rgba(0, 212, 255, 0.75);
+}
+
+.sm5d-sound-btn {
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--sm5d-primary);
+  cursor: pointer;
+}
+
+.sm5d-sound-btn:hover,
+.sm5d-sound-btn:focus-visible {
+  border-color: var(--sm5d-primary);
+  outline: none;
+}
+
+.sm5d-sound-btn[aria-pressed="true"] {
+  background: rgba(0, 255, 136, 0.12);
+}
+
+.sm5d-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 14px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: rgba(200, 220, 230, 0.88);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.sm5d-readout span {
+  white-space: nowrap;
+}
+
+.sm5d-readout .sm5d-dim-name {
+  color: rgba(0, 255, 136, 0.45);
+  margin-right: 4px;
+}
+
+.sm5d-viewport {
+  position: relative;
+  min-height: 120px;
+  padding: 14px 16px 18px;
+  background: radial-gradient(ellipse 80% 70% at 50% 30%, rgba(0, 80, 70, 0.2), transparent 65%);
+}
+
+.sm5d-story {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(235, 245, 250, 0.92);
+  min-height: 4.5em; /* ~3 lines: reduces layout jump when σ beat changes */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm5d-story {
+    transition: none;
+  }
+}
+
+.sm5d-sigma-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 255, 136, 0.12);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.sm5d-sigma-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sm5d-secondary), var(--sm5d-primary));
+  width: 0%;
+  transition: width 0.6s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm5d-sigma-bar-fill {
+    transition: none;
+  }
+}
+
+/* Battle page: match arena accent */
+.battle-arena .sm5d-root {
+  --sm5d-primary: var(--battle-primary, #00ff88);
+  --sm5d-secondary: var(--battle-secondary, #00d4ff);
+  --sm5d-border: rgba(0, 255, 136, 0.28);
+}
+
+/* Game page */
+.hunter-game-app .sm5d-root {
+  --sm5d-primary: #00ff88;
+  --sm5d-secondary: #7fdbff;
+  --sm5d-border: rgba(0, 255, 136, 0.25);
+}
+
+/* Aggregator full-width block */
+.agg-story-monitor-block {
+  max-width: 1400px;
+  margin: 0 auto 1rem;
+  padding: 0 1rem;
+}
+
+.agg-story-monitor-block .sm5d-viewport {
+  min-height: 140px;
+}

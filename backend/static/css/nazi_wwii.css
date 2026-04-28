@@ -1,0 +1,44 @@
+/* WWII Theme - WWII historical theme */
+
+.theme-nazi_wwii {
+    --theme-primary: rgb(139, 0, 0);
+    --theme-secondary: rgb(0, 0, 0);
+    --theme-bg: rgb(26, 26, 26);
+    --theme-accent: rgb(255, 215, 0);
+}
+
+.theme-nazi_wwii .generator-frame {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-primary) 100%);
+    border: 2px solid var(--theme-primary);
+    box-shadow: 0 0 30px rgba(139, 0, 0, 0.3);
+}
+
+.theme-nazi_wwii .matrix-monitor {
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px var(--theme-primary), 0 0 20px var(--theme-primary);
+}
+
+.theme-nazi_wwii button {
+    background: var(--theme-primary);
+    color: var(--theme-bg);
+    border: 2px solid var(--theme-secondary);
+    box-shadow: 0 0 15px rgba(139, 0, 0, 0.5);
+}
+
+.theme-nazi_wwii button:hover {
+    background: var(--theme-secondary);
+    box-shadow: 0 0 25px var(--theme-primary), 0 0 40px var(--theme-primary);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.theme-nazi_wwii input, .theme-nazi_wwii textarea {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(26, 26, 26, 0.8);
+}
+
+.theme-nazi_wwii input:focus, .theme-nazi_wwii textarea:focus {
+    border-color: var(--theme-secondary);
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+}

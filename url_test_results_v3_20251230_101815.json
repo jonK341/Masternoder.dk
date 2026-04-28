@@ -1,0 +1,363 @@
+{
+  "passed": [],
+  "failed": [],
+  "warnings": [
+    {
+      "path": "/vidgenerator/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/index.html",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/index.html - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/generator/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/generator/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/gallery/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/gallery/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/stats/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/stats/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/profile/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/profile/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/social/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/social/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/shop/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/shop/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/chat/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/chat/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/debugger/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/debugger/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/game/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/game/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/battle/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/battle/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/analytics/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/analytics/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/dashboard/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/dashboard/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/aggregator/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/aggregator/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/metal/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/metal/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/theme-points/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/theme-points/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/rights-law/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/rights-law/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/quests/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/quests/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/time-achievement-guides/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/time-achievement-guides/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/champions-league/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/champions-league/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/battlegrounds/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/battlegrounds/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/milkyway/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/milkyway/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/leaderboards/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/leaderboards/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/advanced-calculator/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/advanced-calculator/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/theme-premium/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/theme-premium/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/monetization/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/monetization/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/editor/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/editor/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/beta-testing/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/beta-testing/ - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/academic-perspective/",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/academic-perspective/ - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3 - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/search?query=test",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/search?query=test - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/analytics",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/analytics - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/templates",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/templates - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/add",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/add - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/monsters",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/monsters - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/monsters?type=dragon",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/monsters?type=dragon - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/monsters/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/monsters/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/monsters/invalid_id",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/monsters/invalid_id - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/spells/enhanced/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/spells/enhanced/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/spells/enhanced/cast",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/spells/enhanced/cast - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/divine/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/divine/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/divine/invalid_id/blessing",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/divine/invalid_id/blessing - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/divine/invalid_id/curse",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/divine/invalid_id/curse - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/psycho",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/psycho - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/psycho/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/psycho/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/psycho/apply",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/psycho/apply - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/stats/enhanced/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/rulebook-v3/stats/enhanced/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/stats/enhanced/test_entity",
+      "method": "GET",
+      "message": "✗ GET /api/ofc/rulebook-v3/stats/enhanced/test_entity - Connection Error"
+    },
+    {
+      "path": "/api/ofc/rulebook-v3/stats/enhanced/test_entity",
+      "method": "PUT",
+      "message": "✗ PUT /api/ofc/rulebook-v3/stats/enhanced/test_entity - Connection Error"
+    },
+    {
+      "path": "/api/ofc/neutrino/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/neutrino/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/neutrino/forces",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/neutrino/forces - Connection Error"
+    },
+    {
+      "path": "/api/ofc/neutrino/power",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/neutrino/power - Connection Error"
+    },
+    {
+      "path": "/api/ofc/ghost-tables/add",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/ghost-tables/add - Connection Error"
+    },
+    {
+      "path": "/api/ofc/teenager-strategy/analyze",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/teenager-strategy/analyze - Connection Error"
+    },
+    {
+      "path": "/api/ofc/teenager-strategy/predict",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/teenager-strategy/predict - Connection Error"
+    },
+    {
+      "path": "/api/ofc/social-points/add",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/social-points/add - Connection Error"
+    },
+    {
+      "path": "/api/ofc/time-lock/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/time-lock/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/time-lock/verify",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/time-lock/verify - Connection Error"
+    },
+    {
+      "path": "/api/ofc/time-lock/protect-dna",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/time-lock/protect-dna - Connection Error"
+    },
+    {
+      "path": "/api/ofc/unified-matrix/matrix-all",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/unified-matrix/matrix-all - Connection Error"
+    },
+    {
+      "path": "/api/ofc/unified-matrix/calculate-all",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/unified-matrix/calculate-all - Connection Error"
+    },
+    {
+      "path": "/api/ofc/compass/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/compass/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/hourglass/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/hourglass/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/spells/create",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/spells/create - Connection Error"
+    },
+    {
+      "path": "/api/ofc/spells/cast",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/spells/cast - Connection Error"
+    },
+    {
+      "path": "/api/ofc/unified-points/sync",
+      "method": "POST",
+      "message": "✗ POST /api/ofc/unified-points/sync - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/static/js/unified-point-counters.js",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/static/js/unified-point-counters.js - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/static/js/hypnotic-point-counters.js",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/static/js/hypnotic-point-counters.js - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/static/js/ofc_unified_sync.js",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/static/js/ofc_unified_sync.js - Connection Error"
+    },
+    {
+      "path": "/vidgenerator/static/css/style.css",
+      "method": "GET",
+      "message": "✗ GET /vidgenerator/static/css/style.css - Connection Error"
+    }
+  ],
+  "total": 71,
+  "timestamp": "2025-12-30T10:13:26.279926"
+}

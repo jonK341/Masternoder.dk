@@ -1,0 +1,32 @@
+{
+  "type": "video_pipeline",
+  "bundle_id": "f7f2e9e4-e827-41bd-b5de-3f521eeec178",
+  "user_id": "user_1773029103295_q9ceuooyx",
+  "title": "min gode dag i dag",
+  "prompt": "2026",
+  "generation_method": "adaptive_ai_v2",
+  "quality_mode": "auto",
+  "rearranged_segments": [
+    {
+      "title": "The Dawn of 2026",
+      "description": "For user_1773029103295_q9ceuooyx, the video opens on a breathtaking futuristic cityscape in 2026, showcasing sleek skyscrapers reaching into the clouds and flying cars gracefully zipping through the air. This sets the stage for \"min gode dag i dag,\" highlighti",
+      "duration": 20,
+      "image_path": null
+    },
+    {
+      "title": "Shared Reality",
+      "description": "The camera zooms in to reveal user_1773029103295_q9ceuooyx and a group of friends gathered, their faces lit by the glow of a holographic display. This display projects a vibrant, immersive virtual reality experience, central to their \"min gode dag i dag\" in 20",
+      "duration": 20,
+      "image_path": null
+    },
+    {
+      "title": "Immersive Joy",
+      "description": "The scene deepens into the immersive virtual reality experience, showing the friends, including user_1773029103295_q9ceuooyx, fully engaged and enjoying their \"min gode dag i dag.\" The surroundings begin to blend with the virtual world, symbolizing the seamles",
+      "duration": 20,
+      "image_path": null
+    }
+  ],
+  "generated_script": "- The Dawn of 2026: For user_1773029103295_q9ceuooyx, the video opens on a breathtaking futuristic cityscape in 2026, showcasing sleek skyscrapers reaching into the clouds and flying cars gracefully zipping through the air. This sets the stage for \"min gode dag i dag,\" highlighti\n- Shared Reality: The camera zooms in to reveal user_1773029103295_q9ceuooyx and a group of friends gathered, their faces lit by the glow of a holographic display. This display projects a vibrant, immersive virtual reality experience, central to their \"min gode dag i dag\" in 20\n- Immersive Joy: The scene deepens into the immersive virtual reality experience, showing the friends, including user_1773029103295_q9ceuooyx, fully engaged and enjoying their \"min gode dag i dag.\" The surroundings begin to blend with the virtual world, symbolizing the seamles",
+  "profile_context": "name=user_1773029103295_q9ceuooyx; bio=; level=1; generation_points=0",
+  "created_at": "2026-03-09T04:58:17.693271"
+}

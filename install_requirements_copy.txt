@@ -1,0 +1,6 @@
+# Requirements for copy_server.py
+# Install with: pip install -r install_requirements_copy.txt
+
+paramiko>=3.3.0
+scp>=0.14.0
+

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "title": "Star Map 25 — readable proofs (canonical documentation)",
+  "description": "Stable references the AI must ground on; shown beside generated explanations.",
+  "proofs": [
+    {
+      "id": "mult",
+      "title": "Investigation reward multiplier",
+      "refs": [
+        "Code: backend/routes/star_map_routes.py → STAR_MAP_INVESTIGATION_MULTIPLIER",
+        "API: GET /api/star-map/25/status → investigation_reward_multiplier"
+      ],
+      "body": "Each investigation awards round(point_value × multiplier) game_points. Default multiplier is 1.2 (Season 2 +20%). Display and awards use the same formula."
+    },
+    {
+      "id": "status",
+      "title": "Status API (source of truth for UI)",
+      "refs": [
+        "GET /api/star-map/25/status?user_id=…",
+        "Fields: investigated_ids, total_points_earned, walkthrough, reward_formula"
+      ],
+      "body": "Poll or load once for progress, multiplier, and walkthrough tier. Sync profile via POST /api/star-map/25/sync-profile."
+    },
+    {
+      "id": "walkthrough",
+      "title": "Profile walkthrough (10 tiers)",
+      "refs": [
+        "data/starmap25_walkthrough.json",
+        "status.walkthrough.current_level / next"
+      ],
+      "body": "Tiers unlock by investigation count (1,3,5,…,25). Each tier names a UI capability (3D, planet intel, 4D view, etc.)."
+    },
+    {
+      "id": "planet_intel",
+      "title": "Planet deep intel (5 levels)",
+      "refs": [
+        "GET /api/star-map/25/planet-intel?point_id=&planet=",
+        "Alien tier includes catalog line with “Already had this behavior.” when using server fallback"
+      ],
+      "body": "Click a planet chip on a card to fetch five depth levels; xenos classification is depth 3 in the fallback generator."
+    },
+    {
+      "id": "buildup",
+      "title": "Buildup & collect",
+      "refs": [
+        "GET /api/star-map/25/buildup",
+        "POST /api/star-map/25/collect",
+        "data/starmap25_buildings.json, starmap25_units.json"
+      ],
+      "body": "After investigating a system, place buildings/units; pending points accrue. Collect posts game_points. Daily reset window can multiply structure output (see system levels config)."
+    },
+    {
+      "id": "levels_sys",
+      "title": "Per-system levels 1–5",
+      "refs": [
+        "GET /api/star-map/25/levels",
+        "data/starmap25_system_levels.json"
+      ],
+      "body": "Levels rise with placements in a system (buildings + units). Higher levels unlock stronger structures in JSON rules."
+    },
+    {
+      "id": "investigate",
+      "title": "Investigate (once per point)",
+      "refs": [
+        "POST /api/star-map/25/investigate { user_id, point_id }",
+        "data/star_map_25.json (point ids and point_value)"
+      ],
+      "body": "Awards points once per user per point_id; investigations list stored in data/star_map_25_investigations.json."
+    },
+    {
+      "id": "ai_hint",
+      "title": "Legacy tactical hints",
+      "refs": ["GET /api/star-map/25/ai-hint"],
+      "body": "Short tips; does not include proof blocks. Prefer /ai-guide for narrative + proofs."
+    }
+  ]
+}

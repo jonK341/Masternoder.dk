@@ -1,0 +1,53 @@
+{
+  "sources": [
+    {
+      "id": "arxiv",
+      "name": "arXiv",
+      "type": "research",
+      "enabled": true,
+      "description": "CS/AI/ML/CV preprints",
+      "url_template": "https://export.arxiv.org/api/query?search_query=cat:{category}&max_results={limit}&sortBy=submittedDate&sortOrder=descending",
+      "category_map": {
+        "ai": "cs.AI",
+        "machine-learning": "cs.LG",
+        "computer-vision": "cs.CV",
+        "all": "cs.AI+OR+cat:cs.LG+OR+cat:cs.CV"
+      },
+      "env_key": null,
+      "cache_seconds": 21600
+    },
+    {
+      "id": "newsapi",
+      "name": "NewsAPI.org",
+      "type": "news",
+      "enabled": false,
+      "description": "Headlines (requires NEWSAPI_API_KEY)",
+      "url_template": "https://newsapi.org/v2/top-headlines?category=technology&pageSize={limit}&apiKey={api_key}",
+      "env_key": "NEWSAPI_API_KEY",
+      "cache_seconds": 3600
+    },
+    {
+      "id": "hackernews",
+      "name": "Hacker News",
+      "type": "news",
+      "enabled": true,
+      "description": "HN top stories (public)",
+      "url_template": "https://hacker-news.firebaseio.com/v0/topstories.json",
+      "env_key": null,
+      "cache_seconds": 1800
+    },
+    {
+      "id": "open_meteo",
+      "name": "Open-Meteo",
+      "type": "weather",
+      "enabled": true,
+      "description": "Weather (public, no key)",
+      "url_template": "https://api.open-meteo.com/v1/forecast?latitude=55.68&longitude=12.57&current=temperature_2m,weather_code&timezone=Europe/Copenhagen",
+      "env_key": null,
+      "cache_seconds": 3600
+    }
+  ],
+  "default_research_category": "all",
+  "default_news_limit": 10,
+  "request_timeout_seconds": 15
+}

@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="da" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compendium — Rulebook V1–V15 | MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        :root { --cp-primary: #FFD700; --cp-bg: #0a0a0f; --cp-card: #151520; --cp-border: rgba(255,215,0,0.25); }
+        body { margin: 0; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%); color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+        .comp-nav { max-width: 900px; margin: 0 auto; padding: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--cp-border); }
+        .comp-nav a { color: var(--cp-primary); text-decoration: none; padding: 8px 12px; border-radius: 8px; background: rgba(255,215,0,0.1); }
+        .comp-nav a:hover { background: rgba(255,215,0,0.2); }
+        .comp-main { max-width: 900px; margin: 0 auto; padding: 24px; }
+        h1 { color: var(--cp-primary); margin-bottom: 8px; }
+        .comp-desc { opacity: 0.9; margin-bottom: 28px; }
+        .section-title { color: var(--cp-primary); font-size: 1.1rem; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--cp-border); }
+        .section-title:first-of-type { margin-top: 0; }
+        .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+        .page-link { display: block; padding: 16px; background: var(--cp-card); border: 2px solid var(--cp-border); border-radius: 12px; color: #fff; text-decoration: none; text-align: center; transition: all 0.2s; }
+        .page-link:hover { border-color: var(--cp-primary); box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+        .page-link strong { display: block; color: var(--cp-primary); margin-bottom: 4px; }
+        .page-link span { font-size: 0.9em; opacity: 0.8; }
+        .page-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--cp-border); }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div id="navigation-toolbar"></div>
+    <nav class="comp-nav">
+        <a href="/trophies">← Trophies</a>
+        <a href="/trophies#compendium">Trophies · Compendium tab</a>
+    </nav>
+    <main class="comp-main">
+        <h1>📚 Compendium — Rulebook V1–V15</h1>
+        <img src="/static/img/rulebook-compendium-v15.png" alt="Compendium V15" style="max-width: 100%; border-radius: 12px; border: 2px solid var(--cp-border); margin-bottom: 20px;">
+        <p class="comp-desc">Alle rulebooks samlet ét sted. Communication Psychology (25 teorier), Trophy Hunters (spells + Medieval, Time Reversal, Power combos), Hunters Stories (Winter Wedding 1017), Star Map, Effect Clusters, Electric Magnet, Unified Points, Agents, Shop, Battle, DNA, Generator, Geo & Session, Analytics. Læsning giver compendium-point.</p>
+        <h2 class="section-title">Communication Psychology (V3) — 10 sider</h2>
+        <div class="page-grid">
+            <a class="page-link" href="/compendium/page-1.html"><strong>Side 1</strong><span>Magtdynamikker 1–3</span></a>
+            <a class="page-link" href="/compendium/page-2.html"><strong>Side 2</strong><span>Magt + Social 4–6</span></a>
+            <a class="page-link" href="/compendium/page-3.html"><strong>Side 3</strong><span>Social indflydelse 7–8</span></a>
+            <a class="page-link" href="/compendium/page-4.html"><strong>Side 4</strong><span>Retorik 9–11</span></a>
+            <a class="page-link" href="/compendium/page-5.html"><strong>Side 5</strong><span>Retorik + Psyk 12–14</span></a>
+            <a class="page-link" href="/compendium/page-6.html"><strong>Side 6</strong><span>Psyk krig 15–16</span></a>
+            <a class="page-link" href="/compendium/page-7.html"><strong>Side 7</strong><span>Digital magt 17–19</span></a>
+            <a class="page-link" href="/compendium/page-8.html"><strong>Side 8</strong><span>Digital + Monet 20–21</span></a>
+            <a class="page-link" href="/compendium/page-9.html"><strong>Side 9</strong><span>Monetarisering 22–24</span></a>
+            <a class="page-link" href="/compendium/page-10.html"><strong>Side 10</strong><span>Halo Effect</span></a>
+        </div>
+        <h2 class="section-title">Rulebooks V1–V15</h2>
+        <div class="page-grid" id="rulebook-v1-15-list">
+            <a class="page-link" href="/compendium/rulebook-v1"><img src="/static/img/rulebook-v1-core.png" alt="" class="page-thumb"><strong>V1</strong><span>Core Rules</span></a>
+            <a class="page-link" href="/compendium/hunters-rulebook.html"><img src="/static/img/rulebook-v2-hunters.png" alt="" class="page-thumb"><strong>V2</strong><span>Trophy Hunters</span></a>
+            <a class="page-link" href="/compendium/page-1.html"><img src="/static/img/rulebook-v3-comm-psych.png" alt="" class="page-thumb"><strong>V3</strong><span>Comm. Psychology</span></a>
+            <a class="page-link" href="/compendium/rulebook-v4"><img src="/static/img/rulebook-v4-star-map.png" alt="" class="page-thumb"><strong>V4</strong><span>Star Map</span></a>
+            <a class="page-link" href="/compendium/rulebook-v5"><img src="/static/img/rulebook-v5-effect-clusters.png" alt="" class="page-thumb"><strong>V5</strong><span>Effect Clusters</span></a>
+            <a class="page-link" href="/compendium/rulebook-v6"><img src="/static/img/rulebook-v6-electric-magnet.png" alt="" class="page-thumb"><strong>V6</strong><span>Electric Magnet</span></a>
+            <a class="page-link" href="/compendium/rulebook-v7"><img src="/static/img/rulebook-v7-unified-points.png" alt="" class="page-thumb"><strong>V7</strong><span>Unified Points</span></a>
+            <a class="page-link" href="/compendium/rulebook-v8"><img src="/static/img/rulebook-v8-agents.png" alt="" class="page-thumb"><strong>V8</strong><span>Agents</span></a>
+            <a class="page-link" href="/compendium/rulebook-v9"><img src="/static/img/rulebook-v9-shop.png" alt="" class="page-thumb"><strong>V9</strong><span>Shop</span></a>
+            <a class="page-link" href="/compendium/rulebook-v10"><img src="/static/img/rulebook-v10-battle.png" alt="" class="page-thumb"><strong>V10</strong><span>Battle</span></a>
+            <a class="page-link" href="/compendium/rulebook-v11"><img src="/static/img/rulebook-v11-dna.png" alt="" class="page-thumb"><strong>V11</strong><span>DNA Theory</span></a>
+            <a class="page-link" href="/compendium/rulebook-v12"><img src="/static/img/rulebook-v12-generator.png" alt="" class="page-thumb"><strong>V12</strong><span>Generator</span></a>
+            <a class="page-link" href="/compendium/rulebook-v13"><img src="/static/img/rulebook-v13-geo-session.png" alt="" class="page-thumb"><strong>V13</strong><span>Geo & Session</span></a>
+            <a class="page-link" href="/compendium/rulebook-v14"><img src="/static/img/rulebook-v14-analytics.png" alt="" class="page-thumb"><strong>V14</strong><span>Analytics</span></a>
+            <a class="page-link" href="/compendium/"><img src="/static/img/rulebook-compendium-v15.png" alt="" class="page-thumb"><strong>V15</strong><span>Master Index</span></a>
+        </div>
+        <p style="margin-top: 12px;"><a href="/trophies" style="color: var(--cp-primary); font-weight: 600;">📜 Hunters Stories</a> — Winter Wedding (1017), time reversal, medieval, power combos. Open Trophies and select the Stories tab.</p>
+        <h2 class="section-title">Rulebook Viewer</h2>
+        <div id="inline-rulebook-viewer" style="background: var(--cp-card); border: 1px solid var(--cp-border); border-radius: 12px; padding: 16px;">
+            <p style="opacity: 0.85; margin: 0;">Select a rulebook from the grid above (opens full viewer) or use a hash like <code>#rulebook-v9</code> for a quick inline preview on this page.</p>
+        </div>
+        <p style="margin-top: 24px; font-size: 0.9em; opacity: 0.7;">Integreret med unified points, Communication Psychology og Hunters game. Din bruger-ID bruges til at registrere læsning.</p>
+        <p style="margin-top: 12px; font-size: 0.85em; opacity: 0.6;">Compendium V1–V15 · Opdateret 2026-02-21</p>
+    </main>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        (function() {
+            function renderRulebookView(version) {
+                var viewer = document.getElementById('inline-rulebook-viewer');
+                if (!viewer) return;
+                if (!version) {
+                    viewer.innerHTML = '<p style="opacity:0.85; margin:0;">Use a hash like <code>#rulebook-v9</code> for an inline preview, or open a version from the grid (full viewer).</p>';
+                    return;
+                }
+                var v = String(version).replace('rulebook-', '').replace('#', '').replace('v', '').trim();
+                if (!v) return;
+                var candidates = [
+                    '/api/rulebooks/v' + v,
+                    '/api/rulebooks/v' + v,
+                    '/api/rulebooks/' + v,
+                    '/api/rulebooks/' + v
+                ];
+                function fetchApi(i) {
+                    if (i >= candidates.length) throw new Error('No rulebook API');
+                    return fetch(candidates[i]).then(function(r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function(payload) {
+                        if (!payload || payload.success === false) throw new Error('Invalid payload');
+                        return payload.rulebook || {};
+                    }).catch(function() {
+                        return fetchApi(i + 1);
+                    });
+                }
+                viewer.innerHTML = '<p style="opacity:0.8; margin:0;">Loading Rulebook V' + v + '...</p>';
+                fetchApi(0).then(function(rb) {
+                    var title = (rb._meta && rb._meta.icon ? rb._meta.icon + ' ' : '') + (rb.name || ('Rulebook V' + v));
+                    var desc = rb.description || '';
+                    var parts = [];
+                    parts.push('<h3 style="color: var(--cp-primary); margin-top:0;">' + title + '</h3>');
+                    if (desc) parts.push('<p style="opacity:0.9;">' + desc + '</p>');
+                    if (rb.agent_prompt) parts.push('<div class="rule-block"><h3>Agent prompt</h3><p>' + rb.agent_prompt + '</p></div>');
+                    if (rb.tech_spec) parts.push('<div class="rule-block"><h3>Tech spec</h3><p>' + rb.tech_spec + '</p></div>');
+                    if (rb.user_guide) parts.push('<div class="rule-block"><h3>User guide</h3><p>' + rb.user_guide + '</p></div>');
+                    if (rb.manual) parts.push('<div class="rule-block"><h3>Manual</h3><p>' + rb.manual + '</p></div>');
+                    if (rb.image_url) parts.push('<img src="' + rb.image_url + '" alt="' + (rb.image_alt || title) + '" style="max-width:100%; border-radius:10px; border:1px solid var(--cp-border); margin-top:10px;">');
+                    viewer.innerHTML = parts.join('');
+                }).catch(function() {
+                    viewer.innerHTML = '<div class="rule-block"><h3>Rulebook V' + v + '</h3><p>Data is temporarily unavailable. You can still use the compendium index while APIs sync.</p></div>';
+                });
+            }
+            function fromHash() {
+                var h = (window.location.hash || '').replace('#', '');
+                if (h.indexOf('rulebook-v') === 0) {
+                    renderRulebookView(h);
+                } else {
+                    renderRulebookView('');
+                }
+            }
+            window.addEventListener('hashchange', fromHash);
+            fromHash();
+        })();
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

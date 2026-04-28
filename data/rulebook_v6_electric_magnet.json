@@ -1,0 +1,33 @@
+{
+  "name": "Electric Magnet",
+  "version": "V6",
+  "shop_ui_alignment": "Shop UI V.9 — patch slices V6.1–V6.8 dokumenterer shop-linjer baglæns (shop_slot 8→1).",
+  "description": "Specials og tech tree. Electric Magnet tech integration. Under V6.1–V6.8: shop-katalogsøjler knyttet til specials og monetization.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v6-electric-magnet.png",
+  "image_alt": "Electric Magnet V6",
+  "agent_prompt": "Electric Magnet specials: run_verification, run_dna_test, view_star_map. Shop: shop_rulebook_patches V6.1–V6.8 (kategori↔docs). Wave v6/v7 shop-temaer ændrer ikke specials — fuld SKU-routing: rulebook_v9_shop.json cross_rulebook_routing.",
+  "tech_spec": "Specials: run_verification, run_dna_test, view_star_map; agent_electric_magnet; skillsets.json; electric_magnet_tech",
+  "user_guide": "Electric Magnet specials: verification, DNA test, stjernemap. Tilgængelige i Hunters game.",
+  "manual": "Agent manual V6: Agents with specials use these three. Expose via execute or view_star_map.",
+  "specials": ["run_verification", "run_dna_test", "view_star_map"],
+  "rules": [
+    {"id": "specials", "name": "Electric Magnet Specials", "text": "Tre specials deles mellem Electric Magnet, Hunters game og agent skillsets."},
+    {"id": "tech_tree", "name": "Tech Tree", "text": "electric_magnet_tech inkluderer view_star_map og star_map path."},
+    {"id": "agent_share", "name": "Agent Integration", "text": "Agents med specials bruger samme liste. Debugger og profile viser dem konsistent."},
+    {"id": "mn2_5d_monitor_bridge", "name": "MN2 5-dags monitor", "text": "Shop-linjen mn2_5d refererer til Profile MN2 5-dags UTC chart (ind/ud). Køb er tokens/flair — wallet-logik følger stadig MN2 API og brugerens faktiske balance."},
+    {"id": "theme_stack_wave_v6", "name": "Tema-wave v6", "text": "Wave v6-temaer (D&D, MTG tribute, Mafia, AI Core, Christmas, Home Base) er additive kosmetik; Electric Magnet specials forbliver uændrede i scope."},
+    {"id": "theme_stack_wave_v7", "name": "Tema-wave v7 (måneder)", "text": "Tolv theme-january … theme-december er kosmetik under themes-kategorien (V6.1). Ingen binding til run_verification/run_dna_test/view_star_map medmindre produkt kobler det eksplicit — se rulebook_v9_shop monthly_theme_catalog."},
+    {"id": "mn2_5d_and_specials", "name": "mn2_5d vs specials", "text": "mn2-5d-* SKUer (tech/cosmetic/boost/inventory) er Profile wallet-monitor flair (V1/V7/V9); de udvider ikke electric_magnet_tech eller specials-listen."}
+  ],
+  "shop_rulebook_patches": [
+    {"patch": "V6.8", "shop_slot": 8, "category": "inventory", "summary": "Inventory & orders tab + Profile inventory: merged API + Shop V.9 local shadow (shop_v9_shadow_*; migrates legacy shop_v4_shadow_*)."},
+    {"patch": "V6.7", "shop_slot": 7, "category": "stories", "summary": "Stories SKUs (Winter Wedding m.fl.): narrative unlocks; purchases append shop purchase history."},
+    {"patch": "V6.6", "shop_slot": 6, "category": "trophies", "summary": "Hunters trophies: cosmetic/progression lines; same unified user_id som resten af platformen."},
+    {"patch": "V6.5", "shop_slot": 5, "category": "premium", "summary": "Premium / unified-points bundles: caps enforced server-side; surfaced on Profile."},
+    {"patch": "V6.4", "shop_slot": 4, "category": "buy_coins", "summary": "PayPal & coins tab: coin packs via /api/shop/coin-packs og PayPal capture flow."},
+    {"patch": "V6.3", "shop_slot": 3, "category": "starmap25", "summary": "Star Map 25 category: aligns med view_star_map special og V4 stjernedata."},
+    {"patch": "V6.2", "shop_slot": 2, "category": "boosts", "summary": "Boosters & events tab + boosts filter: XP/timer boosters skrevet via unified points service ved køb."},
+    {"patch": "V6.1", "shop_slot": 1, "category": "themes", "summary": "Themes catalog: primary cosmetic/gameplay skins; køb via /api/shop-v3/purchase eller legacy /api/game/shop/purchase."}
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "description": "25 monetization levers — hooked to AI and agents to drive revenue. Each lever can be assigned an agent and get AI recommendations.",
+  "levers": [
+    {"id": "01", "domain": "conversion_orchestration", "name": "Conversion orchestration", "description": "End-to-end conversion flow optimization", "category": "conversion", "suggested_agents": ["content_generator_agent", "analytics_agent"], "shop_category_hook": "premium", "revenue_hook": "paypal"},
+    {"id": "02", "domain": "offer_architecture", "name": "Offer architecture", "description": "Structure and present offers for maximum take-up", "category": "offers", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "premium", "revenue_hook": "shop"},
+    {"id": "03", "domain": "pricing_intelligence", "name": "Pricing intelligence", "description": "Dynamic and value-based pricing signals", "category": "pricing", "suggested_agents": ["analytics_agent"], "shop_category_hook": "currency", "revenue_hook": "paypal"},
+    {"id": "04", "domain": "bundle_engineering", "name": "Bundle engineering", "description": "Design bundles and packs that increase AOV", "category": "offers", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "premium", "revenue_hook": "shop"},
+    {"id": "05", "domain": "checkout_optimization", "name": "Checkout optimization", "description": "Reduce friction and drop-off at checkout", "category": "conversion", "suggested_agents": ["analytics_agent"], "shop_category_hook": "buy_coins", "revenue_hook": "paypal"},
+    {"id": "06", "domain": "cart_reactivation", "name": "Cart reactivation", "description": "Bring back abandoned carts with smart prompts", "category": "retention", "suggested_agents": ["content_generator_agent", "learning_agent"], "shop_category_hook": "boosts", "revenue_hook": "shop"},
+    {"id": "07", "domain": "cross_sell_matrix", "name": "Cross-sell matrix", "description": "Recommend related items and upgrades", "category": "offers", "suggested_agents": ["content_generator_agent", "analytics_agent"], "shop_category_hook": "inventory", "revenue_hook": "shop"},
+    {"id": "08", "domain": "upsell_sequence", "name": "Upsell sequence", "description": "Timed upsells and one-click upgrades", "category": "offers", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "premium", "revenue_hook": "shop"},
+    {"id": "09", "domain": "retention_automation", "name": "Retention automation", "description": "Automate win-back and loyalty flows", "category": "retention", "suggested_agents": ["learning_agent", "analytics_agent"], "shop_category_hook": "boosts", "revenue_hook": "subscription"},
+    {"id": "10", "domain": "lifecycle_revenue", "name": "Lifecycle revenue", "description": "Maximize revenue per user over time", "category": "retention", "suggested_agents": ["analytics_agent"], "shop_category_hook": "unified_points", "revenue_hook": "paypal"},
+    {"id": "11", "domain": "segment_personalization", "name": "Segment personalization", "description": "Personalize offers by segment and behaviour", "category": "conversion", "suggested_agents": ["learning_agent", "analytics_agent"], "shop_category_hook": "premium", "revenue_hook": "shop"},
+    {"id": "12", "domain": "creative_performance", "name": "Creative performance", "description": "Optimize creatives and copy for conversion", "category": "creative", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "cosmetic", "revenue_hook": "shop"},
+    {"id": "13", "domain": "landing_page_velocity", "name": "Landing page velocity", "description": "Fast, focused landing pages that convert", "category": "conversion", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "themes", "revenue_hook": "shop"},
+    {"id": "14", "domain": "cta_precision", "name": "CTA precision", "description": "Clear, compelling calls to action", "category": "creative", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "boosts", "revenue_hook": "shop"},
+    {"id": "15", "domain": "social_proof_systems", "name": "Social proof systems", "description": "Reviews, ratings, and social proof", "category": "trust", "suggested_agents": ["content_generator_agent", "learning_agent"], "shop_category_hook": "social", "revenue_hook": "shop"},
+    {"id": "16", "domain": "trust_signal_stack", "name": "Trust signal stack", "description": "Badges, guarantees, and trust signals", "category": "trust", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "achievement", "revenue_hook": "shop"},
+    {"id": "17", "domain": "paywall_refinement", "name": "Paywall refinement", "description": "Optimize paywall placement and messaging", "category": "conversion", "suggested_agents": ["analytics_agent"], "shop_category_hook": "premium", "revenue_hook": "paypal"},
+    {"id": "18", "domain": "subscription_uplift", "name": "Subscription uplift", "description": "Increase subscription value and retention", "category": "retention", "suggested_agents": ["analytics_agent", "learning_agent"], "shop_category_hook": "premium", "revenue_hook": "subscription"},
+    {"id": "19", "domain": "profit_margin_guard", "name": "Profit margin guard", "description": "Guard margins while maximizing volume", "category": "pricing", "suggested_agents": ["analytics_agent"], "shop_category_hook": "currency", "revenue_hook": "paypal"},
+    {"id": "20", "domain": "refund_risk_control", "name": "Refund risk control", "description": "Reduce refunds and chargebacks", "category": "trust", "suggested_agents": ["analytics_agent"], "shop_category_hook": "premium", "revenue_hook": "paypal"},
+    {"id": "21", "domain": "funnel_diagnostics", "name": "Funnel diagnostics", "description": "Identify and fix funnel drop-off", "category": "analytics", "suggested_agents": ["analytics_agent"], "shop_category_hook": null, "revenue_hook": "data"},
+    {"id": "22", "domain": "kpi_forecasting", "name": "KPI forecasting", "description": "Forecast revenue and conversion KPIs", "category": "analytics", "suggested_agents": ["analytics_agent"], "shop_category_hook": null, "revenue_hook": "data"},
+    {"id": "23", "domain": "sales_copy_adaptation", "name": "Sales copy adaptation", "description": "Adapt copy by channel and audience", "category": "creative", "suggested_agents": ["content_generator_agent"], "shop_category_hook": "stories", "revenue_hook": "shop"},
+    {"id": "24", "domain": "campaign_compounding", "name": "Campaign compounding", "description": "Compound gains across campaigns", "category": "analytics", "suggested_agents": ["analytics_agent", "learning_agent"], "shop_category_hook": "boosts", "revenue_hook": "shop"},
+    {"id": "25", "domain": "scale_readiness", "name": "Scale readiness", "description": "Infrastructure and ops for scaling revenue", "category": "scale", "suggested_agents": ["analytics_agent"], "shop_category_hook": "premium", "revenue_hook": "paypal"}
+  ],
+  "revenue_hooks": {
+    "paypal": "Direct PayPal / real-money conversion",
+    "shop": "In-app shop (coins, points, items)",
+    "subscription": "Recurring or subscription revenue",
+    "data": "Data and insights that inform revenue decisions"
+  },
+  "agent_roles": {
+    "content_generator_agent": "Copy, creatives, offers, bundles",
+    "learning_agent": "Personalization, retention, adaptation",
+    "analytics_agent": "Pricing, funnel, KPIs, forecasting"
+  }
+}

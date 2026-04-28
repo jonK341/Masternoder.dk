@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Champions League Top 10 - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <style>
+        .champions-page {
+            min-height: 100vh;
+            padding: 100px 20px 40px;
+        }
+        
+        .top10-list {
+            display: grid;
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .top10-entry {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-card);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+        }
+        
+        .top10-entry:hover {
+            border-color: var(--primary);
+            transform: translateX(10px);
+        }
+        
+        .rank-badge {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #000; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #000; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #e6a857); color: #fff; }
+        .rank-other { background: rgba(0, 255, 136, 0.2); color: var(--primary); }
+        
+        .history-section {
+            margin-top: var(--spacing-xl);
+        }
+        
+        .season-selector {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin: var(--spacing-md) 0;
+            flex-wrap: wrap;
+        }
+        
+        .season-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+        
+        .season-btn:hover,
+        .season-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="champions-page">
+        <div class="container">
+            <h1>🏆 Champions League Top 10</h1>
+            <p class="subtitle">Elite Rankings • History • Champions</p>
+            
+            <div class="season-selector" id="seasonSelector"></div>
+            
+            <div id="top10Container">
+                <p>Loading Champions League data...</p>
+            </div>
+            
+            <div class="history-section">
+                <h2>📜 History</h2>
+                <div id="historyContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        const API_BASE = window.location.origin;
+        let currentSeason = '2024';
+        
+        async function loadChampionsLeague(season = null) {
+            try {
+                const url = season 
+                    ? `${API_BASE}/api/champions-league/top10?season=${season}`
+                    : `${API_BASE}/api/champions-league/top10`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTop10(data.top_10, data.season);
+                    displayHistory(data.history);
+                    currentSeason = data.season;
+                }
+            } catch (error) {
+                console.error('Error loading Champions League:', error);
+            }
+        }
+        
+        function displayTop10(top10, season) {
+            const container = document.getElementById('top10Container');
+            
+            if (top10.length === 0) {
+                container.innerHTML = '<p>No entries yet for this season.</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <h2>Season ${season} - Top 10</h2>
+                <div class="top10-list">
+                    ${top10.map((entry, index) => {
+                        const rank = index + 1;
+                        const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+                        return `
+                            <div class="top10-entry">
+                                <div class="rank-badge ${rankClass}">${rank}</div>
+                                <div style="flex: 1;">
+                                    <strong>User: ${entry.user_id}</strong><br>
+                                    <small>Guild: ${entry.guild_id || 'N/A'} | Clan: ${entry.clan_id || 'N/A'}</small>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                                        ${entry.points}
+                                    </div>
+                                    <small>Points</small>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        function displayHistory(history) {
+            const container = document.getElementById('historyContainer');
+            const selector = document.getElementById('seasonSelector');
+            
+            const seasons = Object.keys(history || {});
+            
+            if (seasons.length === 0) {
+                container.innerHTML = '<p>No history available.</p>';
+                return;
+            }
+            
+            // Season selector
+            selector.innerHTML = seasons.map(season => `
+                <button class="season-btn ${season === currentSeason ? 'active' : ''}" 
+                        onclick="loadChampionsLeague('${season}')">
+                    ${season}
+                </button>
+            `).join('');
+            
+            // History display
+            container.innerHTML = `
+                <div style="display: grid; gap: var(--spacing-md);">
+                    ${seasons.map(season => `
+                        <div style="padding: var(--spacing-md); background: var(--bg-card); border-radius: var(--radius-md);">
+                            <h3>Season ${season}</h3>
+                            <p>${history[season].length} entries</p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Load on page load
+        window.addEventListener('load', () => {
+            loadChampionsLeague();
+        });
+    </script>
+    
+    
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    <!-- System Aggregator Integration -->
+    <script>
+        const AGGREGATOR_API = '/api/aggregator';
+        
+        // Unified data loader using aggregator
+        async function loadAllSystemData(userId) {
+            try {
+                const response = await fetch(`${AGGREGATOR_API}/frontend?user_id=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Aggregator API failed, falling back to individual endpoints:', error);
+            }
+            return null;
+        }
+        
+        // Update page-specific data
+        async function updatePageData(userId) {
+            const allData = await loadAllSystemData(userId);
+            if (!allData) return;
+            
+            // Update based on page type
+            if (allData.dashboard) {
+                updateDashboardData(allData.dashboard);
+            }
+            if (allData.battle) {
+                updateBattleData(allData.battle);
+            }
+            if (allData.shop) {
+                updateShopData(allData.shop);
+            }
+            if (allData.quest) {
+                updateQuestData(allData.quest);
+            }
+            if (allData.points) {
+                updatePointsData(allData.points);
+            }
+        }
+        
+        // Helper functions for each page type
+        function updateDashboardData(data) {
+            if (data.points && data.points.total !== undefined) {
+                const pointsEl = document.getElementById('total-points');
+                if (pointsEl) pointsEl.textContent = data.points.total;
+            }
+        }
+        
+        function updateBattleData(data) {
+            if (data.battles && Array.isArray(data.battles)) {
+                const battlesEl = document.getElementById('battle-list');
+                if (battlesEl) {
+                    battlesEl.innerHTML = data.battles.map(b => 
+                        `<div class="battle-item">${b.name || 'Battle'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateShopData(data) {
+            if (data.items && Array.isArray(data.items)) {
+                const itemsEl = document.getElementById('shop-items');
+                if (itemsEl) {
+                    itemsEl.innerHTML = data.items.map(item => 
+                        `<div class="shop-item">${item.name || 'Item'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateQuestData(data) {
+            if (data.active_quests && Array.isArray(data.active_quests)) {
+                const questsEl = document.getElementById('active-quests');
+                if (questsEl) {
+                    questsEl.innerHTML = data.active_quests.map(q => 
+                        `<div class="quest-item">${q.name || 'Quest'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updatePointsData(data) {
+            // Update points displays across the page
+            const pointsElements = document.querySelectorAll('[data-points]');
+            pointsElements.forEach(el => {
+                const pointType = el.getAttribute('data-points');
+                if (data[pointType] !== undefined) {
+                    el.textContent = data[pointType];
+                }
+            });
+        }
+        
+        // Auto-update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            updatePageData(userId);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => updatePageData(userId), 30000);
+        });
+    </script>
+    
+
+    <!-- Production Debugger Integration -->
+    <script>
+        const DEBUGGER_API = '/api/debug';
+        
+        // Debug function (only in development)
+        function debugSystem(systemName) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                fetch(`${DEBUGGER_API}/system/${systemName}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`[Debug] ${systemName}:`, data);
+                    })
+                    .catch(e => console.error(`[Debug] Error debugging ${systemName}:`, e));
+            }
+        }
+        
+        // Auto-debug on errors (development only)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.addEventListener('error', (event) => {
+                console.error('[Debug] Page error detected:', event.error);
+                // Optionally send to debugger API
+            });
+        }
+    </script>
+    
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+

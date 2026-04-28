@@ -1,0 +1,18 @@
+---
+description: Register Intelligence - automatic route/blueprint/API registration
+globs: backend/**/*.py, vidgenerator/**/*.{js,html}
+---
+
+# Register Intelligence
+
+When adding new routes, blueprints, or API endpoints:
+
+1. **Backend**: Add your blueprint in `backend/routes/` - it will be auto-discovered and registered. No need to manually add to `register_blueprints.py`.
+
+2. **Frontend**: Use `/vidgenerator/api/` or `/api/` paths. The system scans frontend for API calls and compares with backend routes.
+
+3. **404s**: All API 404s are logged to `logs/register_intelligence/404_occurrences.jsonl` for analysis.
+
+4. **Audit**: Run `python scripts/run_register_intelligence.py` to see discovery and gap analysis. Use `--show-404-patterns` to see logged 404 patterns.
+
+5. **API**: `GET /api/register-intelligence/audit` returns the full audit (discovery + potential missing paths).

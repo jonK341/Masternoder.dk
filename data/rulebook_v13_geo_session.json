@@ -1,0 +1,19 @@
+{
+  "name": "Geo & Session",
+  "version": "V13",
+  "description": "geo_reference, checkpoint, extend_session, aggregator_fill.",
+  "updated_at": "2026-02-21",
+  "image_url": "/vidgenerator/static/img/rulebook-v13-geo-session.png",
+  "image_alt": "Geo & Session V13",
+  "agent_prompt": "Geo & Session: geo_reference (GPS), checkpoint (generator on/off), extend_session, aggregator_fill. Hunters utility spells.",
+  "tech_spec": "geo_reference cost 18; checkpoint cost 40; extend_session cost 28; aggregator_fill cost 32; agent_geo_refs; aggregator-fulfill API",
+  "user_guide": "Geo-ref, checkpoint, session length. Hunters utility spells.",
+  "manual": "Agent manual V13: geo_ref for location. checkpoint and extend_session for session hooks. aggregator_fill for missing data.",
+  "spells": ["geo_reference", "checkpoint", "extend_session", "aggregator_fill"],
+  "rules": [
+    {"id": "geo_reference", "name": "Geo Reference", "text": "Hunters spell. Cost 18. GPS/geo-ref i agent_geo_refs."},
+    {"id": "checkpoint", "name": "Checkpoint", "text": "Hunters spell. Cost 40. Generator on/off placeholder."},
+    {"id": "extend_session", "name": "Extend Session", "text": "Hunters spell. Cost 28. Session length hooks."},
+    {"id": "aggregator_fill", "name": "Aggregator Fill", "text": "Hunters spell. Cost 32. Fylder manglende Hunters data."}
+  ]
+}

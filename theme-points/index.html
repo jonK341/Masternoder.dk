@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Theme Points - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+        <script src="/static/js/error-manager.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Same styles as metal page */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+            background: #0a0a0a; color: #ffffff; overflow-x: hidden;
+        }
+        .bg-animated {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 100, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .theme-points-page {
+            min-height: 100vh; position: relative; z-index: 2; padding: 100px 20px 60px;
+        }
+        .page-header {
+            text-align: center; margin-bottom: 60px;
+        }
+        .page-header h1 {
+            font-size: 4em; margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.5));
+        }
+        .theme-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px; max-width: 1600px; margin: 0 auto;
+        }
+        .theme-card {
+            background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 255, 136, 0.3); border-radius: 20px;
+            padding: 30px; transition: all 0.3s ease;
+        }
+        .theme-card:hover {
+            transform: translateY(-10px); border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+        .theme-name { font-size: 1.8em; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+        .theme-points { font-size: 3em; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+        .theme-label { font-size: 0.9em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="theme-points-page">
+        <div class="page-header">
+            <h1>🎨 Theme Points</h1>
+            <p class="subtitle">Track Your Theme Progress</p>
+        </div>
+        <div class="theme-grid" id="themeGrid">
+            <div class="loading">Loading theme points...</div>
+        </div>
+    </div>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/toast-notifications.js"></script>
+    <script>
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        async function loadThemePoints() {
+            try {
+                const response = await fetch(`/api/theme-points/user?user_id=${userId}`);
+                const data = await response.json();
+                if (data.success) {
+                    const grid = document.getElementById('themeGrid');
+                    const themes = data.theme_points || {};
+                    if (Object.keys(themes).length === 0) {
+                        grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary);">No theme points yet. Start creating videos to earn theme points!</div>';
+                    } else {
+                        grid.innerHTML = Object.entries(themes).map(([theme, points]) => `
+                            <div class="theme-card">
+                                <div class="theme-name">${theme}</div>
+                                <div class="theme-points">${points.toLocaleString()}</div>
+                                <div class="theme-label">Points</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading theme points:', error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadThemePoints);
+    </script>
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    
+
+    
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,16 @@
+{
+  "name": "Star Map 25 — System levels",
+  "description": "Each of the 25 systems has levels 1–5. Higher levels unlock harder structures. Daily reset refreshes high-level bonuses (must-have).",
+  "updated_at": "2026-03-18",
+  "max_level": 5,
+  "level_rules": [
+    { "level": 1, "name": "Scouted", "requirement": "Investigated", "unlocks": "Outpost, Listening Post" },
+    { "level": 2, "name": "Established", "requirement": "1+ building in system", "unlocks": "Barracks" },
+    { "level": 3, "name": "Fortified", "requirement": "3+ buildings or 2+ units in system", "unlocks": "Forge Shrine, Naval Dock" },
+    { "level": 4, "name": "Bastion", "requirement": "5+ total placements in system", "unlocks": "Sanctum, Orbital Fortress" },
+    { "level": 5, "name": "Dominion", "requirement": "8+ total placements in system", "unlocks": "Cathedral, Primarch's Gate" }
+  ],
+  "daily_reset_utc_hour": 0,
+  "daily_reset_bonus_hours": 12,
+  "daily_reset_bonus_multiplier": 2.0
+}

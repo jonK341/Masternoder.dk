@@ -1,0 +1,162 @@
+/* Intelligence Widget - Research, News, Trending cards and panels */
+
+.intelligence-subtabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.intelligence-subtabs .intel-tab {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    background: rgba(0, 255, 136, 0.08);
+    color: #00ff88;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.intelligence-subtabs .intel-tab:hover {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: rgba(0, 255, 136, 0.5);
+}
+
+.intelligence-subtabs .intel-tab.active {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: #00ff88;
+}
+
+#intelligence-panels {
+    min-height: 120px;
+}
+
+.intel-panel {
+    display: none;
+}
+
+.intel-panel.active {
+    display: block;
+}
+
+.intel-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.intel-card {
+    background: rgba(26, 26, 46, 0.8);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.intel-card:hover {
+    border-color: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+}
+
+.intel-badge,
+.intel-badge-source {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(0, 255, 136, 0.15);
+    color: #00d4ff;
+    margin-bottom: 8px;
+}
+
+.intel-card-title {
+    font-size: 1rem;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.intel-card-title a {
+    color: #00ff88;
+    text-decoration: none;
+}
+
+.intel-card-title a:hover {
+    text-decoration: underline;
+}
+
+.intel-card-meta,
+.intel-card-abstract,
+.intel-card-summary {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+}
+
+.intel-card-date {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 8px 0 0 0;
+}
+
+.intel-trending-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.intel-trending-item {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: rgba(26, 26, 46, 0.6);
+    border-radius: 8px;
+    border-left: 3px solid #00ff88;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.intel-trend-topic {
+    font-weight: 600;
+    color: #fff;
+}
+
+.intel-trend-score {
+    font-size: 0.85rem;
+    color: #00d4ff;
+}
+
+.intel-trend-growth {
+    font-size: 0.85rem;
+    color: #00ff88;
+}
+
+.intel-empty,
+.intel-error {
+    padding: 24px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+}
+
+.intel-error {
+    color: #ff6b6b;
+}
+
+.intel-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.intel-loading.hidden {
+    display: none !important;
+}
+
+@media (max-width: 640px) {
+    .intel-cards {
+        grid-template-columns: 1fr;
+    }
+}

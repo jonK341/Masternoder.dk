@@ -1,0 +1,17 @@
+---
+description: Project rethink and agent-native direction (marketplace: brainstorming + agent-native-architecture)
+alwaysApply: false
+globs: docs/**/*.md, backend/routes/**/*.py, backend/services/agent*.py
+---
+
+# Project Rethink
+
+When rethinking the project, making large architectural changes, or adding agent capabilities:
+
+1. **Read** [docs/PROJECT_RETHINK.md](../../docs/PROJECT_RETHINK.md) for intent, parity, granularity, and consolidation.
+
+2. **Apply marketplace skills:**
+   - **Brainstorming:** Clarify WHAT (purpose, users, success) before HOW. One-sentence product definition.
+   - **Agent-native:** Parity (every UI action = agent-achievable), atomic tools, new features as prompts.
+
+3. **Before adding agent routes:** Prefer extending the capability map and a single agent API over new fragmented blueprints.

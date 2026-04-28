@@ -1,0 +1,24 @@
+---
+description: Tabbed UI click handling and JS parsing fixes for single-page HTML
+globs: vidgenerator/**/*.html
+alwaysApply: false
+---
+
+# Tabbed UI and JS Parsing
+
+When building or fixing tabbed UIs and inline script in HTML:
+
+## Tab buttons that don't respond
+
+- Use **container delegation**: `container.addEventListener('click', (e) => { ... })` and match `e.target.closest('.tab')` or button data attributes.
+- Add a **document fallback**: `document.addEventListener('click', handler, true)` so clicks are still handled if the container isn't ready.
+- As backup, attach **direct listeners** to each tab button after DOM is ready.
+- Give tab buttons `type="button"` and class like `tab`; use CSS `button.tab { pointer-events: auto; cursor: pointer; }` so they're clickable.
+- Wrap tab content updates (e.g. `fillTableSync()`) in **try/catch** so one failing tab doesn't break others.
+
+## JS syntax and parsing
+
+- Avoid **template literals** for URL arrays in tight loops if the file is parsed in a context that mis-handles backticks; use string concat instead:
+  - Prefer: `const base = API_BASE; const urls = [base + '/path1', base + '/path2'];`
+  - Avoid in problematic files: `` urls = [`${API_BASE}/path1`, ...] ``.
+- Use **ASCII** for arrows and dashes in JS strings/comments when targeting mixed environments (e.g. Windows cp1252): use `->` or `&rarr;` instead of `→`, and `--` or `-` instead of `—`, to prevent encoding/parse errors.

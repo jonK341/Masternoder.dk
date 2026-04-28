@@ -1,0 +1,39 @@
+{
+  "share_base_url": "https://masternoder.dk",
+  "networks": [
+    {
+      "id": "x",
+      "name": "X (Twitter)",
+      "icon": "𝕏",
+      "color": "#000000",
+      "share_url": "https://twitter.com/intent/tweet?text={text}&url={url}&hashtags=MasterNoder,HuntersGame",
+      "encode_text": true
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn",
+      "icon": "in",
+      "color": "#0a66c2",
+      "share_url": "https://www.linkedin.com/sharing/share-offsite/?url={url}",
+      "encode_text": false
+    },
+    {
+      "id": "facebook",
+      "name": "Facebook",
+      "icon": "f",
+      "color": "#1877f2",
+      "share_url": "https://www.facebook.com/sharer/sharer.php?u={url}",
+      "encode_text": false
+    },
+    {
+      "id": "mastodon",
+      "name": "Mastodon",
+      "icon": "M",
+      "color": "#6364ff",
+      "share_url": "https://mastodonshare.com/?text={text}&url={url}",
+      "encode_text": true
+    }
+  ],
+  "default_share_text": "MasterNoder — AI video generation + Hunters Game",
+  "default_share_hashtags": "MasterNoder,HuntersGame"
+}

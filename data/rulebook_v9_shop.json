@@ -1,0 +1,65 @@
+{
+  "name": "Shop & Monetization",
+  "version": "V9",
+  "description": "Shop V.9: tabbed catalog, PayPal/MN2 rails, inventory shadow merge, API line checks, og monetization flows. Inkluderer månedlige tema-SKUer (theme-january … theme-december) og wave v6/v7 tags.",
+  "updated_at": "2026-04-20",
+  "image_url": "/vidgenerator/static/img/rulebook-v9-shop.png",
+  "image_alt": "Shop V9",
+  "agent_prompt": "Shop V.9: tabs Catalog / PayPal & coins / MN2 / Boosters / Inventory. Wave v6: D&D (merged D6D), MTG tribute, Mafia, AI Core, Christmas, Home Base. Wave v7: 12 monthly_theme SKUer (theme-january … theme-december). MN2 5-dags monitor (mn2-5d-*). Shadow shop_v9_shadow_{user}. shop-v9-purchase + shop-v4-purchase. API line checks GET /api/shop/config. Lab: same game_user_id; handbook docs/LAB.md; APIs /api/lab/progression, explore, chapter2-research, technologies.",
+  "tech_spec": "SHOP_UI_VERSION=9.0.0 (shop_routes); shop/index.html ShopV9; GET /api/shop/config (shop_ui_version, api_line_checks); POST /api/shop-v3/purchase, /api/game/shop/purchase; GET /api/shop/inventory; GET /api/shop/purchases; data/shop_v4_api_line_checks.json (filnavn historisk, indhold = produktlinje); profile merge shadow v9+v4. Lab: GET /api/lab/progression; POST /api/lab/explore; GET|POST /api/lab/chapter2-research; GET|POST /api/lab/technologies; POST /api/lab/technologies/{id}/agent-refine — se docs/LAB.md.",
+  "user_guide": "Åbn /shop. Vælg faner og kategori-filter. Køb med coins, unified points, MN2 eller PayPal (coin packs / subscription på PayPal-fanen). Profile viser inventory med samme merge som shop. Kør API line test i bunden af revenue-kortet hvis noget fejler. Tværgående tema-/MN2-dokumentation: se cross_rulebook_routing (V1,V4,V5,V6,V7,V8,V10,lab_research). Research og exploration: /lab + handbook docs/LAB.md (repo).",
+  "manual": "Agent manual V9: Henvis til shop UI; ingen server-køb fra agent uden tool. Brug monthly_theme_catalog for måned-for-måned SKU-liste. Forklar V6.1–V6.8 shop_rulebook_patches for kategori→regel. Dokumentér shop_ui_version når bruger spørger om version. Lab: cross_rulebook_routing.lab_research + rules.lab_handbook; fuld teknisk reference i docs/LAB.md.",
+  "tabs": [
+    {"id": "catalog", "label": "Catalog", "notes": "Primær grid, søg/sort, kategori-dropdown."},
+    {"id": "coins", "label": "PayPal & coins", "notes": "Coin packs, subscription flows."},
+    {"id": "mn2", "label": "MN2 wallet", "notes": "Balance, in-wallet betaling, on-chain ordre + QR."},
+    {"id": "boosters", "label": "Boosters & events", "notes": "Tidsbundne boosts og events."},
+    {"id": "account", "label": "Inventory & orders", "notes": "Lokal liste + købshistorik inkl. shadow."}
+  ],
+  "client_events": [
+    "shop-v9-purchase (primary)",
+    "shop-v4-purchase (compatibility — samme payload)"
+  ],
+  "monthly_theme_catalog": [
+    {"month": 1, "item_id": "theme-january", "name": "January Aurora", "summary": "Arctic glow / new-year crisp UI energy."},
+    {"month": 2, "item_id": "theme-february", "name": "February Velvet Hearts", "summary": "Velvet reds / romantic winter highlights."},
+    {"month": 3, "item_id": "theme-march", "name": "March Clover Rain", "summary": "Clover greens / early spring rain contrast."},
+    {"month": 4, "item_id": "theme-april", "name": "April Blossom Rain", "summary": "Pastel blossoms / spring window light."},
+    {"month": 5, "item_id": "theme-may", "name": "May Meadow", "summary": "Meadow greens / long-day calm florals."},
+    {"month": 6, "item_id": "theme-june", "name": "June Solstice", "summary": "Midsummer gold / sky tones."},
+    {"month": 7, "item_id": "theme-july", "name": "July Fireworks", "summary": "Night-sky neon sparks / festive contrast."},
+    {"month": 8, "item_id": "theme-august", "name": "August Sunset Coast", "summary": "Coastal dusk / amber ocean haze."},
+    {"month": 9, "item_id": "theme-september", "name": "September Harvest Gold", "summary": "Harvest amber / structured autumn focus."},
+    {"month": 10, "item_id": "theme-october", "name": "October Midnight Ember", "summary": "Moonlit shadows / noir-orange ember."},
+    {"month": 11, "item_id": "theme-november", "name": "November Hearth", "summary": "Hearth browns / wool low-light comfort."},
+    {"month": 12, "item_id": "theme-december", "name": "December Snowlight", "summary": "Snow glow / festive winter-glass shimmer."}
+  ],
+  "cross_rulebook_routing": {
+    "purpose": "Hvor shop-/tema-/MN2-dokumentation hører hjemme på tværs af V1–V10 — undgå drift: V9 holder kanoniske SKU-lister; øvrige bind lægger domæne-regler ovenpå.",
+    "canonical_sku_lists": "Denne fil (V9): monthly_theme_catalog; wave v6-temaer + wave v7 månedlige theme-*; mn2-5d-* monitor-linje; Hunters shop-linjer i rules.shop_items / hunters_shop.",
+    "v1_core": "Profil-identitet, fair-use for tredjeparts-temaer, MN2 5-dags overflade vs on-chain; peger tilbage til V9 for fuld katalog.",
+    "v4_star_map": "Stjernedata uændret af UI-temaer; månedlige temaer er kosmetik ift. star map API.",
+    "v5_effect_clusters": "monthly_cluster_hints + cluster-sprog til Mafia/AI/jul + måneder (forklaring til spillere, ikke nye spells).",
+    "v6_electric_magnet": "Shop kategori ↔ specials bridge (shop_rulebook_patches V6.1–V6.8); wave v6/v7 temaer ændrer ikke Electric Magnet-special scope.",
+    "v7_unified_points": "MN2 vs unified points; theme-/måned-køb giver ikke point medmindre eksplicit add_points-kobling findes.",
+    "v8_agents": "Agent adfærd når brugeren spørger om shop/SKU: tool-grounded, wallet-sandhed, henvis til V9 for lister.",
+    "v10_battle": "Battle/leaderboard/profiling uændret af shop-temaer alene; kosmetik erstatter ikke profiling-endpoints.",
+    "lab_research": "Lab (/lab): research grid, exploration pulse og co-tech deler game_user_id med shop og profile; første research-touch kan give unified points + hunter XP (server). Katalog data/lab_progression_catalog.json. Operativ handbook: docs/LAB.md. APIs under /api/lab/*."
+  },
+  "rules": [
+    {"id": "shop_items", "name": "Shop Items", "text": "Electric Magnet, Star Map, Lab, Verification, DNA, Rulebook, Communication Psychology packs."},
+    {"id": "hunters_shop", "name": "Hunters Shop", "text": "Trophies (Winter Wedding, Medieval Crown, Time Reversal, Power Combo, Jarl's Favor). Stories: Winter Wedding Story Unlock, Medieval Campaign Pack. Game time: +30m, +1h, +2h, +4h, Weekend Pass. Boosters: XP, Power Combo 1h, Time Reversal 1h, Medieval Might 1h."},
+    {"id": "purchases", "name": "Purchases", "text": "Shop purchase flow. Inventory opdateres ved køb; shadow backup i browser for offline/preflight merge."},
+    {"id": "monetization", "name": "Monetization", "text": "Monetization flows integreret med unified points og profile."},
+    {"id": "version_canon", "name": "Version canon", "text": "UI- og config-version er V.9 (9.0.0). Tidligere 4.0.0 / ShopV4 navne i repo henviser til samme produktlinje — se RULEBOOK_CANON.md."},
+    {"id": "api_line_checks", "name": "API line checks", "text": "Run checks knappen kalder samme endpoints som scripts/shop_v4_production_smoke.py --full-line (JSON-kilde data/shop_v4_api_line_checks.json)."},
+    {"id": "profile_parity", "name": "Profile parity", "text": "Profile inventory læser API + shop_v9_shadow + shop_v4_shadow og lytter på shop-v9-purchase / shop-v4-purchase / storage events."},
+    {"id": "themes_wave_v6", "name": "Nye temaer (wave v6)", "text": "Katalog indeholder blandt andet ét D&D-tema (tidligere D6D foldet ind), Magic: The Gathering (fan tribute), Mafia noir, AI Core, Christmas, Home Base — category themes, tags shop_wave_v6. Legacy item_id theme-d6d i inventory mappes stadig i shop_item_media til samme visuelle linje som theme-dnd."},
+    {"id": "mn2_5d_shop_line", "name": "MN2 5-dags monitor-SKUer", "text": "Fem shop-linjer (mn2-5d-*) knytter sig til Profile MN2 5-dags UTC chart (ind/ud søjler). De er primært flair/reminder; saldi styres af MN2 endpoints og wallet."},
+    {"id": "christmas_seasonal_copy", "name": "Sæson og hjem", "text": "Christmas og Home Base er generiske UI-temaer; marketing-kopi må ikke love fysiske leverancer medmindre backend understøtter det."},
+    {"id": "paypal_mn2_tabs", "name": "Betaling og tema", "text": "Tema påvirker ikke PayPal- eller MN2-sikkerhedsflow; brugeren skal stadig godkende transaktioner i deres wallet eller PayPal."},
+    {"id": "themes_wave_v7_monthly", "name": "Månedlige temaer (wave v7)", "text": "Tolv faste tema-SKUer (theme-january … theme-december), category themes, tags monthly_theme + shop_wave_v7 + calendar_theme. Medie-metadata i data/shop_item_media.json. Kosmetik — ingen automatisk kalender-skift i UI uden produktbeslutning."},
+    {"id": "cross_rulebook_shop", "name": "Tværgående rulebook-routing", "text": "Se cross_rulebook_routing i denne JSON: V1 identitet/MN2-overflade, V4 stjerner vs kosmetik, V5 cluster-hints pr. måned, V6 shop↔specials, V7 points/MN2, V8 agenthjælp, V10 battle-uafhængighed, lab_research Lab↔shop identitet."},
+    {"id": "lab_handbook", "name": "Lab handbook", "text": "Live UI /lab; contributor handbook docs/LAB.md (APIs, profile_data keys, catalog, cooldowns, deploy, idé-backlog). Shop SKU-linje Lab i rules.shop_items henviser til samme produkt-univers; progression er catalog-drevet."}
+  ]
+}

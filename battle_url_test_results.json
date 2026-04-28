@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-01-05T13:39:35.261523",
+  "results": [
+    {
+      "url": "/vidgenerator/battle",
+      "status": 200,
+      "success": true,
+      "size": 493979
+    },
+    {
+      "url": "/vidgenerator/api/battle/quick",
+      "status": 500,
+      "success": false,
+      "size": 265
+    },
+    {
+      "url": "/vidgenerator/api/battle/stats",
+      "status": 404,
+      "success": false,
+      "size": 207
+    },
+    {
+      "url": "/vidgenerator/api/battle/history",
+      "status": 200,
+      "success": true,
+      "size": 30
+    },
+    {
+      "url": "/vidgenerator/api/battle/leaderboard",
+      "status": 200,
+      "success": true,
+      "size": 34
+    },
+    {
+      "url": "/vidgenerator/api/battle/intelligence",
+      "status": 404,
+      "success": false,
+      "size": 207
+    },
+    {
+      "url": "/vidgenerator/api/battle/tech-tree/all",
+      "status": 404,
+      "success": false,
+      "size": 207
+    },
+    {
+      "url": "/vidgenerator/api/battle/technology-science/levels",
+      "status": 200,
+      "success": true,
+      "size": 251
+    },
+    {
+      "url": "/vidgenerator/api/battle/advanced-tech/available",
+      "status": 404,
+      "success": false,
+      "size": 207
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/test",
+      "status": 200,
+      "success": true,
+      "size": 381
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/stats",
+      "status": 200,
+      "success": true,
+      "size": 474
+    }
+  ],
+  "summary": {
+    "total": 11,
+    "successful": 6,
+    "failed": 5
+  }
+}

@@ -1,0 +1,564 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point Testing Dashboard - All POINT_VALUES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --danger: #ff3366;
+            --dark: #0a0a0f;
+            --card: #151520;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 10px;
+            background: var(--card);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #ff0000);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        .point-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .point-card {
+            background: var(--card);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .point-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.2);
+            transform: translateY(-3px);
+        }
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .point-type {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        .point-value {
+            background: rgba(0, 255, 136, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .point-category {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+        }
+        .point-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 15px;
+        }
+        .point-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+        .btn-test {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        .btn-info {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--secondary);
+        }
+        .search-filter {
+            margin-bottom: 20px;
+        }
+        .search-filter input {
+            width: 100%;
+            padding: 12px;
+            background: var(--card);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 700;
+            z-index: 10000;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            min-width: 300px;
+        }
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .notification.success {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .notification.error {
+            background: linear-gradient(135deg, var(--danger), #ff0000);
+        }
+    </style>
+</head>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Point Testing Dashboard</h1>
+            <p>Test URLs for all 178 Point Systems & POINT_VALUES</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>User ID</label>
+                <input type="text" id="userId" value="test_user" placeholder="Enter user ID">
+            </div>
+            <div class="control-group">
+                <label>Category Filter</label>
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                    <option value="Core Engagement">Core Engagement</option>
+                    <option value="Battle & Combat">Battle & Combat</option>
+                    <option value="Content Creation">Content Creation</option>
+                    <option value="Social & Community">Social & Community</option>
+                    <option value="Progression & Leveling">Progression & Leveling</option>
+                    <option value="Economy & Trading">Economy & Trading</option>
+                    <option value="Exploration & Discovery">Exploration & Discovery</option>
+                    <option value="Learning & Education">Learning & Education</option>
+                    <option value="Events & Special Occasions">Events & Special Occasions</option>
+                    <option value="Customization & Personalization">Customization & Personalization</option>
+                    <option value="Innovation & Creativity">Innovation & Creativity</option>
+                    <option value="Meta & System">Meta & System</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Actions</label>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="awardAllPoints()">Award All Points</button>
+                    <button class="btn btn-danger" onclick="clearAllPoints()">Clear All</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalPointTypes">0</div>
+                <div class="stat-label">Total Point Types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalValue">0</div>
+                <div class="stat-label">Total POINT_VALUES</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="filteredCount">0</div>
+                <div class="stat-label">Filtered Results</div>
+            </div>
+        </div>
+
+        <div class="search-filter">
+            <input type="text" id="searchInput" placeholder="Search point types..." oninput="filterPoints()">
+        </div>
+
+        <div class="point-grid" id="pointGrid">
+            <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">Loading point types...</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        let allPointTypes = [];
+        let filteredPointTypes = [];
+
+        async function loadPointTypes() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/list`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allPointTypes = data.point_types;
+                    filteredPointTypes = allPointTypes;
+                    
+                    updateStats();
+                    renderPoints();
+                }
+            } catch (error) {
+                console.error('Error loading point types:', error);
+                showNotification('error', 'Failed to load point types');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalPointTypes').textContent = allPointTypes.length;
+            const totalValue = allPointTypes.reduce((sum, pt) => sum + pt.value, 0);
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString();
+            document.getElementById('filteredCount').textContent = filteredPointTypes.length;
+        }
+
+        function filterPoints() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            
+            filteredPointTypes = allPointTypes.filter(pt => {
+                const matchesSearch = pt.point_type.toLowerCase().includes(searchTerm) ||
+                                    pt.description.toLowerCase().includes(searchTerm);
+                const matchesCategory = category === 'all' || pt.category === category;
+                return matchesSearch && matchesCategory;
+            });
+            
+            updateStats();
+            renderPoints();
+        }
+
+        function renderPoints() {
+            const grid = document.getElementById('pointGrid');
+            const userId = document.getElementById('userId').value;
+            
+            if (filteredPointTypes.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">No point types found</div>';
+                return;
+            }
+            
+            grid.innerHTML = filteredPointTypes.map(pt => `
+                <div class="point-card">
+                    <div class="point-header">
+                        <div class="point-type">${pt.point_type}</div>
+                        <div class="point-value">${pt.value}</div>
+                    </div>
+                    <div class="point-category">${pt.category || 'Other'}</div>
+                    <div class="point-description">${pt.description}</div>
+                    <div class="point-actions">
+                        <button class="btn btn-small btn-test" onclick="testPoint('${pt.point_type}', '${userId}')">
+                            <i class="fas fa-play"></i> Test
+                        </button>
+                        <button class="btn btn-small btn-info" onclick="showPointInfo('${pt.point_type}')">
+                            <i class="fas fa-info"></i> Info
+                        </button>
+                        <a href="${BASE_URL}${pt.test_url}?user_id=${userId}" target="_blank" class="btn btn-small" style="text-decoration: none; display: inline-block;">
+                            <i class="fas fa-external-link-alt"></i> URL
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function testPoint(pointType, userId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/${pointType}/award?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('success', `Awarded ${data.amount_awarded} ${pointType} points! Total: ${data.current_total}`);
+                } else {
+                    showNotification('error', data.error || 'Failed to award points');
+                }
+            } catch (error) {
+                showNotification('error', 'Network error: ' + error.message);
+            }
+        }
+
+        async function showPointInfo(pointType) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/${pointType}/info`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Point Type: ${data.point_type}\nValue: ${data.point_value}\nCategory: ${data.category}\nDescription: ${data.description}\n\nTest URL: ${BASE_URL}${data.test_url}`);
+                }
+            } catch (error) {
+                showNotification('error', 'Failed to get point info');
+            }
+        }
+
+        async function awardAllPoints() {
+            const userId = document.getElementById('userId').value;
+            if (!confirm(`Award points for ALL ${allPointTypes.length} point types to ${userId}?`)) return;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/points/all/award`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('success', `Awarded points for ${data.successful_awards} point types! Total: ${data.total_points_awarded.toLocaleString()} points`);
+                } else {
+                    showNotification('error', data.error || 'Failed to award all points');
+                }
+            } catch (error) {
+                showNotification('error', 'Network error: ' + error.message);
+            }
+        }
+
+        function clearAllPoints() {
+            if (!confirm('This will clear the search filter. Continue?')) return;
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = 'all';
+            filterPoints();
+        }
+
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 10);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Initialize
+        document.getElementById('categoryFilter').addEventListener('change', filterPoints);
+        document.getElementById('userId').addEventListener('change', () => renderPoints());
+        loadPointTypes();
+    </script>
+    <script src="/static/js/error-manager.js"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                // Cache version changed - force reload
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                window.location.reload(true);
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // AGGRESSIVE CACHE-BUSTING FOR MAIN CONTENT
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || Date.now().toString();
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            const contentVersion = sessionStorage.getItem('contentCacheVersion');
+            
+            // Force reload if version changed
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.clear();
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+                window.location.href = window.location.href.split('?')[0] + '?v=' + currentVersion + '&_=' + Date.now();
+                return;
+            }
+            
+            // Store versions
+            sessionStorage.setItem('pageCacheVersion', currentVersion);
+            if (!contentVersion || contentVersion !== currentVersion) {
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+            }
+            
+            // Force reload main content area on every load
+            function forceReloadContent() {
+                const mainContent = document.querySelector('.container') || document.querySelector('main') || document.querySelector('#main') || document.body;
+                if (mainContent) {
+                    // Add timestamp to force re-render
+                    mainContent.setAttribute('data-version', currentVersion);
+                    mainContent.setAttribute('data-timestamp', Date.now());
+                    
+                    // Force style recalculation
+                    const display = window.getComputedStyle(mainContent).display;
+                    mainContent.style.display = 'none';
+                    mainContent.offsetHeight; // Trigger reflow
+                    mainContent.style.display = display;
+                    
+                    // Add comment to force HTML change detection
+                    const comment = document.createComment(' FORCED REFRESH ' + Date.now() + ' ');
+                    mainContent.insertBefore(comment, mainContent.firstChild);
+                }
+            }
+            
+            // Run immediately and on DOM ready
+            forceReloadContent();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceReloadContent);
+            } else {
+                setTimeout(forceReloadContent, 100);
+            }
+            
+            // Add cache-busting to all links and forms
+            function addCacheBusting() {
+                const links = document.querySelectorAll('a[href^="/"], a[href^="/"]');
+                links.forEach(link => {
+                    const url = new URL(link.href, window.location.origin);
+                    if (!url.searchParams.has('v')) {
+                        url.searchParams.set('v', currentVersion);
+                        url.searchParams.set('_', Date.now());
+                        link.href = url.toString();
+                    }
+                });
+                
+                // Add to forms
+                const forms = document.querySelectorAll('form[action]');
+                forms.forEach(form => {
+                    const action = form.getAttribute('action');
+                    if (action && !action.includes('v=')) {
+                        const separator = action.includes('?') ? '&' : '?';
+                        form.setAttribute('action', action + separator + 'v=' + currentVersion + '&_=' + Date.now());
+                    }
+                });
+            }
+            
+            // Run on DOM ready and periodically
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', addCacheBusting);
+            } else {
+                addCacheBusting();
+            }
+            
+            // Periodic check for content updates
+            setInterval(function() {
+                const stored = sessionStorage.getItem('contentCacheVersion');
+                if (stored && stored !== currentVersion) {
+                    window.location.reload(true);
+                }
+            }, 5000);
+            
+            // Intercept fetch/XHR to add cache-busting
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (typeof args[0] === 'string' && args[0].startsWith('/')) {
+                    const url = new URL(args[0], window.location.origin);
+                    url.searchParams.set('_', Date.now());
+                    args[0] = url.toString();
+                }
+                return originalFetch.apply(this, args);
+            };
+        })();
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

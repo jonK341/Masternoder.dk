@@ -1,0 +1,18 @@
+{
+  "tutorials": [
+    {
+      "tutorial_id": "da386b53-fe78-412d-b5b5-358786ee8e27",
+      "title": "Introduction to Monster Bonding",
+      "monster_type": "all",
+      "steps": [
+        "Understanding monster psychology",
+        "Establishing trust",
+        "Basic commands",
+        "Advanced communication"
+      ],
+      "duration_minutes": 30,
+      "difficulty": "beginner",
+      "created_at": "2025-12-29T23:17:55.909403"
+    }
+  ]
+}

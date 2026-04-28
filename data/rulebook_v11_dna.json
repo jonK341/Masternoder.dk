@@ -1,0 +1,18 @@
+{
+  "name": "DNA Theory",
+  "version": "V11",
+  "description": "DNA manipulation points, cloning, verification integration.",
+  "updated_at": "2026-02-21",
+  "image_url": "/vidgenerator/static/img/rulebook-v11-dna.png",
+  "image_alt": "DNA Theory V11",
+  "agent_prompt": "DNA: dna_manipulation_points, dna_cloning_points. run_dna_test is Electric Magnet special. Integrates with lab and verification.",
+  "tech_spec": "dna_manipulation_points, dna_cloning_points; run_dna_test; lab integration; verification",
+  "user_guide": "DNA: manipulation og cloning points. Brug DNA test via Electric Magnet.",
+  "manual": "Agent manual V11: DNA points awarded on DNA-related activities. run_dna_test available as special.",
+  "point_types": ["dna_manipulation_points", "dna_cloning_points"],
+  "rules": [
+    {"id": "manipulation", "name": "DNA Manipulation", "text": "dna_manipulation_points tildeles ved DNA-relaterede aktiviteter."},
+    {"id": "cloning", "name": "DNA Cloning", "text": "dna_cloning_points. Integreret med verification og lab."},
+    {"id": "run_dna_test", "name": "Run DNA Test", "text": "Electric Magnet special. DNA-verifikation."}
+  ]
+}

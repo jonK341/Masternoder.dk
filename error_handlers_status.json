@@ -1,0 +1,708 @@
+{
+  "files_analyzed": 74,
+  "total_files": 74,
+  "error_handlers_by_file": {
+    "agent-behavior-widget.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 4,
+      "total": 8
+    },
+    "agent-dashboard-data.js": {
+      "console.error": 1,
+      "console.warn": 10,
+      "catch_blocks": 10,
+      "promise_catch": 4,
+      "try_blocks": 6,
+      "error_handlers": 23,
+      "total": 54
+    },
+    "agent-skill-sets.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 7
+    },
+    "agent-techs-manager.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 1,
+      "try_blocks": 3,
+      "error_handlers": 11,
+      "total": 20
+    },
+    "agent-tracker.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 12,
+      "total": 17
+    },
+    "all-api-integration.js": {
+      "console.error": 14,
+      "console.warn": 0,
+      "catch_blocks": 14,
+      "promise_catch": 0,
+      "try_blocks": 14,
+      "error_handlers": 84,
+      "total": 126
+    },
+    "atomic-calculator-integration.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 21,
+      "total": 31
+    },
+    "audio-player.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 28,
+      "total": 40
+    },
+    "backend-connector.js": {
+      "console.error": 3,
+      "console.warn": 0,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 59,
+      "total": 74
+    },
+    "battle-shop-integration.js": {
+      "console.error": 0,
+      "console.warn": 1,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 3,
+      "total": 8
+    },
+    "battle-stats-display.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 7
+    },
+    "bonus-template-store.js": {
+      "console.error": 5,
+      "console.warn": 0,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 39,
+      "total": 54
+    },
+    "calendar-enhanced.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 7
+    },
+    "chartjs-enhanced.js": {
+      "console.error": 0,
+      "console.warn": 1,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 0,
+      "total": 1
+    },
+    "chat-points.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 3,
+      "promise_catch": 0,
+      "try_blocks": 3,
+      "error_handlers": 8,
+      "total": 16
+    },
+    "click-through-game.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 16,
+      "total": 28
+    },
+    "comprehensive-api-integration.js": {
+      "console.error": 3,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 29,
+      "total": 36
+    },
+    "comprehensive-auto-save.js": {
+      "console.error": 5,
+      "console.warn": 0,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 23,
+      "total": 40
+    },
+    "comprehensive-loading-fix.js": {
+      "console.error": 0,
+      "console.warn": 9,
+      "catch_blocks": 9,
+      "promise_catch": 0,
+      "try_blocks": 9,
+      "error_handlers": 18,
+      "total": 45
+    },
+    "comprehensive-page-integration.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 10,
+      "total": 16
+    },
+    "energy-regeneration-timers.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 8,
+      "total": 14
+    },
+    "enhanced-frontpage-stats.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 16,
+      "total": 27
+    },
+    "enhanced-game-mechanics.js": {
+      "console.error": 10,
+      "console.warn": 0,
+      "catch_blocks": 10,
+      "promise_catch": 1,
+      "try_blocks": 9,
+      "error_handlers": 44,
+      "total": 74
+    },
+    "enhanced-metal-systems.js": {
+      "console.error": 5,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 24,
+      "total": 37
+    },
+    "epic-gaming-experience.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 16,
+      "total": 28
+    },
+    "error-manager.js": {
+      "console.error": 5,
+      "console.warn": 4,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 185,
+      "total": 206
+    },
+    "game-mode.js": {
+      "console.error": 3,
+      "console.warn": 0,
+      "catch_blocks": 3,
+      "promise_catch": 3,
+      "try_blocks": 0,
+      "error_handlers": 7,
+      "total": 16
+    },
+    "game-notifications.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 3,
+      "total": 3
+    },
+    "game-sounds.js": {
+      "console.error": 0,
+      "console.warn": 6,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 5,
+      "total": 23
+    },
+    "game-timeline.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 5,
+      "total": 9
+    },
+    "hardcore-ai-metal.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 8,
+      "total": 14
+    },
+    "hypnotic-point-counters.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 6,
+      "total": 9
+    },
+    "image-support.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 6,
+      "total": 6
+    },
+    "insane-battle-integration.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 23,
+      "total": 35
+    },
+    "intelligent_point_middleware_frontend.js": {
+      "console.error": 3,
+      "console.warn": 1,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 21,
+      "total": 33
+    },
+    "ip-mac-user-tracker.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 15,
+      "total": 27
+    },
+    "knowledge-unlock-ui.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 19,
+      "total": 25
+    },
+    "main.js": {
+      "console.error": 0,
+      "console.warn": 1,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 0,
+      "total": 1
+    },
+    "media-gatherer.js": {
+      "console.error": 1,
+      "console.warn": 1,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 8
+    },
+    "navigation-toolbar.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 6,
+      "total": 12
+    },
+    "notification-alarm.js": {
+      "console.error": 7,
+      "console.warn": 1,
+      "catch_blocks": 7,
+      "promise_catch": 1,
+      "try_blocks": 6,
+      "error_handlers": 29,
+      "total": 51
+    },
+    "notification-system.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 2,
+      "total": 2
+    },
+    "ofc_unified_sync.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 20,
+      "total": 28
+    },
+    "onboarding-manager.js": {
+      "console.error": 4,
+      "console.warn": 2,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 22,
+      "total": 40
+    },
+    "point-analytics-dashboard.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 12,
+      "total": 20
+    },
+    "point-system-repair.js": {
+      "console.error": 8,
+      "console.warn": 0,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 29,
+      "total": 49
+    },
+    "point-system-save-manager.js": {
+      "console.error": 12,
+      "console.warn": 1,
+      "catch_blocks": 10,
+      "promise_catch": 1,
+      "try_blocks": 9,
+      "error_handlers": 66,
+      "total": 99
+    },
+    "points-page.js": {
+      "console.error": 8,
+      "console.warn": 0,
+      "catch_blocks": 9,
+      "promise_catch": 0,
+      "try_blocks": 9,
+      "error_handlers": 36,
+      "total": 62
+    },
+    "progression-display.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 7
+    },
+    "progression-triggers-frontend.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 6,
+      "total": 9
+    },
+    "progression-triggers.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 8,
+      "total": 14
+    },
+    "quick-battle-frontend.js": {
+      "console.error": 5,
+      "console.warn": 0,
+      "catch_blocks": 6,
+      "promise_catch": 0,
+      "try_blocks": 6,
+      "error_handlers": 25,
+      "total": 42
+    },
+    "realtime-client.js": {
+      "console.error": 2,
+      "console.warn": 1,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 5,
+      "total": 10
+    },
+    "referral-tracker.js": {
+      "console.error": 4,
+      "console.warn": 0,
+      "catch_blocks": 4,
+      "promise_catch": 0,
+      "try_blocks": 4,
+      "error_handlers": 16,
+      "total": 28
+    },
+    "service-worker-gatherer.js": {
+      "console.error": 4,
+      "console.warn": 1,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 16,
+      "total": 31
+    },
+    "stats-achievements-tracker.js": {
+      "console.error": 5,
+      "console.warn": 7,
+      "catch_blocks": 12,
+      "promise_catch": 0,
+      "try_blocks": 12,
+      "error_handlers": 41,
+      "total": 77
+    },
+    "template-engine-core.js": {
+      "console.error": 2,
+      "console.warn": 1,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 8,
+      "total": 15
+    },
+    "template-services.js": {
+      "console.error": 11,
+      "console.warn": 0,
+      "catch_blocks": 11,
+      "promise_catch": 0,
+      "try_blocks": 11,
+      "error_handlers": 49,
+      "total": 82
+    },
+    "theme-timeline.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 8,
+      "total": 14
+    },
+    "theme-toggle.js": {
+      "console.error": 0,
+      "console.warn": 1,
+      "catch_blocks": 2,
+      "promise_catch": 0,
+      "try_blocks": 2,
+      "error_handlers": 0,
+      "total": 5
+    },
+    "threejs-visualizations.js": {
+      "console.error": 1,
+      "console.warn": 2,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 4,
+      "total": 9
+    },
+    "toast-notifications.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 7,
+      "total": 7
+    },
+    "top50-monetization-frame.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 5,
+      "total": 8
+    },
+    "trigger-based-actions.js": {
+      "console.error": 3,
+      "console.warn": 0,
+      "catch_blocks": 8,
+      "promise_catch": 0,
+      "try_blocks": 8,
+      "error_handlers": 31,
+      "total": 50
+    },
+    "unified-generator-battle.js": {
+      "console.error": 8,
+      "console.warn": 0,
+      "catch_blocks": 5,
+      "promise_catch": 0,
+      "try_blocks": 5,
+      "error_handlers": 44,
+      "total": 62
+    },
+    "unified-point-counters.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 7,
+      "total": 10
+    },
+    "universal-auto-save-status.js": {
+      "console.error": 0,
+      "console.warn": 0,
+      "catch_blocks": 1,
+      "promise_catch": 0,
+      "try_blocks": 1,
+      "error_handlers": 6,
+      "total": 8
+    },
+    "user-identification.js": {
+      "console.error": 2,
+      "console.warn": 0,
+      "catch_blocks": 3,
+      "promise_catch": 1,
+      "try_blocks": 2,
+      "error_handlers": 5,
+      "total": 13
+    },
+    "video-player.js": {
+      "console.error": 1,
+      "console.warn": 0,
+      "catch_blocks": 0,
+      "promise_catch": 0,
+      "try_blocks": 0,
+      "error_handlers": 1,
+      "total": 2
+    }
+  },
+  "error_handlers_by_type": {
+    "console.error": 197,
+    "console.warn": 51,
+    "catch_blocks": 257,
+    "promise_catch": 12,
+    "try_blocks": 246,
+    "error_handlers": 1333
+  },
+  "files_with_error_manager": [
+    "backend-connector.js",
+    "error-manager.js"
+  ],
+  "files_without_error_manager": [
+    "agent-behavior-widget.js",
+    "agent-dashboard-data.js",
+    "agent-skill-sets.js",
+    "agent-techs-manager.js",
+    "agent-tracker.js",
+    "all-api-integration.js",
+    "atomic-calculator-integration.js",
+    "audio-player.js",
+    "battle-shop-integration.js",
+    "battle-stats-display.js",
+    "bonus-template-store.js",
+    "calendar-enhanced.js",
+    "chartjs-enhanced.js",
+    "chat-points.js",
+    "click-through-game.js",
+    "comprehensive-api-integration.js",
+    "comprehensive-auto-save.js",
+    "comprehensive-loading-fix.js",
+    "comprehensive-page-integration.js",
+    "energy-regeneration-timers.js",
+    "enhanced-frontpage-stats.js",
+    "enhanced-game-mechanics.js",
+    "enhanced-metal-systems.js",
+    "epic-gaming-experience.js",
+    "game-mode.js",
+    "game-notifications.js",
+    "game-sounds.js",
+    "game-timeline.js",
+    "hardcore-ai-metal.js",
+    "hypnotic-point-counters.js",
+    "image-support.js",
+    "insane-battle-integration.js",
+    "intelligent_point_middleware_frontend.js",
+    "ip-mac-user-tracker.js",
+    "knowledge-unlock-ui.js",
+    "main.js",
+    "media-gatherer.js",
+    "navigation-toolbar.js",
+    "notification-alarm.js",
+    "notification-system.js",
+    "ofc_unified_sync.js",
+    "onboarding-manager.js",
+    "point-analytics-dashboard.js",
+    "point-system-repair.js",
+    "point-system-save-manager.js",
+    "points-page.js",
+    "progression-display.js",
+    "progression-triggers-frontend.js",
+    "progression-triggers.js",
+    "quick-battle-frontend.js",
+    "realtime-client.js",
+    "referral-tracker.js",
+    "service-worker-gatherer.js",
+    "stats-achievements-tracker.js",
+    "template-engine-core.js",
+    "template-services.js",
+    "theme-timeline.js",
+    "theme-toggle.js",
+    "threejs-visualizations.js",
+    "toast-notifications.js",
+    "top50-monetization-frame.js",
+    "trigger-based-actions.js",
+    "unified-generator-battle.js",
+    "unified-point-counters.js",
+    "universal-auto-save-status.js",
+    "user-identification.js",
+    "video-player.js"
+  ]
+}

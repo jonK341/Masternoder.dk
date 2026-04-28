@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-01-05T18:17:01.541819",
+  "working": [
+    "/vidgenerator/api/game/battle/stats?user_id=test",
+    "/vidgenerator/api/battle/fantasy/history?user_id=test",
+    "/vidgenerator/api/battle/fantasy/tournaments",
+    "/vidgenerator/api/battle/fantasy/history?user_id=test",
+    "/vidgenerator/api/battle/leaderboard",
+    "/vidgenerator/api/battle/fantasy/intelligence?user_id=test",
+    "/vidgenerator/api/battle/fantasy/power?user_id=test",
+    "/vidgenerator/api/battle/fantasy/resources?user_id=test",
+    "/vidgenerator/api/battle/rulebooks",
+    "/vidgenerator/api/battle/series",
+    "/vidgenerator/api/battle/gps",
+    "/vidgenerator/api/battle/news",
+    "/vidgenerator/api/battle/peers?user_id=test",
+    "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+    "/vidgenerator/api/battle/trophy-trading?user_id=test",
+    "/vidgenerator/api/battle/collectibles?user_id=test",
+    "/vidgenerator/api/missions/daily?user_id=test",
+    "/vidgenerator/api/missions/timeline?user_id=test",
+    "/vidgenerator/api/ai-research?user_id=test",
+    "/vidgenerator/api/battle/rewards?user_id=test",
+    "/vidgenerator/api/battle/tech-tree/all?user_id=test",
+    "/vidgenerator/api/battle/technology-science/levels",
+    "/vidgenerator/api/autoplay/status?user_id=test",
+    "/vidgenerator/api/social/friends?user_id=test",
+    "/vidgenerator/api/teams/user?user_id=test",
+    "/vidgenerator/api/alliances/user?user_id=test",
+    "/vidgenerator/api/groups/destruction-history?user_id=test",
+    "/vidgenerator/api/bonus-levels?user_id=test",
+    "/vidgenerator/api/death-teleport/status/test",
+    "/vidgenerator/api/militia/forces?user_id=test",
+    "/vidgenerator/api/legal/content",
+    "/vidgenerator/api/tech-hardware/progress/test",
+    "/vidgenerator/api/death-portal-manager/portals",
+    "/vidgenerator/api/death-portal/status",
+    "/vidgenerator/api/experience/recount-status/test",
+    "/vidgenerator/api/points/get-all-connected?user_id=test"
+  ],
+  "issues": [
+    {
+      "endpoint": "/vidgenerator/api/quick-battle/create",
+      "status": 500,
+      "issue": "HTTP 500",
+      "response": "<!doctype html>\n<html lang=en>\n<title>500 Internal Server Error</title>\n<h1>Internal Server Error</h1>\n<p>The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.</p>\n"
+    }
+  ],
+  "summary": {
+    "total": 37,
+    "working": 36,
+    "issues": 1
+  }
+}

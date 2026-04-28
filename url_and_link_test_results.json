@@ -1,0 +1,496 @@
+{
+  "timestamp": "2026-01-02T03:58:02.352847",
+  "url_results": [
+    {
+      "url": "/vidgenerator/",
+      "status": 200,
+      "success": true,
+      "size": 89090,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/game",
+      "status": 200,
+      "success": true,
+      "size": 148243,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/battle",
+      "status": 200,
+      "success": true,
+      "size": 493979,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/social",
+      "status": 200,
+      "success": true,
+      "size": 61248,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/profile",
+      "status": 200,
+      "success": true,
+      "size": 69250,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/stats",
+      "status": 200,
+      "success": true,
+      "size": 48999,
+      "content_type": "text/html; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/gallery",
+      "status": 200,
+      "success": true,
+      "size": 67490,
+      "content_type": "text/html; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/generator",
+      "status": 200,
+      "success": true,
+      "size": 74868,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/shop",
+      "status": 200,
+      "success": true,
+      "size": 12333,
+      "content_type": "text/html; charset=utf-8; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/points/get-all-connected",
+      "status": 200,
+      "success": true,
+      "size": 2774,
+      "content_type": "application/json",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/game/state",
+      "status": 200,
+      "success": true,
+      "size": 571,
+      "content_type": "application/json",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/battle/stats",
+      "status": 404,
+      "success": false,
+      "size": 207,
+      "content_type": "text/html; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/battle/tech-tree/all",
+      "status": 404,
+      "success": false,
+      "size": 207,
+      "content_type": "text/html; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/mind-energy",
+      "status": 404,
+      "success": false,
+      "size": 207,
+      "content_type": "text/html; charset=utf-8",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/quick-battle/test",
+      "status": 200,
+      "success": true,
+      "size": 381,
+      "content_type": "application/json",
+      "redirected": false
+    },
+    {
+      "url": "/vidgenerator/api/generator/test",
+      "status": 200,
+      "success": true,
+      "size": 135,
+      "content_type": "application/json",
+      "redirected": false
+    }
+  ],
+  "link_results": [
+    {
+      "url": "/vidgenerator/",
+      "links_found": 46,
+      "links": [
+        {
+          "href": "/vidgenerator/static/css/modern-design-system.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/modern-design-system.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/navigation-toolbar.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/navigation-toolbar.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/theme-timeline.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/theme-timeline.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Start Video Generator"
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Video World"
+        },
+        {
+          "href": "/vidgenerator/generator?mode=clips",
+          "absolute": "https://masternoder.dk/vidgenerator/generator?mode=clips",
+          "text": "Clip World"
+        },
+        {
+          "href": "/vidgenerator/gallery",
+          "absolute": "https://masternoder.dk/vidgenerator/gallery",
+          "text": "Galleri"
+        },
+        {
+          "href": "/vidgenerator/game",
+          "absolute": "https://masternoder.dk/vidgenerator/game",
+          "text": "Game"
+        },
+        {
+          "href": "/vidgenerator/battle",
+          "absolute": "https://masternoder.dk/vidgenerator/battle",
+          "text": "Battle"
+        },
+        {
+          "href": "/vidgenerator/stats",
+          "absolute": "https://masternoder.dk/vidgenerator/stats",
+          "text": "Statistikker"
+        },
+        {
+          "href": "/vidgenerator/profile",
+          "absolute": "https://masternoder.dk/vidgenerator/profile",
+          "text": "Profil"
+        },
+        {
+          "href": "/vidgenerator/social",
+          "absolute": "https://masternoder.dk/vidgenerator/social",
+          "text": "Social"
+        },
+        {
+          "href": "/vidgenerator/shop",
+          "absolute": "https://masternoder.dk/vidgenerator/shop",
+          "text": "Shop"
+        },
+        {
+          "href": "/vidgenerator/chat",
+          "absolute": "https://masternoder.dk/vidgenerator/chat",
+          "text": "Chat"
+        },
+        {
+          "href": "/vidgenerator/debugger",
+          "absolute": "https://masternoder.dk/vidgenerator/debugger",
+          "text": "Debugger"
+        },
+        {
+          "href": "/vidgenerator/analytics",
+          "absolute": "https://masternoder.dk/vidgenerator/analytics",
+          "text": "Analytics"
+        },
+        {
+          "href": "/vidgenerator/metal",
+          "absolute": "https://masternoder.dk/vidgenerator/metal",
+          "text": "Metal Systems"
+        },
+        {
+          "href": "/vidgenerator/theme-points",
+          "absolute": "https://masternoder.dk/vidgenerator/theme-points",
+          "text": "Theme Points"
+        },
+        {
+          "href": "#",
+          "absolute": "https://masternoder.dk",
+          "text": "Se Video"
+        },
+        {
+          "href": "#",
+          "absolute": "https://masternoder.dk",
+          "text": "Kort Link"
+        }
+      ]
+    },
+    {
+      "url": "/vidgenerator/game",
+      "links_found": 12,
+      "links": [
+        {
+          "href": "/vidgenerator/static/css/modern-design-system.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/modern-design-system.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/theme-toggle.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/theme-toggle.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/game-timeline.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/game-timeline.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/navigation-toolbar.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/navigation-toolbar.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/",
+          "absolute": "https://masternoder.dk/vidgenerator/",
+          "text": "🏠 Home"
+        },
+        {
+          "href": "/vidgenerator/game",
+          "absolute": "https://masternoder.dk/vidgenerator/game",
+          "text": "Game"
+        },
+        {
+          "href": "/vidgenerator/battle",
+          "absolute": "https://masternoder.dk/vidgenerator/battle",
+          "text": "Battle"
+        },
+        {
+          "href": "/vidgenerator/social",
+          "absolute": "https://masternoder.dk/vidgenerator/social",
+          "text": "Social"
+        },
+        {
+          "href": "/vidgenerator/shop",
+          "absolute": "https://masternoder.dk/vidgenerator/shop",
+          "text": "Shop"
+        },
+        {
+          "href": "/vidgenerator/stats",
+          "absolute": "https://masternoder.dk/vidgenerator/stats",
+          "text": "Stats"
+        },
+        {
+          "href": "/vidgenerator/gallery",
+          "absolute": "https://masternoder.dk/vidgenerator/gallery",
+          "text": "Gallery"
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Generator"
+        }
+      ]
+    },
+    {
+      "url": "/vidgenerator/battle",
+      "links_found": 12,
+      "links": [
+        {
+          "href": "/vidgenerator/static/css/modern-design-system.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/modern-design-system.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/loading-states.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/loading-states.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/navigation-toolbar.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/navigation-toolbar.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/battle-graphics.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/battle-graphics.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/",
+          "absolute": "https://masternoder.dk/vidgenerator/",
+          "text": "🏠 Home"
+        },
+        {
+          "href": "/vidgenerator/game",
+          "absolute": "https://masternoder.dk/vidgenerator/game",
+          "text": "Game"
+        },
+        {
+          "href": "/vidgenerator/battle",
+          "absolute": "https://masternoder.dk/vidgenerator/battle",
+          "text": "Battle"
+        },
+        {
+          "href": "/vidgenerator/social",
+          "absolute": "https://masternoder.dk/vidgenerator/social",
+          "text": "Social"
+        },
+        {
+          "href": "/vidgenerator/shop",
+          "absolute": "https://masternoder.dk/vidgenerator/shop",
+          "text": "Shop"
+        },
+        {
+          "href": "/vidgenerator/stats",
+          "absolute": "https://masternoder.dk/vidgenerator/stats",
+          "text": "Stats"
+        },
+        {
+          "href": "/vidgenerator/gallery",
+          "absolute": "https://masternoder.dk/vidgenerator/gallery",
+          "text": "Gallery"
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Generator"
+        }
+      ]
+    },
+    {
+      "url": "/vidgenerator/social",
+      "links_found": 11,
+      "links": [
+        {
+          "href": "/vidgenerator/static/css/modern-design-system.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/modern-design-system.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/loading-states.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/loading-states.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/navigation-toolbar.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/navigation-toolbar.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/",
+          "absolute": "https://masternoder.dk/vidgenerator/",
+          "text": "🏠 Home"
+        },
+        {
+          "href": "/vidgenerator/game",
+          "absolute": "https://masternoder.dk/vidgenerator/game",
+          "text": "Game"
+        },
+        {
+          "href": "/vidgenerator/battle",
+          "absolute": "https://masternoder.dk/vidgenerator/battle",
+          "text": "Battle"
+        },
+        {
+          "href": "/vidgenerator/social",
+          "absolute": "https://masternoder.dk/vidgenerator/social",
+          "text": "Social"
+        },
+        {
+          "href": "/vidgenerator/shop",
+          "absolute": "https://masternoder.dk/vidgenerator/shop",
+          "text": "Shop"
+        },
+        {
+          "href": "/vidgenerator/stats",
+          "absolute": "https://masternoder.dk/vidgenerator/stats",
+          "text": "Stats"
+        },
+        {
+          "href": "/vidgenerator/gallery",
+          "absolute": "https://masternoder.dk/vidgenerator/gallery",
+          "text": "Gallery"
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Generator"
+        }
+      ]
+    },
+    {
+      "url": "/vidgenerator/profile",
+      "links_found": 10,
+      "links": [
+        {
+          "href": "/vidgenerator/static/css/modern-design-system.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/modern-design-system.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/static/css/navigation-toolbar.css",
+          "absolute": "https://masternoder.dk/vidgenerator/static/css/navigation-toolbar.css",
+          "text": ""
+        },
+        {
+          "href": "/vidgenerator/",
+          "absolute": "https://masternoder.dk/vidgenerator/",
+          "text": "🏠 Home"
+        },
+        {
+          "href": "/vidgenerator/game",
+          "absolute": "https://masternoder.dk/vidgenerator/game",
+          "text": "Game"
+        },
+        {
+          "href": "/vidgenerator/battle",
+          "absolute": "https://masternoder.dk/vidgenerator/battle",
+          "text": "Battle"
+        },
+        {
+          "href": "/vidgenerator/social",
+          "absolute": "https://masternoder.dk/vidgenerator/social",
+          "text": "Social"
+        },
+        {
+          "href": "/vidgenerator/profile",
+          "absolute": "https://masternoder.dk/vidgenerator/profile",
+          "text": "Profile"
+        },
+        {
+          "href": "/vidgenerator/stats",
+          "absolute": "https://masternoder.dk/vidgenerator/stats",
+          "text": "Stats"
+        },
+        {
+          "href": "/vidgenerator/gallery",
+          "absolute": "https://masternoder.dk/vidgenerator/gallery",
+          "text": "Gallery"
+        },
+        {
+          "href": "/vidgenerator/generator",
+          "absolute": "https://masternoder.dk/vidgenerator/generator",
+          "text": "Generator"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_urls": 16,
+    "successful_urls": 13,
+    "failed_urls": 3,
+    "total_links_found": 91
+  }
+}

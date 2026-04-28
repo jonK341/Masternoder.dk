@@ -1,0 +1,17 @@
+{
+  "name": "Analytics & Dashboard",
+  "version": "V14",
+  "description": "Event tracker, analytics, dashboard, agent_event_tracker.",
+  "updated_at": "2026-02-21",
+  "image_url": "/vidgenerator/static/img/rulebook-v14-analytics.png",
+  "image_alt": "Analytics V14",
+  "agent_prompt": "Analytics: event tracker, agent_event_tracker/track_new_task, analytics dashboard, unified dashboard. Track agent tasks and events.",
+  "tech_spec": "agent_event_tracker; track_new_task; analytics; unified_dashboard; points and stats display",
+  "user_guide": "Analytics dashboard viser tracking og stats. Event tracker for agent tasks.",
+  "manual": "Agent manual V14: Report tasks via track_new_task. Analytics dashboard aggregates. Use for debugging and monitoring.",
+  "rules": [
+    {"id": "event_tracker", "name": "Event Tracker", "text": "agent_event_tracker/track_new_task. Tracks agent tasks og events."},
+    {"id": "analytics", "name": "Analytics", "text": "Analytics dashboard. Tracking af brug og konvertering."},
+    {"id": "unified_dashboard", "name": "Unified Dashboard", "text": "Points, stats og oversigt samlet i dashboard."}
+  ]
+}

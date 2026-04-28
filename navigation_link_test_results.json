@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Home",
+    "url": "/vidgenerator/",
+    "success": true,
+    "message": "OK",
+    "status": 200
+  },
+  {
+    "name": "Dashboard",
+    "url": "/vidgenerator/dashboard",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Aggregator",
+    "url": "/vidgenerator/aggregator",
+    "success": true,
+    "message": "OK",
+    "status": 200
+  },
+  {
+    "name": "Generator",
+    "url": "/vidgenerator/generator",
+    "success": true,
+    "message": "OK",
+    "status": 200
+  },
+  {
+    "name": "Gallery",
+    "url": "/vidgenerator/gallery",
+    "success": false,
+    "message": "Status 500",
+    "status": 500
+  },
+  {
+    "name": "Game",
+    "url": "/vidgenerator/game",
+    "success": true,
+    "message": "OK",
+    "status": 200
+  },
+  {
+    "name": "Battle",
+    "url": "/vidgenerator/battle",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "BattleGrounds",
+    "url": "/vidgenerator/battlegrounds",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Champions League",
+    "url": "/vidgenerator/champions-league",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Stats",
+    "url": "/vidgenerator/stats",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Profile",
+    "url": "/vidgenerator/profile",
+    "success": true,
+    "message": "OK",
+    "status": 200
+  },
+  {
+    "name": "Social",
+    "url": "/vidgenerator/social",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Shop",
+    "url": "/vidgenerator/shop",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Chat",
+    "url": "/vidgenerator/chat",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Metal",
+    "url": "/vidgenerator/metal",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Theme Points",
+    "url": "/vidgenerator/theme-points",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Victory Tech Tree",
+    "url": "/vidgenerator/victory-tech-tree",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Danish Tech Tree",
+    "url": "/vidgenerator/danish-divine-tech-tree",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Debugger",
+    "url": "/vidgenerator/debugger",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  },
+  {
+    "name": "Analytics",
+    "url": "/vidgenerator/analytics",
+    "success": false,
+    "message": "Status 404",
+    "status": 404
+  }
+]

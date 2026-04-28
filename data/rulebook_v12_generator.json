@@ -1,0 +1,17 @@
+{
+  "name": "Generator & Video",
+  "version": "V12",
+  "description": "Video generator, content categories, conspiracy/alternative_theories triggers.",
+  "updated_at": "2026-02-21",
+  "image_url": "/vidgenerator/static/img/rulebook-v12-generator.png",
+  "image_alt": "Generator V12",
+  "agent_prompt": "Video generator: content_category conspiracy/alternative_theories/religious_conspiracy/theory awards communication_psychology_points. Pass user_id and user_index to generation.",
+  "tech_spec": "video_generator_service; content_category: conspiracy, alternative_theories, religious_conspiracy, theory; GET /api/user/account-control for user context",
+  "user_guide": "Generator: vælg kategori. Visse kategorier giver comm. psych points. Bruger-kontekst bruges i generation.",
+  "manual": "Agent manual V12: When starting generation, fetch user context from account-control. Pass user_id and user_index in metadata.",
+  "rules": [
+    {"id": "content_categories", "name": "Content Categories", "text": "conspiracy, alternative_theories, religious_conspiracy, theory trigger communication_psychology_points."},
+    {"id": "video_gen", "name": "Video Generation", "text": "video_generator_service. Awards points baseret på content_category."},
+    {"id": "user_context", "name": "User Context", "text": "user_id og user_index fra account-control bruges i generation metadata."}
+  ]
+}

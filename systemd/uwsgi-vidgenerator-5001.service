@@ -1,0 +1,24 @@
+[Unit]
+Description=uWSGI vidgenerator app (port 5001, second backend for load spreading)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+EnvironmentFile=-/var/www/html/.env
+Environment=PRODUCTION=true
+Environment=FLASK_ENV=production
+Environment=LITE_APP=1
+# Dedicated uwsgi_5001.ini — only binds 5001 (uwsgi.ini also binds 5000; combining caused bind failure on 5000)
+ExecStart=/usr/bin/uwsgi --ini /var/www/html/uwsgi_5001.ini
+TimeoutStartSec=300
+TimeoutStopSec=120
+KillSignal=SIGTERM
+KillMode=mixed
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

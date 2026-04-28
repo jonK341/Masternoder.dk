@@ -1,0 +1,1117 @@
+{
+  "timestamp": "2026-01-05T15:15:03.808857",
+  "summary": {
+    "total_endpoints": 38,
+    "online": 10,
+    "offline": 28
+  },
+  "results": {
+    "overview": [
+      {
+        "endpoint": "/vidgenerator/api/game/battle/stats?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 104,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/history?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    "battle": [
+      {
+        "endpoint": "/vidgenerator/api/quick-battle/create",
+        "method": "POST",
+        "status": 200,
+        "online": true,
+        "size": 1608,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/battle/quick",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 265,
+        "error": null
+      }
+    ],
+    "tournaments": [
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/tournaments",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 5861,
+        "error": null
+      }
+    ],
+    "history": [
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/history?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    "leaderboard": [
+      {
+        "endpoint": "/vidgenerator/api/battle/leaderboard",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 34,
+        "error": null
+      }
+    ],
+    "intelligence": [
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/intelligence?user_id=test",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 1519,
+        "error": null
+      }
+    ],
+    "resources": [
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/power?user_id=test",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 175,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/resources?user_id=test",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 932,
+        "error": null
+      }
+    ],
+    "rulebooks": [
+      {
+        "endpoint": "/vidgenerator/api/battle/rulebooks",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "series": [
+      {
+        "endpoint": "/vidgenerator/api/battle/series",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    "gps": [
+      {
+        "endpoint": "/vidgenerator/api/battle/gps",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "news": [
+      {
+        "endpoint": "/vidgenerator/api/battle/news",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    "peers": [
+      {
+        "endpoint": "/vidgenerator/api/battle/peers?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    "timepocket": [
+      {
+        "endpoint": "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "trading": [
+      {
+        "endpoint": "/vidgenerator/api/battle/trophy-trading?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/battle/collectibles?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "missions": [
+      {
+        "endpoint": "/vidgenerator/api/missions/daily?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/missions/timeline?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "ai-research": [
+      {
+        "endpoint": "/vidgenerator/api/ai-research?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "rewards": [
+      {
+        "endpoint": "/vidgenerator/api/battle/rewards?user_id=test",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 133,
+        "error": null
+      }
+    ],
+    "technology": [
+      {
+        "endpoint": "/vidgenerator/api/battle/tech-tree/all",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/battle/technology-science/levels",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 251,
+        "error": null
+      }
+    ],
+    "autoplay": [
+      {
+        "endpoint": "/vidgenerator/api/autoplay/status?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "social": [
+      {
+        "endpoint": "/vidgenerator/api/social/friends?user_id=test",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 84,
+        "error": null
+      }
+    ],
+    "teams": [
+      {
+        "endpoint": "/vidgenerator/api/teams/user?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "alliances": [
+      {
+        "endpoint": "/vidgenerator/api/alliances/user?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "groups-destroy": [
+      {
+        "endpoint": "/vidgenerator/api/groups/destruction-history?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "bonus-level": [
+      {
+        "endpoint": "/vidgenerator/api/bonus-levels?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "death-teleport-install": [
+      {
+        "endpoint": "/vidgenerator/api/death-teleport/status/test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "militia-forces": [
+      {
+        "endpoint": "/vidgenerator/api/militia/forces?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "legal-content": [
+      {
+        "endpoint": "/vidgenerator/api/legal/content",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "tech-hardware": [
+      {
+        "endpoint": "/vidgenerator/api/tech-hardware/progress/test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "death-portal": [
+      {
+        "endpoint": "/vidgenerator/api/death-portal-manager/portals",
+        "method": "GET",
+        "status": 200,
+        "online": true,
+        "size": 986,
+        "error": null
+      },
+      {
+        "endpoint": "/vidgenerator/api/death-portal/status",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "experience-recount": [
+      {
+        "endpoint": "/vidgenerator/api/experience/recount-status/test",
+        "method": "POST",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    "enhanced-system": [
+      {
+        "endpoint": "/api/points/get-all-connected?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 162,
+        "error": null
+      }
+    ]
+  },
+  "offline_endpoints": [
+    [
+      "overview",
+      "/vidgenerator/api/game/battle/stats?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/game/battle/stats?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 104,
+        "error": null
+      }
+    ],
+    [
+      "overview",
+      "/vidgenerator/api/battle/fantasy/history?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/history?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    [
+      "battle",
+      "/vidgenerator/api/battle/quick",
+      {
+        "endpoint": "/vidgenerator/api/battle/quick",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 265,
+        "error": null
+      }
+    ],
+    [
+      "history",
+      "/vidgenerator/api/battle/fantasy/history?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/fantasy/history?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    [
+      "rulebooks",
+      "/vidgenerator/api/battle/rulebooks",
+      {
+        "endpoint": "/vidgenerator/api/battle/rulebooks",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "series",
+      "/vidgenerator/api/battle/series",
+      {
+        "endpoint": "/vidgenerator/api/battle/series",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    [
+      "gps",
+      "/vidgenerator/api/battle/gps",
+      {
+        "endpoint": "/vidgenerator/api/battle/gps",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "news",
+      "/vidgenerator/api/battle/news",
+      {
+        "endpoint": "/vidgenerator/api/battle/news",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    [
+      "peers",
+      "/vidgenerator/api/battle/peers?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/peers?user_id=test",
+        "method": "GET",
+        "status": 500,
+        "online": false,
+        "size": 292,
+        "error": null
+      }
+    ],
+    [
+      "timepocket",
+      "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "trading",
+      "/vidgenerator/api/battle/trophy-trading?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/trophy-trading?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "trading",
+      "/vidgenerator/api/battle/collectibles?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/battle/collectibles?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "missions",
+      "/vidgenerator/api/missions/daily?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/missions/daily?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "missions",
+      "/vidgenerator/api/missions/timeline?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/missions/timeline?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "ai-research",
+      "/vidgenerator/api/ai-research?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/ai-research?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "technology",
+      "/vidgenerator/api/battle/tech-tree/all",
+      {
+        "endpoint": "/vidgenerator/api/battle/tech-tree/all",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "autoplay",
+      "/vidgenerator/api/autoplay/status?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/autoplay/status?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "teams",
+      "/vidgenerator/api/teams/user?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/teams/user?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "alliances",
+      "/vidgenerator/api/alliances/user?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/alliances/user?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "groups-destroy",
+      "/vidgenerator/api/groups/destruction-history?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/groups/destruction-history?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "bonus-level",
+      "/vidgenerator/api/bonus-levels?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/bonus-levels?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "death-teleport-install",
+      "/vidgenerator/api/death-teleport/status/test",
+      {
+        "endpoint": "/vidgenerator/api/death-teleport/status/test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "militia-forces",
+      "/vidgenerator/api/militia/forces?user_id=test",
+      {
+        "endpoint": "/vidgenerator/api/militia/forces?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "legal-content",
+      "/vidgenerator/api/legal/content",
+      {
+        "endpoint": "/vidgenerator/api/legal/content",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "tech-hardware",
+      "/vidgenerator/api/tech-hardware/progress/test",
+      {
+        "endpoint": "/vidgenerator/api/tech-hardware/progress/test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "death-portal",
+      "/vidgenerator/api/death-portal/status",
+      {
+        "endpoint": "/vidgenerator/api/death-portal/status",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "experience-recount",
+      "/vidgenerator/api/experience/recount-status/test",
+      {
+        "endpoint": "/vidgenerator/api/experience/recount-status/test",
+        "method": "POST",
+        "status": 404,
+        "online": false,
+        "size": 207,
+        "error": null
+      }
+    ],
+    [
+      "enhanced-system",
+      "/api/points/get-all-connected?user_id=test",
+      {
+        "endpoint": "/api/points/get-all-connected?user_id=test",
+        "method": "GET",
+        "status": 404,
+        "online": false,
+        "size": 162,
+        "error": null
+      }
+    ]
+  ],
+  "todo_items": [
+    {
+      "priority": 1,
+      "tab_id": "overview",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/game/battle/stats?user_id=test",
+        "/vidgenerator/api/battle/fantasy/history?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for overview"
+    },
+    {
+      "priority": 1,
+      "tab_id": "history",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/fantasy/history?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for history"
+    },
+    {
+      "priority": 1,
+      "tab_id": "rulebooks",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/rulebooks"
+      ],
+      "action": "Create/restore API endpoints for rulebooks"
+    },
+    {
+      "priority": 1,
+      "tab_id": "series",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/series"
+      ],
+      "action": "Create/restore API endpoints for series"
+    },
+    {
+      "priority": 1,
+      "tab_id": "gps",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/gps"
+      ],
+      "action": "Create/restore API endpoints for gps"
+    },
+    {
+      "priority": 1,
+      "tab_id": "news",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/news"
+      ],
+      "action": "Create/restore API endpoints for news"
+    },
+    {
+      "priority": 1,
+      "tab_id": "peers",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/peers?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for peers"
+    },
+    {
+      "priority": 1,
+      "tab_id": "timepocket",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/timepocket/realtime?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for timepocket"
+    },
+    {
+      "priority": 1,
+      "tab_id": "trading",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/trophy-trading?user_id=test",
+        "/vidgenerator/api/battle/collectibles?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for trading"
+    },
+    {
+      "priority": 1,
+      "tab_id": "missions",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/missions/daily?user_id=test",
+        "/vidgenerator/api/missions/timeline?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for missions"
+    },
+    {
+      "priority": 1,
+      "tab_id": "ai-research",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/ai-research?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for ai-research"
+    },
+    {
+      "priority": 1,
+      "tab_id": "autoplay",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/autoplay/status?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for autoplay"
+    },
+    {
+      "priority": 1,
+      "tab_id": "teams",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/teams/user?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for teams"
+    },
+    {
+      "priority": 1,
+      "tab_id": "alliances",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/alliances/user?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for alliances"
+    },
+    {
+      "priority": 1,
+      "tab_id": "groups-destroy",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/groups/destruction-history?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for groups-destroy"
+    },
+    {
+      "priority": 1,
+      "tab_id": "bonus-level",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/bonus-levels?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for bonus-level"
+    },
+    {
+      "priority": 1,
+      "tab_id": "death-teleport-install",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/death-teleport/status/test"
+      ],
+      "action": "Create/restore API endpoints for death-teleport-install"
+    },
+    {
+      "priority": 1,
+      "tab_id": "militia-forces",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/militia/forces?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for militia-forces"
+    },
+    {
+      "priority": 1,
+      "tab_id": "legal-content",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/legal/content"
+      ],
+      "action": "Create/restore API endpoints for legal-content"
+    },
+    {
+      "priority": 1,
+      "tab_id": "tech-hardware",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/tech-hardware/progress/test"
+      ],
+      "action": "Create/restore API endpoints for tech-hardware"
+    },
+    {
+      "priority": 1,
+      "tab_id": "experience-recount",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/experience/recount-status/test"
+      ],
+      "action": "Create/restore API endpoints for experience-recount"
+    },
+    {
+      "priority": 1,
+      "tab_id": "enhanced-system",
+      "issue": "All endpoints offline",
+      "endpoints": [
+        "/api/points/get-all-connected?user_id=test"
+      ],
+      "action": "Create/restore API endpoints for enhanced-system"
+    },
+    {
+      "priority": 2,
+      "tab_id": "battle",
+      "issue": "Some endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/quick"
+      ],
+      "action": "Fix offline endpoints for battle"
+    },
+    {
+      "priority": 2,
+      "tab_id": "technology",
+      "issue": "Some endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/battle/tech-tree/all"
+      ],
+      "action": "Fix offline endpoints for technology"
+    },
+    {
+      "priority": 2,
+      "tab_id": "death-portal",
+      "issue": "Some endpoints offline",
+      "endpoints": [
+        "/vidgenerator/api/death-portal/status"
+      ],
+      "action": "Fix offline endpoints for death-portal"
+    },
+    {
+      "priority": 3,
+      "tab_id": "rulebooks",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/battle/rulebooks"
+      ],
+      "action": "Create missing endpoints for rulebooks"
+    },
+    {
+      "priority": 3,
+      "tab_id": "gps",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/battle/gps"
+      ],
+      "action": "Create missing endpoints for gps"
+    },
+    {
+      "priority": 3,
+      "tab_id": "timepocket",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/battle/timepocket/realtime?user_id=test"
+      ],
+      "action": "Create missing endpoints for timepocket"
+    },
+    {
+      "priority": 3,
+      "tab_id": "trading",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/battle/trophy-trading?user_id=test",
+        "/vidgenerator/api/battle/collectibles?user_id=test"
+      ],
+      "action": "Create missing endpoints for trading"
+    },
+    {
+      "priority": 3,
+      "tab_id": "missions",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/missions/daily?user_id=test",
+        "/vidgenerator/api/missions/timeline?user_id=test"
+      ],
+      "action": "Create missing endpoints for missions"
+    },
+    {
+      "priority": 3,
+      "tab_id": "ai-research",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/ai-research?user_id=test"
+      ],
+      "action": "Create missing endpoints for ai-research"
+    },
+    {
+      "priority": 3,
+      "tab_id": "technology",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/battle/tech-tree/all"
+      ],
+      "action": "Create missing endpoints for technology"
+    },
+    {
+      "priority": 3,
+      "tab_id": "autoplay",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/autoplay/status?user_id=test"
+      ],
+      "action": "Create missing endpoints for autoplay"
+    },
+    {
+      "priority": 3,
+      "tab_id": "teams",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/teams/user?user_id=test"
+      ],
+      "action": "Create missing endpoints for teams"
+    },
+    {
+      "priority": 3,
+      "tab_id": "alliances",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/alliances/user?user_id=test"
+      ],
+      "action": "Create missing endpoints for alliances"
+    },
+    {
+      "priority": 3,
+      "tab_id": "groups-destroy",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/groups/destruction-history?user_id=test"
+      ],
+      "action": "Create missing endpoints for groups-destroy"
+    },
+    {
+      "priority": 3,
+      "tab_id": "bonus-level",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/bonus-levels?user_id=test"
+      ],
+      "action": "Create missing endpoints for bonus-level"
+    },
+    {
+      "priority": 3,
+      "tab_id": "death-teleport-install",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/death-teleport/status/test"
+      ],
+      "action": "Create missing endpoints for death-teleport-install"
+    },
+    {
+      "priority": 3,
+      "tab_id": "militia-forces",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/militia/forces?user_id=test"
+      ],
+      "action": "Create missing endpoints for militia-forces"
+    },
+    {
+      "priority": 3,
+      "tab_id": "legal-content",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/legal/content"
+      ],
+      "action": "Create missing endpoints for legal-content"
+    },
+    {
+      "priority": 3,
+      "tab_id": "tech-hardware",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/tech-hardware/progress/test"
+      ],
+      "action": "Create missing endpoints for tech-hardware"
+    },
+    {
+      "priority": 3,
+      "tab_id": "death-portal",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/death-portal/status"
+      ],
+      "action": "Create missing endpoints for death-portal"
+    },
+    {
+      "priority": 3,
+      "tab_id": "experience-recount",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/vidgenerator/api/experience/recount-status/test"
+      ],
+      "action": "Create missing endpoints for experience-recount"
+    },
+    {
+      "priority": 3,
+      "tab_id": "enhanced-system",
+      "issue": "Endpoints return 404",
+      "endpoints": [
+        "/api/points/get-all-connected?user_id=test"
+      ],
+      "action": "Create missing endpoints for enhanced-system"
+    }
+  ]
+}

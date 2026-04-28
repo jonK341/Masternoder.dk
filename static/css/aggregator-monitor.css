@@ -1,0 +1,465 @@
+/* Aggregator — 4D+ monitor playfield + explorer */
+
+.agg-top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-primary, #2a2a2a);
+  padding: 8px 0;
+}
+
+.agg-top-nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.agg-top-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agg-top-nav .nav-link {
+  padding: var(--spacing-xs, 6px) var(--spacing-md, 12px);
+  color: var(--text-secondary, #aaa);
+  text-decoration: none;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-sm, 0.9rem);
+  transition: background 0.15s, color 0.15s;
+}
+
+.agg-top-nav .nav-link:hover {
+  background: var(--bg-card, #1a1e22);
+  color: var(--text-primary, #fff);
+}
+
+.agg-top-nav .nav-link--current {
+  opacity: 0.95;
+  color: var(--primary, #00ff88);
+  font-weight: 600;
+}
+
+.agg-top-nav .nav-link--home {
+  font-weight: 700;
+  color: var(--primary, #00ff88);
+}
+
+.agg-page {
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+/* Tech footprint + unified points HUD (metrics vars in page-layout-metrics.css) */
+.agg-tech-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+
+@media (min-width: 900px) {
+  .agg-tech-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.agg-tech-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--agg-tech-bar-gap, 8px);
+  align-items: center;
+}
+
+.agg-tech-chip {
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary, #333);
+  background: rgba(0, 255, 136, 0.06);
+  color: var(--text-secondary, #aaa);
+}
+
+.agg-points-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  min-height: var(--agg-points-hud-min-height, 44px);
+  font-size: 0.82rem;
+  color: var(--text-secondary, #aaa);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary, #2a2a2a);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.agg-points-hud strong {
+  color: var(--primary, #00ff88);
+  font-weight: 700;
+}
+
+.agg-hud-bit {
+  white-space: nowrap;
+}
+
+.agg-hero {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.agg-hero h1 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  margin: 0 0 0.35rem;
+  background: linear-gradient(135deg, var(--primary, #00ff88), var(--secondary, #00d4ff));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.agg-hero p {
+  color: var(--text-secondary, #aaa);
+  font-size: 0.95rem;
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.agg-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 340px);
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .agg-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Holodeck monitor frame */
+.agg-monitor-wrap {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+.agg-monitor-frame {
+  position: relative;
+  border-radius: 16px;
+  padding: 12px;
+  background: linear-gradient(145deg, rgba(0, 40, 30, 0.95), rgba(0, 20, 40, 0.95));
+  border: 2px solid rgba(0, 255, 136, 0.35);
+  box-shadow:
+    0 0 40px rgba(0, 255, 136, 0.12),
+    inset 0 0 60px rgba(0, 0, 0, 0.5);
+  transform: rotateX(2deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agg-monitor-frame {
+    transform: none;
+  }
+}
+
+.agg-monitor-bezel {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 136, 0.55);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agg-dims {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--secondary, #5cf);
+}
+
+.agg-play-surface {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, rgba(0, 60, 50, 0.4) 0%, rgba(0, 5, 15, 0.95) 70%);
+  min-height: 320px;
+  aspect-ratio: 16 / 10;
+}
+
+.agg-grid-layer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 10px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.agg-cell {
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  background: rgba(0, 20, 30, 0.6);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  min-height: 0;
+  position: relative;
+}
+
+.agg-cell:hover {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 60, 50, 0.35);
+}
+
+.agg-cell.player {
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.55);
+  border-color: var(--primary, #00ff88);
+  background: rgba(0, 255, 136, 0.18);
+}
+
+.agg-cell.goal {
+  border-color: rgba(255, 200, 80, 0.7);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 200, 80, 0.25), transparent);
+}
+
+.agg-cell.path {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.agg-battle-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 5, 12, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 5;
+  padding: 1rem;
+  text-align: center;
+}
+
+.agg-battle-overlay h3 {
+  color: var(--primary, #00ff88);
+  margin: 0 0 0.75rem;
+}
+
+.agg-rps {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.agg-rps button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--primary, #00ff88);
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--text-primary, #fff);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agg-rps button:hover {
+  background: rgba(0, 255, 136, 0.25);
+}
+
+.agg-rps button:focus-visible,
+.agg-chat-input-row button:focus-visible,
+.agg-chat-input-row input:focus-visible,
+.agg-link-list a:focus-visible {
+  outline: 2px solid var(--primary, #00ff88);
+  outline-offset: 2px;
+}
+
+.agg-monitor-hint {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #999);
+  text-align: center;
+}
+
+/* Explorer column */
+.agg-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agg-panel {
+  background: var(--bg-card, rgba(20, 24, 28, 0.95));
+  border: 1px solid var(--border-primary, #333);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.agg-panel h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--primary, #00ff88);
+}
+
+.agg-user-print {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  background: #0a0e10;
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid #222;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.agg-progress-reader {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #bbb);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.agg-progress-reader dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+}
+
+.agg-progress-reader dt {
+  color: var(--secondary, #6cf);
+}
+
+.agg-chat-log {
+  height: 180px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+}
+
+.agg-chat-msg {
+  margin-bottom: 6px;
+}
+
+.agg-chat-msg .who {
+  color: var(--secondary, #6cf);
+  font-weight: 600;
+}
+
+.agg-chat-msg.user .who {
+  color: var(--primary, #0f8);
+}
+
+.agg-chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.agg-chat-input-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #111;
+  color: #eee;
+}
+
+.agg-chat-input-row button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary, #00ff88);
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Encoder */
+.agg-encoder {
+  max-width: 1400px;
+  margin: 1.5rem auto 0;
+  padding: 0 1rem;
+}
+
+.agg-encoder-inner {
+  background: var(--bg-card, #12161a);
+  border: 1px solid var(--border-primary, #2a2a2a);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+}
+
+.agg-encoder textarea {
+  width: 100%;
+  min-height: 100px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #0c0f12;
+  color: #cfd8dc;
+  box-sizing: border-box;
+}
+
+.agg-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.agg-link-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  color: var(--primary, #00ff88);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.agg-link-list a:hover {
+  background: rgba(0, 255, 136, 0.2);
+}
+
+.agg-intel-section {
+  max-width: 1400px;
+  margin: 2rem auto 0;
+  padding: 0 1rem;
+}
+
+.agg-intel-section .intelligence-subtabs {
+  margin-bottom: 12px;
+}
+
+.agg-battle-overlay p {
+  color: var(--text-secondary, #ccc);
+  font-size: 0.9rem;
+}

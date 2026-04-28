@@ -1,0 +1,12 @@
+.\comprehensive_redeploy_and_check.py
+.\deploy_all_game_features.py
+.\deploy_all_metal_systems.py
+.\deploy_all_new_systems.py
+.\deploy_all_non_interactive.py
+.\deploy_complete_implementation.py
+.\deploy_complete_system.py
+.\deploy_comprehensive_features_phase2.py
+.\deploy_final_queue.py
+.\deploy_full_auto.py
+.\deploy_phase3_and_point_connection.py
+.\review_and_redeploy_all.py

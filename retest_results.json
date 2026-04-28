@@ -1,0 +1,252 @@
+{
+  "url_results": [
+    {
+      "url": "/vidgenerator/api/points/all",
+      "status": "ok",
+      "status_code": 200,
+      "response_time": 1425.02,
+      "error": null,
+      "json": {
+        "accuracy_grade": "A+",
+        "points": {
+          "accuracy_grade": "A+",
+          "achievement_points": 0,
+          "achievements_earned": 0,
+          "achievements_total": 0,
+          "active_quests": 0,
+          "average_quality_score": 0,
+          "battle_losses": 0,
+          "battle_points": 0,
+          "battle_streak": 0,
+          "battle_wins": 0,
+          "chat_messages": 0,
+          "chat_points": 0,
+          "coins": 0,
+          "completed_quests": 0,
+          "creativity_points": 0,
+          "credits": 0,
+          "daily_logins": 0,
+          "efficiency_points": 0,
+          "followers_count": 0,
+          "friends_count": 0,
+          "generations_total": 0,
+          "high_quality_generations": 0,
+          "knowledge_points": 0,
+          "last_updated": "2026-01-13T20:20:50.930683",
+          "level": 1,
+          "level_progress": 0.0,
+          "login_streak": 0,
+          "milestone_points": 0,
+          "milestones_reached": 0,
+          "milestones_total": 0,
+          "mtg_level": 1,
+          "mtg_points": 0,
+          "points_validated": true,
+          "porno_rights_level": 1,
+          "porno_rights_points": 0,
+          "prestige_count": 0,
+          "quality_points": 0,
+          "quest_points": 0,
+          "quest_xp": 0,
+          "rights_discussions_created": 0,
+          "rights_discussions_replied": 0,
+          "rights_paragraphs_read": 0,
+          "rights_points": 0,
+          "sex_metal_level": 1,
+          "sex_metal_points": 0,
+          "social_interactions": 0,
+          "social_points": 0,
+          "stats_points_available": 0,
+          "stats_points_total": 0,
+          "stats_points_used": 0,
+          "territory_level": 1,
+          "territory_points": 0,
+          "theme_points_by_theme": {},
+          "theme_points_total": 0,
+          "time_played": 0,
+          "tokens": 0,
+          "total_earned": 0,
+          "total_spent": 0,
+          "trophies_collected": 0,
+          "trophy_hunt_level": 1,
+          "trophy_hunt_points": 0,
+          "trophy_level": 1,
+          "trophy_points": 0,
+          "videos_created": 0,
+          "videos_shared": 0,
+          "videos_watched": 0,
+          "xp_this_month": 0,
+          "xp_this_week": 0,
+          "xp_today": 0,
+          "xp_total": 0
+        },
+        "success": true,
+        "user_id": "user_742544030b3844e3"
+      }
+    },
+    {
+      "url": "/vidgenerator/api/unified-dashboard/data",
+      "status": "ok",
+      "status_code": 200,
+      "response_time": 612.18,
+      "error": null,
+      "json": {
+        "cash": {
+          "sources": {},
+          "total": 0.0
+        },
+        "energy": {
+          "data": {
+            "last_update": "2026-01-13T20:20:51.544751",
+            "mind": 100,
+            "place": 100,
+            "power": 100,
+            "time": 100
+          },
+          "percentage": 100,
+          "total": 400
+        },
+        "points": {
+          "data": {},
+          "total": 0
+        },
+        "progress": {
+          "completion": 0,
+          "game_mechanics": {
+            "function_usage": {},
+            "progress_by_class": {
+              "1a": 0,
+              "2a": 0,
+              "3a": 0
+            },
+            "subjects_completed": 0,
+            "subjects_started": 0,
+            "success": true,
+            "total_progress": 0.0,
+            "user_id": "default_user"
+          }
+        },
+        "success": true,
+        "top50": {
+          "rank": null,
+          "top6": []
+        },
+        "user_id": "default_user"
+      }
+    },
+    {
+      "url": "/vidgenerator/api/monetization/top50",
+      "status": "ok",
+      "status_code": 200,
+      "response_time": 667.42,
+      "error": null,
+      "json": {
+        "count": 0,
+        "success": true,
+        "top_50": []
+      }
+    },
+    {
+      "url": "/vidgenerator/api/leaderboard/all",
+      "status": "ok",
+      "status_code": 200,
+      "response_time": 1133.9,
+      "error": null,
+      "json": {
+        "cached": false,
+        "leaderboard": [
+          {
+            "rank": 1,
+            "total_points": 0,
+            "user_id": "test_user_1766980355",
+            "username": "test_user_1766980355"
+          },
+          {
+            "rank": 2,
+            "total_points": 0,
+            "user_id": "test_user_1766980679",
+            "username": "test_user_1766980679"
+          },
+          {
+            "rank": 3,
+            "total_points": 0,
+            "user_id": "test_user_1766984089",
+            "username": "test_user_1766984089"
+          }
+        ],
+        "success": true,
+        "total_entries": 3,
+        "updated_at": "2026-01-13T20:20:53.359599"
+      }
+    },
+    {
+      "url": "/vidgenerator/api/debug/report",
+      "status": "ok",
+      "status_code": 200,
+      "response_time": 690.34,
+      "error": null,
+      "content": "================================================================================\nTECH STRUCTURE ANALYSIS REPORT\n================================================================================\nGenerat"
+    },
+    {
+      "url": "/vidgenerator/api/debug/system/unified_point_counter",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 571.46,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/route?path=/api/points/all",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 781.03,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/check-duplicates",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 571.91,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/all",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 605.95,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/dashboard",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 664.21,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/tech-tree/knowledge",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 1051.97,
+      "error": null
+    }
+  ],
+  "blueprint_info": {
+    "success": false,
+    "blueprints": {},
+    "duplicates": [],
+    "error": "Status 404"
+  },
+  "prefix_info": {
+    "needs_prefix": [],
+    "works_without_prefix": [],
+    "works_with_prefix": [
+      "/api/points/all",
+      "/api/debug/report"
+    ]
+  },
+  "summary": {
+    "total": 11,
+    "ok": 5,
+    "broken": 6
+  }
+}

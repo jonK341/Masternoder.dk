@@ -1,0 +1,35 @@
+# Production server - slim runtime set.
+# Install: python -m pip install -r requirements-production.txt
+# Optional AI/video/browser/realtime stacks live in requirements-optional.txt.
+
+# Core web stack. These match the currently working local Flask 3 / SQLAlchemy 2 app.
+Flask>=3.1.3,<4.0
+Werkzeug>=3.1.8,<4.0
+click>=8.1.8,<9.0
+Flask-SQLAlchemy>=3.1.1,<4.0
+SQLAlchemy>=2.0.49,<3.0
+
+# HTTP/config
+requests>=2.32.0,<2.34
+urllib3>=2.6.3,<3.0
+certifi>=2026.4.22
+python-dotenv>=1.2.2,<2.0
+configparser>=7.2.0,<8.0
+
+# Deploy/SSH helpers used by deploy.py and server maintenance scripts.
+paramiko>=4.0.0,<5.0
+scp>=0.15.0,<1.0
+
+# Lightweight runtime helpers.
+Pillow>=11.3.0,<12.0
+numpy>=2.4.2,<3.0
+beautifulsoup4>=4.14.3,<5.0
+duckduckgo-search>=8.1.1,<9.0
+lxml>=6.1.0,<7.0
+psutil>=7.2.2,<8.0
+tenacity>=9.1.4,<10.0
+
+# Security / migrations.
+cryptography>=46.0.3,<48.0
+alembic>=1.18.4,<2.0
+sqlalchemy-utils>=0.42.1,<1.0

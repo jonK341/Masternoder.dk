@@ -1,0 +1,90 @@
+{
+  "$schema": "masternoder.monetization.v1",
+  "reference_job_id": "ref_v1_global_doc_90s",
+  "credit_definition": {
+    "comment": "1 generation_credit = this fraction of one reference job (see REFERENCE_JOB_COGS.md)",
+    "reference_fraction_per_credit": 0.25
+  },
+  "coin_packs": [
+    {
+      "id": "coin-pack-s",
+      "name": "100 Coins",
+      "description": "100 coins via PayPal",
+      "price_usd": 0.99,
+      "coins_granted": 100,
+      "generation_credits_granted": 0.25,
+      "icon": "🪙"
+    },
+    {
+      "id": "coin-pack-m",
+      "name": "500 Coins",
+      "description": "500 coins via PayPal — best value",
+      "price_usd": 4.99,
+      "coins_granted": 500,
+      "generation_credits_granted": 1.5,
+      "icon": "🪙"
+    },
+    {
+      "id": "coin-pack-l",
+      "name": "2000 Coins",
+      "description": "2000 coins via PayPal — best deal",
+      "price_usd": 9.99,
+      "coins_granted": 2000,
+      "generation_credits_granted": 4.0,
+      "icon": "🪙"
+    }
+  ],
+  "tiers": {
+    "creator": {
+      "label": "Creator",
+      "max_output_duration_sec": 180,
+      "max_segments_per_job": 12,
+      "max_runway_output_seconds_billed_per_job": 60,
+      "max_llm_tokens_estimated_per_job": 32000,
+      "max_output_file_mb_per_job": 80
+    },
+    "pro": {
+      "label": "Pro",
+      "max_output_duration_sec": 600,
+      "max_segments_per_job": 12,
+      "max_runway_output_seconds_billed_per_job": 120,
+      "max_llm_tokens_estimated_per_job": 128000,
+      "max_output_file_mb_per_job": 400
+    }
+  },
+  "default_tier": "creator",
+  "subscriptions": {
+    "comment": "Keys are PayPal billing plan ids (P-…). Replace P-PLACEHOLDER-PRO with your live/sandbox plan id.",
+    "plans": {
+      "P-PLACEHOLDER-PRO": {
+        "label": "Pro monthly",
+        "price_usd_monthly": 19.99,
+        "monthly_generation_credits": 8.0,
+        "tier": "pro"
+      }
+    }
+  },
+  "b2b_studio_skus": {
+    "comment": "Studio Cash Rail (SCR) — quote anchors; real price in contract. See docs/MONETIZATION_PAYPAL.md §4.",
+    "skus": [
+      {
+        "id": "scr-studio-90d-500",
+        "label": "Studio — 90 days · 500 ref-eq credits (pool)",
+        "description": "Prepaid generation pool for teams; burn is still measured in metering.jsonl like retail.",
+        "term_days": 90,
+        "generation_credits_pool": 500,
+        "list_price_usd": 2499.0,
+        "currency": "USD"
+      },
+      {
+        "id": "scr-annual-custom",
+        "label": "Annual commit — custom pool",
+        "description": "Placeholder anchor for negotiated annual deals; list_price_usd often overridden in writing.",
+        "term_days": 365,
+        "generation_credits_pool": 2000,
+        "list_price_usd": 0,
+        "currency": "USD"
+      }
+    ]
+  }
+}

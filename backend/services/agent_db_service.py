@@ -1,0 +1,491 @@
+"""
+Agent DB Service
+Single source of truth for agent progress and activity — stored in the database
+with JSON-file fallback. Connects agent skills to points, profile, and activity feed.
+"""
+import os
+import json
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+
+from sqlalchemy import text
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Action-to-label map for human-readable activity feed
+_ACTION_LABELS = {
+    'generate_video': ('🎬', 'Generated a video'),
+    'generate_clip': ('🎞️', 'Generated a clip'),
+    'generate_image': ('🖼️', 'Generated an image'),
+    'analyze_user_behavior': ('📊', 'Analyzed user behavior'),
+    'track_metrics': ('📈', 'Tracked metrics'),
+    'generate_reports': ('📄', 'Generated a report'),
+    'create_strategy': ('⚔️', 'Created battle strategy'),
+    'analyze_battle': ('🔍', 'Analyzed a battle'),
+    'optimize_tactics': ('🎯', 'Optimized tactics'),
+    'manage_friends': ('👥', 'Managed social connections'),
+    'coordinate_events': ('🗓️', 'Coordinated an event'),
+    'build_community': ('🤝', 'Built community engagement'),
+    'run_full_diagnostic': ('🔧', 'Ran full diagnostic'),
+    'check_blueprints': ('📋', 'Checked blueprints'),
+    'verify_database': ('💾', 'Verified database integrity'),
+    'scan_vulnerabilities': ('🛡️', 'Scanned for vulnerabilities'),
+    'optimize_performance': ('⚡', 'Optimized performance'),
+    'skill_execution': ('✨', 'Executed agent skill'),
+    'tech_unlocked': ('🔓', 'Unlocked agent technology'),
+    'level_up': ('⬆️', 'Agent leveled up!'),
+    'shop_purchase': ('🛒', 'Made a shop purchase'),
+    'quest_completed': ('📜', 'Completed a quest'),
+    'battle_won': ('⚔️', 'Won a battle'),
+    'trophy_earned': ('🏆', 'Earned a trophy'),
+    'login': ('🔑', 'Logged in'),
+    'daily_bonus': ('🎁', 'Claimed daily bonus'),
+    'ai_follow_user_action': ('🤖', 'AI followed your action'),
+    'ai_suggest_next': ('💡', 'AI suggested next step'),
+    'ai_auto_optimize': ('⚡', 'AI auto-optimized'),
+    'ai_nice_and_easy': ('✨', 'AI did the job nice and easy'),
+    'ai_assist_task': ('🛠️', 'AI assisted task'),
+    'ai_learn_from_action': ('🧠', 'AI learned from your action'),
+    'ai_win_with_user': ('🏆', 'Won with you'),
+    'user_action_followed': ('👣', 'Agent followed your action'),
+    'agent_win': ('🎉', 'Agent win!'),
+    'broadcast': ('📡', 'Broadcast update'),
+    'news_report_ingredients': ('📰', 'News report ingredients (knowledge sharing)'),
+}
+
+_AGENT_DISPLAY = {
+    'content_generator_agent': ('🎬', 'Content Generator', '#00ff88'),
+    'analytics_agent': ('📊', 'Analytics Agent', '#00d4ff'),
+    'battle_strategy_agent': ('⚔️', 'Battle Strategy', '#ff6b35'),
+    'social_engagement_agent': ('👥', 'Social Agent', '#a855f7'),
+    'master_fix_agent': ('🔧', 'Master Fix Agent', '#fbbf24'),
+    'monitoring_agent': ('👁️', 'Monitoring Agent', '#60a5fa'),
+    'scanner_agent': ('🔍', 'Scanner Agent', '#34d399'),
+    'security_agent': ('🛡️', 'Security Agent', '#f87171'),
+    'performance_optimizer_agent': ('⚡', 'Performance Agent', '#fb923c'),
+    'user_experience_agent': ('✨', 'UX Agent', '#c084fc'),
+    'learning_agent': ('🧠', 'Learning Agent', '#38bdf8'),
+    'reporter_agent': ('📡', 'Reporter Agent', '#f472b6'),
+    'ai_intelligence_agent': ('🤖', 'AI Intelligence', '#818cf8'),
+    'tester_agent': ('🧪', 'Tester Agent', '#4ade80'),
+    'error_migration_agent': ('🔄', 'Migration Agent', '#facc15'),
+}
+
+
+class AgentDBService:
+    """DB-backed agent progress and activity tracking."""
+
+    def __init__(self):
+        self._fallback_dir = os.path.join(BASE_DIR, 'logs', 'agent_progress')
+        os.makedirs(self._fallback_dir, exist_ok=True)
+
+    # ── DB helpers ─────────────────────────────────────────────────────────
+
+    def _get_db(self):
+        from src.db.models import db
+        from src.app import create_app
+        app = create_app()
+        return db, app
+
+    def _ensure_tables(self, db):
+        """Create agent tables if they don't exist."""
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS agent_progress (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                agent_id TEXT NOT NULL,
+                level INTEGER DEFAULT 1,
+                xp INTEGER DEFAULT 0,
+                total_actions INTEGER DEFAULT 0,
+                skill_count INTEGER DEFAULT 0,
+                last_action TEXT,
+                last_action_at TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(user_id, agent_id)
+            )
+        """))
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS agent_activity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                agent_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                skill TEXT,
+                xp_gained INTEGER DEFAULT 0,
+                points_gained REAL DEFAULT 0,
+                metadata TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """))
+        try:
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_agent_activity_user ON agent_activity(user_id, created_at DESC)"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_agent_progress_user ON agent_progress(user_id)"))
+        except Exception:
+            pass
+        db.session.commit()
+
+    # ── File fallback ───────────────────────────────────────────────────────
+
+    def _fallback_file(self, user_id: str) -> str:
+        return os.path.join(self._fallback_dir, f"{user_id}.json")
+
+    def _load_fallback(self, user_id: str) -> Dict:
+        f = self._fallback_file(user_id)
+        if os.path.exists(f):
+            try:
+                with open(f) as fh:
+                    return json.load(fh)
+            except Exception:
+                pass
+        return {'agents': {}, 'activity': []}
+
+    def _save_fallback(self, user_id: str, data: Dict):
+        try:
+            with open(self._fallback_file(user_id), 'w') as fh:
+                json.dump(data, fh, indent=2, default=str)
+        except Exception:
+            pass
+
+    # ── Core API ────────────────────────────────────────────────────────────
+
+    def record_agent_activity(
+        self,
+        user_id: str,
+        agent_id: str,
+        action: str,
+        skill: Optional[str] = None,
+        xp_gained: int = 0,
+        points_gained: float = 0.0,
+        metadata: Optional[Dict] = None,
+    ) -> Dict:
+        """
+        Record that a user's agent performed an action.
+        Updates agent_progress (XP, level, action count) and inserts into agent_activity.
+        Returns the updated agent progress.
+        """
+        now = datetime.utcnow().isoformat()
+        meta_str = json.dumps(metadata or {})
+
+        # Always write to file fallback first
+        fb = self._load_fallback(user_id)
+        agent_fb = fb['agents'].setdefault(agent_id, {
+            'xp': 0, 'level': 1, 'total_actions': 0, 'last_action': None, 'last_action_at': None
+        })
+        agent_fb['xp'] = agent_fb.get('xp', 0) + xp_gained
+        agent_fb['level'] = max(1, agent_fb['xp'] // 500 + 1)
+        agent_fb['total_actions'] = agent_fb.get('total_actions', 0) + 1
+        agent_fb['last_action'] = action
+        agent_fb['last_action_at'] = now
+        activity_entry = {
+            'agent_id': agent_id,
+            'action': action,
+            'skill': skill,
+            'xp_gained': xp_gained,
+            'points_gained': points_gained,
+            'created_at': now,
+        }
+        fb['activity'].insert(0, activity_entry)
+        fb['activity'] = fb['activity'][:200]  # keep last 200
+        self._save_fallback(user_id, fb)
+
+        # Best-effort DB write
+        try:
+            db, app = self._get_db()
+            with app.app_context():
+                self._ensure_tables(db)
+                # Upsert agent_progress
+                existing = db.session.execute(
+                    text("SELECT id, xp, total_actions FROM agent_progress WHERE user_id=:u AND agent_id=:a"),
+                    {'u': user_id, 'a': agent_id}
+                ).fetchone()
+                if existing:
+                    new_xp = (existing[1] or 0) + xp_gained
+                    new_actions = (existing[2] or 0) + 1
+                    new_level = max(1, new_xp // 500 + 1)
+                    db.session.execute(text("""
+                        UPDATE agent_progress SET xp=:xp, level=:lv, total_actions=:ta,
+                        last_action=:la, last_action_at=:lat, updated_at=:now
+                        WHERE user_id=:u AND agent_id=:a
+                    """), {'xp': new_xp, 'lv': new_level, 'ta': new_actions,
+                           'la': action, 'lat': now, 'now': now, 'u': user_id, 'a': agent_id})
+                else:
+                    new_xp = xp_gained
+                    new_level = max(1, new_xp // 500 + 1)
+                    db.session.execute(text("""
+                        INSERT INTO agent_progress (user_id, agent_id, xp, level, total_actions, last_action, last_action_at, created_at, updated_at)
+                        VALUES (:u, :a, :xp, :lv, 1, :la, :lat, :now, :now)
+                    """), {'u': user_id, 'a': agent_id, 'xp': new_xp, 'lv': new_level,
+                           'la': action, 'lat': now, 'now': now})
+                # Insert activity
+                db.session.execute(text("""
+                    INSERT INTO agent_activity (user_id, agent_id, action, skill, xp_gained, points_gained, metadata, created_at)
+                    VALUES (:u, :a, :act, :sk, :xp, :pts, :meta, :now)
+                """), {'u': user_id, 'a': agent_id, 'act': action, 'sk': skill,
+                       'xp': xp_gained, 'pts': points_gained, 'meta': meta_str, 'now': now})
+                db.session.commit()
+        except Exception:
+            pass
+
+        try:
+            from backend.services.unified_points_sync import unified_points_sync_device
+            unified_points_sync_device.record_domain_sync('agent_activity', extra={"agent_id": agent_id, "action": action})
+        except Exception:
+            pass
+
+        return {'success': True, 'agent_id': agent_id, 'xp_gained': xp_gained}
+
+    def record_user_action_followed(
+        self,
+        user_id: str,
+        agent_id: str,
+        user_action: str,
+        win: bool = False,
+        xp_on_win: int = 25,
+        points_on_win: float = 5.0,
+        metadata: Optional[Dict] = None,
+    ) -> Dict:
+        """
+        Record that an agent followed the user's action. When win=True, award XP and points
+        so the user and agent win together. Makes agents do the job nice and easy.
+        """
+        action = 'agent_win' if win else 'user_action_followed'
+        skill = 'ai_win_with_user' if win else 'ai_follow_user_action'
+        xp = xp_on_win if win else 10
+        pts = points_on_win if win else 1.0
+        meta = dict(metadata or {}, user_action=user_action, win=win)
+        return self.record_agent_activity(
+            user_id=user_id,
+            agent_id=agent_id,
+            action=action,
+            skill=skill,
+            xp_gained=xp,
+            points_gained=pts,
+            metadata=meta,
+        )
+
+    def get_user_agents(self, user_id: str) -> List[Dict]:
+        """
+        Returns a list of the user's assigned agents with current progress from DB (fallback to JSON).
+        Merges DB progress with agent assignments from user_agent_skills.
+        """
+        # Load assigned agents from user_agent_skills JSON
+        try:
+            from backend.services.user_agent_skills import user_agent_skills
+            skills_data = user_agent_skills.get_user_skills(user_id)
+        except Exception:
+            skills_data = {}
+        assigned_agents = skills_data.get('assigned_agents', [])
+        skills_list = skills_data.get('skills', [])
+
+        # Group skills by agent
+        skills_by_agent: Dict[str, List] = {}
+        for sk in skills_list:
+            aid = sk.get('agent_id', '')
+            if aid:
+                skills_by_agent.setdefault(aid, []).append(sk)
+
+        # Load progress from DB first, fallback to file
+        progress_map: Dict[str, Dict] = {}
+        try:
+            db, app = self._get_db()
+            with app.app_context():
+                self._ensure_tables(db)
+                rows = db.session.execute(
+                    text("SELECT agent_id, level, xp, total_actions, last_action, last_action_at FROM agent_progress WHERE user_id=:u"),
+                    {'u': user_id}
+                ).fetchall()
+                for r in rows:
+                    progress_map[r[0]] = {
+                        'level': r[1] or 1, 'xp': r[2] or 0,
+                        'total_actions': r[3] or 0, 'last_action': r[4], 'last_action_at': r[5]
+                    }
+        except Exception:
+            pass
+
+        # Merge with file fallback
+        fb = self._load_fallback(user_id)
+        for aid, prog in fb.get('agents', {}).items():
+            if aid not in progress_map:
+                progress_map[aid] = prog
+
+        # Build result — only for assigned agents, but also include any with progress
+        all_agent_ids = set(assigned_agents) | set(progress_map.keys())
+        result = []
+        for aid in all_agent_ids:
+            prog = progress_map.get(aid, {'level': 1, 'xp': 0, 'total_actions': 0})
+            display = _AGENT_DISPLAY.get(aid, ('🤖', aid.replace('_', ' ').title(), '#888888'))
+            agent_skills = skills_by_agent.get(aid, [])
+            xp = prog.get('xp', 0)
+            level = max(1, xp // 500 + 1)
+            xp_in_level = xp % 500
+            xp_to_next = 500
+
+            result.append({
+                'agent_id': aid,
+                'name': display[1],
+                'icon': display[0],
+                'color': display[2],
+                'level': level,
+                'xp': xp,
+                'xp_in_level': xp_in_level,
+                'xp_to_next': xp_to_next,
+                'xp_progress_pct': round(xp_in_level / xp_to_next * 100),
+                'total_actions': prog.get('total_actions', 0),
+                'last_action': prog.get('last_action'),
+                'last_action_at': prog.get('last_action_at'),
+                'skills': [{'skill': s.get('skill'), 'level': s.get('level', 1), 'usage_count': s.get('usage_count', 0)} for s in agent_skills],
+                'skill_count': len(agent_skills),
+                'is_assigned': aid in assigned_agents,
+            })
+
+        result.sort(key=lambda x: (-x['xp'], x['name']))
+        return result
+
+    def get_activity_feed(self, user_id: str, limit: int = 30) -> List[Dict]:
+        """
+        Returns the most recent agent activities for the user with human-readable labels.
+        """
+        activities = []
+
+        # Try DB first
+        try:
+            db, app = self._get_db()
+            with app.app_context():
+                self._ensure_tables(db)
+                rows = db.session.execute(
+                    text("""
+                        SELECT agent_id, action, skill, xp_gained, points_gained, metadata, created_at
+                        FROM agent_activity
+                        WHERE user_id=:u
+                        ORDER BY id DESC
+                        LIMIT :lim
+                    """),
+                    {'u': user_id, 'lim': limit}
+                ).fetchall()
+                for r in rows:
+                    activities.append(self._format_activity(r[0], r[1], r[2], r[3], r[4], r[6]))
+        except Exception:
+            pass
+
+        # Fallback to file if DB empty
+        if not activities:
+            fb = self._load_fallback(user_id)
+            for entry in fb.get('activity', [])[:limit]:
+                activities.append(self._format_activity(
+                    entry.get('agent_id', ''),
+                    entry.get('action', ''),
+                    entry.get('skill'),
+                    entry.get('xp_gained', 0),
+                    entry.get('points_gained', 0),
+                    entry.get('created_at', ''),
+                ))
+
+        return activities
+
+    def get_user_last_activity_at(self, user_id: str) -> Optional[datetime]:
+        """
+        Latest activity timestamp for a user from agent_activity / agent_progress (DB or file fallback).
+        Used for user_agent_skills inactivity maintenance.
+        """
+        best: Optional[datetime] = None
+
+        def _merge(dt: Optional[datetime]) -> None:
+            nonlocal best
+            if dt is None:
+                return
+            if best is None or dt > best:
+                best = dt
+
+        def _parse_ts(s) -> Optional[datetime]:
+            if not s:
+                return None
+            try:
+                raw = str(s).strip().replace(' ', 'T', 1)
+                if raw.endswith('Z'):
+                    raw = raw[:-1] + '+00:00'
+                return datetime.fromisoformat(raw)
+            except Exception:
+                return None
+
+        try:
+            db, app = self._get_db()
+            with app.app_context():
+                self._ensure_tables(db)
+                r1 = db.session.execute(
+                    text("SELECT MAX(created_at) FROM agent_activity WHERE user_id=:u"),
+                    {'u': user_id},
+                ).fetchone()
+                if r1 and r1[0]:
+                    _merge(_parse_ts(r1[0]))
+                rows = db.session.execute(
+                    text("SELECT last_action_at FROM agent_progress WHERE user_id=:u"),
+                    {'u': user_id},
+                ).fetchall()
+                for row in rows:
+                    _merge(_parse_ts(row[0]))
+        except Exception:
+            pass
+
+        if best is None:
+            fb = self._load_fallback(user_id)
+            for entry in fb.get('activity', [])[:50]:
+                _merge(_parse_ts(entry.get('created_at')))
+            for _aid, prog in (fb.get('agents') or {}).items():
+                _merge(_parse_ts(prog.get('last_action_at')))
+
+        return best
+
+    def _format_activity(self, agent_id, action, skill, xp_gained, points_gained, created_at) -> Dict:
+        label_info = _ACTION_LABELS.get(action or skill or '', ('⚡', f'Agent action: {action or skill or "unknown"}'))
+        agent_display = _AGENT_DISPLAY.get(agent_id, ('🤖', agent_id.replace('_', ' ').title(), '#888888'))
+        return {
+            'agent_id': agent_id,
+            'agent_name': agent_display[1],
+            'agent_icon': agent_display[0],
+            'agent_color': agent_display[2],
+            'action': action,
+            'skill': skill,
+            'icon': label_info[0],
+            'label': label_info[1],
+            'xp_gained': xp_gained or 0,
+            'points_gained': float(points_gained or 0),
+            'created_at': created_at,
+        }
+
+    def sync_user_agents_to_db(self, user_id: str) -> int:
+        """
+        Sync user's agent skill assignments from JSON into agent_progress table.
+        Creates rows for agents not yet in DB. Returns count of rows synced.
+        """
+        try:
+            from backend.services.user_agent_skills import user_agent_skills
+            skills_data = user_agent_skills.get_user_skills(user_id)
+        except Exception:
+            return 0
+
+        synced = 0
+        now = datetime.utcnow().isoformat()
+        try:
+            db, app = self._get_db()
+            with app.app_context():
+                self._ensure_tables(db)
+                for agent_id in skills_data.get('assigned_agents', []):
+                    existing = db.session.execute(
+                        text("SELECT id FROM agent_progress WHERE user_id=:u AND agent_id=:a"),
+                        {'u': user_id, 'a': agent_id}
+                    ).fetchone()
+                    if not existing:
+                        db.session.execute(text("""
+                            INSERT INTO agent_progress (user_id, agent_id, xp, level, total_actions, created_at, updated_at)
+                            VALUES (:u, :a, 0, 1, 0, :now, :now)
+                        """), {'u': user_id, 'a': agent_id, 'now': now})
+                        synced += 1
+                db.session.commit()
+        except Exception:
+            pass
+        return synced
+
+
+# Global singleton
+agent_db_service = AgentDBService()

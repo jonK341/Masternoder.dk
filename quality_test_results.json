@@ -1,0 +1,62 @@
+[
+  {
+    "quality": "ULTRA",
+    "status": "warning",
+    "quality_score": 0.0,
+    "quality_level": "unknown",
+    "quality_valid": false,
+    "meets_a_plus": false,
+    "expected_min": 0.9,
+    "score_ok": false,
+    "doc_id": "d449e7f5-29f7-46b5-b710-f0a4e09fa833",
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\d449e7f5-29f7-46b5-b710-f0a4e09fa833.mp4"
+  },
+  {
+    "quality": "PREMIUM",
+    "status": "warning",
+    "quality_score": 0.0,
+    "quality_level": "unknown",
+    "quality_valid": false,
+    "meets_a_plus": false,
+    "expected_min": 0.85,
+    "score_ok": false,
+    "doc_id": "a6cc8049-ad5a-41ba-9dc9-43157d4af31c",
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\a6cc8049-ad5a-41ba-9dc9-43157d4af31c.mp4"
+  },
+  {
+    "quality": "HIGH",
+    "status": "warning",
+    "quality_score": 0.0,
+    "quality_level": "unknown",
+    "quality_valid": false,
+    "meets_a_plus": false,
+    "expected_min": 0.75,
+    "score_ok": false,
+    "doc_id": "460e2899-24ef-49a9-b1d8-222bc0825ae4",
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\460e2899-24ef-49a9-b1d8-222bc0825ae4.mp4"
+  },
+  {
+    "quality": "MEDIUM",
+    "status": "warning",
+    "quality_score": 0.0,
+    "quality_level": "unknown",
+    "quality_valid": false,
+    "meets_a_plus": false,
+    "expected_min": 0.6,
+    "score_ok": false,
+    "doc_id": "a1d30470-38d8-48be-81a9-c61d21e89d54",
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\a1d30470-38d8-48be-81a9-c61d21e89d54.mp4"
+  },
+  {
+    "quality": "LOW",
+    "status": "warning",
+    "quality_score": 0.0,
+    "quality_level": "unknown",
+    "quality_valid": false,
+    "meets_a_plus": false,
+    "expected_min": 0.4,
+    "score_ok": false,
+    "doc_id": "026ed533-a985-474b-8174-bcf907f40fc5",
+    "video_path": "/vidgenerator/\\var\\www\\html\\vidgenerator\\output\\videos\\026ed533-a985-474b-8174-bcf907f40fc5.mp4"
+  }
+]

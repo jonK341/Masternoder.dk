@@ -1,0 +1,29 @@
+# Systemd unit for scripts/agent_daemon.py — single controller for AgentAutomation ticks
+# (avoids duplicate threads per uwsgi worker). Copy to /etc/systemd/system/masternoder-agent-daemon.service
+#
+# On the app server: set in uwsgi EnvironmentFile (same .env):
+#   AGENT_DAEMON_SECRET=<long random>
+#   AGENT_DAEMON_CONTROLS_AUTOMATION=1
+#
+# AGENT_DAEMON_CONTROLS_AUTOMATION=1 disables in-process AgentAutomation.start() in agent_automation_routes.
+
+[Unit]
+Description=MasterNoder agent daemon (POST /api/agents/daemon/tick)
+After=network.target uwsgi-vidgenerator.service
+Wants=uwsgi-vidgenerator.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+EnvironmentFile=-/var/www/html/.env
+Environment=AGENT_DAEMON_ENV_FILE=/var/www/html/.env
+Environment=AGENT_DAEMON_URL=http://127.0.0.1:5000/api/agents/daemon/tick
+Environment=AGENT_DAEMON_INTERVAL_SEC=60
+ExecStart=/usr/bin/python3 /var/www/html/scripts/agent_daemon.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,209 @@
+/**
+ * Bonus Template Store CSS
+ * Styles for the bonus template store interface
+ */
+
+.template-store-header {
+    text-align: center;
+    padding: 30px 20px;
+    margin-bottom: 30px;
+}
+
+.template-store-header h2 {
+    color: var(--profile-primary, #00ff88);
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.template-store-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+.template-store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 20px;
+}
+
+.template-card {
+    background: rgba(21, 21, 32, 0.9);
+    border: 2px solid rgba(0, 255, 136, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.template-card:hover {
+    border-color: rgba(0, 255, 136, 0.6);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+    transform: translateY(-5px);
+}
+
+.template-card.owned {
+    border-color: rgba(0, 212, 255, 0.5);
+}
+
+.template-preview {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a1a2e, #252540);
+}
+
+.template-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.template-card:hover .template-preview img {
+    transform: scale(1.1);
+}
+
+.owned-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 212, 255, 0.9);
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.template-info {
+    padding: 20px;
+}
+
+.template-info h3 {
+    color: #fff;
+    font-size: 1.3rem;
+    margin: 0 0 10px 0;
+}
+
+.template-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.template-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.feature-tag {
+    background: rgba(0, 255, 136, 0.1);
+    color: rgba(0, 255, 136, 0.9);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.template-price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.price {
+    color: var(--profile-primary, #00ff88);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.purchase-btn,
+.apply-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.purchase-btn:hover {
+    background: linear-gradient(135deg, #00d4ff, #00ff88);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+.purchase-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.apply-btn {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+}
+
+.apply-btn:hover {
+    background: linear-gradient(135deg, #0099cc, #00d4ff);
+}
+
+/* Notifications */
+.template-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    min-width: 300px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.template-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.template-notification.success {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.9), rgba(0, 212, 255, 0.9));
+    border-left: 4px solid #00ff88;
+}
+
+.template-notification.error {
+    background: linear-gradient(135deg, rgba(255, 51, 102, 0.9), rgba(255, 0, 0, 0.9));
+    border-left: 4px solid #ff3366;
+}
+
+.template-notification.warning {
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.9), rgba(255, 200, 0, 0.9));
+    border-left: 4px solid #ffaa00;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .template-store-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+    
+    .template-notification {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+}

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggregator — Monitor play &amp; intelligence hub</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=3">
+    <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
+</head>
+<body class="layout-standard layout-aggregator-tech">
+    <div class="bg-animated"></div>
+    <nav class="agg-top-nav" aria-label="Primary">
+        <div class="agg-top-nav-inner">
+            <a href="/" class="nav-link nav-link--home">Home</a>
+            <div class="agg-top-nav-links">
+                <a href="/game" class="nav-link">Game</a>
+                <a href="/battle" class="nav-link">Battle</a>
+                <a href="/shop" class="nav-link">Shop</a>
+                <a href="/profile" class="nav-link">Profile</a>
+                <span class="nav-link nav-link--current" aria-current="page">Aggregator</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="agg-tech-row" aria-label="Aggregator technology footprint">
+        <div class="agg-tech-stack">
+            <span class="agg-tech-chip">Holodeck grid</span>
+            <span class="agg-tech-chip">battle_quick API</span>
+            <span class="agg-tech-chip">List encoder (Base64)</span>
+            <span class="agg-tech-chip">Intel feeds</span>
+            <span class="agg-tech-chip">Engagement award</span>
+            <span class="agg-tech-chip">Unified points</span>
+            <span class="agg-tech-chip">5D σ narrative</span>
+            <span class="agg-tech-chip">Web Audio resonance</span>
+        </div>
+        <div class="agg-points-hud" role="status" aria-live="polite">
+            <span class="agg-hud-bit">Session <strong id="agg-session-points">0</strong></span>
+            <span class="agg-hud-bit">Activity <strong id="agg-total-activity">—</strong></span>
+            <span class="agg-hud-bit">Game <strong id="agg-total-game">—</strong></span>
+            <span class="agg-hud-bit">Knowledge <strong id="agg-total-knowledge">—</strong></span>
+            <span class="agg-hud-bit">Last <span id="agg-last-action">—</span></span>
+        </div>
+    </div>
+
+    <main class="agg-page agg-main-wrap" data-page-layout="standard">
+        <header class="agg-hero">
+            <h1>Intelligence aggregator — 5D monitor hub</h1>
+            <p>Move through the holodeck grid (WASD / arrows / adjacent clicks). Below, the <strong>5D story monitor</strong> runs the narrative field (σ) with optional Web Audio. The <strong>final battle</strong> still plays inside the holodeck when you reach the golden core.</p>
+        </header>
+
+        <div
+            class="agg-story-monitor-block"
+            data-story-monitor-5d
+            data-story-context="aggregator"
+            data-tech-label="Panoptic σ field engine · Web Audio storyscape + chroniton τ"
+            aria-label="Five dimensional story monitor"
+        ></div>
+
+        <section class="agg-ideas-section" aria-labelledby="agg-ideas-heading">
+            <h2 id="agg-ideas-heading" style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;text-align:center;">Top 15 new aggregator ideas</h2>
+            <div data-aggregator-ideas="list"></div>
+        </section>
+
+        <div class="agg-layout">
+            <div id="agg-monitor-anchor">
+                <div class="agg-monitor-wrap">
+                    <div class="agg-monitor-frame">
+                        <div class="agg-monitor-bezel">
+                            <span>Holodeck viewport · 3 drift axes + τ + layer · story σ on chronicle monitor</span>
+                            <span class="agg-dims" id="agg-dim-readout">x:0 y:0 z:0 · t:0 · layer:1</span>
+                        </div>
+                        <div class="agg-play-surface" id="agg-play-surface">
+                            <div id="agg-grid-host" class="agg-grid-layer" aria-label="Movement grid"></div>
+                            <div id="agg-battle-overlay" class="agg-battle-overlay" hidden>
+                                <h3>Final battle — inside the monitor</h3>
+                                <p id="agg-battle-status" class="agg-battle-help">Pick a move. Outcome syncs to battle points &amp; Hunter XP.</p>
+                                <div class="agg-rps">
+                                    <button type="button" id="agg-rps-rock">Rock</button>
+                                    <button type="button" id="agg-rps-paper">Paper</button>
+                                    <button type="button" id="agg-rps-scissors">Scissors</button>
+                                </div>
+                                <button type="button" id="agg-battle-dismiss" style="margin-top:14px;padding:8px 16px;border-radius:8px;border:1px solid #555;background:#222;color:#ccc;cursor:pointer;">Leave core (reset run)</button>
+                            </div>
+                        </div>
+                        <p class="agg-monitor-hint">Adjacent cells only · Center = duel · Dimensions update as you move (exploration depth, time wheel, stratum).</p>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="agg-explorer">
+                <div class="agg-panel">
+                    <h3>User print log</h3>
+                    <p id="agg-user-strip-meta" style="font-size:.8rem;color:var(--text-secondary);margin:0 0 6px;"></p>
+                    <div class="agg-user-print" id="agg-user-print" aria-live="polite"></div>
+                </div>
+                <div class="agg-panel">
+                    <h3>Progress reader</h3>
+                    <div class="agg-progress-reader" id="agg-progress-reader">
+                        <p>Loading…</p>
+                    </div>
+                    <button type="button" id="agg-refresh-progress" style="margin-top:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--primary);cursor:pointer;">Refresh</button>
+                </div>
+                <div class="agg-panel">
+                    <h3>Explorer chat</h3>
+                    <div class="agg-chat-log" id="agg-chat-log"></div>
+                    <div class="agg-chat-input-row">
+                        <input type="text" id="agg-chat-input" placeholder="Ask the explorer…" autocomplete="off" />
+                        <button type="button" id="agg-chat-send">Send</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <section class="agg-encoder" id="agg-encoder-block">
+            <div class="agg-encoder-inner">
+                <h2 style="margin:0 0 8px;color:var(--primary);font-size:1.1rem;">List encoder → aggregator links</h2>
+                <p style="color:var(--text-secondary);font-size:.88rem;margin:0 0 10px;">Edit JSON <code>[{&quot;label&quot;,&quot;href&quot;,&quot;external&quot;:true}]</code>. Encode to Base64 and share the URL hash, or paste back to decode. Links can target anchors on this page or the intelligence API.</p>
+                <textarea id="agg-encoder-json" aria-label="Link list JSON"></textarea>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+                    <button type="button" id="agg-encode-btn" style="padding:8px 14px;border-radius:8px;border:none;background:var(--primary);color:#000;font-weight:700;cursor:pointer;">Encode</button>
+                    <button type="button" id="agg-decode-btn" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);cursor:pointer;">Decode output → list</button>
+                </div>
+                <label style="display:block;margin-top:10px;font-size:.85rem;color:var(--text-secondary);">Base64 payload</label>
+                <textarea id="agg-encoder-out" style="min-height:64px;margin-top:4px;" readonly placeholder="Encode output…"></textarea>
+                <p style="font-size:.78rem;color:var(--text-secondary);word-break:break-all;margin:8px 0 0;" id="agg-share-url"></p>
+                <div id="agg-link-list" class="agg-link-list" aria-label="Decoded links"></div>
+            </div>
+        </section>
+
+        <section class="agg-intel-section" id="agg-intelligence-embed">
+            <h2 style="color:var(--primary);margin-bottom:12px;">Intelligence feed</h2>
+            <p style="color:var(--text-secondary);font-size:.9rem;">Pulled from <code>/api/aggregators/intelligence/*</code> — same sources as the rest of the site.</p>
+            <div id="intelligence-content">
+                <div class="intelligence-subtabs">
+                    <button type="button" class="intel-tab active" data-intel="research">Research</button>
+                    <button type="button" class="intel-tab" data-intel="news">News</button>
+                    <button type="button" class="intel-tab" data-intel="trending">Trending</button>
+                </div>
+                <div id="intelligence-panels-agg"></div>
+            </div>
+            <div class="loading intel-loading-agg" style="padding:20px;text-align:center;color:var(--text-secondary);"><p>Loading intelligence…</p></div>
+        </section>
+    </main>
+
+    <script src="/static/js/story-monitor-5d.js?v=1"></script>
+    <script src="/static/js/aggregator-engagement.js"></script>
+    <script src="/static/js/aggregator-ideas.js"></script>
+    <script src="/static/js/aggregator-monitor-game.js?v=2"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('agg-refresh-progress')?.addEventListener('click', function () {
+          var p = document.getElementById('agg-progress-reader');
+          if (p) p.innerHTML = '<p>Refreshing…</p>';
+          var chain = window.AggregatorEngagement
+            ? window.AggregatorEngagement.award('progress_refresh')
+            : Promise.resolve();
+          chain.then(function () {
+            if (window.AggregatorEngagement && window.AggregatorEngagement.refreshTotalsHud) {
+              window.AggregatorEngagement.refreshTotalsHud();
+            }
+          });
+          if (window.__aggRefreshProgress) window.__aggRefreshProgress();
+        });
+
+        var intelHost = document.getElementById('intelligence-panels-agg');
+        if (intelHost && window.AggregatorEngagement) {
+          var intelAwarded = false;
+          var obs = new MutationObserver(function () {
+            if (intelAwarded) return;
+            if (intelHost.querySelector('.intel-card, .intel-panel, .intel-trending-list li')) {
+              intelAwarded = true;
+              window.AggregatorEngagement.award('intel_loaded');
+              if (window.AggregatorEngagement.refreshTotalsHud) window.AggregatorEngagement.refreshTotalsHud();
+              obs.disconnect();
+            }
+          });
+          obs.observe(intelHost, { childList: true, subtree: true });
+        }
+      });
+    </script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.IntelligenceWidget && document.getElementById('intelligence-panels-agg')) {
+          window.IntelligenceWidget.load({
+            panelsSelector: 'intelligence-panels-agg',
+            loadingSelector: '.intel-loading-agg'
+          });
+        }
+      });
+    </script>
+</body>
+</html>

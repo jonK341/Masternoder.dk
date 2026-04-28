@@ -1,0 +1,44 @@
+/* SCI-FI Theme - Science fiction theme */
+
+.theme-sci-fi {
+    --theme-primary: rgb(0, 170, 255);
+    --theme-secondary: rgb(0, 255, 170);
+    --theme-bg: rgb(0, 10, 26);
+    --theme-accent: rgb(0, 255, 170);
+}
+
+.theme-sci-fi .generator-frame {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-primary) 100%);
+    border: 2px solid var(--theme-primary);
+    box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+}
+
+.theme-sci-fi .matrix-monitor {
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px var(--theme-primary), 0 0 20px var(--theme-primary);
+}
+
+.theme-sci-fi button {
+    background: var(--theme-primary);
+    color: var(--theme-bg);
+    border: 2px solid var(--theme-secondary);
+    box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+}
+
+.theme-sci-fi button:hover {
+    background: var(--theme-secondary);
+    box-shadow: 0 0 25px var(--theme-primary), 0 0 40px var(--theme-primary);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.theme-sci-fi input, .theme-sci-fi textarea {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(0, 10, 26, 0.8);
+}
+
+.theme-sci-fi input:focus, .theme-sci-fi textarea:focus {
+    border-color: var(--theme-secondary);
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
+}

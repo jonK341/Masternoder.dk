@@ -1,0 +1,67 @@
+{
+  "name": "Star Map 25 — Profile walkthrough",
+  "description": "Ten tutorial-style levels tied to investigations and features; each unlocks a named capability in the monitor.",
+  "version": 1,
+  "levels": [
+    {
+      "level": 1,
+      "title": "First auspex ping",
+      "min_investigations": 1,
+      "feature": "Investigations tracked on your profile; reward multiplier snapshot saved."
+    },
+    {
+      "level": 2,
+      "title": "Segmentum sweep",
+      "min_investigations": 3,
+      "feature": "Coordinated monitoring grid highlights your progress path."
+    },
+    {
+      "level": 3,
+      "title": "Lore clearance",
+      "min_investigations": 5,
+      "feature": "Lore panels prioritize unlocked systems; quick-jump from grid cells."
+    },
+    {
+      "level": 4,
+      "title": "Tactical overlay",
+      "min_investigations": 8,
+      "feature": "3D map: hover highlights, click selects systems for intel."
+    },
+    {
+      "level": 5,
+      "title": "Deep void",
+      "min_investigations": 12,
+      "feature": "Planet archive: five-level drill-down per world (xenos line included)."
+    },
+    {
+      "level": 6,
+      "title": "Hyperspace calculus",
+      "min_investigations": 15,
+      "feature": "4D view: temporal/warp axis visualized (color + scale encoding)."
+    },
+    {
+      "level": 7,
+      "title": "Bastion economics",
+      "min_investigations": 18,
+      "feature": "Buildup and daily reset hints emphasized in profile sync."
+    },
+    {
+      "level": 8,
+      "title": "Dominion threshold",
+      "min_investigations": 21,
+      "feature": "Per-point award history (base × multiplier) stored on profile."
+    },
+    {
+      "level": 9,
+      "title": "Segmentum veritas",
+      "min_investigations": 23,
+      "feature": "AI tactical hints context includes your walkthrough tier."
+    },
+    {
+      "level": 10,
+      "title": "Imperium cartograph",
+      "min_investigations": 25,
+      "feature": "Full map mastery: all walkthrough features active; golden monitor state."
+    }
+  ]
+}

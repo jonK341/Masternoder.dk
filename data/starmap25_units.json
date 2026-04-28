@@ -1,0 +1,80 @@
+{
+  "name": "Star Map 25 — Units & Special Units",
+  "description": "Units and special units deploy to planets; deployed units generate game_points per day (buildup).",
+  "updated_at": "2026-03-18",
+  "units": [
+    {
+      "id": "guard",
+      "name": "Imperial Guard",
+      "description": "Baseline deployment. Generates 1 game_point per day when stationed.",
+      "icon": "🪖",
+      "points_per_day": 1,
+      "tags": ["ground"],
+      "deploy_cost": 0
+    },
+    {
+      "id": "fleet",
+      "name": "Segmentum Fleet",
+      "description": "Naval presence. Generates 2 game_points per day; bonus on fortress worlds.",
+      "icon": "🚀",
+      "points_per_day": 2,
+      "tags": ["naval"],
+      "bonus_tags": ["fortress"],
+      "bonus_points_per_day": 1,
+      "deploy_cost": 5
+    },
+    {
+      "id": "scout",
+      "name": "Scout Detachment",
+      "description": "Forward recon. Generates 1 game_point per day; fast intel.",
+      "icon": "🔭",
+      "points_per_day": 1,
+      "tags": ["intel"],
+      "deploy_cost": 3
+    },
+    {
+      "id": "garrison",
+      "name": "Garrison",
+      "description": "Hold the line. Generates 2 game_points per day when deployed.",
+      "icon": "🛡️",
+      "points_per_day": 2,
+      "tags": ["ground", "military"],
+      "deploy_cost": 8
+    }
+  ],
+  "special_units": [
+    {
+      "id": "marines",
+      "name": "Space Marines",
+      "description": "Elite; bonus on Legion homeworlds. Generates 3 base + 2 on legion worlds per day.",
+      "icon": "🦅",
+      "points_per_day": 3,
+      "bonus_tags": ["legion_homeworld"],
+      "bonus_points_per_day": 2,
+      "special_rule": "bonus_legion_homeworld",
+      "deploy_cost": 15
+    },
+    {
+      "id": "mechanicus",
+      "name": "Mechanicus Cohort",
+      "description": "Tech-priests; bonus on Forge Worlds. Generates 3 base + 2 on forge per day.",
+      "icon": "⚙️",
+      "points_per_day": 3,
+      "bonus_tags": ["forge"],
+      "bonus_points_per_day": 2,
+      "special_rule": "bonus_forge_world",
+      "deploy_cost": 18
+    },
+    {
+      "id": "inquisition",
+      "name": "Inquisition Cell",
+      "description": "Classified operations. Generates 4 game_points per day on throne/fortress.",
+      "icon": "⛪",
+      "points_per_day": 4,
+      "bonus_tags": ["throne", "fortress"],
+      "bonus_points_per_day": 1,
+      "special_rule": "unlock_lore",
+      "deploy_cost": 20
+    }
+  ]
+}

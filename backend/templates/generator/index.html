@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator - MasterNoder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .status.idle {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .status.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .clips-list {
+            margin-top: 20px;
+        }
+
+        .clip-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clip-item a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .clip-item a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+        border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .nav-links {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+        <div class="header">
+            <h1>🎬 AI Video Generator</h1>
+            <p>Opret professionelle videoer med kunstig intelligens</p>
+            <div class="nav-links">
+                <a href="/vidgenerator">🏠 Hjem</a>
+                <a href="/vidgenerator/gallery">🖼️ Galleri</a>
+                <a href="/vidgenerator/stats">📊 Statistikker</a>
+                <a href="/vidgenerator/api/debugger">🔍 Debugger</a>
+        </div>
+    </div>
+
+        <div class="main-content">
+            <!-- AI Clip Generator -->
+            <div class="card">
+                <h2>🤖 AI Clip Generator</h2>
+                <div class="form-group">
+                    <label for="clipPrompt">Beskrivelse af klip:</label>
+                    <textarea id="clipPrompt" placeholder="fx: En solnedgang over havet med bølger der bryder mod klipperne..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="clipMeta">Yderligere indstillinger (JSON, valgfrit):</label>
+                    <textarea id="clipMeta" placeholder='{"duration": 10, "style": "cinematic"}'></textarea>
+                </div>
+                <button class="btn btn-success" id="generateClipsBtn" onclick="generateClips()">
+                    🎬 Generer Klip (AI)
+            </button>
+                <div id="clipStatus" class="status idle">idle</div>
+                <div id="clipsList" class="clips-list"></div>
+        </div>
+
+            <!-- Video Generator -->
+            <div class="card">
+                <h2>📹 Video Generator</h2>
+                        <div class="form-group">
+                    <label for="videoTitle">Video Titel:</label>
+                    <input type="text" id="videoTitle" placeholder="fx: Min Dokumentar">
+                                </div>
+                        <div class="form-group">
+                    <label for="videoDescription">Beskrivelse:</label>
+                    <textarea id="videoDescription" placeholder="Beskriv videoens indhold..."></textarea>
+                        </div>
+                        <div class="form-group">
+                    <label for="videoTheme">Tema:</label>
+                    <select id="videoTheme">
+                        <option value="default">Standard</option>
+                        <option value="nature">Natur</option>
+                        <option value="sci-fi">Sci-Fi</option>
+                        <option value="fantasy">Fantasy</option>
+                        <option value="action">Action</option>
+                    </select>
+                                </div>
+                <button class="btn" id="generateVideoBtn" onclick="generateVideo()">
+                    🎥 Generer Video
+                    </button>
+                <div id="videoStatus" class="status idle">idle</div>
+                </div>
+                </div>
+            </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/vidgenerator';
+
+        // Safe JSON parsing
+        async function safeJson(response) {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error(`Non-JSON response (${response.status}): ${text.substring(0, 120)}`);
+            }
+        }
+
+        // Generate AI Clips
+        async function generateClips() {
+            const promptEl = document.getElementById('clipPrompt');
+            const metaEl = document.getElementById('clipMeta');
+            const statusEl = document.getElementById('clipStatus');
+            const clipsListEl = document.getElementById('clipsList');
+            const btn = document.getElementById('generateClipsBtn');
+
+            const prompt = promptEl.value.trim();
+            if (!prompt) {
+                alert('Indtast en beskrivelse af klipet!');
+                return;
+            }
+
+            let meta = {};
+            try {
+                if (metaEl.value.trim()) {
+                    meta = JSON.parse(metaEl.value);
+                }
+            } catch (e) {
+                alert('Ugyldig JSON i indstillinger!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Genererer...';
+            statusEl.className = 'status processing';
+            statusEl.textContent = 'processing...';
+            clipsListEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/generator/ai-clips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, meta })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await safeJson(response);
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Ukendt fejl');
+                }
+
+                statusEl.textContent = `queued (job: ${data.job_id.substring(0, 8)}...)`;
+                
+                // Poll for status
+                pollClipStatus(data.job_id);
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `Error: ${error.message}`;
+                btn.disabled = false;
+                btn.innerHTML = '🎬 Generer Klip (AI)';
+            }
+        }
+
+        // Poll clip status
+        async function pollClipStatus(jobId) {
+            const statusEl = document.getElementById('clipStatus');
+            const clipsListEl = document.getElementById('clipsList');
+            const btn = document.getElementById('generateClipsBtn');
+
+            const poll = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/generator/ai-clips/${jobId}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await safeJson(response);
+
+                    if (!data.success) {
+                        throw new Error(data.error || 'Ukendt fejl');
+                    }
+
+                    statusEl.textContent = `${data.status} (job: ${jobId.substring(0, 8)}...)`;
+
+                    if (data.status === 'completed') {
+                        statusEl.className = 'status completed';
+                        statusEl.textContent = `completed - ${data.clips?.length || 0} klip genereret`;
+
+                        if (data.clips && data.clips.length > 0) {
+                            clipsListEl.innerHTML = '<h3 style="margin-bottom: 10px;">Genererede Klip:</h3>';
+                            data.clips.forEach((clip, idx) => {
+                                const clipEl = document.createElement('div');
+                                clipEl.className = 'clip-item';
+                                clipEl.innerHTML = `
+                            <div>
+                                        <strong>${clip.title || `Clip ${idx + 1}`}</strong>
+                            </div>
+                                    <a href="${API_BASE}${clip.url}" target="_blank">📥 Download</a>
+                                `;
+                                clipsListEl.appendChild(clipEl);
+                            });
+                        }
+
+                        btn.disabled = false;
+                        btn.innerHTML = '🎬 Generer Klip (AI)';
+                    } else {
+                        // Continue polling
+                        setTimeout(poll, 1000);
+                    }
+                } catch (error) {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = `Error: ${error.message}`;
+                    btn.disabled = false;
+                    btn.innerHTML = '🎬 Generer Klip (AI)';
+                }
+            };
+
+            poll();
+        }
+
+        // Generate Video
+        async function generateVideo() {
+            const titleEl = document.getElementById('videoTitle');
+            const descEl = document.getElementById('videoDescription');
+            const themeEl = document.getElementById('videoTheme');
+            const statusEl = document.getElementById('videoStatus');
+            const btn = document.getElementById('generateVideoBtn');
+
+            const title = titleEl.value.trim();
+            if (!title) {
+                alert('Indtast en video titel!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Genererer...';
+            statusEl.className = 'status processing';
+            statusEl.textContent = 'processing...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/generator/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        description: descEl.value.trim(),
+                        theme: themeEl.value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await safeJson(response);
+
+                statusEl.className = 'status completed';
+                statusEl.textContent = `success: ${data.message || 'Video genereret!'}`;
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `Error: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🎥 Generer Video';
+            }
+        }
+    </script>
+</body>
+</html>

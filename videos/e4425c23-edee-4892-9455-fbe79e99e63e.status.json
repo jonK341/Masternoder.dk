@@ -1,0 +1,9 @@
+{
+  "id": "e4425c23-edee-4892-9455-fbe79e99e63e",
+  "status": "failed",
+  "message": "Video generation failed",
+  "error_message": "Video generation unavailable. Install: pip install moviepy imageio-ffmpeg",
+  "progress": 0,
+  "video_url": null,
+  "updated_at": "2026-03-05T10:15:32.608186Z"
+}

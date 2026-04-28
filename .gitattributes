@@ -1,0 +1,4 @@
+# Ensure server config files use LF on all platforms (avoid "invalid user 'www-data\r'" on server)
+*.ini text eol=lf
+*.cfg text eol=lf
+*.sh text eol=lf

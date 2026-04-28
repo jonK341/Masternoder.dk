@@ -1,0 +1,19 @@
+{
+  "user_id": "test_user_744",
+  "points": {
+    "xp": 0,
+    "level": 1,
+    "coins": 0
+  },
+  "preferences": {
+    "all_points": {
+      "xp_points": 1727,
+      "battle_points": 2356,
+      "activity_points": 492,
+      "trophy_points": 1188,
+      "generation_points": 3696,
+      "chat_points": 164
+    }
+  },
+  "last_updated": "2026-01-08T12:39:23.245735"
+}

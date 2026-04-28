@@ -1,0 +1,24 @@
+{
+  "name": "Battle & Leaderboard",
+  "version": "V10",
+  "description": "Hunters profiling, leaderboard, geo_ref, aggregator-fulfill.",
+  "updated_at": "2026-04-23",
+  "image_url": "/vidgenerator/static/img/rulebook-v10-battle.png",
+  "image_alt": "Battle V10",
+  "agent_prompt": "Hunters profiling, leaderboard, geo_ref. Aggregator-fulfill fills missing Hunters data. Rulebook spell aggregator_fill. Shop UI-temaer (måned/wave) ændrer ikke profiling/leaderboard alene — se rulebook_v9_shop.json cross_rulebook_routing.v10_battle.",
+  "tech_spec": "GET /api/game/hunters/profiling?user_id=; agent_geo_refs; aggregator-fulfill; geo_ref in profiling",
+  "user_guide": "Hunters profiling viser level, specials. Geo-ref og leaderboard tilgængelige.",
+  "manual": "Agent manual V10: Profiling returns agent_tech, specials, level_info. Use geo_ref when location context needed.",
+  "documentation": "Battle rulebook: agent battle skill set is wired via get_battle_skill_set_for_rulebook(). All agents have battle skills; compendium and rulebooks stay in sync via agent knowledge API.",
+  "finish_lines": [
+    "Agent Battle Skill Set: applied to all agents; export for rulebooks via agent_skillset.get_battle_skill_set_for_rulebook().",
+    "Unified Points Sync Device: single source of truth for points; use for battle_points and leaderboard consistency.",
+    "Agent learning: POST /api/rulebooks/agent-knowledge to append learned technology; GET for compendium display."
+  ],
+  "rules": [
+    {"id": "profiling", "name": "Hunters Profiling", "text": "GET /api/game/hunters/profiling. Returnerer agent_tech, specials, level_info, geo_ref."},
+    {"id": "geo_ref", "name": "Geo Reference", "text": "agent_geo_refs table. Geo-ref i profiling. Schema klar."},
+    {"id": "aggregator_fulfill", "name": "Aggregator Fulfill", "text": "Fylder manglende Hunters data. Rulebook spell aggregator_fill."},
+    {"id": "battle_independent_of_shop_themes", "name": "Battle vs shop-temaer", "text": "Profiling, leaderboard og geo_ref endpoints ændres ikke af køb af theme-* eller wave v6/v7 kosmetik medmindre backend eksplicit kobler det. Sand battle-state kommer fra Hunters/battle APIs — shop: rulebook_v9_shop."}
+  ]
+}

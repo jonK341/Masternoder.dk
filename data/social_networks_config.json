@@ -1,0 +1,24 @@
+{
+  "share_default_text": "I just created a video on MasterNoder — AI video generation with RPG mechanics",
+  "share_hashtags": "AIvideo MasterNoder",
+  "networks": {
+    "x": {
+      "name": "X (Twitter)",
+      "url_template": "https://twitter.com/intent/tweet?text={text}&url={url}&hashtags={hashtags}",
+      "icon": "𝕏",
+      "label": "X"
+    },
+    "linkedin": {
+      "name": "LinkedIn",
+      "url_template": "https://www.linkedin.com/sharing/share-offsite/?url={url}",
+      "icon": "in",
+      "label": "LinkedIn"
+    },
+    "facebook": {
+      "name": "Facebook",
+      "url_template": "https://www.facebook.com/sharer/sharer.php?u={url}",
+      "icon": "f",
+      "label": "Facebook"
+    }
+  }
+}

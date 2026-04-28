@@ -1,0 +1,3013 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="202602161">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/theme-timeline.css">
+    <!-- Generator page uses embedded CSS - no external CSS needed -->
+    <style>
+        /* ============================================
+           A+ GENERATOR PAGE UI - COMPLETE REDESIGN
+           ============================================ */
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 100, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none !important;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 255, 136, 0.6);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container */
+        .generator-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding: 60px 20px 80px;
+            pointer-events: auto !important;
+        }
+        
+        .main-content,
+        .card,
+        .form-group,
+        .btn {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header Section */
+        .generator-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .generator-header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.3), transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: pulseGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .generator-header h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin: 0 0 20px 0;
+            background: linear-gradient(135deg, #00ff88, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            text-shadow: 0 0 60px rgba(0, 255, 136, 0.5);
+            position: relative;
+            display: inline-block;
+        }
+
+        .generator-header h1::after {
+            content: '✨';
+            position: absolute;
+            right: -50px;
+            top: 0;
+            font-size: 0.5em;
+            animation: sparkle 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+        }
+
+        @keyframes sparkle {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1) rotate(0deg); 
+            }
+            50% { 
+                opacity: 0.6; 
+                transform: scale(1.3) rotate(180deg); 
+            }
+        }
+
+        .generator-header .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* Points Display Widget - visible, right side below Top 50 */
+        .points-display-widget {
+            position: fixed;
+            top: 320px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.98), rgba(30, 30, 45, 0.98));
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.25);
+            z-index: 9998;
+            min-width: 260px;
+            max-width: 320px;
+        }
+
+        .points-display-widget h3 {
+            margin: 0 0 15px 0;
+            color: #00ff88;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .points-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .points-item:last-child {
+            border-bottom: none;
+        }
+
+        .points-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .points-value {
+            color: #00ff88;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .points-value.updated {
+            animation: pointPulse 0.5s ease;
+        }
+
+        @keyframes pointPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #00d4ff; }
+        }
+
+        @media (max-width: 768px) {
+            .points-display-widget {
+                top: 280px;
+                right: 10px;
+                min-width: 220px;
+            }
+        }
+
+        /* Lab button - fixed lower-left, symbolic and functional */
+        .generator-lab-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 10001;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.25), rgba(0, 212, 255, 0.2));
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            border-radius: 50px;
+            color: #00ff88;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.35);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+        .generator-lab-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.4), rgba(0, 212, 255, 0.3));
+            border-color: #00ff88;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 255, 136, 0.5);
+        }
+        .generator-lab-icon {
+            font-size: 1.4rem;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.6));
+        }
+        .generator-lab-text {
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation Links */
+        .nav-links {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(40, 40, 55, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Main Content Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            .generator-header h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Cards - Premium Design */
+        .card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            padding: 40px;
+            border-radius: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            backdrop-filter: blur(20px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff, #ff00ff);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .card:hover {
+            border-color: #00ff88;
+            box-shadow: 
+                0 16px 64px rgba(0, 255, 136, 0.3),
+                0 0 40px rgba(0, 255, 136, 0.2),
+                0 0 0 1px rgba(0, 255, 136, 0.3) inset;
+            transform: translateY(-8px);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        /* Card Headers */
+        .card h2 {
+            font-size: 2rem;
+            color: #00ff88;
+            margin: 0 0 30px 0;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .card h2 .icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 0 15px currentColor);
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .card h2::before {
+            content: '';
+            width: 6px;
+            height: 40px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .card-description {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .form-group label::before {
+            content: '▸';
+            color: #00ff88;
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100% !important;
+            padding: 16px 20px !important;
+            background: rgba(20, 20, 30, 0.8) !important;
+            border: 2px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            font-size: 1rem !important;
+            color: #ffffff !important;
+            transition: all 0.3s ease;
+            font-family: inherit !important;
+            box-sizing: border-box !important;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            margin: 0 !important;
+            pointer-events: auto !important;
+            cursor: text !important;
+            z-index: 10 !important;
+            position: relative !important;
+        }
+        
+        .form-group input[disabled],
+        .form-group textarea[disabled],
+        .form-group select[disabled] {
+            pointer-events: none !important;
+            opacity: 0.5 !important;
+        }
+        
+        .form-group select {
+            cursor: pointer !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300ff88' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 16px center !important;
+            padding-right: 45px !important;
+        }
+        
+        .form-group textarea {
+            min-height: 150px !important;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+            opacity: 1;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none !important;
+            border-color: #00ff88 !important;
+            background: rgba(20, 20, 30, 1) !important;
+            box-shadow: 
+                0 0 0 4px rgba(0, 255, 136, 0.2),
+                0 8px 24px rgba(0, 255, 136, 0.15) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 18px 32px !important;
+            background: linear-gradient(135deg, #00ff88, #00d4ff) !important;
+            color: #000000 !important;
+            border: none !important;
+            border-radius: 12px !important;
+            cursor: pointer !important;
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            transition: all 0.3s ease;
+            width: 100% !important;
+            margin-top: 10px !important;
+            box-shadow: 
+                0 4px 20px rgba(0, 255, 136, 0.4),
+                0 0 0 0 rgba(0, 255, 136, 0.5) !important;
+            position: relative !important;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px;
+            box-sizing: border-box !important;
+            pointer-events: auto !important;
+            z-index: 10 !important;
+            user-select: none;
+        }
+        
+        .btn[disabled] {
+            pointer-events: none !important;
+        }
+        
+        .btn,
+        .btn *,
+        .btn i {
+            color: #000000 !important;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00ff88, #00cc6a) !important;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 32px rgba(0, 255, 136, 0.5),
+                0 0 0 8px rgba(0, 255, 136, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: rgba(60, 60, 80, 0.5) !important;
+            color: rgba(255, 255, 255, 0.5) !important;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .btn:disabled * {
+            color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+
+        /* Status Display */
+        .status {
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-weight: 700;
+            background: rgba(20, 20, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: currentColor;
+        }
+
+        .status.idle {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .status.processing {
+            color: #ffaa00;
+            border-color: #ffaa00;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 0 12px rgba(255, 170, 0, 0);
+            }
+        }
+
+        .status.completed {
+            color: #00ff88;
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .status.error {
+            color: #ff3366;
+            border-color: #ff3366;
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        /* Clips List */
+        .clips-list {
+            margin-top: 30px;
+        }
+
+        .clip-item {
+            padding: 20px;
+            margin-bottom: 16px;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 12px;
+            border-left: 4px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .clip-item:hover {
+            background: rgba(30, 30, 45, 0.9);
+            border-left-color: #00d4ff;
+            transform: translateX(6px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.2);
+        }
+
+        .clip-item a {
+            color: #00ff88;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clip-item a:hover {
+            color: #00d4ff;
+            gap: 12px;
+        }
+
+        .clip-item a::after {
+            content: '→';
+            transition: transform 0.3s ease;
+        }
+
+        .clip-item a:hover::after {
+            transform: translateX(4px);
+        }
+
+        /* Progress Bar */
+        .progress-bar-wrapper {
+            background: rgba(20, 20, 30, 0.8);
+            padding: 30px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff, #ff00ff);
+        }
+
+        .progress-bar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 36px;
+            background: rgba(20, 20, 30, 1);
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00d4ff, #00ff88);
+            background-size: 200% 100%;
+            border-radius: 18px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-bar-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmerOverlay 1.5s infinite;
+        }
+
+        @keyframes shimmerOverlay {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-bar-fill.completed {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            animation: celebrate 0.6s ease-out;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.15); }
+        }
+
+        .progress-bar-fill.error {
+            background: linear-gradient(90deg, #ff3366, #ff6b9d);
+        }
+
+        #progressStage, #progressPercentage {
+            color: #00ff88;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #progressMessage {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            text-align: center;
+            margin-top: 16px;
+            font-weight: 500;
+            padding: 12px;
+            background: rgba(20, 20, 30, 0.6);
+            border-radius: 8px;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Summary Tabs */
+        .summary-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .summary-tab-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+        }
+
+        .summary-tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2));
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .summary-tab-content {
+            display: none;
+        }
+
+        .summary-tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: rgba(20, 20, 30, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            border-color: #00ff88;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.2);
+        }
+
+        .summary-card-title {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+
+        .summary-card-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .history-item {
+            padding: 15px;
+            margin-bottom: 12px;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:hover {
+            background: rgba(30, 30, 45, 0.9);
+            transform: translateX(5px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .generator-page {
+                padding: 40px 15px 60px;
+            }
+            
+            .card {
+                padding: 30px 20px;
+            }
+            
+            .generator-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .generator-header .subtitle {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/vidgenerator/static/css/image-support.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/template-effects.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/page-layout-metrics.css">
+    <link rel="stylesheet" href="/vidgenerator/static/css/modern-design-system.css">
+</head>
+<body class="layout-standard">
+
+    <!-- Top 50 Monetization Frame - visible top-right -->
+    <div id="top50-monetization-frame-container" style="position: fixed; top: 70px; right: 20px; z-index: 9999; max-width: 380px; min-height: 120px;">
+        <div id="top50-monetization-frame"></div>
+    </div>
+
+    <!-- Lab button - fixed lower-left, always visible -->
+    <a href="/vidgenerator/lab" id="generator-lab-btn" class="generator-lab-btn" title="Lab">
+        <span class="generator-lab-icon">🔬</span>
+        <span class="generator-lab-text">Lab</span>
+    </a>
+
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="generator-page">
+        <!-- Points Display Widget -->
+        <div class="points-display-widget" id="pointsDisplayWidget">
+            <h3><i class="fas fa-star"></i> Your Points</h3>
+            <div class="points-item">
+                <span class="points-label">XP</span>
+                <span class="points-value" id="points-xp">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Level</span>
+                <span class="points-value" id="points-level">1</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Generation Points</span>
+                <span class="points-value" id="points-generation">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Activity Points</span>
+                <span class="points-value" id="points-activity">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Battle Points</span>
+                <span class="points-value" id="points-battle">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Quest Points</span>
+                <span class="points-value" id="points-quest">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">Total Points</span>
+                <span class="points-value" id="points-total">0</span>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="generator-header">
+                <h1>🎬 AI Video Generator</h1>
+                <p class="subtitle">Opret professionelle videoer med kunstig intelligens</p>
+                <div class="nav-links">
+                    <a href="/vidgenerator" class="nav-link"><i class="fas fa-home"></i> Hjem</a>
+                    <a href="/vidgenerator/generator" class="nav-link active"><i class="fas fa-rocket"></i> Generator</a>
+                    <a href="/vidgenerator/gallery" class="nav-link"><i class="fas fa-images"></i> Galleri</a>
+                    <a href="/vidgenerator/game" class="nav-link"><i class="fas fa-gamepad"></i> Game</a>
+                    <a href="/vidgenerator/battle" class="nav-link"><i class="fas fa-sword"></i> Battle</a>
+                    <a href="/vidgenerator/stats" class="nav-link"><i class="fas fa-chart-line"></i> Statistikker</a>
+                    <a href="/vidgenerator/profile" class="nav-link"><i class="fas fa-user"></i> Profil</a>
+                    <a href="/vidgenerator/social" class="nav-link"><i class="fas fa-users"></i> Social</a>
+                    <a href="/vidgenerator/shop" class="nav-link"><i class="fas fa-shopping-cart"></i> Shop</a>
+                    <a href="/vidgenerator/chat" class="nav-link"><i class="fas fa-comments"></i> Chat</a>
+                    <a href="/vidgenerator/debugger" class="nav-link"><i class="fas fa-tools"></i> Debugger</a>
+                    <a href="/vidgenerator/analytics" class="nav-link"><i class="fas fa-analytics"></i> Analytics</a>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- AI Clip Generator -->
+                <div class="card">
+                    <h2>
+                        <span class="icon">🤖</span>
+                        AI Clip Generator
+                    </h2>
+                    <p class="card-description">
+                        Opret professionelle video klip ved hjælp af kunstig intelligens. Beskriv hvad du vil se, og AI'en genererer det for dig med høj kvalitet.
+                    </p>
+                    <div class="form-group">
+                        <label for="clipPrompt">Beskrivelse af klip</label>
+                        <textarea id="clipPrompt" placeholder="Eksempel: En solnedgang over havet med bølger der bryder mod klipperne, dramatisk lys og atmosfærisk musik..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="clipMeta">Yderligere indstillinger (JSON, valgfrit)</label>
+                        <textarea id="clipMeta" placeholder='{"duration": 10, "style": "cinematic", "quality": "high"}'></textarea>
+                    </div>
+                    <button class="btn btn-success" id="generateClipsBtn" onclick="generateClips()">
+                        <i class="fas fa-magic"></i> Generer Klip med AI
+                    </button>
+                    <div id="clipStatus" class="status idle">
+                        <i class="fas fa-circle" style="font-size: 0.5em;"></i>
+                        <span>Klar til generering</span>
+                    </div>
+                    <div id="clipsList" class="clips-list"></div>
+                </div>
+
+                <!-- Video Generator -->
+                <div class="card">
+                    <h2>
+                        <span class="icon">📹</span>
+                        Video Generator
+                    </h2>
+                    <p class="card-description">
+                        Opret komplette videoer med titel, beskrivelse og tema. Systemet sammensætter klip til en færdig video med professionel kvalitet.
+                    </p>
+                    <div class="form-group">
+                        <label for="videoTitle">Video Titel</label>
+                        <input type="text" id="videoTitle" placeholder="Eksempel: Min Dokumentar om Natur">
+                    </div>
+                    <div class="form-group">
+                        <label for="videoDescription">Beskrivelse</label>
+                        <textarea id="videoDescription" placeholder="Beskriv videoens indhold, stil og formål. Jo mere detaljeret, jo bedre resultat..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="videoTheme">Tema</label>
+                        <!-- Theme Timeline Selector -->
+                        <div id="theme-timeline-container"></div>
+                        <!-- Hidden input to store selected theme -->
+                        <input type="hidden" id="videoTheme" name="theme" value="">
+                        
+                        <!-- Agent Opinion Option -->
+                        <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(0, 255, 136, 0.1); border-radius: 8px; border: 1px solid rgba(0, 255, 136, 0.3);">
+                            <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+                                <input type="checkbox" id="agentOpinionEnabled" checked style="width: auto; cursor: pointer;">
+                                <span style="font-weight: 600; color: var(--primary);">🤖 Get Agent Opinion on Video</span>
+                            </label>
+                            <div id="agentOpinionDisplay" style="display: none; margin-top: var(--spacing-sm); padding: var(--spacing-sm); background: rgba(0, 0, 0, 0.3); border-radius: 5px;">
+                                <div style="font-size: var(--font-size-sm); color: var(--text-secondary);">Agent will analyze and provide feedback after generation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn" id="generateVideoBtn" onclick="generateVideo()">
+                        <i class="fas fa-rocket"></i> Generer Video Nu
+                    </button>
+                    <div id="videoStatus" class="status idle">
+                        <i class="fas fa-circle" style="font-size: 0.5em;"></i>
+                        <span>Klar til generering</span>
+                    </div>
+                    
+                    <!-- Restart Button (hidden by default, shown when generation fails) -->
+                    <button class="btn" id="restartVideoBtn" style="display: none; margin-top: 15px; background: linear-gradient(135deg, #ffaa00, #ff8800) !important;" onclick="restartVideoGenerationFromButton()">
+                        <i class="fas fa-redo"></i> Genstart Generering
+                    </button>
+                    
+                    <!-- Progress Bar Container -->
+                    <div id="progressContainer" style="display: none;">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar-header">
+                                <span id="progressStage">Initialiserer...</span>
+                                <span id="progressPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-track">
+                                <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                            </div>
+                            <div id="progressMessage">
+                                Forbereder generering...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summaries Section -->
+            <div class="card" style="margin-top: 40px;">
+                <h2>
+                    <span class="icon">📊</span>
+                    Generation Summaries
+                </h2>
+                <p class="card-description">
+                    Overview of your generation history, statistics, and performance metrics.
+                </p>
+                
+                <!-- Summary Tabs -->
+                <div class="summary-tabs" style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
+                    <button class="summary-tab-btn active" onclick="switchSummaryTab('history')">
+                        <i class="fas fa-history"></i> History
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('statistics')">
+                        <i class="fas fa-chart-bar"></i> Statistics
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('performance')">
+                        <i class="fas fa-tachometer-alt"></i> Performance
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('quick-actions')">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('url-test')">
+                        <i class="fas fa-vial"></i> URL Test
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('connections')">
+                        <i class="fas fa-plug"></i> Agent Connections (20)
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('service-worker')">
+                        <i class="fas fa-cog"></i> Service Worker
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('magic')">
+                        <i class="fas fa-magic"></i> Magic
+                    </button>
+                    <button class="summary-tab-btn" onclick="switchSummaryTab('deployment')">
+                        <i class="fas fa-rocket"></i> Deployment
+                    </button>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="summary-history" class="summary-tab-content active">
+                    <div id="generation-history-content">
+                        <div class="loading"><i class="fas fa-spinner"></i> Loading generation history...</div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Tab -->
+                <div id="summary-statistics" class="summary-tab-content">
+                    <div id="generation-statistics-content">
+                        <div class="loading"><i class="fas fa-spinner"></i> Loading statistics...</div>
+                    </div>
+                </div>
+                
+                <!-- Performance Tab -->
+                <div id="summary-performance" class="summary-tab-content">
+                    <div id="generation-performance-content">
+                        <div class="loading"><i class="fas fa-spinner"></i> Loading performance data...</div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions Tab -->
+                <div id="summary-quick-actions" class="summary-tab-content">
+                    <div id="quick-actions-content">
+                        <div class="loading"><i class="fas fa-spinner"></i> Loading quick actions...</div>
+                    </div>
+                </div>
+                
+                <!-- URL Test Tab: hard-test generator endpoints -->
+                <div id="summary-url-test" class="summary-tab-content">
+                    <p class="card-description">Run backend URL checks (same as <code>scripts/hard_test_generator_urls.py</code>). Reset the engine first so tests start from a clean state. Quick = GET only; Full = create documentary and poll until done.</p>
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="btn" id="resetEngineBtn" onclick="resetGeneratorEngine()" style="background: #444;">
+                            <i class="fas fa-sync-alt"></i> Reset engine for test
+                        </button>
+                        <button type="button" class="btn" id="urlTestQuickBtn" onclick="runHardTestGenerator(true)">
+                            <i class="fas fa-vial"></i> Quick URL test (GET only)
+                        </button>
+                        <button type="button" class="btn" id="urlTestFullBtn" onclick="runHardTestGenerator(false)">
+                            <i class="fas fa-play"></i> Full URL test (create + video)
+                        </button>
+                    </div>
+                    <pre id="urlTestOutput" style="background: #1a1a2e; padding: 16px; border-radius: 8px; overflow: auto; max-height: 400px; font-size: 13px; margin: 0;">Click a button to run tests.</pre>
+                </div>
+                <!-- Agent Connections (20) -->
+                <div id="summary-connections" class="summary-tab-content">
+                    <p class="card-description">20 integration points between agents and the video generator. Each agent connects to the generator for rewards, triggers, display, or orchestration.</p>
+                    <div id="connections-content"><div class="loading"><i class="fas fa-spinner"></i> Loading connections...</div></div>
+                </div>
+                <!-- Service Worker -->
+                <div id="summary-service-worker" class="summary-tab-content">
+                    <p class="card-description">Service worker powers offline-ready requests, caches generator/documentary APIs, and posts progress to this page. Status below.</p>
+                    <div id="sw-status-panel" style="background: #1a1a2e; padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+                        <div><strong>Status</strong>: <span id="sw-status-text">Checking...</span></div>
+                        <div><strong>Online</strong>: <span id="sw-online-text">-</span></div>
+                        <div><strong>Queue</strong>: <span id="sw-queue-text">0</span> request(s) queued</div>
+                        <div><strong>Scope</strong>: <span id="sw-scope-text">/vidgenerator/</span></div>
+                    </div>
+                    <p style="font-size: 0.9em; color: #aaa;">Work done by the SW: cache GET progress/video/jobs; network-first; generation_progress messages; offline queue via gatherer.</p>
+                </div>
+                <!-- Magic Technology -->
+                <div id="summary-magic" class="summary-tab-content">
+                    <p class="card-description">Magic Technology: one-click video generation with optimized defaults. Create a short documentary in one tap.</p>
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="btn" id="magicGenerateBtn" onclick="runMagicGenerate()" style="background: linear-gradient(135deg, #9333ea, #7c3aed);">
+                            <i class="fas fa-magic"></i> Magic Generate (1-click video)
+                        </button>
+                        <input type="text" id="magicPromptInput" placeholder="Optional: your prompt (or use default)" style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border: 1px solid #333; color: #fff;">
+                    </div>
+                    <div id="magic-result" style="min-height: 40px;"></div>
+                    <p style="font-size: 0.9em; color: #aaa;">Uses preset duration and theme; documentary runs in background. Check progress in the main generator area.</p>
+                </div>
+                <!-- Deployment -->
+                <div id="summary-deployment" class="summary-tab-content">
+                    <p class="card-description">Upload and deployment: run scripts to deploy generator and agents to production.</p>
+                    <ul style="margin: 16px 0; padding-left: 24px; color: #ccc;">
+                        <li><code>python scripts/deploy_vidgenerator_solution.py</code> – upload key files and restart (SSH).</li>
+                        <li><code>python scripts/production_deployment.py</code> – full deployment pipeline.</li>
+                        <li><code>python scripts/full_deploy_and_restart.py</code> – deploy and restart services.</li>
+                    </ul>
+                    <p style="font-size: 0.9em;">Set <code>DEPLOY_PASS</code> for SSH. Server: masternoder.dk. Remote base: /var/www/html.</p>
+                    <p style="margin-top: 12px;"><a href="/vidgenerator/debugger/" style="color: #00ff88;">Open Debugger</a> for route checks and unit tests before deploy.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+                    
+        <!-- Unified Generator and Battle Integration -->
+            <script src="/vidgenerator/static/js/error-manager.js"></script>
+    <script src="/vidgenerator/static/js/unified-generator-battle.js" onerror="console.warn('Failed to load unified-generator-battle.js')"></script>
+        
+        <!-- Service Worker Gatherer - REACTIVATED -->
+        <script src="/vidgenerator/static/js/service-worker-gatherer.js"></script>
+        <script>
+            // Reactivate Service Worker for Video Generation
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/vidgenerator/service-worker.js', {
+                        scope: '/vidgenerator/'
+                    }).then(registration => {
+                        console.log('[Generator] ✅ Service Worker registered:', registration.scope);
+                        
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            console.log('[Generator] ✅ New service worker found');
+                        });
+                        
+                        // Listen for messages from service worker
+                        navigator.serviceWorker.addEventListener('message', (event) => {
+                            if (event.data && event.data.type === 'generation_progress') {
+                                console.log('[Generator] Progress from SW:', event.data);
+                                // Update progress UI
+                                updateProgressFromSW(event.data);
+                            }
+                        });
+                    }).catch(error => {
+                        console.error('[Generator] Service Worker registration failed:', error);
+                    });
+                });
+            }
+            
+            function updateProgressFromSW(data) {
+                const progressBar = document.querySelector('.progress-bar-fill');
+                const progressMessage = document.getElementById('progressMessage');
+                const progressStage = document.getElementById('progressStage');
+                const progressPercentage = document.getElementById('progressPercentage');
+                if (progressBar && data.progress !== undefined) {
+                    progressBar.style.width = `${data.progress}%`;
+                    progressBar.textContent = `${data.progress}%`;
+                }
+                if (data.status === 'failed' || data.status === 'error') {
+                    if (progressBar) { progressBar.className = 'progress-bar-fill error'; progressBar.style.width = '100%'; }
+                    if (progressMessage) progressMessage.textContent = data.message || data.error_message || 'Generering mislykkedes';
+                    if (progressStage) progressStage.textContent = 'Fejl';
+                    if (progressPercentage) progressPercentage.textContent = 'Fejl';
+                }
+                if (data.status === 'completed' && progressPercentage) progressPercentage.textContent = '100%';
+            }
+        </script>
+        <!-- Media Gatherer -->
+        <script src="/vidgenerator/static/js/media-gatherer.js"></script>
+    
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = 60;
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 15 + 20) + 's';
+                particle.style.width = (Math.random() * 4 + 2) + 'px';
+                particle.style.height = particle.style.width;
+                container.appendChild(particle);
+            }
+        }
+
+        const API_BASE = window.location.origin + '/vidgenerator';
+        
+        // Ensure API_BASE is available globally
+        window.API_BASE = API_BASE;
+        
+        console.log('[Generator] API_BASE initialized:', API_BASE);
+
+        // Enhanced fetch with service worker support and retry logic
+        async function enhancedFetch(url, options = {}) {
+            if (window.swGatherer && window.swGatherer.fetchWithQueue) {
+                try {
+                    return await window.swGatherer.fetchWithQueue(url, options);
+                } catch (e) {
+                    if (e.message && e.message.includes('queued')) {
+                        console.log('[Generator] Request queued for offline processing');
+                    }
+                }
+            }
+            
+            let lastError;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const response = await fetch(url, options);
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt < 2) {
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                    }
+                }
+            }
+            throw lastError;
+        }
+
+        // Safe JSON parsing with better error handling
+        async function safeJson(response) {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                if (text.trim().startsWith('<')) {
+                    throw new Error(`HTML response (${response.status}) - Route not found. Response: ${text.substring(0, 200)}`);
+                }
+                if (text.includes('offline') || text.includes('Offline')) {
+                    throw new Error('Offline - Tjek din internetforbindelse');
+                }
+                throw new Error(`Non-JSON response (${response.status}): ${text.substring(0, 120)}`);
+            }
+        }
+
+        // Debug function to test routes
+        async function debugRoutes() {
+            try {
+                const response = await fetch(`${API_BASE}/api/generator/debug-routes`);
+                const data = await safeJson(response);
+                console.log('Registered routes:', data);
+                alert('Routes: ' + JSON.stringify(data.routes, null, 2));
+            } catch (error) {
+                console.error('Debug routes error:', error);
+                alert('Debug error: ' + error.message);
+            }
+        }
+
+        // Test route function
+        async function testRoute() {
+            try {
+                const response = await fetch(`${API_BASE}/api/generator/test`);
+                const data = await safeJson(response);
+                console.log('Test route response:', data);
+                alert('Test route works: ' + data.message);
+            } catch (error) {
+                console.error('Test route error:', error);
+                alert('Test route error: ' + error.message);
+            }
+        }
+
+        // Make debug functions available globally
+        window.debugRoutes = debugRoutes;
+        window.testRoute = testRoute;
+
+        // Generate AI Clips
+        async function generateClips() {
+            console.log('[Generator] generateClips() called');
+            
+            const promptEl = document.getElementById('clipPrompt');
+            const metaEl = document.getElementById('clipMeta');
+            const statusEl = document.getElementById('clipStatus');
+            const clipsListEl = document.getElementById('clipsList');
+            const btn = document.getElementById('generateClipsBtn');
+
+            if (!promptEl) {
+                console.error('[Generator] clipPrompt element not found');
+                alert('Fejl: Kunne ikke finde tekstfeltet. Genindlæs siden.');
+                return;
+            }
+
+            const prompt = promptEl.value.trim();
+            if (!prompt) {
+                alert('Indtast en beskrivelse af klipet!');
+                promptEl.focus();
+                return;
+            }
+            
+            console.log('[Generator] Prompt:', prompt);
+
+            let meta = {};
+            try {
+                if (metaEl.value.trim()) {
+                    meta = JSON.parse(metaEl.value);
+                }
+            } catch (e) {
+                alert('Ugyldig JSON i indstillinger!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Genererer...';
+            statusEl.className = 'status processing';
+            statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Behandler...</span>';
+            clipsListEl.innerHTML = '';
+
+            try {
+                // Try primary endpoint first: /api/ai-clips/generate
+                let apiUrl = `${API_BASE}/api/ai-clips/generate`;
+                let response;
+                let data;
+                
+                statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Sender anmodning...</span>';
+                console.log('[Generator] Calling API:', apiUrl);
+                console.log('[Generator] Request body:', { prompt, meta });
+                
+                try {
+                    const userId = localStorage.getItem('game_user_id') || 'default_user';
+                    response = await enhancedFetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            prompt: prompt,
+                            user_id: userId,
+                            clip_count: 5,
+                            duration: 5
+                        })
+                    });
+
+                    console.log('[Generator] Response status:', response.status, response.statusText);
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            // Try fallback endpoint
+                            throw new Error('ENDPOINT_NOT_FOUND');
+                        } else {
+                            const errorText = await response.text();
+                            console.error('[Generator] Error response:', errorText);
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                    }
+
+                    data = await safeJson(response);
+                    console.log('[Generator] Response data:', data);
+                } catch (fetchError) {
+                    // Try fallback endpoint: /api/generator/ai-clips
+                    if (fetchError.message === 'ENDPOINT_NOT_FOUND' || fetchError.message.includes('Failed to fetch')) {
+                        console.warn('[Generator] Primary endpoint failed, trying fallback:', fetchError);
+                        apiUrl = `${API_BASE}/api/generator/ai-clips`;
+                        statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Prøver alternativ metode...</span>';
+                        
+                        try {
+                            response = await enhancedFetch(apiUrl, {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ prompt, meta })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+
+                            data = await safeJson(response);
+                            console.log('[Generator] Fallback response data:', data);
+                        } catch (fallbackError) {
+                            console.error('[Generator] Fallback endpoint also failed:', fallbackError);
+                            throw fetchError; // Throw original error
+                        }
+                    } else {
+                        throw fetchError;
+                    }
+                }
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Ukendt fejl');
+                }
+
+                // Handle response format (either job_id or direct clips)
+                if (data.job_id) {
+                    statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>I kø (job: ${data.job_id.substring(0, 8)}...)</span>`;
+                    pollClipStatus(data.job_id);
+                } else if (data.clips && data.clips.length > 0) {
+                    // Direct clips response
+                    statusEl.className = 'status completed';
+                    statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Færdig - ${data.clips.length} klip genereret</span>`;
+                    
+                    clipsListEl.innerHTML = '<h3 style="margin-bottom: 16px; color: #00ff88; font-size: 1.3rem;">Genererede Klip:</h3>';
+                    data.clips.forEach((clip, idx) => {
+                        const clipEl = document.createElement('div');
+                        clipEl.className = 'clip-item';
+                        const clipId = clip.clip_id || clip.video_id || `clip_${idx}`;
+                        const clipUrl = clip.access_urls?.vidgenerator_short || clip.access_urls?.short || `${API_BASE}/c/${clipId}`;
+                        clipEl.innerHTML = `
+                            <div>
+                                <strong style="color: #ffffff;">${clip.title || `Clip ${idx + 1}`}</strong>
+                            </div>
+                            <a href="${clipUrl}" target="_blank"><i class="fas fa-play"></i> Se Clip</a>
+                        `;
+                        clipsListEl.appendChild(clipEl);
+                    });
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip med AI';
+                } else {
+                    throw new Error('Intet svar fra serveren');
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                let errorMessage = 'Kunne ikke oprette forbindelse til serveren. Tjek din internetforbindelse og prøv igen.';
+                
+                if (error.message) {
+                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                        errorMessage = 'Kunne ikke oprette forbindelse til serveren. Tjek din internetforbindelse og prøv igen.';
+                    } else if (error.message.includes('HTTP 404')) {
+                        errorMessage = 'Endpoint ikke fundet. Prøv igen om et øjeblik.';
+                    } else if (error.message.includes('HTTP 500')) {
+                        errorMessage = 'Server fejl. Prøv igen om et øjeblik.';
+                    } else if (error.message.length < 100 && !error.message.includes('HTTP')) {
+                        errorMessage = error.message;
+                    }
+                }
+                
+                statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${errorMessage}</span>`;
+                console.error('Clip generation error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip med AI';
+            }
+        }
+
+        // Poll clip status
+        async function pollClipStatus(jobId) {
+            const statusEl = document.getElementById('clipStatus');
+            const clipsListEl = document.getElementById('clipsList');
+            const btn = document.getElementById('generateClipsBtn');
+
+            const poll = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/generator/ai-clips/${jobId}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await safeJson(response);
+
+                    if (!data.success) {
+                        throw new Error(data.error || 'Ukendt fejl');
+                    }
+
+                    statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${data.status} (job: ${jobId.substring(0, 8)}...)</span>`;
+
+                    if (data.status === 'completed') {
+                        statusEl.className = 'status completed';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Færdig - ${data.clips?.length || 0} klip genereret</span>`;
+
+                        if (data.clips && data.clips.length > 0) {
+                            clipsListEl.innerHTML = '<h3 style="margin-bottom: 16px; color: #00ff88; font-size: 1.3rem;">Genererede Klip:</h3>';
+                            data.clips.forEach((clip, idx) => {
+                                const clipEl = document.createElement('div');
+                                clipEl.className = 'clip-item';
+                                clipEl.innerHTML = `
+                                    <div>
+                                        <strong style="color: #ffffff;">${clip.title || `Clip ${idx + 1}`}</strong>
+                                    </div>
+                                    <a href="${API_BASE}${clip.url}" target="_blank"><i class="fas fa-download"></i> Download</a>
+                                `;
+                                clipsListEl.appendChild(clipEl);
+                            });
+                        }
+
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip med AI';
+                    } else {
+                        setTimeout(poll, 1000);
+                    }
+                } catch (error) {
+                    statusEl.className = 'status error';
+                    let errorMessage = 'Der opstod en fejl. Prøv igen.';
+                    if (error.message) {
+                        if (error.message.includes('HTTP') || error.message.includes('JSON') || error.message.length > 100) {
+                            errorMessage = 'Kunne ikke oprette forbindelse til serveren. Tjek din internetforbindelse og prøv igen.';
+                        } else {
+                            errorMessage = error.message;
+                        }
+                    }
+                    statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${errorMessage}</span>`;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip med AI';
+                }
+            };
+
+            poll();
+        }
+
+        // Restart Video Generation - Define BEFORE pollVideoProgress so it's available
+        async function restartVideoGeneration(docId) {
+            console.log('[Generator] restartVideoGeneration() called for doc_id:', docId);
+            
+            const statusEl = document.getElementById('videoStatus');
+            const btn = document.getElementById('generateVideoBtn');
+            
+            if (!docId) {
+                alert('Fejl: Ingen video ID fundet. Opret en ny video i stedet.');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Genstarter...';
+            statusEl.className = 'status processing';
+            statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Genstarter videogenerering...</span>';
+            
+            try {
+                const response = await enhancedFetch(`${API_BASE}/api/documentary/restart/${docId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await safeJson(response);
+                
+                if (data.success) {
+                    statusEl.className = 'status processing';
+                    statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>✅ Videogenerering genstartet! Genererer nu...</span>';
+                    
+                    // Start polling progress again
+                    pollVideoProgress(docId);
+                } else {
+                    throw new Error(data.error || 'Kunne ikke genstarte videogenerering');
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                let errorMessage = 'Kunne ikke genstarte videogenerering. Prøv igen.';
+                
+                if (error.message) {
+                    if (error.message.includes('HTTP 404')) {
+                        errorMessage = 'Video ikke fundet. Opret en ny video i stedet.';
+                    } else if (error.message.includes('HTTP 400')) {
+                        errorMessage = 'Kan ikke genstarte denne video. Opret en ny i stedet.';
+                    } else if (!error.message.includes('HTTP') && error.message.length < 100) {
+                        errorMessage = error.message;
+                    }
+                }
+                
+                statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>❌ ${errorMessage}</span>`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Genstart Generering';
+                btn.onclick = () => restartVideoGeneration(docId);
+                console.error('Restart error:', error);
+            }
+        }
+
+        // Poll video generation progress
+        async function pollVideoProgress(docId) {
+            const statusEl = document.getElementById('videoStatus');
+            const btn = document.getElementById('generateVideoBtn');
+            
+            let pollAttempts = 0;
+            const maxPollAttempts = 300;
+            
+            const poll = async () => {
+                try {
+                    pollAttempts++;
+                    
+                    if (pollAttempts > maxPollAttempts) {
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Timeout - Generering tager for lang tid. Tjek status senere.</span>';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        return;
+                    }
+                    
+                    const response = await enhancedFetch(`${API_BASE}/api/documentary/progress/${docId}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        cache: 'no-cache'
+                    });
+                    
+                    // Parse JSON even if response is not ok
+                    let data;
+                    try {
+                        data = await safeJson(response);
+                    } catch (jsonErr) {
+                        throw new Error(`Kunne ikke parse svar fra serveren: ${response.status}`);
+                    }
+                    
+                    // Handle non-200 responses - but check if we got error data
+                    if (!response.ok) {
+                        if (response.status === 404 && pollAttempts < 5) {
+                            setTimeout(poll, 1000);
+                            return;
+                        }
+                        // If we got error data, use it
+                        if (data && data.error) {
+                            throw new Error(data.error);
+                        }
+                        throw new Error(`HTTP ${response.status}: ${response.statusText || 'Ukendt fejl'}`);
+                    }
+                    
+                    // Handle error responses (even with 200 status)
+                    if (!data || data.status === 'error' || (!data.success && data.error)) {
+                        const errorMsg = data?.error || data?.message || 'Ukendt fejl';
+                        
+                        // If it's a temporary error, retry
+                        if (pollAttempts < 15 && (errorMsg.includes('Kunne ikke hente') || errorMsg.includes('Server fejl'))) {
+                            statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⏳ ${errorMsg} (forsøg ${pollAttempts + 1}/15)</span>`;
+                            setTimeout(poll, Math.min(2000 * Math.pow(1.5, pollAttempts), 10000));
+                            return;
+                        }
+                        
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${errorMsg}</span>`;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        return;
+                    }
+                    
+                    // Check if data.success is false
+                    if (data.success === false && !data.status) {
+                        const errorMsg = data.error || data.message || 'Ukendt fejl';
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${errorMsg}</span>`;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        return;
+                    }
+                    
+                    // Get progress - ensure it's a number, default to 0 if not provided
+                    let progress = 0;
+                    if (data.progress !== undefined && data.progress !== null) {
+                        progress = parseInt(data.progress) || 0;
+                    }
+                    // If progress is 0 but status is processing, set to at least 1% to show activity
+                    if (progress === 0 && (data.status === 'processing' || data.status === 'pending' || !data.status || data.status === 'unknown')) {
+                        progress = Math.min(99, Math.max(1, pollAttempts * 2)); // Gradually increase up to 99%
+                    }
+                    
+                    const status = data.status || 'unknown';
+                    const message = data.message || '';
+                    const errorMessage = data.error_message || '';
+                    const messageKey = data.message_key || '';
+                    
+                    const progressContainer = document.getElementById('progressContainer');
+                    const progressBarFill = document.getElementById('progressBarFill');
+                    const progressPercentage = document.getElementById('progressPercentage');
+                    const progressStage = document.getElementById('progressStage');
+                    const progressMessage = document.getElementById('progressMessage');
+                    
+                    statusEl.className = status === 'completed' ? 'status completed' : 
+                                        status === 'failed' ? 'status error' : 'status processing';
+                    
+                    if (status === 'completed') {
+                        if (progressContainer) progressContainer.style.display = 'none';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>✅ Færdig! (${progress}%)</span>`;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        
+                        if (data.video_path || data.video_url) {
+                            const videoUrl = data.video_url || `${API_BASE}/api/documentary/video/${docId}`;
+                            statusEl.innerHTML = `✅ <strong>Færdig!</strong> <a href="${videoUrl}" target="_blank" style="color: #00ff88; text-decoration: underline; font-weight: bold;">▶ Se video</a>`;
+                        }
+                        // Refresh points so Generation Points and totals update in the UI
+                        if (typeof updatePointsDisplay === 'function') {
+                            setTimeout(updatePointsDisplay, 500);
+                            setTimeout(updatePointsDisplay, 2500);
+                        }
+                        window.dispatchEvent(new CustomEvent('videoGenerated', { detail: { docId, progress: 100 } }));
+                    } else if (status === 'failed' || status === 'error') {
+                        if (progressContainer) {
+                            progressContainer.style.display = 'block';
+                            progressBarFill.className = 'progress-bar-fill error';
+                            progressBarFill.style.width = '100%';
+                            progressPercentage.textContent = 'Fejl';
+                            progressStage.textContent = 'Generering mislykkedes';
+                            progressMessage.textContent = errorMessage || message || 'Videogenerering mislykkedes';
+                        }
+                        const errorMsg = errorMessage || data.error || message || 'Videogenerering mislykkedes';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>❌ ${errorMsg}</span>`;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        btn.onclick = generateVideo;
+                        btn.removeAttribute('data-doc-id');
+                        
+                        // Show restart button
+                        const restartBtn = document.getElementById('restartVideoBtn');
+                        if (restartBtn) {
+                            restartBtn.style.display = 'flex';
+                            restartBtn.setAttribute('data-doc-id', docId);
+                        }
+                    } else {
+                        if (progressContainer) {
+                            progressContainer.style.display = 'block';
+                            progressBarFill.className = 'progress-bar-fill';
+                            progressBarFill.style.width = `${progress}%`;
+                            progressPercentage.textContent = `${progress}%`;
+                            
+                            const stageName = messageKey ? messageKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Genererer...';
+                            progressStage.textContent = stageName;
+                            progressMessage.textContent = message || 'Arbejder på videoen...';
+                        }
+                        
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⏳ ${message || 'Genererer...'} [${progress}%]</span>`;
+                        
+                        const pollInterval = Math.min(2000 + (pollAttempts * 100), 5000);
+                        setTimeout(poll, pollInterval);
+                    }
+                } catch (error) {
+                    console.error('Poll error:', error, 'Attempt:', pollAttempts);
+                    
+                    // Check if response has error data
+                    let errorData = null;
+                    if (error.responseData) {
+                        errorData = error.responseData;
+                    } else if (error.response && error.response.ok === false) {
+                        // Try to parse response
+                        try {
+                            error.response.json().then(data => {
+                                errorData = data;
+                            }).catch(() => {});
+                        } catch (e) {}
+                    }
+                    
+                    // Handle error response from server
+                    if (errorData && errorData.status === 'error') {
+                        const errorMsg = errorData.error || errorData.message || 'Server fejl';
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⚠️ ${errorMsg}</span>`;
+                        
+                        // Retry with exponential backoff
+                        if (pollAttempts < 15) {  // Increased max attempts
+                            const retryDelay = Math.min(2000 * Math.pow(1.5, pollAttempts), 10000);  // Max 10 seconds
+                            setTimeout(poll, retryDelay);
+                            statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⏳ Henter status... (forsøg ${pollAttempts + 1}/15)</span>`;
+                        } else {
+                            statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>❌ Kunne ikke hente status. Tjek status senere eller genindlæs siden.</span>';
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                        }
+                    } else if (error.message && (error.message.includes('offline') || error.message.includes('Offline'))) {
+                        statusEl.className = 'status processing';
+                        statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⏸ Offline - Forsøger igen når online...</span>';
+                        setTimeout(poll, 5000);
+                    } else if (pollAttempts < 15) {  // Increased max attempts
+                        const retryDelay = Math.min(2000 + (pollAttempts * 200), 8000);  // Max 8 seconds
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>⏳ Henter status... (forsøg ${pollAttempts + 1}/15)</span>`;
+                        setTimeout(poll, retryDelay);
+                    } else {
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>❌ Kunne ikke hente status. Tjek status senere eller genindlæs siden.</span>';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                    }
+                }
+            };
+            
+            poll();
+        }
+
+        // Generate Video
+        async function generateVideo() {
+            console.log('[Generator] generateVideo() called');
+            
+            const titleEl = document.getElementById('videoTitle');
+            const descEl = document.getElementById('videoDescription');
+            const themeEl = document.getElementById('videoTheme');
+            const statusEl = document.getElementById('videoStatus');
+            const btn = document.getElementById('generateVideoBtn');
+
+            if (!titleEl) {
+                console.error('[Generator] videoTitle element not found');
+                alert('Fejl: Kunne ikke finde tekstfeltet. Genindlæs siden.');
+                return;
+            }
+
+            const title = titleEl.value.trim();
+            if (!title) {
+                alert('Indtast en video titel!');
+                titleEl.focus();
+                return;
+            }
+            
+            const description = descEl?.value?.trim() || '';
+            const prompt = description || title;
+            
+            console.log('[Generator] Title:', title, 'Description:', description, 'Theme:', themeEl?.value);
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Genererer...';
+            statusEl.className = 'status processing';
+            statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Validerer proces...</span>';
+
+            try {
+                // Step 1: Calculate and validate process using calculator
+                statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Beregner proces...</span>';
+                
+                let calculationResult;
+                try {
+                    const userId = localStorage.getItem('game_user_id') || 'default_user';
+                    const calcResponse = await enhancedFetch(`${API_BASE}/api/video-generation/calculate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            user_id: userId,
+                            duration: 180, // Default documentary duration
+                            resolution: '1280x768',
+                            video_type: 'video'
+                        })
+                    });
+                    
+                    if (calcResponse.ok) {
+                        calculationResult = await safeJson(calcResponse);
+                        console.log('[Generator] Process calculation:', calculationResult);
+                        
+                        // Solve problems automatically if any
+                        if (calculationResult.problems && calculationResult.problems.length > 0) {
+                            statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Løser problemer...</span>';
+                            try {
+                                const solveResponse = await enhancedFetch(`${API_BASE}/api/video-generation/solve-problems`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        problems: calculationResult.problems
+                                    })
+                                });
+                                if (solveResponse.ok) {
+                                    const solveResult = await safeJson(solveResponse);
+                                    console.log('[Generator] Problems solved:', solveResult);
+                                }
+                            } catch (solveErr) {
+                                console.warn('[Generator] Could not solve problems:', solveErr);
+                            }
+                        }
+                        
+                        // Check if we can proceed
+                        if (!calculationResult.validation_summary.can_proceed) {
+                            const problems = calculationResult.problems.join(', ');
+                            throw new Error(`Proces validering fejlede: ${problems}`);
+                        }
+                    }
+                } catch (calcErr) {
+                    console.warn('[Generator] Process calculation failed, continuing anyway:', calcErr);
+                    // Continue even if calculator fails
+                }
+                
+                // Step 2: Generate video
+                statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>Behandler...</span>';
+                
+                const requestBody = {
+                    title,
+                    description: description,
+                    theme: themeEl?.value || 'default'
+                };
+                
+                // Try unified endpoint first (better integration)
+                let apiUrl = `${API_BASE}/api/unified/generate-video`;
+                let requestBodyUnified = {
+                    prompt: prompt,
+                    user_id: localStorage.getItem('game_user_id') || 'default_user',
+                    duration: 180,
+                    resolution: '1280x768'
+                };
+                
+                console.log('[Generator] Trying unified endpoint:', apiUrl);
+                console.log('[Generator] Request body:', requestBodyUnified);
+                
+                let response;
+                let data;
+                
+                try {
+                    response = await enhancedFetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(requestBodyUnified)
+                    });
+                    
+                    console.log('[Generator] Unified response status:', response.status, response.statusText);
+                    
+                    if (response.ok) {
+                        data = await safeJson(response);
+                        console.log('[Generator] Unified response data:', data);
+                    } else {
+                        throw new Error(`Unified endpoint returned ${response.status}`);
+                    }
+                } catch (unifiedError) {
+                    console.warn('[Generator] Unified endpoint failed, trying generator endpoint:', unifiedError);
+                    
+                    // Fallback to generator endpoint
+                    apiUrl = `${API_BASE}/api/generator/create`;
+                    console.log('[Generator] Trying generator endpoint:', apiUrl);
+                    console.log('[Generator] Request body:', requestBody);
+                    
+                    response = await enhancedFetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    console.log('[Generator] Generator response status:', response.status, response.statusText);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('[Generator] Error response:', errorText);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    data = await safeJson(response);
+                    console.log('[Generator] Generator response data:', data);
+                }
+
+                if (data.success) {
+                    statusEl.className = 'status processing';
+                    statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${data.message || 'Videogenerering er startet...'}</span>`;
+                    
+                    // Get documentary_id from various possible fields
+                    const docId = data.documentary_id || data.video_id || data.document_id || data.id;
+                    
+                    if (docId) {
+                        console.log('[Generator] Starting progress polling for docId:', docId);
+                        pollVideoProgress(docId);
+                        
+                        // Store doc ID for restart
+                        btn.setAttribute('data-doc-id', docId);
+                        
+                        // Request agent opinion if enabled
+                        const agentOpinionEnabled = document.getElementById('agentOpinionEnabled')?.checked;
+                        if (agentOpinionEnabled) {
+                            requestAgentOpinion(docId, title, description);
+                        }
+                    } else {
+                        console.warn('[Generator] No documentary_id in response, cannot poll progress');
+                        statusEl.className = 'status completed';
+                        statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${data.message || 'Video genereret!'}</span>`;
+                        btn.onclick = generateVideo;
+                        btn.removeAttribute('data-doc-id');
+                        
+                        const restartBtn = document.getElementById('restartVideoBtn');
+                        if (restartBtn) {
+                            restartBtn.style.display = 'none';
+                        }
+                    }
+                } else {
+                    const error = new Error(data.error || data.message || 'Ukendt fejl');
+                    error.responseData = data;
+                    throw error;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                let errorMessage = 'Der opstod en fejl ved generering af videoen. Prøv igen.';
+                
+                if (error.responseData) {
+                    errorMessage = error.responseData.error || error.responseData.message || errorMessage;
+                } else if (error.message) {
+                    if ((error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) && 
+                        !error.message.includes('500')) {
+                        errorMessage = 'Kunne ikke oprette forbindelse til serveren. Tjek din internetforbindelse og prøv igen.';
+                    } else if (error.message.includes('HTTP 500') || error.message.includes('500 Server Error')) {
+                        errorMessage = 'Server fejl. Prøv igen om et øjeblik.';
+                    } else if (!error.message.includes('HTTP') && error.message.length < 100) {
+                        errorMessage = error.message;
+                    } else if (error.message.length > 100) {
+                        errorMessage = 'Der opstod en fejl. Prøv igen.';
+                    }
+                }
+                statusEl.innerHTML = `<i class="fas fa-circle" style="font-size: 0.5em;"></i><span>${errorMessage}</span>`;
+                console.error('Video generation error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video Nu';
+                btn.onclick = generateVideo; // Reset onclick
+                btn.removeAttribute('data-doc-id'); // Clear doc ID
+                
+                // Hide restart button if shown
+                const restartBtn = document.getElementById('restartVideoBtn');
+                if (restartBtn && statusEl.className !== 'status error') {
+                    restartBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // Restart from button click
+        function restartVideoGenerationFromButton() {
+            const restartBtn = document.getElementById('restartVideoBtn');
+            const docId = restartBtn?.getAttribute('data-doc-id');
+            if (docId) {
+                restartVideoGeneration(docId);
+            } else {
+                alert('Fejl: Ingen video ID fundet. Opret en ny video i stedet.');
+            }
+        }
+
+        // Make functions globally accessible IMMEDIATELY (before DOM ready)
+        // This ensures onclick handlers work even if DOMContentLoaded hasn't fired
+        if (typeof window !== 'undefined') {
+            window.generateClips = generateClips;
+            window.generateVideo = generateVideo;
+            window.debugRoutes = debugRoutes;
+            window.testRoute = testRoute;
+            window.restartVideoGeneration = restartVideoGeneration;
+            window.restartVideoGenerationFromButton = restartVideoGenerationFromButton;
+            window.pollVideoProgress = pollVideoProgress;
+            
+            console.log('[Generator] Functions registered globally:', {
+                generateClips: typeof generateClips,
+                generateVideo: typeof generateVideo,
+                debugRoutes: typeof debugRoutes,
+                testRoute: typeof testRoute,
+                restartVideoGeneration: typeof restartVideoGeneration,
+                restartVideoGenerationFromButton: typeof restartVideoGenerationFromButton,
+                pollVideoProgress: typeof pollVideoProgress
+            });
+        }
+
+        // Load themes dynamically
+        async function loadThemes() {
+            try {
+                const response = await fetch(`${API_BASE}/api/themes/list`);
+                const data = await response.json();
+                
+                if (data.success && data.themes) {
+                    const themeSelect = document.getElementById('videoTheme');
+                    if (themeSelect) {
+                        // Keep default options, add new themes
+                        const newThemes = data.themes.filter(t => 
+                            ['wwii', 'mtg', 'ctrl_a_delete', 'the_end', 'slaprygler'].includes(t.theme_id)
+                        );
+                        
+                        newThemes.forEach(theme => {
+                            const option = document.createElement('option');
+                            option.value = theme.theme_id;
+                            option.textContent = `${theme.metadata?.tags?.[0] || '🎨'} ${theme.name}`;
+                            if (theme.metadata?.premium) {
+                                option.textContent += ' ⭐';
+                            }
+                            if (theme.metadata?.warning) {
+                                option.textContent += ' ⚠️';
+                            }
+                            themeSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading themes:', error);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            loadThemes();
+            
+            // Add event listeners as backup to onclick handlers
+            const generateClipsBtn = document.getElementById('generateClipsBtn');
+            const generateVideoBtn = document.getElementById('generateVideoBtn');
+            
+            if (generateClipsBtn) {
+                generateClipsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    generateClips();
+                });
+            }
+            
+            if (generateVideoBtn) {
+                generateVideoBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    generateVideo();
+                });
+            }
+            
+            // Ensure form inputs are accessible
+            const clipPrompt = document.getElementById('clipPrompt');
+            const clipMeta = document.getElementById('clipMeta');
+            const videoTitle = document.getElementById('videoTitle');
+            const videoDescription = document.getElementById('videoDescription');
+            const videoTheme = document.getElementById('videoTheme');
+            
+            // Ensure buttons are enabled on page load
+            if (generateClipsBtn) {
+                generateClipsBtn.disabled = false;
+            }
+            if (generateVideoBtn) {
+                generateVideoBtn.disabled = false;
+            }
+            
+            // Add input validation feedback (visual only, don't disable buttons)
+            if (clipPrompt) {
+                clipPrompt.addEventListener('input', function() {
+                    // Visual feedback only - button stays enabled
+                    const btn = document.getElementById('generateClipsBtn');
+                    if (btn && !this.value.trim()) {
+                        btn.style.opacity = '0.6';
+                    } else if (btn) {
+                        btn.style.opacity = '1';
+                    }
+                });
+            }
+            
+            if (videoTitle) {
+                videoTitle.addEventListener('input', function() {
+                    // Visual feedback only - button stays enabled
+                    const btn = document.getElementById('generateVideoBtn');
+                    if (btn && !this.value.trim()) {
+                        btn.style.opacity = '0.6';
+                    } else if (btn) {
+                        btn.style.opacity = '1';
+                    }
+                });
+            }
+            
+            console.log('[Generator] Initialized - Functions available:', {
+                generateClips: typeof generateClips,
+                generateVideo: typeof generateVideo,
+                API_BASE: API_BASE
+            });
+        });
+    </script>
+    <script src="/vidgenerator/static/js/toast-notifications.js"></script>
+    
+    
+    <script src="/vidgenerator/static/js/progression-display.js"></script>
+    <script src="/vidgenerator/static/js/navigation-toolbar.js"></script>
+    <script src="/vidgenerator/static/js/theme-timeline.js"></script>
+    <script>
+        // Initialize Theme Timeline
+        let themeTimeline;
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof ThemeTimeline !== 'undefined') {
+                themeTimeline = new ThemeTimeline('theme-timeline-container', function(themeId) {
+                    // Update hidden input when theme is selected
+                    const themeInput = document.getElementById('videoTheme');
+                    if (themeInput) {
+                        themeInput.value = themeId;
+                        console.log('[Generator] Theme selected:', themeId);
+                    }
+                    
+                    if (typeof toast !== 'undefined') {
+                        toast.success(`Theme selected: ${themeId}`);
+                    }
+                });
+                
+                themeTimeline.init().catch(err => {
+                    console.error('[Generator] Theme timeline initialization error:', err);
+                });
+            } else {
+                console.warn('[Generator] ThemeTimeline class not found. Theme selector may not work.');
+                // Fallback: Set default theme
+                const themeInput = document.getElementById('videoTheme');
+                if (themeInput && !themeInput.value) {
+                    themeInput.value = 'default';
+                }
+            }
+            
+            // Initialize points display
+            initializePointsDisplay();
+            
+            // Update points every 5 seconds
+            setInterval(updatePointsDisplay, 5000);
+        });
+
+        // Initialize points display
+        function initializePointsDisplay() {
+            updatePointsDisplay();
+        }
+
+        // Enhanced Point Tracker - Extended time sessions
+        let currentSessionId = null;
+        let sessionStartTime = null;
+        let extendedTimeEnabled = true;
+        
+        // Start extended point creation session
+        async function startPointCreationSession() {
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const response = await fetch(`${API_BASE}/api/tracker/start-session`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        extended_time: extendedTimeEnabled
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentSessionId = data.session_id;
+                        sessionStartTime = Date.now();
+                        console.log('[Generator] Extended session started:', currentSessionId, 'Duration:', data.duration_minutes, 'minutes');
+                        
+                        // Show session indicator
+                        showSessionIndicator(data.duration_minutes);
+                    }
+                }
+            } catch (error) {
+                console.error('[Generator] Error starting session:', error);
+            }
+        }
+        
+        // Track point creation
+        async function trackPointCreation(pointType, amount, source = 'generator') {
+            if (!currentSessionId) return;
+            
+            try {
+                await fetch(`${API_BASE}/api/tracker/track-points`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        point_type: pointType,
+                        amount: amount,
+                        source: source
+                    })
+                });
+            } catch (error) {
+                console.error('[Generator] Error tracking points:', error);
+            }
+        }
+        
+        // Show session indicator
+        function showSessionIndicator(durationMinutes) {
+            // Create or update session indicator
+            let indicator = document.getElementById('point-session-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'point-session-indicator';
+                indicator.style.cssText = 'position:fixed;top:10px;right:10px;background:#4CAF50;color:white;padding:10px;border-radius:5px;z-index:10000;';
+                document.body.appendChild(indicator);
+            }
+            
+            const updateTimer = () => {
+                if (!currentSessionId) return;
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000 / 60);
+                const remaining = Math.max(0, durationMinutes - elapsed);
+                indicator.innerHTML = `⏱️ Extended Session: ${remaining} min remaining<br>📊 Points being tracked`;
+            };
+            
+            updateTimer();
+            setInterval(updateTimer, 60000); // Update every minute
+        }
+        
+        // Start session on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startPointCreationSession);
+        } else {
+            startPointCreationSession();
+        }
+        
+        // Update points display - with cache busting and better error handling
+        let pointsUpdateInProgress = false;
+        async function updatePointsDisplay() {
+            // Prevent multiple simultaneous calls
+            if (pointsUpdateInProgress) {
+                console.log('[Generator] Points update already in progress, skipping');
+                return;
+            }
+            
+            pointsUpdateInProgress = true;
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                // Use full path with /vidgenerator prefix - ensure API_BASE is correct
+                // Add cache-busting timestamp to avoid stale responses
+                const timestamp = new Date().getTime();
+                const url = `${API_BASE}/api/points/get-all-connected?user_id=${userId}&_t=${timestamp}`;
+                console.log('[Generator] Fetching points from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    cache: 'no-store'
+                });
+                
+                console.log('[Generator] Response status:', response.status, response.statusText);
+                console.log('[Generator] Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.warn(`[Generator] Points API returned ${response.status}:`, errorText.substring(0, 200));
+                    pointsUpdateInProgress = false;
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.warn('[Generator] Response is not JSON, content-type:', contentType);
+                    console.warn('[Generator] Response text:', text.substring(0, 200));
+                    pointsUpdateInProgress = false;
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('[Generator] Points data received:', data);
+                processPointsData(data);
+                
+                // Track point changes in session
+                if (currentSessionId && data.success && data.result && data.result.all_points) {
+                    const points = data.result.all_points;
+                    // Track generation points
+                    if (points.generation_points) {
+                        trackPointCreation('generation_points', points.generation_points);
+                    }
+                    // Track XP
+                    if (points.xp_total) {
+                        trackPointCreation('xp', points.xp_total);
+                    }
+                }
+                
+                pointsUpdateInProgress = false;
+            } catch (error) {
+                console.error('[Generator] Error updating points display:', error);
+                console.error('[Generator] Error details:', error.message);
+                if (error.stack) {
+                    console.error('[Generator] Error stack:', error.stack);
+                }
+                pointsUpdateInProgress = false;
+            }
+        }
+        
+        // Process points data (supports result.all_points or top-level all_points/xp_total/level)
+        function processPointsData(data) {
+            if (!data || !data.success) return;
+            let points = (data.result && data.result.all_points) ? data.result.all_points : null;
+            if (!points && data.all_points) {
+                points = Object.assign({}, data.all_points, {
+                    xp_total: data.xp_total != null ? data.xp_total : (data.all_points && data.all_points.xp_total),
+                    level: data.level != null ? data.level : (data.all_points && data.all_points.level)
+                });
+            }
+            if (!points) return;
+            updatePointElement('points-xp', points.xp_total || 0);
+            updatePointElement('points-level', points.level || 1);
+            updatePointElement('points-generation', points.generation_points || 0);
+            updatePointElement('points-activity', points.activity_points || 0);
+            updatePointElement('points-battle', points.battle_points || 0);
+            updatePointElement('points-quest', points.quest_points || 0);
+            const total = (Number(points.xp_total) || 0) + (Number(points.generation_points) || 0) +
+                         (Number(points.activity_points) || 0) + (Number(points.battle_points) || 0) +
+                         (Number(points.quest_points) || 0) + (Number(points.trophy_points) || 0) +
+                         (Number(points.achievement_points) || 0) + (Number(points.reward_points) || 0);
+            updatePointElement('points-total', Math.round(total));
+        }
+
+        // Update point element with animation
+        function updatePointElement(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                const oldValue = parseFloat(String(element.textContent).replace(/,/g, '')) || 0;
+                const newValue = parseFloat(value) || 0;
+                const rounded = Math.round(newValue);
+                if (Math.abs(oldValue - rounded) > 0.01) {
+                    element.textContent = rounded.toLocaleString();
+                    element.classList.add('updated');
+                    setTimeout(() => element.classList.remove('updated'), 500);
+                }
+            }
+        }
+
+        // Hook into video generation to update points
+        const originalGenerateVideo = window.generateVideo;
+        if (typeof originalGenerateVideo === 'function') {
+            window.generateVideo = function(...args) {
+                const result = originalGenerateVideo.apply(this, args);
+                // Update points after a delay to allow backend processing
+                setTimeout(updatePointsDisplay, 3000);
+                return result;
+            };
+        }
+
+        // Also update when video generation completes
+        window.addEventListener('videoGenerated', function() {
+            setTimeout(updatePointsDisplay, 3000);
+            loadGenerationSummaries(); // Reload summaries after generation
+        });
+        
+        // Summary Tab Switching
+        function switchSummaryTab(tabName) {
+            document.querySelectorAll('.summary-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', (btn.getAttribute('onclick') || '').indexOf("'"+tabName+"'") !== -1);
+            });
+            document.querySelectorAll('.summary-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const el = document.getElementById('summary-' + tabName);
+            if (el) el.classList.add('active');
+            loadSummaryTabData(tabName);
+        }
+        
+        // Load Summary Tab Data
+        async function loadSummaryTabData(tabName) {
+            switch(tabName) {
+                case 'history':
+                    await loadGenerationHistory();
+                    break;
+                case 'statistics':
+                    await loadGenerationStatistics();
+                    break;
+                case 'performance':
+                    await loadGenerationPerformance();
+                    break;
+                case 'quick-actions':
+                    await loadQuickActions();
+                    break;
+                case 'url-test':
+                    break;
+                case 'connections':
+                    await loadAgentConnections();
+                    break;
+                case 'service-worker':
+                    updateSWStatus();
+                    break;
+                case 'magic':
+                case 'deployment':
+                    break;
+            }
+        }
+        
+        async function loadAgentConnections() {
+            const container = document.getElementById('connections-content');
+            if (!container) return;
+            try {
+                const res = await fetch(API_BASE + '/api/generator/agent-connections');
+                const data = await res.json();
+                if (data.success && data.connections && data.connections.length) {
+                    container.innerHTML = '<div style="display: grid; gap: 10px;">' + data.connections.map(c => 
+                        '<div style="background: #1a1a2e; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #00ff88;">' +
+                        '<strong>' + (c.agent || '') + '</strong> <span style="color: #888;">(' + (c.type || '') + ')</span><br>' +
+                        '<span style="color: #aaa; font-size: 0.9em;">' + (c.description || '') + '</span>' +
+                        (c.link ? '<br><a href="' + c.link + '" style="color: #00ff88; font-size: 0.85em;">Open</a>' : '') +
+                        '</div>'
+                    ).join('') + '</div>';
+                } else {
+                    container.innerHTML = '<p style="color: #888;">No connections loaded.</p>';
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="color: #e44;">Failed to load: ' + (e.message || '') + '</p>';
+            }
+        }
+        
+        function updateSWStatus() {
+            const st = window.swGatherer ? window.swGatherer.getStatus() : null;
+            const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+            if (st) {
+                set('sw-status-text', st.active ? 'Active' : (st.supportsSW ? 'Registering...' : 'Not supported'));
+                set('sw-online-text', st.online ? 'Yes' : 'No (offline)');
+                set('sw-queue-text', String(st.queueLength));
+                set('sw-scope-text', st.scope || '/vidgenerator/');
+            } else {
+                set('sw-status-text', 'Gatherer not ready');
+                set('sw-online-text', navigator.onLine ? 'Yes' : 'No');
+                set('sw-queue-text', '0');
+                set('sw-scope-text', '/vidgenerator/');
+            }
+        }
+        
+        async function runMagicGenerate() {
+            const btn = document.getElementById('magicGenerateBtn');
+            const resultEl = document.getElementById('magic-result');
+            const promptInput = document.getElementById('magicPromptInput');
+            const prompt = (promptInput && promptInput.value.trim()) || 'Magic documentary – created with one click';
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            if (btn) btn.disabled = true;
+            if (resultEl) resultEl.innerHTML = '<span style="color: #aaa;"><i class="fas fa-spinner"></i> Starting...</span>';
+            try {
+                const res = await fetch(API_BASE + '/api/generator/magic-generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt, user_id: userId, duration: 60 })
+                });
+                const data = await res.json();
+                if (data.success && data.documentary_id) {
+                    if (resultEl) resultEl.innerHTML = '<span style="color: #00ff88;">Magic generation started. Documentary ID: <code>' + data.documentary_id + '</code>. Poll progress above or open the video when ready.</span>';
+                    if (typeof loadGenerationSummaries === 'function') loadGenerationSummaries();
+                } else {
+                    if (resultEl) resultEl.innerHTML = '<span style="color: #e44;">Error: ' + (data.error || res.status) + '</span>';
+                }
+            } catch (e) {
+                if (resultEl) resultEl.innerHTML = '<span style="color: #e44;">Request failed: ' + (e.message || '') + '</span>';
+            }
+            if (btn) btn.disabled = false;
+        }
+        
+        async function runHardTestGenerator(quick) {
+            const out = document.getElementById('urlTestOutput');
+            const quickBtn = document.getElementById('urlTestQuickBtn');
+            const fullBtn = document.getElementById('urlTestFullBtn');
+            if (!out) return;
+            out.textContent = 'Running...';
+            if (quickBtn) quickBtn.disabled = true;
+            if (fullBtn) fullBtn.disabled = true;
+            try {
+                const url = `${API_BASE}/api/debug/hard-test-generator?run=1&quick=${quick ? '1' : '0'}&poll=60`;
+                const res = await fetch(url);
+                const data = await res.json();
+                let text = data.success !== false ? `Passed: ${data.passed}\nFailed: ${data.failed}\n\n` : `Error: ${data.error || res.status}\n\n`;
+                if (data.results && data.results.length) {
+                    data.results.forEach(r => {
+                        const ok = r.ok ? 'OK' : 'FAIL';
+                        text += `  ${ok}  ${r.name || '?'}`;
+                        if (r.code != null) text += ` (${r.code})`;
+                        if (r.message) text += ` - ${r.message}`;
+                        if (r.doc_id) text += ` doc_id=${r.doc_id}`;
+                        text += '\n';
+                    });
+                }
+                out.textContent = text;
+            } catch (e) {
+                out.textContent = `Request failed: ${e.message}`;
+            }
+            if (quickBtn) quickBtn.disabled = false;
+            if (fullBtn) fullBtn.disabled = false;
+        }
+        
+        // Load Generation History
+        async function loadGenerationHistory() {
+            const container = document.getElementById('generation-history-content');
+            if (!container) return;
+            
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const response = await fetch(`${API_BASE}/api/generator/history?user_id=${userId}&limit=10`);
+                const data = await response.json();
+                
+                if (data.success && data.history) {
+                    const history = data.history;
+                    container.innerHTML = `
+                        <div class="summary-grid">
+                            <div class="summary-card">
+                                <div class="summary-card-title">Total Generations</div>
+                                <div class="summary-card-value">${history.total || 0}</div>
+                                <div class="summary-card-label">All time</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Successful</div>
+                                <div class="summary-card-value">${history.successful || 0}</div>
+                                <div class="summary-card-label">${history.total > 0 ? ((history.successful / history.total) * 100).toFixed(1) + '%' : '0%'} success rate</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Average Time</div>
+                                <div class="summary-card-value">${history.avg_time ? history.avg_time + 's' : 'N/A'}</div>
+                                <div class="summary-card-label">Per generation</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Today</div>
+                                <div class="summary-card-value">${history.today || 0}</div>
+                                <div class="summary-card-label">Generations</div>
+                            </div>
+                        </div>
+                        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #00ff88;">Recent Generations</h3>
+                        <div id="recent-generations-list">
+                            ${(history.recent || []).map(item => `
+                                <div class="history-item">
+                                    <div>
+                                        <div style="font-weight: 600; color: #00ff88; margin-bottom: 5px;">${item.title || 'Untitled'}</div>
+                                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${item.theme || 'N/A'} • ${item.created_at || 'Unknown date'}</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="color: ${item.status === 'completed' ? '#00ff88' : item.status === 'failed' ? '#ff3366' : '#ffaa00'}; font-weight: 600;">
+                                            ${item.status || 'unknown'}
+                                        </div>
+                                        ${item.duration ? `<div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${item.duration}s</div>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No generation history available</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading generation history:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading history</p></div>';
+            }
+        }
+        
+        // Load Generation Statistics
+        async function loadGenerationStatistics() {
+            const container = document.getElementById('generation-statistics-content');
+            if (!container) return;
+            
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const response = await fetch(`${API_BASE}/api/generator/statistics?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (data.success && data.statistics) {
+                    const stats = data.statistics;
+                    container.innerHTML = `
+                        <div class="summary-grid">
+                            <div class="summary-card">
+                                <div class="summary-card-title">Total Videos</div>
+                                <div class="summary-card-value">${stats.total_videos || 0}</div>
+                                <div class="summary-card-label">Created</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">By Theme</div>
+                                <div class="summary-card-value">${stats.themes_count || 0}</div>
+                                <div class="summary-card-label">Different themes</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">By Provider</div>
+                                <div class="summary-card-value">${stats.providers_count || 0}</div>
+                                <div class="summary-card-label">Providers used</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Quality Avg</div>
+                                <div class="summary-card-value">${stats.avg_quality ? stats.avg_quality.toFixed(1) : '0'}</div>
+                                <div class="summary-card-label">Out of 10</div>
+                            </div>
+                        </div>
+                        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #00ff88;">Theme Distribution</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            ${Object.entries(stats.theme_distribution || {}).map(([theme, count]) => `
+                                <div class="summary-card">
+                                    <div class="summary-card-title">${theme}</div>
+                                    <div class="summary-card-value">${count}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No statistics available</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading statistics</p></div>';
+            }
+        }
+        
+        // Load Generation Performance
+        async function loadGenerationPerformance() {
+            const container = document.getElementById('generation-performance-content');
+            if (!container) return;
+            
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const response = await fetch(`${API_BASE}/api/generator/performance?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (data.success && data.performance) {
+                    const perf = data.performance;
+                    container.innerHTML = `
+                        <div class="summary-grid">
+                            <div class="summary-card">
+                                <div class="summary-card-title">Success Rate</div>
+                                <div class="summary-card-value">${perf.success_rate ? (perf.success_rate * 100).toFixed(1) + '%' : '0%'}</div>
+                                <div class="summary-card-label">Overall</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Avg Speed</div>
+                                <div class="summary-card-value">${perf.avg_speed ? perf.avg_speed + 's' : 'N/A'}</div>
+                                <div class="summary-card-label">Per generation</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Best Provider</div>
+                                <div class="summary-card-value">${perf.best_provider || 'N/A'}</div>
+                                <div class="summary-card-label">Fastest</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-card-title">Trend</div>
+                                <div class="summary-card-value">${perf.trend || 'stable'}</div>
+                                <div class="summary-card-label">Performance</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-tachometer-alt"></i><p>No performance data available</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading performance:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading performance</p></div>';
+            }
+        }
+        
+        // Load Quick Actions
+        async function loadQuickActions() {
+            const container = document.getElementById('quick-actions-content');
+            if (!container) return;
+            
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const response = await fetch(`${API_BASE}/api/generator/quick-actions?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (data.success && data.actions) {
+                    const actions = data.actions;
+                    container.innerHTML = `
+                        <h3 style="margin-bottom: 20px; color: #00ff88;">Recent Videos</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            ${(actions.recent_videos || []).slice(0, 6).map(video => `
+                                <div class="summary-card" style="cursor: pointer;" onclick="window.location.href='/vidgenerator/gallery'">
+                                    <div class="summary-card-title">${video.title || 'Untitled'}</div>
+                                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 5px;">${video.theme || 'N/A'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <h3 style="margin-bottom: 20px; color: #00ff88;">Favorite Themes</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            ${(actions.favorite_themes || []).map(theme => `
+                                <button class="summary-tab-btn" onclick="document.getElementById('videoTheme').value='${theme}'; document.getElementById('videoTheme').dispatchEvent(new Event('change'))">
+                                    ${theme}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-bolt"></i><p>No quick actions available</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading quick actions:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading quick actions</p></div>';
+            }
+        }
+        
+        // Load All Summaries
+        async function loadGenerationSummaries() {
+            await loadGenerationHistory();
+        }
+        
+        // Initialize summaries on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGenerationSummaries();
+        });
+        
+        // Agent Opinion Functions
+        async function requestAgentOpinion(videoId, title, description) {
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                
+                // Get user's agents
+                const agentsResponse = await fetch(`${API_BASE}/api/agent/get?user_id=${userId}`);
+                const agentsData = await agentsResponse.json();
+                
+                if (agentsData.success && agentsData.agents && agentsData.agents.length > 0) {
+                    const primaryAgent = agentsData.agents[0];
+                    const agentId = primaryAgent.id;
+                    
+                    // Request opinion
+                    const opinionResponse = await fetch(`${API_BASE}/api/agent/video-opinion`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            agent_id: agentId,
+                            video_id: videoId,
+                            video_data: {
+                                title: title,
+                                description: description,
+                                quality_score: 0.85
+                            }
+                        })
+                    });
+                    
+                    const opinionData = await opinionResponse.json();
+                    if (opinionData.success && opinionData.opinion) {
+                        displayAgentOpinion(opinionData.opinion);
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting agent opinion:', error);
+            }
+        }
+        
+        function displayAgentOpinion(opinion) {
+            const display = document.getElementById('agentOpinionDisplay');
+            if (display) {
+                display.style.display = 'block';
+                display.innerHTML = `
+                    <div style="font-weight: 600; color: var(--primary); margin-bottom: var(--spacing-xs);">
+                        🤖 Agent Opinion: ${(opinion.opinion_score * 100).toFixed(0)}%
+                    </div>
+                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs);">
+                        ${opinion.opinion_text || 'Agent has reviewed your video'}
+                    </div>
+                    ${opinion.suggestions && opinion.suggestions.length > 0 ? `
+                        <div style="margin-top: var(--spacing-xs);">
+                            <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">Suggestions:</div>
+                            <ul style="margin: var(--spacing-xs) 0; padding-left: var(--spacing-md); font-size: var(--font-size-xs); color: var(--text-secondary);">
+                                ${opinion.suggestions.map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+        
+        // Show agent opinion display when checkbox is checked
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('agentOpinionEnabled');
+            const display = document.getElementById('agentOpinionDisplay');
+            if (checkbox && display) {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        display.style.display = 'block';
+                    } else {
+                        display.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+    <!-- Hypnotic Point Counters -->
+    <script src="/vidgenerator/static/js/hypnotic-point-counters.js" onerror="console.warn('Failed to load hypnotic-point-counters.js')"></script>
+    <!-- Trigger-Based Actions -->
+    <script src="/vidgenerator/static/js/trigger-based-actions.js" onerror="console.warn('Failed to load trigger-based-actions.js')"></script>
+    <script>
+        // Note: Generator page uses its own generateVideo function
+        // Trigger-based actions are available but don't override the main generator
+        // The generator's generateVideo() function handles video generation directly
+        console.log('[Generator] Trigger-based actions loaded (available but not overriding generator)');
+    </script>
+<script src="/vidgenerator/static/js/comprehensive-loading-fix.js" onerror="console.warn('Failed to load comprehensive-loading-fix.js')"></script>
+<script src="/vidgenerator/static/js/universal-auto-save-status.js" onerror="console.warn('Failed to load universal-auto-save-status.js')"></script>
+<script src="/vidgenerator/static/js/top50-monetization-frame.js"></script>
+<script src="/vidgenerator/static/js/energy-regeneration-timers.js"></script>
+    <script src="/vidgenerator/static/js/stats-achievements-tracker.js"></script>
+    <script src="/vidgenerator/static/js/image-support.js"></script>
+    <script src="/vidgenerator/static/js/template-effects.js"></script>
+    <script src="/vidgenerator/static/js/template-services.js"></script>
+    <script src="/vidgenerator/static/js/agent-skill-sets.js"></script>
+    <script src="/vidgenerator/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/vidgenerator/static/js/unified-point-counters.js"></script>
+    <script src="/vidgenerator/static/js/comprehensive-api-integration.js"></script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+</body>
+</html>

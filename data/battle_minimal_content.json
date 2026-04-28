@@ -1,0 +1,34 @@
+{
+  "fantasy_resources_template": {
+    "energy": 100,
+    "shards": 3,
+    "boost_tokens": 1
+  },
+  "trophy_definitions": [
+    {
+      "id": "first_skirmish",
+      "name": "First Skirmish",
+      "description": "Complete your first quick battle.",
+      "tier": "bronze",
+      "icon": "\u2694\ufe0f"
+    },
+    {
+      "id": "streak_3",
+      "name": "Hot Streak",
+      "description": "Win 3 quick battles in a row.",
+      "tier": "silver",
+      "icon": "\ud83d\udd25"
+    },
+    {
+      "id": "duelist",
+      "name": "Duelist",
+      "description": "Win a rock-paper-scissors duel vs AI.",
+      "tier": "gold",
+      "icon": "\u2728"
+    }
+  ],
+  "intelligence_defaults": {
+    "avg_duration_seconds": 4,
+    "sample_size_note": "Rolling window; stub analytics until full telemetry."
+  }
+}

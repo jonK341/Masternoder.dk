@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html lang="da" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rulebook | MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        :root { --cp-primary: #FFD700; --cp-card: #151520; --cp-border: rgba(255,215,0,0.25); }
+        body { margin: 0; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%); color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+        .comp-nav { max-width: 900px; margin: 0 auto; padding: 16px 20px; display: flex; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--cp-border); }
+        .comp-nav a { color: var(--cp-primary); text-decoration: none; padding: 8px 12px; border-radius: 8px; background: rgba(255,215,0,0.1); }
+        .comp-main { max-width: 900px; margin: 0 auto; padding: 24px; }
+        h1 { color: var(--cp-primary); font-size: 1.6rem; margin-bottom: 8px; }
+        .rule-block { background: var(--cp-card); border: 1px solid var(--cp-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .rule-block h3 { margin: 0 0 8px; color: var(--cp-primary); font-size: 1rem; }
+        .rule-block p { margin: 0; opacity: 0.9; line-height: 1.5; }
+        .cluster-list, .spell-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .tag { padding: 6px 12px; background: rgba(255,215,0,0.15); border-radius: 8px; font-size: 0.9em; }
+        .rulebook-image { max-width: 100%; border-radius: 12px; border: 2px solid var(--cp-border); margin: 16px 0; }
+        .rulebook-image-caption { font-size: 0.9em; opacity: 0.8; margin-top: 8px; }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div id="navigation-toolbar"></div>
+    <nav class="comp-nav">
+        <a href="/compendium/">← Compendium</a>
+        <a href="/trophies">Trophies</a>
+    </nav>
+    <main class="comp-main">
+        <h1 id="rulebook-title">Loading…</h1>
+        <p id="rulebook-desc" class="comp-sub"></p>
+        <div id="rulebook-content"></div>
+        <nav class="comp-nav" style="border-bottom: none; margin-top: 24px;"><a href="/compendium/">← Tilbage til Compendium</a></nav>
+    </main>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        (function() {
+            var path = (window.location.pathname || '').replace(/\/+$/, '');
+            var m = path.match(/\/rulebook-v(\d+)(?:-(\d+))?(?:\.html)?$/i);
+            var v = m ? ('v' + m[1] + (m[2] != null && m[2] !== '' ? '.' + m[2] : '')) : 'v1';
+            var apis = [
+                '/api/rulebooks/' + v,
+                '/api/rulebooks/' + v,
+                '/api/rulebooks/' + v.replace('v', ''),
+                '/api/rulebooks/' + v.replace('v', '')
+            ];
+
+            function getRulebookFromApis(i) {
+                if (i >= apis.length) return Promise.reject(new Error('No rulebook API available'));
+                return fetch(apis[i]).then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                }).then(function(res) {
+                    if (!res || res.success === false) throw new Error('Invalid rulebook payload');
+                    return res;
+                }).catch(function() {
+                    return getRulebookFromApis(i + 1);
+                });
+            }
+
+            getRulebookFromApis(0).then(function(res) {
+                var rb = res.rulebook || {};
+                document.getElementById('rulebook-title').textContent = (rb._meta && rb._meta.icon ? rb._meta.icon + ' ' : '') + (rb.name || 'Rulebook ' + v);
+                document.getElementById('rulebook-desc').textContent = rb.description || '';
+                var el = document.getElementById('rulebook-content');
+                var html = '';
+                if (rb.image_url) {
+                    html += '<div class="rule-block"><img class="rulebook-image" src="' + rb.image_url + '" alt="' + (rb.image_alt || rb.name || '') + '">' + (rb.image_caption ? '<p class="rulebook-image-caption">' + rb.image_caption + '</p>' : '') + '</div>';
+                }
+                if (rb.images && rb.images.length) {
+                    rb.images.forEach(function(img) {
+                        html += '<div class="rule-block"><img class="rulebook-image" src="' + (img.url || img) + '" alt="' + (img.alt || '') + '">' + (img.caption ? '<p class="rulebook-image-caption">' + img.caption + '</p>' : '') + '</div>';
+                    });
+                }
+                if (rb.rules && rb.rules.length) {
+                    rb.rules.forEach(function(r) {
+                        html += '<div class="rule-block"><h3>' + (r.name || r.id) + '</h3><p>' + (r.text || '') + '</p></div>';
+                    });
+                }
+                if (rb.cross_rulebook_routing && typeof rb.cross_rulebook_routing === 'object') {
+                    html += '<div class="rule-block"><h3>Cross rulebook routing</h3><ul style="margin:0;padding-left:1.2em;line-height:1.5;">';
+                    Object.keys(rb.cross_rulebook_routing).forEach(function(k) {
+                        var val = rb.cross_rulebook_routing[k];
+                        if (typeof val === 'string') {
+                            html += '<li><strong>' + k + '</strong>: ' + val + '</li>';
+                        }
+                    });
+                    html += '</ul></div>';
+                }
+                if (rb.monthly_theme_catalog && rb.monthly_theme_catalog.length) {
+                    html += '<div class="rule-block"><h3>Monthly theme catalog</h3><ul style="margin:0;padding-left:1.2em;line-height:1.5;">';
+                    rb.monthly_theme_catalog.forEach(function(row) {
+                        html += '<li>' + (row.month != null ? row.month : '') + ' — <strong>' + (row.name || row.item_id || '') + '</strong>' + (row.summary ? ': ' + row.summary : '') + '</li>';
+                    });
+                    html += '</ul></div>';
+                }
+                if (rb.clusters && rb.clusters.length) {
+                    rb.clusters.forEach(function(c) {
+                        html += '<div class="rule-block"><h3>' + (c.name || c.id) + '</h3><div class="cluster-list">' + (c.effects || []).map(function(e) { return '<span class="tag">' + e + '</span>'; }).join('') + '</div></div>';
+                    });
+                }
+                if (rb.point_types && rb.point_types.length) {
+                    html += '<div class="rule-block"><h3>Point types</h3><div class="cluster-list">' + rb.point_types.map(function(p) { return '<span class="tag">' + p + '</span>'; }).join('') + '</div></div>';
+                }
+                if (rb.specials && rb.specials.length) {
+                    html += '<div class="rule-block"><h3>Specials</h3><div class="cluster-list">' + rb.specials.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + '</div></div>';
+                }
+                if (rb.spells && rb.spells.length) {
+                    html += '<div class="rule-block"><h3>Spells</h3><div class="spell-list">' + rb.spells.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + '</div></div>';
+                }
+                if (rb.documentation) html += '<div class="rule-block"><h3>Documentation</h3><p>' + rb.documentation + '</p></div>';
+                if (rb.finish_lines && rb.finish_lines.length) html += '<div class="rule-block"><h3>Finish lines</h3><ul>' + rb.finish_lines.map(function(l) { return '<li>' + l + '</li>'; }).join('') + '</ul></div>';
+                if (rb.sync_domains && rb.sync_domains.length) {
+                    html += '<div class="rule-block"><h3>Sync domains</h3><table style="width:100%;border-collapse:collapse;"><tr><th style="text-align:left;padding:6px;">Domain</th><th style="text-align:left;padding:6px;">Source</th><th style="text-align:left;padding:6px;">Description</th></tr>';
+                    rb.sync_domains.forEach(function(d) {
+                        html += '<tr><td style="padding:6px;border-top:1px solid var(--cp-border);">' + (d.id || '') + '</td><td style="padding:6px;border-top:1px solid var(--cp-border);">' + (d.source || '') + '</td><td style="padding:6px;border-top:1px solid var(--cp-border);">' + (d.description || '') + '</td></tr>';
+                    });
+                    html += '</table></div>';
+                }
+                if (rb.agent_prompt) html += '<div class="rule-block"><h3>Agent prompt</h3><p>' + rb.agent_prompt + '</p></div>';
+                if (rb.tech_spec) html += '<div class="rule-block"><h3>Tech spec</h3><p>' + rb.tech_spec + '</p></div>';
+                if (rb.user_guide) html += '<div class="rule-block"><h3>User guide</h3><p>' + rb.user_guide + '</p></div>';
+                if (rb.manual) html += '<div class="rule-block"><h3>Manual</h3><p>' + rb.manual + '</p></div>';
+                if (rb.sectors && typeof rb.sectors === 'object') {
+                    Object.keys(rb.sectors).forEach(function(sid) {
+                        var s = rb.sectors[sid];
+                        if (!s || !s.spells) return;
+                        html += '<div class="rule-block"><h3>' + (s.name || sid) + '</h3><div class="spell-list">';
+                        s.spells.forEach(function(sp) {
+                            html += '<span class="tag">' + (sp.icon || '') + ' ' + (sp.name || sp.id) + ' (' + (sp.cost || 0) + ')</span>';
+                        });
+                        html += '</div></div>';
+                    });
+                }
+                el.innerHTML = html || '<p>Ingen indhold.</p>';
+            }).catch(function() {
+                document.getElementById('rulebook-title').textContent = 'Rulebook ' + v.toUpperCase();
+                document.getElementById('rulebook-desc').textContent = 'Rulebook API unavailable - fallback mode.';
+                document.getElementById('rulebook-content').innerHTML = '<div class="rule-block"><h3>Fallback</h3><p>Kunne ikke hente rulebook-data lige nu. Prøv igen om lidt.</p></div>';
+            });
+        })();
+    </script>
+    <script src="/static/js/compendium-view-tracker.js"></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

@@ -1,0 +1,1578 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab - MasterNoder</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <style>
+        .lab-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+        .lab-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-xl);
+        }
+        .lab-header h1 {
+            font-size: var(--font-size-5xl);
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .lab-placeholder {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            text-align: left;
+            color: var(--text-secondary);
+        }
+        .lab-placeholder p { margin: var(--spacing-md) 0; }
+        .lab-card { margin: 24px 0; padding: 20px; background: rgba(21,21,32,0.8); border: 1px solid rgba(255,215,0,0.25); border-radius: 12px; }
+        .lab-card h2 { color: #FFD700; margin-bottom: 12px; font-size: 1.25em; }
+        .lab-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .lab-btn { padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; text-decoration: none; display: inline-block; border: 1px solid; transition: opacity 0.2s; }
+        .lab-btn:hover { opacity: 0.9; }
+        .lab-btn-primary { background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2)); border-color: rgba(255,215,0,0.6); color: #FFD700; }
+        .lab-btn-success { background: rgba(0,255,136,0.15); border-color: rgba(0,255,136,0.4); color: #00ff88; }
+        .lab-btn-info { background: rgba(33,150,243,0.15); border-color: rgba(33,150,243,0.4); color: #2196F3; }
+        .lab-chapter {
+            max-width: 1100px;
+            margin: 0 auto 32px;
+            padding: 28px 24px 8px;
+            background: linear-gradient(180deg, rgba(138, 43, 226, 0.12), rgba(21, 21, 32, 0.5));
+            border: 1px solid rgba(186, 104, 255, 0.35);
+            border-radius: 16px;
+        }
+        .lab-chapter-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #e0b0ff;
+            border: 1px solid rgba(224, 176, 255, 0.45);
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+        .lab-chapter h2.chapter-title {
+            color: #f3e5ff;
+            font-size: 1.65rem;
+            margin: 0 0 12px;
+            font-weight: 600;
+        }
+        .lab-chapter-lede {
+            color: rgba(230, 220, 255, 0.88);
+            font-size: 0.98rem;
+            line-height: 1.55;
+            margin: 0 0 22px;
+            max-width: 720px;
+        }
+        .lab-upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .lab-upgrade-tile {
+            text-align: left;
+            padding: 14px 14px 12px;
+            border-radius: 10px;
+            background: rgba(12, 10, 24, 0.85);
+            border: 1px solid rgba(186, 104, 255, 0.22);
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .lab-upgrade-tile:hover {
+            border-color: rgba(255, 215, 0, 0.45);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.12);
+        }
+        .lab-upgrade-tile.researched {
+            border-color: rgba(0, 255, 136, 0.45);
+            background: rgba(0, 40, 28, 0.35);
+        }
+        .lab-upgrade-tile .u-icon { font-size: 1.35rem; margin-bottom: 6px; }
+        .lab-upgrade-tile .u-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+            line-height: 1.25;
+        }
+        .lab-upgrade-tile .u-desc {
+            color: rgba(200, 195, 220, 0.9);
+            font-size: 0.78rem;
+            line-height: 1.45;
+            margin-bottom: 8px;
+        }
+        .lab-upgrade-tile .u-tier {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #b794f6;
+        }
+        .lab-upgrade-tile.researched .u-tier { color: #00ff88; }
+        .lab-upgrade-tile.locked {
+            opacity: 0.42;
+            cursor: not-allowed;
+            filter: grayscale(0.35);
+        }
+        .lab-upgrade-tile.locked .u-tier { color: #888; }
+        .lab-cd {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.78rem;
+            color: #ffcc66;
+            letter-spacing: 0.02em;
+        }
+        .lab-upgrade-tile .lab-cd-slot {
+            margin-top: 4px;
+            font-size: 0.68rem;
+            color: #ffcc66;
+            min-height: 1em;
+        }
+        .lab-chapter-foot {
+            margin-top: 14px;
+            font-size: 0.8rem;
+            color: rgba(180, 170, 210, 0.75);
+        }
+        .lab-doc-card {
+            margin: 0 auto 28px;
+            max-width: 920px;
+            padding: 18px 20px;
+            border-radius: 14px;
+            border: 1px solid rgba(127, 219, 255, 0.28);
+            background: rgba(8, 24, 40, 0.45);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        .lab-doc-card h2 { margin: 0 0 10px; font-size: 1.1rem; color: #7fdbff; }
+        .lab-doc-card summary { cursor: pointer; color: #a8e6ff; font-weight: 600; }
+        .lab-doc-card table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 8px; }
+        .lab-doc-card th, .lab-doc-card td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .lab-doc-card ul { margin: 8px 0 0; padding-left: 1.15rem; opacity: 0.92; }
+        .lab-product-workbench {
+            margin: 0 auto 28px;
+            max-width: 1100px;
+            padding: 18px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 215, 0, 0.24);
+            background: radial-gradient(circle at top left, rgba(255, 215, 0, 0.11), transparent 34%), rgba(14, 12, 28, 0.78);
+        }
+        .lab-product-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .lab-product-head h2 { margin: 0 0 6px; color: #FFD700; font-size: 1.2rem; }
+        .lab-product-head p { margin: 0; opacity: 0.82; font-size: 0.88rem; max-width: 680px; line-height: 1.5; }
+        .lab-product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .lab-product {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.24);
+            padding: 12px;
+        }
+        .lab-product-title { display: flex; gap: 8px; align-items: center; color: #fff; font-weight: 700; font-size: 0.92rem; }
+        .lab-product-copy { margin: 7px 0 10px; color: rgba(230, 224, 255, 0.82); font-size: 0.78rem; line-height: 1.45; }
+        .lab-product-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border: 1px solid rgba(127, 219, 255, 0.32);
+            color: #7fdbff;
+        }
+        .lab-product-status.ready { border-color: rgba(0,255,136,0.38); color: #00ff88; }
+        .lab-product-status.waiting { border-color: rgba(255,204,102,0.38); color: #ffcc66; }
+        .lab-product-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .lab-product-output {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 10px;
+        }
+        .lab-output-panel {
+            min-height: 86px;
+            max-height: 220px;
+            overflow: auto;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(127, 219, 255, 0.2);
+            background: rgba(0, 0, 0, 0.26);
+            font-size: 0.78rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+        .lab-upgrade-tile.recommended {
+            border-color: rgba(255, 215, 0, 0.72);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.18), 0 12px 28px rgba(255, 215, 0, 0.08);
+            transform: translateY(-1px);
+        }
+        .lab-upgrade-tile.recommended::after {
+            content: "Recommended next";
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            font-size: 0.66rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .lab-agent-lab {
+            margin: 0 auto 28px;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+            gap: 14px;
+        }
+        .lab-panel {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(127, 219, 255, 0.24);
+            background: rgba(6, 14, 28, 0.62);
+        }
+        .lab-panel h2 { margin: 0 0 8px; color: #7fdbff; font-size: 1.1rem; }
+        .lab-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+        .lab-mini-card { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.24); border: 1px solid rgba(255,255,255,0.08); }
+        .lab-mini-card strong { display:block; color:#fff; font-size:1rem; }
+        .lab-mini-card span { display:block; opacity:0.72; font-size:0.72rem; margin-top:3px; text-transform:uppercase; letter-spacing:0.04em; }
+        .lab-roundtable-list, .lab-project-list, .lab-todo-list { display: grid; gap: 8px; margin-top: 10px; }
+        .lab-roundtable-msg, .lab-project-row, .lab-todo-row {
+            padding: 9px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.22);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+        .lab-roundtable-msg.agent { border-color: rgba(0,255,136,0.24); }
+        .lab-monitor-4d {
+            position: relative;
+            min-height: 210px;
+            overflow: hidden;
+            border-color: rgba(255,215,0,0.32);
+            background: radial-gradient(circle at 25% 25%, rgba(0,255,136,0.16), transparent 26%), radial-gradient(circle at 75% 30%, rgba(127,219,255,0.16), transparent 24%), rgba(5, 8, 20, 0.74);
+        }
+        .lab-monitor-orb {
+            position: absolute;
+            width: 86px;
+            height: 86px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,215,0,0.34);
+            box-shadow: 0 0 34px rgba(255,215,0,0.14);
+            animation: labOrbit 8s linear infinite;
+        }
+        .lab-monitor-orb:nth-child(1) { left: 16%; top: 26%; }
+        .lab-monitor-orb:nth-child(2) { right: 18%; top: 18%; animation-duration: 11s; border-color: rgba(127,219,255,0.42); }
+        .lab-monitor-orb:nth-child(3) { left: 44%; bottom: 12%; animation-duration: 13s; border-color: rgba(0,255,136,0.36); }
+        @keyframes labOrbit {
+            from { transform: rotate(0deg) translateX(8px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(8px) rotate(-360deg); }
+        }
+        .lab-monitor-content { position: relative; z-index: 2; }
+        @media (max-width: 760px) {
+            .lab-product-output { grid-template-columns: 1fr; }
+            .lab-agent-lab { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body class="layout-standard">
+    <div id="navigation-toolbar"></div>
+    <div class="lab-page container" data-page-layout="standard">
+        <header class="lab-header">
+            <h1>🔬 Lab</h1>
+            <p class="subtitle">Experiments • Agent Tech • 3D Monitor</p>
+        </header>
+        <div class="lab-placeholder">
+            <p><strong>Lab</strong> is the place for experiments, agent technologies, and advanced features.</p>
+
+            <div class="lab-doc-card" id="lab-documentation" aria-labelledby="lab-doc-title">
+                <h2 id="lab-doc-title">📚 Documentation &amp; ideas</h2>
+                <p style="margin:0 0 10px;opacity:0.9;">Contributor handbook (APIs, profile keys, catalog, deploy, troubleshooting) lives in the repo at <code>docs/LAB.md</code> — also listed in <code>deploy.py</code> so it ships with production mirrors.</p>
+                <details style="margin-top:12px;">
+                    <summary>Quick API reference</summary>
+                    <table>
+                        <thead><tr><th>Method</th><th>Path</th><th>Role</th></tr></thead>
+                        <tbody>
+                            <tr><td>GET</td><td><code>/api/lab/progression</code></td><td>Catalog + unlocks + cooldown remainders + explore summary.</td></tr>
+                            <tr><td>POST</td><td><code>/api/lab/explore</code></td><td>Exploration pulse (3h cooldown).</td></tr>
+                            <tr><td>GET/POST</td><td><code>/api/lab/chapter2-research</code></td><td>Research set; POST validates unlocks + re-research gates.</td></tr>
+                            <tr><td>GET/POST</td><td><code>/api/lab/technologies</code></td><td>Co-tech drafts (POST 1h spacing).</td></tr>
+                            <tr><td>POST</td><td><code>/api/lab/technologies/&lt;id&gt;/agent-refine</code></td><td>Agent notes (10h per draft).</td></tr>
+                        </tbody>
+                    </table>
+                </details>
+                <details style="margin-top:10px;">
+                    <summary>Profile keys (hunters_profiles.profile_data)</summary>
+                    <p style="margin:8px 0 4px;font-size:0.8rem;opacity:0.88;"><code>lab_chapter2_research</code>, <code>lab_chapter2_bonus_awarded</code>, <code>lab_research_reenable_after</code>, <code>lab_exploration</code>, <code>lab_technologies</code>, <code>lab_next_tech_draft_at</code> — see handbook for semantics.</p>
+                </details>
+                <details style="margin-top:10px;">
+                    <summary>Ideas for future lab work</summary>
+                    <ul>
+                        <li><strong>Research log</strong> — timeline from unified points ledger filtered by <code>lab_*</code> reasons.</li>
+                        <li><strong>Unlock tooltips</strong> — parse catalog <code>unlock</code> into plain requirements on hover.</li>
+                        <li><strong>Recommended next node</strong> — one highlighted “cheapest path” unlocked tile.</li>
+                        <li><strong>Chapter IV</strong> — new catalog rows behind foundry core + feature flag.</li>
+                        <li><strong>Deep scan pulse</strong> — alternate exploration with longer CD and higher payout (A/B in JSON).</li>
+                        <li><strong>Co-tech lifecycle</strong> — draft → suggested → accepted → archived; optional export to rulebook appendix.</li>
+                    </ul>
+                    <p style="margin:8px 0 0;font-size:0.76rem;opacity:0.72;">More items + troubleshooting in <code>docs/LAB.md</code> § Ideas backlog.</p>
+                </details>
+            </div>
+
+            <section class="lab-product-workbench" id="lab-product-workbench" aria-labelledby="lab-product-title">
+                <div class="lab-product-head">
+                    <div>
+                        <h2 id="lab-product-title">🧫 Ideas backlog workbench</h2>
+                        <p id="lab-product-lede">The handbook backlog is now represented on the site: research log, unlock hints, recommended next node, share card, agent hook, Chapter IV stubs, deep scan, co-tech lifecycle, localization, and offline queue.</p>
+                    </div>
+                    <label style="display:flex;flex-direction:column;gap:4px;font-size:0.78rem;color:rgba(230,224,255,0.82);">Lab language
+                        <select id="lab-locale-select" style="padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(0,0,0,0.4);color:#fff;">
+                            <option value="en">English</option>
+                            <option value="da">Dansk</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="lab-product-grid" id="lab-product-grid"></div>
+                <div class="lab-product-actions">
+                    <button type="button" id="btn-lab-load-log" class="lab-btn lab-btn-info">Load research log</button>
+                    <button type="button" id="btn-lab-share-card" class="lab-btn lab-btn-primary">Copy share card</button>
+                    <button type="button" id="btn-lab-register-hook" class="lab-btn lab-btn-success">Register agent hook</button>
+                    <button type="button" id="btn-lab-replay-offline" class="lab-btn lab-btn-info">Replay offline queue</button>
+                </div>
+                <div class="lab-product-output">
+                    <div class="lab-output-panel" id="lab-research-log-output">Research log will appear here.</div>
+                    <div class="lab-output-panel" id="lab-share-output">Share card, hook status, and offline queue status will appear here.</div>
+                </div>
+            </section>
+
+            <section class="lab-agent-lab" id="lab-agent-presence" aria-label="Lab agent presence and monitor">
+                <div class="lab-panel">
+                    <h2>🤖 Agent presence &amp; research projects</h2>
+                    <p style="margin:0;opacity:0.82;font-size:0.86rem;">Tools now have named agent owners. Research projects use a 6h creation cooldown and appear in the Profile logbook.</p>
+                    <div class="lab-mini-grid" id="lab-tool-grid"></div>
+                    <div style="display:grid;gap:8px;margin-top:12px;">
+                        <input id="lab-project-title" type="text" maxlength="120" placeholder="Research project title" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;">
+                        <textarea id="lab-project-question" rows="3" maxlength="2000" placeholder="Research question, hypothesis, or project acceptance test" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;font-family:inherit;"></textarea>
+                        <div class="lab-actions" style="margin:0;">
+                            <select id="lab-project-track" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;">
+                                <option value="tech_progression">Tech progression</option>
+                                <option value="agents">Agents</option>
+                                <option value="unified_points">Unified points</option>
+                                <option value="monitor_4d">4D monitor</option>
+                                <option value="research">Research</option>
+                            </select>
+                            <button type="button" id="btn-lab-create-project" class="lab-btn lab-btn-success">Start research project</button>
+                            <span id="lab-project-cooldown" class="lab-cd" aria-live="polite"></span>
+                        </div>
+                    </div>
+                    <div class="lab-project-list" id="lab-project-list"></div>
+                </div>
+                <div class="lab-panel lab-monitor-4d">
+                    <div class="lab-monitor-orb"></div>
+                    <div class="lab-monitor-orb"></div>
+                    <div class="lab-monitor-orb"></div>
+                    <div class="lab-monitor-content">
+                        <h2>🖥️ 4D research monitor</h2>
+                        <p style="margin:0 0 10px;opacity:0.82;font-size:0.86rem;">Research, agents, economy, and time cooldowns in one live overview. Sound starts only when you press the button.</p>
+                        <div class="lab-mini-grid" id="lab-monitor-metrics"></div>
+                        <div class="lab-actions">
+                            <button type="button" id="btn-lab-monitor-sound" class="lab-btn lab-btn-primary">Play monitor sound</button>
+                            <button type="button" id="btn-lab-refresh-overview" class="lab-btn lab-btn-info">Refresh overview</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="lab-panel">
+                    <h2>🪑 Round table discussion room</h2>
+                    <p style="margin:0;opacity:0.82;font-size:0.86rem;">Researchers and agents can add short notes. Tech progression and project status stay visible on the same table.</p>
+                    <div style="display:grid;gap:8px;margin-top:10px;">
+                        <input id="lab-roundtable-speaker" type="text" maxlength="80" value="Researcher" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;">
+                        <textarea id="lab-roundtable-message" rows="3" maxlength="1200" placeholder="Add a discussion point for agents and researchers..." style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;font-family:inherit;"></textarea>
+                        <div class="lab-actions" style="margin:0;">
+                            <select id="lab-roundtable-role" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;">
+                                <option value="researcher">Researcher</option>
+                                <option value="agent">Agent</option>
+                            </select>
+                            <button type="button" id="btn-lab-roundtable-send" class="lab-btn lab-btn-success">Add to round table</button>
+                        </div>
+                    </div>
+                    <div class="lab-roundtable-list" id="lab-roundtable-list"></div>
+                </div>
+                <div class="lab-panel">
+                    <h2>✅ Always-on activity list</h2>
+                    <p style="margin:0;opacity:0.82;font-size:0.86rem;">The monitor always returns ten lab todo points.</p>
+                    <div class="lab-todo-list" id="lab-todo-list"></div>
+                </div>
+            </section>
+
+            <section class="lab-chapter" id="lab-chapter-2" aria-labelledby="chapter-2-title">
+                <span class="lab-chapter-badge">Chapters II–III</span>
+                <h2 class="chapter-title" id="chapter-2-title">Resonance Foundry &amp; exploration rails</h2>
+                <p class="lab-chapter-lede">
+                    Research nodes unlock from <strong>hunter level</strong>, <strong>hunter XP</strong>, <strong>unified points</strong> (game, battle, …), and <strong>prerequisite nodes</strong>—same progression as the Hunters game and Profile economy.
+                    First-time research grants unified points and hunter XP on the server. Some nodes use a <strong>1h / 3h / 10h re-research cooldown</strong> after you clear them. <strong>Exploration pulse</strong> uses a <strong>3h</strong> profile cooldown. Co-tech: <strong>1h</strong> between new drafts, <strong>10h</strong> between agent refines per draft.
+                </p>
+                <details class="lab-cd-policy" style="margin:12px 0 16px;padding:10px 14px;border-radius:10px;border:1px solid rgba(183,148,246,0.35);background:rgba(12,10,24,0.55);font-size:0.82rem;max-width:920px;">
+                    <summary style="cursor:pointer;color:#c4b5fd;font-weight:600;">Cooldown policy (nodes + projects)</summary>
+                    <p style="margin:10px 0 8px;opacity:0.92;line-height:1.5;">Timers start when you <strong>clear</strong> a researched node (re-research gate), when you <strong>save a co-tech draft</strong> (1h), after <strong>agent refine</strong> on that draft (10h), or after an <strong>exploration pulse</strong> (3h).</p>
+                    <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+                        <thead><tr style="text-align:left;border-bottom:1px solid rgba(255,215,0,0.25);"><th style="padding:6px 8px;">Tier</th><th style="padding:6px 8px;">Duration</th><th style="padding:6px 8px;">Applies to</th></tr></thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><td style="padding:6px 8px;">1h</td><td style="padding:6px 8px;">3600s</td><td style="padding:6px 8px;">Light Ch.II tools (codec, cache, chrono, echo dampener, magnetometer, helix bus, events horizon, gallery orbit). <em>Also:</em> new co-tech draft spacing (profile).</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);"><td style="padding:6px 8px;">3h</td><td style="padding:6px 8px;">10800s</td><td style="padding:6px 8px;">Gated Ch.II nodes + geo-anchor; all Ch.III exploration rails except rule fold / core lock. <em>Also:</em> exploration pulse (profile).</td></tr>
+                            <tr><td style="padding:6px 8px;">10h</td><td style="padding:6px 8px;">36000s</td><td style="padding:6px 8px;">Points prism, rulebook node, foundry key, rule fold, foundry core. <em>Also:</em> agent refine per technology draft.</td></tr>
+                        </tbody>
+                    </table>
+                    <p style="margin:8px 0 0;opacity:0.75;font-size:0.74rem;">Exact per-node seconds live in <code>data/lab_progression_catalog.json</code> (<code>research_cooldown_sec</code>).</p>
+                </details>
+                <div class="lab-upgrade-grid" id="lab-upgrade-grid-ch2" role="list"></div>
+                <div class="lab-actions" style="margin-top:12px;flex-wrap:wrap;align-items:center;">
+                    <button type="button" id="btn-lab-explore" class="lab-btn lab-btn-info">🔭 Exploration pulse</button>
+                    <button type="button" id="btn-lab-deep-scan" class="lab-btn lab-btn-primary">🛰️ Deep scan pulse</button>
+                    <span id="lab-explore-countdown" class="lab-cd" style="margin-left:10px;" aria-live="polite"></span>
+                    <span id="lab-deep-scan-countdown" class="lab-cd" style="margin-left:10px;" aria-live="polite"></span>
+                    <span style="font-size:0.78rem;opacity:0.75;margin-left:10px;">Pulse: +3 activity · +1 game · +6 XP. Deep scan: +9 activity · +4 game · +20 XP.</span>
+                </div>
+                <p id="lab-explore-status" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:0.85rem;"></p>
+                <p class="lab-chapter-foot" id="lab-chapter2-progress"></p>
+            </section>
+
+            <div class="lab-card" id="lab-co-tech-card">
+                <h2>🧪 Co-create technologies (you + agents)</h2>
+                <p style="opacity:0.9;">Draft a new platform technology. Your <code>game_user_id</code> owns the draft; a partner agent id labels who should refine it. <strong>Agent refine</strong> runs an LLM pass when the server has a model configured, otherwise you get a structured stub.</p>
+                <div id="lab-tech-form-status" style="display:none;margin-bottom:12px;padding:10px;border-radius:8px;font-size:0.9rem;"></div>
+                <div style="display:grid;gap:10px;max-width:720px;margin-bottom:16px;">
+                    <label style="display:flex;flex-direction:column;gap:4px;font-size:0.85rem;">Title
+                        <input id="lab-tech-name" type="text" maxlength="120" placeholder="e.g. Latency-aware storyboard diff" style="padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(0,0,0,0.4);color:#fff;">
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:4px;font-size:0.85rem;">Pitch
+                        <textarea id="lab-tech-pitch" rows="4" maxlength="4000" placeholder="What it does, who benefits, one acceptance test…" style="padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(0,0,0,0.4);color:#fff;font-family:inherit;"></textarea>
+                    </label>
+                    <p id="lab-draft-cooldown" class="lab-cd" style="display:none;margin-bottom:8px;" aria-live="polite"></p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+                        <label style="display:flex;flex-direction:column;gap:4px;font-size:0.85rem;">Track
+                            <select id="lab-tech-category" style="padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(0,0,0,0.4);color:#fff;">
+                                <option value="general">General</option>
+                                <option value="video">Video</option>
+                                <option value="agents">Agents</option>
+                                <option value="electric_magnet">Electric Magnet</option>
+                                <option value="debugger">Debugger</option>
+                                <option value="shop">Shop</option>
+                                <option value="battle">Battle</option>
+                                <option value="mn2">MN2</option>
+                                <option value="social">Social</option>
+                            </select>
+                        </label>
+                        <label style="display:flex;flex-direction:column;gap:4px;font-size:0.85rem;">Partner agent id
+                            <input id="lab-tech-agent" type="text" maxlength="80" value="lab_agent" style="padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(0,0,0,0.4);color:#fff;min-width:180px;">
+                        </label>
+                        <button type="button" id="btn-lab-tech-create" class="lab-btn lab-btn-primary">Save draft</button>
+                    </div>
+                </div>
+                <h3 style="color:#FFD700;font-size:1.05rem;margin-bottom:10px;">Your drafts</h3>
+                <div id="lab-tech-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+            </div>
+            
+            <div class="lab-card">
+                <h2>🧲 Electric Magnet Technology</h2>
+                <p style="opacity: 0.9;">Advanced agent technology with verification, DNA testing, and star map capabilities.</p>
+                <div id="em-tech-status" style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;"></div>
+                <div class="lab-actions">
+                    <button id="btn-lab-download-em" class="lab-btn lab-btn-primary">📥 Download Electric Magnet</button>
+                    <button id="btn-lab-check-em" class="lab-btn lab-btn-success">🔍 Check Status</button>
+                    <button id="btn-lab-verify" class="lab-btn lab-btn-success">✔️ Run Verification</button>
+                    <button id="btn-lab-dna" class="lab-btn lab-btn-success">🧬 DNA Test</button>
+                </div>
+                <div id="em-specials" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,215,0,0.2); display: none;">
+                    <h3 style="color: #FFD700; margin-bottom: 12px; font-size: 1.2em;">Available Specials:</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <span style="padding: 8px 16px; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 6px; color: #00ff88;">✔️ Verification</span>
+                        <span style="padding: 8px 16px; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 6px; color: #00ff88;">🧬 DNA Test</span>
+                        <span style="padding: 8px 16px; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 6px; color: #00ff88;">🗺️ Star Map</span>
+                    </div>
+                </div>
+                <div id="lab-em-result" style="margin-top: 12px; padding: 10px; border-radius: 8px; display: none; font-size: 0.95em;"></div>
+            </div>
+
+            <div class="lab-card">
+                <h2>🗺️ Star Map &amp; Trophies</h2>
+                <p style="opacity: 0.9;">7 nearest stars, host→b planets. Electric Magnet specials on Star Map tab.</p>
+                <div class="lab-actions">
+                    <a href="/trophies" class="lab-btn lab-btn-primary">🏆 Trophies</a>
+                    <a href="/game" class="lab-btn lab-btn-info">🎮 Hunters Game</a>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.85;">Open Trophies → Star Map tab for 7 nearest stars and Electric Magnet specials.</p>
+            </div>
+
+            <div class="lab-card">
+                <h2>🎯 Event Tracker</h2>
+                <p style="opacity: 0.9;">Track new tasks. View recent tasks from agents.</p>
+                <div class="lab-actions">
+                    <button id="btn-lab-new-task" class="lab-btn lab-btn-success">➕ New Task</button>
+                    <a href="/debugger" class="lab-btn lab-btn-info">🔧 Debugger (Agent Tech)</a>
+                </div>
+                <div id="lab-et-status" style="margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;"></div>
+            </div>
+
+            <div class="lab-card" id="lab-agent-test-card">
+                <h2>🤖 Debugger agent test run</h2>
+                <p style="opacity: 0.9;">Runs assign → complete for a standard systems task. Awards unified points to your <code>game_user_id</code> (same as Profile).</p>
+                <div class="lab-actions">
+                    <button type="button" id="btn-lab-agent-run" class="lab-btn lab-btn-primary">Run test cycle</button>
+                    <a href="/debugger" class="lab-btn lab-btn-info">Open Debugger</a>
+                </div>
+                <pre id="lab-agent-test-log" style="display:none;margin-top:12px;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;white-space:pre-wrap;font-size:0.8rem;max-height:280px;overflow:auto;"></pre>
+            </div>
+
+            <div class="lab-card">
+                <h2>🖥️ 3D Monitor</h2>
+                <p style="opacity: 0.9;">3D visual effects for the vidgenerator. Coming soon.</p>
+                <div class="lab-actions">
+                    <span class="lab-btn lab-btn-info" style="cursor: default; opacity: 0.7;">Placeholder — in development</span>
+                </div>
+            </div>
+
+            <p style="margin-top: 30px; opacity: 0.7;">More agent technologies and experiments coming soon.</p>
+            <p>
+                <a href="/debugger" class="nav-link">🔧 Debugger</a> ·
+                <a href="/trophies" class="nav-link">🏆 Trophies</a> ·
+                <a href="/profile?tab=activity" class="nav-link">📊 Profile activity</a>
+            </p>
+        </div>
+    </div>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+        const EM_API_BASE = '/api/agent-tech/agent_electric_magnet';
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const LAB_OFFLINE_QUEUE_KEY = 'lab_offline_queue_v1';
+        const LAB_CATALOG_CACHE_KEY = 'lab_catalog_cache_v1';
+        const LAB_PRODUCTS = [
+            ['research_log', '📓', 'Research log', 'Timeline of research, exploration, deep scans, and co-tech lifecycle events.'],
+            ['unlock_tooltips', '🧭', 'Unlock tooltips', 'Hover/focus tiles to see readable requirements from the catalog.'],
+            ['recommended_next', '✨', 'Recommended next', 'Highlights the next interactable unresearched node.'],
+            ['share_card', '🔗', 'Shareable lab card', 'Copies a compact tier/progress card for profile or social use.'],
+            ['agent_hook', '🪝', 'Agent hook', 'Registers a lab milestone task through Event Tracker.'],
+            ['chapter4', 'Ⅳ', 'Chapter IV stubs', 'Future catalog rows unlock after Foundry Core.'],
+            ['deep_scan', '🛰️', 'Deep scan pulse', 'Rare exploration variant with longer cooldown and higher rewards.'],
+            ['co_tech_lifecycle', '🧪', 'Co-tech lifecycle', 'Move drafts through suggested, accepted, and archived states.'],
+            ['localization', '🌐', 'Localization', 'Switches the workbench copy between English and Danish.'],
+            ['offline_first', '📦', 'Offline queue', 'Caches catalog data and queues lab POST actions while offline.'],
+            ['research_projects', '🧱', 'Research projects', '6h cooldown projects with agent ownership and Profile logbook visibility.'],
+            ['roundtable', '🪑', 'Round table', 'Discussion room for agents and researchers around tech progression.'],
+            ['monitor_4d', '🖥️', '4D monitor', 'Research, agent, economy, and cooldown dimensions with optional sound.'],
+            ['point_results', '💠', 'Point results', 'Unified point systems surfaced inside Lab overview results.'],
+            ['profile_logbook', '📘', 'Profile logbook', 'Profile tab showing lab progress, projects, and research history.']
+        ];
+        const LAB_COPY = {
+            en: {
+                lede: 'The handbook backlog is now represented on the site: research log, unlock hints, recommended next node, share card, agent hook, Chapter IV stubs, deep scan, co-tech lifecycle, localization, and offline queue.',
+                ready: 'Live',
+                waiting: 'Waiting for data',
+                logEmpty: 'No lab log events yet.',
+                logLoading: 'Loading lab log...',
+                shareCopied: 'Share card copied:',
+                queueEmpty: 'Offline queue is empty.',
+                queueDone: 'Offline queue replayed.',
+                hookDone: 'Agent hook registered for lab tier milestone.'
+            },
+            da: {
+                lede: 'Handbook-backloggen findes nu på siden: researchlog, unlock-hints, anbefalet næste node, dele-kort, agent-hook, Chapter IV-stubs, deep scan, co-tech lifecycle, lokalisering og offline-kø.',
+                ready: 'Aktiv',
+                waiting: 'Venter på data',
+                logEmpty: 'Ingen lab-hændelser endnu.',
+                logLoading: 'Henter lab-log...',
+                shareCopied: 'Dele-kort kopieret:',
+                queueEmpty: 'Offline-køen er tom.',
+                queueDone: 'Offline-køen er afspillet.',
+                hookDone: 'Agent-hook registreret for lab-tier milepæl.'
+            }
+        };
+
+        const LAB_CHAPTER2_KEY = 'lab_chapter2_research_v1';
+        const LAB_CHAPTER2_UPGRADES = [
+            { id: 'c2_harmonic_codec', icon: '🎛️', name: 'Harmonic Codec Buffer', desc: 'Smoother batch encoding with adaptive frame pacing for long renders.', tier: 'Signal' },
+            { id: 'c2_magnetometer', icon: '🧭', name: 'Magnetometer Suite', desc: 'Calibrates Electric Magnet drift so verification stays stable across sessions.', tier: 'EM' },
+            { id: 'c2_chrono_sync', icon: '⏱️', name: 'Chrono-Sync Lattice', desc: 'Aligns agent task clocks with server UTC for reproducible debugger traces.', tier: 'Systems' },
+            { id: 'c2_photon_trace', icon: '🔦', name: 'Photon Trace Grid', desc: 'Optional per-frame QA overlays for preview passes before final export.', tier: 'Video' },
+            { id: 'c2_nebula_cache', icon: '☁️', name: 'Nebula Cache Shard', desc: 'Cold-tier storage hints for gallery and shop media without blocking the UI.', tier: 'Storage' },
+            { id: 'c2_sentinel_pulse', icon: '📡', name: 'Sentinel Pulse', desc: 'Proactive health pings for APIs you touch from Lab and Debugger.', tier: 'Ops' },
+            { id: 'c2_glyph_router', icon: '🔀', name: 'Glyph Router Mk-II', desc: 'Intent-aware routing from Lab actions into the right agent skill lanes.', tier: 'Agents' },
+            { id: 'c2_echo_dampener', icon: '🔇', name: 'Echo Chamber Dampener', desc: 'De-duplicates overlapping agent chatter in assign/complete cycles.', tier: 'Agents' },
+            { id: 'c2_quantum_rng', icon: '🎲', name: 'Quantum RNG Sequencer', desc: 'Deterministic chaos seeds for A/B prompt tests without poisoning production.', tier: 'Research' },
+            { id: 'c2_helix_bus', icon: '🧬', name: 'Helix Writer Bus', desc: 'Faster DNA test pipelines with batched checksum stages.', tier: 'EM' },
+            { id: 'c2_aperture_weave', icon: '🌅', name: 'Aperture Weave', desc: 'HDR-aware thumbnail previews for generator outputs.', tier: 'Video' },
+            { id: 'c2_star_loom', icon: '🌌', name: 'Star Loom Alpha', desc: 'Constellation-aware scheduling when Star Map specials queue work.', tier: 'Hunters' },
+            { id: 'c2_trophy_resonator', icon: '🏆', name: 'Trophy Resonator', desc: 'Harmonizes trophy drop telemetry with unified points ledgers.', tier: 'Hunters' },
+            { id: 'c2_debugger_lens', icon: '🔬', name: 'Debugger Lens Stack', desc: 'Multi-layer log diffs for systems vs agent tabs.', tier: 'Debugger' },
+            { id: 'c2_skill_synth', icon: '🧠', name: 'Skill Vector Synthesizer', desc: 'Preview how compound skill merges read before pushing to agents.', tier: 'Skills' },
+            { id: 'c2_shadow_merge', icon: '🛒', name: 'Shop Shadow Merger v2', desc: 'Second-pass consistency for inventory shadow rows after purchases.', tier: 'Shop' },
+            { id: 'c2_mn2_bridge', icon: '💠', name: 'MN2 Bridge Harmonizer', desc: 'Wallet settle retries with backoff tuned for Lab-initiated checks.', tier: 'MN2' },
+            { id: 'c2_et_horizon', icon: '📋', name: 'Event Tracker Horizon', desc: 'Extends visible task history for lab_manual_task and debugger origins.', tier: 'Events' },
+            { id: 'c2_points_prism', icon: '💎', name: 'Unified Points Prism', desc: 'Splits attribution views: activity vs shop vs game in one panel.', tier: 'Economy' },
+            { id: 'c2_rulebook_node', icon: '📜', name: 'Rulebook Compiler Node', desc: 'Hot-reload friendly cache for rulebook JSON used in agent prompts.', tier: 'Rules' },
+            { id: 'c2_social_crest', icon: '👥', name: 'Social Crest Encoder', desc: 'Guild metadata stamps for future social surfaces without breaking profile.', tier: 'Social' },
+            { id: 'c2_battle_ether', icon: '⚔️', name: 'Battle Snapshot Ether', desc: 'Frozen arena state cards for reproducible battle QA.', tier: 'Battle' },
+            { id: 'c2_gallery_orbit', icon: '🖼️', name: 'Gallery Orbit Index', desc: 'Clustered discovery for similar clips in the gallery API.', tier: 'Gallery' },
+            { id: 'c2_geo_anchor', icon: '📍', name: 'Profile Geo-Anchor', desc: 'GPS-weighted activity summaries tied to profile event hooks.', tier: 'Profile' },
+            { id: 'c2_foundry_key', icon: '🗝️', name: 'Foundry Master Key', desc: 'Meta unlock: opens Chapter III resonance paths.', tier: 'Meta' },
+            { id: 'c3_orbit_seed', icon: '🌱', name: 'Orbit Seed Compiler', desc: 'Compiles exploratory lab runs into reusable generator presets.', tier: 'Exploration' },
+            { id: 'c3_residue_map', icon: '🗺️', name: 'Residue Map', desc: 'Maps leftover render energy into trophy hunt bonus lanes.', tier: 'Exploration' },
+            { id: 'c3_echo_budget', icon: '💫', name: 'Echo Budget Router', desc: 'Routes lab echoes into battle replay buffers without double-spend.', tier: 'Exploration' },
+            { id: 'c3_sieve_stack', icon: '🧱', name: 'Sieve Stack Integrity', desc: 'Stacks verification sieves for multi-tab agent sessions.', tier: 'Exploration' },
+            { id: 'c3_coin_halo', icon: '🪙', name: 'Coin Halo Ledger', desc: 'Soft-links shop coin velocity to lab experiment budgets.', tier: 'Exploration' },
+            { id: 'c3_mn2_echo', icon: '🔗', name: 'MN2 Echo Anchor', desc: 'Anchors MN2 settlement retries to lab exploration timestamps.', tier: 'Exploration' },
+            { id: 'c3_star_fold', icon: '✨', name: 'Star Fold Buffer', desc: 'Folds Star Map 25 telemetry into lab readiness scores.', tier: 'Exploration' },
+            { id: 'c3_trophy_drift', icon: '🏹', name: 'Trophy Drift Corrector', desc: 'Corrects trophy drift when lab and hunt sessions interleave.', tier: 'Exploration' },
+            { id: 'c3_social_weft', icon: '🕸️', name: 'Social Weft', desc: 'Weaves social crest experiments into lab co-tech drafts.', tier: 'Exploration' },
+            { id: 'c3_rule_fold', icon: '📐', name: 'Rule Fold Engine', desc: 'Folds rulebook deltas into lab progression snapshots.', tier: 'Exploration' },
+            { id: 'c3_foundry_core', icon: '🜂', name: 'Foundry Core Lock', desc: 'Caps Chapter III when all exploration rails are green.', tier: 'Meta' },
+            { id: 'c4_agent_hook_spire', icon: '🪝', name: 'Agent Hook Spire', desc: 'Chapter IV stub: turns lab tier milestones into opt-in agent tasks.', tier: 'Chapter IV' },
+            { id: 'c4_share_card_forge', icon: '🔗', name: 'Share Card Forge', desc: 'Chapter IV stub: prepares social/profile embed cards from lab summaries.', tier: 'Chapter IV' },
+            { id: 'c4_offline_queue_core', icon: '📦', name: 'Offline Queue Core', desc: 'Chapter IV stub: formalizes queued lab mutations after offline playtests.', tier: 'Chapter IV' }
+        ];
+        window.__labCatalog = null;
+        window.__labFootExtra = null;
+        window.__labExploreCdEnds = 0;
+        window.__labDeepScanCdEnds = 0;
+        window.__labProjectCdEnds = 0;
+        window.__labDraftCdEnds = 0;
+        window.__labCdInterval = null;
+        window.__labOverview = null;
+
+        function labLocale() {
+            return localStorage.getItem('lab_locale') || 'en';
+        }
+        function labT(key) {
+            return (LAB_COPY[labLocale()] && LAB_COPY[labLocale()][key]) || LAB_COPY.en[key] || key;
+        }
+        function labEscape(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function labReadOfflineQueue() {
+            try {
+                const raw = localStorage.getItem(LAB_OFFLINE_QUEUE_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr : [];
+            } catch {
+                return [];
+            }
+        }
+        function labWriteOfflineQueue(queue) {
+            localStorage.setItem(LAB_OFFLINE_QUEUE_KEY, JSON.stringify(queue.slice(-30)));
+            renderLabProducts();
+        }
+        function labQueueOffline(method, url, body) {
+            const queue = labReadOfflineQueue();
+            queue.push({ id: Date.now() + '-' + Math.random().toString(16).slice(2), method, url, body, queued_at: new Date().toISOString() });
+            labWriteOfflineQueue(queue);
+            const out = document.getElementById('lab-share-output');
+            if (out) out.textContent = 'Queued offline action for replay: ' + method + ' ' + url;
+        }
+        async function labPostJson(url, body) {
+            if (!navigator.onLine) {
+                labQueueOffline('POST', url, body);
+                return { success: true, offline_queued: true };
+            }
+            try {
+                const r = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {})
+                });
+                return await r.json();
+            } catch (e) {
+                labQueueOffline('POST', url, body);
+                return { success: true, offline_queued: true, error: String(e && e.message ? e.message : e) };
+            }
+        }
+        async function labReplayOfflineQueue() {
+            const out = document.getElementById('lab-share-output');
+            const queue = labReadOfflineQueue();
+            if (!queue.length) {
+                if (out) out.textContent = labT('queueEmpty');
+                return;
+            }
+            const remaining = [];
+            for (const item of queue) {
+                try {
+                    const r = await fetch(item.url, {
+                        method: item.method || 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item.body || {})
+                    });
+                    const d = await r.json();
+                    if (!d || !d.success) remaining.push(item);
+                } catch (e) {
+                    remaining.push(item);
+                }
+            }
+            labWriteOfflineQueue(remaining);
+            if (out) out.textContent = remaining.length ? (remaining.length + ' offline action(s) still pending.') : labT('queueDone');
+            loadLabProgressionAndRender();
+        }
+        function renderLabProducts() {
+            const grid = document.getElementById('lab-product-grid');
+            const lede = document.getElementById('lab-product-lede');
+            const localeSelect = document.getElementById('lab-locale-select');
+            if (lede) lede.textContent = labT('lede');
+            if (localeSelect) localeSelect.value = labLocale();
+            if (!grid) return;
+            const queueCount = labReadOfflineQueue().length;
+            const hasCatalog = !!(window.__labCatalog && window.__labCatalog.length);
+            grid.innerHTML = LAB_PRODUCTS.map(([id, icon, title, copy]) => {
+                let ready = true;
+                let suffix = '';
+                if (id === 'offline_first') suffix = queueCount ? queueCount + ' queued' : '0 queued';
+                if (id === 'unlock_tooltips' || id === 'recommended_next' || id === 'chapter4') ready = hasCatalog;
+                if (id === 'deep_scan' && window.__labDeepScanCdEnds > Date.now()) suffix = 'cooldown';
+                return '<article class="lab-product">' +
+                    '<div class="lab-product-title"><span aria-hidden="true">' + icon + '</span><span>' + labEscape(title) + '</span></div>' +
+                    '<p class="lab-product-copy">' + labEscape(copy) + '</p>' +
+                    '<span class="lab-product-status ' + (ready ? 'ready' : 'waiting') + '">' + labEscape(ready ? labT('ready') : labT('waiting')) + (suffix ? ' · ' + labEscape(suffix) : '') + '</span>' +
+                    '</article>';
+            }).join('');
+        }
+        async function labLoadResearchLog() {
+            const out = document.getElementById('lab-research-log-output');
+            if (out) out.textContent = labT('logLoading');
+            try {
+                const r = await fetch('/api/lab/research-log?user_id=' + encodeURIComponent(userId));
+                const d = await r.json();
+                if (!d || !d.success || !Array.isArray(d.events) || !d.events.length) {
+                    if (out) out.textContent = labT('logEmpty');
+                    return;
+                }
+                if (out) {
+                    out.textContent = d.events.slice(0, 12).map(function (e) {
+                        return '[' + (e.type || 'lab') + '] ' + (e.label || '') + ' — ' + (e.detail || '') + (e.at ? '\n  ' + e.at : '');
+                    }).join('\n\n');
+                }
+            } catch (e) {
+                if (out) out.textContent = 'Could not load lab log.';
+            }
+        }
+        async function labCopyShareCard() {
+            const out = document.getElementById('lab-share-output');
+            try {
+                const r = await fetch('/api/lab/share-card?user_id=' + encodeURIComponent(userId));
+                const d = await r.json();
+                const card = d && d.card ? d.card : 'MasterNoder Lab';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(card);
+                }
+                if (out) out.textContent = labT('shareCopied') + '\n' + card;
+            } catch (e) {
+                if (out) out.textContent = 'Could not create share card.';
+            }
+        }
+        async function labRegisterAgentHook() {
+            const out = document.getElementById('lab-share-output');
+            const d = await labPostJson('/api/agent-tech/agent_event_tracker/track_new_task', {
+                user_id: userId,
+                task_name: 'lab_tier_threshold_hook',
+                params: { source: 'lab', trigger: 'lab_tier_threshold', catalog_total: (window.__labCatalog || []).length }
+            });
+            if (out) out.textContent = d && d.offline_queued ? 'Agent hook queued for replay.' : labT('hookDone');
+        }
+        function renderLabOverview(d) {
+            if (!d || !d.success) return;
+            window.__labOverview = d;
+            const tools = document.getElementById('lab-tool-grid');
+            if (tools) {
+                tools.innerHTML = (d.tools || []).map(function (t) {
+                    return '<div class="lab-mini-card"><strong>' + labEscape(t.name || t.id) + '</strong><span>' + labEscape((t.agent || 'agent') + ' · ' + (t.cooldown || '')) + '</span></div>';
+                }).join('');
+            }
+            const metrics = document.getElementById('lab-monitor-metrics');
+            const dims = (d.monitor && d.monitor.dimensions) || {};
+            if (metrics) {
+                metrics.innerHTML = [
+                    ['Research', dims.research || 0],
+                    ['Agent presence', dims.agent_presence || 0],
+                    ['Economy', Math.round(Number(dims.economy || 0))],
+                    ['Cooldown seconds', dims.time || 0]
+                ].map(function (row) {
+                    return '<div class="lab-mini-card"><strong>' + labEscape(String(row[1])) + '</strong><span>' + labEscape(row[0]) + '</span></div>';
+                }).join('');
+            }
+            const pointsPanel = document.getElementById('lab-share-output');
+            const systems = (d.point_systems && (d.point_systems.systems || d.point_systems.points)) || {};
+            if (pointsPanel && systems && Object.keys(systems).length) {
+                pointsPanel.textContent = 'Unified point systems in lab results:\n' + Object.keys(systems).slice(0, 10).map(function (k) {
+                    return k + ': ' + systems[k];
+                }).join('\n');
+            }
+            const projectCd = Number(d.project_cooldown_remaining_sec) || 0;
+            window.__labProjectCdEnds = projectCd > 0 ? Date.now() + projectCd * 1000 : 0;
+            const projects = document.getElementById('lab-project-list');
+            if (projects) {
+                const rows = d.projects || [];
+                projects.innerHTML = rows.length ? rows.slice(-8).reverse().map(function (p) {
+                    return '<div class="lab-project-row"><strong style="color:#7fdbff;">' + labEscape(p.title || p.id) + '</strong><br>' +
+                        labEscape(p.track || 'general') + ' · ' + labEscape(p.status || 'active') + ' · ' + (Number(p.progress || 0)) + '%<br>' +
+                        '<span style="opacity:0.72;">' + labEscape(p.question || '') + '</span></div>';
+                }).join('') : '<div class="lab-project-row">No research projects yet.</div>';
+            }
+            const round = document.getElementById('lab-roundtable-list');
+            if (round) {
+                const msgs = d.roundtable || [];
+                round.innerHTML = msgs.length ? msgs.slice(-10).reverse().map(function (m) {
+                    return '<div class="lab-roundtable-msg ' + (m.role === 'agent' ? 'agent' : '') + '"><strong style="color:' + (m.role === 'agent' ? '#00ff88' : '#FFD700') + ';">' + labEscape(m.speaker || m.role || 'Researcher') + '</strong> <span style="opacity:0.65;">' + labEscape(m.topic || 'tech_progression') + '</span><br>' + labEscape(m.message || '') + '</div>';
+                }).join('') : '<div class="lab-roundtable-msg">No discussion yet. Add the first point.</div>';
+            }
+            const todos = document.getElementById('lab-todo-list');
+            if (todos) {
+                todos.innerHTML = (d.todos || []).slice(0, 10).map(function (t, i) {
+                    return '<div class="lab-todo-row"><strong>' + String(i + 1).padStart(2, '0') + '.</strong> ' + labEscape(t.text || '') + '</div>';
+                }).join('');
+            }
+            renderLabProducts();
+            labRefreshCooldownUi();
+        }
+        async function loadLabOverview() {
+            try {
+                const r = await fetch('/api/lab/overview?user_id=' + encodeURIComponent(userId));
+                const d = await r.json();
+                renderLabOverview(d);
+            } catch (e) {
+                renderLabProducts();
+            }
+        }
+        async function labCreateProject() {
+            const titleEl = document.getElementById('lab-project-title');
+            const qEl = document.getElementById('lab-project-question');
+            const trackEl = document.getElementById('lab-project-track');
+            const title = (titleEl && titleEl.value || '').trim();
+            const question = (qEl && qEl.value || '').trim();
+            if (title.length < 2 || question.length < 8) {
+                const out = document.getElementById('lab-share-output');
+                if (out) out.textContent = 'Research project needs a title and an 8+ character question.';
+                return;
+            }
+            const d = await labPostJson('/api/lab/projects', {
+                user_id: userId,
+                title: title,
+                question: question,
+                track: (trackEl && trackEl.value) || 'tech_progression',
+                agent_id: 'lab_project_agent'
+            });
+            const out = document.getElementById('lab-share-output');
+            if (d && d.success) {
+                if (titleEl) titleEl.value = '';
+                if (qEl) qEl.value = '';
+                if (out) out.textContent = d.offline_queued ? 'Research project queued for replay.' : 'Research project started. It is now visible in the profile logbook.';
+                loadLabOverview();
+            } else if (out) {
+                out.textContent = d && d.error === 'project_cooldown'
+                    ? 'Project cooldown: ' + labFormatDuration(d.project_cooldown_remaining_sec || 0) + ' left.'
+                    : (d && d.error ? d.error : 'Could not start project.');
+            }
+        }
+        async function labSendRoundtable() {
+            const speakerEl = document.getElementById('lab-roundtable-speaker');
+            const msgEl = document.getElementById('lab-roundtable-message');
+            const roleEl = document.getElementById('lab-roundtable-role');
+            const message = (msgEl && msgEl.value || '').trim();
+            if (message.length < 2) return;
+            const d = await labPostJson('/api/lab/roundtable/messages', {
+                user_id: userId,
+                speaker: (speakerEl && speakerEl.value || 'Researcher').trim(),
+                role: (roleEl && roleEl.value) || 'researcher',
+                topic: 'tech_progression',
+                message: message
+            });
+            if (d && d.success && msgEl) msgEl.value = '';
+            loadLabOverview();
+        }
+        function labPlayMonitorSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                [164, 246, 392].forEach(function (freq, i) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = i === 0 ? 'sine' : 'triangle';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 0.03 + i * 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55 + i * 0.08);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(ctx.currentTime + i * 0.04);
+                    osc.stop(ctx.currentTime + 0.7 + i * 0.08);
+                });
+            } catch (e) {}
+        }
+        function labFormatDuration(totalSec) {
+            totalSec = Math.max(0, Math.floor(Number(totalSec) || 0));
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            return m + ':' + String(s).padStart(2, '0');
+        }
+        function labRefreshCooldownUi() {
+            const now = Date.now();
+            const exEl = document.getElementById('lab-explore-countdown');
+            const exBtn = document.getElementById('btn-lab-explore');
+            let exRem = 0;
+            if (window.__labExploreCdEnds > now) {
+                exRem = Math.max(0, Math.floor((window.__labExploreCdEnds - now) / 1000));
+            }
+            if (exEl) {
+                exEl.textContent = exRem > 0 ? ('Explore pulse: ' + labFormatDuration(exRem) + ' (3h)') : '';
+            }
+            if (exBtn && exBtn.textContent.indexOf('⏳') === -1) {
+                exBtn.disabled = exRem > 0;
+            }
+
+            const dsEl = document.getElementById('lab-deep-scan-countdown');
+            const dsBtn = document.getElementById('btn-lab-deep-scan');
+            let dsRem = 0;
+            if (window.__labDeepScanCdEnds > now) {
+                dsRem = Math.max(0, Math.floor((window.__labDeepScanCdEnds - now) / 1000));
+            }
+            if (dsEl) {
+                dsEl.textContent = dsRem > 0 ? ('Deep scan: ' + labFormatDuration(dsRem) + ' (12h)') : '';
+            }
+            if (dsBtn && dsBtn.textContent.indexOf('⏳') === -1) {
+                dsBtn.disabled = dsRem > 0;
+            }
+
+            const projectEl = document.getElementById('lab-project-cooldown');
+            const projectBtn = document.getElementById('btn-lab-create-project');
+            let prRem = 0;
+            if (window.__labProjectCdEnds > now) {
+                prRem = Math.max(0, Math.floor((window.__labProjectCdEnds - now) / 1000));
+            }
+            if (projectEl) {
+                projectEl.textContent = prRem > 0 ? ('Research project: ' + labFormatDuration(prRem) + ' (6h)') : '';
+            }
+            if (projectBtn && projectBtn.textContent.indexOf('⏳') === -1) {
+                projectBtn.disabled = prRem > 0;
+            }
+
+            const draftEl = document.getElementById('lab-draft-cooldown');
+            let drRem = 0;
+            if (window.__labDraftCdEnds > now) {
+                drRem = Math.max(0, Math.floor((window.__labDraftCdEnds - now) / 1000));
+            }
+            if (draftEl) {
+                if (drRem > 0) {
+                    draftEl.style.display = 'block';
+                    draftEl.textContent = 'New co-tech draft: ' + labFormatDuration(drRem) + ' (1h)';
+                } else {
+                    draftEl.style.display = 'none';
+                    draftEl.textContent = '';
+                }
+            }
+            const createBtn = document.getElementById('btn-lab-tech-create');
+            if (createBtn && createBtn.textContent.indexOf('⏳') === -1) {
+                createBtn.disabled = drRem > 0;
+            }
+
+            document.querySelectorAll('.lab-upgrade-tile[data-cd-ends]').forEach(function (btn) {
+                const ends = parseInt(btn.getAttribute('data-cd-ends'), 10) || 0;
+                const slot = btn.querySelector('.lab-cd-slot');
+                if (!slot) return;
+                if (btn.classList.contains('researched') || !ends || ends <= now) {
+                    slot.textContent = '';
+                    return;
+                }
+                const sec = Math.max(0, Math.floor((ends - now) / 1000));
+                const cdCfg = parseInt(btn.getAttribute('data-cd-config-sec'), 10) || 0;
+                let tag = '';
+                if (cdCfg >= 36000) tag = ' · 10h gate';
+                else if (cdCfg >= 10800) tag = ' · 3h gate';
+                else if (cdCfg >= 3600) tag = ' · 1h gate';
+                slot.textContent = 'Re-research in ' + labFormatDuration(sec) + tag;
+            });
+
+            document.querySelectorAll('button.lab-tech-refine[data-refine-ends]').forEach(function (btn) {
+                const ends = parseInt(btn.getAttribute('data-refine-ends'), 10) || 0;
+                const wrap = btn.parentElement;
+                let line = wrap ? wrap.querySelector('.lab-refine-cd-line') : null;
+                if (!line && wrap) {
+                    line = document.createElement('div');
+                    line.className = 'lab-refine-cd-line lab-cd';
+                    line.style.marginTop = '4px';
+                    wrap.appendChild(line);
+                }
+                if (!ends || ends <= now) {
+                    if (line) line.textContent = '';
+                    if (btn.textContent.indexOf('⏳') === -1) {
+                        btn.disabled = false;
+                        btn.textContent = 'Agent refine';
+                    }
+                    return;
+                }
+                const sec = Math.max(0, Math.floor((ends - now) / 1000));
+                if (line) line.textContent = 'Agent refine: ' + labFormatDuration(sec) + ' (10h)';
+                if (btn.textContent.indexOf('⏳') === -1) {
+                    btn.disabled = true;
+                    btn.textContent = 'Agent refine (cooldown)';
+                }
+            });
+        }
+        function labEnsureCooldownTicker() {
+            if (window.__labCdInterval) return;
+            window.__labCdInterval = setInterval(labRefreshCooldownUi, 1000);
+        }
+
+        function loadChapter2Research() {
+            try {
+                const raw = localStorage.getItem(LAB_CHAPTER2_KEY + '_' + userId);
+                const arr = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(arr) ? arr : []);
+            } catch {
+                return new Set();
+            }
+        }
+        function saveChapter2Research(set) {
+            localStorage.setItem(LAB_CHAPTER2_KEY + '_' + userId, JSON.stringify([...set]));
+        }
+        async function pushChapter2Server(set) {
+            return labPostJson('/api/lab/chapter2-research', { user_id: userId, researched_ids: [...set] });
+        }
+        async function mergeChapter2FromServer() {
+            try {
+                const r = await fetch('/api/lab/chapter2-research?user_id=' + encodeURIComponent(userId));
+                const d = await r.json();
+                if (!d || !d.success || !Array.isArray(d.researched_ids)) return;
+                const serverSet = new Set(d.researched_ids);
+                saveChapter2Research(serverSet);
+            } catch (e) {
+                console.warn('[Lab] chapter2 load skipped:', e);
+            }
+        }
+        async function loadLabProgressionAndRender() {
+            try {
+                const r = await fetch('/api/lab/progression?user_id=' + encodeURIComponent(userId));
+                const d = await r.json();
+                if (d && d.success && Array.isArray(d.catalog) && d.catalog.length) {
+                    window.__labCatalog = d.catalog;
+                    localStorage.setItem(LAB_CATALOG_CACHE_KEY, JSON.stringify(d.catalog));
+                } else {
+                    window.__labCatalog = null;
+                }
+                const remEx = (d && d.success && Number(d.explore_cooldown_remaining_sec) > 0)
+                    ? Number(d.explore_cooldown_remaining_sec)
+                    : 0;
+                window.__labExploreCdEnds = remEx > 0 ? (Date.now() + remEx * 1000) : 0;
+                const remDs = (d && d.success && Number(d.deep_scan_cooldown_remaining_sec) > 0)
+                    ? Number(d.deep_scan_cooldown_remaining_sec)
+                    : 0;
+                window.__labDeepScanCdEnds = remDs > 0 ? (Date.now() + remDs * 1000) : 0;
+            } catch (e) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(LAB_CATALOG_CACHE_KEY) || '[]');
+                    window.__labCatalog = Array.isArray(cached) && cached.length ? cached : null;
+                } catch {
+                    window.__labCatalog = null;
+                }
+                window.__labExploreCdEnds = 0;
+                window.__labDeepScanCdEnds = 0;
+            }
+            renderChapter2Upgrades();
+            renderLabProducts();
+            labRefreshCooldownUi();
+            labEnsureCooldownTicker();
+        }
+        function renderChapter2Upgrades() {
+            const grid = document.getElementById('lab-upgrade-grid-ch2');
+            const foot = document.getElementById('lab-chapter2-progress');
+            if (!grid) return;
+            const researched = loadChapter2Research();
+            const rows = (window.__labCatalog && window.__labCatalog.length)
+                ? window.__labCatalog
+                : LAB_CHAPTER2_UPGRADES.map((u) => ({ ...u, unlocked: true, researched: researched.has(u.id) }));
+            const total = rows.length;
+            const recommended = rows.find((u) => {
+                const id = u.id;
+                const on = researched.has(id);
+                const cdRem = Number(u.cooldown_remaining_sec) || 0;
+                const unlocked = typeof u.interactable === 'boolean' ? u.interactable : !!u.unlocked;
+                return !on && unlocked && cdRem <= 0;
+            });
+            grid.innerHTML = rows.map((u) => {
+                const id = u.id;
+                const on = researched.has(id);
+                const cdRem = Number(u.cooldown_remaining_sec) || 0;
+                const cdCfg = Number(u.research_cooldown_sec) || 0;
+                let locked;
+                if (typeof u.interactable === 'boolean') {
+                    locked = !on && !u.interactable;
+                } else {
+                    locked = !on && ((!u.unlocked) || cdRem > 0);
+                }
+                const cdEnds = (!on && cdRem > 0) ? String(Date.now() + cdRem * 1000) : '0';
+                const cls = 'lab-upgrade-tile' + (on ? ' researched' : '') + (locked ? ' locked' : '') + (recommended && recommended.id === id ? ' recommended' : '');
+                let tierLine = (on ? 'Researched · ' : (locked ? 'Locked · ' : 'Tap to research · ')) + (u.tier || '');
+                if (!on && cdCfg > 0 && !locked) {
+                    tierLine += ' · ' + (cdCfg >= 36000 ? '10h re-lock' : (cdCfg >= 10800 ? '3h re-lock' : '1h re-lock')) + ' if cleared';
+                } else if (!on && cdRem > 0) {
+                    tierLine = 'Cooldown · ' + (u.tier || '');
+                }
+                return (
+                    '<button type="button" class="' + cls + '" data-upgrade-id="' + labEscape(id) + '" data-locked="' + (locked ? '1' : '0') + '" data-cd-ends="' + cdEnds + '" data-cd-config-sec="' + cdCfg + '" role="listitem" aria-pressed="' + on + '" title="' + labEscape(u.unlock_summary || 'Available immediately.') + '" aria-label="' + labEscape((u.name || id) + '. ' + (u.unlock_summary || 'Available immediately.')) + '"' + (locked ? ' disabled' : '') + '>' +
+                    '<div class="u-icon" aria-hidden="true">' + labEscape(u.icon || '🔹') + '</div>' +
+                    '<div class="u-name">' + labEscape(u.name) + '</div>' +
+                    '<div class="u-desc">' + labEscape(u.desc || '') + '</div>' +
+                    '<div class="u-tier">' + labEscape(tierLine) + '</div>' +
+                    '<div class="lab-cd-slot" aria-live="polite"></div>' +
+                    '</button>'
+                );
+            }).join('');
+            grid.querySelectorAll('.lab-upgrade-tile').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    if (btn.getAttribute('data-locked') === '1') return;
+                    const id = btn.getAttribute('data-upgrade-id');
+                    const prevArr = [...loadChapter2Research()];
+                    const s = loadChapter2Research();
+                    const wasOn = s.has(id);
+                    if (!wasOn && btn.getAttribute('data-locked') === '1') return;
+                    if (s.has(id)) s.delete(id); else s.add(id);
+                    saveChapter2Research(s);
+                    renderChapter2Upgrades();
+                    const d = await pushChapter2Server(s);
+                    if (!d || !d.success) {
+                        saveChapter2Research(new Set(prevArr));
+                        renderChapter2Upgrades();
+                        const foot2 = document.getElementById('lab-chapter2-progress');
+                        if (foot2) {
+                            let msg = (d && d.message) ? d.message : (d && d.error ? d.error : 'Save rejected');
+                            if (d && d.locked_id) msg += ' (' + d.locked_id + ')';
+                            if (d && d.error === 'research_cooldown' && d.cooldown_remaining_sec) {
+                                msg += ' · ' + labFormatDuration(d.cooldown_remaining_sec) + ' left';
+                            }
+                            foot2.textContent = foot2.textContent.split(' · ')[0] + ' · ' + msg;
+                        }
+                        return;
+                    }
+                    const extras = [];
+                    if (Array.isArray(d.bonuses_applied) && d.bonuses_applied.length) {
+                        extras.push('Bonuses: ' + d.bonuses_applied.map((b) => '+' + b.amount + ' ' + (b.point_type || '')).join(', '));
+                    }
+                    if (d.xp_awarded_hunter) {
+                        extras.push('XP: +' + d.xp_awarded_hunter + ' hunter');
+                    }
+                    if (extras.length) window.__labFootExtra = extras.join(' · ');
+                    loadLabProgressionAndRender();
+                });
+            });
+            if (foot) {
+                let line = researched.size + ' / ' + total + ' nodes researched · unified points + hunter XP on first touch (server).';
+                if (recommended && recommended.name) {
+                    line += ' · Recommended next: ' + recommended.name;
+                }
+                if (window.__labFootExtra) {
+                    line += ' · ' + window.__labFootExtra;
+                    window.__labFootExtra = null;
+                }
+                foot.textContent = line;
+            }
+            labRefreshCooldownUi();
+        }
+        mergeChapter2FromServer().then(() => loadLabProgressionAndRender());
+        loadLabOverview();
+        renderLabProducts();
+        document.getElementById('lab-locale-select')?.addEventListener('change', (e) => {
+            localStorage.setItem('lab_locale', e.target.value || 'en');
+            renderLabProducts();
+        });
+        document.getElementById('btn-lab-load-log')?.addEventListener('click', labLoadResearchLog);
+        document.getElementById('btn-lab-share-card')?.addEventListener('click', labCopyShareCard);
+        document.getElementById('btn-lab-register-hook')?.addEventListener('click', labRegisterAgentHook);
+        document.getElementById('btn-lab-replay-offline')?.addEventListener('click', labReplayOfflineQueue);
+        document.getElementById('btn-lab-create-project')?.addEventListener('click', labCreateProject);
+        document.getElementById('btn-lab-roundtable-send')?.addEventListener('click', labSendRoundtable);
+        document.getElementById('btn-lab-monitor-sound')?.addEventListener('click', labPlayMonitorSound);
+        document.getElementById('btn-lab-refresh-overview')?.addEventListener('click', loadLabOverview);
+        window.addEventListener('online', labReplayOfflineQueue);
+
+        async function runLabExplore(mode) {
+            const es = document.getElementById('lab-explore-status');
+            const isDeep = mode === 'deep_scan';
+            const btn = document.getElementById(isDeep ? 'btn-lab-deep-scan' : 'btn-lab-explore');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ …'; }
+            if (es) { es.style.display = 'block'; es.textContent = isDeep ? 'Running deep scan pulse…' : 'Running exploration pulse…'; es.style.color = '#7fdbff'; }
+            try {
+                const d = await labPostJson('/api/lab/explore', { user_id: userId, mode: isDeep ? 'deep_scan' : 'pulse' });
+                if (es) {
+                    if (d && d.offline_queued) {
+                        es.style.color = '#ffcc66';
+                        es.textContent = (isDeep ? 'Deep scan' : 'Explore pulse') + ' queued for replay when online.';
+                    } else if (d && d.success) {
+                        es.style.color = '#00ff88';
+                        const aw = (d.awarded || []).map(function (a) { return '+' + (a.amount || 0) + ' ' + (a.point_type || ''); }).join(', ');
+                        es.textContent = (isDeep ? 'Deep scan' : 'Pulse') + ' #' + (d.exploration_count || '?') + ': ' + aw + ' · +' + (d.xp_awarded_hunter || 0) + ' hunter XP';
+                        const ecs = Number(d.explore_cooldown_sec || d.cooldown_sec) || (isDeep ? 12 * 3600 : 3 * 3600);
+                        if (isDeep) window.__labDeepScanCdEnds = Date.now() + ecs * 1000;
+                        else window.__labExploreCdEnds = Date.now() + ecs * 1000;
+                    } else if (d && d.error === 'cooldown') {
+                        es.style.color = '#ffaa00';
+                        const cr = Number(d.cooldown_remaining_sec) || 0;
+                        es.textContent = (isDeep ? 'Deep scan' : 'Explore') + ' on cooldown: ' + labFormatDuration(cr) + ' left ' + (isDeep ? '(12h)' : '(3h)');
+                        if (cr > 0) {
+                            if (isDeep) window.__labDeepScanCdEnds = Date.now() + cr * 1000;
+                            else window.__labExploreCdEnds = Date.now() + cr * 1000;
+                        }
+                    } else {
+                        es.style.color = '#ff6b8a';
+                        es.textContent = (d && d.error) ? d.error : 'Explore failed';
+                    }
+                }
+                loadLabProgressionAndRender();
+            } catch (e) {
+                if (es) { es.style.color = '#ff6b8a'; es.textContent = 'Explore failed (network).'; }
+            }
+            if (btn) {
+                btn.textContent = isDeep ? '🛰️ Deep scan pulse' : '🔭 Exploration pulse';
+                labRefreshCooldownUi();
+            }
+        }
+        document.getElementById('btn-lab-explore')?.addEventListener('click', () => runLabExplore('pulse'));
+        document.getElementById('btn-lab-deep-scan')?.addEventListener('click', () => runLabExplore('deep_scan'));
+
+        (function initLabCoTech() {
+            const listEl = document.getElementById('lab-tech-list');
+            const st = document.getElementById('lab-tech-form-status');
+            function showFormStatus(msg, isErr) {
+                if (!st) return;
+                st.style.display = 'block';
+                st.textContent = msg;
+                st.style.background = isErr ? 'rgba(255,51,102,0.12)' : 'rgba(0,255,136,0.1)';
+                st.style.border = '1px solid ' + (isErr ? 'rgba(255,51,102,0.35)' : 'rgba(0,255,136,0.3)');
+                st.style.color = isErr ? '#ff6b8a' : '#00ff88';
+            }
+            function esc(s) {
+                return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+            }
+            async function loadTechList() {
+                if (!listEl) return;
+                listEl.innerHTML = '<p style="opacity:0.75;">Loading drafts…</p>';
+                try {
+                    const r = await fetch('/api/lab/technologies?user_id=' + encodeURIComponent(userId));
+                    const d = await r.json();
+                    if (d && d.success) {
+                        const drInit = Number(d.draft_cooldown_remaining_sec) || 0;
+                        window.__labDraftCdEnds = drInit > 0 ? (Date.now() + drInit * 1000) : 0;
+                        labRefreshCooldownUi();
+                        labEnsureCooldownTicker();
+                    }
+                    if (!d || !d.success || !Array.isArray(d.technologies)) {
+                        listEl.innerHTML = '<p style="opacity:0.75;">No drafts yet (or API unavailable).</p>';
+                        return;
+                    }
+                    if (d.technologies.length === 0) {
+                        listEl.innerHTML = '<p style="opacity:0.75;">No drafts yet — add one above.</p>';
+                        return;
+                    }
+                    listEl.innerHTML = d.technologies.map((t) => {
+                        const notes = t.agent_notes ? '<div style="margin-top:8px;padding:10px;background:rgba(0,0,0,0.35);border-radius:8px;white-space:pre-wrap;font-size:0.82rem;opacity:0.92;"><strong>Agent notes</strong><br>' + esc(t.agent_notes) + '</div>' : '';
+                        const rr = Number(t.refine_cooldown_remaining_sec) || 0;
+                        const refineEnds = rr > 0 ? (Date.now() + rr * 1000) : 0;
+                        return '<div class="lab-tech-row" style="padding:12px;border:1px solid rgba(255,215,0,0.25);border-radius:10px;background:rgba(21,21,32,0.75);">' +
+                            '<div style="font-weight:700;color:#FFD700;">' + esc(t.name) + ' <span style="opacity:0.65;font-weight:500;font-size:0.8rem;">(' + esc(t.category || 'general') + ' · ' + esc(t.status || 'draft') + ')</span></div>' +
+                            '<div style="margin-top:6px;font-size:0.88rem;opacity:0.9;white-space:pre-wrap;">' + esc(t.pitch || '') + '</div>' +
+                            '<div style="margin-top:8px;font-size:0.78rem;opacity:0.65;">Partner: <code>' + esc(t.co_agent_id || '') + '</code> · id <code>' + esc(t.id || '') + '</code></div>' +
+                            notes +
+                            '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="lab-btn lab-btn-success lab-tech-refine" data-tech-id="' + esc(t.id) + '" data-refine-ends="' + refineEnds + '">Agent refine</button>' +
+                            '<button type="button" class="lab-btn lab-btn-primary lab-tech-status" data-tech-id="' + esc(t.id) + '" data-status="user_accepted">Accept</button>' +
+                            '<button type="button" class="lab-btn lab-btn-info lab-tech-status" data-tech-id="' + esc(t.id) + '" data-status="archived">Archive</button>' +
+                            '<div class="lab-refine-cd-line lab-cd" style="min-height:1em;margin-top:4px;"></div></div>';
+                    }).join('');
+                    listEl.querySelectorAll('.lab-tech-refine').forEach((btn) => {
+                        btn.addEventListener('click', async () => {
+                            const tid = btn.getAttribute('data-tech-id');
+                            if (!tid) return;
+                            btn.disabled = true;
+                            btn.textContent = '⏳ Refining…';
+                            try {
+                                const dj = await labPostJson('/api/lab/technologies/' + encodeURIComponent(tid) + '/agent-refine', { user_id: userId });
+                                if (!dj.success) {
+                                    if (dj.error === 'refine_cooldown' && dj.refine_cooldown_remaining_sec) {
+                                        showFormStatus('Agent refine cooldown: ' + labFormatDuration(dj.refine_cooldown_remaining_sec) + ' left (10h)', true);
+                                    } else {
+                                        showFormStatus(dj.error || 'Refine failed', true);
+                                    }
+                                } else {
+                                    showFormStatus('Agent notes updated for ' + tid + '.', false);
+                                }
+                            } catch (e) {
+                                showFormStatus('Refine request failed.', true);
+                            }
+                            loadTechList();
+                        });
+                    });
+                    listEl.querySelectorAll('.lab-tech-status').forEach((btn) => {
+                        btn.addEventListener('click', async () => {
+                            const tid = btn.getAttribute('data-tech-id');
+                            const status = btn.getAttribute('data-status');
+                            if (!tid || !status) return;
+                            btn.disabled = true;
+                            const dj = await labPostJson('/api/lab/technologies/' + encodeURIComponent(tid) + '/status', { user_id: userId, status });
+                            showFormStatus(dj && dj.offline_queued ? 'Lifecycle change queued for replay.' : ('Technology marked ' + status + '.'), false);
+                            loadTechList();
+                        });
+                    });
+                } catch (e) {
+                    listEl.innerHTML = '<p style="color:#ff6b8a;">Could not load drafts.</p>';
+                }
+            }
+            document.getElementById('btn-lab-tech-create')?.addEventListener('click', async () => {
+                const nameEl = document.getElementById('lab-tech-name');
+                const pitchEl = document.getElementById('lab-tech-pitch');
+                const catEl = document.getElementById('lab-tech-category');
+                const agEl = document.getElementById('lab-tech-agent');
+                const name = (nameEl && nameEl.value || '').trim();
+                const pitch = (pitchEl && pitchEl.value || '').trim();
+                const category = (catEl && catEl.value) || 'general';
+                const co_agent_id = (agEl && agEl.value || 'lab_agent').trim().slice(0, 80) || 'lab_agent';
+                if (name.length < 2 || pitch.length < 8) {
+                    showFormStatus('Title (2+) and pitch (8+ chars) required.', true);
+                    return;
+                }
+                const btn = document.getElementById('btn-lab-tech-create');
+                if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
+                try {
+                    const d = await labPostJson('/api/lab/technologies', { user_id: userId, name, pitch, category, co_agent_id });
+                    if (!d.success) {
+                        if (d.error === 'draft_cooldown' && d.draft_cooldown_remaining_sec) {
+                            const cr = Number(d.draft_cooldown_remaining_sec) || 0;
+                            window.__labDraftCdEnds = cr > 0 ? (Date.now() + cr * 1000) : 0;
+                            showFormStatus('New draft cooldown: ' + labFormatDuration(cr) + ' left (1h)', true);
+                            labRefreshCooldownUi();
+                            labEnsureCooldownTicker();
+                        } else {
+                            showFormStatus(d.error || ('HTTP ' + r.status), true);
+                        }
+                    } else {
+                        showFormStatus('Draft saved. You can ask the agent for refinement.', false);
+                        if (nameEl) nameEl.value = '';
+                        if (pitchEl) pitchEl.value = '';
+                        try {
+                            await fetch('/api/agent-tech/agent_event_tracker/track_new_task', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: userId, task_name: 'lab_technology_draft', params: { technology_id: d.technology && d.technology.id, name } })
+                            });
+                        } catch (e2) { /* optional */ }
+                        loadTechList();
+                    }
+                } catch (e) {
+                    showFormStatus('Save failed (network).', true);
+                }
+                if (btn) { btn.disabled = false; btn.textContent = 'Save draft'; }
+            });
+            loadTechList();
+        })();
+        
+        // Check Electric Magnet status on load
+        async function checkEMStatus() {
+            const statusDiv = document.getElementById('em-tech-status');
+            const specialsDiv = document.getElementById('em-specials');
+            const downloadBtn = document.getElementById('btn-lab-download-em');
+            
+            try {
+                const response = await fetch(`${EM_API_BASE}/status`);
+                const data = await response.json();
+                
+                if (data.success && data.downloaded) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'rgba(0,255,136,0.1)';
+                    statusDiv.style.border = '1px solid rgba(0,255,136,0.3)';
+                    statusDiv.style.color = '#00ff88';
+                    statusDiv.innerHTML = `✅ <strong>Electric Magnet Technology Installed</strong><br>Version: ${data.version || '1.0.0'} | Status: ${data.status || 'active'}`;
+                    specialsDiv.style.display = 'block';
+                    if (downloadBtn) {
+                        downloadBtn.textContent = '✅ Installed';
+                        downloadBtn.disabled = true;
+                        downloadBtn.style.background = 'rgba(0,255,136,0.2)';
+                        downloadBtn.style.borderColor = 'rgba(0,255,136,0.6)';
+                        downloadBtn.style.color = '#00ff88';
+                    }
+                } else {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'rgba(255,215,0,0.1)';
+                    statusDiv.style.border = '1px solid rgba(255,215,0,0.3)';
+                    statusDiv.style.color = '#FFD700';
+                    statusDiv.textContent = '⚡ Electric Magnet Technology available for download';
+                }
+            } catch (error) {
+                console.error('Error checking EM status:', error);
+            }
+        }
+        
+        // Download Electric Magnet
+        document.getElementById('btn-lab-download-em')?.addEventListener('click', async () => {
+            const btn = document.getElementById('btn-lab-download-em');
+            const statusDiv = document.getElementById('em-tech-status');
+            const specialsDiv = document.getElementById('em-specials');
+            
+            if (!btn || btn.disabled) return;
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Downloading...';
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = 'rgba(255,215,0,0.1)';
+            statusDiv.style.border = '1px solid rgba(255,215,0,0.3)';
+            statusDiv.style.color = '#FFD700';
+            statusDiv.textContent = 'Downloading Electric Magnet technology...';
+            
+            try {
+                const response = await fetch(`${EM_API_BASE}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.downloaded) {
+                    statusDiv.style.background = 'rgba(0,255,136,0.1)';
+                    statusDiv.style.border = '1px solid rgba(0,255,136,0.3)';
+                    statusDiv.style.color = '#00ff88';
+                    statusDiv.innerHTML = `✅ <strong>Electric Magnet Technology Downloaded!</strong><br>Specials: ${(data.specials || []).join(', ')}`;
+                    specialsDiv.style.display = 'block';
+                    btn.textContent = '✅ Installed';
+                    btn.style.background = 'rgba(0,255,136,0.2)';
+                    btn.style.borderColor = 'rgba(0,255,136,0.6)';
+                    btn.style.color = '#00ff88';
+                } else {
+                    throw new Error(data.error || 'Download failed');
+                }
+            } catch (error) {
+                statusDiv.style.background = 'rgba(255,51,102,0.1)';
+                statusDiv.style.border = '1px solid rgba(255,51,102,0.3)';
+                statusDiv.style.color = '#ff3366';
+                statusDiv.textContent = `❌ Error: ${error.message || 'Download failed'}`;
+                btn.disabled = false;
+                btn.textContent = '📥 Download Electric Magnet';
+            }
+        });
+        
+        document.getElementById('btn-lab-check-em')?.addEventListener('click', checkEMStatus);
+        
+        // Verification & DNA (quick actions)
+        async function showLabResult(el, html, isError) {
+            if (!el) return;
+            el.style.display = 'block';
+            el.style.background = isError ? 'rgba(255,51,102,0.1)' : 'rgba(0,255,136,0.1)';
+            el.style.border = isError ? '1px solid rgba(255,51,102,0.3)' : '1px solid rgba(0,255,136,0.3)';
+            el.style.color = isError ? '#ff3366' : '#00ff88';
+            el.innerHTML = html;
+        }
+        document.getElementById('btn-lab-verify')?.addEventListener('click', async () => {
+            const resultDiv = document.getElementById('lab-em-result');
+            try {
+                const r = await fetch(`${EM_API_BASE}/run_verification`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                const d = await r.json();
+                showLabResult(resultDiv, d.verification_passed ? '✔️ Verification passed. ' + (d.checks?.length ? d.checks.length + ' checks.' : '') : '❌ ' + (d.error || 'Verification failed.'), !d.verification_passed);
+            } catch (e) { showLabResult(document.getElementById('lab-em-result'), '❌ ' + (e.message || 'Error'), true); }
+        });
+        document.getElementById('btn-lab-dna')?.addEventListener('click', async () => {
+            const resultDiv = document.getElementById('lab-em-result');
+            try {
+                const r = await fetch(`${EM_API_BASE}/run_dna_test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                const d = await r.json();
+                showLabResult(resultDiv, d.dna_test_passed ? '🧬 DNA test passed.' + (d.dna_system_available ? ' DNA system OK.' : '') : '❌ ' + (d.error || 'DNA test failed.'), !d.dna_test_passed);
+            } catch (e) { showLabResult(document.getElementById('lab-em-result'), '❌ ' + (e.message || 'Error'), true); }
+        });
+        
+        // Event Tracker: new task
+        document.getElementById('btn-lab-new-task')?.addEventListener('click', async () => {
+            const statusDiv = document.getElementById('lab-et-status');
+            const name = prompt('Task name:', 'lab_manual_task') || 'lab_manual_task';
+            if (!statusDiv) return;
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = 'rgba(33,150,243,0.1)';
+            statusDiv.style.border = '1px solid rgba(33,150,243,0.3)';
+            statusDiv.style.color = '#2196F3';
+            statusDiv.textContent = 'Tracking...';
+            try {
+                const r = await fetch('/api/agent-tech/agent_event_tracker/track_new_task', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, task_name: name, params: { source: 'lab' } })
+                });
+                const d = await r.json();
+                statusDiv.style.background = 'rgba(0,255,136,0.1)';
+                statusDiv.style.border = '1px solid rgba(0,255,136,0.3)';
+                statusDiv.style.color = '#00ff88';
+                statusDiv.innerHTML = d.success ? '✅ Task tracked: ' + name : '❌ ' + (d.error || 'Failed');
+            } catch (e) {
+                statusDiv.style.background = 'rgba(255,51,102,0.1)';
+                statusDiv.style.border = '1px solid rgba(255,51,102,0.3)';
+                statusDiv.style.color = '#ff3366';
+                statusDiv.textContent = '❌ ' + (e.message || 'Error');
+            }
+        });
+        
+        checkEMStatus();
+
+        document.getElementById('btn-lab-agent-run')?.addEventListener('click', async () => {
+            const logEl = document.getElementById('lab-agent-test-log');
+            const uid = localStorage.getItem('game_user_id') || 'default_user';
+            const payload = {
+                task_id: 'systems_debug_all',
+                tab: 'systems',
+                action: 'debug_all_systems',
+                agent_id: 'lab_agent',
+                user_id: uid
+            };
+            if (logEl) {
+                logEl.style.display = 'block';
+                logEl.textContent = 'Running assign → complete...';
+            }
+            try {
+                const ar = await fetch('/api/debugger/tasks/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const assignJson = await ar.json();
+                const cr = await fetch('/api/debugger/tasks/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...payload, result_data: { source: 'lab_page' } })
+                });
+                const completeJson = await cr.json();
+                if (logEl) {
+                    logEl.textContent = JSON.stringify({ assign: assignJson, complete: completeJson }, null, 2);
+                }
+            } catch (e) {
+                if (logEl) logEl.textContent = 'Error: ' + (e && e.message ? e.message : e);
+            }
+        });
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

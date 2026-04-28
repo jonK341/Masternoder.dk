@@ -1,0 +1,501 @@
+{
+  "timestamp": "2026-01-05T22:53:29.452759",
+  "summary": {
+    "total_tabs": 31,
+    "total_endpoints": 37,
+    "online_endpoints": 37,
+    "fully_working": 31,
+    "partially_working": 0,
+    "not_working": 0
+  },
+  "results": {
+    "overview": {
+      "name": "Overview",
+      "endpoints": [
+        [
+          "/vidgenerator/api/game/battle/stats?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/battle/fantasy/history?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "battle": {
+      "name": "Battle",
+      "endpoints": [
+        [
+          "/vidgenerator/api/quick-battle/create",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "tournaments": {
+      "name": "Tournaments",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/fantasy/tournaments",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "history": {
+      "name": "History",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/fantasy/history?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "leaderboard": {
+      "name": "Leaderboard",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/leaderboard",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "intelligence": {
+      "name": "Intelligence",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/fantasy/intelligence?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "resources": {
+      "name": "Resources",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/fantasy/power?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/battle/fantasy/resources?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "rulebooks": {
+      "name": "Rule Books",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/rulebooks",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "series": {
+      "name": "Series",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/series",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "gps": {
+      "name": "GPS",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/gps",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "news": {
+      "name": "News",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/news",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "peers": {
+      "name": "Peers & Network",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/peers?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "timepocket": {
+      "name": "Timepocket Real-Time",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/timepocket/realtime?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "trading": {
+      "name": "Trophy Trading & Collectibles",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/trophy-trading?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/battle/collectibles?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "missions": {
+      "name": "Missions & Quests",
+      "endpoints": [
+        [
+          "/vidgenerator/api/missions/daily?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/missions/timeline?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "ai-research": {
+      "name": "AI Research",
+      "endpoints": [
+        [
+          "/vidgenerator/api/ai-research?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "rewards": {
+      "name": "Rewards",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/rewards?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "technology": {
+      "name": "Technology & Science",
+      "endpoints": [
+        [
+          "/vidgenerator/api/battle/tech-tree/all?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/battle/technology-science/levels",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "autoplay": {
+      "name": "Autoplay & Recording",
+      "endpoints": [
+        [
+          "/vidgenerator/api/autoplay/status?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "social": {
+      "name": "Social",
+      "endpoints": [
+        [
+          "/vidgenerator/api/social/friends?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "teams": {
+      "name": "Teams & Groups",
+      "endpoints": [
+        [
+          "/vidgenerator/api/teams/user?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "alliances": {
+      "name": "Alliances",
+      "endpoints": [
+        [
+          "/vidgenerator/api/alliances/user?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "groups-destroy": {
+      "name": "Group Destruction",
+      "endpoints": [
+        [
+          "/vidgenerator/api/groups/destruction-history?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "bonus-level": {
+      "name": "Bonus Level",
+      "endpoints": [
+        [
+          "/vidgenerator/api/bonus-levels?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "death-teleport-install": {
+      "name": "Death Teleport Install",
+      "endpoints": [
+        [
+          "/vidgenerator/api/death-teleport/status/test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "militia-forces": {
+      "name": "Militia Forces",
+      "endpoints": [
+        [
+          "/vidgenerator/api/militia/forces?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "legal-content": {
+      "name": "Legal Content",
+      "endpoints": [
+        [
+          "/vidgenerator/api/legal/content",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "tech-hardware": {
+      "name": "Tech & Hardware",
+      "endpoints": [
+        [
+          "/vidgenerator/api/tech-hardware/progress/test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "death-portal": {
+      "name": "Death Portal",
+      "endpoints": [
+        [
+          "/vidgenerator/api/death-portal-manager/portals",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ],
+        [
+          "/vidgenerator/api/death-portal/status",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "experience-recount": {
+      "name": "Experience Recount",
+      "endpoints": [
+        [
+          "/vidgenerator/api/experience/recount-status/test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    },
+    "enhanced-system": {
+      "name": "Enhanced Battle System",
+      "endpoints": [
+        [
+          "/vidgenerator/api/points/get-all-connected?user_id=test",
+          {
+            "status": 200,
+            "online": true,
+            "has_data": true,
+            "error": null
+          }
+        ]
+      ]
+    }
+  }
+}

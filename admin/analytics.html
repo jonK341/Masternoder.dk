@@ -1,0 +1,546 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260114100145">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
+        <script src="/static/js/error-manager.js?v=20260304154115"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --analytics-primary: #00ff88;
+            --analytics-secondary: #00d4ff;
+            --analytics-danger: #ff3366;
+            --analytics-warning: #ffaa00;
+            --analytics-dark: #0a0a0f;
+            --analytics-card: #151520;
+            --analytics-border: rgba(0, 255, 136, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .analytics-header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+        }
+
+        .analytics-header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(135deg, var(--analytics-primary), var(--analytics-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: var(--analytics-card);
+            border: 2px solid var(--analytics-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--analytics-primary);
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .chart-container {
+            background: var(--analytics-card);
+            border: 2px solid var(--analytics-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            color: var(--analytics-primary);
+            margin-bottom: 15px;
+        }
+
+        .export-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: var(--analytics-primary);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--analytics-secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/template-effects.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+
+</head>
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+<body>
+    <div class="analytics-header">
+        <h1>📊 Analytics Dashboard</h1>
+        <p>System Performance • User Behavior • Revenue Analytics</p>
+    </div>
+
+    <div class="export-controls">
+        <button class="btn" onclick="refreshAnalytics()">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+        <button class="btn btn-secondary" onclick="exportAnalytics('json')">
+            <i class="fas fa-download"></i> Export JSON
+        </button>
+        <button class="btn btn-secondary" onclick="exportAnalytics('csv')">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+    </div>
+
+    <!-- System Overview Metrics -->
+    <div class="metrics-grid" id="overview-metrics">
+        <div class="metric-card">
+            <div class="metric-label">Total Users</div>
+            <div class="metric-value" id="metric-total-users">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Active Today</div>
+            <div class="metric-value" id="metric-active-today">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Total Battles</div>
+            <div class="metric-value" id="metric-total-battles">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Active Battles</div>
+            <div class="metric-value" id="metric-active-battles">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Matchmaking Queue</div>
+            <div class="metric-value" id="metric-queue-size">0</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Spectators</div>
+            <div class="metric-value" id="metric-spectators">0</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+        <div class="chart-container">
+            <div class="chart-title">User Growth</div>
+            <canvas id="user-growth-chart"></canvas>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Battle Activity</div>
+            <canvas id="battle-activity-chart"></canvas>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">System Performance</div>
+            <canvas id="performance-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Agent Data Section -->
+    <div class="chart-container">
+        <h3 class="chart-title">
+            <i class="fas fa-robot"></i> Agent Data Overview
+        </h3>
+        <div id="agent-data-content">
+            <div class="loading">Loading agent data...</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        let charts = {};
+
+        // Load Agent Data
+        async function loadAgentData() {
+            const container = document.getElementById('agent-data-content');
+            if (!container) return;
+            
+            try {
+                if (window.agentDashboardData) {
+                    // Admin view - show global agent data
+                    await window.agentDashboardData.loadAndRender('agent-data-content', null);
+                } else {
+                    container.innerHTML = '<div class="loading">Agent dashboard utility not loaded</div>';
+                }
+            } catch (error) {
+                console.error('Error loading agent data:', error);
+                container.innerHTML = '<div class="loading">Failed to load agent data</div>';
+            }
+        }
+
+        async function refreshAnalytics() {
+            // Load agent data
+            loadAgentData();
+            try {
+                // Load overview
+                const overviewRes = await fetch(`${BASE_URL}/api/analytics/overview`);
+                const overviewData = await overviewRes.json();
+
+                if (overviewData.success && overviewData.overview) {
+                    const overview = overviewData.overview;
+                    
+                    // Update metrics
+                    if (overview.users) {
+                        document.getElementById('metric-total-users').textContent = overview.users.total_users || 0;
+                        document.getElementById('metric-active-today').textContent = overview.users.active_today || 0;
+                    }
+                    
+                    if (overview.battles) {
+                        document.getElementById('metric-total-battles').textContent = overview.battles.total_battles || 0;
+                        document.getElementById('metric-active-battles').textContent = overview.battles.active_battles || 0;
+                        document.getElementById('metric-queue-size').textContent = overview.battles.matchmaking_queue_size || 0;
+                        document.getElementById('metric-spectators').textContent = overview.battles.total_spectators || 0;
+                    }
+                }
+
+                // Load user behavior
+                const behaviorRes = await fetch(`${BASE_URL}/api/analytics/user-behavior?timeframe=week`);
+                const behaviorData = await behaviorRes.json();
+
+                if (behaviorData.success) {
+                    updateCharts(overviewData.overview, behaviorData.behavior);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function updateCharts(overview, behavior) {
+            // User Growth Chart
+            const userGrowthCtx = document.getElementById('user-growth-chart');
+            if (userGrowthCtx && window.Chart) {
+                if (charts.userGrowth) charts.userGrowth.destroy();
+                charts.userGrowth = new Chart(userGrowthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Today', 'This Week', 'This Month'],
+                        datasets: [{
+                            label: 'New Users',
+                            data: [
+                                overview.users?.new_users_today || 0,
+                                overview.users?.new_users_this_week || 0,
+                                overview.users?.new_users_this_month || 0
+                            ],
+                            borderColor: 'rgb(0, 255, 136)',
+                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: '#fff' } }
+                        },
+                        scales: {
+                            y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        }
+                    }
+                });
+            }
+
+            // Battle Activity Chart
+            const battleCtx = document.getElementById('battle-activity-chart');
+            if (battleCtx && window.Chart) {
+                if (charts.battleActivity) charts.battleActivity.destroy();
+                charts.battleActivity = new Chart(battleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total', 'Active', 'Queue', 'Spectators'],
+                        datasets: [{
+                            label: 'Battles',
+                            data: [
+                                overview.battles?.total_battles || 0,
+                                overview.battles?.active_battles || 0,
+                                overview.battles?.matchmaking_queue_size || 0,
+                                overview.battles?.total_spectators || 0
+                            ],
+                            backgroundColor: [
+                                'rgba(0, 255, 136, 0.8)',
+                                'rgba(0, 212, 255, 0.8)',
+                                'rgba(255, 170, 0, 0.8)',
+                                'rgba(255, 51, 102, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: '#fff' } }
+                        },
+                        scales: {
+                            y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        }
+                    }
+                });
+            }
+
+            // Performance Chart
+            const perfCtx = document.getElementById('performance-chart');
+            if (perfCtx && window.Chart) {
+                if (charts.performance) charts.performance.destroy();
+                charts.performance = new Chart(perfCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Users', 'Battles', 'Points', 'Activity'],
+                        datasets: [{
+                            data: [
+                                overview.users?.total_users || 0,
+                                overview.battles?.total_battles || 0,
+                                overview.points?.total_points_awarded || 0,
+                                behavior?.active_users || 0
+                            ],
+                            backgroundColor: [
+                                'rgba(0, 255, 136, 0.8)',
+                                'rgba(0, 212, 255, 0.8)',
+                                'rgba(255, 170, 0, 0.8)',
+                                'rgba(255, 51, 102, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: '#fff' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        async function exportAnalytics(format) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/analytics/export?format=${format}`);
+                
+                if (format === 'csv') {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const data = await response.json();
+                    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+                
+                alert(`Analytics exported as ${format.toUpperCase()}`);
+            } catch (error) {
+                console.error('Error exporting analytics:', error);
+                alert('Error exporting analytics');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAnalytics();
+            // Auto-refresh every 5 minutes
+            setInterval(refreshAnalytics, 300000);
+        });
+    </script>
+    <script src="/static/js/image-support.js?v=20260304154115"></script>
+    <script src="/static/js/template-effects.js?v=20260304154115"></script>
+    <script src="/static/js/template-services.js?v=20260304154115"></script>
+    <script src="/static/js/agent-skill-sets.js?v=20260304154115"></script>
+    <script src="/static/js/agent-dashboard-data.js?v=20260304154115"></script>
+    <script src="/static/js/template-engine-core.js?v=20260304154115"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                // Cache version changed - force reload
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                window.location.reload(true);
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // AGGRESSIVE CACHE-BUSTING FOR MAIN CONTENT
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || Date.now().toString();
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            const contentVersion = sessionStorage.getItem('contentCacheVersion');
+            
+            // Force reload if version changed
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.clear();
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+                window.location.href = window.location.href.split('?')[0] + '?v=' + currentVersion + '&_=' + Date.now();
+                return;
+            }
+            
+            // Store versions
+            sessionStorage.setItem('pageCacheVersion', currentVersion);
+            if (!contentVersion || contentVersion !== currentVersion) {
+                sessionStorage.setItem('contentCacheVersion', currentVersion);
+            }
+            
+            // Force reload main content area on every load
+            function forceReloadContent() {
+                const mainContent = document.querySelector('.container') || document.querySelector('main') || document.querySelector('#main') || document.body;
+                if (mainContent) {
+                    // Add timestamp to force re-render
+                    mainContent.setAttribute('data-version', currentVersion);
+                    mainContent.setAttribute('data-timestamp', Date.now());
+                    
+                    // Force style recalculation
+                    const display = window.getComputedStyle(mainContent).display;
+                    mainContent.style.display = 'none';
+                    mainContent.offsetHeight; // Trigger reflow
+                    mainContent.style.display = display;
+                    
+                    // Add comment to force HTML change detection
+                    const comment = document.createComment(' FORCED REFRESH ' + Date.now() + ' ');
+                    mainContent.insertBefore(comment, mainContent.firstChild);
+                }
+            }
+            
+            // Run immediately and on DOM ready
+            forceReloadContent();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceReloadContent);
+            } else {
+                setTimeout(forceReloadContent, 100);
+            }
+            
+            // Add cache-busting to all links and forms
+            function addCacheBusting() {
+                const links = document.querySelectorAll('a[href^="/"], a[href^="/"]');
+                links.forEach(link => {
+                    const url = new URL(link.href, window.location.origin);
+                    if (!url.searchParams.has('v')) {
+                        url.searchParams.set('v', currentVersion);
+                        url.searchParams.set('_', Date.now());
+                        link.href = url.toString();
+                    }
+                });
+                
+                // Add to forms
+                const forms = document.querySelectorAll('form[action]');
+                forms.forEach(form => {
+                    const action = form.getAttribute('action');
+                    if (action && !action.includes('v=')) {
+                        const separator = action.includes('?') ? '&' : '?';
+                        form.setAttribute('action', action + separator + 'v=' + currentVersion + '&_=' + Date.now());
+                    }
+                });
+            }
+            
+            // Run on DOM ready and periodically
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', addCacheBusting);
+            } else {
+                addCacheBusting();
+            }
+            
+            // Periodic check for content updates
+            setInterval(function() {
+                const stored = sessionStorage.getItem('contentCacheVersion');
+                if (stored && stored !== currentVersion) {
+                    window.location.reload(true);
+                }
+            }, 5000);
+            
+            // Intercept fetch/XHR to add cache-busting
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                if (typeof args[0] === 'string' && args[0].startsWith('/')) {
+                    const url = new URL(args[0], window.location.origin);
+                    url.searchParams.set('_', Date.now());
+                    args[0] = url.toString();
+                }
+                return originalFetch.apply(this, args);
+            };
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

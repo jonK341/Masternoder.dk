@@ -1,0 +1,104 @@
+{
+  "name": "Star Map — 7 Nearest Stars",
+  "description": "Host stars and life-bearing b planets. Electric Magnet specials: verification, DNA test, view_star_map.",
+  "center": "Sun",
+  "updated_at": "2026-01-28",
+  "info": "Proxima b, Sirius b, Sun→Earth b, and 6 other nearest systems. Use Verification and DNA Test for integrity checks.",
+  "flyers": [
+    { "id": "em_tech", "title": "Electric Magnet Tech", "url": "/vidgenerator/lab", "summary": "Download verification & DNA specials" },
+    { "id": "trophies", "title": "Trophy Hunters", "url": "/vidgenerator/game", "summary": "Star map integrated with game" },
+    { "id": "comm_psych", "title": "Communication Psychology", "url": "/vidgenerator/api/communication-psychology/theories", "summary": "25 theories — agenda-setting, framing, influence, DNA & starmap integration" }
+  ],
+  "stars": [
+    {
+      "id": "sun",
+      "name": "Sun",
+      "distance_ly": 0,
+      "planets": ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"],
+      "life_bearing": "Earth",
+      "life_label": "Sun → Earth (B)",
+      "info": "G-type main sequence. Earth in habitable zone. Reference for host→b naming.",
+      "flyers": [{ "title": "Solar System", "summary": "Our home system" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "proxima_centauri",
+      "name": "Proxima Centauri",
+      "distance_ly": 4.22,
+      "planets": ["Proxima Centauri b", "Proxima Centauri c", "Proxima Centauri d"],
+      "life_bearing": "Proxima Centauri b",
+      "life_label": "Proxima Centauri → Proxima b",
+      "info": "Potentially habitable zone. M-dwarf. Proxima b in conservative HZ.",
+      "flyers": [{ "title": "Proxima b", "summary": "Closest exoplanet; potential biosignatures" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "alpha_centauri",
+      "name": "Alpha Centauri A & B",
+      "distance_ly": 4.37,
+      "planets": ["Proxima b (nearest)", "Alpha Cen Ab (candidate)", "Alpha Cen Bb (disputed)"],
+      "life_bearing": "Proxima Centauri b",
+      "life_label": "Alpha Centauri → Proxima b",
+      "info": "Triple system. Proxima b in habitable zone. Nearest stellar system.",
+      "flyers": [{ "title": "Alpha Cen", "summary": "Future mission target" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "barnards_star",
+      "name": "Barnard's Star",
+      "distance_ly": 5.96,
+      "planets": ["Barnard's Star b"],
+      "life_bearing": "Barnard's Star b",
+      "life_label": "Barnard's Star → Barnard b",
+      "info": "Super-Earth. Cold; possible subsurface habitability. High proper motion.",
+      "flyers": [{ "title": "Barnard b", "summary": "Super-Earth, cold world" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "lalande_21185",
+      "name": "Lalande 21185",
+      "distance_ly": 8.31,
+      "planets": ["Lalande 21185 b", "Lalande 21185 c"],
+      "life_bearing": "Lalande 21185 b",
+      "life_label": "Lalande 21185 → Lalande b",
+      "info": "M-dwarf. Multiple planets. Lalande 21185 b candidate.",
+      "flyers": [{ "title": "Lalande 21185", "summary": "Nearby M-dwarf system" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "sirius",
+      "name": "Sirius A",
+      "companion": "Sirius B",
+      "distance_ly": 8.60,
+      "planets": ["Sirius b (hypothetical)", "Sirius B (white dwarf companion)"],
+      "life_bearing": "Sirius b",
+      "life_label": "Sirius → Sirius b",
+      "info": "Brightest star. Sirius B is white dwarf.",
+      "flyers": [],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "epsilon_eridani",
+      "name": "Epsilon Eridani",
+      "distance_ly": 10.5,
+      "planets": ["Epsilon Eridani b", "Epsilon Eridani c", "Epsilon Eridani d"],
+      "life_bearing": "Epsilon Eridani b",
+      "life_label": "Epsilon Eridani → Eps Eri b",
+      "info": "Young system. Debris disk. Eps Eri b gas giant; further bodies possible.",
+      "flyers": [{ "title": "Epsilon Eridani", "summary": "Debris disk; young system" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    },
+    {
+      "id": "ross_128",
+      "name": "Ross 128",
+      "distance_ly": 10.9,
+      "planets": ["Ross 128 b"],
+      "life_bearing": "Ross 128 b",
+      "life_label": "Ross 128 → Ross 128 b",
+      "info": "Habitable zone. Quiet M-dwarf. Ross 128 b in HZ; low flare activity.",
+      "flyers": [{ "title": "Ross 128 b", "summary": "Quiet M-dwarf; HZ planet" }],
+      "specials": ["run_verification", "run_dna_test", "view_star_map"]
+    }
+  ],
+  "specials": ["run_verification", "run_dna_test", "view_star_map"]
+}

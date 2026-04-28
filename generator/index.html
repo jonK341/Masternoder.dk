@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="da" data-agent-skill-sets="enriched">
+<head>
+    <script>window._pageLoadStart = performance.now();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="cache-version" content="20260325a">
+    <title>AI Video Generator - MasterNoder</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="/static/css/theme-timeline.css?v=20260304">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #fff; }
+        .gen-page { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; }
+        .gen-header { text-align: center; margin-bottom: 32px; }
+        .gen-header h1 { font-size: 1.75rem; margin: 0; color: #00ff88; }
+        .gen-header p { color: rgba(255,255,255,0.7); font-size: 0.95rem; margin: 8px 0 0 0; }
+        .gen-nav { display: flex; gap: 10px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+        .gen-nav a { color: rgba(255,255,255,0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; }
+        .gen-nav a:hover { color: #00ff88; background: rgba(0,255,136,0.1); }
+        .gen-card { background: rgba(22,27,34,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .gen-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .gen-tab { flex: 1; padding: 12px; border: none; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+        .gen-tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .gen-tab.active { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .gen-panel { display: none; }
+        .gen-panel.active { display: block; }
+        .gen-label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
+        .gen-input, .gen-textarea { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #161b22; color: #fff; font-size: 1rem; margin-bottom: 16px; }
+        .gen-textarea { min-height: 100px; resize: vertical; }
+        .gen-input::placeholder, .gen-textarea::placeholder { color: rgba(255,255,255,0.4); }
+        .gen-btn { width: 100%; padding: 14px 24px; border: none; border-radius: 10px; background: linear-gradient(135deg, #00ff88, #00d4ff); color: #000; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .gen-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .gen-btn-magic { background: linear-gradient(135deg, #9333ea, #7c3aed) !important; color: #fff !important; margin-bottom: 16px; }
+        .gen-status { padding: 12px 16px; border-radius: 8px; margin-top: 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+        .gen-status.idle { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
+        .gen-status.processing { background: rgba(255,170,0,0.15); color: #ffaa00; }
+        .gen-status.done { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .gen-status.error { background: rgba(255,51,102,0.15); color: #ff3366; }
+        #theme-timeline-container { margin-bottom: 16px; }
+        .gen-footer { text-align: center; margin-top: 32px; font-size: 0.85rem; color: rgba(255,255,255,0.45); }
+        .gen-footer a { color: rgba(255,255,255,0.6); margin: 0 8px; }
+        /* Generator page: hide fixed monetization frame to avoid overlap */
+        body.gen-page-body #top50-monetization-frame-container { display: none; }
+        /* Special effects during generation */
+        .gen-status.processing { animation: gen-pulse 1.5s ease-in-out infinite; box-shadow: 0 0 20px rgba(255,170,0,0.3); }
+        @keyframes gen-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+        .gen-progress-active #progressBox { animation: gen-glow 2s ease-in-out infinite; }
+        @keyframes gen-glow { 0%, 100% { box-shadow: 0 0 12px rgba(0,255,136,0.25); } 50% { box-shadow: 0 0 24px rgba(0,255,136,0.45); } }
+        #progressBar { transition: width 0.4s ease-out; }
+        .gen-config-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 16px; }
+        .gen-config-table th, .gen-config-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .gen-config-table th { color: rgba(255,255,255,0.7); font-weight: 600; width: 38%; }
+        .gen-config-table select, .gen-config-table input[type="number"], .gen-config-table input[type="text"] { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: #161b22; color: #fff; }
+        .gen-checklist { margin-bottom: 20px; padding: 14px 16px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-radius: 10px; }
+        .gen-checklist h4 { margin: 0 0 12px 0; font-size: 0.95rem; color: #00ff88; }
+        .gen-checklist label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
+        .gen-checklist input[type="checkbox"] { width: 18px; height: 18px; accent-color: #00ff88; }
+        .gen-checklist .check-status { font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-left: 28px; }
+        .gen-section-row { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent); margin: 20px 0; border: none; }
+        .gen-table-sep { border-top: 2px solid rgba(0,255,136,0.25); }
+        .gen-finish-box { display: none; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,212,255,0.08)); border: 1px solid rgba(0,255,136,0.4); border-radius: 12px; text-align: center; }
+        .gen-finish-box.show { display: block; animation: gen-finish-in 0.5s ease-out; }
+        @keyframes gen-finish-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .gen-finish-box h3 { margin: 0 0 12px 0; color: #00ff88; font-size: 1.2rem; }
+        .gen-finish-box .finish-links { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .gen-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(0,255,136,0.2); color: #00ff88; margin-right: 6px; }
+        .gen-mission-title { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+        .gen-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .gen-card-header h2 { margin: 0; font-size: 1.1rem; color: #00ff88; }
+        .gen-checklist-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .gen-checklist-row label { margin-bottom: 0; }
+        .gen-refresh-btn { padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; border: 1px solid rgba(0,255,136,0.4); background: rgba(0,255,136,0.1); color: #00ff88; cursor: pointer; }
+        .gen-refresh-btn:hover { background: rgba(0,255,136,0.2); }
+        .gen-ai-power { margin: 16px 0; padding: 16px; background: linear-gradient(135deg, rgba(147,51,234,0.08), rgba(0,212,255,0.06)); border: 1px solid rgba(147,51,234,0.25); border-radius: 12px; }
+        .gen-ai-power h4 { margin: 0 0 12px; font-size: 0.95rem; color: #00ff88; }
+        .gen-ai-power .ai-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .gen-ai-power .ai-toggle-row label { cursor: pointer; font-size: 0.95rem; }
+        .gen-ai-power .ai-toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: #9333ea; }
+        .gen-provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
+        .gen-provider-chip { padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+        .gen-provider-chip.available { border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.08); color: #00ff88; }
+        .gen-provider-chip .chip-type { font-size: 0.7rem; opacity: 0.8; margin-top: 2px; }
+        .gen-updates { margin-top: 24px; padding: 14px 18px; background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; font-size: 0.88rem; }
+        .gen-updates h4 { margin: 0 0 8px; color: #00d4ff; font-size: 0.95rem; }
+        .gen-updates ul { margin: 0; padding-left: 18px; color: rgba(255,255,255,0.8); }
+        .gen-updates li { margin-bottom: 4px; }
+        .gen-collapse { cursor: pointer; user-select: none; }
+        .gen-collapse::after { content: ' ▾'; font-size: 0.8em; opacity: 0.7; }
+        .gen-collapse.collapsed::after { content: ' ▸'; }
+        .gen-collapse-content.collapsed { display: none; }
+    </style>
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body class="gen-page-body">
+
+    <div class="gen-page">
+        <header class="gen-header">
+            <h1><i class="fas fa-film"></i> AI Video Generator</h1>
+            <p>Opret videoer og klip med kunstig intelligens · Mission control · Video: <code style="font-size:0.8em;opacity:0.85;">POST /api/generator/create</code></p>
+            <!-- Main nav is the shared navigation toolbar (navigation-toolbar.js) — same as profile/home -->
+        </header>
+
+        <div class="gen-card" id="genMainCard">
+            <div class="gen-card-header">
+                <h2><i class="fas fa-play-circle"></i> Mission control</h2>
+                <span class="gen-badge">VIDEO</span><span class="gen-badge">CLIP</span>
+            </div>
+
+            <table class="gen-config-table" style="margin-bottom:0;">
+                <tbody>
+                <tr><td colspan="2" style="padding:0; border: none; vertical-align: top;">
+                    <div class="gen-checklist" id="genChecklist">
+                        <div class="gen-mission-title"><i class="fas fa-clipboard-check"></i> Pre-flight checklist</div>
+                        <div class="gen-checklist-row">
+                            <label><input type="checkbox" id="checkAi" disabled> LLM (script/planning)</label>
+                            <span class="check-status" id="checkLlmStatus">Tjekker...</span>
+                            <button type="button" class="gen-refresh-btn" id="btnRefreshChecklist" title="Opdater">↻</button>
+                        </div>
+                        <div class="gen-checklist-row">
+                            <label><input type="checkbox" id="checkVideo" disabled> Video AI (clips)</label>
+                            <span class="check-status" id="checkVideoStatus">—</span>
+                        </div>
+                        <div class="gen-checklist-row">
+                            <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
+                            <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; nedenfor ved behov.</span>
+                        </div>
+                        <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
+                    </div>
+                </td></tr>
+                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
+                <tr><th scope="row" style="width:38%;">Titel</th><td><input type="text" id="videoTitle" class="gen-input" placeholder="Fx: Min dokumentar om natur" style="margin-bottom:0;"></td></tr>
+                <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:80px; margin-bottom:0;"></textarea></td></tr>
+                <tr><th scope="row">Tema</th><td><div id="theme-timeline-container"></div><input type="hidden" id="videoTheme" value="default"></td></tr>
+                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
+                <tr><th scope="row">Varighed (sek)</th><td><input type="number" id="configDuration" min="30" max="300" value="60" title="30–300 sek"></td></tr>
+                <tr><th scope="row">Kort klip</th><td><label><input type="checkbox" id="configShortClip" checked> Ja (hurtigere)</label></td></tr>
+                <tr><th scope="row">Kvalitet</th><td><select id="configQuality"><option value="auto">Auto</option><option value="fast">Hurtig</option><option value="high">Høj</option><option value="best">Bedst (multi-AI)</option><option value="max">Max (alle AIs)</option></select></td></tr>
+                <tr><th scope="row">AI Power</th><td>
+                    <div class="gen-ai-power">
+                        <div class="ai-toggle-row">
+                            <label><input type="checkbox" id="configUseAllAis"> Brug alle AI-udbydere (multi-provider)</label>
+                        </div>
+                        <p style="margin:0 0 10px; font-size:0.85rem; color:rgba(255,255,255,0.65);">Flere AIs = bedre planlægning + bonus point. Vælg &quot;Bedst&quot; eller &quot;Max&quot; for automatisk.</p>
+                        <div class="gen-collapse" id="aiProviderToggle">Vis konfigurerede AI-udbydere</div>
+                        <div class="gen-provider-grid gen-collapse-content collapsed" id="genProviderGrid"></div>
+                    </div>
+                </td></tr>
+                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
+                <tr><th scope="row">Style</th><td><select id="configStyle"><option value="">Auto</option><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="dramatic">Dramatic</option><option value="educational">Educational</option></select></td></tr>
+                <tr><th scope="row">Tone</th><td><select id="configTone"><option value="">Auto</option><option value="mysterious">Mysterious</option><option value="inspiring">Inspiring</option><option value="calm">Calm</option><option value="energetic">Energetic</option></select></td></tr>
+                <tr><th scope="row">Creative twist</th><td><input type="text" id="configTwist" placeholder="Fx: Start med et overraskende spørgsmål"></td></tr>
+                </tbody>
+            </table>
+
+            <hr class="gen-section-row">
+            <div class="gen-tabs" id="genTabs">
+                <button type="button" class="gen-tab active" data-mode="video"><i class="fas fa-film"></i> Video</button>
+                <button type="button" class="gen-tab" data-mode="clip"><i class="fas fa-bolt"></i> Clip</button>
+            </div>
+
+            <div id="panelVideo" class="gen-panel active">
+                <button type="button" class="gen-btn gen-btn-magic" id="magicBtn">
+                    <i class="fas fa-magic"></i> Magic Generate (1-klik)
+                </button>
+                <button type="button" class="gen-btn" id="btnVideo" style="margin-top:10px;"><i class="fas fa-rocket"></i> Generer Video</button>
+                <button type="button" class="gen-btn" id="btnTestDeploy" style="margin-top:8px; background: rgba(0,212,255,0.2); color: #00d4ff; width: 100%;">
+                    <i class="fas fa-vial"></i> Test efter deploy
+                </button>
+                <span id="magicStatus" style="font-size:0.9rem;color:rgba(255,255,255,0.7);display:block;margin-top:8px;"></span>
+                <div id="videoStatus" class="gen-status idle" style="margin-top:16px;"><i class="fas fa-circle" style="font-size:0.5em;"></i> Klar</div>
+                <div id="progressBox" style="display:none; margin-top:16px; background:#161b22; padding:16px; border-radius:8px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span id="progressStage">Starter</span><span id="progressPct">0%</span></div>
+                    <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;"><div id="progressBar" style="height:100%;width:0%;background:#00ff88;"></div></div>
+                    <div id="progressJobId" style="margin-top:10px;font-size:0.8rem;color:rgba(255,255,255,0.5);display:none;">Job-ID: <code id="progressJobIdValue"></code> <button type="button" id="btnCopyJobId" class="gen-btn" style="padding:4px 10px;font-size:0.8rem;width:auto;margin-left:8px;">Kopier ID</button></div>
+                </div>
+                <div class="gen-finish-box" id="genFinishBox">
+                    <h3><i class="fas fa-trophy"></i> Mission complete</h3>
+                    <p style="margin:0;color:rgba(255,255,255,0.85);font-size:0.95rem;">Din video er klar. Download eller åbn i galleriet.</p>
+                    <div class="finish-links" id="genFinishLinks"></div>
+                </div>
+            </div>
+
+            <div id="panelClip" class="gen-panel">
+                <label class="gen-label">Beskriv klip</label>
+                <textarea id="clipPrompt" class="gen-textarea" placeholder="Fx: Solnedgang over havet, dramatisk lys..."></textarea>
+                <button type="button" class="gen-btn" id="btnClip"><i class="fas fa-magic"></i> Generer Klip</button>
+                <div id="clipStatus" class="gen-status idle"><i class="fas fa-circle" style="font-size:0.5em;"></i> Klar</div>
+                <div id="clipsList" style="margin-top:16px;"></div>
+            </div>
+        </div>
+
+        <div class="gen-card" id="recentClipsCard" style="display:none;">
+            <h3 class="gen-label" style="margin-bottom:12px;">Mine seneste klip</h3>
+            <div id="recentClipsList"></div>
+        </div>
+
+        <div class="gen-card" id="dailyAgentsCard">
+            <div class="gen-card-header">
+                <h2><i class="fas fa-robot"></i> Agents &amp; gallery</h2>
+                <span class="gen-badge">DAILY</span>
+            </div>
+            <hr class="gen-section-row">
+            <p style="color:rgba(255,255,255,0.7);font-size:0.9rem;margin-bottom:16px;">Assign rulebook/starmap tasks to AIs and agents (content_generator_agent, learning_agent, analytics_agent, reporter_agent). Kør én gang om dagen.</p>
+            <button type="button" class="gen-btn" id="btnAssign25" style="margin-bottom:10px;"><i class="fas fa-tasks"></i> Assign 25 tasks to agents</button>
+            <span id="assign25Status" style="font-size:0.9rem;color:rgba(255,255,255,0.6);display:block;margin-top:8px;"></span>
+            <button type="button" class="gen-btn" id="btnAssignStarmap50" style="margin-top:12px;margin-bottom:10px;background:rgba(0,255,136,0.15);border-color:rgba(0,255,136,0.4);"><i class="fas fa-map"></i> Assign 50 Star Map projects to agents</button>
+            <span id="assignStarmap50Status" style="font-size:0.9rem;color:rgba(255,255,255,0.6);display:block;margin-top:8px;"></span>
+            <hr class="gen-section-row">
+            <h3 class="gen-label" style="margin-bottom:8px;">Gallery</h3>
+            <p style="color:rgba(255,255,255,0.7);font-size:0.9rem;margin-bottom:12px;">Clean gallery: remove expired videos, keep top 10 by quality.</p>
+            <button type="button" class="gen-btn" id="btnCleanGallery" style="background:rgba(255,170,0,0.2);color:#ffaa00;"><i class="fas fa-broom"></i> Clean gallery</button>
+            <span id="cleanGalleryStatus" style="font-size:0.9rem;color:rgba(255,255,255,0.6);display:block;margin-top:8px;"></span>
+            <hr class="gen-section-row">
+            <h3 class="gen-label" id="agent-calendar" style="margin-bottom:8px;">📅 Agent &amp; AI calendar</h3>
+            <p style="color:rgba(255,255,255,0.7);font-size:0.9rem;margin-bottom:12px;">Schedule appointments for content_generator_agent, learning_agent, analytics_agent, reporter_agent. Daily reset aligns with Star Map 25.</p>
+            <div id="agentCalendarList" style="min-height:40px;margin-bottom:12px;font-size:0.9rem;">Loading…</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <select id="agentCalendarAgent" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:#fff;">
+                    <option value="content_generator_agent">Content generator</option>
+                    <option value="learning_agent">Learning</option>
+                    <option value="analytics_agent">Analytics</option>
+                    <option value="reporter_agent">Reporter</option>
+                </select>
+                <input type="text" id="agentCalendarTask" placeholder="Task / title" style="padding:6px 10px;min-width:160px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:#fff;">
+                <input type="datetime-local" id="agentCalendarWhen" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:#fff;">
+                <button type="button" class="gen-btn" id="btnAgentCalendarAdd" style="padding:6px 14px;">Add appointment</button>
+            </div>
+            <span id="agentCalendarStatus" style="font-size:0.85rem;color:rgba(255,255,255,0.5);display:block;margin-top:6px;"></span>
+        </div>
+
+        <div class="gen-updates" id="genUpdates">
+            <h4 class="gen-collapse" id="genUpdatesToggle">🆕 Seneste opdateringer</h4>
+            <ul class="gen-collapse-content" id="genUpdatesList">
+                <li><strong>Multi-AI Power:</strong> Brug flere LLM-udbydere (Groq, Gemini, OpenRouter, Cohere…) samtidig for bedre planlægning og bonus point</li>
+                <li><strong>Video AI:</strong> HeyGen (avatar), Replicate (Stable Video Diffusion) tilføjet – konfigurer i Agent Support</li>
+                <li><strong>AI Power toggle:</strong> Vælg &quot;Brug alle AI-udbydere&quot; eller kvalitet Bedst/Max for multi-provider</li>
+                <li><strong>Checklist:</strong> LLM + Video AI-status og provider-grid</li>
+            </ul>
+        </div>
+        <p class="gen-footer">
+            <strong>Connect:</strong> <a href="/profile">Profile</a> · <a href="/generator">Generator</a> · <a href="/agents">Agents</a> · <a href="/agent_support">Agent Support</a> · <a href="/gallery">Gallery</a> · <a href="/aggregator">Aggregator</a> · <a href="/theme_premium">Themes</a> · <a href="/profile#monetization-25-card">Monetization 25 (AI + agents)</a>
+            &nbsp;|&nbsp; <a href="/lab">Lab</a> · <a href="/debugger">Debugger</a>
+            &nbsp;|&nbsp; <a href="https://theresanaiforthat.com/" target="_blank" rel="noopener">Discover more AIs (TAAFT)</a>
+        </p>
+    </div>
+
+    <script src="/static/js/load-time-measurement.js?v=20260304" defer></script>
+    <script src="/static/js/error-manager.js?v=20260304" defer></script>
+    <script src="/static/js/unified-generator-battle.js?v=20260304" defer></script>
+    <script src="/static/js/service-worker-gatherer.js?v=20260304" defer></script>
+    <script src="/static/js/theme-timeline.js?v=20260304" defer></script>
+    <script>
+        const API_BASE = (window.location.origin || '');
+        window.API_BASE = API_BASE;
+        var isGenerating = false;
+        var pollCancel = false;
+
+        function setMode(m) {
+            document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.gen-tab[data-mode="' + m + '"]').classList.add('active');
+            document.querySelectorAll('.gen-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel' + (m === 'video' ? 'Video' : 'Clip')).classList.add('active');
+        }
+
+        async function enhancedFetch(url, opts) {
+            if (window.swGatherer && window.swGatherer.fetchWithQueue) {
+                try { return await window.swGatherer.fetchWithQueue(url, opts); } catch (e) {}
+            }
+            return fetch(url, opts);
+        }
+        async function safeJson(r) {
+            const t = await r.text();
+            if (!r.ok) {
+                if (/^\s*</.test(t) || t.toLowerCase().indexOf('<!doctype') !== -1)
+                    throw new Error('Server error (' + (r.status || 500) + '). Try again later.');
+                try {
+                    const j = JSON.parse(t);
+                    throw new Error(j.error || j.message || 'Request failed (' + r.status + ')');
+                } catch (e) {
+                    if (e.message && e.message.indexOf('Request failed') !== -1) throw e;
+                    throw new Error('Server error (' + (r.status || 500) + '). Try again later.');
+                }
+            }
+            try { return JSON.parse(t); } catch (e) {
+                if (/^\s*</.test(t) || t.length > 200) throw new Error('Server error. Try again later.');
+                throw new Error('Invalid response: ' + String(t).slice(0, 50));
+            }
+        }
+        function userFacingError(msg, res) {
+            if (res && (res.status === 502 || res.status === 504)) return 'Serveren er optaget eller timeout. Prøv igen om et øjeblik.';
+            if (msg && (msg.includes('timeout') || msg.includes('Timeout') || msg.includes('Failed to fetch'))) return 'Serveren svarer ikke. Prøv igen om et øjeblik.';
+            return msg || 'Noget gik galt. Prøv igen.';
+        }
+
+        async function runMagic() {
+            if (isGenerating) return;
+            isGenerating = true;
+            const btn = document.getElementById('magicBtn');
+            const st = document.getElementById('magicStatus');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starter...';
+            st.textContent = '';
+            try {
+                const res = await fetch(API_BASE + '/api/generator/magic-generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: 'Magic documentary', user_id: localStorage.getItem('game_user_id') || 'default_user', duration: 60 })
+                });
+                const d = await res.json().catch(() => ({}));
+                if (d.success && d.documentary_id) {
+                    st.textContent = 'Startet! Doc: ' + d.documentary_id;
+                    st.style.color = '#00ff88';
+                } else {
+                    st.textContent = userFacingError(d.error || d.message, res);
+                    st.style.color = '#ff3366';
+                }
+            } catch (e) {
+                st.textContent = userFacingError(e.message);
+                st.style.color = '#ff3366';
+            }
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Magic Generate (1-klik video)';
+        }
+
+        async function generateClips() {
+            if (isGenerating) return;
+            const prompt = (document.getElementById('clipPrompt').value || '').trim();
+            if (!prompt) { alert('Indtast en beskrivelse'); return; }
+            isGenerating = true;
+            const btn = document.getElementById('btnClip');
+            const st = document.getElementById('clipStatus');
+            const list = document.getElementById('clipsList');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Genererer...';
+            st.className = 'gen-status processing';
+            st.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Behandler...';
+            list.innerHTML = '';
+            try {
+                let res = await enhancedFetch(API_BASE + '/api/ai-clips/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, user_id: localStorage.getItem('game_user_id') || 'default_user', clip_count: 5 })
+                });
+                if (!res.ok) {
+                    res = await enhancedFetch(API_BASE + '/api/generator/ai-clips', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                }
+                const d = await safeJson(res);
+                if (d.success && d.clips && d.clips.length) {
+                    st.className = 'gen-status done';
+                    st.innerHTML = '<i class="fas fa-check"></i> ' + d.clips.length + ' klip genereret';
+                    d.clips.forEach(c => {
+                        const a = document.createElement('a');
+                        a.href = c.url || c.video_url || '#';
+                        a.target = '_blank';
+                        a.style.cssText = 'display:block;padding:12px;background:rgba(0,255,136,0.1);border-radius:8px;margin-bottom:8px;color:#00ff88;text-decoration:none;';
+                        a.textContent = (c.title || c.prompt || 'Klip') + ' →';
+                        list.appendChild(a);
+                    });
+                } else {
+                    throw new Error(d.error || d.message || 'Ingen klip returneret');
+                }
+            } catch (e) {
+                st.className = 'gen-status error';
+                st.innerHTML = '<i class="fas fa-times"></i> ' + userFacingError(e.message, res);
+            }
+            isGenerating = false;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip';
+        }
+
+        async function generateVideo() {
+            if (isGenerating) return;
+            const title = (document.getElementById('videoTitle').value || '').trim();
+            if (!title) { alert('Indtast en titel'); return; }
+            isGenerating = true;
+            pollCancel = false;
+            const desc = (document.getElementById('videoDesc').value || '').trim();
+            const theme = document.getElementById('videoTheme').value || 'default';
+            const btn = document.getElementById('btnVideo');
+            const st = document.getElementById('videoStatus');
+            const progBox = document.getElementById('progressBox');
+            const progBar = document.getElementById('progressBar');
+            const progPct = document.getElementById('progressPct');
+            const progStage = document.getElementById('progressStage');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Genererer...';
+            st.className = 'gen-status processing';
+            st.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starter...';
+            progBox.style.display = 'block';
+            var mainCard = document.getElementById('genMainCard');
+            if (mainCard) mainCard.classList.add('gen-progress-active');
+            var finishBox = document.getElementById('genFinishBox');
+            if (finishBox) finishBox.classList.remove('show');
+            progBar.style.width = '5%';
+            progPct.textContent = '...';
+            progStage.textContent = 'Starter';
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            let profileSnapshot = null;
+            try {
+                const rawProfile = localStorage.getItem('user_profile') || localStorage.getItem('profile');
+                if (rawProfile) {
+                    const parsed = JSON.parse(rawProfile);
+                    if (parsed && typeof parsed === 'object') {
+                        profileSnapshot = {
+                            display_name: parsed.display_name || parsed.username || userId,
+                            bio: (parsed.bio || '').toString().slice(0, 220),
+                            skill_path: parsed.skill_path || '',
+                            preferences: parsed.preferences || {}
+                        };
+                    }
+                }
+            } catch (e) {}
+            try {
+                var durationVal = 60;
+                var shortClipVal = true;
+                var qualityVal = 'auto';
+                var styleVal = '';
+                var toneVal = '';
+                var twistVal = '';
+                var elDur = document.getElementById('configDuration');
+                var elShort = document.getElementById('configShortClip');
+                var elQual = document.getElementById('configQuality');
+                var elStyle = document.getElementById('configStyle');
+                var elTone = document.getElementById('configTone');
+                var elTwist = document.getElementById('configTwist');
+                if (elDur) { durationVal = Math.min(300, Math.max(30, parseInt(elDur.value, 10) || 60)); }
+                if (elShort) shortClipVal = elShort.checked;
+                if (elQual) qualityVal = (elQual.value || 'auto').toLowerCase();
+                if (elStyle) styleVal = (elStyle.value || '').trim();
+                if (elTone) toneVal = (elTone.value || '').trim();
+                if (elTwist) twistVal = (elTwist.value || '').trim();
+                const body = {
+                    title,
+                    description: desc,
+                    prompt: (desc || title),
+                    theme,
+                    user_id: userId,
+                    duration: durationVal,
+                    short_clip: shortClipVal,
+                    use_context: true,
+                    include_points_in_clip: true,
+                    generation_method: 'adaptive_ai_v2',
+                    quality_mode: qualityVal,
+                    audio_style: 'cinematic',
+                    template: 'ai_content',
+                    ai_content: true,
+                    encode_profile: qualityVal === 'fast' ? 'fast_ai' : (qualityVal === 'high' ? null : 'fast_ai'),
+                    profiling: true,
+                    profile_mode: 'personalized',
+                    profile_context: profileSnapshot,
+                    content_category: (theme && theme !== 'default') ? theme : 'general',
+                    content_context: (desc || title)
+                };
+                var useAllAis = document.getElementById('configUseAllAis') && document.getElementById('configUseAllAis').checked;
+                if (['best', 'max', 'ultra'].indexOf(qualityVal) >= 0) useAllAis = true;
+                body.use_all_ais = useAllAis;
+                if (styleVal) body.style_preset = styleVal;
+                if (toneVal) body.theme_tone = toneVal;
+                if (twistVal) body.creative_twist = twistVal;
+                const res = await enhancedFetch(API_BASE + '/api/generator/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const d = await safeJson(res);
+                if (!res.ok) throw new Error(userFacingError(d.error || d.message || 'HTTP ' + res.status, res));
+                if (!d.success) throw new Error(userFacingError(d.error || d.message));
+                const docId = d.documentary_id || d.video_id || d.id;
+                if (!docId) {
+                    st.className = 'gen-status done';
+                    st.innerHTML = '<i class="fas fa-check"></i> ' + (d.message || 'Startet');
+                    progBox.style.display = 'none';
+                    if (mainCard) mainCard.classList.remove('gen-progress-active');
+                    isGenerating = false;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                    return;
+                }
+                progStage.textContent = 'Encoding runs in background. You can leave this page.';
+                var jobIdEl = document.getElementById('progressJobId');
+                var jobIdVal = document.getElementById('progressJobIdValue');
+                var btnCopyJob = document.getElementById('btnCopyJobId');
+                if (jobIdEl && jobIdVal) {
+                    jobIdVal.textContent = docId;
+                    jobIdEl.style.display = 'block';
+                }
+                if (btnCopyJob) btnCopyJob.onclick = function() { try { navigator.clipboard.writeText(docId); btnCopyJob.textContent = 'Kopieret!'; setTimeout(function(){ btnCopyJob.textContent = 'Kopier ID'; }, 2000); } catch (e) {} };
+                let attempts = 0;
+                let lastProgress = 5;
+                const pollInterval = () => (attempts > 48 ? 5000 : 2500);
+                const poll = async () => {
+                    if (pollCancel) return;
+                    attempts++;
+                    if (attempts > 200) {
+                        st.className = 'gen-status error';
+                        st.innerHTML = '<i class="fas fa-clock"></i> Kodning kører stadig i baggrunden. Tjek igen om et par minutter eller se i <a href="/gallery" style="color:#00d4ff;">Galleriet</a>.';
+                        progBox.style.display = 'none';
+                        if (mainCard) mainCard.classList.remove('gen-progress-active');
+                        isGenerating = false;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                        return;
+                    }
+                    try {
+                        const pr = await enhancedFetch(API_BASE + '/api/documentary/progress/' + docId);
+                        const pd = await safeJson(pr);
+                        let p = pd.progress != null ? parseInt(pd.progress) : Math.min(99, attempts * 3);
+                        if (p < lastProgress) p = lastProgress;
+                        if (p > lastProgress) lastProgress = p;
+                        progBar.style.width = p + '%';
+                        progPct.textContent = p + '%';
+                        var stageLine = (pd.message || pd.stage || pd.status || 'Behandler');
+                        if (pd.storyline_preview && String(pd.storyline_preview).trim()) {
+                            stageLine = stageLine + ' · ' + String(pd.storyline_preview).trim().slice(0, 140);
+                        }
+                        progStage.textContent = stageLine;
+                        if (pd.status === 'completed' || pd.status === 'done' || p >= 100) {
+                            st.className = 'gen-status done';
+                            const videoUrl = (pd.video_url || (API_BASE + '/api/documentary/video/' + docId));
+                            const downloadUrl = videoUrl + (videoUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
+                            st.innerHTML = '<i class="fas fa-check"></i> Færdig!';
+                            progBar.style.width = '100%';
+                            progPct.textContent = '100%';
+                            progBox.style.display = 'none';
+                            if (mainCard) mainCard.classList.remove('gen-progress-active');
+                            var finishBox = document.getElementById('genFinishBox');
+                            var finishLinks = document.getElementById('genFinishLinks');
+                            if (finishBox && finishLinks) {
+                                var shareUrl = (window.location.origin || API_BASE || '') + '/generator';
+                                var shareText = 'I just created a video on MasterNoder — AI video generation with RPG mechanics';
+                                var shareEnc = encodeURIComponent(shareText);
+                                var urlEnc = encodeURIComponent(shareUrl);
+                                var twUrl = 'https://twitter.com/intent/tweet?text=' + shareEnc + '&url=' + urlEnc + '&hashtags=AIvideo,MasterNoder';
+                                var liUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + urlEnc;
+                                var fbUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + urlEnc;
+                                var shareRow = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,255,136,0.2);"><span style="font-size:0.85rem;color:rgba(255,255,255,0.7);">Share:</span> <a href="' + twUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#00d4ff;text-decoration:none;" title="Share on X">𝕏</a> <a href="' + liUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#0a66c2;text-decoration:none;" title="Share on LinkedIn">in</a> <a href="' + fbUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#1877f2;text-decoration:none;" title="Share on Facebook">f</a></div>';
+                                finishLinks.innerHTML = '<a href="' + downloadUrl + '" download class="gen-btn" style="width:auto;padding:10px 20px;text-decoration:none;"><i class="fas fa-download"></i> Download MP4</a> <a href="' + (API_BASE || '') + '/gallery" class="gen-btn" style="width:auto;padding:10px 20px;background:rgba(0,212,255,0.25);text-decoration:none;"><i class="fas fa-images"></i> Galleri</a>' + shareRow;
+                                var aiUsed = pd.providers_used;
+                                var aiLabel = document.getElementById('genFinishAiUsed');
+                                if (aiUsed && Array.isArray(aiUsed) && aiUsed.length > 0) {
+                                    if (!aiLabel) {
+                                        aiLabel = document.createElement('p');
+                                        aiLabel.id = 'genFinishAiUsed';
+                                        aiLabel.style.cssText = 'margin-top:12px;font-size:0.85rem;color:rgba(0,212,255,0.9);';
+                                        finishBox.insertBefore(aiLabel, finishLinks);
+                                    }
+                                    aiLabel.textContent = 'AIs brugt: ' + aiUsed.map(function(p){ return p.replace(/_/g, ' '); }).join(', ');
+                                    aiLabel.style.display = '';
+                                } else if (aiLabel) { aiLabel.style.display = 'none'; aiLabel.textContent = ''; }
+                                finishBox.classList.add('show');
+                                finishBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                            isGenerating = false;
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                            return;
+                        }
+                        if (pd.status === 'error' || pd.status === 'failed') throw new Error(pd.error_message || pd.error || pd.message || 'Generering fejlede. Prøv igen.');
+                    } catch (e) {
+                        if (attempts < 10 && !pollCancel) { setTimeout(poll, 2000); return; }
+                        st.className = 'gen-status error';
+                        var errMsg = userFacingError(e.message, typeof pr !== 'undefined' ? pr : null);
+                        st.innerHTML = '<i class="fas fa-times"></i> ' + errMsg + ' <button type="button" id="btnRetryVideo" class="gen-btn" style="padding:8px 16px;font-size:0.9rem;width:auto;margin-left:12px;margin-top:8px;"><i class="fas fa-redo"></i> Prøv igen</button>';
+                        progBox.style.display = 'none';
+                        if (mainCard) mainCard.classList.remove('gen-progress-active');
+                        isGenerating = false;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                        setTimeout(function() {
+                            var retryBtn = document.getElementById('btnRetryVideo');
+                            if (retryBtn) retryBtn.onclick = function() { generateVideo(); };
+                        }, 100);
+                        return;
+                    }
+                    if (!pollCancel) setTimeout(poll, pollInterval());
+                };
+                poll();
+            } catch (e) {
+                st.className = 'gen-status error';
+                st.innerHTML = '<i class="fas fa-times"></i> ' + userFacingError(e.message, typeof res !== 'undefined' ? res : null) + ' <button type="button" id="btnRetryCreate" class="gen-btn" style="padding:8px 16px;font-size:0.9rem;width:auto;margin-left:12px;margin-top:8px;"><i class="fas fa-redo"></i> Prøv igen</button>';
+                progBox.style.display = 'none';
+                var mainCard = document.getElementById('genMainCard');
+                if (mainCard) mainCard.classList.remove('gen-progress-active');
+                isGenerating = false;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                setTimeout(function() {
+                    var retryBtn = document.getElementById('btnRetryCreate');
+                    if (retryBtn) retryBtn.onclick = function() { generateVideo(); };
+                }, 100);
+            }
+        }
+
+        async function loadRecentClips() {
+            const card = document.getElementById('recentClipsCard');
+            const list = document.getElementById('recentClipsList');
+            if (!card || !list) return;
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            try {
+                let recent = [];
+                const historyRes = await enhancedFetch(API_BASE + '/api/generator/history?user_id=' + encodeURIComponent(userId) + '&limit=5');
+                if (historyRes.ok) {
+                    const data = await historyRes.json().catch(() => ({}));
+                    if (data.history && data.history.recent) recent = data.history.recent;
+                    else if (data.recent) recent = data.recent;
+                }
+                if (recent.length === 0) {
+                    const jobsRes = await enhancedFetch(API_BASE + '/api/generator/jobs?user_id=' + encodeURIComponent(userId) + '&limit=5');
+                    if (jobsRes.ok) {
+                        const data = await jobsRes.json().catch(() => ({}));
+                        if (data.jobs && data.jobs.length) {
+                            recent = data.jobs.map(function(j) {
+                                const cfg = j.config || {};
+                                return {
+                                    id: j.id,
+                                    title: (cfg.title || cfg.prompt || j.theme || 'Untitled').toString().slice(0, 60),
+                                    status: j.status,
+                                    video_url: j.status === 'completed' ? ('/api/documentary/video/' + j.id) : null,
+                                    points_earned: j.points_earned,
+                                };
+                            });
+                        }
+                    }
+                }
+                if (recent.length === 0) return;
+                card.style.display = 'block';
+                list.innerHTML = recent.slice(0, 5).map(function(item) {
+                    const title = (item.title || 'Untitled').replace(/</g, '&lt;');
+                    const url = item.video_url || ('/api/documentary/video/' + (item.id || ''));
+                    const pts = item.points_earned != null ? ' · ' + item.points_earned + ' point' + (item.points_earned !== 1 ? 's' : '') : '';
+                    const canDownload = item.status === 'completed';
+                    return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+                        (canDownload ? '<a href="' + url + '" target="_blank" style="color:#00ff88;text-decoration:none;">' + title + '</a>' : '<span style="color:rgba(255,255,255,0.7);">' + title + '</span>') +
+                        (pts ? '<span style="color:rgba(255,255,255,0.5);font-size:0.85em;">' + pts + '</span>' : '') +
+                        (canDownload ? ' &middot; <a href="' + url + '?download=1" download style="color:#00d4ff;font-size:0.9em;">Download</a>' : '') +
+                        '</div>';
+                }).join('');
+            } catch (e) {}
+        }
+
+        function loadChecklist() {
+            var checkAi = document.getElementById('checkAi');
+            var checkLlmStatus = document.getElementById('checkLlmStatus');
+            var checkVideo = document.getElementById('checkVideo');
+            var checkVideoStatus = document.getElementById('checkVideoStatus');
+            var checkAgents = document.getElementById('checkAgents');
+            var checkAgentsStatus = document.getElementById('checkAgentsStatus');
+            if (checkAi) checkAi.checked = false;
+            if (checkLlmStatus) checkLlmStatus.textContent = 'Tjekker...';
+            if (checkVideoStatus) checkVideoStatus.textContent = '—';
+            function tryProviders(url) {
+                return enhancedFetch(url).then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.text();
+                }).then(function(text) {
+                    var d;
+                    try { d = JSON.parse(text); } catch (e) { throw new Error('Invalid JSON'); }
+                    var list = (d && d.providers) ? d.providers : (Array.isArray(d) ? d : []);
+                    var anyOk = Array.isArray(list) && list.some(function(p) { return p && (p.configured || p.available); });
+                    if (checkAi) checkAi.checked = anyOk;
+                    if (checkLlmStatus) checkLlmStatus.textContent = anyOk ? (list.filter(function(p){ return p && (p.configured||p.available); }).length + ' LLM konfigureret') : 'Konfigurer i Agent Support.';
+                    return d;
+                });
+            }
+            function loadVideoProviders() {
+                enhancedFetch(API_BASE + '/api/ai/video-providers').then(function(r) {
+                    if (!r.ok) return;
+                    return r.json();
+                }).then(function(d) {
+                    if (!d || !d.providers) return;
+                    var list = d.providers;
+                    var nOk = list.filter(function(p){ return p && p.available; }).length;
+                    if (checkVideo) checkVideo.checked = nOk > 0;
+                    if (checkVideoStatus) checkVideoStatus.textContent = nOk + ' video-AI (Runway, Pika, HeyGen, Replicate...)';
+                }).catch(function() {
+                    if (checkVideoStatus) checkVideoStatus.textContent = 'Valgfri';
+                });
+            }
+            loadVideoProviders();
+            loadProviderGrid();
+            enhancedFetch(API_BASE + '/api/generator/generation-health').then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).then(function(h) {
+                var ready = h && h.ready;
+                var sc = (h && h.service_check) || {};
+                var diskOk = !sc.disk || sc.disk.ok !== false;
+                var llmOk = sc.llm && sc.llm.ok;
+                var nProv = (h.configured_provider_count != null) ? h.configured_provider_count : 0;
+                if (ready && llmOk) {
+                    if (checkAi) checkAi.checked = true;
+                    if (checkLlmStatus) checkLlmStatus.textContent = nProv + ' LLM klar. ' + (sc.ffmpeg && sc.ffmpeg.ok ? 'ffmpeg OK' : '');
+                    return;
+                }
+                var parts = [];
+                if (!diskOk) parts.push('diskplads');
+                if (!llmOk) parts.push('LLM API');
+                if (checkAi) checkAi.checked = false;
+                if (checkLlmStatus) checkLlmStatus.textContent = (h && h.message) ? h.message : ('Mangler: ' + (parts.join(' + ') || 'konfiguration'));
+            }).catch(function() {
+                return tryProviders(API_BASE + '/api/ai/providers').catch(function() {
+                    return tryProviders(API_BASE + '/api/ai/providers');
+                }).catch(function() {
+                    if (checkLlmStatus) checkLlmStatus.textContent = 'Tjek netværk.';
+                });
+            });
+            if (checkAgents && checkAgentsStatus) {
+                checkAgentsStatus.textContent = 'Valgfri: kør "Assign 25" nedenfor.';
+            }
+        }
+        function loadProviderGrid() {
+            var grid = document.getElementById('genProviderGrid');
+            if (!grid) return;
+            Promise.all([
+                enhancedFetch(API_BASE + '/api/ai/providers').then(function(r){ return r.ok ? r.json() : null; }),
+                enhancedFetch(API_BASE + '/api/ai/video-providers').then(function(r){ return r.ok ? r.json() : null; })
+            ]).then(function(arr) {
+                var llm = (arr[0] && arr[0].providers) ? arr[0].providers : [];
+                var vid = (arr[1] && arr[1].providers) ? arr[1].providers : [];
+                var html = '';
+                llm.forEach(function(p) {
+                    if (!p || !p.label) return;
+                    var ok = p.configured || p.available;
+                    html += '<div class="gen-provider-chip' + (ok ? ' available' : '') + '" title="' + (p.label || '') + '">' + (p.label || '').replace(/\s*\([^)]*\)/g,'').slice(0,14) + '<div class="chip-type">LLM</div></div>';
+                });
+                vid.forEach(function(p) {
+                    if (!p || !p.name) return;
+                    var ok = p.available;
+                    html += '<div class="gen-provider-chip' + (ok ? ' available' : '') + '" title="' + (p.name || '') + '">' + (p.name || '').slice(0,14) + '<div class="chip-type">Video</div></div>';
+                });
+                grid.innerHTML = html || '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Ingen providers fundet</span>';
+            }).catch(function() {
+                grid.innerHTML = '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Kunne ikke hente</span>';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof ThemeTimeline !== 'undefined') {
+                themeTimeline = new ThemeTimeline('theme-timeline-container', function(id) {
+                    document.getElementById('videoTheme').value = id || 'default';
+                });
+                themeTimeline.init().then(function() {
+                    var params = new URLSearchParams(window.location.search);
+                    var themeFromUrl = params.get('theme');
+                    if (themeFromUrl && document.getElementById('videoTheme')) {
+                        document.getElementById('videoTheme').value = themeFromUrl;
+                        if (themeTimeline && typeof themeTimeline.selectTheme === 'function') themeTimeline.selectTheme(themeFromUrl);
+                    }
+                }).catch(() => {});
+            }
+            loadChecklist();
+            loadRecentClips();
+            var aiProviderToggle = document.getElementById('aiProviderToggle');
+            if (aiProviderToggle) {
+                aiProviderToggle.addEventListener('click', function() {
+                    var grid = document.getElementById('genProviderGrid');
+                    if (grid) { grid.classList.toggle('collapsed'); aiProviderToggle.classList.toggle('collapsed'); }
+                });
+            }
+            var genUpdatesToggle = document.getElementById('genUpdatesToggle');
+            if (genUpdatesToggle) {
+                genUpdatesToggle.addEventListener('click', function() {
+                    var list = document.getElementById('genUpdatesList');
+                    if (list) { list.classList.toggle('collapsed'); genUpdatesToggle.classList.toggle('collapsed'); }
+                });
+            }
+            var configQuality = document.getElementById('configQuality');
+            var configUseAllAis = document.getElementById('configUseAllAis');
+            if (configQuality && configUseAllAis) {
+                configQuality.addEventListener('change', function() {
+                    var v = (configQuality.value || '').toLowerCase();
+                    configUseAllAis.checked = ['best','max','ultra'].indexOf(v) >= 0;
+                });
+                configUseAllAis.addEventListener('change', function() {
+                    if (configUseAllAis.checked && !['best','max','ultra'].includes((configQuality.value||'').toLowerCase()))
+                        configQuality.value = 'best';
+                });
+            }
+            var btnRefreshChecklist = document.getElementById('btnRefreshChecklist');
+            if (btnRefreshChecklist && !btnRefreshChecklist.dataset.bound) {
+                btnRefreshChecklist.dataset.bound = '1';
+                btnRefreshChecklist.addEventListener('click', function() {
+                    btnRefreshChecklist.disabled = true;
+                    btnRefreshChecklist.textContent = '...';
+                    loadChecklist();
+                    setTimeout(function() { btnRefreshChecklist.disabled = false; btnRefreshChecklist.textContent = '\u21BB'; }, 800);
+                });
+            }
+            var mb = document.getElementById('magicBtn');
+            var bv = document.getElementById('btnVideo');
+            var bc = document.getElementById('btnClip');
+            var gt = document.getElementById('genTabs');
+            if (mb && !mb.dataset.bound) { mb.dataset.bound = '1'; mb.addEventListener('click', function() { runMagic(); }); }
+            var btnTestDeploy = document.getElementById('btnTestDeploy');
+            if (btnTestDeploy && !btnTestDeploy.dataset.bound) {
+                btnTestDeploy.dataset.bound = '1';
+                btnTestDeploy.addEventListener('click', function() {
+                    if (isGenerating) return;
+                    var st = document.getElementById('magicStatus');
+                    st.textContent = 'Tester API...';
+                    st.style.color = 'rgba(255,255,255,0.7)';
+                    enhancedFetch(API_BASE + '/api/generator/test').then(function(r) { return r.json(); }).then(function(d) {
+                        if (d.ok || d.success) {
+                            st.textContent = 'API OK. Starter kort testvideo...';
+                            st.style.color = '#00ff88';
+                            document.getElementById('videoTitle').value = 'Deploy test';
+                            document.getElementById('videoDesc').value = 'Kort testvideo efter deploy.';
+                            var elDur = document.getElementById('configDuration'); if (elDur) elDur.value = '30';
+                            var elShort = document.getElementById('configShortClip'); if (elShort) elShort.checked = true;
+                            setMode('video');
+                            setTimeout(function() { generateVideo(); }, 400);
+                        } else {
+                            st.textContent = d.error || 'Test fejlede';
+                            st.style.color = '#ff3366';
+                        }
+                    }).catch(function(e) {
+                        st.textContent = 'Test fejlede: ' + (e.message || 'Netværksfejl');
+                        st.style.color = '#ff3366';
+                    });
+                });
+            }
+            if (bv && !bv.dataset.bound) { bv.dataset.bound = '1'; bv.addEventListener('click', function() { generateVideo(); }); }
+            if (bc && !bc.dataset.bound) { bc.dataset.bound = '1'; bc.addEventListener('click', function() { generateClips(); }); }
+            if (gt) gt.addEventListener('click', function(e) {
+                var t = e.target.closest('.gen-tab');
+                if (t && t.dataset.mode) setMode(t.dataset.mode);
+            });
+            var btnAssign25 = document.getElementById('btnAssign25');
+            if (btnAssign25 && !btnAssign25.dataset.bound) {
+                btnAssign25.dataset.bound = '1';
+                btnAssign25.addEventListener('click', function() {
+                    var st = document.getElementById('assign25Status');
+                    st.textContent = '';
+                    btnAssign25.disabled = true;
+                    btnAssign25.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+                    fetch(API_BASE + '/api/debugger/tasks/assign-rulebook-todo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ max_tasks: 25, daily: true })
+                    }).then(function(r) { return r.json(); }).then(function(d) {
+                        if (d.success) {
+                            st.textContent = 'Assigned ' + (d.total_assigned || 0) + ' tasks to ' + (d.agents_used || []).join(', ');
+                            st.style.color = '#00ff88';
+                            var checkAgents = document.getElementById('checkAgents');
+                            var checkAgentsStatus = document.getElementById('checkAgentsStatus');
+                            if (checkAgents) checkAgents.checked = true;
+                            if (checkAgentsStatus) checkAgentsStatus.textContent = 'Agents har modtaget opgaver.';
+                        } else {
+                            st.textContent = d.error || 'Failed';
+                            st.style.color = '#ff3366';
+                        }
+                    }).catch(function(e) {
+                        st.textContent = e.message || 'Error';
+                        st.style.color = '#ff3366';
+                    }).finally(function() {
+                        btnAssign25.disabled = false;
+                        btnAssign25.innerHTML = '<i class="fas fa-tasks"></i> Assign 25 tasks to agents';
+                    });
+                });
+            }
+            var btnAssignStarmap50 = document.getElementById('btnAssignStarmap50');
+            if (btnAssignStarmap50 && !btnAssignStarmap50.dataset.bound) {
+                btnAssignStarmap50.dataset.bound = '1';
+                btnAssignStarmap50.addEventListener('click', function() {
+                    var st = document.getElementById('assignStarmap50Status');
+                    st.textContent = '';
+                    btnAssignStarmap50.disabled = true;
+                    btnAssignStarmap50.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning 50…';
+                    fetch(API_BASE + '/api/debugger/tasks/assign-starmap50', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    }).then(function(r) { return r.json(); }).then(function(d) {
+                        if (d.success) {
+                            st.textContent = 'Assigned ' + (d.total_assigned || 0) + ' Star Map projects to ' + (d.agents_used || []).join(', ');
+                            st.style.color = '#00ff88';
+                        } else {
+                            st.textContent = d.error || 'Failed';
+                            st.style.color = '#ff3366';
+                        }
+                    }).catch(function(e) {
+                        st.textContent = e.message || 'Error';
+                        st.style.color = '#ff3366';
+                    }).finally(function() {
+                        btnAssignStarmap50.disabled = false;
+                        btnAssignStarmap50.innerHTML = '<i class="fas fa-map"></i> Assign 50 Star Map projects to agents';
+                    });
+                });
+            }
+            var btnCleanGallery = document.getElementById('btnCleanGallery');
+            if (btnCleanGallery && !btnCleanGallery.dataset.bound) {
+                btnCleanGallery.dataset.bound = '1';
+                btnCleanGallery.addEventListener('click', function() {
+                    var st = document.getElementById('cleanGalleryStatus');
+                    st.textContent = '';
+                    btnCleanGallery.disabled = true;
+                    btnCleanGallery.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cleaning...';
+                    fetch(API_BASE + '/api/gallery/clean', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    }).then(function(r) { return r.json(); }).then(function(d) {
+                        if (d.status === 'success' || d.cleaned) {
+                            st.textContent = 'Removed ' + (d.deleted_count || 0) + ' expired video(s).';
+                            st.style.color = '#00ff88';
+                        } else {
+                            st.textContent = d.error || 'Failed';
+                            st.style.color = '#ff3366';
+                        }
+                    }).catch(function(e) {
+                        st.textContent = e.message || 'Error';
+                        st.style.color = '#ff3366';
+                    }).finally(function() {
+                        btnCleanGallery.disabled = false;
+                        btnCleanGallery.innerHTML = '<i class="fas fa-broom"></i> Clean gallery';
+                    });
+                });
+            }
+            function loadAgentCalendar() {
+                var listEl = document.getElementById('agentCalendarList');
+                if (!listEl) return;
+                fetch(API_BASE + '/api/agent-calendar').then(function(r) { return r.json(); }).then(function(d) {
+                    if (d.success && Array.isArray(d.appointments)) {
+                        if (d.appointments.length === 0) listEl.innerHTML = 'No appointments yet. Add one below.';
+                        else listEl.innerHTML = d.appointments.slice(0, 20).map(function(a) {
+                            var when = a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : '—';
+                            return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);">' + (a.agent_id || '') + ': ' + (a.title || a.task || '') + ' — ' + when + '</div>';
+                        }).join('');
+                    } else listEl.innerHTML = 'Could not load calendar.';
+                }).catch(function() { if (listEl) listEl.innerHTML = 'Could not load calendar.'; });
+            }
+            loadAgentCalendar();
+            var btnAgentCalendarAdd = document.getElementById('btnAgentCalendarAdd');
+            if (btnAgentCalendarAdd && !btnAgentCalendarAdd.dataset.bound) {
+                btnAgentCalendarAdd.dataset.bound = '1';
+                btnAgentCalendarAdd.addEventListener('click', function() {
+                    var agent = document.getElementById('agentCalendarAgent');
+                    var task = document.getElementById('agentCalendarTask');
+                    var when = document.getElementById('agentCalendarWhen');
+                    var st = document.getElementById('agentCalendarStatus');
+                    if (!agent || !when) return;
+                    var scheduledAt = when.value ? new Date(when.value).toISOString() : new Date(Date.now() + 3600000).toISOString();
+                    fetch(API_BASE + '/api/agent-calendar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ agent_id: agent.value, task: task ? task.value : '', scheduled_at: scheduledAt, title: (task && task.value) ? task.value.slice(0, 50) : 'Appointment' })
+                    }).then(function(r) { return r.json(); }).then(function(d) {
+                        if (d.success) { st.textContent = 'Added.'; st.style.color = '#00ff88'; loadAgentCalendar(); if (task) task.value = ''; }
+                        else { st.textContent = d.error || 'Failed'; st.style.color = '#ff3366'; }
+                    }).catch(function() { st.textContent = 'Error'; st.style.color = '#ff3366'; });
+                });
+            }
+            if (window.location.hash === '#agent-calendar') {
+                var el = document.getElementById('agent-calendar');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    </script>
+    <script src="/static/js/navigation-toolbar.js?v=20260304" defer></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Intelligence Widget -->
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/energy-regeneration-timers.js"></script>
+    <script src="/static/js/top50-monetization-frame.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "name": "Trophy Hunters Walkthrough",
+  "version": "V15",
+  "description": "Step-by-step walkthrough. Play by the rulebook.",
+  "updated_at": "2026-02-21",
+  "rulebook_ref": "V1–V15",
+  "phases": [
+    {
+      "id": "phase_1",
+      "name": "Getting Started",
+      "rulebook": "V1",
+      "steps": [
+        {"order": 1, "action": "Create profile", "detail": "Visit profile or complete onboarding. Your user_id and user_index are set.", "reward": "Profile ready"},
+        {"order": 2, "action": "Open Trophies", "detail": "Go to Trophies page. See trophy list, Star Map, Comm. Psychology, Rulebook, Compendium.", "reward": "Overview"},
+        {"order": 3, "action": "Read Rulebook V1", "detail": "Open Compendium → V1 Core Rules. Understand user_id, user_index, profiles.", "reward": "compendium_points"}
+      ]
+    },
+    {
+      "id": "phase_2",
+      "name": "Star Map & Verification",
+      "rulebook": "V4",
+      "steps": [
+        {"order": 1, "action": "View Star Map", "detail": "Trophies → Star Map tab. Click View Star Map. See 7 nearest stars.", "reward": "game_points"},
+        {"order": 2, "action": "Run Verification", "detail": "Click Run Verification. Electric Magnet special.", "reward": "game_points"},
+        {"order": 3, "action": "Run DNA Test", "detail": "Click Run DNA Test. Electric Magnet special.", "reward": "dna_manipulation_points"}
+      ]
+    },
+    {
+      "id": "phase_3",
+      "name": "Hunters Spells (Rulebook V2)",
+      "rulebook": "V2",
+      "steps": [
+        {"order": 1, "action": "Open Hunters Rulebook", "detail": "Compendium → V2 or Trophies → Rulebook. See 19 spells in 5 sectors.", "reward": "compendium_points"},
+        {"order": 2, "action": "Learn Galactic spells", "detail": "Star Map, Proxima B Beacon, Sirius B Pulse, Earth B Shield. Cost 10–30.", "reward": "Knowledge"},
+        {"order": 3, "action": "Earn game_points", "detail": "Use specials, complete activities. Award game_points via unified points.", "reward": "game_points"}
+      ]
+    },
+    {
+      "id": "phase_4",
+      "name": "Communication Psychology (V3)",
+      "rulebook": "V3",
+      "steps": [
+        {"order": 1, "action": "Open Comm. Psychology", "detail": "Trophies → Comm. Psychology tab. See 25 theories.", "reward": "Overview"},
+        {"order": 2, "action": "Study first theory", "detail": "Click Study on Agenda-Setting or any locked theory.", "reward": "communication_psychology_points"},
+        {"order": 3, "action": "Read Compendium pages", "detail": "Compendium → Part I pages 1–10. Each page awards compendium_points.", "reward": "compendium_points"}
+      ]
+    },
+    {
+      "id": "phase_5",
+      "name": "Unified Points & Mastery",
+      "rulebook": "V7",
+      "steps": [
+        {"order": 1, "action": "Check all point types", "detail": "Profile or Points page. xp_points, game_points, communication_psychology_points, compendium_points.", "reward": "Awareness"},
+        {"order": 2, "action": "Complete Compendium V1–V15", "detail": "Read all rulebook pages. Each awards points.", "reward": "compendium_points"},
+        {"order": 3, "action": "Use agent-context", "detail": "Agents load /api/rulebooks/agent-context. You play by the rulebook.", "reward": "Mastery"}
+      ]
+    },
+    {
+      "id": "phase_6",
+      "name": "Stories: Time Reversal, Medieval, Power Combos",
+      "rulebook": "V2",
+      "steps": [
+        {"order": 1, "action": "Open Stories tab", "detail": "Trophies -> Stories. Read Winter Wedding (1017) — setting, roles, conflicts, NPCs, twist.", "reward": "Overview"},
+        {"order": 2, "action": "Buy story unlock in Shop", "detail": "Shop -> Stories: Winter Wedding Story Unlock or Medieval Campaign Pack. Trophies: Winter Wedding, Time Reversal, Power Combo.", "reward": "game_points"},
+        {"order": 3, "action": "Use Time Reversal & Power Combos", "detail": "Rulebook V2: Medieval and Time Reversal sectors. Power combos: Contract Seal + Jarl's Fury, etc.", "reward": "Mastery"}
+      ]
+    }
+  ]
+}

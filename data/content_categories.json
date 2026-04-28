@@ -1,0 +1,409 @@
+{
+  "description": "Content categories for video and clip generation: 25 conspiracy methods in separate sections. All award unified points. Used for both full documentary and quick clip.",
+  "unified_point_system": {
+    "base_generation_points": 25,
+    "short_clip_points": 10,
+    "point_types_tracked": [
+      "generation_points",
+      "conspiracy_points",
+      "religious_conspiracy_points",
+      "alternative_theory_points"
+    ]
+  },
+  "sections": [
+    {
+      "id": "general",
+      "name": "General",
+      "description": "Standard documentary or clip; no specific theory type.",
+      "order": 0
+    },
+    {
+      "id": "political_power",
+      "name": "Political & power",
+      "description": "Conspiracies about governments, deep state, elections, and hidden power.",
+      "order": 1
+    },
+    {
+      "id": "religious_prophecy",
+      "name": "Religious & prophecy",
+      "description": "End-times, prophecies, secret religious agendas, and faith-based conspiracy ideas.",
+      "order": 2
+    },
+    {
+      "id": "health_science",
+      "name": "Health & science",
+      "description": "Pandemics, Big Pharma, climate, and mainstream science as cover-up.",
+      "order": 3
+    },
+    {
+      "id": "historical_coverups",
+      "name": "Historical & cover-ups",
+      "description": "Assassinations, hidden history, and suppressed events.",
+      "order": 4
+    },
+    {
+      "id": "extraterrestrial_occult",
+      "name": "Extraterrestrial & occult",
+      "description": "UFOs, aliens, hollow Earth, secret societies, and occult elite.",
+      "order": 5
+    },
+    {
+      "id": "economic_control",
+      "name": "Economic & control",
+      "description": "Banking, central banks, population and resource control.",
+      "order": 6
+    },
+    {
+      "id": "media_control",
+      "name": "Media & narrative control",
+      "description": "Media manipulation, surveillance, and mind control.",
+      "order": 7
+    },
+    {
+      "id": "alternative_theories",
+      "name": "Alternative / unnormal theories",
+      "description": "Non-mainstream and alternative explanations; contrast to conspiracy.",
+      "order": 8
+    }
+  ],
+  "categories": [
+    {
+      "id": "general",
+      "name": "General (no conspiracy)",
+      "description": "Standard documentary or clip; no specific theory type.",
+      "section_id": "general",
+      "context": "Standard documentary or short clip. No conspiracy or alternative theory angle.",
+      "tags": ["documentary", "general"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 0,
+      "unified_point_type": null,
+      "order": 0
+    },
+    {
+      "id": "deep_state",
+      "name": "Deep state / shadow government",
+      "description": "Hidden unelected elite controlling policy behind the scenes.",
+      "section_id": "political_power",
+      "context": "Conspiracy theory about a deep state or shadow government: unelected officials, intelligence agencies, or bureaucrats secretly controlling national and global policy regardless of who is elected.",
+      "tags": ["conspiracy", "political", "deep state", "shadow government"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 1
+    },
+    {
+      "id": "false_flag",
+      "name": "False flag operations",
+      "description": "Staged attacks or events blamed on others to justify war or policy.",
+      "section_id": "political_power",
+      "context": "Conspiracy theory about false flag operations: governments or groups staging attacks, terror events, or crises and blaming others to justify war, surveillance, or political agendas.",
+      "tags": ["conspiracy", "false flag", "political", "staged"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 2
+    },
+    {
+      "id": "new_world_order",
+      "name": "New World Order / globalists",
+      "description": "Elite plan for a single global government and controlled society.",
+      "section_id": "political_power",
+      "context": "Conspiracy theory about a New World Order or globalist elite: a planned single world government, erosion of sovereignty, and a controlled society run by a small group of powerful figures.",
+      "tags": ["conspiracy", "NWO", "globalists", "political"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 3
+    },
+    {
+      "id": "election_fraud",
+      "name": "Election / vote fraud",
+      "description": "Rigged elections, stolen votes, and manipulated outcomes.",
+      "section_id": "political_power",
+      "context": "Conspiracy theory about election or vote fraud: rigged voting machines, stolen ballots, media collusion, or foreign interference to fix electoral outcomes.",
+      "tags": ["conspiracy", "election", "fraud", "political"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 4
+    },
+    {
+      "id": "religious_prophecy",
+      "name": "Religious prophecy / end-times",
+      "description": "Biblical or religious prophecies, end-times, and hidden divine plans.",
+      "section_id": "religious_prophecy",
+      "context": "Religious conspiracy ideas: end-times prophecy, biblical signs, secret religious agendas, or belief that current events fulfill ancient prophecies or divine plans.",
+      "tags": ["religious", "conspiracy", "prophecy", "end-times"],
+      "is_conspiracy": true,
+      "is_religious": true,
+      "bonus_unified_points": 8,
+      "unified_point_type": "religious_conspiracy_points",
+      "order": 5
+    },
+    {
+      "id": "secret_societies",
+      "name": "Secret societies (Illuminati, etc.)",
+      "description": "Hidden societies controlling world events and symbolism.",
+      "section_id": "extraterrestrial_occult",
+      "context": "Conspiracy theory about secret societies such as the Illuminati, Freemasons, or other closed groups: hidden symbolism, coordinated control of events, and ancient plans for world domination.",
+      "tags": ["conspiracy", "Illuminati", "secret society", "occult"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 6
+    },
+    {
+      "id": "mind_control",
+      "name": "Mind control / MK-Ultra type",
+      "description": "Government or elite programs to control thoughts and behavior.",
+      "section_id": "media_control",
+      "context": "Conspiracy theory about mind control: MK-Ultra-style programs, behavioral engineering, subliminal messaging, or elite use of psychology and media to control populations.",
+      "tags": ["conspiracy", "mind control", "MK-Ultra", "surveillance"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 7
+    },
+    {
+      "id": "pandemic_hoax",
+      "name": "Pandemic / health hoax",
+      "description": "Pandemics or health crises as manufactured or exaggerated for control.",
+      "section_id": "health_science",
+      "context": "Conspiracy theory that pandemics or major health crises are hoaxed, exaggerated, or manufactured to justify lockdowns, mandates, or control over populations.",
+      "tags": ["conspiracy", "health", "pandemic", "hoax"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 8
+    },
+    {
+      "id": "big_pharma",
+      "name": "Big Pharma / drug suppression",
+      "description": "Pharmaceutical industry hiding cures and pushing harmful drugs.",
+      "section_id": "health_science",
+      "context": "Conspiracy theory about Big Pharma: suppressed cures, harmful drugs pushed for profit, and collusion with regulators to keep alternative or natural treatments off the market.",
+      "tags": ["conspiracy", "health", "pharma", "drugs"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 9
+    },
+    {
+      "id": "climate_hoax",
+      "name": "Climate change hoax",
+      "description": "Climate crisis as a manufactured narrative for control or profit.",
+      "section_id": "health_science",
+      "context": "Conspiracy theory that climate change or global warming is a hoax or exaggerated narrative used for control, taxation, or profit by elites and corporations.",
+      "tags": ["conspiracy", "climate", "hoax", "science"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 10
+    },
+    {
+      "id": "flat_earth",
+      "name": "Flat Earth / hidden geography",
+      "description": "Earth shape and geography as lied about by authorities.",
+      "section_id": "health_science",
+      "context": "Conspiracy or alternative theory about Earth's shape or geography: flat Earth, hidden continents, or that mainstream geography and space agencies are lying about the true nature of the world.",
+      "tags": ["conspiracy", "flat earth", "geography", "alternative"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 11
+    },
+    {
+      "id": "moon_landing_hoax",
+      "name": "Moon landing hoax",
+      "description": "Moon landings faked in studios; space program as deception.",
+      "section_id": "historical_coverups",
+      "context": "Conspiracy theory that the Moon landings were faked in television studios and that the space program is used to deceive the public and drain resources.",
+      "tags": ["conspiracy", "moon", "NASA", "hoax"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 12
+    },
+    {
+      "id": "assassination_coverup",
+      "name": "Assassination cover-ups (JFK, etc.)",
+      "description": "Political assassinations with hidden perpetrators and covered-up evidence.",
+      "section_id": "historical_coverups",
+      "context": "Conspiracy theory about political assassinations such as JFK: multiple shooters, covered-up evidence, and hidden perpetrators or agencies behind the killings.",
+      "tags": ["conspiracy", "assassination", "JFK", "cover-up"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 13
+    },
+    {
+      "id": "ufo_coverup",
+      "name": "UFO / alien cover-up",
+      "description": "Governments hiding contact with extraterrestrials and UFO evidence.",
+      "section_id": "extraterrestrial_occult",
+      "context": "Conspiracy theory that governments and agencies are covering up UFO sightings, alien contact, and reverse-engineered technology from non-human sources.",
+      "tags": ["conspiracy", "UFO", "alien", "cover-up"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 14
+    },
+    {
+      "id": "hollow_earth",
+      "name": "Hollow Earth / inner world",
+      "description": "Earth is hollow with inner civilizations or realms.",
+      "section_id": "extraterrestrial_occult",
+      "context": "Conspiracy or alternative theory that Earth is hollow, with inner worlds, civilizations, or entrances at the poles kept secret by authorities.",
+      "tags": ["conspiracy", "hollow earth", "alternative", "geography"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 15
+    },
+    {
+      "id": "banking_cartel",
+      "name": "Banking / central bank cartel",
+      "description": "Central banks and bankers controlling economy and society.",
+      "section_id": "economic_control",
+      "context": "Conspiracy theory about a banking or central bank cartel: control of money supply, engineered crises, and elites using finance to dominate nations and populations.",
+      "tags": ["conspiracy", "banking", "central bank", "economic"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 16
+    },
+    {
+      "id": "media_manipulation",
+      "name": "Media manipulation / mainstream narrative",
+      "description": "Mainstream media pushing a single narrative and hiding truth.",
+      "section_id": "media_control",
+      "context": "Conspiracy theory that mainstream media is controlled or coordinated to push a single narrative, suppress dissent, and hide inconvenient truths from the public.",
+      "tags": ["conspiracy", "media", "narrative", "control"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 17
+    },
+    {
+      "id": "surveillance_state",
+      "name": "Mass surveillance / privacy",
+      "description": "Total surveillance of citizens by governments and corporations.",
+      "section_id": "media_control",
+      "context": "Conspiracy theory about mass surveillance: governments and tech giants spying on everyone, erosion of privacy, and use of data for control or persecution.",
+      "tags": ["conspiracy", "surveillance", "privacy", "control"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 18
+    },
+    {
+      "id": "population_control",
+      "name": "Population control / depopulation",
+      "description": "Elite plans to reduce or control global population.",
+      "section_id": "economic_control",
+      "context": "Conspiracy theory that elites are pursuing population control or depopulation through policy, health interventions, or other means to maintain power and resources.",
+      "tags": ["conspiracy", "population", "depopulation", "control"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 19
+    },
+    {
+      "id": "food_water_control",
+      "name": "Food / water / supply control",
+      "description": "Control of food, water, and supply chains to dominate populations.",
+      "section_id": "economic_control",
+      "context": "Conspiracy theory that food, water, and supply chains are being controlled or monopolized by elites to create dependency and control over populations.",
+      "tags": ["conspiracy", "food", "water", "supply", "control"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 20
+    },
+    {
+      "id": "alternative_history",
+      "name": "Alternative history / hidden past",
+      "description": "Suppressed or rewritten history and hidden civilizations.",
+      "section_id": "historical_coverups",
+      "context": "Conspiracy or alternative theory that mainstream history is wrong or suppressed: hidden civilizations, rewritten timelines, or covered-up historical events.",
+      "tags": ["conspiracy", "history", "alternative", "cover-up"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 21
+    },
+    {
+      "id": "ancient_astronauts",
+      "name": "Ancient astronauts / lost civilizations",
+      "description": "Ancient contact with advanced beings or lost high civilizations.",
+      "section_id": "extraterrestrial_occult",
+      "context": "Conspiracy or alternative theory about ancient astronauts, lost advanced civilizations, or contact between ancient humans and non-human intelligence, suppressed by mainstream archaeology.",
+      "tags": ["conspiracy", "ancient", "astronauts", "civilization"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 22
+    },
+    {
+      "id": "occult_elite",
+      "name": "Occult practices of elite",
+      "description": "Elites using occult or ritual practices for power.",
+      "section_id": "extraterrestrial_occult",
+      "context": "Conspiracy theory that political and financial elites engage in occult, ritual, or symbolic practices to maintain power or communicate with hidden forces.",
+      "tags": ["conspiracy", "occult", "elite", "ritual"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 23
+    },
+    {
+      "id": "conspiracy_general",
+      "name": "General conspiracy (catch-all)",
+      "description": "Conspiracy angle without a specific method; general hidden forces.",
+      "section_id": "political_power",
+      "context": "General conspiracy theory: hidden forces, cover-ups, or coordinated elite action without specifying a single method. Catch-all for mixed or unspecified conspiracy content.",
+      "tags": ["conspiracy", "general", "hidden", "elite"],
+      "is_conspiracy": true,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "conspiracy_points",
+      "order": 24
+    },
+    {
+      "id": "alternative_theory",
+      "name": "Alternative / unnormal theory",
+      "description": "Non-mainstream or alternative explanation; not necessarily conspiracy.",
+      "section_id": "alternative_theories",
+      "context": "Alternative or unnormal theory: non-mainstream explanations, fringe science, or unconventional views that contrast with both mainstream and classic conspiracy narratives.",
+      "tags": ["alternative", "unnormal", "fringe", "theory"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 5,
+      "unified_point_type": "alternative_theory_points",
+      "order": 25
+    }
+  ]
+}

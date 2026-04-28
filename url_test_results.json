@@ -1,0 +1,261 @@
+{
+  "total": 18,
+  "ok": 0,
+  "broken": 18,
+  "results": [
+    {
+      "url": "/vidgenerator/api/points/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 490.86,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/points/history/analytics",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 516.76,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/points/statistics",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 475.17,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/unified-dashboard/data",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 450.71,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/monetization/top50",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 425.38,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/monetization/cash",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 448.67,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/tech-tree/knowledge",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 463.49,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/agent/get-all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 479.83,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/agent/recommendations",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 381.79,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/leaderboard/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 408.82,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/leaderboard/categories",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 459.64,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 433.76,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/dashboard",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 463.1,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/frontend",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 416.36,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/system/unified_point_counter",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 416.49,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/route",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 380.83,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/report",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 371.93,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/check-duplicates",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 426.39,
+      "error": null
+    }
+  ],
+  "broken_urls": [
+    {
+      "url": "/vidgenerator/api/points/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 490.86,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/points/history/analytics",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 516.76,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/points/statistics",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 475.17,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/unified-dashboard/data",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 450.71,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/monetization/top50",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 425.38,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/monetization/cash",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 448.67,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/tech-tree/knowledge",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 463.49,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/agent/get-all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 479.83,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/agent/recommendations",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 381.79,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/leaderboard/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 408.82,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/leaderboard/categories",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 459.64,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/all",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 433.76,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/dashboard",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 463.1,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/aggregator/frontend",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 416.36,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/system/unified_point_counter",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 416.49,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/route",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 380.83,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/report",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 371.93,
+      "error": null
+    },
+    {
+      "url": "/vidgenerator/api/debug/check-duplicates",
+      "status": "server_error",
+      "status_code": 502,
+      "response_time": 426.39,
+      "error": null
+    }
+  ]
+}

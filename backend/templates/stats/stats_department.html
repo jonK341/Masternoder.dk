@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Stats Department{% endblock %}
+
+{% block content %}
+<div class="stats-department-container">
+    <div class="stats-department-header">
+        <h1><i class="fas fa-chart-line"></i> Stats Department</h1>
+        <p class="subtitle">Track and manage all your statistics and attributes</p>
+    </div>
+    
+    <div class="stats-controls">
+        <div class="add-points-panel">
+            <h2>Add Points</h2>
+            <form id="add-points-form">
+                <div class="form-group">
+                    <label for="stat-category">Category:</label>
+                    <select id="stat-category" required>
+                        <option value="">Select Category</option>
+                        <option value="generation">Generation</option>
+                        <option value="leveling">Leveling</option>
+                        <option value="monetization">Monetization</option>
+                        <option value="engagement">Engagement</option>
+                        <option value="game">Game</option>
+                        <option value="attributes">Attributes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stat-name">Stat Name:</label>
+                    <input type="text" id="stat-name" placeholder="e.g., total_generations" required>
+                </div>
+                <div class="form-group">
+                    <label for="points-amount">Points:</label>
+                    <input type="number" id="points-amount" value="1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="update-related" checked>
+                        Update Related Stats
+                    </label>
+                </div>
+                <button type="submit" class="btn-add-points">
+                    <i class="fas fa-plus"></i> Add Points
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="stats-grid-container">
+        <div class="stats-category" data-category="generation">
+            <h2><i class="fas fa-video"></i> Generation Stats</h2>
+            <div class="stats-list" id="generation-stats"></div>
+        </div>
+        
+        <div class="stats-category" data-category="leveling">
+            <h2><i class="fas fa-level-up-alt"></i> Leveling Stats</h2>
+            <div class="stats-list" id="leveling-stats"></div>
+        </div>
+        
+        <div class="stats-category" data-category="monetization">
+            <h2><i class="fas fa-coins"></i> Monetization Stats</h2>
+            <div class="stats-list" id="monetization-stats"></div>
+        </div>
+        
+        <div class="stats-category" data-category="engagement">
+            <h2><i class="fas fa-fire"></i> Engagement Stats</h2>
+            <div class="stats-list" id="engagement-stats"></div>
+        </div>
+        
+        <div class="stats-category" data-category="game">
+            <h2><i class="fas fa-trophy"></i> Game Stats</h2>
+            <div class="stats-list" id="game-stats"></div>
+        </div>
+        
+        <div class="stats-category" data-category="attributes">
+            <h2><i class="fas fa-star"></i> Attributes</h2>
+            <div class="stats-list" id="attributes-stats"></div>
+        </div>
+    </div>
+    
+    <div class="stats-summary-panel">
+        <h2>Summary</h2>
+        <div class="summary-grid" id="stats-summary"></div>
+    </div>
+</div>
+
+<style>
+.stats-department-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #00ff00;
+}
+
+.stats-department-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: rgba(0, 255, 0, 0.05);
+    border: 2px solid rgba(0, 255, 0, 0.3);
+    border-radius: 8px;
+}
+
+.stats-department-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.subtitle {
+    color: rgba(0, 255, 0, 0.7);
+    font-size: 1.1rem;
+}
+
+.stats-controls {
+    margin-bottom: 2rem;
+}
+
+.add-points-panel {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.add-points-panel h2 {
+    margin-bottom: 1rem;
+    color: #00ff00;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #00ff00;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+    border-radius: 4px;
+}
+
+.btn-add-points {
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.btn-add-points:hover {
+    transform: scale(1.05);
+}
+
+.stats-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-category {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.stats-category h2 {
+    margin-bottom: 1rem;
+    color: #00ff00;
+    font-size: 1.3rem;
+    border-bottom: 2px solid rgba(0, 255, 0, 0.3);
+    padding-bottom: 0.5rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid #00ff00;
+    border-radius: 4px;
+}
+
+.stat-name {
+    font-weight: bold;
+    color: #00ff00;
+}
+
+.stat-value {
+    color: #00ff88;
+    font-size: 1.1rem;
+}
+
+.stats-summary-panel {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(0, 255, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.stats-summary-panel h2 {
+    margin-bottom: 1rem;
+    color: #00ff00;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.summary-item {
+    background: rgba(0, 255, 0, 0.1);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.summary-label {
+    color: rgba(0, 255, 0, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.summary-value {
+    color: #00ff00;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/stats-department.js') }}?v=1.0.0"></script>
+{% endblock %}
+

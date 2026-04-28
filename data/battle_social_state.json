@@ -1,0 +1,53 @@
+{
+  "tournaments": [
+    {
+      "id": "tour_alpha",
+      "name": "Alpha Clash Cup",
+      "status": "open",
+      "type": "Single Elimination",
+      "max_participants": 16,
+      "entry_fee": 0,
+      "prize_pool": {
+        "1st": "500 pts",
+        "2nd": "200 pts",
+        "3rd": "100 pts"
+      },
+      "participants": [
+        "user_b4984c3befca47a7"
+      ]
+    },
+    {
+      "id": "tour_omega",
+      "name": "Omega Skills League",
+      "status": "open",
+      "type": "Round Robin",
+      "max_participants": 12,
+      "entry_fee": 0,
+      "prize_pool": {
+        "1st": "400 pts",
+        "2nd": "150 pts"
+      },
+      "participants": []
+    }
+  ],
+  "clans": [
+    {
+      "id": "clan_vanguard",
+      "name": "Vanguard Protocol",
+      "focus": "offense",
+      "members": []
+    },
+    {
+      "id": "clan_aegis",
+      "name": "Aegis Circuit",
+      "focus": "defense",
+      "members": []
+    },
+    {
+      "id": "clan_nova",
+      "name": "Nova Syndicate",
+      "focus": "tactics",
+      "members": []
+    }
+  ]
+}

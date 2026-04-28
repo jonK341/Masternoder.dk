@@ -1,0 +1,477 @@
+[
+  {
+    "url": "/vidgenerator/",
+    "full_url": "https://masternoder.dk/vidgenerator/",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": 6,
+      "broken_links": [],
+      "content": [],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "unknown"
+  },
+  {
+    "url": "/vidgenerator/generator",
+    "full_url": "https://masternoder.dk/vidgenerator/generator",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/service-worker-gatherer.js (Status: 500)"
+      ],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [
+        "/vidgenerator/static/js/service-worker-gatherer.js"
+      ],
+      "buttons": [
+        "🎬 Generer Klip (AI)",
+        "🎥 Generer Video"
+      ],
+      "links": 6,
+      "broken_links": [],
+      "content": [
+        "h1: 🎬 AI Video Generator",
+        "h2: 🤖 AI Clip Generator",
+        "h2: 📹 Video Generator"
+      ],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "generator"
+  },
+  {
+    "url": "/vidgenerator/gallery",
+    "full_url": "https://masternoder.dk/vidgenerator/gallery",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [],
+      "buttons": [
+        "Videos",
+        "Calendar",
+        "Stats",
+        "✕",
+        "Search"
+      ],
+      "links": 2,
+      "broken_links": [],
+      "content": [
+        "h1: 🎬 Documentary Gallery",
+        "h2: No documentaries found",
+        "h2: Gallery Statistics"
+      ],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "gallery"
+  },
+  {
+    "url": "/vidgenerator/game",
+    "full_url": "https://masternoder.dk/vidgenerator/game",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [
+        "CSS file not accessible: /vidgenerator/static/css/modern-design-system.css (Status: 500)"
+      ],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/toast-notifications.js (Status: 500)"
+      ],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [
+        "/vidgenerator/static/css/modern-design-system.css"
+      ],
+      "javascript": [
+        "/vidgenerator/static/js/toast-notifications.js"
+      ],
+      "buttons": [
+        "Overview",
+        "Challenges 🎯",
+        "Achievements",
+        "Milestones",
+        "Leaderboard",
+        "Rewards",
+        "Stats",
+        "XP History",
+        "Overview",
+        "Challenges 🎯"
+      ],
+      "links": 8,
+      "broken_links": [],
+      "content": [
+        "h1: 🎮 Game",
+        ".game-header: 🎮 GameAchievements • Milestones • Stats Points • L",
+        ".game-tabs: OverviewChallenges 🎯AchievementsMilestonesLeaderbo"
+      ],
+      "background": [
+        ".bg-animated",
+        ".particles",
+        "body"
+      ],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "game"
+  },
+  {
+    "url": "/vidgenerator/battle",
+    "full_url": "https://masternoder.dk/vidgenerator/battle",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [
+        "CSS file not accessible: /vidgenerator/static/css/modern-design-system.css (Status: 500)",
+        "CSS file not accessible: /vidgenerator/static/css/loading-states.css (Status: 500)"
+      ],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/toast-notifications.js (Status: 500)"
+      ],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [
+        "/vidgenerator/static/css/modern-design-system.css",
+        "/vidgenerator/static/css/loading-states.css"
+      ],
+      "javascript": [
+        "/vidgenerator/static/js/toast-notifications.js"
+      ],
+      "buttons": [
+        "Overview",
+        "Battle",
+        "Tournaments",
+        "History",
+        "Leaderboard",
+        "Find Opponent",
+        "Overview",
+        "Battle",
+        "Tournaments",
+        "History"
+      ],
+      "links": 8,
+      "broken_links": [],
+      "content": [
+        "h1: ⚔️ Battle Arena",
+        ".battle-header: ⚔️ Battle ArenaCompete • Win • Climb the Leaderboa",
+        ".battle-tabs: OverviewBattleTournamentsHistoryLeaderboard"
+      ],
+      "background": [
+        ".bg-animated",
+        ".particles",
+        "body"
+      ],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "battle"
+  },
+  {
+    "url": "/vidgenerator/social",
+    "full_url": "https://masternoder.dk/vidgenerator/social",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [
+        "CSS file not accessible: /vidgenerator/static/css/modern-design-system.css (Status: 500)",
+        "CSS file not accessible: /vidgenerator/static/css/loading-states.css (Status: 500)"
+      ],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/toast-notifications.js (Status: 500)"
+      ],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [
+        "/vidgenerator/static/css/modern-design-system.css",
+        "/vidgenerator/static/css/loading-states.css"
+      ],
+      "javascript": [
+        "/vidgenerator/static/js/toast-notifications.js"
+      ],
+      "buttons": [
+        "Friends",
+        "Guilds",
+        "Requests",
+        "Friends",
+        "Guilds",
+        "Requests",
+        "Friends",
+        "Guilds",
+        "Requests"
+      ],
+      "links": 8,
+      "broken_links": [],
+      "content": [
+        "h1: 👥 Social",
+        ".social-header: 👥 SocialFriends • Guilds • Community",
+        ".social-tabs: FriendsGuildsRequests"
+      ],
+      "background": [
+        ".bg-animated",
+        ".particles",
+        "body"
+      ],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "social"
+  },
+  {
+    "url": "/vidgenerator/shop",
+    "full_url": "https://masternoder.dk/vidgenerator/shop",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [
+        "CSS file not accessible: /vidgenerator/static/css/modern-design-system.css (Status: 500)",
+        "CSS file not accessible: /vidgenerator/static/css/loading-states.css (Status: 500)"
+      ],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/toast-notifications.js (Status: 500)"
+      ],
+      "buttons": [
+        "Missing buttons matching selector: .purchase-btn"
+      ],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [
+        "/vidgenerator/static/css/modern-design-system.css",
+        "/vidgenerator/static/css/loading-states.css"
+      ],
+      "javascript": [
+        "/vidgenerator/static/js/toast-notifications.js"
+      ],
+      "buttons": [
+        "All Items",
+        "Themes",
+        "Power-ups",
+        "Cosmetics",
+        "Currency",
+        "All Items",
+        "Themes",
+        "Power-ups",
+        "Cosmetics",
+        "Currency"
+      ],
+      "links": 8,
+      "broken_links": [],
+      "content": [
+        "h1: 🛍️ Game Shop",
+        ".shop-header: 🛍️ Game ShopThemes • Power-ups • Cosmetics"
+      ],
+      "background": [
+        ".bg-animated",
+        ".particles",
+        "body"
+      ],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "shop"
+  },
+  {
+    "url": "/vidgenerator/stats",
+    "full_url": "https://masternoder.dk/vidgenerator/stats",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/toast-notifications.js (Status: 500)"
+      ],
+      "buttons": [],
+      "links": [],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [
+        "/vidgenerator/static/js/toast-notifications.js"
+      ],
+      "buttons": [
+        "🔄 Refresh",
+        "🖨️ Print",
+        "📥 Export"
+      ],
+      "links": 8,
+      "broken_links": [],
+      "content": [
+        "h1: 📊 Statistics & Analytics",
+        "h2: Stats Points Overview",
+        "h2: Achievements",
+        "h2: Milestones",
+        "h2: Categories"
+      ],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "stats"
+  },
+  {
+    "url": "/vidgenerator/analytics",
+    "full_url": "https://masternoder.dk/vidgenerator/analytics",
+    "status_code": 404,
+    "accessible": false,
+    "issues": {
+      "general": [
+        "HTTP 404"
+      ]
+    },
+    "found_elements": {},
+    "page_type": "analytics"
+  },
+  {
+    "url": "/vidgenerator/debugger",
+    "full_url": "https://masternoder.dk/vidgenerator/debugger",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": [
+        "No links found on page"
+      ],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": 0,
+      "broken_links": [],
+      "content": [],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "unknown"
+  },
+  {
+    "url": "/vidgenerator/api/debugger",
+    "full_url": "https://masternoder.dk/vidgenerator/api/debugger",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": [
+        "No links found on page"
+      ],
+      "content": [],
+      "background": [],
+      "images": []
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [],
+      "buttons": [],
+      "links": 0,
+      "broken_links": [],
+      "content": [],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "unknown"
+  },
+  {
+    "url": "/vidgenerator/chat",
+    "full_url": "https://masternoder.dk/vidgenerator/chat",
+    "status_code": 200,
+    "accessible": true,
+    "issues": {
+      "css": [],
+      "javascript": [
+        "JS file not accessible: /vidgenerator/static/js/chat/main.js (Status: 404)",
+        "JS file not accessible: /vidgenerator/static/js/chat/chat-points.js (Status: 404)"
+      ],
+      "buttons": [],
+      "links": [
+        "No links found on page"
+      ],
+      "content": [],
+      "background": [],
+      "images": [],
+      "general": [
+        "Missing <title> tag",
+        "Missing viewport meta tag"
+      ]
+    },
+    "found_elements": {
+      "css": [],
+      "javascript": [
+        "/vidgenerator/static/js/chat/main.js",
+        "/vidgenerator/static/js/chat/chat-points.js"
+      ],
+      "buttons": [],
+      "links": 0,
+      "broken_links": [],
+      "content": [],
+      "background": [],
+      "images": 0,
+      "broken_images": []
+    },
+    "page_type": "unknown"
+  }
+]

@@ -1,0 +1,221 @@
+{
+  "summary": {
+    "ok": 50,
+    "missing": 0,
+    "error": 0,
+    "other": 0,
+    "timeout": 0,
+    "exception": 0
+  },
+  "missing": [],
+  "errors": [],
+  "all_results": {
+    "OK": [
+      {
+        "url": "/vidgenerator/",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/generator",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/battle",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/game",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/gallery",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/stats",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/profile",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/social",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/shop",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/chat",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/dashboard",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/unified_dashboard",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/tech-tree",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/victory-tech-tree",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/quests",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/leaderboards",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/stats/summary",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/stats/comprehensive",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/stats/counts",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/points/all",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/points/summary",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/points/skills-abilities",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/points/json/get",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/state",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/battle/stats",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/battle/history",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/game/achievements",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/status",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/stats",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/leaderboard",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/history",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/clans",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/fantasy/tournaments",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/fantasy/history",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/fantasy/leaderboard",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/intelligence/statistics",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/quick-battle/stats",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/quick-battle/intelligence",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/generator/create",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/generator/ai-clips",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/ai-video/generate",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/ai-clips/generate",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/system/fix-all",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/frontpage/init",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/frontpage/status",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/tech-tree",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/battle/tech-tree/all",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/points/skills-abilities",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/skills/list",
+        "code": 200
+      },
+      {
+        "url": "/vidgenerator/api/abilities/list",
+        "code": 200
+      }
+    ],
+    "MISSING": [],
+    "ERROR": [],
+    "OTHER": [],
+    "TIMEOUT": [],
+    "EXCEPTION": []
+  }
+}
