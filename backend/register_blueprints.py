@@ -133,6 +133,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2: {e}")
     try:
+        from backend.routes.ptc_ads_routes import ptc_ads_bp
+        app.register_blueprint(ptc_ads_bp)
+        n += 1
+        print("  [OK] Registered ptc_ads blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP ptc_ads: {e}")
+    try:
         from backend.routes.paypal_routes import paypal_bp
         app.register_blueprint(paypal_bp)
         n += 1
@@ -696,6 +703,17 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import mn2: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2: {e}")
+
+    # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
+    try:
+        from backend.routes.ptc_ads_routes import ptc_ads_bp
+        app.register_blueprint(ptc_ads_bp)
+        registered_count += 1
+        print("  [OK] Registered ptc_ads blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import ptc_ads: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering ptc_ads: {e}")
 
     # PayPal (real-money payments — add PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET to .env)
     try:

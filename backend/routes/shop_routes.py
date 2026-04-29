@@ -69,6 +69,26 @@ def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: i
                     add_to_inventory(user_id, child_id, child_name, child_qty, purchase_id=None)
             except Exception:
                 pass
+        if category == "marketing" and "ptc" in (item.get("tags") or []):
+            try:
+                from backend.services.ptc_ads_service import record_budget_event
+
+                qty = max(1, int(quantity or 1))
+                for _ in range(qty):
+                    record_budget_event(
+                        package_id=item_id,
+                        campaign_id="",
+                        provider="shop_purchase",
+                        amount=float(item.get("price_usd") or 0),
+                        actor=user_id,
+                        metadata={
+                            "user_id": user_id,
+                            "item_name": item.get("name") or item_id,
+                            "requires_admin_campaign_binding": True,
+                        },
+                    )
+            except Exception:
+                pass
         total_minutes = 0
         # Game time: +30m, +1h, +2h, +4h, Weekend Pass (48h), Theme Session +Xm/+Xh
         if (
@@ -281,6 +301,40 @@ def _content_bundle_shop_items():
         }
         if row["id"]:
             items.append(row)
+    return items
+
+
+def _ptc_advertiser_package_shop_items():
+    """Expose managed traffic packages as PayPal/MN2-ready shop catalog items."""
+    try:
+        from backend.services.ptc_ads_service import get_advertiser_packages
+
+        packages = get_advertiser_packages()
+    except Exception:
+        packages = []
+    items = []
+    for package in packages:
+        package_id = package.get("id")
+        if not package_id:
+            continue
+        budget_clicks = int(package.get("budget_clicks") or 0)
+        price_usd = float(package.get("price_usd") or 0)
+        price_coins = max(1, int(round(price_usd * 100))) if price_usd > 0 else 0
+        items.append({
+            "id": package_id,
+            "name": package.get("name") or package_id,
+            "description": package.get("description") or "",
+            "category": "marketing",
+            "price": price_coins,
+            "price_usd": price_usd,
+            "icon": "📣",
+            "rarity": "rare",
+            "tags": ["ptc", "advertising", "traffic", "managed"],
+            "payment_rails": ["paypal", "mn2", "managed_admin"],
+            "marketing_clicks": budget_clicks,
+            "budget_clicks": budget_clicks,
+            "placements": package.get("placements") or [],
+        })
     return items
 
 
@@ -1227,6 +1281,10 @@ def _get_shop_items():
         if bundle_item.get("id") not in existing_ids:
             items.append(bundle_item)
             existing_ids.add(bundle_item.get("id"))
+    for package_item in _ptc_advertiser_package_shop_items():
+        if package_item.get("id") not in existing_ids:
+            items.append(package_item)
+            existing_ids.add(package_item.get("id"))
     # Add price_usd for items with coin price (enables direct PayPal purchase)
     for item in items or []:
         if item.get("id") in get_coin_pack_map():

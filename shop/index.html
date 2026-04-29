@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
@@ -683,6 +684,7 @@
                 <strong style="color: var(--text-primary);"> Spend in catalog</strong> → deduct balance like coins, or use <strong style="color: var(--text-primary);">Pay on-chain</strong> to send from any wallet to a fresh address (exact amount; scanner fulfills the order).
                 <strong style="color: var(--text-primary);"> Withdraw</strong> → send MN2 back to your address when enabled. Status for the node and PayPal appears in the strip above.
             </p>
+            <div data-ptc-placement="shop_mn2" data-ptc-limit="1"></div>
         </div>
         <div class="card" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';">
@@ -2478,6 +2480,7 @@
         });
     </script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>
     <script src="/static/js/stats-achievements-tracker.js" defer></script>
     <script src="/static/js/image-support.js" defer></script>

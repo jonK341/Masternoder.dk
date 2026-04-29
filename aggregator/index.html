@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=3">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
+    <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="layout-standard layout-aggregator-tech">
     <div class="bg-animated"></div>
@@ -63,6 +64,7 @@
         <section class="agg-ideas-section" aria-labelledby="agg-ideas-heading">
             <h2 id="agg-ideas-heading" style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;text-align:center;">Top 15 new aggregator ideas</h2>
             <div data-aggregator-ideas="list"></div>
+            <div data-ptc-placement="aggregator_ideas" data-ptc-limit="2"></div>
         </section>
 
         <div class="agg-layout">
@@ -150,6 +152,7 @@
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>
     <script src="/static/js/aggregator-monitor-game.js?v=2"></script>
+    <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('agg-refresh-progress')?.addEventListener('click', function () {
