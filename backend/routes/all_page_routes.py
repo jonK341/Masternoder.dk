@@ -44,7 +44,7 @@ PAGES = [
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
     'time-achievement-guides', 'beta_testing',
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
-    'social', 'profile', 'trophies',
+    'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
     'aggregator',
 ]

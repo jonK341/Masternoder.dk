@@ -10,5 +10,6 @@
   "withdrawal_requires_verification": false,
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
   "coins_per_mn2": 100,
-  "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX"
+  "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
 }

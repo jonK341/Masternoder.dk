@@ -86,5 +86,100 @@
         "currency": "USD"
       }
     ]
-  }
+  },
+  "payment_rails_catalog": {
+    "comment": "Phase 1 — single source for which checkout rails apply per SKU family (paypal | mn2 | credits). credits = unified points/coins balance (funded by PayPal or MN2 deposit).",
+    "rails": ["paypal", "mn2", "credits"],
+    "defaults": {
+      "coin_pack": ["paypal", "credits"],
+      "digital_good": ["paypal", "mn2", "credits"],
+      "subscription": ["paypal"],
+      "b2b_studio": ["invoice", "paypal"]
+    },
+    "sku_overrides": {
+      "coin-pack-m": ["paypal", "mn2", "credits"],
+      "coin-pack-l": ["paypal", "mn2", "credits"]
+    }
+  },
+  "digital_goods": [
+    {
+      "id": "dg-theme-pack-starter",
+      "line": "B",
+      "name": "Theme pack — Starter",
+      "description": "Galaxy Dark + Neon Green presets (CSS bundle placeholder). Deliver download link after purchase (Phase 2).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/theme-pack-starter.md",
+      "download_filename": "masternoder-theme-pack-starter.md",
+      "license": "Personal use on MasterNoder surfaces only."
+    },
+    {
+      "id": "dg-prompt-pack-video",
+      "line": "B",
+      "name": "Prompt pack — Rich video starters",
+      "description": "Curated prompt snippets for generator workflows.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/rich-video-prompt-pack.md",
+      "download_filename": "masternoder-rich-video-prompt-pack.md",
+      "license": "Personal use; redistribution prohibited."
+    },
+    {
+      "id": "dg-edu-monetization-onepager",
+      "line": "G",
+      "name": "Guide — PayPal + MN2 rails (PDF)",
+      "description": "Internal ops one-pager; link to downloadable asset when hosted (Phase 2).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "free_info",
+      "artifact_path": "content/digital_goods/paypal-mn2-rails-onepager.md",
+      "download_filename": "masternoder-paypal-mn2-rails-onepager.md",
+      "license": "MasterNoder internal documentation."
+    }
+  ],
+  "content_bundles": [
+    {
+      "id": "bundle-creator-starter",
+      "name": "Creator starter bundle",
+      "description": "One checkout for 500 coins plus the starter theme pack and rich video prompt pack.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 12.99,
+      "price_coins": 1299,
+      "coins_granted": 500,
+      "generation_credits_granted": 1.5,
+      "items": [
+        {"item_id": "dg-theme-pack-starter", "quantity": 1},
+        {"item_id": "dg-prompt-pack-video", "quantity": 1}
+      ],
+      "attribution": {
+        "line": "bundle",
+        "includes_generator_pack": true,
+        "includes_digital_goods": true
+      }
+    },
+    {
+      "id": "bundle-theme-growth",
+      "name": "Theme growth bundle",
+      "description": "Starter theme plus monetization one-pager for building paid content rails.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 5.99,
+      "price_coins": 599,
+      "coins_granted": 100,
+      "generation_credits_granted": 0.25,
+      "items": [
+        {"item_id": "dg-theme-pack-starter", "quantity": 1},
+        {"item_id": "dg-edu-monetization-onepager", "quantity": 1}
+      ],
+      "attribution": {
+        "line": "bundle",
+        "includes_generator_pack": true,
+        "includes_digital_goods": true
+      }
+    }
+  ]
 }
