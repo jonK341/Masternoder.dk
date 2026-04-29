@@ -357,9 +357,15 @@ class UnifiedPointsDatabase:
             "accuracy_grade": "A+",
             "mn2_balance": float(systems.get("mn2_balance", 0) or 0),
         }
+        points["crypto_points"] = max(
+            float(systems.get("crypto_points", 0) or 0),
+            points["mn2_balance"],
+        )
         points["systems"] = {k: float(v or 0) for k, v in systems.items()}
         if "mn2_balance" not in points["systems"]:
             points["systems"]["mn2_balance"] = points.get("mn2_balance", 0)
+        if "crypto_points" not in points["systems"]:
+            points["systems"]["crypto_points"] = points.get("crypto_points", 0)
         if "game_points" not in points["systems"]:
             points["systems"]["game_points"] = points.get("game_points", 0)
         return points
@@ -451,9 +457,15 @@ class UnifiedPointsDatabase:
                     "accuracy_grade": "A+",
                     "mn2_balance": float(snapshots.get("mn2_balance", 0) or 0),
                 }
+                points["crypto_points"] = max(
+                    float(snapshots.get("crypto_points", 0) or 0),
+                    points["mn2_balance"],
+                )
                 points["systems"] = {k: float(v or 0) for k, v in snapshots.items()}
                 if "mn2_balance" not in points["systems"]:
                     points["systems"]["mn2_balance"] = points.get("mn2_balance", 0)
+                if "crypto_points" not in points["systems"]:
+                    points["systems"]["crypto_points"] = points.get("crypto_points", 0)
                 if "game_points" not in points["systems"]:
                     points["systems"]["game_points"] = points.get("game_points", 0)
                 return points
@@ -467,7 +479,7 @@ class UnifiedPointsDatabase:
             "xp_total", "activity_points", "quest_points", "stats_points_total", "stats_points_available",
             "trophy_points", "coins", "credits", "battle_points", "social_points", "knowledge_points",
             "dna_manipulation_points", "dna_cloning_points", "communication_psychology_points",
-            "compendium_points", "generation_points", "game_points", "mn2_balance",
+            "compendium_points", "generation_points", "game_points", "mn2_balance", "crypto_points",
         )
         int_keys = ("achievements_earned", "milestones_reached", "trophies_collected")
         out = {}
