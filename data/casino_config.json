@@ -1,0 +1,24 @@
+{
+  "currency": "coins",
+  "disclaimer": "Virtual coins only. No real-money gambling. MN2 and PayPal are not used for casino bets.",
+  "min_bet": 5,
+  "max_bet": 500,
+  "max_bets_per_day": 200,
+  "games": {
+    "coin_flip": {
+      "label": "Coin flip",
+      "payout_multiplier": 1.9,
+      "choices": ["heads", "tails"]
+    },
+    "dice": {
+      "label": "Lucky dice",
+      "payout_multiplier": 4.0,
+      "sides": 6
+    },
+    "rps_bet": {
+      "label": "RPS wager",
+      "payout_multiplier": 2.0,
+      "choices": ["rock", "paper", "scissors"]
+    }
+  }
+}

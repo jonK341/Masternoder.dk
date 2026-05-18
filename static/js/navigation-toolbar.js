@@ -22,6 +22,7 @@
             { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
             { name: 'Stories', icon: '📜', url: APP_BASE + '/trophies#stories', id: 'stories', title: 'Hunters Stories: Winter Wedding, time reversal, medieval' },
             { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
+            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },

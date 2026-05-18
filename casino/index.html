@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window._pageLoadStart = performance.now();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20260519a">
+</head>
+<body>
+    <div class="casino-page">
+        <header class="casino-header">
+            <h1>🎰 Virtual Casino</h1>
+            <p>Stake in-app coins on quick cosmetic games. Connects to battle RPS vibes without real-money gambling.</p>
+        </header>
+
+        <div id="casino-disclaimer-text" class="casino-disclaimer">Virtual coins only. No real-money gambling. MN2 and PayPal are not used for casino bets.</div>
+        <div id="casino-balance" class="casino-balance">Loading balance…</div>
+
+        <section class="casino-grid" aria-label="Casino games">
+            <article class="casino-card">
+                <h2>Coin flip</h2>
+                <p>Pick heads or tails. Win pays 1.9× your stake.</p>
+                <div class="casino-controls">
+                    <input id="coin-flip-bet" type="number" min="5" max="500" value="25" aria-label="Coin flip bet">
+                    <select id="coin-flip-choice" aria-label="Coin flip choice">
+                        <option value="heads">Heads</option>
+                        <option value="tails">Tails</option>
+                    </select>
+                    <button id="coin-flip-play" type="button">Flip</button>
+                </div>
+                <div id="coin-flip-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card">
+                <h2>Lucky dice</h2>
+                <p>Guess 1–6. Correct roll pays 4× your stake.</p>
+                <div class="casino-controls">
+                    <input id="dice-bet" type="number" min="5" max="500" value="25" aria-label="Dice bet">
+                    <input id="dice-guess" type="number" min="1" max="6" value="3" aria-label="Dice guess">
+                    <button id="dice-play" type="button">Roll</button>
+                </div>
+                <div id="dice-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card">
+                <h2>RPS wager</h2>
+                <p>Rock / paper / scissors vs the house. Win pays 2×; draw refunds stake.</p>
+                <div class="casino-controls">
+                    <input id="rps-bet" type="number" min="5" max="500" value="25" aria-label="RPS bet">
+                    <select id="rps-choice" aria-label="RPS choice">
+                        <option value="rock">Rock</option>
+                        <option value="paper">Paper</option>
+                        <option value="scissors">Scissors</option>
+                    </select>
+                    <button id="rps-play" type="button">Play</button>
+                </div>
+                <div id="rps-result" class="casino-result"></div>
+            </article>
+        </section>
+
+        <section class="casino-history" aria-label="Recent bets">
+            <h2>Recent bets</h2>
+            <table>
+                <thead>
+                    <tr><th>Game</th><th>Bet</th><th>Outcome</th><th>Net</th><th>Time</th></tr>
+                </thead>
+                <tbody id="casino-history-body"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
+    <script src="/static/js/casino.js?v=20260519d" defer></script>
+</body>
+</html>
