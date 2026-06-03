@@ -26,6 +26,7 @@ from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
 APPLY = "--apply" in sys.argv
 UNLOCK = "--unlock" in sys.argv
 MNSYNC_RESET = "--mnsync-reset" in sys.argv
+MNSYNC_NEXT = "--mnsync-next" in sys.argv
 
 
 def sh(ssh, cmd, timeout=30):
@@ -97,6 +98,38 @@ def main():
             if staking_on:
                 print("  >>> staking is now ACTIVE — pool is minting.")
                 break
+        print("\n-- mnsync status (final) --")
+        print(rpc("mnsync", ["status"]) or "(no response)")
+        print("-- getstakingstatus (final) --")
+        print(rpc("getstakingstatus") or "(no response)")
+
+    # Opt-in: manually step the masternode-sync asset stages to FINISHED (999).
+    # On a tiny network the winner/budget stages have no data to receive, so we push
+    # past them. `mnsync next` is supported on most PIVX-style builds.
+    if MNSYNC_NEXT:
+        import re as _re
+        import time as _t
+        print("\n== mnsync next (stepping asset stages to FINISHED) ==")
+        last = None
+        for i in range(12):
+            r = rpc("mnsync", ["next"])
+            st = rpc("mnsync", ["status"])
+            gs = rpc("getstakingstatus")
+            asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
+            staking_on = '"stakingstatus":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            note = r.strip() if (r and '"error":null' not in r) else ""
+            print(f"  step {i+1}: RequestedMasternodeAssets={asset}  staking={'TRUE' if staking_on else 'false'}  {note}")
+            if staking_on or asset == "999":
+                if staking_on:
+                    print("  >>> staking is now ACTIVE — pool is minting.")
+                # one more status read after reaching 999 so staking flag settles
+                _t.sleep(3)
+                break
+            if asset == last and i >= 2 and '"error"' in (r or ""):
+                print("  (mnsync next not advancing / not supported on this build — stopping)")
+                break
+            last = asset
+            _t.sleep(2)
         print("\n-- mnsync status (final) --")
         print(rpc("mnsync", ["status"]) or "(no response)")
         print("-- getstakingstatus (final) --")
