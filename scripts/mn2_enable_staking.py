@@ -80,15 +80,26 @@ def main():
     print(wi or "(no response)")
 
     # Opt-in: kick a stuck masternode sync (safe; just restarts the sync state machine).
+    # On a tiny network the winners/budget stages have no data, so we poll while they
+    # time-through toward RequestedMasternodeAssets=999 (FINISHED) and staking flips on.
     if MNSYNC_RESET:
+        import re as _re
+        import time as _t
         print("\n== mnsync reset (unsticking masternode sync) ==")
         print(rpc("mnsync", ["reset"]) or "(no response)")
-        import time as _t
-        print("waiting 20s for sync to advance...")
-        _t.sleep(20)
-        print("-- mnsync status (after reset) --")
+        for i in range(9):  # ~9 x 15s = ~135s
+            _t.sleep(15)
+            st = rpc("mnsync", ["status"])
+            gs = rpc("getstakingstatus")
+            asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
+            staking_on = '"staking status":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            print(f"  [{(i+1)*15:>3}s] RequestedMasternodeAssets={asset}  staking={'TRUE' if staking_on else 'false'}")
+            if staking_on:
+                print("  >>> staking is now ACTIVE — pool is minting.")
+                break
+        print("\n-- mnsync status (final) --")
         print(rpc("mnsync", ["status"]) or "(no response)")
-        print("-- getstakingstatus (after reset) --")
+        print("-- getstakingstatus (final) --")
         print(rpc("getstakingstatus") or "(no response)")
 
     # Determine the actual config path to edit (prefer the datadir the process uses)
