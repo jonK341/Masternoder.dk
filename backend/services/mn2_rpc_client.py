@@ -155,6 +155,62 @@ def getstakinginfo() -> Dict[str, Any]:
     return _call("getstakinginfo")
 
 
+def getwalletinfo() -> Dict[str, Any]:
+    """Wallet info incl. balance, unconfirmed_balance, immature_balance. May be unimplemented on some chains."""
+    return _call("getwalletinfo")
+
+
+def staking_health() -> Dict[str, Any]:
+    """
+    Daemon staking health for ops (plan sec.9): is the pool actually minting?
+    Reads getstakinginfo + getwalletinfo and normalizes PIVX/Bitcoin-style field names.
+    Never raises; returns status='unsupported' if the chain lacks these RPCs.
+
+    status: active | inactive | unsupported | unreachable
+    """
+    out: Dict[str, Any] = {
+        "status": "unsupported",
+        "staking_active": None,
+        "staking_weight": None,
+        "net_stake_weight": None,
+        "expected_time_to_reward_sec": None,
+        "mature_balance": None,
+        "immature_balance": None,
+        "unconfirmed_balance": None,
+        "errors": None,
+    }
+    si = getstakinginfo()
+    if si.get("error"):
+        el = str(si["error"]).lower()
+        if any(x in el for x in ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")):
+            out["status"] = "unreachable"
+            out["errors"] = si["error"]
+            return out
+        # method not found / unimplemented -> leave unsupported
+        out["errors"] = si["error"]
+    else:
+        r = si.get("result") or {}
+        if isinstance(r, dict):
+            enabled = r.get("enabled")
+            staking = r.get("staking")
+            active = bool(staking) if staking is not None else bool(enabled)
+            out["staking_active"] = active
+            out["staking_weight"] = r.get("weight")
+            out["net_stake_weight"] = r.get("netstakeweight") or r.get("netstakewight")
+            out["expected_time_to_reward_sec"] = r.get("expectedtime")
+            out["errors"] = r.get("errors") or out["errors"]
+            out["status"] = "active" if active else "inactive"
+
+    wi = getwalletinfo()
+    if not wi.get("error"):
+        w = wi.get("result") or {}
+        if isinstance(w, dict):
+            out["mature_balance"] = w.get("balance")
+            out["immature_balance"] = w.get("immature_balance")
+            out["unconfirmed_balance"] = w.get("unconfirmed_balance")
+    return out
+
+
 def getmasternodecount() -> Dict[str, Any]:
     """Masternode count. May be unimplemented on some chains."""
     return _call("getmasternodecount")

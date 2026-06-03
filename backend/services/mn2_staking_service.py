@@ -877,11 +877,42 @@ def get_staking_leaderboard(limit: int = 10) -> Dict[str, Any]:
     return {"success": True, "leaderboard": entries[: max(1, min(int(limit or 10), 100))]}
 
 
+_AGENT_ACTIVITY_FILE = "mn2_staking_agent_activity.jsonl"
+
+
+def _agent_actions_24h() -> int:
+    """Count agent automation actions logged in the last 24h (for the monitor)."""
+    path = os.path.join(_data_dir(), _AGENT_ACTIVITY_FILE)
+    if not os.path.exists(path):
+        return 0
+    from datetime import datetime, timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    n = 0
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    ts = str(row.get("ts") or "").replace("Z", "+00:00")
+                    if ts and datetime.fromisoformat(ts) >= cutoff:
+                        n += 1
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return n
+
+
 def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
     stakes = _load_stakes()
     processes = []
     active_rigs = 0
     total = 0.0
+    agent_managed_count = 0
+    agent_staked = 0.0
     for uid, r in stakes.items():
         staked = float((r or {}).get("staked", 0) or 0)
         if staked <= 0:
@@ -891,6 +922,10 @@ def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
         active = rig_active(uid)
         if active:
             active_rigs += 1
+        is_agent = bool((r or {}).get("managed_by_agent"))
+        if is_agent:
+            agent_managed_count += 1
+            agent_staked += staked
         m = effective_multiplier(uid, rec)
         sess = _worker_sessions().get(uid) or {}
         processes.append({
@@ -900,6 +935,7 @@ def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
             "longevity_days": round(longevity_days(rec), 2),
             "uptime_ratio": round(uptime_ratio(uid), 4),
             "rig_active": active,
+            "agent_managed": is_agent,
             "effective_apr": round(dynamic_apr() * m["combined"], 4),
             "total_earned": round(float(rec.get("total_earned", 0) or 0), 8),
             "last_heartbeat": sess.get("last_heartbeat_iso"),
@@ -914,6 +950,9 @@ def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
         "rewards_paid_lifetime_mn2": round(reserve.get("lifetime_paid", 0.0), 8),
         "realized_yield_lifetime_mn2": round(reserve.get("lifetime_realized_yield", 0.0), 8),
         "reserve_mn2": round(reserve.get("reserve_mn2", 0.0), 8),
+        "agent_managed_stakers": agent_managed_count,
+        "agent_staked_mn2": round(agent_staked, 8),
+        "agent_actions_24h": _agent_actions_24h(),
     }
     return {"success": True, "aggregates": aggregates,
             "processes": processes[: max(1, min(int(limit or 50), 500))]}

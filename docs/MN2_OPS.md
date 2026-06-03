@@ -124,7 +124,58 @@ Balance API returns `withdrawal_verified: true|false` when the gate is enabled s
 
 ---
 
-## 7. References
+## 8. Staking, on-ramp & P2P (daemon staking, rewards, reconcile, agents)
+
+The staking system (plan: [MN2_STAKING_PLAN.md](MN2_STAKING_PLAN.md)) pools opted-in user MN2, earns **realized PoS yield** from the daemon, and distributes it weighted by stake × longevity × uptime × boost.
+
+### 8.1 Make the daemon actually stake (sec.9)
+
+In `masternoder2.conf`: `staking=1` / `enablestaking=1` (confirm exact keys for the MN2 build), and unlock the wallet **for staking only**:
+
+```bash
+masternoder2-cli walletpassphrase "<passphrase>" 0 true   # 0 = until restart, true = staking-only
+```
+
+Consolidate per-user deposit balances into the staking address (keep a small hot balance for withdrawals); the rest mints. **Health:** `GET /api/mn2/ops/stats` now returns `staking_health` (`status`, `staking_active`, `staking_weight`, `net_stake_weight`, `expected_time_to_reward_sec`, `mature_balance`, `immature_balance`) and a `pool` snapshot (`total_staked_mn2`, `dynamic_apr_percent`). `status: unreachable` = daemon down; `inactive` = wallet locked / not minting.
+
+### 8.2 Hourly cron (rewards + holds + reconcile + agents)
+
+Deployed by the `mn2_env` manifest: `cron/mn2_accrue_rewards.sh` + `/etc/cron.d/masternoder-mn2-accrue` (hourly). It reads the token from `/var/www/html/.env` (`MN2_OPS_SECRET`, falls back to `MN2_SCAN_SECRET`) and calls, in order:
+
+1. `POST /api/mn2/staking/ops/accrue` — credit the interval's realized yield (idempotent per window).
+2. `POST /api/mn2/onramp/ops/clear-matured` — release matured PayPal→MN2 holds (makes MN2 withdrawable).
+3. `POST /api/mn2/p2p/ops/clear-matured` — release matured P2P buyer MN2 + seller payouts.
+4. `POST /api/mn2/staking/ops/reconcile` — conservation check; **HTTP 409** = drift (logged to stderr for alerting).
+5. `POST /api/agent/staking/ops/run-all` — drive autonomous staking personas one policy step.
+
+### 8.3 Reconciliation / conservation invariant (sec.8)
+
+`scripts/mn2_reconcile.py` now also prints the staking invariant (or hit `POST /api/mn2/staking/ops/reconcile` with an ops token). Hard checks (drift → 409 / non-zero exit):
+
+- `rewards_rows_match_ledger` — Σ reward rows == Σ `staking_reward` ledger.
+- `staked_matches_ledger` — live staked == Σ`stake` − Σ`unstake` (auto-compound emits `stake`).
+- `onramp_purchase_match_ledger` / `onramp_clawback_match_ledger`.
+- `p2p_escrow_conservation` — outstanding listing escrow == escrowed − returned − delivered.
+- `no_pay_over_realized_yield` — only enforced in `reward_pool_mode: realized_yield` with realized data.
+
+**On drift:** stop accrual (`agent.automation_enabled: false` won't stop accrual — set the cron off or `enabled: false` in `mn2_staking_config.json`), inspect `data/mn2_staking_rewards.jsonl`, `data/mn2_ledger.json`, `data/mn2_stakes.json`, and the on-ramp/P2P order stores, then correct before re-enabling.
+
+### 8.4 Secrets & kill switches
+
+| Variable | Purpose |
+|----------|---------|
+| `MN2_OPS_SECRET` (or `MN2_SCAN_SECRET`) | Gates all `/ops/*` endpoints (accrue, reconcile, clear-matured, run-all). |
+| `AGENT_MN2_STAKING_SECRET` (or `AGENT_MN2_SHOP_SECRET`) | Gates the agent automation layer (`/api/agent/staking/execute` write verbs). Rotate independently. |
+
+Config kill switches in `data/mn2_staking_config.json`: `enabled` (whole system), `p2p.enabled` (P2P market — **currently true**), `onramp.enabled` (on-ramp), `agent.automation_enabled` (autonomous personas only). Withdrawals of PayPal-purchased MN2 are blocked until their hold clears (`code: onramp_hold`).
+
+### 8.5 Files
+
+`data/mn2_staking_config.json`, `mn2_staking_terms.json`, `mn2_stakes.json`, `mn2_staking_reserve.json`, `mn2_staking_rewards.jsonl`, `mn2_onramp_orders.{json,jsonl}`, `mn2_p2p_{listings,orders,payouts}.json` + `mn2_p2p_events.jsonl`, `agent_staking_agents.json`, `mn2_staking_agent_activity.jsonl`. Back these up with the ledger.
+
+---
+
+## 9. References
 
 - [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) — Install and run the daemon.
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).

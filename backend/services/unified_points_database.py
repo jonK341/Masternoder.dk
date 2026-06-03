@@ -356,6 +356,7 @@ class UnifiedPointsDatabase:
             "game_points": float(systems.get("game_points", 0) or 0),
             "accuracy_grade": "A+",
             "mn2_balance": float(systems.get("mn2_balance", 0) or 0),
+            "mn2_staked": float(systems.get("mn2_staked", 0) or 0),
         }
         points["crypto_points"] = max(
             float(systems.get("crypto_points", 0) or 0),
@@ -456,6 +457,7 @@ class UnifiedPointsDatabase:
                     "game_points": float(snapshots.get("game_points", 0) or 0),
                     "accuracy_grade": "A+",
                     "mn2_balance": float(snapshots.get("mn2_balance", 0) or 0),
+                    "mn2_staked": float(snapshots.get("mn2_staked", 0) or 0),
                 }
                 points["crypto_points"] = max(
                     float(snapshots.get("crypto_points", 0) or 0),
@@ -479,7 +481,7 @@ class UnifiedPointsDatabase:
             "xp_total", "activity_points", "quest_points", "stats_points_total", "stats_points_available",
             "trophy_points", "coins", "credits", "battle_points", "social_points", "knowledge_points",
             "dna_manipulation_points", "dna_cloning_points", "communication_psychology_points",
-            "compendium_points", "generation_points", "game_points", "mn2_balance", "crypto_points",
+            "compendium_points", "generation_points", "game_points", "mn2_balance", "mn2_staked", "crypto_points",
         )
         int_keys = ("achievements_earned", "milestones_reached", "trophies_collected")
         out = {}

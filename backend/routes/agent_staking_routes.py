@@ -65,6 +65,14 @@ _CAPABILITIES = [
      "description": "Buy MN2 from a listing via PayPal; returns approve_url."},
     {"action": "p2p_status", "method": "GET", "params": ["user_id", "order_id?"],
      "description": "Poll a P2P order, or list the user's listings/purchases + payout balance."},
+    {"action": "list_agents", "method": "GET", "params": [],
+     "description": "List staking personas (agent_id->user_id + policy) for the autonomous loop."},
+    {"action": "upsert_agent", "method": "POST", "params": ["agent_id", "user_id", "policy?"],
+     "description": "Create/update a staking persona (target_staked, max_staked, auto_compound, ...)."},
+    {"action": "run_agent", "method": "POST", "params": ["agent_id", "dry_run?"],
+     "description": "Execute one autonomous policy step for a persona (stake/unstake/heartbeat within caps)."},
+    {"action": "run_all", "method": "POST", "params": ["dry_run?"],
+     "description": "Execute one policy step for every enabled persona."},
 ]
 
 
@@ -160,7 +168,42 @@ def execute():
             if order_id:
                 return jsonify(p2p.get_order(order_id, user_id)), 200
             return jsonify(p2p.get_user_overview(user_id)), 200
+        if action in ("list_agents", "upsert_agent", "run_agent", "run_all"):
+            import backend.services.mn2_staking_agents_service as agents
+            if action == "list_agents":
+                return jsonify(agents.list_agents()), 200
+            if action == "upsert_agent":
+                r = agents.upsert_agent((data.get("agent_id") or "").strip(), user_id,
+                                        policy=data.get("policy"))
+                return jsonify(r), 200 if r.get("success") else 400
+            if action == "run_agent":
+                r = agents.run_agent((data.get("agent_id") or "").strip(),
+                                     dry_run=bool(data.get("dry_run")))
+                return jsonify(r), 200 if r.get("success") else 400
+            return jsonify(agents.run_all(dry_run=bool(data.get("dry_run")))), 200
         return jsonify({"success": False, "error": f"unknown action '{action}'",
                         "valid_actions": [c["action"] for c in _CAPABILITIES]}), 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def _ops_authorized() -> bool:
+    secret = (os.environ.get("MN2_OPS_SECRET") or os.environ.get("MN2_SCAN_SECRET") or "").strip()
+    if not secret:
+        return False
+    token = (request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
+    return token == secret
+
+
+@agent_staking_bp.route("/api/agent/staking/ops/run-all", methods=["POST", "GET"])
+def ops_run_all():
+    """Ops/cron entry point to drive the autonomous staking loop for all enabled personas.
+    Gated by MN2_OPS_SECRET so the existing hourly cron can call it without the agent key."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        import backend.services.mn2_staking_agents_service as agents
+        dry = request.args.get("dry_run", "").lower() in ("1", "true", "yes")
+        return jsonify(agents.run_all(dry_run=dry)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

@@ -403,6 +403,21 @@ def mn2_ops_stats():
             out["rpc_calls_summary"] = {"last_100_ok": ok_count, "last_100_total": len(last_100)}
         except Exception as e:
             out["rpc_error"] = str(e)
+    # Daemon staking health (plan sec.9): is the pool actually minting blocks?
+    try:
+        from backend.services.mn2_rpc_client import staking_health
+        out["staking_health"] = staking_health()
+    except Exception as e:
+        out["staking_health"] = {"status": "unsupported", "error": str(e)}
+    # In-app pool snapshot (independent of daemon RPC)
+    try:
+        from backend.services import mn2_staking_service as _stk
+        out["pool"] = {
+            "total_staked_mn2": _stk.total_staked(),
+            "dynamic_apr_percent": _stk.dynamic_apr(),
+        }
+    except Exception:
+        out["pool"] = None
     return jsonify({"success": True, **out}), 200
 
 

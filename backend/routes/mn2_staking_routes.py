@@ -223,3 +223,16 @@ def staking_ops_accrue():
         return jsonify(result), 200 if result.get("success") else 500
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/ops/reconcile", methods=["POST", "GET"])
+def staking_ops_reconcile():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services import mn2_staking_reconcile_service as recon
+        result = recon.reconcile()
+        # 200 when the books balance, 409 (Conflict) on hard drift so monitors can alert.
+        return jsonify(result), 200 if result.get("ok") else 409
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500

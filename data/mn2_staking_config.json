@@ -80,7 +80,7 @@
     "lifetime_usd_cap_unverified": 500.0
   },
   "p2p": {
-    "enabled": false,
+    "enabled": true,
     "model": "B",
     "platform_fee_percent": 2.5,
     "buyer_spread_percent": 1.0,

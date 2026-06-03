@@ -153,6 +153,43 @@ Returns last scanner runs and RPC call summary (from logs). If `MN2_OPS_SECRET` 
 
 ---
 
+## 10. Staking (parity layer)
+
+All staking actions a user takes in the wallet UI are plain HTTP with `user_id`, so any agent has parity. Consent (terms) must be recorded **before** the first `stake`.
+
+| Action | Method | Path | Notes |
+|--------|--------|------|-------|
+| Status | GET | `/api/mn2/staking/status?user_id=...` | Balance, staked, APR, longevity tier, multipliers, rig/uptime, terms |
+| Accept terms | POST | `/api/mn2/staking/accept-terms` | `{user_id, version?}` — required before staking |
+| Stake | POST | `/api/mn2/staking/stake` | `{user_id, amount}` — moves balance → pool (min/max + consent) |
+| Unstake | POST | `/api/mn2/staking/unstake` | `{user_id, amount}` — instant, internal move |
+| Auto-compound | POST | `/api/mn2/staking/auto-compound` | `{user_id, enabled}` |
+| Rig heartbeat | POST | `/api/mn2/staking/work` | `{user_id, proof?, nonce?}` — participation/uptime signal |
+| Calculator | GET | `/api/mn2/staking/calculator?amount=&days=&uptime=&boost=` | Projection, no side effects |
+| Rewards table | GET | `/api/mn2/staking/rewards-table?user_id=...&format=csv?` | Per-interval history (+ CSV) |
+| Monitor | GET | `/api/mn2/staking/monitor?limit=...` | Anonymized pool processes + aggregates (incl. `agent_staked_mn2`, `agent_actions_24h`) |
+| Network overview | GET | `/api/mn2/staking/network-overview` | Explorer + pool + on-ramp + P2P stats (public) |
+| On-ramp (Model A) | POST | `/api/mn2/onramp/{quote,order,capture}` | PayPal→MN2, KYC caps + hold window |
+| P2P (Model B) | GET/POST | `/api/mn2/p2p/{listings,buy,...}` | Seller escrow + buyer hold; KYC-gated |
+
+---
+
+## 11. Staking automation layer (secret-gated)
+
+For headless / cron / LLM personas acting **on behalf of** users, separate from the parity layer.
+
+- **Auth:** `AGENT_MN2_STAKING_SECRET` (falls back to `AGENT_MN2_SHOP_SECRET`), header `X-Agent-Staking-Key`. Read-only verbs (`status`, `calculator`, `rewards_table`, `monitor`, `onramp_status`, `p2p_listings`, `p2p_status`) work without it.
+- **Discover:** `GET /api/agent/staking/capabilities` → machine-readable verb manifest + config.
+- **Execute:** `POST /api/agent/staking/execute` → `{ action, user_id, params... }`. Verbs include `accept_terms`, `stake`, `unstake`, `set_auto_compound`, `heartbeat`, `onramp_*`, `p2p_*`.
+- **Personas + autonomous loop:** `data/agent_staking_agents.json` binds `agent_id → user_id` + policy (`target_staked`, `max_staked`, `keep_balance_min`, `auto_compound`, `heartbeat`, `rebalance_step_max`, `auto_accept_terms`, `allowed_actions`).
+  - `upsert_agent` `{agent_id, user_id, policy}` — create/update a persona.
+  - `run_agent` `{agent_id, dry_run?}` — one policy step (consent-gate → heartbeat → align auto-compound → rebalance toward target within caps).
+  - `run_all` `{dry_run?}` — step every enabled persona.
+- **Cron entry point:** `POST /api/agent/staking/ops/run-all` (ops-token gated via `MN2_OPS_SECRET`) — driven hourly by `cron/mn2_accrue_rewards.sh`.
+- **Governance:** consent required before agent `stake`/`onramp_order` (`consent_required`); kill switch `agent.automation_enabled: false` in `mn2_staking_config.json` disables the loop without affecting the user parity layer; every step is audited to `mn2_staking_agent_activity.jsonl` and counted in the monitor (`agent_managed`, `agent_staked_mn2`, `agent_actions_24h`).
+
+---
+
 ## Agent parity summary
 
 | Action | Method | Path | Purpose |

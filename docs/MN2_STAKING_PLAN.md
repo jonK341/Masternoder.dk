@@ -194,7 +194,7 @@ A live monitor showing **all staking processes from different users**:
 
 ## 8. Safety, anti‑abuse & reconciliation
 
-- **Conservation invariant:** `Σ(mn2_balance + mn2_staked)` ≤ net deposits − withdrawals. Extend `scripts/mn2_reconcile.py` to alert on drift.
+- **Conservation invariant (implemented S8):** `backend/services/mn2_staking_reconcile_service.py` verifies, against the ledger, that Σ reward rows == `staking_reward` entries, live staked == Σ`stake`−Σ`unstake`, on‑ramp funded/clawed == ledger, and P2P outstanding escrow == escrowed−returned−delivered. Surfaced at `GET/POST /api/mn2/staking/ops/reconcile` (HTTP 409 on hard drift), printed by `scripts/mn2_reconcile.py`, and checked hourly by the accrual cron.
 - **No pay > yield:** payouts never exceed realized pool yield minus margin.
 - **Weighting bound:** staked amount **dominates**; longevity, uptime, and boost only modulate (each capped) so CPU/longevity farming can't dominate the pool.
 - **Worker anti‑sybil:** proofs nonce/timestamp‑bound, rate‑limited per user, capped uptime weight; default rig settings only (no client‑set weight).
@@ -443,9 +443,14 @@ Goal: a user pays via PayPal and **automatically receives MN2**. Add the resulti
 | S4 | Shop boost + calculator + monitor + badges + stabilization reserve |
 | S5 | Growth & realtime: dynamic APR, SSE, referral, streak, auto‑compound |
 | **S6** | **Reward tracking table (§15) + explorer overview (§16) + PayPal→MN2 on‑ramp Model A (§17)** |
-| **S7** | **P2P MN2 trading/auction Model B (§17), guarded** |
+| **S7** | **P2P MN2 trading/auction Model B (§17)** — now **enabled** |
+| **S8** | **Conservation invariant + reconcile service** (`mn2_staking_reconcile_service.py`, `/api/mn2/staking/ops/reconcile`, `scripts/mn2_reconcile.py`, hourly cron drift alert) |
+| **S9** | **Daemon staking health/ops** (`rpc_client.staking_health()` → `staking_active`, weight, expected‑time, mature/immature in `/api/mn2/ops/stats`) |
+| **S10** | **Agent personas + autonomous loop** (`mn2_staking_agents_service.py`, `data/agent_staking_agents.json`, `run_agent`/`run_all`, ops `run-all` cron, agent flag + `agent_staked_mn2`/`agent_actions_24h` in monitor) |
 
-> **Decision (locked):** **Model A (custodial on‑ramp) ships first in S6; Model B (P2P auction) follows in S7** — only after Model A's hold/KYC/dispute machinery + stabilization reserve are proven in production.
+> **Decision (locked):** **Model A (custodial on‑ramp) ships first in S6; Model B (P2P auction) follows in S7.** As of S7 the P2P market is **enabled** (`p2p.enabled: true`) — sellers are still KYC‑gated, buyer MN2 stays in the hold window, and the §8 reconcile (S8) + reserve guard the books.
+>
+> **S8–S10 (hardening):** S8 makes the books self‑checking (every `stake/unstake/reward/onramp/p2p` move must reconcile, hard drift → HTTP 409 + cron alert); S9 surfaces whether the daemon is actually minting; S10 lets headless/cron/LLM personas drive staking within per‑persona policy caps under the same consent + guardrails as users, with a kill switch (`agent.automation_enabled`).
 
 ---
 
