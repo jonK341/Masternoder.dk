@@ -1016,6 +1016,93 @@
                         <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
                         <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a></p>
                     </div>
+
+                    <!-- MN2 Staking: stake/unstake, browser rig, longevity, calculator -->
+                    <div class="section-card" id="profile-mn2-staking-card" data-profile-route="overview wallet" style="border: 2px solid rgba(0,255,136,0.4); background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04));">
+                        <h2 class="section-title" style="color: #00ff88;">⚡ MN2 Staking</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Stake your MN2 to earn rewards from realized pool yield. Run the optional browser <strong>staking rig</strong> on your own processor to boost your share. Unstake any time.</p>
+
+                        <!-- Buy MN2 with PayPal (on-ramp Model A) -->
+                        <div id="mn2-onramp-panel" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(0,112,186,0.10); border:1px solid rgba(0,112,186,0.4);">
+                            <strong style="color:#4fa8ff;">Buy MN2 with PayPal</strong>
+                            <p style="font-size:0.76rem; opacity:0.8; margin:4px 0 8px;">Pay USD and receive MN2 in-app at a locked quote. Purchased MN2 can be staked/spent immediately but is <strong>not withdrawable</strong> until its clearance window passes.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                                <label style="font-size:0.8rem;">USD <input type="number" id="mn2-onramp-usd" value="10" min="1" step="1" style="width:90px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <button type="button" id="mn2-onramp-quote-btn" style="padding:7px 12px; border-radius:8px; border:1px solid #4fa8ff; background:rgba(0,112,186,0.18); color:#4fa8ff; cursor:pointer;">Get quote</button>
+                                <button type="button" id="mn2-onramp-pay-btn" disabled style="padding:7px 12px; border-radius:8px; border:none; background:#0070ba; color:#fff; font-weight:600; cursor:pointer;">Pay with PayPal</button>
+                            </div>
+                            <p id="mn2-onramp-quote-result" style="font-size:0.82rem; margin:8px 0 0; color:#4fa8ff;"></p>
+                            <p id="mn2-onramp-held" style="font-size:0.76rem; margin:4px 0 0; opacity:0.8;"></p>
+                        </div>
+
+                        <!-- P2P MN2 marketplace (Model B; shows only when enabled) -->
+                        <div id="mn2-p2p-panel" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(170,0,255,0.08); border:1px solid rgba(170,0,255,0.35);">
+                            <strong style="color:#c08cff;">MN2 marketplace (P2P)</strong>
+                            <p style="font-size:0.76rem; opacity:0.8; margin:4px 0 8px;">Buy MN2 from other users with PayPal, or sell your own. Purchased MN2 is held until its clearance window passes. Seller payouts release after the buyer's chargeback window clears.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:8px;">
+                                <label style="font-size:0.78rem;">Sell MN2 <input type="number" id="mn2-p2p-sell-amount" placeholder="amount" min="0" style="width:90px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">$/MN2 <input type="number" id="mn2-p2p-sell-price" placeholder="price" min="0" step="0.01" style="width:80px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <button type="button" id="mn2-p2p-list-btn" style="padding:7px 12px; border-radius:8px; border:1px solid #c08cff; background:rgba(170,0,255,0.18); color:#c08cff; cursor:pointer;">List for sale</button>
+                            </div>
+                            <div id="mn2-p2p-listings" style="margin-top:6px; max-height:200px; overflow-y:auto; font-size:0.8rem;">Loading listings…</div>
+                            <p id="mn2-p2p-msg" style="font-size:0.8rem; margin:6px 0 0; color:#c08cff;"></p>
+                        </div>
+
+                        <div id="mn2-staking-stats" style="display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px;">
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Staked</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-staked">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Available</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-balance">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Effective APR</div><div style="font-size:1.15rem; font-weight:700; color:#00ff88;"><span id="mn2-staking-apr">--</span>%</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Total earned</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-earned">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:140px;"><div style="opacity:0.7; font-size:0.72rem;">Longevity</div><div style="font-size:1.05rem; font-weight:700;"><span id="mn2-staking-tier">--</span></div><div id="mn2-staking-tier-progress" style="font-size:0.7rem; opacity:0.7;"></div></div>
+                        </div>
+
+                        <!-- Consent gate -->
+                        <div id="mn2-staking-consent" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(255,170,0,0.08); border:1px solid rgba(255,170,0,0.35);">
+                            <strong style="color:#ffaa00;">Accept staking terms to begin</strong>
+                            <p id="mn2-staking-consent-text" style="font-size:0.78rem; opacity:0.85; margin:6px 0;">Loading terms…</p>
+                            <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.8rem;">
+                                <input type="checkbox" id="mn2-staking-consent-check" style="margin-top:3px;">
+                                <span id="mn2-staking-consent-statement"></span>
+                            </label>
+                            <button type="button" id="mn2-staking-consent-accept" disabled style="margin-top:8px; padding:6px 12px; border-radius:8px; border:1px solid #00ff88; background:rgba(0,255,136,0.15); color:#00ff88; cursor:pointer;">Accept &amp; enable staking</button>
+                        </div>
+
+                        <!-- Stake / unstake -->
+                        <div id="mn2-staking-controls" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px;">
+                            <input type="number" id="mn2-staking-amount" placeholder="Amount" step="0.00000001" min="0" style="width:130px; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                            <button type="button" id="mn2-staking-stake-btn" style="padding:8px 14px; border-radius:8px; border:none; background:linear-gradient(135deg,#00ff88,#00cc66); color:#000; font-weight:600; cursor:pointer;">Stake</button>
+                            <button type="button" id="mn2-staking-unstake-btn" style="padding:8px 14px; border-radius:8px; border:1px solid #00d4ff; background:rgba(0,212,255,0.15); color:#00d4ff; font-weight:600; cursor:pointer;">Unstake</button>
+                            <label style="display:flex; gap:6px; align-items:center; font-size:0.8rem; opacity:0.9; margin-left:6px;"><input type="checkbox" id="mn2-staking-autocompound"> Auto-compound</label>
+                            <span id="mn2-staking-msg" style="font-size:0.82rem; margin-left:6px;"></span>
+                        </div>
+
+                        <!-- Browser staking rig -->
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.2);">
+                            <button type="button" id="mn2-staking-rig-toggle" style="padding:8px 14px; border-radius:8px; border:1px solid #00ff88; background:rgba(0,255,136,0.12); color:#00ff88; cursor:pointer; font-weight:600;">▶ Start staking rig</button>
+                            <span style="font-size:0.82rem;">Rig: <strong id="mn2-staking-rig-status" style="color:#ffaa44;">off</strong> · uptime <span id="mn2-staking-uptime">0</span>%</span>
+                            <span style="font-size:0.72rem; opacity:0.7;">Uses your CPU as a participation signal only — it does not mine or validate MN2.</span>
+                        </div>
+
+                        <!-- Calculator -->
+                        <div style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,0,0,0.2);">
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Reward calculator (estimate)</strong>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <label style="font-size:0.78rem;">Amount <input type="number" id="mn2-calc-amount" value="100" min="0" style="width:90px; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">Days <input type="number" id="mn2-calc-days" value="30" min="1" style="width:70px; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">Rig uptime <input type="range" id="mn2-calc-uptime" min="0" max="100" value="100" style="vertical-align:middle;"> <span id="mn2-calc-uptime-val">100</span>%</label>
+                            </div>
+                            <p id="mn2-calc-result" style="font-size:0.85rem; margin:8px 0 0; color:#00ff88;">—</p>
+                        </div>
+
+                        <!-- Reward history table -->
+                        <div>
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Reward history</strong>
+                            <a href="/api/mn2/staking/rewards-table?format=csv" id="mn2-staking-rewards-csv" style="font-size:0.75rem; color:#00d4ff; margin-left:8px;">export</a>
+                            <div id="mn2-staking-rewards-table" style="margin-top:6px; max-height:220px; overflow-y:auto; font-size:0.8rem; opacity:0.92;">No rewards yet.</div>
+                        </div>
+
+                        <p style="margin-top:12px; font-size:0.75rem; opacity:0.75; border-top:1px solid rgba(0,255,136,0.2); padding-top:10px;">Rewards are variable, estimated, and not guaranteed. Staked MN2 is custodial and not insured. Not financial advice. <a href="/staking-monitor" style="color:#00d4ff;">Live staking monitor →</a></p>
+                    </div>
                 </div>
 
                 <div class="sidebar">
@@ -1137,6 +1224,25 @@
                             <button type="button" id="password-recovery-reset-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24;cursor:pointer;">Reset with token</button>
                         </div>
                         <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
+                    </div>
+
+                    <div class="section-card" id="account-security-card" data-profile-route="overview account">
+                        <h2 class="section-title">🛡️ Real-money security</h2>
+                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Protect accounts with MN2 or casino USD balance. Enable password-on-login and require verification before real-money casino bets.</p>
+                        <div id="account-security-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
+                        <div id="account-security-recommendations" style="font-size:0.82rem;color:#fbbf24;margin-bottom:10px;"></div>
+                        <div id="account-security-toggles" style="display:flex;flex-direction:column;gap:8px;">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-login"> Require password on login
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-real-money"> Require password before MN2/USD casino bets
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-purchases"> Require password for paid shop purchases
+                            </label>
+                            <button type="button" id="account-security-save-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;max-width:220px;">Save security settings</button>
+                        </div>
                     </div>
 
                     <!-- Achievements Section -->
@@ -1306,6 +1412,7 @@
                         this.loadPaypalControlPanel();
                         this.loadRecentClipDownload();
                         this.loadPasswordProtection();
+                        this.loadAccountSecurity();
                         this.loadQuickBattleAndLeaderboard();
                         this.loadAgentControl();
                         this.loadMonetization25();
@@ -1902,6 +2009,54 @@
                 }
             }
 
+            loadAccountSecurity() {
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var statusEl = document.getElementById('account-security-status');
+                var recEl = document.getElementById('account-security-recommendations');
+                var loginCb = document.getElementById('sec-require-login');
+                var moneyCb = document.getElementById('sec-require-real-money');
+                var purchaseCb = document.getElementById('sec-require-purchases');
+                var saveBtn = document.getElementById('account-security-save-btn');
+                if (!statusEl) return;
+                fetch('/api/user/security/status?user_id=' + encodeURIComponent(uid))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data.success) { statusEl.textContent = data.error || 'Failed to load security status.'; return; }
+                        var bal = 'MN2: ' + (data.mn2_balance || 0) + ' · Casino USD: ' + (data.casino_fiat_balance || 0);
+                        statusEl.textContent = (data.has_password ? 'Password set.' : 'No password yet.') + ' · ' + bal;
+                        if (recEl) {
+                            recEl.innerHTML = (data.recommendations || []).map(function(r) { return '<div>• ' + profileEscapeHtml(r) + '</div>'; }).join('');
+                        }
+                        var s = data.settings || {};
+                        if (loginCb) loginCb.checked = s.require_password_login !== false;
+                        if (moneyCb) moneyCb.checked = s.require_password_real_money !== false;
+                        if (purchaseCb) purchaseCb.checked = !!s.require_password_purchases;
+                    })
+                    .catch(function() { statusEl.textContent = 'Failed to load security status.'; });
+                if (saveBtn && !saveBtn._wired) {
+                    saveBtn._wired = true;
+                    saveBtn.addEventListener('click', function() {
+                        saveBtn.disabled = true;
+                        fetch('/api/user/security/settings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: uid,
+                                require_password_login: loginCb ? loginCb.checked : true,
+                                require_password_real_money: moneyCb ? moneyCb.checked : true,
+                                require_password_purchases: purchaseCb ? purchaseCb.checked : false
+                            })
+                        }).then(function(r) { return r.json(); }).then(function(res) {
+                            saveBtn.disabled = false;
+                            if (res.success) {
+                                statusEl.textContent = 'Security settings saved.';
+                                window.profileManager.loadAccountSecurity();
+                            } else statusEl.textContent = res.error || 'Save failed.';
+                        }).catch(function() { saveBtn.disabled = false; statusEl.textContent = 'Save failed.'; });
+                    });
+                }
+            }
+
             loadQuickBattleAndLeaderboard() {
                 var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
                 var statsEl = document.getElementById('profile-battle-stats');
@@ -2372,12 +2527,27 @@
                         }
                         try {
                             if (status) status.textContent = 'Logging in...';
-                            const res = await fetch('/api/user/login', {
+                            var loginBody = { user_id: uid, auto_create: false };
+                            var res = await fetch('/api/user/login', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: uid, auto_create: false })
+                                body: JSON.stringify(loginBody)
                             });
-                            const data = await res.json();
+                            var data = await res.json();
+                            if (!data.success && data.requires_password) {
+                                var pwd = window.prompt('This account requires a password to log in:');
+                                if (!pwd) {
+                                    if (status) status.textContent = 'Password required to log in.';
+                                    return;
+                                }
+                                loginBody.password = pwd;
+                                res = await fetch('/api/user/login', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(loginBody)
+                                });
+                                data = await res.json();
+                            }
                             if (!data.success) {
                                 if (status) status.textContent = data.error || 'Login failed';
                                 return;
@@ -3039,9 +3209,15 @@
                         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000))
                     ]);
                     if (res && res.success && res.agents && res.agents.length > 0) {
-                        container.innerHTML = res.agents.map(a => `
+                        container.innerHTML = res.agents.map(a => {
+                            const emoji = a.icon || '🤖';
+                            const avatarUrl = a.avatar_url || (a.agent_id ? `/static/img/agents/${a.agent_id}.svg` : '');
+                            const visual = avatarUrl
+                                ? `<img src="${avatarUrl}" alt="" loading="lazy" style="width:2em;height:2em;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.06);border:2px solid ${a.color || '#00ff88'};" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${emoji}',style:'font-size:1.4em;'}))">`
+                                : `<span style="font-size:1.4em;">${emoji}</span>`;
+                            return `
                             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
-                                <span style="font-size:1.4em;">${a.icon || '🤖'}</span>
+                                ${visual}
                                 <div style="flex:1;min-width:0;">
                                     <div style="font-weight:600;color:${a.color || '#00ff88'};font-size:0.95em;">${a.name}</div>
                                     <div style="font-size:0.8em;opacity:0.7;">Lvl ${a.level} · ${a.xp} XP · ${a.total_actions} actions</div>
@@ -3051,7 +3227,8 @@
                                 </div>
                                 <div style="font-size:0.75em;opacity:0.6;text-align:right;">${a.skill_count} skills</div>
                             </div>
-                        `).join('');
+                        `;
+                        }).join('');
                     } else {
                         container.innerHTML = '<div class="info-message">No agents assigned yet. Generate content to activate your agents!</div>';
                     }
@@ -3578,6 +3755,9 @@
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script src="/static/js/mn2-staking.js?v=20260603a" defer></script>
+    <script src="/static/js/mn2-onramp.js?v=20260603a" defer></script>
+    <script src="/static/js/mn2-p2p.js?v=20260603a" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var panels = document.getElementById('intelligence-panels');

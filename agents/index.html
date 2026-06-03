@@ -31,6 +31,9 @@
         .agent-card:hover { transform: translateY(-2px); border-color: rgba(0,255,136,0.3); }
         .agent-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
         .agent-icon { font-size: 2rem; }
+        .agent-avatar { width: 2.6rem; height: 2.6rem; border-radius: 50%; object-fit: cover; display: block; flex-shrink: 0; background: rgba(255,255,255,0.06); border: 2px solid var(--ring, rgba(255,255,255,0.15)); box-shadow: 0 0 10px -2px var(--ring, transparent); }
+        .agent-avatar-sm { width: 1.6rem; height: 1.6rem; border-radius: 50%; object-fit: cover; display: inline-block; vertical-align: middle; background: rgba(255,255,255,0.06); }
+        .sys-agent-row .agent-avatar { width: 2rem; height: 2rem; }
         .agent-name { font-size: 1.1em; font-weight: 700; }
         .agent-meta { font-size: 0.8em; opacity: 0.6; }
         .level-badge { background: rgba(0,255,136,0.2); color: #00ff88; border-radius: 6px; padding: 2px 8px; font-size: 0.8em; font-weight: 700; }
@@ -219,6 +222,29 @@
         } catch(e) { return s.slice(0,10); }
     }
 
+    // --- Agent profile picture (with emoji fallback) ---
+    function avatarUrlFor(agentId, explicit) {
+        if (explicit) return explicit;
+        return agentId ? `/static/img/agents/${agentId}.svg` : '';
+    }
+    function agentAvatar(agentId, emoji, color, opts) {
+        opts = opts || {};
+        const cls = opts.cls || 'agent-avatar';
+        const e = (emoji || '🤖').replace(/'/g, "\\'");
+        const url = avatarUrlFor(agentId, opts.url);
+        const ring = color ? ` style="--ring:${color};"` : '';
+        if (url) {
+            return `<img class="${cls}" src="${url}" alt=""${ring} loading="lazy" onerror="agentAvatarFallback(this,'${e}')">`;
+        }
+        return `<span class="agent-icon">${emoji || '🤖'}</span>`;
+    }
+    window.agentAvatarFallback = function(img, emoji) {
+        const span = document.createElement('span');
+        span.className = 'agent-icon';
+        span.textContent = emoji || '🤖';
+        img.replaceWith(span);
+    };
+
     // --- Load My Agents ---
     async function loadMyAgents() {
         const grid = document.getElementById('my-agents-grid');
@@ -240,7 +266,7 @@
                 return `
                 <div class="agent-card" style="border-left: 3px solid ${a.color || '#00ff88'};">
                     <div class="agent-card-header">
-                        <span class="agent-icon">${a.icon || '🤖'}</span>
+                        ${agentAvatar(a.agent_id, a.icon, a.color, {url: a.avatar_url})}
                         <div style="flex:1;">
                             <div class="agent-name" style="color:${a.color || '#00ff88'};">${a.name}</div>
                             <div class="agent-meta">${lastAct}</div>
@@ -282,7 +308,7 @@
                 <div class="activity-row" style="border-left:3px solid ${a.agent_color || '#00ff88'};">
                     <span class="ai">${a.icon || '⚡'}</span>
                     <div class="details">
-                        <div class="aname" style="color:${a.agent_color||'#00ff88'};">${a.agent_icon||'🤖'} ${a.agent_name || a.agent_id}</div>
+                        <div class="aname" style="color:${a.agent_color||'#00ff88'};">${agentAvatar(a.agent_id, a.agent_icon, a.agent_color, {cls:'agent-avatar-sm', url:a.agent_avatar_url})} ${a.agent_name || a.agent_id}</div>
                         <div class="alabel">${a.label || a.action}</div>
                     </div>
                     ${a.xp_gained > 0 ? `<span class="axp">+${a.xp_gained} XP</span>` : ''}
@@ -344,7 +370,7 @@
             return `
             <div class="sys-agent-row">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <span style="font-size:1.3em;">${a.icon}</span>
+                    ${agentAvatar(a.id, a.icon)}
                     <div class="sname">${a.name}</div>
                 </div>
                 <div class="smeta">${a.role}</div>
