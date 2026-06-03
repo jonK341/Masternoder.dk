@@ -201,13 +201,14 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
   "block_height": 896572,
   "mn2_usd_price": 5.3537,
   "difficulty": 74512.52,
-  "masternode_count": null,
-  "staking_weight": null,
+  "masternode_count": 1,
+  "staking_weight": 4912885010705,
+  "network_hashps": 4912885010705,
   "expected_stake_time_sec": null,
   "pool_total_staked": 0.0,
   "pool_apr_percent": 5.0,
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
-  "source": { "block_height": "chainz", "mn2_usd_price": "chainz", "difficulty": "chainz" },
+  "source": { "block_height": "rpc", "difficulty": "rpc", "masternode_count": "rpc", "staking_weight": "rpc", "mn2_usd_price": "chainz" },
   "onramp": { "onramp_volume_usd_24h": 0.0, "mn2_sold_24h": 0.0, "open_orders": 0, "chargeback_rate": 0.0 },
   "p2p": { "p2p_volume_usd_24h": 0.0, "mn2_traded_24h": 0.0, "open_listings": 0, "chargeback_rate": 0.0 }
 }

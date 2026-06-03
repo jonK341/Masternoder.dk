@@ -155,6 +155,16 @@ def getstakinginfo() -> Dict[str, Any]:
     return _call("getstakinginfo")
 
 
+def getmininginfo() -> Dict[str, Any]:
+    """Mining/network info incl. difficulty and networkhashps. Used as a network-weight proxy on PoS forks that lack getstakinginfo."""
+    return _call("getmininginfo")
+
+
+def getstakingstatus() -> Dict[str, Any]:
+    """PIVX-style staking status booleans (staking status, mnsync, walletunlocked, mintablecoins, ...). Preferred on forks where getstakinginfo is unimplemented."""
+    return _call("getstakingstatus")
+
+
 def getstakingstatus() -> Dict[str, Any]:
     """PIVX-style staking status (staking_status, mintablecoins, walletunlocked, ...).
     This MN2 build implements getstakingstatus rather than getstakinginfo."""
@@ -225,6 +235,23 @@ def staking_health() -> Dict[str, Any]:
             out["expected_time_to_reward_sec"] = r.get("expectedtime")
             out["errors"] = r.get("errors") or out["errors"]
             out["status"] = "active" if active else "inactive"
+
+    # PIVX-style fork fallback: getstakinginfo missing -> use getstakingstatus booleans.
+    if out["status"] == "unsupported":
+        ss = getstakingstatus()
+        if not ss.get("error") and isinstance(ss.get("result"), dict):
+            r = ss["result"]
+            active = bool(r.get("staking status", r.get("staking_status")))
+            out["staking_active"] = active
+            out["status"] = "active" if active else "inactive"
+            out["staking_status_detail"] = {
+                "validtime": r.get("validtime"),
+                "haveconnections": r.get("haveconnections"),
+                "walletunlocked": r.get("walletunlocked"),
+                "mintablecoins": r.get("mintablecoins"),
+                "enoughcoins": r.get("enoughcoins"),
+                "mnsync": r.get("mnsync"),
+            }
 
     wi = getwalletinfo()
     if not wi.get("error"):

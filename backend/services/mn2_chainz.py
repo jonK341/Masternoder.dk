@@ -82,6 +82,7 @@ def network_overview() -> Dict[str, Any]:
         "block_height": None,
         "mn2_usd_price": None,
         "staking_weight": None,
+        "network_hashps": None,
         "expected_stake_time_sec": None,
         "masternode_count": None,
         "difficulty": None,
@@ -109,6 +110,20 @@ def network_overview() -> Dict[str, Any]:
             res = df["result"]
             out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
             out["source"]["difficulty"] = "rpc"
+        # getmininginfo: networkhashps is the network-weight proxy on PoS forks
+        # that don't implement getstakinginfo (MasterNoder2). Also a difficulty fallback.
+        mi = rpc.getmininginfo()
+        if not mi.get("error") and isinstance(mi.get("result"), dict):
+            res = mi["result"]
+            nh = res.get("networkhashps")
+            if nh is not None:
+                out["network_hashps"] = nh
+                if out["staking_weight"] is None:
+                    out["staking_weight"] = nh
+                    out["source"]["staking_weight"] = "rpc"
+            if out["difficulty"] is None and res.get("difficulty") is not None:
+                out["difficulty"] = res.get("difficulty")
+                out["source"]["difficulty"] = "rpc"
     except Exception:
         pass
     # Chainz fallback for anything still missing
