@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN2 Staking Monitor — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        body { background: #0a0e1a; color: #e8eefc; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .sm-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+        .sm-header h1 { color: #00ff88; margin: 0 0 4px; }
+        .sm-header p { opacity: 0.8; margin: 0 0 20px; }
+        .sm-tiles { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
+        .sm-tile { flex: 1 1 150px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,212,255,0.05)); border: 1px solid rgba(0,255,136,0.25); }
+        .sm-tile .label { font-size: 0.72rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.04em; }
+        .sm-tile .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        th { color: #00d4ff; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .pill { padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+        .pill.on { background: rgba(0,255,136,0.18); color: #00ff88; }
+        .pill.off { background: rgba(255,170,68,0.18); color: #ffaa44; }
+        .sm-note { margin-top: 18px; font-size: 0.75rem; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+        .tier { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="sm-wrap">
+        <div class="sm-header">
+            <h1>⚡ MN2 Staking Monitor</h1>
+            <p>Live view of all staking processes across users. Identifiers are anonymized.</p>
+        </div>
+
+        <div class="sm-tiles" id="sm-tiles">
+            <div class="sm-tile"><div class="label">Total staked</div><div class="value" id="t-total">--</div></div>
+            <div class="sm-tile"><div class="label">Active stakers</div><div class="value" id="t-stakers">--</div></div>
+            <div class="sm-tile"><div class="label">Active rigs</div><div class="value" id="t-rigs">--</div></div>
+            <div class="sm-tile"><div class="label">Pool APR</div><div class="value" id="t-apr">--</div></div>
+            <div class="sm-tile"><div class="label">Rewards paid</div><div class="value" id="t-paid">--</div></div>
+            <div class="sm-tile"><div class="label">Reserve</div><div class="value" id="t-reserve">--</div></div>
+        </div>
+
+        <table>
+            <thead>
+                <tr><th>Staker</th><th>Staked</th><th>Tier</th><th>Days</th><th>Rig</th><th>Uptime</th><th>Eff. APR</th><th>Earned</th></tr>
+            </thead>
+            <tbody id="sm-body"><tr><td colspan="8">Loading…</td></tr></tbody>
+        </table>
+
+        <p class="sm-note">Rewards are variable and not guaranteed. The browser staking rig is an engagement signal that uses participants' processors — it does not mine or validate MN2. Staked MN2 is custodial and not insured. Not financial advice.</p>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/mn2-staking-monitor.js?v=20260603a" defer></script>
+</body>
+</html>

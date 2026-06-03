@@ -150,6 +150,21 @@ def validateaddress(address: str) -> Dict[str, Any]:
     return _call("validateaddress", [address])
 
 
+def getstakinginfo() -> Dict[str, Any]:
+    """PoS staking info (weight, expected time, enabled). May be unimplemented on some chains."""
+    return _call("getstakinginfo")
+
+
+def getmasternodecount() -> Dict[str, Any]:
+    """Masternode count. May be unimplemented on some chains."""
+    return _call("getmasternodecount")
+
+
+def getdifficulty() -> Dict[str, Any]:
+    """Network difficulty (may return a dict with PoW/PoS on hybrid chains)."""
+    return _call("getdifficulty")
+
+
 def health_check() -> Dict[str, Any]:
     """
     Lightweight health check: call getblockcount and return status, block_height, latency_ms.

@@ -52,6 +52,88 @@ def chainz_ticker_usd() -> Optional[float]:
     return out.get("price") if isinstance(out, dict) else None
 
 
+_CACHE_TTL.update({"getdifficulty": 300, "mncount": 600})
+
+
+def chainz_difficulty() -> Optional[float]:
+    """Chainz network difficulty for MN2. Cached 5 min. Returns None on error."""
+    v = _cached_get("getdifficulty")
+    try:
+        return float(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def chainz_masternode_count() -> Optional[int]:
+    """Chainz masternode count for MN2. Cached 10 min. Returns None on error."""
+    v = _cached_get("mncount")
+    try:
+        return int(float(v)) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def network_overview() -> Dict[str, Any]:
+    """
+    Aggregate MN2 network stats: RPC-first (own daemon), Chainz fallback. Best-effort, never raises.
+    Returns block_height, mn2_usd_price, staking_weight, masternode_count, difficulty.
+    """
+    out: Dict[str, Any] = {
+        "block_height": None,
+        "mn2_usd_price": None,
+        "staking_weight": None,
+        "expected_stake_time_sec": None,
+        "masternode_count": None,
+        "difficulty": None,
+        "source": {},
+    }
+    # RPC first
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        r = rpc.getblockcount(timeout_sec=4)
+        if not r.get("error") and r.get("result") is not None:
+            out["block_height"] = int(r["result"]); out["source"]["block_height"] = "rpc"
+        si = rpc.getstakinginfo()
+        if not si.get("error") and isinstance(si.get("result"), dict):
+            res = si["result"]
+            out["staking_weight"] = res.get("netstakeweight") or res.get("weight")
+            out["expected_stake_time_sec"] = res.get("expectedtime")
+            out["source"]["staking_weight"] = "rpc"
+        mc = rpc.getmasternodecount()
+        if not mc.get("error") and mc.get("result") is not None:
+            res = mc["result"]
+            out["masternode_count"] = res.get("total") if isinstance(res, dict) else res
+            out["source"]["masternode_count"] = "rpc"
+        df = rpc.getdifficulty()
+        if not df.get("error") and df.get("result") is not None:
+            res = df["result"]
+            out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
+            out["source"]["difficulty"] = "rpc"
+    except Exception:
+        pass
+    # Chainz fallback for anything still missing
+    try:
+        if out["block_height"] is None:
+            bh = chainz_getblockcount()
+            if bh is not None:
+                out["block_height"] = bh; out["source"]["block_height"] = "chainz"
+        if out["mn2_usd_price"] is None:
+            px = chainz_ticker_usd()
+            if px is not None:
+                out["mn2_usd_price"] = round(px, 8); out["source"]["mn2_usd_price"] = "chainz"
+        if out["masternode_count"] is None:
+            mc = chainz_masternode_count()
+            if mc is not None:
+                out["masternode_count"] = mc; out["source"]["masternode_count"] = "chainz"
+        if out["difficulty"] is None:
+            d = chainz_difficulty()
+            if d is not None:
+                out["difficulty"] = d; out["source"]["difficulty"] = "chainz"
+    except Exception:
+        pass
+    return out
+
+
 def chainz_ticker_usd_with_updated() -> Optional[Dict[str, Any]]:
     """Return { price: float, last_updated_iso: str } from cache, or None. Phase 9: live price feed."""
     now = time.time()

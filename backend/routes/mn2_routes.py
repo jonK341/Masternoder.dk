@@ -505,6 +505,22 @@ def mn2_withdraw():
     if (bal.get("mn2_balance") or 0) < amount:
         return jsonify({"success": False, "error": "Insufficient balance"}), 400
 
+    # On-ramp hold gate: MN2 bought via PayPal is not withdrawable until its clearance
+    # window passes (defeats buy -> chargeback -> withdraw). Fail-open if service errors.
+    try:
+        from backend.services.mn2_onramp_service import held_amount as _onramp_held
+        held = float(_onramp_held(user_id) or 0)
+        if held > 0 and (bal.get("mn2_balance") or 0) - held < amount:
+            return jsonify({
+                "success": False,
+                "error": (f"{held:.4f} MN2 from a recent PayPal purchase is still in its clearance "
+                          f"hold window and cannot be withdrawn yet."),
+                "code": "onramp_hold",
+                "held_mn2": round(held, 8),
+            }), 400
+    except Exception:
+        pass
+
     # Send (amount - fee) to address (record duration for ledger)
     import time
     t0 = time.perf_counter()

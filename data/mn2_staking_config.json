@@ -1,0 +1,103 @@
+{
+  "enabled": true,
+  "min_stake": 0.1,
+  "max_stake_per_user": 10000,
+  "instant_unstake": true,
+  "lock_period_hours": 0,
+  "unstake_cooldown_hours": 0,
+  "base_apr_percent": 5.0,
+  "reward_pool_mode": "realized_yield",
+  "site_margin_percent": 20.0,
+  "accrual_interval_minutes": 60,
+  "requires_verification": false,
+  "terms_version": "1.0",
+  "worker": {
+    "enabled": true,
+    "use_defaults": true,
+    "uptime_weight": 1.25,
+    "min_uptime_weight": 1.0,
+    "max_uptime_weight": 1.5,
+    "heartbeat_interval_seconds": 30,
+    "proof_difficulty": 16,
+    "grace_missed_heartbeats": 2,
+    "uptime_window_minutes": 60
+  },
+  "longevity_tiers": [
+    {"id": "bronze",   "min_days": 0,  "multiplier": 1.0,  "label": "Bronze"},
+    {"id": "silver",   "min_days": 7,  "multiplier": 1.1,  "label": "Silver (7d+)"},
+    {"id": "gold",     "min_days": 30, "multiplier": 1.25, "label": "Gold (30d+)"},
+    {"id": "platinum", "min_days": 90, "multiplier": 1.5,  "label": "Platinum (90d+)"}
+  ],
+  "boost": {
+    "shop_effect": "staking_boost",
+    "max_stacked_multiplier": 2.0
+  },
+  "auto_compound": {
+    "enabled_default": false,
+    "min_reward_to_compound": 0.01
+  },
+  "dynamic_apr": {
+    "enabled": true,
+    "target_total_staked": 1000000,
+    "min_apr_percent": 2.0,
+    "max_apr_percent": 8.0
+  },
+  "realtime": {
+    "transport": "sse",
+    "poll_fallback_seconds": 15
+  },
+  "referral": {
+    "enabled": true,
+    "inviter_boost": 1.1,
+    "invitee_boost": 1.1,
+    "duration_minutes": 1440,
+    "max_referrals_per_user_per_day": 5,
+    "requires_verification": true
+  },
+  "streak": {
+    "enabled": true,
+    "per_day_bonus": 0.01,
+    "max_bonus": 0.1,
+    "merged_into_longevity": true
+  },
+  "stabilization_reserve": {
+    "enabled": true,
+    "fund_from_margin_percent": 25.0,
+    "max_reserve_mn2": 50000
+  },
+  "badges": {
+    "enabled": true,
+    "source": "achievements_service"
+  },
+  "onramp": {
+    "enabled": true,
+    "model": "A",
+    "spread_percent": 3.0,
+    "quote_ttl_seconds": 60,
+    "hold_hours": 72,
+    "daily_usd_cap": 200.0,
+    "daily_usd_cap_verified": 2000.0,
+    "lifetime_usd_cap_unverified": 500.0
+  },
+  "p2p": {
+    "enabled": false,
+    "model": "B",
+    "platform_fee_percent": 2.5,
+    "buyer_spread_percent": 1.0,
+    "min_listing_mn2": 1.0,
+    "max_listing_mn2": 5000.0,
+    "max_open_listings_per_seller": 5,
+    "requires_seller_verification": true,
+    "seller_must_sell_cleared_only": true,
+    "hold_hours": 72,
+    "order_ttl_seconds": 900,
+    "daily_usd_cap": 200.0,
+    "daily_usd_cap_verified": 2000.0,
+    "lifetime_usd_cap_unverified": 500.0,
+    "note": "Guarded: disabled by default. Enable only after on-ramp Model A hold/KYC/dispute + reserve are proven in production."
+  },
+  "agent": {
+    "automation_enabled": true
+  },
+  "disclaimer": "Staking moves your in-app MN2 into the staking pool to earn rewards from realized network staking yield. The browser staking rig uses your device's processor only as a participation signal that boosts your reward share - it does NOT validate MN2 blocks or mine MN2. Rewards are variable, estimated, and not guaranteed, and depend on actual pool yield. Not financial advice. See full terms and risk disclosure."
+}
