@@ -25,6 +25,7 @@ from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
 
 APPLY = "--apply" in sys.argv
 UNLOCK = "--unlock" in sys.argv
+MNSYNC_RESET = "--mnsync-reset" in sys.argv
 
 
 def sh(ssh, cmd, timeout=30):
@@ -72,9 +73,23 @@ def main():
 
     print("\n-- getstakingstatus (before) --  (this build's staking RPC; getstakinginfo is not implemented)")
     print(rpc("getstakingstatus") or "(no response)")
+    print("\n-- mnsync status --  (staking is gated on masternode sync finishing: mnsync must be true)")
+    print(rpc("mnsync", ["status"]) or "(no response)")
     print("\n-- getwalletinfo (before) --")
     wi = rpc("getwalletinfo")
     print(wi or "(no response)")
+
+    # Opt-in: kick a stuck masternode sync (safe; just restarts the sync state machine).
+    if MNSYNC_RESET:
+        print("\n== mnsync reset (unsticking masternode sync) ==")
+        print(rpc("mnsync", ["reset"]) or "(no response)")
+        import time as _t
+        print("waiting 20s for sync to advance...")
+        _t.sleep(20)
+        print("-- mnsync status (after reset) --")
+        print(rpc("mnsync", ["status"]) or "(no response)")
+        print("-- getstakingstatus (after reset) --")
+        print(rpc("getstakingstatus") or "(no response)")
 
     # Determine the actual config path to edit (prefer the datadir the process uses)
     if "-datadir=" in (datadir or ""):
