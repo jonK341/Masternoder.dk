@@ -168,13 +168,16 @@ def main():
         import time as _t
         print("\n== mnsync reset (unsticking masternode sync) ==")
         print(rpc("mnsync", ["reset"]) or "(no response)")
-        for i in range(9):  # ~9 x 15s = ~135s
+        for i in range(20):  # ~20 x 15s = ~5 min (lets each stage time through to FINISHED)
             _t.sleep(15)
             st = rpc("mnsync", ["status"])
             gs = rpc("getstakingstatus")
             asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
-            staking_on = '"staking status":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
-            print(f"  [{(i+1)*15:>3}s] RequestedMasternodeAssets={asset}  staking={'TRUE' if staking_on else 'false'}")
+            mnlist = (_re.search(r'"countMasternodeList":(\d+)', st or "") or [None, "?"])[1]
+            winners = (_re.search(r'"countMasternodeWinner":(\d+)', st or "") or [None, "?"])[1]
+            mnsync_on = '"mnsync":true' in (gs or "").replace(" ", "")
+            staking_on = '"stakingstatus":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            print(f"  [{(i+1)*15:>3}s] asset={asset}  mnList={mnlist}  winners={winners}  mnsync={'TRUE' if mnsync_on else 'false'}  staking={'TRUE' if staking_on else 'false'}")
             if staking_on:
                 print("  >>> staking is now ACTIVE — pool is minting.")
                 break

@@ -213,6 +213,14 @@ This is now in scope (not an open question).
 4. **Ops/health:** extend `mn2_rpc_client.health_check()` and `/api/mn2/ops/stats` to report `staking_active`, `staking_weight`, `expected_time_to_reward`, immature/mature balances. Add a `MN2_OPS.md` runbook.
 5. **Custody/security:** staking key handling, cold‑storage of reserves, alerting if staking stops — documented in ops.
 
+### 9.1 Operational status — daemon staking activation (live)
+
+Ops tooling: **`scripts/mn2_enable_staking.py`** (SSH, reuses `deploy_ssh_env` creds). Discovers the running `masternoder2d`, reads RPC creds from `/var/www/html/.env`, and (with `--apply`) sets `staking=1`/`enablestaking=1` in the active datadir config (`/var/www/html/config/masternoder2.conf`) and restarts via systemd. Flags: `--apply`, `--unlock` (needs `MN2_WALLET_PASSPHRASE`), `--addnode IP[,IP...]` (persist peers + live add), `--watch [--watch-min N]` (read‑only sync poll), `--mnsync-reset`.
+
+**This build is PIVX‑style:** `getstakinginfo` is not implemented — the staking RPC is **`getstakingstatus`** (`mn2_rpc_client.staking_health()` already falls back to it, S9). Staking is **gated on masternode sync**: `getstakingstatus.mnsync` must be `true` before `"staking status"` can be `true`.
+
+**Current state (2026‑06‑03):** config has `staking=1`/`enablestaking=1`; wallet is unlocked; `balance ≈ 99,761 MN2`; `validtime/haveconnections/walletunlocked/mintablecoins/enoughcoins` all `true`. The **only** blocker is `mnsync: false`. The node had been isolated (zero masternode data, stuck at `RequestedMasternodeAssets: 2`). Adding **9 persistent `addnode=` peers** fixed connectivity — it advanced to `asset 3` and now has `countMasternodeList: 1`, `countMasternodeWinner: 5`. It is parked at the winners stage waiting to roll `3 → 4 → 999 (FINISHED)`; once it does, `mnsync` flips `true` and the pool mints. Next lever if it stays parked: `--mnsync-reset` (now effective with live peers + cached MN data) or wait out the per‑stage timeouts.
+
 ---
 
 ## 10. Regulatory & compliance framing (maximum)
@@ -445,7 +453,7 @@ Goal: a user pays via PayPal and **automatically receives MN2**. Add the resulti
 | **S6** | **Reward tracking table (§15) + explorer overview (§16) + PayPal→MN2 on‑ramp Model A (§17)** |
 | **S7** | **P2P MN2 trading/auction Model B (§17)** — now **enabled** |
 | **S8** | **Conservation invariant + reconcile service** (`mn2_staking_reconcile_service.py`, `/api/mn2/staking/ops/reconcile`, `scripts/mn2_reconcile.py`, hourly cron drift alert) |
-| **S9** | **Daemon staking health/ops** (`rpc_client.staking_health()` → `staking_active`, weight, expected‑time, mature/immature in `/api/mn2/ops/stats`) |
+| **S9** | **Daemon staking health/ops** (`rpc_client.staking_health()` → `staking_active`, weight, expected‑time, mature/immature in `/api/mn2/ops/stats`) — **daemon activation live, see §9.1** (`scripts/mn2_enable_staking.py`; PIVX `getstakingstatus`; staking gated on `mnsync`) |
 | **S10** | **Agent personas + autonomous loop** (`mn2_staking_agents_service.py`, `data/agent_staking_agents.json`, `run_agent`/`run_all`, ops `run-all` cron, agent flag + `agent_staked_mn2`/`agent_actions_24h` in monitor) |
 
 > **Decision (locked):** **Model A (custodial on‑ramp) ships first in S6; Model B (P2P auction) follows in S7.** As of S7 the P2P market is **enabled** (`p2p.enabled: true`) — sellers are still KYC‑gated, buyer MN2 stays in the hold window, and the §8 reconcile (S8) + reserve guard the books.
