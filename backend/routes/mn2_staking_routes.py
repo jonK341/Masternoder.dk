@@ -203,6 +203,11 @@ def network_overview():
             overview["onramp"] = mn2_onramp_service.onramp_stats()
         except Exception:
             overview["onramp"] = None
+        try:
+            from backend.services import mn2_p2p_service
+            overview["p2p"] = mn2_p2p_service.p2p_stats()
+        except Exception:
+            overview["p2p"] = None
         return jsonify({"success": True, **overview}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

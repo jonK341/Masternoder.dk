@@ -57,6 +57,14 @@ _CAPABILITIES = [
      "description": "Create the PayPal order for a quote; returns approve_url for the user to pay."},
     {"action": "onramp_status", "method": "GET", "params": ["user_id", "order_id?"],
      "description": "Poll an on-ramp order, or list the user's on-ramp orders + held MN2."},
+    {"action": "p2p_listings", "method": "GET", "params": ["limit?"],
+     "description": "List open P2P MN2 sell listings (Model B; guarded)."},
+    {"action": "p2p_create_listing", "method": "POST", "params": ["user_id", "mn2_amount", "price_usd_per_mn2"],
+     "description": "Escrow MN2 and list it for USD sale (seller verification may apply)."},
+    {"action": "p2p_buy", "method": "POST", "params": ["user_id", "listing_id", "mn2_amount?", "return_url?", "cancel_url?"],
+     "description": "Buy MN2 from a listing via PayPal; returns approve_url."},
+    {"action": "p2p_status", "method": "GET", "params": ["user_id", "order_id?"],
+     "description": "Poll a P2P order, or list the user's listings/purchases + payout balance."},
 ]
 
 
@@ -79,7 +87,8 @@ def capabilities():
     }), 200
 
 
-_READ_ACTIONS = {"status", "calculator", "rewards_table", "monitor", "onramp_status"}
+_READ_ACTIONS = {"status", "calculator", "rewards_table", "monitor", "onramp_status",
+                 "p2p_listings", "p2p_status"}
 
 
 @agent_staking_bp.route("/api/agent/staking/execute", methods=["POST"])
@@ -135,6 +144,22 @@ def execute():
             if order_id:
                 return jsonify(onramp.get_status(order_id, user_id)), 200
             return jsonify(onramp.get_user_orders(user_id)), 200
+        if action in ("p2p_listings", "p2p_create_listing", "p2p_buy", "p2p_status"):
+            import backend.services.mn2_p2p_service as p2p
+            if action == "p2p_listings":
+                return jsonify(p2p.list_listings(limit=int(data.get("limit", 100)))), 200
+            if action == "p2p_create_listing":
+                r = p2p.create_listing(user_id, data.get("mn2_amount"), data.get("price_usd_per_mn2"))
+                return jsonify(r), 200 if r.get("success") else 400
+            if action == "p2p_buy":
+                r = p2p.create_purchase(user_id, (data.get("listing_id") or "").strip(),
+                                        mn2_amount=data.get("mn2_amount"),
+                                        return_url=data.get("return_url"), cancel_url=data.get("cancel_url"))
+                return jsonify(r), 200 if r.get("success") else 400
+            order_id = (data.get("order_id") or "").strip()
+            if order_id:
+                return jsonify(p2p.get_order(order_id, user_id)), 200
+            return jsonify(p2p.get_user_overview(user_id)), 200
         return jsonify({"success": False, "error": f"unknown action '{action}'",
                         "valid_actions": [c["action"] for c in _CAPABILITIES]}), 400
     except Exception as exc:
