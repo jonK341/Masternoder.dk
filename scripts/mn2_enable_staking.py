@@ -70,8 +70,8 @@ def main():
                f"-d '{body}' -H 'Content-Type: application/json' {rpc_url}/")
         return sh(ssh, cmd)
 
-    print("\n-- getstakinginfo (before) --")
-    print(rpc("getstakinginfo") or "(no response)")
+    print("\n-- getstakingstatus (before) --  (this build's staking RPC; getstakinginfo is not implemented)")
+    print(rpc("getstakingstatus") or "(no response)")
     print("\n-- getwalletinfo (before) --")
     wi = rpc("getwalletinfo")
     print(wi or "(no response)")
@@ -108,8 +108,9 @@ def main():
     print("\n== Restarting daemon ==")
     has_unit = sh(ssh, "systemctl list-unit-files 2>/dev/null | grep -i masternoder2d || true")
     if has_unit:
-        print("systemd unit found → systemctl restart masternoder2d")
-        print(sh(ssh, "systemctl restart masternoder2d 2>&1; sleep 8; systemctl is-active masternoder2d"))
+        print("systemd unit found → systemctl restart masternoder2d (a wallet daemon restart can take a while)")
+        # Long timeout: stopping/starting flushes + reloads the wallet; 30s is not enough.
+        print(sh(ssh, "systemctl restart masternoder2d 2>&1; sleep 12; systemctl is-active masternoder2d", timeout=180))
     else:
         # Reconstruct the launch command from the running process (binary + args), then relaunch via nohup.
         launch = sh(ssh, "ps aux | grep -i [m]asternoder2 | grep -v grep | head -1 | awk '{for(i=11;i<=NF;i++) printf $i\" \"; print \"\"}'")
@@ -140,10 +141,11 @@ def main():
             res = sh(ssh, cmd)
             print("walletpassphrase: " + ("OK (no error)" if '"error":null' in res else res))
 
-    print("\n-- getstakinginfo (after) --")
-    print(rpc("getstakinginfo") or "(no response)")
+    print("\n-- getstakingstatus (after) --")
+    print(rpc("getstakingstatus") or "(no response)")
     ssh.close()
-    print("\nDone. If staking_active is still false, the wallet may be locked/encrypted or coins not yet mature.")
+    print("\nDone. staking_status:true means the daemon is minting. If false, check mintablecoins/")
+    print("walletunlocked/enoughcoins in the output above (coins may need maturity/more confirmations).")
     return 0
 
 

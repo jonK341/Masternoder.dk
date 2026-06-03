@@ -155,6 +155,12 @@ def getstakinginfo() -> Dict[str, Any]:
     return _call("getstakinginfo")
 
 
+def getstakingstatus() -> Dict[str, Any]:
+    """PIVX-style staking status (staking_status, mintablecoins, walletunlocked, ...).
+    This MN2 build implements getstakingstatus rather than getstakinginfo."""
+    return _call("getstakingstatus")
+
+
 def getwalletinfo() -> Dict[str, Any]:
     """Wallet info incl. balance, unconfirmed_balance, immature_balance. May be unimplemented on some chains."""
     return _call("getwalletinfo")
@@ -179,15 +185,34 @@ def staking_health() -> Dict[str, Any]:
         "unconfirmed_balance": None,
         "errors": None,
     }
+    _CONN = ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")
     si = getstakinginfo()
     if si.get("error"):
         el = str(si["error"]).lower()
-        if any(x in el for x in ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")):
+        if any(x in el for x in _CONN):
             out["status"] = "unreachable"
             out["errors"] = si["error"]
             return out
-        # method not found / unimplemented -> leave unsupported
-        out["errors"] = si["error"]
+        # getstakinginfo not implemented on this build -> fall back to PIVX getstakingstatus
+        ss = getstakingstatus()
+        if ss.get("error"):
+            sl = str(ss["error"]).lower()
+            if any(x in sl for x in _CONN):
+                out["status"] = "unreachable"
+                out["errors"] = ss["error"]
+                return out
+            out["errors"] = ss["error"]  # neither RPC available -> stays unsupported
+        else:
+            r = ss.get("result") or {}
+            if isinstance(r, dict):
+                # PIVX-style flags; some forks use "staking status" / "staking_status"
+                active = bool(r.get("staking_status", r.get("staking status")))
+                out["staking_active"] = active
+                out["mintable_coins"] = r.get("mintablecoins")
+                out["wallet_unlocked"] = r.get("walletunlocked")
+                out["have_connections"] = r.get("haveconnections")
+                out["enough_coins"] = r.get("enoughcoins")
+                out["status"] = "active" if active else "inactive"
     else:
         r = si.get("result") or {}
         if isinstance(r, dict):
