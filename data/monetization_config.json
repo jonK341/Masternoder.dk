@@ -140,6 +140,40 @@
       "artifact_path": "content/digital_goods/paypal-mn2-rails-onepager.md",
       "download_filename": "masternoder-paypal-mn2-rails-onepager.md",
       "license": "MasterNoder internal documentation."
+    },
+    {
+      "id": "exclusive-vip-badge",
+      "line": "exclusive",
+      "name": "VIP profile badge",
+      "description": "Exclusive gold VIP badge displayed on your public profile.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 7.99,
+      "price_coins": 799,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "exclusive-neon-frame",
+      "line": "exclusive",
+      "name": "Neon exclusive avatar frame",
+      "description": "Limited neon avatar frame — shop exclusive, not in regular catalog rotation.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 5.99,
+      "price_coins": 599,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "exclusive-casino-bonus",
+      "line": "exclusive",
+      "name": "Casino welcome bonus (+200 coins)",
+      "description": "One-time exclusive casino coin bonus credited on purchase.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 2.99,
+      "price_coins": 299,
+      "delivery": "coins_grant",
+      "coins_granted": 200,
+      "license": "Virtual coins only."
     }
   ],
   "content_bundles": [
@@ -180,6 +214,81 @@
         "includes_generator_pack": true,
         "includes_digital_goods": true
       }
+    },
+    {
+      "id": "bundle-booster-starter",
+      "name": "Booster starter pack",
+      "description": "XP Booster 2h + Quest Booster 24h + Battle Power 1h — activate on purchase via shop effects.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "coins_granted": 50,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "booster-xp-2h-pack", "quantity": 1},
+        {"item_id": "booster-quest-24h-pack", "quantity": 1},
+        {"item_id": "booster-battle-1h-pack", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true}
+    },
+    {
+      "id": "bundle-booster-pro",
+      "name": "Booster pro pack",
+      "description": "XP 24h + Casino luck booster 6h + Generation Speed booster 3h.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 8.99,
+      "price_coins": 899,
+      "coins_granted": 150,
+      "generation_credits_granted": 0.5,
+      "items": [
+        {"item_id": "booster-xp-24h-pack", "quantity": 1},
+        {"item_id": "booster-casino-luck-6h", "quantity": 1},
+        {"item_id": "booster-gen-speed-3h", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true}
+    },
+    {
+      "id": "bundle-game-time-weekend",
+      "name": "Weekend game time bundle",
+      "description": "48h weekend pass + 4h extra Hunter session time.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 6.99,
+      "price_coins": 699,
+      "coins_granted": 75,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "gametime-weekend-pass", "quantity": 1},
+        {"item_id": "gametime-hunter-4h", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_game_time": true}
+    },
+    {
+      "id": "bundle-exclusive-vip",
+      "name": "Exclusive VIP bonus bundle",
+      "description": "VIP profile badge, casino coin bonus, and exclusive neon avatar frame.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 14.99,
+      "price_coins": 1499,
+      "coins_granted": 300,
+      "generation_credits_granted": 1.0,
+      "items": [
+        {"item_id": "exclusive-vip-badge", "quantity": 1},
+        {"item_id": "exclusive-neon-frame", "quantity": 1},
+        {"item_id": "exclusive-casino-bonus", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_exclusive": true}
     }
+  ],
+  "shop_booster_skus": [
+    {"id": "booster-xp-2h-pack", "name": "XP Booster 2h", "category": "boosts", "effect": "booster", "duration_minutes": 120},
+    {"id": "booster-quest-24h-pack", "name": "Quest Booster 24h", "category": "boosts", "effect": "booster", "duration_minutes": 1440},
+    {"id": "booster-battle-1h-pack", "name": "Battle Power 1h", "category": "boosts", "effect": "booster", "duration_minutes": 60},
+    {"id": "booster-xp-24h-pack", "name": "XP Booster 24h", "category": "boosts", "effect": "booster", "duration_minutes": 1440},
+    {"id": "booster-casino-luck-6h", "name": "Casino Luck Booster 6h", "category": "boosts", "effect": "booster", "duration_minutes": 360},
+    {"id": "booster-gen-speed-3h", "name": "Generation Speed Booster 3h", "category": "boosts", "effect": "booster", "duration_minutes": 180},
+    {"id": "gametime-weekend-pass", "name": "Weekend Pass Game Time", "category": "boosts", "effect": "game_time", "duration_minutes": 2880},
+    {"id": "gametime-hunter-4h", "name": "Hunter Game Time +4h", "category": "boosts", "effect": "game_time", "duration_minutes": 240},
+    {"id": "booster-staking-150-24h", "name": "Staking Boost +50% 24h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 1440, "boost_multiplier": 1.5},
+    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0}
   ]
 }

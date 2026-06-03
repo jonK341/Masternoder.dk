@@ -190,6 +190,34 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
 
 ---
 
+## 12. Explorer / network overview (public)
+
+**GET** `/api/mn2/network-overview` — no auth, cached, best-effort. Backs the on-site **Explorer page** (`/explorer`) and any agent that wants MN2 network + pool stats in one call. Source priority is decided server-side: **self-hosted explorer → daemon RPC → Chainz fallback**; the `source` map tags where each field came from. Fields are `null` when a stat is unavailable (e.g. Chainz does not serve masternode count — that requires daemon RPC).
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "block_height": 896572,
+  "mn2_usd_price": 5.3537,
+  "difficulty": 74512.52,
+  "masternode_count": null,
+  "staking_weight": null,
+  "expected_stake_time_sec": null,
+  "pool_total_staked": 0.0,
+  "pool_apr_percent": 5.0,
+  "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
+  "source": { "block_height": "chainz", "mn2_usd_price": "chainz", "difficulty": "chainz" },
+  "onramp": { "onramp_volume_usd_24h": 0.0, "mn2_sold_24h": 0.0, "open_orders": 0, "chargeback_rate": 0.0 },
+  "p2p": { "p2p_volume_usd_24h": 0.0, "mn2_traded_24h": 0.0, "open_listings": 0, "chargeback_rate": 0.0 }
+}
+```
+
+- `explorer_base_url` reflects `data/mn2_config.json` (`explorer_base_url`) — Chainz today, the self-hosted iquidus host after the cutover. UI uses it for the "Open full explorer" link; agents can use it to build address/tx links.
+- See [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) for the hybrid (iquidus-from-source + on-site tiles) plan and source-priority rationale.
+
+---
+
 ## Agent parity summary
 
 | Action | Method | Path | Purpose |
@@ -203,6 +231,7 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
 | Create on-chain payment | POST | `/api/mn2/order-payment` | Phase 8: get address + amount for shop item; user sends MN2 on-chain |
 | Order payment status | GET | `/api/mn2/order-payment/status?payment_ref=...` | Poll until fulfilled |
 | Get price | GET | `/api/mn2/price` | Phase 9: MN2/USD + last_updated (no auth) |
+| Network overview | GET | `/api/mn2/network-overview` | Explorer + pool + on-ramp + P2P stats (no auth); backs `/explorer` page |
 | List verified users | GET | `/api/mn2/ops/verified-users` | Phase 10: ops only (token) |
 | Add/remove verified | POST | `/api/mn2/ops/verify-user` | Phase 10: body user_id, action=add\|remove (token) |
 

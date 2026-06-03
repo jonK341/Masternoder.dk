@@ -199,6 +199,11 @@ def network_overview():
         overview["pool_total_staked"] = staking.total_staked()
         overview["pool_apr_percent"] = staking.dynamic_apr()
         try:
+            from backend.routes.mn2_routes import _explorer_base_url
+            overview["explorer_base_url"] = _explorer_base_url()
+        except Exception:
+            overview["explorer_base_url"] = None
+        try:
             from backend.services import mn2_onramp_service
             overview["onramp"] = mn2_onramp_service.onramp_stats()
         except Exception:
