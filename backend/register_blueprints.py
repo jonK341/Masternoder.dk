@@ -347,6 +347,38 @@ def register_lite_blueprints(app):
         print("  [OK] Registered advanced_calculator blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP advanced_calculator: {e}")
+
+    # ----- Debugger / diagnostics suite -----
+    # The /vidgenerator/debugger admin page calls these APIs. Without them the
+    # routes are unregistered under LITE_APP, fall through to the 404 handler,
+    # and surface as 500s. Keep them in LITE so the debugger is fully functional.
+    import importlib as _importlib
+    _debugger_blueprints = [
+        ("backend.routes.debug_routes", "debug_bp"),
+        ("backend.routes.api_scanner_routes", "api_scanner_bp"),
+        ("backend.routes.debugger_profile_routes", "debugger_profile_bp"),
+        ("backend.routes.debugger_agent_tasks_routes", "debugger_agent_tasks_bp"),
+        ("backend.routes.debugger_agent_routes", "debugger_agent_bp"),
+        ("backend.routes.debugger_agent_analytics_routes", "debugger_agent_analytics_bp"),
+        ("backend.routes.master_fix_agent_get_routes", "master_fix_get_bp"),
+        ("backend.routes.master_fix_agent_routes", "master_fix_agent_bp"),
+        ("backend.routes.error_logging_routes", "error_logging_bp"),
+        ("backend.routes.error_handler_status_routes", "error_handler_status_bp"),
+        ("backend.routes.error_agent_tasks_routes", "error_agent_tasks_bp"),
+        ("backend.routes.debugging_master_routes", "debugging_master_bp"),
+        ("backend.routes.debugger_download", "debugger_download_bp"),
+    ]
+    for _mod_path, _bp_attr in _debugger_blueprints:
+        try:
+            _mod = _importlib.import_module(_mod_path)
+            _bp = getattr(_mod, _bp_attr)
+            if _bp.name not in app.blueprints:
+                app.register_blueprint(_bp)
+                n += 1
+                print(f"  [OK] Registered {_bp.name} blueprint (debugger suite)")
+        except Exception as e:
+            print(f"  [WARN] LITE_APP debugger {_bp_attr}: {e}")
+
     print(f"  [LITE_APP] Registered {n} blueprints")
     return n
 

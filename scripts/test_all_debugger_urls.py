@@ -68,7 +68,7 @@ ENDPOINTS = [
     # Error endpoints
     {'url': '/api/errors/stats?days=7', 'method': 'GET', 'name': 'Error Stats'},
     {'url': '/api/errors/list?limit=10', 'method': 'GET', 'name': 'Error List'},
-    {'url': '/api/errors/handler-status', 'method': 'GET', 'name': 'Error Handler Status'},
+    {'url': '/api/errors/handler-status/analyze', 'method': 'GET', 'name': 'Error Handler Status'},
 ]
 
 
