@@ -133,12 +133,51 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2: {e}")
     try:
+        from backend.routes.mn2_staking_routes import mn2_staking_bp
+        if 'mn2_staking' not in app.blueprints:
+            app.register_blueprint(mn2_staking_bp)
+            n += 1
+            print("  [OK] Registered mn2_staking blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_staking: {e}")
+    try:
+        from backend.routes.agent_staking_routes import agent_staking_bp
+        if 'agent_staking' not in app.blueprints:
+            app.register_blueprint(agent_staking_bp)
+            n += 1
+            print("  [OK] Registered agent_staking blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_staking: {e}")
+    try:
+        from backend.routes.mn2_onramp_routes import mn2_onramp_bp
+        if 'mn2_onramp' not in app.blueprints:
+            app.register_blueprint(mn2_onramp_bp)
+            n += 1
+            print("  [OK] Registered mn2_onramp blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_onramp: {e}")
+    try:
+        from backend.routes.mn2_p2p_routes import mn2_p2p_bp
+        if 'mn2_p2p' not in app.blueprints:
+            app.register_blueprint(mn2_p2p_bp)
+            n += 1
+            print("  [OK] Registered mn2_p2p blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_p2p: {e}")
+    try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
         n += 1
         print("  [OK] Registered ptc_ads blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP ptc_ads: {e}")
+    try:
+        from backend.routes.casino_routes import casino_bp
+        app.register_blueprint(casino_bp)
+        n += 1
+        print("  [OK] Registered casino blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP casino: {e}")
     try:
         from backend.routes.paypal_routes import paypal_bp
         app.register_blueprint(paypal_bp)
@@ -190,6 +229,20 @@ def register_lite_blueprints(app):
         print("  [OK] Registered password_protection blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP password_protection: {e}")
+    try:
+        from backend.routes.platform_news_routes import platform_news_bp
+        app.register_blueprint(platform_news_bp)
+        n += 1
+        print("  [OK] Registered platform_news blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP platform_news: {e}")
+    try:
+        from backend.routes.account_security_routes import account_security_bp
+        app.register_blueprint(account_security_bp)
+        n += 1
+        print("  [OK] Registered account_security blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP account_security: {e}")
     try:
         if 'agent_profile' not in app.blueprints:
             from backend.routes.agent_profile_routes import agent_profile_bp
@@ -703,6 +756,46 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import mn2: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2: {e}")
+    try:
+        from backend.routes.mn2_staking_routes import mn2_staking_bp
+        if 'mn2_staking' not in app.blueprints:
+            app.register_blueprint(mn2_staking_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_staking blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_staking: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_staking: {e}")
+    try:
+        from backend.routes.agent_staking_routes import agent_staking_bp
+        if 'agent_staking' not in app.blueprints:
+            app.register_blueprint(agent_staking_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_staking blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_staking: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_staking: {e}")
+    try:
+        from backend.routes.mn2_onramp_routes import mn2_onramp_bp
+        if 'mn2_onramp' not in app.blueprints:
+            app.register_blueprint(mn2_onramp_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_onramp blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_onramp: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_onramp: {e}")
+    try:
+        from backend.routes.mn2_p2p_routes import mn2_p2p_bp
+        if 'mn2_p2p' not in app.blueprints:
+            app.register_blueprint(mn2_p2p_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_p2p blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_p2p: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_p2p: {e}")
 
     # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
     try:
@@ -714,6 +807,17 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import ptc_ads: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering ptc_ads: {e}")
+
+    # Virtual-coins casino (cosmetic betting only)
+    try:
+        from backend.routes.casino_routes import casino_bp
+        app.register_blueprint(casino_bp)
+        registered_count += 1
+        print("  [OK] Registered casino blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import casino: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering casino: {e}")
 
     # PayPal (real-money payments — add PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET to .env)
     try:
@@ -1213,6 +1317,26 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import password_protection: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering password_protection: {e}")
+
+    try:
+        from backend.routes.platform_news_routes import platform_news_bp
+        app.register_blueprint(platform_news_bp)
+        registered_count += 1
+        print("  [OK] Registered platform_news blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import platform_news: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering platform_news: {e}")
+
+    try:
+        from backend.routes.account_security_routes import account_security_bp
+        app.register_blueprint(account_security_bp)
+        registered_count += 1
+        print("  [OK] Registered account_security blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import account_security: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering account_security: {e}")
 
     print("  [OK 3/4] Monitoring, debug, dashboard, shop, auth")
 
