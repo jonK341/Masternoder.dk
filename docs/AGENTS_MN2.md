@@ -168,7 +168,7 @@ All staking actions a user takes in the wallet UI are plain HTTP with `user_id`,
 | Calculator | GET | `/api/mn2/staking/calculator?amount=&days=&uptime=&boost=` | Projection, no side effects |
 | Rewards table | GET | `/api/mn2/staking/rewards-table?user_id=...&format=csv?` | Per-interval history (+ CSV) |
 | Monitor | GET | `/api/mn2/staking/monitor?limit=...` | Anonymized pool processes + aggregates (incl. `agent_staked_mn2`, `agent_actions_24h`) |
-| Network overview | GET | `/api/mn2/staking/network-overview` | Explorer + pool + on-ramp + P2P stats (public) |
+| Network overview | GET | `/api/mn2/network-overview` | Explorer + pool + on-ramp + P2P stats (public) |
 | On-ramp (Model A) | POST | `/api/mn2/onramp/{quote,order,capture}` | PayPal→MN2, KYC caps + hold window |
 | P2P (Model B) | GET/POST | `/api/mn2/p2p/{listings,buy,...}` | Seller escrow + buyer hold; KYC-gated |
 
