@@ -82,15 +82,24 @@ class MasterFixAgentSkills:
             scanner = APIScanner(self.base_dir)
             blueprints = scanner.scan_blueprints()
             
-            # Check registration
+            # Check registration against the already-running app (cheap). Building a
+            # throwaway Flask app and re-importing every blueprint here costs ~50s, so
+            # only fall back to that when no application context is available.
+            registered = []
             try:
-                from flask import Flask
-                from backend.register_blueprints import register_all_blueprints
-                app = Flask(__name__)
-                register_all_blueprints(app)
-                registered = list(app.blueprints.keys())
-            except:
+                from flask import current_app
+                registered = list(current_app.blueprints.keys())
+            except Exception:
                 registered = []
+            if not registered:
+                try:
+                    from flask import Flask
+                    from backend.register_blueprints import register_all_blueprints
+                    app = Flask(__name__)
+                    register_all_blueprints(app)
+                    registered = list(app.blueprints.keys())
+                except Exception:
+                    registered = []
             
             unregistered = [bp for bp in blueprints if bp.get('name') not in registered]
             
