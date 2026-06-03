@@ -311,6 +311,7 @@ MANIFESTS = {
         "backend/register_blueprints.py",
         "data/mn2_staking_config.json",
         "data/mn2_staking_terms.json",
+        "data/monetization_config.json",
         "scripts/mn2_reconcile.py",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
