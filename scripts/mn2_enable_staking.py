@@ -11,6 +11,9 @@ Usage (from repo root, same creds as deploy.py — DEPLOY_PASS in .env or prompt
   python scripts/mn2_enable_staking.py --apply     # add staking=1 + restart daemon
   python scripts/mn2_enable_staking.py --apply --unlock   # also unlock wallet for staking
                                                           # (needs MN2_WALLET_PASSPHRASE env)
+  python scripts/mn2_enable_staking.py --addnode IP1,IP2  # persist peers + live-add (unstick mnsync)
+  python scripts/mn2_enable_staking.py --watch            # read-only: poll mnsync→staking until FINISHED
+  python scripts/mn2_enable_staking.py --watch --watch-min 30   # watch for 30 min
 
 Safe by default: no --apply == nothing is changed.
 """
@@ -27,6 +30,23 @@ APPLY = "--apply" in sys.argv
 UNLOCK = "--unlock" in sys.argv
 MNSYNC_RESET = "--mnsync-reset" in sys.argv
 MNSYNC_NEXT = "--mnsync-next" in sys.argv
+
+
+def _arg_value(flag: str):
+    """Return the value following `flag` in argv, or None."""
+    if flag in sys.argv:
+        i = sys.argv.index(flag)
+        if i + 1 < len(sys.argv):
+            return sys.argv[i + 1].strip()
+    return None
+
+
+# --addnode 1.2.3.4  OR  --addnode 1.2.3.4,5.6.7.8,...  (peers that relay masternode data)
+_addnode_raw = _arg_value("--addnode")
+ADDNODES = [p.strip() for p in (_addnode_raw or "").split(",") if p.strip()]
+
+WATCH = "--watch" in sys.argv          # poll mnsync/staking until FINISHED (read-only)
+WATCH_MINUTES = int(_arg_value("--watch-min") or 20)
 
 
 def sh(ssh, cmd, timeout=30):
@@ -72,10 +92,70 @@ def main():
                f"-d '{body}' -H 'Content-Type: application/json' {rpc_url}/")
         return sh(ssh, cmd)
 
+    # Read-only watch loop: poll masternode-sync progress until it reaches FINISHED
+    # (RequestedMasternodeAssets=999) and staking flips on. Changes nothing on the server.
+    if WATCH:
+        import re as _re
+        import time as _t
+        print(f"\n== watch mnsync/staking (read-only, up to {WATCH_MINUTES} min) ==")
+        print("  watching RequestedMasternodeAssets climb 2→3→4→999 and staking flip TRUE\n")
+        iters = max(1, (WATCH_MINUTES * 60) // 20)
+        for i in range(iters):
+            st = rpc("mnsync", ["status"])
+            gs = rpc("getstakingstatus")
+            asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
+            winners = (_re.search(r'"countMasternodeWinner":(\d+)', st or "") or [None, "?"])[1]
+            mnlist = (_re.search(r'"countMasternodeList":(\d+)', st or "") or [None, "?"])[1]
+            conns = (_re.search(r'"result":(\d+)', rpc("getconnectioncount") or "") or [None, "?"])[1]
+            staking_on = '"stakingstatus":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            mnsync_on = '"mnsync":true' in (gs or "").replace(" ", "")
+            print(f"  [{i*20:>4}s] conns={conns}  asset={asset}  mnList={mnlist}  winners={winners}  mnsync={'TRUE' if mnsync_on else 'false'}  staking={'TRUE' if staking_on else 'false'}")
+            if staking_on:
+                print("\n  >>> staking is now ACTIVE — the pool is minting. Done.")
+                break
+            if i < iters - 1:
+                _t.sleep(20)
+        print("\nmnsync status (final): " + (rpc("mnsync", ["status"]) or "(no response)"))
+        print("getstakingstatus (final): " + (rpc("getstakingstatus") or "(no response)"))
+        ssh.close()
+        return 0
+
     print("\n-- getstakingstatus (before) --  (this build's staking RPC; getstakinginfo is not implemented)")
     print(rpc("getstakingstatus") or "(no response)")
+    print("\n-- peers --  (need peers that relay the masternode list to finish mnsync)")
+    print("connections: " + (rpc("getconnectioncount") or "(no response)"))
+    print("known masternodes: " + (rpc("getmasternodecount") or "(no response)"))
     print("\n-- mnsync status --  (staking is gated on masternode sync finishing: mnsync must be true)")
     print(rpc("mnsync", ["status"]) or "(no response)")
+
+    # Opt-in: add peers that serve masternode data so mnsync can complete.
+    # Persists addnode= lines to the daemon's config (survives restarts) AND adds each live via RPC.
+    if ADDNODES:
+        import re as _re
+        import time as _t
+        addnode_conf = (datadir.split("=", 1)[1].strip() + "/masternoder2.conf"
+                        if "-datadir=" in (datadir or "") else "~/.masternoder2/masternoder2.conf")
+        print(f"\n== addnode x{len(ADDNODES)} (persist to {addnode_conf} + live add) ==")
+        for ip in ADDNODES:
+            print(sh(ssh, f"grep -q '^addnode={ip}$' {addnode_conf} 2>/dev/null || echo 'addnode={ip}' >> {addnode_conf}; echo 'persisted {ip}'"))
+            r = rpc("addnode", [ip, "add"])
+            print(f"  addnode {ip} (live): " + ("OK" if '"error":null' in (r or "") else (r or "(no response)")))
+        # Poll while peers feed us the masternode list and mnsync climbs past stage 2.
+        print("\n-- waiting up to ~3 min for masternode list + mnsync to advance --")
+        for i in range(12):  # 12 x 15s = 180s
+            _t.sleep(15)
+            conns = rpc("getconnectioncount")
+            st = rpc("mnsync", ["status"])
+            gs = rpc("getstakingstatus")
+            asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
+            cnt = (_re.search(r'"countMasternodeList":(\d+)', st or "") or [None, "?"])[1]
+            staking_on = '"stakingstatus":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            print(f"  [{(i+1)*15:>3}s] conns={conns}  asset={asset}  mnList={cnt}  staking={'TRUE' if staking_on else 'false'}")
+            if staking_on:
+                print("  >>> staking is now ACTIVE — pool is minting.")
+                break
+        print("\nmnsync status (final): " + (rpc("mnsync", ["status"]) or "(no response)"))
+        print("getstakingstatus (final): " + (rpc("getstakingstatus") or "(no response)"))
     print("\n-- getwalletinfo (before) --")
     wi = rpc("getwalletinfo")
     print(wi or "(no response)")
