@@ -33,6 +33,23 @@ def _load_battle_minimal_content() -> dict:
     return _MINIMAL_CONTENT_CACHE
 
 
+_ARENA_CONFIG_CACHE = None
+
+
+def _load_arena_config() -> dict:
+    """Public Arena income config (rake %, buy-in tiers, ranked, shop)."""
+    global _ARENA_CONFIG_CACHE
+    if _ARENA_CONFIG_CACHE is not None:
+        return _ARENA_CONFIG_CACHE
+    path = os.path.join(_data_dir(), "arena_config.json")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _ARENA_CONFIG_CACHE = json.load(f)
+    except Exception:
+        _ARENA_CONFIG_CACHE = {}
+    return _ARENA_CONFIG_CACHE
+
+
 def _battle_v2_state_path() -> str:
     return os.path.join(_data_dir(), _BATTLE_V2_STATE_FILE)
 
@@ -1276,6 +1293,142 @@ def battle_tournament_join_legacy():
             'message': 'Joined tournament',
             'participants': detail,
             'implementation_status': 'active'
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@battle_bp.route('/api/battle/arena/config', methods=['GET'])
+def battle_arena_config():
+    """Public Arena income config: rake %, buy-in tiers, ranked fees, shop catalog.
+
+    Agent-discoverable (no secrets) so an agent can see prices/tiers before paying.
+    """
+    try:
+        return jsonify({'success': True, 'config': _load_arena_config()}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _arena_tier_ok(amount: float, currency: str) -> bool:
+    cfg = _load_arena_config()
+    tiers = (cfg.get('buy_in_tiers') or {}).get(currency) or []
+    return any(abs(float(amount) - float(t)) < 1e-9 for t in tiers)
+
+
+@battle_bp.route('/api/battle/tournaments/<tournament_id>/buy-in', methods=['POST'])
+def battle_tournament_buy_in(tournament_id):
+    """Real-money (or coins) tournament buy-in.
+
+    Body: { amount, currency, verification_token? }. Debits into escrow via the
+    shared Arena economy (real-money gated), then registers participation.
+    """
+    try:
+        from backend.services import arena_economy as econ
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_uid()
+        currency = (data.get('currency') or 'coins').strip().lower()
+        if currency in ('paypal', 'fiat'):
+            currency = 'usd'
+        if currency not in econ.VALID_CURRENCIES:
+            return jsonify({'success': False, 'error': 'Invalid currency'}), 400
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'amount is required'}), 400
+        if not _arena_tier_ok(amount, currency):
+            return jsonify({'success': False, 'error': 'Buy-in not an allowed tier'}), 400
+
+        res = econ.collect_buy_in(
+            user_id, amount, currency, 'tournament',
+            event_id=tournament_id,
+            meta={'tournament_id': tournament_id},
+        )
+        if not res.get('success'):
+            return jsonify(res), 400
+
+        # Register participation (best-effort; money already escrowed + ledgered).
+        try:
+            from backend.services import battle_social_store as bss
+            bss.join_tournament(tournament_id, user_id)
+        except Exception:
+            pass
+
+        event = econ.get_event(tournament_id) or {}
+        return jsonify({
+            'success': True,
+            'user_id': user_id,
+            'tournament_id': tournament_id,
+            'entry_id': res['entry_id'],
+            'currency': currency,
+            'amount': res['amount'],
+            'balance': res['balance'],
+            'prize_pool': event.get('pot', 0),
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@battle_bp.route('/api/battle/tournaments/<tournament_id>/settle', methods=['POST'])
+def battle_tournament_settle(tournament_id):
+    """Close a tournament: take the house rake and pay ranked prizes from the pot.
+
+    Body: { winners: [user_id, ...] (ranked), prize_split? : [0.6,0.3,0.1] }.
+    Idempotent: a settled event is not paid twice.
+    """
+    try:
+        from backend.services import arena_economy as econ
+        data = request.get_json(silent=True) or {}
+        event = econ.get_event(tournament_id)
+        if not event:
+            return jsonify({'success': False, 'error': 'No buy-ins for this tournament'}), 404
+        if event.get('status') == 'settled':
+            return jsonify({'success': True, 'already_settled': True, 'event': event}), 200
+
+        winners = data.get('winners') or []
+        if not isinstance(winners, list) or not winners:
+            return jsonify({'success': False, 'error': 'winners (ranked list) required'}), 400
+
+        currency = event.get('currency') or 'coins'
+        cfg = _load_arena_config()
+        rake_pct = float((cfg.get('rake') or {}).get('tournaments', 10.0))
+        split = data.get('prize_split')
+        if not (isinstance(split, list) and split):
+            split = [0.6, 0.3, 0.1][:len(winners)] or [1.0]
+        # Normalize split to the number of winners.
+        split = [float(s) for s in split][:len(winners)]
+        total = sum(split) or 1.0
+        split = [s / total for s in split]
+
+        prize_pool, house_take = econ.split_rake(event.get('pot', 0), rake_pct, currency)
+        econ.record_house_take(house_take, currency, 'tournament', event_id=tournament_id)
+
+        payouts = []
+        paid_total = 0.0
+        for i, winner in enumerate(winners[:len(split)]):
+            amount = prize_pool * split[i]
+            pr = econ.payout(winner, amount, currency, 'tournament',
+                             meta={'tournament_id': tournament_id, 'rank': i + 1})
+            if pr.get('success'):
+                paid_total += pr['amount']
+                payouts.append({'user_id': winner, 'rank': i + 1, 'amount': pr['amount']})
+
+        state = econ._load_state()
+        ev = state['events'][tournament_id]
+        ev['status'] = 'settled'
+        ev['prizes_paid'] = paid_total
+        ev['rake_pct'] = rake_pct
+        econ._save_state(state)
+
+        return jsonify({
+            'success': True,
+            'tournament_id': tournament_id,
+            'currency': currency,
+            'pot': event.get('pot', 0),
+            'house_take': house_take,
+            'prize_pool': prize_pool,
+            'payouts': payouts,
+            'reconcile': econ.reconcile(tournament_id),
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

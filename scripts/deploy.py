@@ -284,6 +284,35 @@ MANIFESTS = {
         "scripts/run_masternoder2d.ps1",
         "cron/mn2_scan_deposits.sh",
         "cron/masternoder-mn2-scan.cron.d",
+        "cron/mn2_accrue_rewards.sh",
+        "cron/masternoder-mn2-accrue.cron.d",
+    ],
+    # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
+    # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;
+    # cron + .env ship via "mn2_env". Restarts uwsgi-vidgenerator to load the new Python.
+    # NOTE: data/*.json here are CONFIG (safe to overwrite). Runtime state files (mn2_stakes.json,
+    # mn2_ledger.json, reserve/rewards, onramp/p2p orders, agent_staking_agents.json) are intentionally
+    # NOT deployed so the server's live state is never clobbered.
+    "mn2_staking": [
+        "backend/services/mn2_rpc_client.py",
+        "backend/services/mn2_ledger.py",
+        "backend/services/mn2_chainz.py",
+        "backend/services/mn2_staking_service.py",
+        "backend/services/mn2_staking_reconcile_service.py",
+        "backend/services/mn2_staking_agents_service.py",
+        "backend/services/mn2_onramp_service.py",
+        "backend/services/mn2_p2p_service.py",
+        "backend/services/unified_points_database.py",
+        "backend/routes/mn2_routes.py",
+        "backend/routes/mn2_staking_routes.py",
+        "backend/routes/mn2_onramp_routes.py",
+        "backend/routes/mn2_p2p_routes.py",
+        "backend/routes/agent_staking_routes.py",
+        "backend/register_blueprints.py",
+        "data/mn2_staking_config.json",
+        "data/mn2_staking_terms.json",
+        "data/monetization_config.json",
+        "scripts/mn2_reconcile.py",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
     "knowledge_cron_env": [
@@ -332,6 +361,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "generator_recent",
     "monitor",
     "mn2_env",
+    "mn2_staking",
     "config",
     "agent_daemon_env",
     "service_check_backend",
@@ -417,6 +447,18 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
                 print("  [OK] /etc/cron.d/masternoder-mn2-scan (every 5 min)")
             else:
                 print("  [WARN] cron.d install may have failed — check root and /etc/cron.d/")
+
+            # MN2 staking reward accrual cron (hourly)
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_accrue_rewards.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-mn2-accrue.cron.d /etc/cron.d/masternoder-mn2-accrue && chmod 644 /etc/cron.d/masternoder-mn2-accrue",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command("test -f /etc/cron.d/masternoder-mn2-accrue && echo OK", timeout=5)
+            out2 = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-mn2-accrue (hourly)" if out2 == "OK"
+                  else "  [WARN] staking accrual cron.d install may have failed")
             print()
 
         if manifest_name == "knowledge_cron_env" and not upload_only:
@@ -495,30 +537,34 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
         else:
             ssh.exec_command("systemctl restart python-proxy 2>&1 || true", timeout=20)
             time.sleep(wait_s)
-            ssh.exec_command("systemctl restart uwsgi-vidgenerator 2>&1 || true", timeout=20)
-            time.sleep(wait_s)
-            ssh.exec_command("systemctl restart uwsgi 2>&1 || true", timeout=20)
-            time.sleep(3)
-        for _ in range(6):
-            try:
-                stdin, stdout, stderr = ssh.exec_command(
-                    "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/ 2>/dev/null || echo 000",
-                    timeout=10,
-                )
-                out = (stdout.read() or b"").decode().strip()
-                if out and out != "000":
-                    try:
-                        c = int(out)
-                        if 200 <= c < 600 or c in (301, 302):
-                            print("  [OK] Upstream :5000 responding")
-                            break
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-            time.sleep(3)
-        else:
-            print("  [WARN] Upstream :5000 not ready (or check timed out)")
+            for uwsgi_unit in (
+                "uwsgi-vidgenerator",
+                "uwsgi-vidgenerator-5001",
+                "uwsgi",
+            ):
+                ssh.exec_command(f"systemctl restart {uwsgi_unit} 2>&1 || true", timeout=20)
+                time.sleep(wait_s)
+        for port in (5000, 5001):
+            for _ in range(6):
+                try:
+                    stdin, stdout, stderr = ssh.exec_command(
+                        f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:{port}/casino/ 2>/dev/null || echo 000",
+                        timeout=10,
+                    )
+                    out = (stdout.read() or b"").decode().strip()
+                    if out and out != "000":
+                        try:
+                            c = int(out)
+                            if 200 <= c < 600 or c in (301, 302):
+                                print(f"  [OK] Upstream :{port}/casino/ -> {c}")
+                                break
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                time.sleep(3)
+            else:
+                print(f"  [WARN] Upstream :{port} not ready (or /casino/ check timed out)")
         ssh.exec_command("nginx -t 2>&1 || true", timeout=10)
         ssh.exec_command("systemctl reload nginx 2>&1 || systemctl restart nginx 2>&1 || true", timeout=15)
         print("  [OK] Services restarted")

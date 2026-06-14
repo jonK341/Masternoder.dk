@@ -59,6 +59,14 @@ def execute_mn2_purchase():
             "hint": "Set AGENT_MN2_SHOP_SECRET in .env and send header X-Agent-Shop-Key with the same value.",
         }), 403
     data = request.get_json() or {}
+    try:
+        from backend.services.agent_kill_switch import check_action
+        agent_id = (data.get("agent_id") or "").strip() or "crypto_wallet_agent"
+        halt = check_action("execute_mn2_purchase", agent_id=agent_id)
+        if not halt.get("allowed"):
+            return jsonify({"success": False, **halt}), 503
+    except ImportError:
+        pass
     user_id = (data.get("user_id") or request.args.get("user_id") or "").strip()
     item_id = (data.get("item_id") or "").strip()
     agent_id = (data.get("agent_id") or "").strip() or "crypto_wallet_agent"

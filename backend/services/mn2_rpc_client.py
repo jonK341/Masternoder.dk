@@ -150,6 +150,179 @@ def validateaddress(address: str) -> Dict[str, Any]:
     return _call("validateaddress", [address])
 
 
+def getstakinginfo() -> Dict[str, Any]:
+    """PoS staking info (weight, expected time, enabled). May be unimplemented on some chains."""
+    return _call("getstakinginfo")
+
+
+def getmininginfo() -> Dict[str, Any]:
+    """Mining/network info incl. difficulty and networkhashps. Used as a network-weight proxy on PoS forks that lack getstakinginfo."""
+    return _call("getmininginfo")
+
+
+def getstakingstatus() -> Dict[str, Any]:
+    """PIVX-style staking status booleans (staking status, mnsync, walletunlocked, mintablecoins, ...). Preferred on forks where getstakinginfo is unimplemented."""
+    return _call("getstakingstatus")
+
+
+def getstakingstatus() -> Dict[str, Any]:
+    """PIVX-style staking status (staking_status, mintablecoins, walletunlocked, ...).
+    This MN2 build implements getstakingstatus rather than getstakinginfo."""
+    return _call("getstakingstatus")
+
+
+def getwalletinfo() -> Dict[str, Any]:
+    """Wallet info incl. balance, unconfirmed_balance, immature_balance. May be unimplemented on some chains."""
+    return _call("getwalletinfo")
+
+
+def staking_health() -> Dict[str, Any]:
+    """
+    Daemon staking health for ops (plan sec.9): is the pool actually minting?
+    Reads getstakinginfo + getwalletinfo and normalizes PIVX/Bitcoin-style field names.
+    Never raises; returns status='unsupported' if the chain lacks these RPCs.
+
+    status: active | inactive | unsupported | unreachable
+    """
+    out: Dict[str, Any] = {
+        "status": "unsupported",
+        "staking_active": None,
+        "staking_weight": None,
+        "net_stake_weight": None,
+        "expected_time_to_reward_sec": None,
+        "mature_balance": None,
+        "immature_balance": None,
+        "unconfirmed_balance": None,
+        "errors": None,
+    }
+    _CONN = ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")
+    si = getstakinginfo()
+    if si.get("error"):
+        el = str(si["error"]).lower()
+        if any(x in el for x in _CONN):
+            out["status"] = "unreachable"
+            out["errors"] = si["error"]
+            return out
+        # getstakinginfo not implemented on this build -> fall back to PIVX getstakingstatus
+        ss = getstakingstatus()
+        if ss.get("error"):
+            sl = str(ss["error"]).lower()
+            if any(x in sl for x in _CONN):
+                out["status"] = "unreachable"
+                out["errors"] = ss["error"]
+                return out
+            out["errors"] = ss["error"]  # neither RPC available -> stays unsupported
+        else:
+            r = ss.get("result") or {}
+            if isinstance(r, dict):
+                # PIVX-style flags; some forks use "staking status" / "staking_status"
+                active = bool(r.get("staking_status", r.get("staking status")))
+                out["staking_active"] = active
+                out["mintable_coins"] = r.get("mintablecoins")
+                out["wallet_unlocked"] = r.get("walletunlocked")
+                out["have_connections"] = r.get("haveconnections")
+                out["enough_coins"] = r.get("enoughcoins")
+                out["status"] = "active" if active else "inactive"
+    else:
+        r = si.get("result") or {}
+        if isinstance(r, dict):
+            enabled = r.get("enabled")
+            staking = r.get("staking")
+            active = bool(staking) if staking is not None else bool(enabled)
+            out["staking_active"] = active
+            out["staking_weight"] = r.get("weight")
+            out["net_stake_weight"] = r.get("netstakeweight") or r.get("netstakewight")
+            out["expected_time_to_reward_sec"] = r.get("expectedtime")
+            out["errors"] = r.get("errors") or out["errors"]
+            out["status"] = "active" if active else "inactive"
+
+    # PIVX-style fork fallback: getstakinginfo missing -> use getstakingstatus booleans.
+    if out["status"] == "unsupported":
+        ss = getstakingstatus()
+        if not ss.get("error") and isinstance(ss.get("result"), dict):
+            r = ss["result"]
+            active = bool(r.get("staking status", r.get("staking_status")))
+            out["staking_active"] = active
+            out["status"] = "active" if active else "inactive"
+            out["staking_status_detail"] = {
+                "validtime": r.get("validtime"),
+                "haveconnections": r.get("haveconnections"),
+                "walletunlocked": r.get("walletunlocked"),
+                "mintablecoins": r.get("mintablecoins"),
+                "enoughcoins": r.get("enoughcoins"),
+                "mnsync": r.get("mnsync"),
+            }
+
+    wi = getwalletinfo()
+    if not wi.get("error"):
+        w = wi.get("result") or {}
+        if isinstance(w, dict):
+            out["mature_balance"] = w.get("balance")
+            out["immature_balance"] = w.get("immature_balance")
+            out["unconfirmed_balance"] = w.get("unconfirmed_balance")
+    return out
+
+
+def getmasternodecount() -> Dict[str, Any]:
+    """Masternode count. May be unimplemented on some chains."""
+    return _call("getmasternodecount")
+
+
+def listmasternodes() -> Dict[str, Any]:
+    """Full masternode list (PIVX-style): rank, addr, status, lastpaid, activetime, version."""
+    return _call("listmasternodes")
+
+
+def getbestblockhash() -> Dict[str, Any]:
+    """Hash of the current chain tip."""
+    return _call("getbestblockhash")
+
+
+def getblockhash(height: int) -> Dict[str, Any]:
+    """Block hash at a given height."""
+    return _call("getblockhash", [int(height)])
+
+
+def getblock(block_hash: str, verbosity: int = 1) -> Dict[str, Any]:
+    """Block details. verbosity=1 returns tx ids only (light); pass the hash from getblockhash."""
+    return _call("getblock", [str(block_hash), int(verbosity)])
+
+
+def gettxoutsetinfo() -> Dict[str, Any]:
+    """UTXO set summary incl. `total_amount` (circulating supply) and `height`. Can be slow on big chains."""
+    return _call("gettxoutsetinfo")
+
+
+def getdifficulty() -> Dict[str, Any]:
+    """Network difficulty (may return a dict with PoW/PoS on hybrid chains)."""
+    return _call("getdifficulty")
+
+
+def getconnectioncount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
+    """Number of peers the daemon is connected to. Cheap network-health signal."""
+    return _call("getconnectioncount", timeout_sec=timeout_sec)
+
+
+def getnetworkinfo() -> Dict[str, Any]:
+    """Daemon network info: version, subversion, protocolversion, connections."""
+    return _call("getnetworkinfo")
+
+
+def getmempoolinfo() -> Dict[str, Any]:
+    """Mempool summary: size (tx count), bytes, usage. May be unimplemented on some forks."""
+    return _call("getmempoolinfo")
+
+
+def getblockchaininfo() -> Dict[str, Any]:
+    """Chain summary: chain, blocks, headers, verificationprogress, mediantime, size_on_disk."""
+    return _call("getblockchaininfo")
+
+
+def getinfo() -> Dict[str, Any]:
+    """Legacy/PIVX getinfo: version, protocolversion, connections, moneysupply, difficulty."""
+    return _call("getinfo")
+
+
 def health_check() -> Dict[str, Any]:
     """
     Lightweight health check: call getblockcount and return status, block_height, latency_ms.
