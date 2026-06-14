@@ -146,5 +146,11 @@ These are blocking for production and were confirmed by code inspection. Gate S 
 - One news + Discord contract: `data/platform_news.json` is the source of truth for on-site news; `discord_service.py` mirrors selected channels/events off-request; Discord never holds custody — rewards/purchases always complete on-site with auth.
 - One AI execution contract: all AI intelligence runs through cron, subprocess, or background jobs; endpoints enqueue jobs or read cached decisions only. AI output must emit structured events into `logs/activity_events.jsonl` and respect Gate S idempotency/auth/rate-limit requirements. The AI model/provider matrix must define purpose, cost limit, timeout, fallback, data allowed, and human-review rules for every model used.
 
+## M7 + M8 (final monetization waves)
+
+- **M7** — `ai_staking_advisor_service.py` + cron `staking_advisor.sh`; Stage 3; Gate S; read-cache only on request paths.
+- **M8** — `discord_service.py` + `discord_routes.py` + outbox; streams 51–60 phased after Phase 5 news+Discord outbound; Gate S + legal + Discord ToS.
+- Full per-stream table: see `docs/PLAN.md` and `docs/plans/masternoder_mn2_ecosystem.plan.md` M8 section.
+
 ## Execution note
 This orchestrator and the four sub-plans are plan-only. Building them (and committing - the `Masternoder.dk` repo has a `.git`) requires leaving plan mode; on approval I will execute Stage 0 -> Stage 4 in order, checking each gate before proceeding.

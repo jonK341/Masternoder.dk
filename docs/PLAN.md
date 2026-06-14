@@ -54,6 +54,21 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 
 **Infrastructure:** `backend/services/discord_service.py`, `backend/routes/discord_routes.py`, `logs/discord_outbox.jsonl`
 
+**M8 build order (after Gate S + Phase 5):** 51 Role Gating → 52+56 Promo/Quest → 53+55 Funnel/Digest → 58+59 Casino/Generator → 57+54+60 Affiliate/Partner/Support
+
+**Compliance:** No custody on Discord; rewards on-site with auth; gambling promos geo-blocked; affiliate disclosure in embed footer.
+
+## Stage 0 Gate A (verified)
+
+| Check | Status |
+|-------|--------|
+| `GET /api/health` | Pass |
+| `GET /api/mn2/health` | Pass (degraded OK if daemon offline) |
+| `GET /api/themes/user` | Pass |
+| Battle URL tests | Pass (`test_02_battle.py`) |
+| Unified points idempotency | Pass (`test_gate_a_orchestrator.py`) |
+| Casino MN2 rail | Pass (`casino_service.py`) |
+
 ## Shared backbone files
 
 - Economy: `backend/services/unified_points_database.py`

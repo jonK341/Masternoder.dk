@@ -299,6 +299,40 @@ Goal: AI should not only optimize the platform — it should **create and protec
 
 All waves emit decisions to `data/ai_monetization_decisions.jsonl` and revenue events to `logs/activity_events.jsonl` for monitoring. Discord posts also log to `logs/discord_outbox.jsonl`. No wave may auto-move funds without idempotent ledger refs.
 
+### M7 implementation spec (Staking Yield Advisor — idé #29)
+
+**Status:** Implemented in `backend/services/ai_staking_advisor_service.py`
+
+| Component | Path |
+|-----------|------|
+| Service | `backend/services/ai_staking_advisor_service.py` |
+| Routes | `GET /api/ai/staking-advisor`, `POST /api/ai/staking-advisor/refresh` (ops) in `discord_routes.py` |
+| Cache | `data/ai_staking_advisor_cache.json` |
+| Decisions log | `data/ai_monetization_decisions.jsonl` |
+| Cron | `cron/staking_advisor.sh` |
+| Tests | `tests/unit/test_ai_staking_advisor.py` |
+
+**Rules:** Informational only; never calls `stake()`/`unstake()`; disclaimer required in UI.
+
+### M8 implementation spec (Discord channel economy — idéer 51–60)
+
+**Status:** Infrastructure live; per-stream rollout phased after Gate S + Phase 5 news channels.
+
+| # | Stream | Trigger | Backend hooks |
+|---|--------|---------|---------------|
+| 51 | Role Gating | Link + balance cron | `discord_service`, `unified_points_database` |
+| 52 | Promo Codes | Cron + ops | `shop_routes`, `data/discord_promo_codes.json` |
+| 53 | Alert Funnel | `activity_events.jsonl` | `discord_service` + UTM |
+| 54 | Partner Spotlight | Ops POST | `platform_news` channel=market |
+| 55 | Daily Digest | `cron/discord_digest.sh` | `platform_news_digest.run_daily_digest` |
+| 56 | Quest Bot | Daily cron | `game_mn2_rewards`, quest routes |
+| 57 | Affiliate Rotator | Digest posts | `discord_clicks.jsonl` |
+| 58 | Casino Highlights | Opt-in wins | `casino_service`, RG geo-block |
+| 59 | Generator Showcase | Job complete | `video_generator_service` |
+| 60 | Support Bot | Inbound webhook | RAG + support copilot |
+
+**Build order:** 51 → 52+56 → 53+55 → 58+59 → 57+54+60. **Compliance:** No custody on Discord; auth on-site; affiliate disclosure; geo-block gambling promos.
+
 ## Phase 14 - Overall tests + deliverables + commit
 - Run `pytest`; fix failures. Deliver `docs/MN2_ECOSYSTEM_REPORT.md` and `docs/MN2_TODO.md` split into **Critical** (correctness/security/financial integrity) and **Upgrades**.
 - Commit: the repo has a `.git`, so once you approve leaving plan mode I will commit the plan (`docs/PLAN.md`) and subsequent work here.
