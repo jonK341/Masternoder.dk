@@ -13,6 +13,7 @@ Implementation notes:
 import logging
 import os
 import json
+import threading
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Dict, Optional, Any
@@ -20,6 +21,23 @@ from typing import Dict, Optional, Any
 from sqlalchemy import text
 
 _logger = logging.getLogger(__name__)
+
+# Gate S: per-user file lock + idempotency cache for money-critical point types
+_USER_LOCKS: Dict[str, threading.RLock] = {}
+_IDEMPOTENCY_LOCK = threading.RLock()
+_IDEMPOTENCY_CACHE: Dict[str, str] = {}
+_MONEY_POINT_TYPES = frozenset({
+    "mn2_balance", "coins", "casino_fiat_balance", "mn2_staked", "shop_balance",
+})
+
+
+def _user_lock(user_id: str) -> threading.RLock:
+    with _IDEMPOTENCY_LOCK:
+        lock = _USER_LOCKS.get(user_id)
+        if lock is None:
+            lock = threading.RLock()
+            _USER_LOCKS[user_id] = lock
+        return lock
 
 
 @contextmanager
@@ -65,9 +83,13 @@ class UnifiedPointsDatabase:
         return {}
 
     def _save_file_store(self, user_id: str, store: Dict[str, Any]) -> None:
+        """Gate S: atomic write via temp file + os.replace under per-user lock."""
         path = self._points_file(user_id)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(store, f, indent=2)
+        tmp = path + ".tmp"
+        with _user_lock(user_id):
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(store, f, indent=2)
+            os.replace(tmp, path)
 
     def _ensure_player_level_row(self, db, user_id: str):
         # Production schemas may differ; try the most complete schema first, then fall back.
@@ -145,8 +167,25 @@ class UnifiedPointsDatabase:
         if amt == 0:
             return {"success": True, "user_id": user_id, "point_type": pt, "amount": 0, "message": "No-op"}
 
+        meta = metadata if isinstance(metadata, dict) else {}
+        ref = (meta.get("reference") or meta.get("idempotency_key") or "").strip()
+        if ref and pt in _MONEY_POINT_TYPES:
+            cache_key = f"{user_id}:{pt}:{ref}"
+            with _IDEMPOTENCY_LOCK:
+                if cache_key in _IDEMPOTENCY_CACHE:
+                    return {
+                        "success": True,
+                        "duplicate": True,
+                        "user_id": user_id,
+                        "point_type": pt,
+                        "amount": amt,
+                        "message": "Idempotent duplicate skipped",
+                    }
+                _IDEMPOTENCY_CACHE[cache_key] = datetime.now().isoformat()
+
         # File store is the durable baseline (production schema varies)
-        file_result = self._award_points_file_fallback(user_id, pt, amt, source, metadata)
+        with _user_lock(user_id):
+            file_result = self._award_points_file_fallback(user_id, pt, amt, source, metadata)
         if file_result.get("success"):
             try:
                 from backend.services.unified_points_sync import unified_points_sync_device

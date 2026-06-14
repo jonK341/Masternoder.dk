@@ -8,19 +8,268 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/casino.css?v=20260519a">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20260604a">
 </head>
 <body>
     <div class="casino-page">
         <header class="casino-header">
-            <h1>🎰 Virtual Casino</h1>
-            <p>Stake in-app coins on quick cosmetic games. Connects to battle RPS vibes without real-money gambling.</p>
+            <h1>🎰 Casino</h1>
+            <p>Play with virtual coins, MN2 wallet balance, or PayPal-funded USD stakes.</p>
         </header>
 
-        <div id="casino-disclaimer-text" class="casino-disclaimer">Virtual coins only. No real-money gambling. MN2 and PayPal are not used for casino bets.</div>
+        <div id="casino-ticker" class="casino-ticker" aria-live="polite" aria-label="Recent winners">
+            <span class="casino-ticker-label">🏆 Live wins</span>
+            <div class="casino-ticker-track" id="casino-ticker-track"><span class="casino-ticker-item">Waiting for the next big win…</span></div>
+        </div>
+
+        <div id="casino-jackpot-bar" class="casino-jackpot-bar hidden" aria-live="polite" aria-label="Progressive jackpots">
+            <span class="casino-jackpot-label">💰 Progressive jackpot</span>
+            <div id="casino-jackpot-pools" class="casino-jackpot-pools">Loading…</div>
+        </div>
+
+        <div id="casino-disclaimer-text" class="casino-disclaimer">Loading…</div>
+        <div id="casino-currency-bar" class="casino-currency-bar">
+            <span class="casino-currency-label">Stake with:</span>
+            <button type="button" class="casino-currency-btn active" data-currency="coins">Coins</button>
+            <button type="button" class="casino-currency-btn" data-currency="mn2" id="casino-mn2-toggle">MN2</button>
+            <button type="button" class="casino-currency-btn" data-currency="usd" id="casino-usd-toggle">USD</button>
+            <button type="button" class="casino-sound-toggle" id="casino-sound-toggle" aria-pressed="false" title="Toggle sound">🔇 Sound off</button>
+        </div>
+        <div id="casino-paypal-deposit" class="casino-paypal-deposit hidden">
+            <h3>Fund USD balance with PayPal</h3>
+            <div id="casino-deposit-packs" class="casino-deposit-packs">Loading packs…</div>
+        </div>
+        <div id="casino-security-bar" class="casino-security-bar hidden">
+            <h3>Real-money security</h3>
+            <p id="casino-security-msg">Verify your account password before MN2 or USD bets.</p>
+            <div class="casino-controls">
+                <input id="casino-security-password" type="password" placeholder="Account password" aria-label="Security password">
+                <button type="button" id="casino-security-verify">Verify (15 min)</button>
+            </div>
+            <span id="casino-security-status" class="casino-security-status"></span>
+        </div>
         <div id="casino-balance" class="casino-balance">Loading balance…</div>
+        <div id="casino-house-stats" class="casino-house-stats">Loading house stats…</div>
+        <div id="casino-rank-bar" class="casino-rank-bar" aria-live="polite">Loading rank…</div>
+        <div id="casino-double-bar" class="casino-double-bar hidden" aria-live="polite"></div>
+        <div id="casino-personal-bests" class="casino-personal-bests">Loading records…</div>
+
+        <section class="casino-side-panels" aria-label="Quests and leaderboard">
+            <article class="casino-panel">
+                <h2>Daily & weekly</h2>
+                <ul id="casino-quests-list" class="casino-quests-list"></ul>
+                <ul id="casino-weekly-list" class="casino-quests-list casino-weekly-list"></ul>
+                <ul id="casino-bonus-list" class="casino-quests-list casino-bonus-list"></ul>
+            </article>
+            <article class="casino-panel">
+                <h2>Leaderboard</h2>
+                <div class="casino-leaderboard-tabs">
+                    <button type="button" class="casino-tab active" data-period="today">Today</button>
+                    <button type="button" class="casino-tab" data-period="week">Week</button>
+                    <button type="button" class="casino-tab" data-period="all">All</button>
+                </div>
+                <table class="casino-leaderboard-table">
+                    <thead>
+                        <tr><th>#</th><th>Player</th><th>Net</th><th>Win%</th><th>ROI</th></tr>
+                    </thead>
+                    <tbody id="casino-leaderboard-body"></tbody>
+                </table>
+                <h3 class="casino-subheading">Friends & crew</h3>
+                <div id="casino-social-board" class="casino-social-board">Loading…</div>
+                <h3 class="casino-subheading">Hall of fame</h3>
+                <div id="casino-hall-of-fame" class="casino-hall-of-fame">Loading…</div>
+            </article>
+        </section>
 
         <section class="casino-grid" aria-label="Casino games">
+            <article class="casino-card casino-card-wide casino-crash-card">
+                <h2>🚀 Crash</h2>
+                <p>Place a bet, watch the rocket climb, and cash out before it crashes. Win pays your stake × the cash-out multiplier. Provably fair.</p>
+                <div class="casino-crash-stage">
+                    <canvas id="crash-canvas" class="casino-crash-canvas" width="640" height="240" role="img" aria-label="Crash multiplier curve"></canvas>
+                    <div id="crash-multiplier" class="casino-crash-multiplier">1.00×</div>
+                    <div id="crash-status" class="casino-crash-status">Set your bet and launch.</div>
+                </div>
+                <div class="casino-controls casino-crash-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="crash-bet" type="number" min="5" max="500" value="25" aria-label="Crash bet">
+                    </label>
+                    <label class="casino-crash-field">Auto cash-out ×
+                        <input id="crash-auto" type="number" min="1.01" step="0.01" placeholder="e.g. 2.00" aria-label="Auto cash-out multiplier">
+                    </label>
+                    <button id="crash-launch" type="button" class="casino-crash-launch">Launch 🚀</button>
+                    <button id="crash-cashout" type="button" class="casino-crash-cashout" disabled>Cash out</button>
+                </div>
+                <div id="crash-result" class="casino-result"></div>
+                <details class="casino-fairness" id="crash-fairness">
+                    <summary>Provably fair</summary>
+                    <div class="casino-fairness-body">
+                        <p id="crash-fairness-state" class="casino-fairness-state">Loading seeds…</p>
+                        <p class="casino-fairness-note">Each round's bust point = HMAC-SHA256(server seed, client seed:nonce). The server seed hash is committed before you play; rotate your seed to reveal the old server seed and verify past rounds.</p>
+                        <div class="casino-controls">
+                            <input id="crash-client-seed" type="text" placeholder="Your client seed (optional)" aria-label="Client seed">
+                            <button id="crash-rotate-seed" type="button">Rotate &amp; reveal</button>
+                        </div>
+                        <div id="crash-reveal" class="casino-fairness-reveal"></div>
+                    </div>
+                </details>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-plinko-card">
+                <h2>🟡 Plinko</h2>
+                <p>Drop a ball through the pegs. Where it lands sets your multiplier — center bins are common and pay small, the edges are rare and pay big. Provably fair.</p>
+                <div class="casino-plinko-stage">
+                    <canvas id="plinko-canvas" class="casino-plinko-canvas" width="640" height="380" role="img" aria-label="Plinko board"></canvas>
+                </div>
+                <div class="casino-controls casino-plinko-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="plinko-bet" type="number" min="5" max="500" value="25" aria-label="Plinko bet">
+                    </label>
+                    <label class="casino-crash-field">Risk
+                        <select id="plinko-risk" aria-label="Plinko risk">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </label>
+                    <button id="plinko-drop" type="button" class="casino-plinko-drop">Drop ball 🟡</button>
+                </div>
+                <div id="plinko-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-mines-card">
+                <h2>💣 Mines</h2>
+                <p>Pick how many mines hide in the grid, then reveal gems. Each safe pick raises your multiplier — cash out before you hit a mine. Provably fair.</p>
+                <div class="casino-controls casino-mines-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="mines-bet" type="number" min="5" max="500" value="25" aria-label="Mines bet">
+                    </label>
+                    <label class="casino-crash-field">Mines
+                        <select id="mines-count" aria-label="Number of mines">
+                            <option value="1">1</option>
+                            <option value="3" selected>3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="24">24</option>
+                        </select>
+                    </label>
+                    <button id="mines-start" type="button" class="casino-mines-start">Start</button>
+                    <button id="mines-cashout" type="button" class="casino-mines-cashout" disabled>Cash out</button>
+                </div>
+                <div id="mines-status" class="casino-crash-status casino-mines-status">Set your bet and start a round.</div>
+                <div id="mines-grid" class="casino-mines-grid" aria-label="Mines grid"></div>
+                <div id="mines-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-wheel-card">
+                <h2>🎡 Wheel of Fortune</h2>
+                <p>Spin the wheel — where it stops sets your multiplier. Higher risk means rarer but bigger wins. Provably fair.</p>
+                <div class="casino-wheel-stage">
+                    <canvas id="wheel-canvas" class="casino-wheel-canvas" width="360" height="360" role="img" aria-label="Fortune wheel"></canvas>
+                    <div class="casino-wheel-pointer">▼</div>
+                </div>
+                <div class="casino-controls casino-wheel-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="wheel-bet" type="number" min="5" max="500" value="25" aria-label="Wheel bet">
+                    </label>
+                    <label class="casino-crash-field">Risk
+                        <select id="wheel-risk" aria-label="Wheel risk">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </label>
+                    <button id="wheel-spin" type="button" class="casino-wheel-spin">Spin 🎡</button>
+                </div>
+                <div id="wheel-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-keno-card">
+                <h2>🔢 Keno</h2>
+                <p>Pick up to 6 numbers, then the house draws 10 from 40. The more of your picks that hit, the bigger the payout. Provably fair.</p>
+                <div class="casino-controls casino-keno-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="keno-bet" type="number" min="5" max="500" value="25" aria-label="Keno bet">
+                    </label>
+                    <span id="keno-selected" class="casino-keno-selected">0 / 6 picked</span>
+                    <button id="keno-quick" type="button">Quick pick</button>
+                    <button id="keno-clear" type="button">Clear</button>
+                    <button id="keno-play" type="button" class="casino-keno-play">Play 🔢</button>
+                </div>
+                <div id="keno-grid" class="casino-keno-grid" aria-label="Keno number grid"></div>
+                <div id="keno-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-roulette-card">
+                <h2>🎯 Roulette</h2>
+                <p>European single-zero roulette. Bet a colour, a range, a dozen, a column, or a single number (pays 36×). Provably fair.</p>
+                <div class="casino-roulette-stage">
+                    <div id="roulette-pocket" class="casino-roulette-pocket">–</div>
+                </div>
+                <div class="casino-controls casino-roulette-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="roulette-bet" type="number" min="5" max="500" value="25" aria-label="Roulette bet">
+                    </label>
+                    <label class="casino-crash-field">Bet on
+                        <select id="roulette-bet-type" aria-label="Roulette bet type">
+                            <option value="red">Red (2×)</option>
+                            <option value="black">Black (2×)</option>
+                            <option value="even">Even (2×)</option>
+                            <option value="odd">Odd (2×)</option>
+                            <option value="low">1–18 (2×)</option>
+                            <option value="high">19–36 (2×)</option>
+                            <option value="dozen">Dozen (3×)</option>
+                            <option value="column">Column (3×)</option>
+                            <option value="straight">Single number (36×)</option>
+                        </select>
+                    </label>
+                    <label class="casino-crash-field" id="roulette-selection-field" style="display:none;">Pick
+                        <input id="roulette-selection" type="number" min="0" max="36" value="17" aria-label="Roulette number">
+                    </label>
+                    <button id="roulette-spin" type="button" class="casino-roulette-spin">Spin 🎯</button>
+                </div>
+                <div id="roulette-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-hilo-card">
+                <h2>🃏 Hi-Lo</h2>
+                <p>A card is dealt. Guess whether the next is higher or lower — each correct call grows your multiplier. Cash out before you call it wrong. Provably fair.</p>
+                <div class="casino-hilo-stage">
+                    <div id="hilo-card" class="casino-hilo-card-face">?</div>
+                </div>
+                <div class="casino-controls casino-hilo-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="hilo-bet" type="number" min="5" max="500" value="25" aria-label="Hi-Lo bet">
+                    </label>
+                    <button id="hilo-start" type="button" class="casino-hilo-start">Deal</button>
+                    <button id="hilo-higher" type="button" class="casino-hilo-higher" disabled>Higher ▲</button>
+                    <button id="hilo-lower" type="button" class="casino-hilo-lower" disabled>Lower ▼</button>
+                    <button id="hilo-cashout" type="button" class="casino-hilo-cashout" disabled>Cash out</button>
+                </div>
+                <div id="hilo-status" class="casino-crash-status casino-hilo-status">Set your bet and deal.</div>
+                <div id="hilo-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-tournaments-card">
+                <h2>🏆 Tournaments</h2>
+                <p>Buy in, then your net result across this currency's games becomes your score. When the clock runs out, the top finishers split the house-seeded prize pool.</p>
+                <div id="casino-tournaments" class="casino-tournaments">Loading tournaments…</div>
+            </article>
+
+            <article class="casino-card">
+                <h2>Free daily flip</h2>
+                <p>One free 5-coin flip per day. Counts for quests, not leaderboard net.</p>
+                <div id="free-bet-status" class="casino-free-status">Checking…</div>
+                <div class="casino-controls">
+                    <select id="free-bet-choice" aria-label="Free flip choice">
+                        <option value="heads">Heads</option>
+                        <option value="tails">Tails</option>
+                    </select>
+                    <button id="free-bet-play" type="button">Free flip</button>
+                </div>
+                <div id="free-bet-result" class="casino-result"></div>
+            </article>
+
             <article class="casino-card">
                 <h2>Coin flip</h2>
                 <p>Pick heads or tails. Win pays 1.9× your stake.</p>
@@ -60,6 +309,113 @@
                 </div>
                 <div id="rps-result" class="casino-result"></div>
             </article>
+
+            <article class="casino-card">
+                <h2>Mystery multiplier flip</h2>
+                <p>Same coin flip — but your multiplier rolls between 1.5× and 3× before the reveal.</p>
+                <div class="casino-controls">
+                    <input id="mystery-bet" type="number" min="5" max="500" value="25" aria-label="Mystery flip bet">
+                    <select id="mystery-choice" aria-label="Mystery flip choice">
+                        <option value="heads">Heads</option>
+                        <option value="tails">Tails</option>
+                    </select>
+                    <button id="mystery-play" type="button">Flip</button>
+                </div>
+                <div id="mystery-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-slots-section">
+                <h2>🎰 Slot machines</h2>
+                <p>Seven machines — wilds, scatters, jackpots, and staggered reel stops. RTP and volatility shown per machine.</p>
+                <div id="casino-slots-grid" class="casino-slots-grid" aria-live="polite">Loading slot machines…</div>
+            </article>
+
+            <article class="casino-card">
+                <h2>Pick-3 scratch</h2>
+                <p>Reveal 3 symbols. Match 2 pays 1.5×; match 3 pays 8×.</p>
+                <div class="casino-controls">
+                    <input id="scratch-bet" type="number" min="5" max="500" value="25" aria-label="Scratch bet">
+                    <button id="scratch-play" type="button">Scratch</button>
+                </div>
+                <div id="scratch-tiles" class="casino-scratch-tiles" aria-live="polite"></div>
+                <div id="scratch-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide">
+                <h2>Counter-pick RPS</h2>
+                <p>Pick the move that beats the most common AI opener — then duel the house using live battle stats.</p>
+                <div id="counter-pick-hint" class="casino-distribution-stats">Loading counter hint…</div>
+                <div class="casino-controls">
+                    <input id="counter-bet" type="number" min="5" max="500" value="25" aria-label="Counter-pick bet">
+                    <select id="counter-choice" aria-label="Your counter move">
+                        <option value="rock">Rock</option>
+                        <option value="paper">Paper</option>
+                        <option value="scissors">Scissors</option>
+                    </select>
+                    <button id="counter-play" type="button">Counter</button>
+                </div>
+                <div id="counter-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide">
+                <h2>Battle RPS meta</h2>
+                <p>Predict the house move using live battle arena AI opener stats. Pick a difficulty lane and optional player opener for dual-signal odds.</p>
+                <div class="casino-meta-filters">
+                    <label>Lane
+                        <select id="rps-dist-lane" aria-label="Difficulty lane">
+                            <option value="">All lanes</option>
+                            <option value="easy">Easy</option>
+                            <option value="balanced">Balanced</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </label>
+                    <label>Dual signal
+                        <select id="rps-dist-context" aria-label="Player opener context">
+                            <option value="">All openers</option>
+                            <option value="rock">When players open rock</option>
+                            <option value="paper">When players open paper</option>
+                            <option value="scissors">When players open scissors</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="rps-distribution-stats" class="casino-distribution-stats">Loading battle stats…</div>
+                <div class="casino-controls">
+                    <input id="rps-dist-bet" type="number" min="5" max="500" value="25" aria-label="Meta bet">
+                    <select id="rps-dist-prediction" aria-label="Predicted house move">
+                        <option value="rock">Rock</option>
+                        <option value="paper">Paper</option>
+                        <option value="scissors">Scissors</option>
+                    </select>
+                    <button id="rps-dist-play" type="button">Predict</button>
+                </div>
+                <div id="rps-dist-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide">
+                <h2>Battle outcome bet</h2>
+                <p>Predict win, draw, or loss from recent quick battles. Rarer outcomes pay more.</p>
+                <div class="casino-meta-filters">
+                    <label>Lane
+                        <select id="outcome-dist-lane" aria-label="Outcome difficulty lane">
+                            <option value="">All lanes</option>
+                            <option value="easy">Easy</option>
+                            <option value="balanced">Balanced</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="outcome-distribution-stats" class="casino-distribution-stats">Loading battle outcomes…</div>
+                <div class="casino-controls">
+                    <input id="outcome-bet" type="number" min="5" max="500" value="25" aria-label="Outcome bet">
+                    <select id="outcome-prediction" aria-label="Predicted battle result">
+                        <option value="win">Win</option>
+                        <option value="draw">Draw</option>
+                        <option value="loss">Loss</option>
+                    </select>
+                    <button id="outcome-play" type="button">Predict</button>
+                </div>
+                <div id="outcome-result" class="casino-result"></div>
+            </article>
         </section>
 
         <section class="casino-history" aria-label="Recent bets">
@@ -73,7 +429,39 @@
         </section>
     </div>
 
+    <div id="casino-toast" class="casino-toast hidden" role="status" aria-live="polite"></div>
+    <div id="casino-celebration" class="casino-celebration hidden" aria-hidden="true">
+        <div class="casino-celebration-inner">
+            <div id="casino-celebration-title" class="casino-celebration-title">BIG WIN</div>
+            <div id="casino-celebration-sub" class="casino-celebration-sub"></div>
+        </div>
+    </div>
+
     <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
-    <script src="/static/js/casino.js?v=20260519d" defer></script>
+    <script src="/static/js/casino.js?v=20260604a" defer></script>
+    <script>
+    (function () {
+        if (window.__casinoBootstrapped) return;
+        window.__casinoBootstrapped = true;
+        setTimeout(function () {
+            var el = document.getElementById('casino-balance');
+            if (!el || (el.textContent || '').indexOf('Loading') === -1) return;
+            var uid = localStorage.getItem('game_user_id') || 'default_user';
+            fetch('/api/casino/balance?user_id=' + encodeURIComponent(uid), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d || !d.success) {
+                        el.textContent = (d && d.error) || 'Could not load balance';
+                        return;
+                    }
+                    el.textContent = 'Coins: ' + Math.round(d.balance) +
+                        ' · MN2: ' + Number(d.mn2_balance || 0).toFixed(4) +
+                        ' · USD: $' + Number(d.fiat_balance || 0).toFixed(2) +
+                        ' · Bets today: ' + d.bets_today + '/' + d.max_bets_per_day;
+                })
+                .catch(function () { el.textContent = 'Network error — refresh the page'; });
+        }, 16000);
+    })();
+    </script>
 </body>
 </html>

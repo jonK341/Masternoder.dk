@@ -1,9 +1,50 @@
 {
   "currency": "coins",
-  "disclaimer": "Virtual coins only. No real-money gambling. MN2 and PayPal are not used for casino bets.",
+  "disclaimer": "Play with virtual coins, MN2, or PayPal-funded USD balance.",
   "min_bet": 5,
   "max_bet": 500,
   "max_bets_per_day": 200,
+  "bet_tiers": [
+    {"min_xp": 0, "max_bet_mn2": 0.5, "max_bet_usd": 5.0},
+    {"min_xp": 5000, "max_bet_mn2": 2.0, "max_bet_usd": 15.0},
+    {"min_xp": 25000, "max_bet_mn2": 5.0, "max_bet_usd": 25.0}
+  ],
+  "responsible_gaming": {
+    "enabled": true,
+    "session_window_hours": 24,
+    "limits_by_xp": [
+      {"min_xp": 0, "max_loss_coins": 5000, "max_loss_mn2": 0.5, "max_loss_usd": 5.0, "cooldown_minutes": 60},
+      {"min_xp": 5000, "max_loss_coins": 15000, "max_loss_mn2": 2.0, "max_loss_usd": 15.0, "cooldown_minutes": 30},
+      {"min_xp": 25000, "max_loss_coins": 50000, "max_loss_mn2": 5.0, "max_loss_usd": 25.0, "cooldown_minutes": 15}
+    ]
+  },
+  "trophy_rake_rebate": {
+    "enabled": true,
+    "max_rebate_pct": 0.12,
+    "tiers": [
+      {"min_trophies": 1, "rebate_pct": 0.02},
+      {"min_trophies": 5, "rebate_pct": 0.05},
+      {"min_trophies": 15, "rebate_pct": 0.08},
+      {"min_trophies": 30, "rebate_pct": 0.12}
+    ]
+  },
+  "real_money": {
+    "enabled": true,
+    "rails": ["mn2", "paypal"],
+    "mn2_min_bet": 0.05,
+    "mn2_max_bet": 5.0,
+    "paypal_min_bet": 0.5,
+    "paypal_max_bet": 25.0,
+    "paypal_currency": "USD",
+    "disclaimer_coins": "Virtual coins only — cosmetic play. Switch to MN2 or USD for real stakes.",
+    "disclaimer_mn2": "MN2 bets debit your on-chain wallet balance (mn2_balance). Virtual coin bets stay separate.",
+    "disclaimer_paypal": "USD bets use your PayPal-funded casino balance. Deposit via PayPal, then stake in USD. Winnings stay in USD balance.",
+    "paypal_deposit_packs": [
+      {"id": "casino_usd_5", "label": "$5 play balance", "amount_usd": 5.0},
+      {"id": "casino_usd_10", "label": "$10 play balance", "amount_usd": 10.0},
+      {"id": "casino_usd_25", "label": "$25 play balance", "amount_usd": 25.0}
+    ]
+  },
   "games": {
     "coin_flip": {
       "label": "Coin flip",
@@ -19,6 +60,449 @@
       "label": "RPS wager",
       "payout_multiplier": 2.0,
       "choices": ["rock", "paper", "scissors"]
+    },
+    "rps_distribution": {
+      "label": "Battle RPS meta",
+      "payout_multiplier": 2.2,
+      "choices": ["rock", "paper", "scissors"]
+    },
+    "rps_counter_pick": {
+      "label": "Counter-pick RPS",
+      "payout_multiplier": 2.0,
+      "choices": ["rock", "paper", "scissors"]
+    },
+    "mystery_coin_flip": {
+      "label": "Mystery multiplier flip",
+      "min_multiplier": 1.5,
+      "max_multiplier": 3.0,
+      "choices": ["heads", "tails"]
+    },
+    "scratch_card": {
+      "label": "Pick-3 scratch",
+      "symbols": ["7", "star", "gem", "coin", "bell"],
+      "match_2_multiplier": 1.5,
+      "match_3_multiplier": 8.0
+    },
+    "battle_outcome": {
+      "label": "Battle outcome",
+      "choices": ["win", "draw", "loss"],
+      "payout_multipliers": {
+        "win": 2.0,
+        "draw": 3.5,
+        "loss": 2.5
+      }
+    },
+    "crash": {
+      "label": "Crash",
+      "icon": "🚀",
+      "house_edge": 0.03,
+      "growth_per_second": 0.13863,
+      "max_round_seconds": 60,
+      "max_auto_cashout": 100.0,
+      "rtp_estimate": 97.0
+    },
+    "plinko": {
+      "label": "Plinko",
+      "icon": "🟡",
+      "rows": 12,
+      "rtp_estimate": 99.0,
+      "risk_tables": {
+        "low": [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10],
+        "medium": [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
+        "high": [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170]
+      }
+    },
+    "mines": {
+      "label": "Mines",
+      "icon": "💣",
+      "tiles": 25,
+      "default_mines": 3,
+      "min_mines": 1,
+      "max_mines": 24,
+      "house_edge": 0.01,
+      "max_round_seconds": 7200,
+      "rtp_estimate": 99.0
+    },
+    "wheel": {
+      "label": "Wheel of Fortune",
+      "icon": "🎡",
+      "rtp_estimate": 98.0,
+      "risk_tables": {
+        "low": [
+          {"multiplier": 0, "weight": 4},
+          {"multiplier": 1.2, "weight": 6},
+          {"multiplier": 1.5, "weight": 3},
+          {"multiplier": 2, "weight": 1}
+        ],
+        "medium": [
+          {"multiplier": 0, "weight": 8},
+          {"multiplier": 1.7, "weight": 4},
+          {"multiplier": 2, "weight": 2},
+          {"multiplier": 4, "weight": 1}
+        ],
+        "high": [
+          {"multiplier": 0, "weight": 62},
+          {"multiplier": 2, "weight": 3},
+          {"multiplier": 9.9, "weight": 1},
+          {"multiplier": 49.5, "weight": 1}
+        ]
+      }
+    },
+    "keno": {
+      "label": "Keno",
+      "icon": "🔢",
+      "pool": 40,
+      "draw": 10,
+      "max_spots": 6,
+      "rtp_estimate": 94.0,
+      "pay_table": {
+        "1": {"1": 3.8},
+        "2": {"2": 16.5},
+        "3": {"2": 5.5, "3": 16.5},
+        "4": {"3": 20, "4": 60},
+        "5": {"3": 7.5, "4": 30, "5": 120},
+        "6": {"4": 27, "5": 135, "6": 680}
+      }
+    },
+    "hilo": {
+      "label": "Hi-Lo",
+      "icon": "🃏",
+      "ranks": 13,
+      "house_edge": 0.02,
+      "max_round_seconds": 7200,
+      "rtp_estimate": 98.0
+    },
+    "roulette": {
+      "label": "Roulette",
+      "icon": "🎯",
+      "pockets": 37,
+      "rtp_estimate": 97.3
+    },
+    "slot_classic": {
+      "label": "Classic Reels",
+      "icon": "🎰",
+      "volatility": "medium",
+      "rtp_estimate": 96.2,
+      "reels": 3,
+      "symbols": ["7", "bar", "cherry", "bell", "lemon", "wild"],
+      "symbol_display": {"7": "7️⃣", "bar": "🎰", "cherry": "🍒", "bell": "🔔", "lemon": "🍋", "wild": "⭐"},
+      "weights": {"7": 1, "bar": 2, "cherry": 3, "bell": 3, "lemon": 4, "wild": 1},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "bell",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.0,
+        "default_two": 1.3,
+        "three": {"7": 12.0, "bar": 8.0, "cherry": 5.0, "bell": 4.0, "lemon": 3.0},
+        "two": {"7": 2.5, "bar": 1.8, "cherry": 1.4}
+      }
+    },
+    "slot_diamond": {
+      "label": "Diamond Rush",
+      "icon": "💎",
+      "volatility": "high",
+      "rtp_estimate": 95.0,
+      "reels": 3,
+      "symbols": ["diamond", "7", "star", "gem", "coin", "wild"],
+      "symbol_display": {"diamond": "💎", "7": "7️⃣", "star": "⭐", "gem": "💠", "coin": "🪙", "wild": "🃏"},
+      "weights": {"diamond": 1, "7": 2, "star": 3, "gem": 3, "coin": 4, "wild": 1},
+      "wild_symbols": ["wild"],
+      "jackpot_symbol": "diamond",
+      "jackpot_multiplier": 15.0,
+      "paytable": {
+        "default_three": 6.0,
+        "default_two": 1.5,
+        "three": {"diamond": 15.0, "7": 10.0, "star": 6.0, "gem": 5.0, "coin": 4.0},
+        "two": {"diamond": 3.0, "7": 2.0, "star": 1.6}
+      }
+    },
+    "slot_neon": {
+      "label": "Neon Pulse",
+      "icon": "🌃",
+      "volatility": "medium",
+      "rtp_estimate": 96.5,
+      "reels": 3,
+      "symbols": ["neon", "bolt", "chip", "wave", "dot", "wild"],
+      "symbol_display": {"neon": "🌃", "bolt": "⚡", "chip": "💾", "wave": "〰️", "dot": "🔵", "wild": "✨"},
+      "weights": {"neon": 1, "bolt": 2, "chip": 3, "wave": 3, "dot": 4, "wild": 2},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "neon",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.0,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {"neon": 14.0, "bolt": 9.0, "chip": 6.0, "wave": 4.5, "dot": 3.5},
+        "two": {"neon": 2.8, "bolt": 2.0, "chip": 1.5}
+      }
+    },
+    "slot_cosmic": {
+      "label": "Cosmic Orbit",
+      "icon": "🌌",
+      "volatility": "high",
+      "rtp_estimate": 94.8,
+      "reels": 3,
+      "symbols": ["sun", "moon", "comet", "orbit", "void", "wild"],
+      "symbol_display": {"sun": "☀️", "moon": "🌙", "comet": "☄️", "orbit": "🪐", "void": "🕳️", "wild": "🌟"},
+      "weights": {"sun": 1, "moon": 2, "comet": 2, "orbit": 3, "void": 4, "wild": 1},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "comet",
+      "scatter_min": 3,
+      "scatter_multiplier": 4.0,
+      "jackpot_symbol": "sun",
+      "jackpot_multiplier": 20.0,
+      "paytable": {
+        "default_three": 6.5,
+        "default_two": 1.6,
+        "three": {"sun": 20.0, "moon": 11.0, "comet": 7.0, "orbit": 5.0, "void": 3.5},
+        "two": {"sun": 3.5, "moon": 2.2, "comet": 1.7}
+      }
+    },
+    "slot_battle": {
+      "label": "Battle Arena",
+      "icon": "⚔️",
+      "volatility": "medium",
+      "rtp_estimate": 96.0,
+      "reels": 3,
+      "symbols": ["sword", "shield", "crown", "banner", "skull", "wild"],
+      "symbol_display": {"sword": "⚔️", "shield": "🛡️", "crown": "👑", "banner": "🚩", "skull": "💀", "wild": "🔥"},
+      "weights": {"sword": 2, "shield": 2, "crown": 1, "banner": 3, "skull": 3, "wild": 1},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.8,
+      "paytable": {
+        "default_three": 5.0,
+        "default_two": 1.35,
+        "three": {"crown": 13.0, "sword": 8.0, "shield": 7.0, "banner": 4.5, "skull": 3.0},
+        "two": {"crown": 2.6, "sword": 1.9, "shield": 1.7}
+      }
+    },
+    "slot_treasure": {
+      "label": "Treasure Cove",
+      "icon": "🏴‍☠️",
+      "volatility": "low",
+      "rtp_estimate": 97.1,
+      "reels": 3,
+      "symbols": ["chest", "map", "anchor", "rum", "parrot", "wild"],
+      "symbol_display": {"chest": "🧰", "map": "🗺️", "anchor": "⚓", "rum": "🍾", "parrot": "🦜", "wild": "🏴‍☠️"},
+      "weights": {"chest": 1, "map": 2, "anchor": 3, "rum": 4, "parrot": 4, "wild": 2},
+      "wild_symbols": ["wild"],
+      "jackpot_symbol": "chest",
+      "jackpot_multiplier": 12.0,
+      "paytable": {
+        "default_three": 4.5,
+        "default_two": 1.25,
+        "three": {"chest": 12.0, "map": 7.0, "anchor": 5.0, "rum": 3.5, "parrot": 3.0},
+        "two": {"chest": 2.2, "map": 1.6, "anchor": 1.3}
+      }
+    },
+    "slot_mega": {
+      "label": "Mega 777",
+      "icon": "🔥",
+      "volatility": "extreme",
+      "rtp_estimate": 93.5,
+      "reels": 3,
+      "symbols": ["mega7", "bar", "fire", "gold", "blank", "wild"],
+      "symbol_display": {"mega7": "7️⃣", "bar": "📊", "fire": "🔥", "gold": "🥇", "blank": "⬜", "wild": "💥"},
+      "weights": {"mega7": 1, "bar": 2, "fire": 2, "gold": 3, "blank": 5, "wild": 1},
+      "wild_symbols": ["wild"],
+      "jackpot_symbol": "mega7",
+      "jackpot_multiplier": 25.0,
+      "scatter_symbol": "fire",
+      "scatter_min": 3,
+      "scatter_multiplier": 5.0,
+      "paytable": {
+        "default_three": 7.0,
+        "default_two": 1.5,
+        "three": {"mega7": 25.0, "bar": 10.0, "fire": 8.0, "gold": 5.0, "blank": 2.0},
+        "two": {"mega7": 4.0, "bar": 2.5, "fire": 2.0}
+      }
     }
+  },
+  "daily_quests": [
+    {
+      "id": "place_3_bets",
+      "title": "High roller",
+      "description": "Place 3 casino bets today",
+      "metric": "bets",
+      "target": 3,
+      "reward_coins": 15
+    },
+    {
+      "id": "win_once",
+      "title": "Lucky streak",
+      "description": "Win any casino game once today",
+      "metric": "wins",
+      "target": 1,
+      "reward_coins": 20
+    },
+    {
+      "id": "try_meta_bet",
+      "title": "Battle analyst",
+      "description": "Try a Battle RPS meta bet once today",
+      "metric": "rps_distribution_bets",
+      "target": 1,
+      "reward_coins": 10
+    },
+    {
+      "id": "net_positive",
+      "title": "In the green",
+      "description": "Finish +50 net coins from casino bets today",
+      "metric": "net",
+      "target": 50,
+      "reward_coins": 25
+    }
+  ],
+  "rotating_daily_quests": [
+    {
+      "quests": [{
+        "id": "rot_mon_coin_flips",
+        "title": "Flip fanatic",
+        "description": "Play 5 coin flips today",
+        "metric": "coin_flip_bets",
+        "target": 5,
+        "reward_coins": 12,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_tue_dice_wins",
+        "title": "Dice master",
+        "description": "Win 2 dice rolls today",
+        "metric": "dice_wins",
+        "target": 2,
+        "reward_coins": 18,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_wed_scratch",
+        "title": "Scratcher",
+        "description": "Try 3 scratch cards today",
+        "metric": "scratch_bets",
+        "target": 3,
+        "reward_coins": 15,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_thu_counter",
+        "title": "Counter strategist",
+        "description": "Try 2 counter-pick RPS bets today",
+        "metric": "rps_counter_bets",
+        "target": 2,
+        "reward_coins": 14,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_fri_coin_flips",
+        "title": "Friday flips",
+        "description": "Play 3 coin flips today",
+        "metric": "coin_flip_bets",
+        "target": 3,
+        "reward_coins": 10,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_sat_dice_wins",
+        "title": "Saturday rolls",
+        "description": "Win 1 dice roll today",
+        "metric": "dice_wins",
+        "target": 1,
+        "reward_coins": 12,
+        "rotating": true
+      }]
+    },
+    {
+      "quests": [{
+        "id": "rot_sun_scratch",
+        "title": "Sunday scratch",
+        "description": "Try 2 scratch cards today",
+        "metric": "scratch_bets",
+        "target": 2,
+        "reward_coins": 12,
+        "rotating": true
+      }]
+    }
+  ],
+  "battle_meta": {
+    "window_hours": 24,
+    "max_events": 50,
+    "rarity_base_multiplier": 2.0,
+    "rarity_min_multiplier": 1.8,
+    "rarity_max_multiplier": 3.5,
+    "difficulty_lanes": ["easy", "balanced", "hard"]
+  },
+  "quest_streaks": {
+    "daily_all_claimed_bonus": 10,
+    "streak_3_day_bonus": 25,
+    "streak_days_required": 3
+  },
+  "weekly_challenge": {
+    "id": "weekly_wins",
+    "title": "Weekly grinder",
+    "description": "Win 15 casino games this week",
+    "metric": "wins",
+    "target": 15,
+    "reward_coins": 50,
+    "badge": "weekly_grinder"
+  },
+  "free_daily_bet": {
+    "coins": 5,
+    "payout_multiplier": 1.9
+  },
+  "double_or_nothing": {
+    "max_steps": 3
+  },
+  "jackpot": {
+    "enabled": true,
+    "slot_jackpot_symbol_awards": true,
+    "rails": {
+      "coins": {"seed": 1000, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 1000},
+      "mn2": {"seed": 5.0, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 5.0},
+      "usd": {"seed": 25.0, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 25.0}
+    }
+  },
+  "tournaments": {
+    "enabled": true,
+    "scoring": "net",
+    "prize_split": [0.5, 0.3, 0.2],
+    "rake": 0.0,
+    "auto_recreate": true,
+    "templates": [
+      {
+        "id": "daily_coins",
+        "name": "Daily Coin Cup",
+        "currency": "coins",
+        "buy_in": 50,
+        "house_seed": 2000,
+        "duration_hours": 24
+      },
+      {
+        "id": "daily_mn2",
+        "name": "Daily MN2 Masters",
+        "currency": "mn2",
+        "buy_in": 0.25,
+        "house_seed": 5.0,
+        "duration_hours": 24
+      },
+      {
+        "id": "daily_usd",
+        "name": "Daily USD Shootout",
+        "currency": "usd",
+        "buy_in": 2.0,
+        "house_seed": 25.0,
+        "duration_hours": 24
+      }
+    ]
   }
 }

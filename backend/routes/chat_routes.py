@@ -288,6 +288,124 @@ def get_new_messages():
         }), 200
 
 
+TIP_MIN_MN2 = 0.001
+TIP_MAX_MN2 = 5.0
+TIP_PRESETS = [0.01, 0.05, 0.1, 0.25]
+
+
+@chat_bp.route('/api/chat/tip/config', methods=['GET'])
+def chat_tip_config():
+    """Public MN2 tip presets and limits for the chat UI."""
+    return jsonify({
+        'success': True,
+        'currency': 'MN2',
+        'min_mn2': TIP_MIN_MN2,
+        'max_mn2': TIP_MAX_MN2,
+        'presets': TIP_PRESETS,
+    }), 200
+
+
+@chat_bp.route('/api/chat/tip', methods=['POST'])
+def send_tip():
+    """Send an MN2 tip to another user (peer transfer on mn2_balance)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        from_user = _resolve_uid()
+        to_user = (data.get('to_user_id') or data.get('recipient_id') or '').strip()
+        message = (data.get('message') or '').strip()[:200]
+
+        if not to_user:
+            return jsonify({'success': False, 'error': 'to_user_id is required'}), 400
+        if to_user == from_user:
+            return jsonify({'success': False, 'error': 'Cannot tip yourself'}), 400
+
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'amount is required'}), 400
+        if amount < TIP_MIN_MN2 or amount > TIP_MAX_MN2:
+            return jsonify({
+                'success': False,
+                'error': f'Tip must be between {TIP_MIN_MN2} and {TIP_MAX_MN2} MN2',
+            }), 400
+
+        from backend.services.unified_points_database import unified_points_db
+        from backend.services.mn2_ledger import append_entry
+
+        points_result = unified_points_db.get_all_points(from_user)
+        if not points_result.get('success', True):
+            return jsonify({'success': False, 'error': 'Failed to load sender balance'}), 500
+        sender_points = points_result.get('points', {}) or {}
+        sender_balance = float(sender_points.get('mn2_balance', 0) or 0)
+        if sender_balance == 0 and isinstance(sender_points.get('systems'), dict):
+            sender_balance = float(sender_points['systems'].get('mn2_balance', 0) or 0)
+        if sender_balance < amount:
+            return jsonify({
+                'success': False,
+                'error': f'Insufficient MN2 balance. Need {amount:.8f}, have {sender_balance:.8f}',
+                'mn2_balance': sender_balance,
+            }), 400
+
+        meta = {
+            'from_user_id': from_user,
+            'to_user_id': to_user,
+            'message': message or None,
+            'source': 'chat_tip',
+        }
+        debit = unified_points_db.add_points(
+            from_user, 'mn2_balance', -amount, source='chat_tip_sent', metadata=meta,
+        )
+        if not debit.get('success', True):
+            return jsonify({'success': False, 'error': 'Failed to debit sender balance'}), 500
+
+        credit = unified_points_db.add_points(
+            to_user, 'mn2_balance', amount, source='chat_tip_received', metadata=meta,
+        )
+        if not credit.get('success', True):
+            unified_points_db.add_points(
+                from_user, 'mn2_balance', amount, source='chat_tip_refund', metadata=meta,
+            )
+            return jsonify({'success': False, 'error': 'Failed to credit recipient; tip refunded'}), 500
+
+        try:
+            append_entry(
+                user_id=from_user,
+                entry_type='chat_tip_sent',
+                amount=amount,
+                metadata=meta,
+            )
+            append_entry(
+                user_id=to_user,
+                entry_type='chat_tip_received',
+                amount=amount,
+                metadata=meta,
+            )
+        except Exception:
+            pass
+
+        tip_note = f'Tipped {amount:.4f} MN2 to {to_user}'
+        if message:
+            tip_note += f': {message}'
+        save_message(from_user, tip_note, username=from_user, is_ai=False)
+
+        recipient_balance = unified_points_db.get_all_points(to_user).get('points', {}) or {}
+        new_sender_balance = unified_points_db.get_all_points(from_user).get('points', {}) or {}
+
+        return jsonify({
+            'success': True,
+            'from_user_id': from_user,
+            'to_user_id': to_user,
+            'amount': amount,
+            'currency': 'MN2',
+            'message': message or None,
+            'sender_balance': float(new_sender_balance.get('mn2_balance', 0) or 0),
+            'recipient_balance': float(recipient_balance.get('mn2_balance', 0) or 0),
+        }), 200
+    except Exception as e:
+        print(f"Error in send_tip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @chat_bp.route('/api/chat/clear', methods=['POST'])
 def clear_history():
     """Clear chat history (DB when available, then file)"""

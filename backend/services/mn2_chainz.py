@@ -73,10 +73,112 @@ def chainz_masternode_count() -> Optional[int]:
         return None
 
 
+_SUPPLY_CACHE: Dict[str, Any] = {}
+_SUPPLY_TTL = 600  # gettxoutsetinfo is a full UTXO scan; cache 10 min
+
+
+def _cached_circulating_supply() -> Optional[float]:
+    """Circulating supply (gettxoutsetinfo.total_amount), cached. None if unsupported/error."""
+    now = time.time()
+    if "value" in _SUPPLY_CACHE and (now - _SUPPLY_CACHE.get("ts", 0)) < _SUPPLY_TTL:
+        return _SUPPLY_CACHE.get("value")
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        r = rpc.gettxoutsetinfo()
+        if not r.get("error") and isinstance(r.get("result"), dict):
+            ta = r["result"].get("total_amount")
+            if ta is not None:
+                value = round(float(ta), 8)
+                _SUPPLY_CACHE["value"] = value
+                _SUPPLY_CACHE["ts"] = now
+                return value
+    except Exception:
+        pass
+    return _SUPPLY_CACHE.get("value")  # stale ok
+
+
+_DAEMON_CACHE: Dict[str, Any] = {}
+_DAEMON_TTL = 30  # seconds — bound RPC load from the explorer poll
+
+
+def daemon_extras() -> Dict[str, Any]:
+    """Extra live daemon stats for the explorer (connections, mempool, version, chain).
+
+    RPC-only (no Chainz fallback), cached ~30s. Tolerates forks that don't implement
+    a given RPC — each field is independently best-effort and stays None if missing.
+    """
+    now = time.time()
+    cached = _DAEMON_CACHE.get("value")
+    if cached is not None and (now - _DAEMON_CACHE.get("ts", 0)) < _DAEMON_TTL:
+        return cached
+
+    out: Dict[str, Any] = {
+        "connections": None, "version": None, "subversion": None,
+        "protocol_version": None, "mempool_tx": None, "mempool_bytes": None,
+        "chain": None, "verification_progress": None, "median_time": None,
+        "size_on_disk": None, "headers": None, "money_supply": None,
+        "reachable": False,
+    }
+    try:
+        from backend.services import mn2_rpc_client as rpc
+
+        cc = rpc.getconnectioncount(timeout_sec=4)
+        if not cc.get("error") and cc.get("result") is not None:
+            out["connections"] = int(cc["result"]); out["reachable"] = True
+
+        ni = rpc.getnetworkinfo()
+        if not ni.get("error") and isinstance(ni.get("result"), dict):
+            r = ni["result"]; out["reachable"] = True
+            out["version"] = r.get("version")
+            out["subversion"] = r.get("subversion")
+            out["protocol_version"] = r.get("protocolversion")
+            if out["connections"] is None and r.get("connections") is not None:
+                out["connections"] = r.get("connections")
+
+        mp = rpc.getmempoolinfo()
+        if not mp.get("error") and isinstance(mp.get("result"), dict):
+            r = mp["result"]
+            out["mempool_tx"] = r.get("size")
+            out["mempool_bytes"] = r.get("bytes") or r.get("usage")
+
+        bi = rpc.getblockchaininfo()
+        if not bi.get("error") and isinstance(bi.get("result"), dict):
+            r = bi["result"]; out["reachable"] = True
+            out["chain"] = r.get("chain")
+            out["verification_progress"] = r.get("verificationprogress")
+            out["median_time"] = r.get("mediantime")
+            out["size_on_disk"] = r.get("size_on_disk")
+            out["headers"] = r.get("headers")
+            if r.get("moneysupply") is not None:
+                out["money_supply"] = r.get("moneysupply")
+
+        # PIVX getinfo fills version/connections/moneysupply gaps on older forks.
+        if out["money_supply"] is None or out["version"] is None or out["connections"] is None:
+            gi = rpc.getinfo()
+            if not gi.get("error") and isinstance(gi.get("result"), dict):
+                r = gi["result"]; out["reachable"] = True
+                if out["money_supply"] is None:
+                    out["money_supply"] = r.get("moneysupply")
+                if out["version"] is None:
+                    out["version"] = r.get("version")
+                if out["protocol_version"] is None:
+                    out["protocol_version"] = r.get("protocolversion")
+                if out["connections"] is None:
+                    out["connections"] = r.get("connections")
+    except Exception:
+        pass
+
+    _DAEMON_CACHE["value"] = out
+    _DAEMON_CACHE["ts"] = now
+    return out
+
+
 def network_overview() -> Dict[str, Any]:
     """
     Aggregate MN2 network stats: RPC-first (own daemon), Chainz fallback. Best-effort, never raises.
-    Returns block_height, mn2_usd_price, staking_weight, masternode_count, difficulty.
+    Returns block_height, mn2_usd_price, staking_weight, masternode_count, difficulty,
+    plus a `daemon` block (connections, mempool, version, chain) and top-level
+    `connections`/`mempool_tx` for sparkline history.
     """
     out: Dict[str, Any] = {
         "block_height": None,
@@ -86,6 +188,7 @@ def network_overview() -> Dict[str, Any]:
         "expected_stake_time_sec": None,
         "masternode_count": None,
         "difficulty": None,
+        "circulating_supply": None,
         "source": {},
     }
     # RPC first
@@ -124,6 +227,11 @@ def network_overview() -> Dict[str, Any]:
             if out["difficulty"] is None and res.get("difficulty") is not None:
                 out["difficulty"] = res.get("difficulty")
                 out["source"]["difficulty"] = "rpc"
+        # circulating supply via gettxoutsetinfo (heavy UTXO scan) -> cached ~10 min
+        supply = _cached_circulating_supply()
+        if supply is not None:
+            out["circulating_supply"] = supply
+            out["source"]["circulating_supply"] = "rpc"
     except Exception:
         pass
     # Chainz fallback for anything still missing
@@ -146,6 +254,19 @@ def network_overview() -> Dict[str, Any]:
                 out["difficulty"] = d; out["source"]["difficulty"] = "chainz"
     except Exception:
         pass
+
+    # Live daemon extras (connections, mempool, version, chain). Top-level mirrors
+    # of connections/mempool_tx let the history snapshotter chart them over time.
+    try:
+        de = daemon_extras()
+        out["daemon"] = de
+        out["connections"] = de.get("connections")
+        out["mempool_tx"] = de.get("mempool_tx")
+        if out.get("circulating_supply") is None and de.get("money_supply") is not None:
+            out["circulating_supply"] = de.get("money_supply")
+            out["source"]["circulating_supply"] = "rpc"
+    except Exception:
+        out.setdefault("daemon", {})
     return out
 
 

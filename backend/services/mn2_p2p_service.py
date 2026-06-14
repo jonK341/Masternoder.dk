@@ -220,6 +220,18 @@ def create_listing(seller_id: str, mn2_amount: Any, price_usd_per_mn2: Any) -> D
         return {"success": False, "error": f"Maximum listing is {cfg['max_listing_mn2']} MN2"}
     if price <= 0:
         return {"success": False, "error": "price_usd_per_mn2 must be positive"}
+    try:
+        from backend.services.mn2_p2p_oracle import validate_listing_price
+        oracle_gate = validate_listing_price(price)
+        if not oracle_gate.get("allowed"):
+            return {
+                "success": False,
+                "error": oracle_gate.get("error"),
+                "code": oracle_gate.get("code", "price_outside_corridor"),
+                **{k: oracle_gate[k] for k in oracle_gate if k not in ("allowed", "error", "code")},
+            }
+    except ImportError:
+        pass
     if cfg.get("requires_seller_verification") and not _is_verified(sid):
         return {"success": False, "error": "Seller account verification required to list",
                 "code": "verification_required"}

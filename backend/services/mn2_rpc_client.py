@@ -268,9 +268,59 @@ def getmasternodecount() -> Dict[str, Any]:
     return _call("getmasternodecount")
 
 
+def listmasternodes() -> Dict[str, Any]:
+    """Full masternode list (PIVX-style): rank, addr, status, lastpaid, activetime, version."""
+    return _call("listmasternodes")
+
+
+def getbestblockhash() -> Dict[str, Any]:
+    """Hash of the current chain tip."""
+    return _call("getbestblockhash")
+
+
+def getblockhash(height: int) -> Dict[str, Any]:
+    """Block hash at a given height."""
+    return _call("getblockhash", [int(height)])
+
+
+def getblock(block_hash: str, verbosity: int = 1) -> Dict[str, Any]:
+    """Block details. verbosity=1 returns tx ids only (light); pass the hash from getblockhash."""
+    return _call("getblock", [str(block_hash), int(verbosity)])
+
+
+def gettxoutsetinfo() -> Dict[str, Any]:
+    """UTXO set summary incl. `total_amount` (circulating supply) and `height`. Can be slow on big chains."""
+    return _call("gettxoutsetinfo")
+
+
 def getdifficulty() -> Dict[str, Any]:
     """Network difficulty (may return a dict with PoW/PoS on hybrid chains)."""
     return _call("getdifficulty")
+
+
+def getconnectioncount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
+    """Number of peers the daemon is connected to. Cheap network-health signal."""
+    return _call("getconnectioncount", timeout_sec=timeout_sec)
+
+
+def getnetworkinfo() -> Dict[str, Any]:
+    """Daemon network info: version, subversion, protocolversion, connections."""
+    return _call("getnetworkinfo")
+
+
+def getmempoolinfo() -> Dict[str, Any]:
+    """Mempool summary: size (tx count), bytes, usage. May be unimplemented on some forks."""
+    return _call("getmempoolinfo")
+
+
+def getblockchaininfo() -> Dict[str, Any]:
+    """Chain summary: chain, blocks, headers, verificationprogress, mediantime, size_on_disk."""
+    return _call("getblockchaininfo")
+
+
+def getinfo() -> Dict[str, Any]:
+    """Legacy/PIVX getinfo: version, protocolversion, connections, moneysupply, difficulty."""
+    return _call("getinfo")
 
 
 def health_check() -> Dict[str, Any]:

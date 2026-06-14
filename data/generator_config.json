@@ -1,0 +1,8 @@
+{
+  "queue": {
+    "queue_enabled": false,
+    "max_concurrent": 1,
+    "base_priority": 100,
+    "shop_booster_bonus": 50
+  }
+}

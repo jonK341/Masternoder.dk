@@ -73,6 +73,10 @@ _CAPABILITIES = [
      "description": "Execute one autonomous policy step for a persona (stake/unstake/heartbeat within caps)."},
     {"action": "run_all", "method": "POST", "params": ["dry_run?"],
      "description": "Execute one policy step for every enabled persona."},
+    {"action": "copy_trade_follow", "method": "POST", "params": ["follower_user_id", "leader_agent_id", "scale?", "max_mn2_per_step?"],
+     "description": "Mirror a leader agent's stake/unstake steps at scaled size."},
+    {"action": "copy_trade_list", "method": "GET", "params": ["leader_agent_id?"],
+     "description": "List copy-trading followers."},
 ]
 
 
@@ -96,7 +100,7 @@ def capabilities():
 
 
 _READ_ACTIONS = {"status", "calculator", "rewards_table", "monitor", "onramp_status",
-                 "p2p_listings", "p2p_status"}
+                 "p2p_listings", "p2p_status", "copy_trade_list"}
 
 
 @agent_staking_bp.route("/api/agent/staking/execute", methods=["POST"])
@@ -112,6 +116,15 @@ def execute():
             "success": False, "error": "Unauthorized",
             "hint": "Set AGENT_MN2_STAKING_SECRET and send header X-Agent-Staking-Key.",
         }), 403
+
+    try:
+        from backend.services.agent_kill_switch import check_action
+        agent_id = (data.get("agent_id") or request.args.get("agent_id") or "").strip()
+        halt = check_action(action, agent_id=agent_id or None)
+        if not halt.get("allowed"):
+            return jsonify({"success": False, **halt}), 503
+    except ImportError:
+        pass
 
     user_id = (data.get("user_id") or request.args.get("user_id") or "").strip()
 
@@ -181,6 +194,18 @@ def execute():
                                      dry_run=bool(data.get("dry_run")))
                 return jsonify(r), 200 if r.get("success") else 400
             return jsonify(agents.run_all(dry_run=bool(data.get("dry_run")))), 200
+        if action in ("copy_trade_follow", "copy_trade_list"):
+            import backend.services.mn2_copy_trading as copy_trade
+            if action == "copy_trade_list":
+                return jsonify(copy_trade.list_followers(data.get("leader_agent_id"))), 200
+            r = copy_trade.upsert_follower(
+                data.get("follower_user_id") or user_id,
+                (data.get("leader_agent_id") or "").strip(),
+                scale=float(data.get("scale") or 0.25),
+                max_mn2_per_step=float(data.get("max_mn2_per_step") or 1.0),
+                enabled=bool(data.get("enabled", True)),
+            )
+            return jsonify(r), 200 if r.get("success") else 400
         return jsonify({"success": False, "error": f"unknown action '{action}'",
                         "valid_actions": [c["action"] for c in _CAPABILITIES]}), 400
     except Exception as exc:
@@ -193,6 +218,16 @@ def _ops_authorized() -> bool:
         return False
     token = (request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
     return token == secret
+
+
+@agent_staking_bp.route("/api/agent/staking/kill-switch", methods=["GET"])
+def agent_kill_switch_status():
+    """Public read-only agent halt status (no secrets)."""
+    try:
+        from backend.services.agent_kill_switch import get_status
+        return jsonify(get_status()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @agent_staking_bp.route("/api/agent/staking/ops/run-all", methods=["POST", "GET"])

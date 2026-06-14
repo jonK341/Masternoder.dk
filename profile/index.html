@@ -916,6 +916,10 @@
                     <!-- Trophies progress -->
                     <div class="section-card" id="profile-trophies-card" data-profile-route="overview progress">
                         <h2 class="section-title">🏆 Trophies</h2>
+                        <div id="profile-showcase" style="display:none; margin-bottom:14px;">
+                            <h3 style="font-size:1rem; color:#FFD700; margin:0 0 10px;">📌 Showcase</h3>
+                            <div id="profile-showcase-grid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                        </div>
                         <div id="profile-trophies-content"></div>
                     </div>
                     <!-- Points system: connected Game, Shop, Star Map 25, Points -->
@@ -1013,9 +1017,70 @@
                             <strong style="color: #00d4ff;">Recent transactions:</strong>
                             <div id="profile-mn2-transactions" style="margin-top: 6px; max-height: 240px; overflow-y: auto; font-size: 0.85rem; opacity: 0.9;">Loading…</div>
                         </div>
+
+                        <!-- Full statement & tax export (Top-10 #4) -->
+                        <div style="margin-top: 14px;">
+                            <strong style="color: #00d4ff;">Statement &amp; tax export:</strong>
+                            <select id="mn2-statement-year" style="margin-left: 8px; background: rgba(0,0,0,0.3); color: #e8eefc; border: 1px solid rgba(0,212,255,0.3); border-radius: 6px; padding: 2px 6px; font-size: 0.8rem;">
+                                <option value="">All time</option>
+                            </select>
+                            <a id="mn2-statement-csv" href="/api/mn2/statement?format=csv" style="font-size: 0.78rem; color: #00d4ff; margin-left: 8px;">export CSV</a>
+                            <div id="mn2-statement-summary" style="font-size: 0.75rem; opacity: 0.75; margin-top: 4px;"></div>
+                            <div id="mn2-statement-rows" style="margin-top: 6px; max-height: 260px; overflow-y: auto; font-size: 0.8rem; opacity: 0.92;">Loading…</div>
+                        </div>
+
                         <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
                         <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a></p>
                     </div>
+                    <script>
+                    (function () {
+                      var rowsEl = document.getElementById('mn2-statement-rows');
+                      if (!rowsEl) return;
+                      var yearEl = document.getElementById('mn2-statement-year');
+                      var csvEl = document.getElementById('mn2-statement-csv');
+                      var sumEl = document.getElementById('mn2-statement-summary');
+                      var label = {
+                        deposit: 'Deposit', withdrawal: 'Withdrawal', staking_reward: 'Staking reward',
+                        stake: 'Stake', unstake: 'Unstake', shop_payment: 'Shop payment',
+                        onramp_purchase: 'PayPal buy', onramp_clawback: 'Chargeback', p2p_buy: 'P2P buy',
+                        p2p_sell_escrow: 'P2P escrow', p2p_escrow_return: 'P2P escrow return'
+                      };
+                      function fmt(n) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 8 }); }
+                      function yearsPopulated() { return yearEl && yearEl.options.length > 1; }
+                      function load() {
+                        var y = yearEl ? yearEl.value : '';
+                        if (csvEl) csvEl.href = '/api/mn2/statement?format=csv' + (y ? '&year=' + y : '');
+                        rowsEl.innerHTML = 'Loading…';
+                        fetch('/api/mn2/statement' + (y ? '?year=' + y : ''), { credentials: 'same-origin' })
+                          .then(function (r) { return r.json(); })
+                          .then(function (d) {
+                            if (!d || !d.success) { rowsEl.innerHTML = (d && d.code === 'auth_required') ? 'Sign in to view your statement.' : 'Could not load statement.'; return; }
+                            if (yearEl && !yearsPopulated()) {
+                              var ys = Object.keys((d.summary && d.summary.by_year) || {}).sort().reverse();
+                              ys.forEach(function (yr) { var o = document.createElement('option'); o.value = yr; o.textContent = yr; yearEl.appendChild(o); });
+                            }
+                            if (sumEl) sumEl.textContent = 'Current balance ' + fmt(d.current_balance_mn2) + ' MN2 · ' + ((d.summary && d.summary.events) || 0) + ' events';
+                            var rows = d.rows || [];
+                            if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
+                            rowsEl.innerHTML = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="opacity:0.7;">' +
+                              '<th style="text-align:left; padding:2px 8px;">Date</th><th style="text-align:left; padding:2px 8px;">Type</th>' +
+                              '<th style="text-align:right; padding:2px 8px;">Change</th><th style="text-align:right; padding:2px 8px;">Balance</th></tr></thead><tbody>' +
+                              rows.map(function (r) {
+                                var pos = (r.delta_mn2 || 0) >= 0;
+                                var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
+                                var dc = (r.delta_mn2 === 0) ? 'opacity:0.6;' : (pos ? 'color:#00ff88;' : 'color:#ffaa44;');
+                                var sign = (r.delta_mn2 > 0 ? '+' : '');
+                                return '<tr><td style="padding:2px 8px;">' + d2 + '</td><td style="padding:2px 8px;">' + (label[r.type] || r.type) +
+                                  '</td><td style="padding:2px 8px; text-align:right; ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
+                                  '</td><td style="padding:2px 8px; text-align:right;">' + fmt(r.running_balance_mn2) + '</td></tr>';
+                              }).join('') + '</tbody></table>';
+                          })
+                          .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
+                      }
+                      if (yearEl) yearEl.addEventListener('change', load);
+                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+                    })();
+                    </script>
 
                     <!-- MN2 Staking: stake/unstake, browser rig, longevity, calculator -->
                     <div class="section-card" id="profile-mn2-staking-card" data-profile-route="overview wallet" style="border: 2px solid rgba(0,255,136,0.4); background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04));">
@@ -1094,8 +1159,27 @@
                             <p id="mn2-calc-result" style="font-size:0.85rem; margin:8px 0 0; color:#00ff88;">—</p>
                         </div>
 
+                        <!-- Reward dashboard charts (Top-10 #2) -->
+                        <div style="margin-top:14px;">
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Earnings dashboard</strong>
+                            <div id="mn2-staking-charts-empty" style="font-size:0.78rem; opacity:0.7; margin-top:6px;">No reward intervals yet — charts appear once you start earning.</div>
+                            <div id="mn2-staking-charts" style="display:none; margin-top:8px;">
+                                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                                    <div style="flex:1 1 300px;">
+                                        <div style="font-size:0.72rem; opacity:0.7; margin-bottom:4px;">Cumulative earnings (MN2) — actual vs projected trend</div>
+                                        <canvas id="mn2-chart-cumulative" height="150" style="width:100%; background:rgba(0,0,0,0.25); border-radius:8px;"></canvas>
+                                    </div>
+                                    <div style="flex:1 1 300px;">
+                                        <div style="font-size:0.72rem; opacity:0.7; margin-bottom:4px;">Per-interval reward (MN2)</div>
+                                        <canvas id="mn2-chart-intervals" height="150" style="width:100%; background:rgba(0,0,0,0.25); border-radius:8px;"></canvas>
+                                    </div>
+                                </div>
+                                <div id="mn2-chart-legend" style="font-size:0.7rem; opacity:0.75; margin-top:6px;"></div>
+                            </div>
+                        </div>
+
                         <!-- Reward history table -->
-                        <div>
+                        <div style="margin-top:14px;">
                             <strong style="color:#00d4ff; font-size:0.85rem;">Reward history</strong>
                             <a href="/api/mn2/staking/rewards-table?format=csv" id="mn2-staking-rewards-csv" style="font-size:0.75rem; color:#00d4ff; margin-left:8px;">export</a>
                             <div id="mn2-staking-rewards-table" style="margin-top:6px; max-height:220px; overflow-y:auto; font-size:0.8rem; opacity:0.92;">No rewards yet.</div>
@@ -3775,6 +3859,41 @@
             }
         }
     });
+    </script>
+
+    <!-- Trophy showcase (Feature 14): render pinned trophies from /api/trophies/showcase -->
+    <script>
+    (function() {
+        function loadProfileShowcase() {
+            var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('user_id')) uid = params.get('user_id');
+            } catch (_) {}
+            fetch('/api/trophies/showcase?user_id=' + encodeURIComponent(uid))
+                .then(function(r) { return r.ok ? r.json() : {}; })
+                .then(function(d) {
+                    var items = (d && d.trophies) || [];
+                    var wrap = document.getElementById('profile-showcase');
+                    var grid = document.getElementById('profile-showcase-grid');
+                    if (!wrap || !grid || !items.length) return;
+                    grid.innerHTML = items.map(function(t) {
+                        var locked = !t.unlocked;
+                        return '<a href="/trophies#trophy=' + encodeURIComponent(t.id) + '" ' +
+                            'style="display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; ' +
+                            'color:inherit; padding:12px 14px; border-radius:12px; min-width:84px; ' +
+                            'background:rgba(21,21,32,0.8); border:2px solid ' + (locked ? 'rgba(255,255,255,0.15)' : 'rgba(255,215,0,0.5)') + ';' +
+                            (locked ? 'opacity:0.55;' : '') + '" title="' + (t.requirement || '').replace(/"/g, '') + '">' +
+                            '<span style="font-size:1.8em;">' + (t.icon || '\uD83C\uDFC6') + '</span>' +
+                            '<span style="font-size:0.78em; text-align:center; color:#FFD700;">' + String(t.name || t.id).replace(/</g, '&lt;') + '</span></a>';
+                    }).join('');
+                    wrap.style.display = 'block';
+                })
+                .catch(function() {});
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProfileShowcase);
+        else loadProfileShowcase();
+    })();
     </script>
 </body>
 </html>

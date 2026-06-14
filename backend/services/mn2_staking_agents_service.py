@@ -134,6 +134,13 @@ def upsert_agent(agent_id: str, user_id: str, policy: Optional[Dict[str, Any]] =
 def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
     """Execute one policy step for a persona. Returns the actions taken (or planned, if dry_run)."""
     agent_id = str(agent_id or "").strip()
+    try:
+        from backend.services.agent_kill_switch import check_action
+        halt = check_action("run_agent", agent_id=agent_id)
+        if not halt.get("allowed"):
+            return {"success": False, **halt}
+    except ImportError:
+        pass
     if not bool(staking.get_config().get("agent", {}).get("automation_enabled", True)):
         return {"success": False, "error": "agent automation disabled by ops kill switch", "code": "automation_disabled"}
     agents = _load_agents()
@@ -148,15 +155,18 @@ def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
     allowed = set(pol.get("allowed_actions") or [])
     actions: List[Dict[str, Any]] = []
 
-    def _do(name: str, fn):
+    def _do(name: str, fn, amount: Optional[float] = None):
         if name not in allowed:
             actions.append({"action": name, "skipped": "not_allowed"})
             return None
         if dry_run:
-            actions.append({"action": name, "planned": True})
+            actions.append({"action": name, "planned": True, "amount": amount})
             return None
         res = fn()
-        actions.append({"action": name, "result": res})
+        act: Dict[str, Any] = {"action": name, "result": res}
+        if amount is not None:
+            act["amount"] = amount
+        actions.append(act)
         return res
 
     # 1. Consent gate (sec.19.4) — required before any stake.
@@ -189,7 +199,7 @@ def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
         amt = round(staked - max_staked, 8)
         if step_max > 0:
             amt = min(amt, step_max)
-        _do("unstake", lambda a=amt: staking.unstake(user_id, a))
+        _do("unstake", lambda a=amt: staking.unstake(user_id, a), amount=amt)
     elif target > 0 and staked < target - 1e-9:
         want = target - staked
         free = max(0.0, bal - keep_min)
@@ -200,7 +210,7 @@ def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
             amt = min(amt, step_max)
         amt = round(amt, 8)
         if amt > 0:
-            r = _do("stake", lambda a=amt: staking.stake(user_id, a))
+            r = _do("stake", lambda a=amt: staking.stake(user_id, a), amount=amt)
             if r and r.get("success") and not dry_run:
                 _tag_managed(user_id, agent_id)
         else:
@@ -212,6 +222,11 @@ def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
         agents[agent_id] = agent
         _save_agents(agents)
         _audit(agent_id, user_id, actions)
+        try:
+            from backend.services.mn2_copy_trading import mirror_agent_run
+            mirror_agent_run(agent_id, user_id, actions)
+        except ImportError:
+            pass
 
     after = staking.get_stake(user_id)
     return {"success": True, "agent_id": agent_id, "user_id": user_id, "dry_run": dry_run,
@@ -221,6 +236,13 @@ def run_agent(agent_id: str, dry_run: bool = False) -> Dict[str, Any]:
 
 
 def run_all(dry_run: bool = False) -> Dict[str, Any]:
+    try:
+        from backend.services.agent_kill_switch import check_action
+        halt = check_action("run_all")
+        if not halt.get("allowed"):
+            return {"success": False, **halt}
+    except ImportError:
+        pass
     agents = _load_agents()
     results = []
     for aid, a in agents.items():
@@ -228,3 +250,93 @@ def run_all(dry_run: bool = False) -> Dict[str, Any]:
             continue
         results.append(run_agent(aid, dry_run=dry_run))
     return {"success": True, "ran": len(results), "results": results}
+
+
+def stake_for_agent(agent_id: str, user_id: str, amount: float) -> Dict[str, Any]:
+    """Stake MN2 from the user's wallet and mark the position as agent-managed."""
+    from backend.services import mn2_staking_service as staking
+
+    agent_id = str(agent_id or "").strip()
+    user_id = str(user_id or "").strip()
+    if not agent_id or not user_id:
+        return {"success": False, "error": "agent_id and user_id required"}
+    res = staking.stake(user_id, amount)
+    if not res.get("success"):
+        return res
+    upsert_agent(agent_id, user_id, policy={"enabled": True})
+    _tag_managed(user_id, agent_id)
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "user_id": user_id,
+        "amount": amount,
+        "stake": res,
+    }
+
+
+def disable_agent(agent_id: str, user_id: str) -> Dict[str, Any]:
+    """Disable a staking persona without unstaking (stops autonomous rebalance)."""
+    agent_id = str(agent_id or "").strip()
+    user_id = str(user_id or "").strip()
+    if not agent_id or not user_id:
+        return {"success": False, "error": "agent_id and user_id required"}
+    agents = _load_agents()
+    agent = agents.get(agent_id)
+    if not agent or str(agent.get("user_id") or "") != user_id:
+        return {"success": False, "error": "agent persona not found for user"}
+    pol = dict(agent.get("policy") or {})
+    pol["enabled"] = False
+    agent["policy"] = pol
+    agent["updated_at"] = _iso()
+    agents[agent_id] = agent
+    _save_agents(agents)
+    return {"success": True, "agent_id": agent_id, "enabled": False}
+
+
+def unstake_for_agent(agent_id: str, user_id: str, amount: Optional[float] = None) -> Dict[str, Any]:
+    """Unstake MN2 from agent-managed position back to liquid wallet."""
+    from backend.services import mn2_staking_service as staking
+
+    agent_id = str(agent_id or "").strip()
+    user_id = str(user_id or "").strip()
+    if not agent_id or not user_id:
+        return {"success": False, "error": "agent_id and user_id required"}
+    agents = _load_agents()
+    agent = agents.get(agent_id)
+    if not agent or str(agent.get("user_id") or "") != user_id:
+        return {"success": False, "error": "agent persona not found for user"}
+    cur = staking.get_stake(user_id)
+    staked = float(cur.get("staked") or 0)
+    if staked <= 0:
+        return {"success": False, "error": "nothing staked", "staked": staked}
+    amt = float(amount) if amount is not None else staked
+    if amt <= 0 or amt > staked + 1e-9:
+        return {"success": False, "error": f"invalid unstake amount (staked {staked})", "staked": staked}
+    res = staking.unstake(user_id, amt)
+    if not res.get("success"):
+        return res
+    # Any unstake disables autonomous agent policy until re-enabled (partial or full).
+    pol = dict(agent.get("policy") or {})
+    pol["enabled"] = False
+    agent["policy"] = pol
+    agent["updated_at"] = _iso()
+    agents[agent_id] = agent
+    _save_agents(agents)
+    after = staking.get_stake(user_id)
+    if float(after.get("staked") or 0) <= 1e-9:
+        try:
+            stakes = staking._load_stakes()
+            rec = stakes.get(user_id)
+            if isinstance(rec, dict) and rec.get("managed_by_agent") == agent_id:
+                rec.pop("managed_by_agent", None)
+                stakes[user_id] = rec
+                staking._save_stakes(stakes)
+        except Exception:
+            pass
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "user_id": user_id,
+        "amount": amt,
+        "unstake": res,
+    }

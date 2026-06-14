@@ -215,7 +215,16 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
 ```
 
 - `explorer_base_url` reflects `data/mn2_config.json` (`explorer_base_url`) — Chainz today, the self-hosted iquidus host after the cutover. UI uses it for the "Open full explorer" link; agents can use it to build address/tx links.
+- `staking_health` (best-effort) reports whether the pool daemon is minting: `{ status: active|inactive|unreachable|unsupported, staking_active, staking_status_detail: { mnsync, walletunlocked, ... } }`. On MasterNoder2 this comes from `getstakingstatus` (no `getstakinginfo`).
 - See [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) for the hybrid (iquidus-from-source + on-site tiles) plan and source-priority rationale.
+
+**Companion endpoints (public, cached):**
+- **GET** `/api/mn2/network-history?hours=24&limit=500` → `{ success, history: [{ ts, block_height, mn2_usd_price, difficulty, network_hashps, staking_weight, masternode_count, pool_total_staked, staking_active, alert }], count }`. Throttled snapshots (~10 min) recorded opportunistically on `network-overview` calls; backs the `/explorer` sparklines.
+- **GET** `/api/mn2/network-alerts?limit=20` → `{ success, alerts: [{ ts, type, message, ... }] }`. Edge-triggered `staking_stopped` / `height_stall` events (also written to `logs/mn2_network_alerts.jsonl`; admin-notified if `MN2_ALERT_USER_ID` is set).
+- **GET** `/api/mn2/recent-blocks?limit=10` → `{ success, blocks: [{ height, hash, time, tx_count, size }], count }`. Latest blocks walked from the tip via RPC (`getblockhash`/`getblock`), cached ~30s; `[]` if the daemon is unreachable.
+- **GET** `/api/mn2/masternodes?limit=50` → `{ success, total, enabled, list: [{ rank, addr, status, lastpaid, activetime, version }] }`. From `listmasternodes`, cached ~60s.
+
+`network-overview` also includes `circulating_supply` (from `gettxoutsetinfo.total_amount`, cached ~10 min) enabling a "% of supply staked by the pool" figure.
 
 ---
 

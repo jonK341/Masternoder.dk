@@ -4,15 +4,15 @@
     <script>window.APP_BASE = '';</script>
     <script>window.MN_NAV_PORTAL_VOID = true;</script>
     <meta charset="UTF-8">
-    <meta name="cache-version" content="20260428a">
+    <meta name="cache-version" content="20260614a">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MasterNoder.dk — AI videogenerering, spil, battle og agenter.">
-    <meta name="content-version" content="20260428a">
+    <meta name="content-version" content="20260614a">
     <title>MasterNoder.dk</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260428a">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260428a">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260614a">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -29,6 +29,7 @@
                 <div class="fp-hero-actions" aria-label="Primære handlinger">
                     <a class="fp-primary-action" href="/generator">Start generator</a>
                     <a class="fp-secondary-action" href="/game">Åbn game hub</a>
+                    <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
                 </div>
             </div>
             <div class="fp-hero-core" aria-hidden="true">
@@ -41,7 +42,22 @@
             </div>
         </section>
 
+        <section class="fp-mn2-band" aria-labelledby="fp-mn2-title">
+            <div class="fp-mn2-band-copy">
+                <h2 id="fp-mn2-title">MN2 crypto ecosystem</h2>
+                <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Wallet lives on your profile.</p>
+                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span></p>
+            </div>
+            <div class="fp-mn2-band-actions">
+                <a class="fp-mn2-badge" href="/shop">Shop &amp; pay MN2</a>
+                <a class="fp-mn2-link" href="/profile#mn2-wallet">Open wallet</a>
+                <a class="fp-mn2-link" href="/explorer">Explorer</a>
+                <a class="fp-mn2-link" href="/casino/">Casino</a>
+            </div>
+        </section>
+
         <section class="fp-stats" id="fp-stats" aria-label="Platform oversigt">
+            <div class="fp-stat fp-stat-mn2"><div class="v" id="stat-mn2-price">—</div><div class="l">MN2 (USD)</div></div>
             <div class="fp-stat"><div class="v" id="stat-videos">0</div><div class="l">Videoer</div></div>
             <div class="fp-stat"><div class="v" id="stat-users">0</div><div class="l">Brugere</div></div>
             <div class="fp-stat"><div class="v" id="stat-achievements">0</div><div class="l">Achievements</div></div>
@@ -146,6 +162,35 @@
         const BASE_URL = window.location.origin;
         const userId = localStorage.getItem('game_user_id') || 'default_user';
 
+        async function loadMn2Surface() {
+            try {
+                const [balRes, priceRes] = await Promise.all([
+                    fetch(`${BASE_URL || ''}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL || ''}/api/mn2/price`)
+                ]);
+                if (balRes.ok) {
+                    const bal = await balRes.json();
+                    const el = document.getElementById('fp-mn2-balance');
+                    const usdEl = document.getElementById('fp-mn2-usd');
+                    if (el && bal.success) {
+                        el.textContent = (bal.mn2_balance || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                    }
+                    if (usdEl && bal.mn2_usd_price != null) {
+                        usdEl.textContent = '(≈ $' + Number(bal.mn2_usd_price).toFixed(6) + ')';
+                    }
+                }
+                if (priceRes.ok) {
+                    const price = await priceRes.json();
+                    const pEl = document.getElementById('stat-mn2-price');
+                    if (pEl && price.mn2_usd_price != null) {
+                        pEl.textContent = '$' + Number(price.mn2_usd_price).toFixed(4);
+                    }
+                }
+            } catch (e) {
+                console.warn('[Frontpage] MN2', e);
+            }
+        }
+
         async function loadAllStats() {
             try {
                 const [statsRes, pointsRes, battleRes] = await Promise.all([
@@ -196,14 +241,17 @@
                 }
             };
             runWhenIdle(() => {
+                loadMn2Surface();
                 loadAllStats();
                 setInterval(loadAllStats, 45000);
+                setInterval(loadMn2Surface, 120000);
             });
         });
     </script>
     <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
     <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260428a" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
 </body>
 </html>

@@ -128,12 +128,129 @@
     }).catch(function () {});
   }
 
+  // ----------------------------------------------------------- charts (#2)
+
+  // Prepare a canvas for crisp drawing at the element's CSS pixel size.
+  function prepCanvas(canvas) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth || 320;
+    var h = canvas.clientHeight || canvas.height || 150;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function niceMax(v) {
+    if (!(v > 0)) return 1;
+    var pow = Math.pow(10, Math.floor(Math.log10(v)));
+    var n = v / pow;
+    var step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return step * pow;
+  }
+
+  function drawLineSeries(canvas, seriesList, maxY) {
+    var p = prepCanvas(canvas), ctx = p.ctx;
+    var padL = 6, padR = 6, padT = 8, padB = 8;
+    var plotW = p.w - padL - padR, plotH = p.h - padT - padB;
+    // baseline
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, p.h - padB); ctx.lineTo(p.w - padR, p.h - padB); ctx.stroke();
+    seriesList.forEach(function (s) {
+      var pts = s.data;
+      if (!pts.length) return;
+      var n = pts.length;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width || 2;
+      if (s.dashed) ctx.setLineDash([4, 4]); else ctx.setLineDash([]);
+      ctx.beginPath();
+      for (var i = 0; i < n; i++) {
+        var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+        var y = padT + plotH - (maxY > 0 ? (plotH * pts[i]) / maxY : 0);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+
+  function drawBars(canvas, values, color, maxY) {
+    var p = prepCanvas(canvas), ctx = p.ctx;
+    var padL = 6, padR = 6, padT = 8, padB = 8;
+    var plotW = p.w - padL - padR, plotH = p.h - padT - padB;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, p.h - padB); ctx.lineTo(p.w - padR, p.h - padB); ctx.stroke();
+    var n = values.length;
+    if (!n) return;
+    var gap = n > 60 ? 0 : 1;
+    var bw = Math.max(1, (plotW / n) - gap);
+    ctx.fillStyle = color;
+    for (var i = 0; i < n; i++) {
+      var x = padL + (plotW * i) / n;
+      var bh = maxY > 0 ? (plotH * values[i]) / maxY : 0;
+      ctx.fillRect(x, padT + plotH - bh, bw, bh);
+    }
+  }
+
+  var _lastRewardsRes = null;
+
+  function renderCharts(res) {
+    if (res) _lastRewardsRes = res; else res = _lastRewardsRes;
+    var wrap = q('mn2-staking-charts');
+    var empty = q('mn2-staking-charts-empty');
+    var rows = (res && res.rows) || [];
+    if (!wrap) return;
+    if (!rows.length) {
+      wrap.style.display = 'none';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    wrap.style.display = 'block';
+
+    // rows arrive newest-first; chart chronologically
+    var chrono = rows.slice().reverse();
+    var rewards = chrono.map(function (r) { return Number(r.reward_mn2 || 0); });
+    var cumulative = [];
+    var run = 0;
+    rewards.forEach(function (v) { run += v; cumulative.push(run); });
+
+    // Projected trend: straight line at the average per-interval reward.
+    var total = cumulative.length ? cumulative[cumulative.length - 1] : 0;
+    var avg = rewards.length ? total / rewards.length : 0;
+    var projected = rewards.map(function (_, i) { return avg * (i + 1); });
+
+    var cumMax = niceMax(Math.max(total, projected[projected.length - 1] || 0));
+    drawLineSeries(q('mn2-chart-cumulative'), [
+      { data: projected, color: 'rgba(0,212,255,0.55)', width: 1.5, dashed: true },
+      { data: cumulative, color: '#00ff88', width: 2 }
+    ], cumMax);
+
+    var rMax = niceMax(Math.max.apply(null, rewards.concat([0])));
+    drawBars(q('mn2-chart-intervals'), rewards, '#00d4ff', rMax);
+
+    var legend = q('mn2-chart-legend');
+    if (legend) {
+      var avgApr = (res.summary && res.summary.avg_effective_apr) || 0;
+      legend.innerHTML =
+        '<span style="color:#00ff88;">\u25cf</span> actual cumulative &nbsp; ' +
+        '<span style="color:#00d4ff;">\u254c</span> projected trend &nbsp;|&nbsp; ' +
+        rewards.length + ' intervals \u00b7 total ' + fmt(total, 6) + ' MN2 \u00b7 avg/interval ' + fmt(avg, 6) +
+        ' MN2 \u00b7 avg APR ' + fmt(avgApr, 2) + '%';
+    }
+  }
+
   function refreshRewards() {
-    return api('/api/mn2/staking/rewards-table&limit=25').then(function (res) {
+    return api('/api/mn2/staking/rewards-table?limit=200').then(function (res) {
+      renderCharts(res);
       var el = q('mn2-staking-rewards-table');
       if (!el) return;
       if (!res || !res.rows || !res.rows.length) { el.textContent = 'No rewards yet.'; return; }
-      var rows = res.rows.map(function (r) {
+      var rows = res.rows.slice(0, 25).map(function (r) {
         return '<tr><td style="padding:2px 8px;">' + (r.accrued_at || '').slice(0, 16).replace('T', ' ') +
           '</td><td style="padding:2px 8px; color:#00ff88;">+' + fmt(r.reward_mn2, 6) +
           '</td><td style="padding:2px 8px;">' + fmt(r.staked, 2) +
@@ -237,11 +354,55 @@
     refreshRewards();
     runCalc();
     setInterval(refreshStatus, 30000);
+    hookOpsKillSwitch();
+    var rzT;
+    window.addEventListener('resize', function () {
+      clearTimeout(rzT);
+      rzT = setTimeout(function () { if (_lastRewardsRes) renderCharts(null); }, 200);
+    });
   }
 
   window.MN2Staking = {
     refresh: function () { refreshStatus(); refreshRewards(); }
   };
+
+  function hookOpsKillSwitch() {
+    var bannerId = 'mn2-staking-halt-banner';
+    function showHalt(on) {
+      var el = q(bannerId);
+      if (!el && on) {
+        el = document.createElement('div');
+        el.id = bannerId;
+        el.style.cssText = 'margin:10px 0;padding:10px 14px;border-radius:8px;background:rgba(255,80,80,0.15);border-left:4px solid #ff6666;font-size:0.9em;';
+        card.insertBefore(el, card.firstChild);
+      }
+      if (el) {
+        el.textContent = on ? 'Agent automation is halted by ops — staking actions may be blocked.' : '';
+        el.style.display = on ? 'block' : 'none';
+      }
+    }
+    function applyKs(data) {
+      if (data && data.agent_kill_switch) {
+        showHalt(!!data.agent_kill_switch.global_halt);
+      }
+    }
+    fetch('/api/ops/snapshot', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j.success) applyKs(j); })
+      .catch(function () {});
+    if (typeof EventSource !== 'undefined') {
+      try {
+        var es = new EventSource('/api/ops/stream?interval=30');
+        es.onmessage = function (ev) {
+          try {
+            var d = JSON.parse(ev.data);
+            if (d.type === 'ops') applyKs(d);
+          } catch (e) { /* ignore */ }
+        };
+        es.onerror = function () { if (es) es.close(); };
+      } catch (e) { /* ignore */ }
+    }
+  }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

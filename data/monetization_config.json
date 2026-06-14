@@ -32,6 +32,26 @@
       "coins_granted": 2000,
       "generation_credits_granted": 4.0,
       "icon": "🪙"
+    },
+    {
+      "id": "coin-pack-xl",
+      "name": "11,500 Coins",
+      "description": "10000 coins + 1500 bonus via PayPal — whale pack",
+      "price_usd": 39.99,
+      "coins_granted": 11500,
+      "generation_credits_granted": 20.0,
+      "icon": "🪙",
+      "tag": "best_bonus"
+    },
+    {
+      "id": "coin-pack-xxl",
+      "name": "30,000 Coins",
+      "description": "25000 coins + 5000 bonus via PayPal — mega whale pack",
+      "price_usd": 89.99,
+      "coins_granted": 30000,
+      "generation_credits_granted": 50.0,
+      "icon": "💰",
+      "tag": "mega"
     }
   ],
   "tiers": {
@@ -174,6 +194,17 @@
       "delivery": "coins_grant",
       "coins_granted": 200,
       "license": "Virtual coins only."
+    },
+    {
+      "id": "vip-pass-monthly",
+      "line": "exclusive",
+      "name": "VIP Pass — 30 days",
+      "description": "Daily 100-coin claim, 10% catalog discount, VIP gold badge, and 2 free daily wheel spins for 30 days.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 9.99,
+      "price_coins": 1500,
+      "delivery": "vip_pass",
+      "license": "Membership on MasterNoder surfaces for 30 days."
     }
   ],
   "content_bundles": [
@@ -277,6 +308,84 @@
         {"item_id": "exclusive-casino-bonus", "quantity": 1}
       ],
       "attribution": {"line": "bundle", "includes_exclusive": true}
+    },
+    {
+      "id": "bundle-whale-mega",
+      "name": "Whale mega bundle",
+      "description": "3000 coins, a 24h XP booster, a Staking Surge x2, and the exclusive neon frame — one checkout, best value.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 29.99,
+      "price_coins": 2999,
+      "coins_granted": 3000,
+      "generation_credits_granted": 3.0,
+      "items": [
+        {"item_id": "booster-xp-24h-pack", "quantity": 1},
+        {"item_id": "booster-staking-200-6h", "quantity": 1},
+        {"item_id": "exclusive-neon-frame", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true, "includes_exclusive": true}
+    },
+    {
+      "id": "bundle-top25-starter",
+      "name": "Top 25 Legends — Starter (ranks 1–5)",
+      "description": "Ranks #01–#05 of the Top 25 Legends collectible series in one checkout — ~21% off buying them separately.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 12.99,
+      "price_coins": 1299,
+      "coins_granted": 0,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "top25-01", "quantity": 1},
+        {"item_id": "top25-02", "quantity": 1},
+        {"item_id": "top25-03", "quantity": 1},
+        {"item_id": "top25-04", "quantity": 1},
+        {"item_id": "top25-05", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true}
+    },
+    {
+      "id": "bundle-top25-elite",
+      "name": "Top 25 Legends — Elite (ranks 21–25)",
+      "description": "The five legendary capstones (#21–#25), including the Masternoder Sovereign Crown — ~21% off.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 169.99,
+      "price_coins": 16999,
+      "coins_granted": 0,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "top25-21", "quantity": 1},
+        {"item_id": "top25-22", "quantity": 1},
+        {"item_id": "top25-23", "quantity": 1},
+        {"item_id": "top25-24", "quantity": 1},
+        {"item_id": "top25-25", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true}
+    },
+    {
+      "id": "bundle-top25-complete",
+      "name": "Top 25 Legends — Complete Collection",
+      "description": "All 25 Legends in one purchase (~30% off) plus 2500 bonus coins. Completes the collection and unlocks the Collector Trophy.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 299.99,
+      "price_coins": 29999,
+      "coins_granted": 2500,
+      "generation_credits_granted": 5.0,
+      "items": [
+        {"item_id": "top25-01", "quantity": 1}, {"item_id": "top25-02", "quantity": 1},
+        {"item_id": "top25-03", "quantity": 1}, {"item_id": "top25-04", "quantity": 1},
+        {"item_id": "top25-05", "quantity": 1}, {"item_id": "top25-06", "quantity": 1},
+        {"item_id": "top25-07", "quantity": 1}, {"item_id": "top25-08", "quantity": 1},
+        {"item_id": "top25-09", "quantity": 1}, {"item_id": "top25-10", "quantity": 1},
+        {"item_id": "top25-11", "quantity": 1}, {"item_id": "top25-12", "quantity": 1},
+        {"item_id": "top25-13", "quantity": 1}, {"item_id": "top25-14", "quantity": 1},
+        {"item_id": "top25-15", "quantity": 1}, {"item_id": "top25-16", "quantity": 1},
+        {"item_id": "top25-17", "quantity": 1}, {"item_id": "top25-18", "quantity": 1},
+        {"item_id": "top25-19", "quantity": 1}, {"item_id": "top25-20", "quantity": 1},
+        {"item_id": "top25-21", "quantity": 1}, {"item_id": "top25-22", "quantity": 1},
+        {"item_id": "top25-23", "quantity": 1}, {"item_id": "top25-24", "quantity": 1},
+        {"item_id": "top25-25", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true, "completes_collection": true}
     }
   ],
   "shop_booster_skus": [
@@ -289,6 +398,137 @@
     {"id": "gametime-weekend-pass", "name": "Weekend Pass Game Time", "category": "boosts", "effect": "game_time", "duration_minutes": 2880},
     {"id": "gametime-hunter-4h", "name": "Hunter Game Time +4h", "category": "boosts", "effect": "game_time", "duration_minutes": 240},
     {"id": "booster-staking-150-24h", "name": "Staking Boost +50% 24h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 1440, "boost_multiplier": 1.5},
-    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0}
-  ]
+    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0},
+    {"id": "booster-staking-300-12h", "name": "Staking Overdrive x3 12h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 720, "boost_multiplier": 3.0}
+  ],
+  "shop_monetization": {
+    "version": "9.2.0",
+    "comment": "Shop V9.2 monetization update — VIP pass, mystery boxes, spin wheel, flash sales, gifting, loyalty/cashback, featured auction listings. Logic in backend/services/shop_monetization_service.py; surfaced via /api/shop/* endpoints and the Deals & VIP tab.",
+    "vip_pass": {
+      "sku_id": "vip-pass-monthly",
+      "name": "VIP Pass (30 days)",
+      "price_usd": 9.99,
+      "price_coins": 1500,
+      "duration_days": 30,
+      "daily_coins": 100,
+      "discount_pct": 10,
+      "badge": "vip-gold",
+      "perks": [
+        "Claim 100 coins every day",
+        "10% discount on mystery boxes and spins",
+        "VIP gold profile badge",
+        "2 free wheel spins per day",
+        "+5% loyalty cashback"
+      ]
+    },
+    "mystery_boxes": [
+      {
+        "id": "mystery-box-bronze",
+        "name": "Bronze Mystery Box",
+        "description": "Affordable crate — coins, a booster, or loyalty points.",
+        "icon": "📦",
+        "rarity": "common",
+        "price_coins": 150,
+        "price_usd": 1.99,
+        "loot": [
+          {"type": "coins", "amount": 50, "weight": 25, "label": "50 coins"},
+          {"type": "coins", "amount": 150, "weight": 35, "label": "150 coins (break even)"},
+          {"type": "coins", "amount": 350, "weight": 12, "label": "350 coins"},
+          {"type": "booster", "ref": "booster-xp-2h-pack", "weight": 20, "label": "XP Booster 2h"},
+          {"type": "loyalty", "amount": 50, "weight": 8, "label": "50 loyalty points"}
+        ]
+      },
+      {
+        "id": "mystery-box-silver",
+        "name": "Silver Mystery Box",
+        "description": "Better odds and bigger coin hits, plus 24h boosters.",
+        "icon": "🎁",
+        "rarity": "rare",
+        "price_coins": 400,
+        "price_usd": 4.99,
+        "loot": [
+          {"type": "coins", "amount": 200, "weight": 25, "label": "200 coins"},
+          {"type": "coins", "amount": 400, "weight": 30, "label": "400 coins (break even)"},
+          {"type": "coins", "amount": 900, "weight": 14, "label": "900 coins"},
+          {"type": "booster", "ref": "booster-xp-24h-pack", "weight": 18, "label": "XP Booster 24h"},
+          {"type": "booster", "ref": "booster-casino-luck-6h", "weight": 8, "label": "Casino Luck 6h"},
+          {"type": "loyalty", "amount": 150, "weight": 5, "label": "150 loyalty points"}
+        ]
+      },
+      {
+        "id": "mystery-box-gold",
+        "name": "Gold Mystery Box",
+        "description": "Whale crate — staking surges, big coin jackpots, and an exclusive frame.",
+        "icon": "🏆",
+        "rarity": "legendary",
+        "price_coins": 1000,
+        "price_usd": 9.99,
+        "loot": [
+          {"type": "coins", "amount": 500, "weight": 22, "label": "500 coins"},
+          {"type": "coins", "amount": 1000, "weight": 30, "label": "1000 coins (break even)"},
+          {"type": "coins", "amount": 2500, "weight": 16, "label": "2500 coins jackpot"},
+          {"type": "booster", "ref": "booster-staking-200-6h", "weight": 16, "label": "Staking Surge x2 6h"},
+          {"type": "booster", "ref": "booster-staking-300-12h", "weight": 6, "label": "Staking Overdrive x3 12h"},
+          {"type": "item", "ref": "exclusive-neon-frame", "label": "Exclusive Neon Frame", "weight": 5},
+          {"type": "loyalty", "amount": 400, "weight": 5, "label": "400 loyalty points"}
+        ]
+      }
+    ],
+    "spin_wheel": {
+      "free_cooldown_hours": 24,
+      "spin_cost_coins": 50,
+      "vip_free_spins_per_day": 2,
+      "prizes": [
+        {"type": "coins", "amount": 25, "weight": 32, "label": "25 coins"},
+        {"type": "coins", "amount": 75, "weight": 22, "label": "75 coins"},
+        {"type": "coins", "amount": 200, "weight": 9, "label": "200 coins"},
+        {"type": "coins", "amount": 500, "weight": 3, "label": "500 coins JACKPOT"},
+        {"type": "booster", "ref": "booster-xp-2h-pack", "weight": 14, "label": "XP Booster 2h"},
+        {"type": "loyalty", "amount": 40, "weight": 12, "label": "40 loyalty points"},
+        {"type": "nothing", "weight": 8, "label": "No win — spin again!"}
+      ]
+    },
+    "flash_sales": {
+      "count": 3,
+      "min_discount": 20,
+      "max_discount": 50,
+      "rotate_hours": 6,
+      "min_price_coins": 30
+    },
+    "loyalty": {
+      "earn_per_100_coins": 5,
+      "tiers": [
+        {"id": "bronze", "name": "Bronze", "min_points": 0, "cashback_pct": 0},
+        {"id": "silver", "name": "Silver", "min_points": 500, "cashback_pct": 3},
+        {"id": "gold", "name": "Gold", "min_points": 2000, "cashback_pct": 7},
+        {"id": "platinum", "name": "Platinum", "min_points": 5000, "cashback_pct": 12}
+      ],
+      "redeem": [
+        {"id": "loyalty-coins-500", "name": "500 coins", "cost_points": 400, "grant": {"type": "coins", "amount": 500}},
+        {"id": "loyalty-coins-1500", "name": "1500 coins", "cost_points": 1000, "grant": {"type": "coins", "amount": 1500}},
+        {"id": "loyalty-xp-24h", "name": "XP Booster 24h", "cost_points": 300, "grant": {"type": "booster", "ref": "booster-xp-24h-pack"}},
+        {"id": "loyalty-staking-x2", "name": "Staking Surge x2 6h", "cost_points": 600, "grant": {"type": "booster", "ref": "booster-staking-200-6h"}}
+      ]
+    },
+    "gifting": {
+      "min_coins": 10,
+      "max_coins": 100000,
+      "fee_pct": 0
+    },
+    "auction_feature": {
+      "price_coins": 200,
+      "duration_hours": 48
+    },
+    "top25_collection": {
+      "series_prefix": "top25-",
+      "total": 25,
+      "completion_reward": {
+        "coins": 5000,
+        "loyalty_points": 1000,
+        "trophy_item_id": "top25-collector-trophy",
+        "trophy_name": "Top 25 Collector Trophy",
+        "badge": "top25-collector"
+      }
+    }
+  }
 }

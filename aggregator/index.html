@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=3">
+    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=4">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
@@ -45,12 +45,22 @@
             <span class="agg-hud-bit">Knowledge <strong id="agg-total-knowledge">—</strong></span>
             <span class="agg-hud-bit">Last <span id="agg-last-action">—</span></span>
         </div>
+        <div class="agg-crypto-hud" id="agg-crypto-hud" role="region" aria-label="MN2 platform crypto">
+            <span class="agg-crypto-chip">MN2 <strong id="agg-crypto-balance">—</strong></span>
+            <span class="agg-crypto-chip">Price <strong id="agg-crypto-price">—</strong></span>
+            <span class="agg-crypto-chip">Staking pool <strong id="agg-crypto-pool">—</strong></span>
+            <span class="agg-crypto-chip">Users <strong id="agg-crypto-users">—</strong></span>
+            <span class="agg-crypto-chip">Market vol <strong id="agg-crypto-market">—</strong></span>
+            <span class="agg-crypto-chip">Earned today <strong id="agg-crypto-earned">—</strong></span>
+            <a class="agg-crypto-link" href="/profile#mn2-wallet">Wallet</a>
+            <a class="agg-crypto-link" href="/shop">Shop MN2</a>
+        </div>
     </div>
 
     <main class="agg-page agg-main-wrap" data-page-layout="standard">
         <header class="agg-hero">
             <h1>Intelligence aggregator — 5D monitor hub</h1>
-            <p>Move through the holodeck grid (WASD / arrows / adjacent clicks). Below, the <strong>5D story monitor</strong> runs the narrative field (σ) with optional Web Audio. The <strong>final battle</strong> still plays inside the holodeck when you reach the golden core.</p>
+            <p>Move through the holodeck grid (WASD / arrows / adjacent clicks). Below, the <strong>5D story monitor</strong> runs the narrative field (σ) with optional Web Audio. The <strong>final battle</strong> still plays inside the holodeck when you reach the golden core. <strong>MN2 crypto tiles</strong> above track wallet, network, and platform activity.</p>
         </header>
 
         <div
@@ -148,6 +158,8 @@
         </section>
     </main>
 
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/aggregator-mn2-crypto.js?v=20260614d"></script>
     <script src="/static/js/story-monitor-5d.js?v=1"></script>
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>

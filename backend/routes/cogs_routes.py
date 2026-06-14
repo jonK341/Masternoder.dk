@@ -119,6 +119,21 @@ def monetization_public_config():
         }), 200
 
 
+@cogs_bp.route("/api/system/cogs/pricing-suggestion", methods=["GET"])
+def cogs_pricing_suggestion():
+    import os
+    key = (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+    if key:
+        got = (request.headers.get("X-Cogs-Admin-Key") or request.args.get("key") or "").strip()
+        if got != key:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.generator_pricing_service import pricing_suggestion
+        return jsonify(pricing_suggestion()), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @cogs_bp.route("/api/monetization/webhooks/paypal-subscription", methods=["POST"])
 def monetization_paypal_subscription_webhook():
     """
@@ -152,10 +167,21 @@ def monetization_paypal_subscription_webhook():
         if not verify_paypal_webhook_signature(request.headers, body):
             return jsonify({"success": False, "error": "webhook_verification_failed"}), 401
 
-    from backend.services.monetization_subscription_service import process_paypal_webhook_event
-
-    payload, status = process_paypal_webhook_event(body)
-    return jsonify(payload), status
+    event_key = str(body.get("id") or (body.get("resource") or {}).get("id") or "")
+    try:
+        from backend.services.webhook_outbox import process_inline
+        result = process_inline(
+            "paypal_subscription",
+            event_key or "unknown",
+            {"event": body},
+            handler="paypal_subscription",
+        )
+        status = 200 if result.get("success") or result.get("duplicate") else 400
+        return jsonify(result if isinstance(result, dict) else {"success": True}), status
+    except ImportError:
+        from backend.services.monetization_subscription_service import process_paypal_webhook_event
+        payload, status = process_paypal_webhook_event(body)
+        return jsonify(payload), status
 
 
 def _subscription_shop_base_url() -> str:

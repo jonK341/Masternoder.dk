@@ -445,7 +445,7 @@
     
     <div class="container shop-page">
         <header class="shop-header">
-            <h1><span class="shop-title-gradient">🛍️ Game Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.0.0</span></h1>
+            <h1><span class="shop-title-gradient">🛍️ Game Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
             <p class="subtitle">Themes, boosters, cosmetics — <strong style="color: var(--text-primary); font-weight: 600;">one catalog</strong>, your choice of <strong style="color: var(--secondary); font-weight: 600;">coins, unified points, PayPal packs, or MN2</strong></p>
             <p id="shop-service-status" style="text-align:center;font-size:0.9rem;color:var(--text-secondary);margin-top:8px;" aria-live="polite">Loading catalog…</p>
         </header>
@@ -458,7 +458,7 @@
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                 <a href="/profile">Profile &amp; wallet settings</a>
-                <span class="shop-version-badge" id="shop-config-version">v9.0.0</span>
+                <span class="shop-version-badge" id="shop-config-version">v9.2.0</span>
             </div>
         </div>
         <div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
@@ -508,6 +508,7 @@
             <button type="button" class="shop-tab-btn" data-tab="coins" role="tab" aria-selected="false">PayPal &amp; coins</button>
             <button type="button" class="shop-tab-btn" data-tab="mn2" role="tab" aria-selected="false">MN2 wallet</button>
             <button type="button" class="shop-tab-btn" data-tab="boosters" role="tab" aria-selected="false">Boosters &amp; events</button>
+            <button type="button" class="shop-tab-btn" data-tab="deals" role="tab" aria-selected="false">⭐ Deals &amp; VIP</button>
             <button type="button" class="shop-tab-btn" data-tab="account" role="tab" aria-selected="false">My Stall &amp; inventory</button>
         </div>
 
@@ -587,9 +588,9 @@
         <!-- Major Update Banner -->
         <div class="card" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2)); border: 2px solid var(--primary); margin-bottom: var(--spacing-xl);">
             <div style="padding: var(--spacing-lg); text-align: center;">
-                <h2 style="color: var(--primary); margin-bottom: var(--spacing-sm);">🚀 MAJOR SHOP UPDATE</h2>
+                <h2 style="color: var(--primary); margin-bottom: var(--spacing-sm);">🚀 SHOP V9.2 — NEW WAYS TO WIN &amp; SAVE</h2>
                 <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
-                    New technology items, battle upgrades, premium content — and the same checkout vision: <strong style="color: var(--text-primary);">earn in-game</strong> or <strong style="color: var(--text-primary);">top up</strong> with PayPal or MN2 when you choose.
+                    New: <strong style="color: var(--text-primary);">VIP Pass</strong>, <strong style="color: var(--text-primary);">Mystery Boxes</strong>, a daily <strong style="color: var(--text-primary);">Spin Wheel</strong>, rotating <strong style="color: var(--text-primary);">Flash Sales</strong>, coin <strong style="color: var(--text-primary);">gifting</strong>, and <strong style="color: var(--text-primary);">loyalty cashback</strong>. Open the <a href="#shop-deals" onclick="if(window.showShopTab)showShopTab('deals')" style="color:var(--secondary);font-weight:700;">⭐ Deals &amp; VIP</a> tab. Pay with coins, PayPal, or MN2 — your choice.
                 </p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-top: var(--spacing-lg);">
                     <div style="padding: var(--spacing-md); background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md);">
@@ -711,14 +712,33 @@
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Send MN2 to this address. Credits appear after 6 confirmations.</p>
                 </div>
                 <div style="margin-bottom: var(--spacing-lg);">
+                    <strong style="color: var(--secondary);">Withdraw security:</strong>
+                    <div id="mn2-withdraw-security" style="margin-top:8px;padding:12px;border-radius:10px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.2);">
+                        <p id="mn2-whitelist-required" style="font-size:0.85rem;margin:0 0 8px;color:var(--text-secondary);"></p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
+                            <input type="text" id="mn2-whitelist-address" placeholder="Whitelist address" style="min-width:240px;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
+                            <button type="button" id="mn2-whitelist-add" class="btn-purchase" style="padding:8px 12px;">Add to whitelist</button>
+                        </div>
+                        <div id="mn2-whitelist-list" style="font-size:0.85rem;margin-bottom:12px;"></div>
+                        <p style="margin:0 0 6px;font-size:0.85rem;">2FA: <span id="mn2-2fa-status">—</span></p>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                            <button type="button" id="mn2-2fa-setup" class="btn-purchase" style="padding:8px 12px;">Setup 2FA</button>
+                            <input type="text" id="mn2-2fa-code" placeholder="6-digit code" maxlength="6" style="width:100px;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
+                            <button type="button" id="mn2-2fa-enable" class="btn-purchase" style="padding:8px 12px;">Enable 2FA</button>
+                            <code id="mn2-2fa-secret" style="font-size:0.75rem;word-break:break-all;opacity:0.7;"></code>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom: var(--spacing-lg);">
                     <strong style="color: var(--secondary);">Withdraw:</strong>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px;">
                         <p id="mn2-withdraw-verification-msg" style="display: none; margin-bottom: 8px; color: var(--warning, #ffaa00); font-size: 0.9rem;">Account verification required to withdraw. Contact support to verify.</p>
                         <input type="text" id="mn2-withdraw-address" placeholder="MN2 address" style="min-width: 280px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-card); color: var(--text-primary);">
                         <input type="number" id="mn2-withdraw-amount" placeholder="Amount" step="0.00000001" min="0" style="width: 120px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-card); color: var(--text-primary);">
+                        <input type="text" id="mn2-withdraw-totp" placeholder="2FA code" maxlength="6" style="width:90px;padding:10px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
                         <button type="button" id="mn2-withdraw-btn" class="btn-purchase" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #000;"><i class="fas fa-paper-plane"></i> Withdraw</button>
                     </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Network fee 0.001 MN2 is deducted from the amount.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Network fee 0.001 MN2 is deducted from the amount. Whitelisted addresses only — add your address above before withdrawing. New addresses also have a 24h cooldown.</p>
                 </div>
                 <div id="mn2-shop-revenue-block" style="margin-bottom: var(--spacing-lg); display: none;">
                     <strong style="color: var(--secondary);">Shop revenue address:</strong>
@@ -754,6 +774,78 @@
             </div>
         </div>
         </div><!-- end shop-panel-boosters -->
+
+        <!-- Deals & VIP (Shop V9.2 monetization) -->
+        <div id="shop-panel-deals" class="shop-panel" role="tabpanel" data-panel="deals">
+            <div class="card" style="margin-bottom: var(--spacing-lg); border: 2px solid rgba(255,215,0,0.45); background: linear-gradient(135deg, rgba(255,215,0,0.10), rgba(170,0,255,0.06)); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+                <h2 style="margin:0 0 6px; color: var(--primary);">⭐ Deals &amp; VIP</h2>
+                <p style="margin:0; color: var(--text-secondary); font-size:0.92rem; max-width:52rem;">Membership perks, mystery boxes, a daily wheel, flash sales, gifting, and loyalty cashback. All pay with your existing coins / MN2 balance.</p>
+            </div>
+
+            <!-- VIP + Loyalty row -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                <div class="card" id="vip-card" style="border:2px solid rgba(255,215,0,0.5); padding: var(--spacing-md);">
+                    <h3 style="margin:0 0 8px; color:#ffd700;">👑 VIP Pass</h3>
+                    <div id="vip-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+                </div>
+                <div class="card" id="loyalty-card" style="border:2px solid rgba(0,212,255,0.5); padding: var(--spacing-md);">
+                    <h3 style="margin:0 0 8px; color:var(--secondary);">🎯 Loyalty &amp; cashback</h3>
+                    <div id="loyalty-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+                </div>
+            </div>
+
+            <!-- Spin the wheel -->
+            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+                <h3 style="margin:0 0 8px; color:var(--primary);">🎡 Spin the Wheel</h3>
+                <div id="spin-status" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:10px;">Loading…</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    <button type="button" id="spin-free-btn" class="btn-purchase" style="width:auto;">Free spin</button>
+                    <button type="button" id="spin-paid-btn" class="btn-purchase" style="width:auto; background:linear-gradient(135deg,#aa00ff,#6600cc);">Paid spin</button>
+                </div>
+                <div id="spin-result" style="margin-top:10px; font-weight:600;"></div>
+            </div>
+
+            <!-- Mystery boxes -->
+            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+                <h3 style="margin:0 0 8px; color:var(--primary);">📦 Mystery Boxes</h3>
+                <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Each box has published odds. VIP members get a discount.</p>
+                <div id="mystery-boxes-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
+                <div id="mystery-box-result" style="margin-top:10px; font-weight:600;"></div>
+            </div>
+
+            <!-- Flash sales -->
+            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+                <h3 style="margin:0 0 8px; color:var(--primary);">⚡ Flash Sales</h3>
+                <div id="flash-sales-meta" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:10px;"></div>
+                <div id="flash-sales-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
+            </div>
+
+            <!-- Gifting -->
+            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+                <h3 style="margin:0 0 8px; color:var(--primary);">🎁 Gift coins</h3>
+                <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Send coins to another profile by their <code>game_user_id</code>.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                    <input type="text" id="gift-recipient" placeholder="Recipient profile id" style="min-width:220px; padding:10px; border-radius:8px; border:1px solid var(--border-primary); background:var(--bg-card); color:var(--text-primary);">
+                    <input type="number" id="gift-amount" placeholder="Coins" min="1" style="width:120px; padding:10px; border-radius:8px; border:1px solid var(--border-primary); background:var(--bg-card); color:var(--text-primary);">
+                    <input type="text" id="gift-message" placeholder="Message (optional)" style="min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border-primary); background:var(--bg-card); color:var(--text-primary);">
+                    <button type="button" id="gift-send-btn" class="btn-purchase" style="width:auto;">Send gift</button>
+                </div>
+                <div id="gift-result" style="margin-top:10px; font-weight:600;"></div>
+            </div>
+
+            <!-- Top 25 Legends collection -->
+            <div class="card" id="top25-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:2px solid rgba(255,215,0,0.45); background: linear-gradient(135deg, rgba(255,215,0,0.07), rgba(170,0,255,0.04));">
+                <h3 style="margin:0 0 8px; color:#ffd700;">💠 Top 25 Legends — Collection</h3>
+                <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Collect all 25 ranked Legends to earn the exclusive Collector Trophy + bonus rewards. Grab the Starter, Elite, or Complete bundle to save.</p>
+                <div id="top25-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+                <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
+                    <button type="button" class="btn-purchase" style="width:auto; font-size:0.85rem;" onclick="purchaseItem('bundle-top25-starter')">Starter (1–5)</button>
+                    <button type="button" class="btn-purchase" style="width:auto; font-size:0.85rem; background:linear-gradient(135deg,#aa00ff,#6600cc);" onclick="purchaseItem('bundle-top25-elite')">Elite (21–25)</button>
+                    <button type="button" class="btn-purchase" style="width:auto; font-size:0.85rem; background:linear-gradient(135deg,#ffd700,#ff9900); color:#1a1a1a;" onclick="purchaseItem('bundle-top25-complete')">Complete (all 25)</button>
+                </div>
+                <div id="top25-result" style="margin-top:10px; font-weight:600;"></div>
+            </div>
+        </div><!-- end shop-panel-deals -->
 
         <!-- My Inventory (Phase 4 migration) -->
         <div id="shop-panel-account" class="shop-panel" role="tabpanel" data-panel="account">
@@ -836,7 +928,7 @@
         let mn2UsdPrice = null;
         let useShopV3 = true;  // From GET /api/shop/config
 
-        let shopUiVersion = '9.0.0';
+        let shopUiVersion = '9.2.0';
 
         /**
          * Shop V.9: local shadow backup + merge with API so profile/shop stay useful if the server
@@ -994,6 +1086,7 @@
             'themes': 'Themes',
             'boosts': 'Power-ups',
             'starmap25': '🗺️ Star Map 25',
+            'top25': '🏅 Top 25 Legends',
             'cosmetic': 'Cosmetics',
             'currency': 'Currency',
             'buy_coins': '💰 Buy Coins',
@@ -1011,7 +1104,7 @@
             'stories': '📜 Stories'
         };
 
-        const QUICK_CHIPS = ['', 'starmap25', 'buy_coins', 'boosts', 'themes', 'premium'];
+        const QUICK_CHIPS = ['', 'top25', 'starmap25', 'buy_coins', 'boosts', 'themes', 'premium'];
 
         function updateCategoryButtonLabels() {
             const sel = document.getElementById('shop-category-select');
@@ -1053,11 +1146,16 @@
                     showShopTab(btn.dataset.tab);
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
                     if (btn.dataset.tab === 'account') loadMyAuctionState();
+                    if (btn.dataset.tab === 'deals') loadDealsPanel();
                 });
             });
             const h = (location.hash || '').replace(/^#/, '');
-            if (h.startsWith('shop-')) showShopTab(h.slice(5));
+            if (h.startsWith('shop-')) {
+                showShopTab(h.slice(5));
+                if (h.slice(5) === 'deals') loadDealsPanel();
+            }
         }
+        window.showShopTab = showShopTab;
 
         function nextSundayArenaUtc() {
             const t = new Date();
@@ -2162,13 +2260,15 @@
                     if (data.success) useShopV3 = false;
                 }
                 if (data.success) {
-                    if (typeof toast !== 'undefined') toast.success(`Purchased ${data.item?.name || 'item'}!`);
+                    const earned = data.loyalty_earned || 0;
+                    if (typeof toast !== 'undefined') toast.success(`Purchased ${data.item?.name || 'item'}!` + (earned ? ` (+${earned} loyalty)` : ''));
                     if (window.ShopV9) ShopV9.recordPurchase(Object.assign({ success: true, item_id: itemId }, data));
                     loadCurrency();
                     loadUnifiedPoints();
                     loadInventory();
                     loadPurchases();
                     loadShopItems();
+                    if (typeof loadLoyaltyCard === 'function') loadLoyaltyCard();
                 } else {
                     const msg = data.details && data.details.length
                         ? (data.error || 'Purchase failed') + ': ' + data.details.join('; ')
@@ -2394,10 +2494,11 @@
                 const btn = document.getElementById('mn2-withdraw-btn');
                 const orig = btn?.innerHTML; if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...'; }
                 try {
+                    const totp = document.getElementById('mn2-withdraw-totp')?.value?.trim();
                     const res = await fetch(`${BASE_URL}/api/mn2/withdraw`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId, address, amount })
+                        body: JSON.stringify({ address, amount, totp_code: totp || undefined })
                     });
                     const data = res.ok ? await res.json() : {};
                     if (data.success) {
@@ -2414,6 +2515,208 @@
                 } finally {
                     if (btn) { btn.disabled = false; btn.innerHTML = orig; }
                 }
+            });
+        }
+
+        // ---------------- Shop V9.2: Deals & VIP ----------------
+        function dealsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        function dealsToast(ok, msg) { if (typeof toast !== 'undefined') { ok ? toast.success(msg) : toast.error(msg); } }
+
+        async function dealsApi(path, opts) {
+            const r = await fetch(BASE_URL + path, opts);
+            let data = {};
+            try { data = await r.json(); } catch (_) {}
+            return data;
+        }
+
+        async function loadDealsPanel() {
+            await Promise.all([loadVipCard(), loadLoyaltyCard(), loadSpinCard(), loadMysteryBoxes(), loadFlashSales(), loadTop25Card()]);
+        }
+
+        async function loadTop25Card() {
+            const el = document.getElementById('top25-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/shop/top25/status?user_id=' + encodeURIComponent(userId));
+                const t = (d && d.top25) || {};
+                const owned = t.owned_count || 0, total = t.total || 25;
+                const pct = Math.round((owned / total) * 100);
+                let html = '<div style="font-weight:700;color:#ffd700;">' + owned + ' / ' + total + ' collected (' + pct + '%)</div>' +
+                    '<div style="height:10px;border-radius:6px;background:rgba(255,255,255,0.08);margin:8px 0;overflow:hidden;">' +
+                    '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#ffd700,#aa00ff);"></div></div>';
+                if (t.claimed) {
+                    html += '<div style="color:var(--secondary);">🏆 Collector Trophy claimed — you completed the set!</div>';
+                } else if (t.claimable) {
+                    const r = t.reward || {};
+                    html += '<button type="button" id="top25-claim-btn" class="btn-purchase" style="width:auto;">Claim Collector Trophy + ' + (r.coins || 0) + ' coins</button>';
+                } else {
+                    html += '<div style="font-size:0.85rem;color:var(--text-secondary);">Complete the collection to unlock the Collector Trophy and bonus rewards.</div>';
+                }
+                el.innerHTML = html;
+                const cb = document.getElementById('top25-claim-btn');
+                if (cb) cb.addEventListener('click', async () => {
+                    cb.disabled = true;
+                    const res = await dealsApi('/api/shop/top25/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                    dealsToast(res.success, res.success ? 'Collector Trophy claimed!' : (res.error || 'Claim failed'));
+                    if (res.success) { loadCurrency(); loadUnifiedPoints(); }
+                    loadTop25Card();
+                });
+            } catch (e) { el.textContent = 'Could not load collection progress.'; }
+        }
+
+        async function loadVipCard() {
+            const el = document.getElementById('vip-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/shop/vip/status?user_id=' + encodeURIComponent(userId));
+                const v = (d && d.vip) || {};
+                if (v.active) {
+                    el.innerHTML = '<div style="color:#ffd700;font-weight:700;">Active — ' + v.days_remaining + ' day(s) left</div>' +
+                        '<ul style="margin:8px 0 10px 1.1rem;padding:0;">' + (v.perks || []).map(p => '<li>' + dealsEsc(p) + '</li>').join('') + '</ul>' +
+                        (v.can_claim_daily ? '<button type="button" id="vip-claim-btn" class="btn-purchase" style="width:auto;">Claim ' + v.daily_coins + ' daily coins</button>' : '<span style="color:var(--text-secondary);">Daily reward claimed — come back tomorrow.</span>');
+                    const btn = document.getElementById('vip-claim-btn');
+                    if (btn) btn.addEventListener('click', async () => {
+                        btn.disabled = true;
+                        const res = await dealsApi('/api/shop/vip/claim-daily', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                        dealsToast(res.success, res.success ? ('Claimed ' + res.coins_granted + ' coins!') : (res.error || 'Claim failed'));
+                        if (res.success) { loadCurrency(); loadUnifiedPoints(); }
+                        loadVipCard();
+                    });
+                } else {
+                    el.innerHTML = '<p style="margin:0 0 10px;">Not active. Get the VIP Pass for daily coins, ' +
+                        '10% off boxes/spins, a gold badge, and free spins.</p>' +
+                        '<button type="button" class="btn-purchase" style="width:auto;" onclick="purchaseItem(\'vip-pass-monthly\')">Buy VIP Pass (coins)</button>';
+                }
+            } catch (e) { el.textContent = 'Could not load VIP status.'; }
+        }
+
+        async function loadLoyaltyCard() {
+            const el = document.getElementById('loyalty-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/shop/loyalty?user_id=' + encodeURIComponent(userId));
+                const l = (d && d.loyalty) || {};
+                const tier = l.tier || {};
+                const nextTier = l.next_tier;
+                let html = '<div style="font-size:1.3rem;font-weight:800;color:var(--secondary);">' + (l.points || 0) + ' pts</div>' +
+                    '<div style="margin:4px 0;">Tier: <strong>' + dealsEsc(tier.name || 'Bronze') + '</strong> (' + (tier.cashback_pct || 0) + '% cashback)</div>';
+                if (nextTier) html += '<div style="font-size:0.85rem;color:var(--text-secondary);">Next: ' + dealsEsc(nextTier.name) + ' at ' + nextTier.min_points + ' pts</div>';
+                html += '<div style="margin-top:10px;display:grid;gap:8px;">' + (l.rewards || []).map(r =>
+                    '<button type="button" class="btn-purchase" style="width:auto;font-size:0.85rem;" data-reward="' + dealsEsc(r.id) + '">' + dealsEsc(r.name) + ' — ' + r.cost_points + ' pts</button>'
+                ).join('') + '</div>';
+                el.innerHTML = html;
+                el.querySelectorAll('button[data-reward]').forEach(b => b.addEventListener('click', async () => {
+                    b.disabled = true;
+                    const res = await dealsApi('/api/shop/loyalty/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, reward_id: b.dataset.reward }) });
+                    dealsToast(res.success, res.success ? 'Reward redeemed!' : (res.error || 'Redeem failed'));
+                    if (res.success) { loadCurrency(); loadUnifiedPoints(); }
+                    loadLoyaltyCard();
+                }));
+            } catch (e) { el.textContent = 'Could not load loyalty.'; }
+        }
+
+        async function loadSpinCard() {
+            const el = document.getElementById('spin-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/shop/spin-wheel?user_id=' + encodeURIComponent(userId));
+                const s = (d && d.spin) || {};
+                el.innerHTML = 'Free spins today: <strong>' + (s.free_spins_per_day - s.free_used_today) + '/' + s.free_spins_per_day + '</strong> · ' +
+                    'Paid spin: <strong>' + s.spin_cost_coins + ' coins</strong>' + (s.vip_active ? ' · <span style="color:#ffd700;">VIP bonus active</span>' : '');
+                const freeBtn = document.getElementById('spin-free-btn');
+                if (freeBtn) freeBtn.disabled = !s.free_available;
+            } catch (e) { el.textContent = 'Could not load spin status.'; }
+        }
+
+        async function doSpin(paid) {
+            const res = await dealsApi('/api/shop/spin-wheel/spin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, paid: !!paid }) });
+            const out = document.getElementById('spin-result');
+            if (res.success) {
+                const r = res.reward || {};
+                if (out) out.innerHTML = '🎉 ' + dealsEsc(r.label || r.type);
+                dealsToast(true, 'Spin: ' + (r.label || r.type));
+                loadCurrency(); loadUnifiedPoints();
+            } else {
+                if (out) out.textContent = res.error || 'Spin failed';
+                dealsToast(false, res.error || 'Spin failed');
+            }
+            loadSpinCard();
+        }
+
+        async function loadMysteryBoxes() {
+            const grid = document.getElementById('mystery-boxes-grid');
+            if (!grid) return;
+            try {
+                const d = await dealsApi('/api/shop/mystery-boxes?user_id=' + encodeURIComponent(userId));
+                const boxes = (d && d.boxes) || [];
+                if (!boxes.length) { grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No mystery boxes configured.</p>'; return; }
+                grid.innerHTML = boxes.map(b => {
+                    const price = b.effective_price_coins != null ? b.effective_price_coins : b.price_coins;
+                    const discounted = b.effective_price_coins != null && b.effective_price_coins < b.price_coins;
+                    const odds = (b.odds || []).map(o => '<li>' + dealsEsc(o.label) + ' — ' + o.chance_pct + '%</li>').join('');
+                    return '<div class="shop-item" style="text-align:left;border:1px solid var(--border-primary);border-radius:10px;padding:12px;">' +
+                        '<div style="font-size:1.8rem;">' + dealsEsc(b.icon) + '</div>' +
+                        '<div class="item-name" style="font-weight:700;">' + dealsEsc(b.name) + '</div>' +
+                        '<div style="font-size:0.82rem;color:var(--text-secondary);margin:4px 0;">' + dealsEsc(b.description) + '</div>' +
+                        '<div style="margin:6px 0;font-weight:700;color:var(--primary);">' + price + ' coins' + (discounted ? ' <span style="text-decoration:line-through;color:var(--text-secondary);font-weight:400;">' + b.price_coins + '</span>' : '') + '</div>' +
+                        '<details style="font-size:0.78rem;color:var(--text-secondary);"><summary>Odds</summary><ul style="margin:6px 0 0 1rem;padding:0;">' + odds + '</ul></details>' +
+                        '<button type="button" class="btn-purchase" style="width:100%;margin-top:8px;" data-box="' + dealsEsc(b.id) + '">Open box</button>' +
+                        '</div>';
+                }).join('');
+                grid.querySelectorAll('button[data-box]').forEach(btn => btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    const res = await dealsApi('/api/shop/mystery-box/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, box_id: btn.dataset.box }) });
+                    const out = document.getElementById('mystery-box-result');
+                    if (res.success) {
+                        const r = res.reward || {};
+                        if (out) out.innerHTML = '🎁 You got: ' + dealsEsc(r.label || r.type);
+                        dealsToast(true, 'Box reward: ' + (r.label || r.type));
+                        loadCurrency(); loadUnifiedPoints(); loadInventory();
+                    } else {
+                        if (out) out.textContent = res.error || 'Open failed';
+                        dealsToast(false, res.error || 'Open failed');
+                    }
+                    loadMysteryBoxes();
+                    loadLoyaltyCard();
+                }));
+            } catch (e) { grid.innerHTML = '<p style="color:#f88;grid-column:1/-1;">Could not load boxes.</p>'; }
+        }
+
+        async function loadFlashSales() {
+            const grid = document.getElementById('flash-sales-grid');
+            const meta = document.getElementById('flash-sales-meta');
+            if (!grid) return;
+            try {
+                const d = await dealsApi('/api/shop/flash-sales');
+                const sales = (d && d.sales) || [];
+                if (meta && d.rotates_at) meta.textContent = 'Rotates at ' + new Date(d.rotates_at).toLocaleString();
+                if (!sales.length) { grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No flash sales right now.</p>'; return; }
+                grid.innerHTML = sales.map(s =>
+                    '<div class="shop-item" style="text-align:left;border:1px solid rgba(255,215,0,0.4);border-radius:10px;padding:12px;">' +
+                    '<div style="font-size:1.6rem;">' + dealsEsc(s.icon) + '</div>' +
+                    '<div class="item-name" style="font-weight:700;">' + dealsEsc(s.name) + '</div>' +
+                    '<div style="margin:6px 0;"><span style="color:var(--primary);font-weight:800;">' + s.deal_price + '</span> ' +
+                    '<span style="text-decoration:line-through;color:var(--text-secondary);">' + s.original_price + '</span> ' +
+                    '<span style="color:#ff5577;font-weight:700;">-' + s.discount_pct + '%</span></div>' +
+                    '<button type="button" class="btn-purchase" style="width:100%;" onclick="purchaseItem(\'' + dealsEsc(s.item_id) + '\')">Buy now</button>' +
+                    '</div>'
+                ).join('');
+            } catch (e) { grid.innerHTML = '<p style="color:#f88;grid-column:1/-1;">Could not load flash sales.</p>'; }
+        }
+
+        function initDealsHandlers() {
+            document.getElementById('spin-free-btn')?.addEventListener('click', () => doSpin(false));
+            document.getElementById('spin-paid-btn')?.addEventListener('click', () => doSpin(true));
+            document.getElementById('gift-send-btn')?.addEventListener('click', async () => {
+                const recipient = (document.getElementById('gift-recipient')?.value || '').trim();
+                const coins = parseInt(document.getElementById('gift-amount')?.value || '0', 10);
+                const message = (document.getElementById('gift-message')?.value || '').trim();
+                const out = document.getElementById('gift-result');
+                if (!recipient || !coins) { if (out) out.textContent = 'Enter a recipient and coin amount.'; return; }
+                const res = await dealsApi('/api/shop/gift', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, recipient_id: recipient, coins, message }) });
+                if (out) out.textContent = res.success ? ('Sent ' + res.gift.net + ' coins to ' + recipient) : (res.error || 'Gift failed');
+                dealsToast(res.success, res.success ? 'Gift sent!' : (res.error || 'Gift failed'));
+                if (res.success) { loadCurrency(); loadUnifiedPoints(); }
             });
         }
 
@@ -2475,11 +2778,14 @@
             loadShopItems();
             loadMn2Wallet();
             initMn2WalletHandlers();
+            initDealsHandlers();
+            if ((location.hash || '') === '#shop-deals') loadDealsPanel();
             
             setInterval(() => loadUnifiedPoints(), 10000);
         });
     </script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>
     <script src="/static/js/stats-achievements-tracker.js" defer></script>

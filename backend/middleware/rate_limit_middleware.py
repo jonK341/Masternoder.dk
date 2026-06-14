@@ -13,7 +13,8 @@ _lock = threading.Lock()
 # Endpoint-specific limits: (requests_per_window, window_seconds)
 _LIMITS = {
     '/api/mn2/withdraw': (5, 60),
-    '/api/mn2/withdraw': (5, 60),
+    '/api/user/login': (12, 60),
+    '/api/user/security/verify': (20, 60),
     '/api/generator/create': (10, 60),
     '/api/generator/ai-clips': (20, 60),
     '/api/ai-clips/generate': (20, 60),

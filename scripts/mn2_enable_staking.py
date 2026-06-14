@@ -14,6 +14,7 @@ Usage (from repo root, same creds as deploy.py — DEPLOY_PASS in .env or prompt
   python scripts/mn2_enable_staking.py --addnode IP1,IP2  # persist peers + live-add (unstick mnsync)
   python scripts/mn2_enable_staking.py --watch            # read-only: poll mnsync→staking until FINISHED
   python scripts/mn2_enable_staking.py --watch --watch-min 30   # watch for 30 min
+  python scripts/mn2_enable_staking.py --mnsync-finish    # force fresh peers to push a stuck MNW/BUDGET sync to FINISHED
 
 Safe by default: no --apply == nothing is changed.
 """
@@ -47,6 +48,10 @@ ADDNODES = [p.strip() for p in (_addnode_raw or "").split(",") if p.strip()]
 
 WATCH = "--watch" in sys.argv          # poll mnsync/staking until FINISHED (read-only)
 WATCH_MINUTES = int(_arg_value("--watch-min") or 20)
+
+# Force fresh peer connections to break the MNW/BUDGET fulfilled-request deadlock
+# (see masternode-sync.cpp: advance check sits after `if HasFulfilledRequest(...) continue`).
+MNSYNC_FINISH = "--mnsync-finish" in sys.argv
 
 
 def sh(ssh, cmd, timeout=30):
@@ -127,6 +132,57 @@ def main():
     print("known masternodes: " + (rpc("getmasternodecount") or "(no response)"))
     print("\n-- mnsync status --  (staking is gated on masternode sync finishing: mnsync must be true)")
     print(rpc("mnsync", ["status"]) or "(no response)")
+
+    # Force-finish a deadlocked masternode sync by injecting FRESH peer connections.
+    # The MNW/BUDGET stages only advance via a timeout branch that's unreachable once
+    # every connected peer has fulfilled the sync request. A brand-new connection
+    # (`addnode <ip> onetry`) is unfulfilled, so when the node has been parked > 25s
+    # it immediately hits the timeout → GetNextAsset → walks MNW→BUDGET→FINISHED(999).
+    if MNSYNC_FINISH:
+        import re as _re
+        import time as _t
+        addnode_conf = (datadir.split("=", 1)[1].strip() + "/masternoder2.conf"
+                        if "-datadir=" in (datadir or "") else "~/.masternoder2/masternoder2.conf")
+        peers = [p for p in sh(ssh, f"grep -E '^addnode=' {addnode_conf} 2>/dev/null | cut -d= -f2").splitlines() if p.strip()]
+        peers = [p.strip() for p in peers] or ADDNODES
+        print(f"\n== mnsync finish (force fresh peer connections to clear the MNW/BUDGET deadlock) ==")
+        print(f"  peers to cycle: {len(peers)}")
+        # Spork 8 (masternode payment enforcement) decides the timeout branch: if ACTIVE the
+        # node FAILS instead of advancing. Surface it so we know if that's the blocker.
+        sp = rpc("spork", ["show"])
+        if not sp or '"error":null' not in sp:
+            sp = rpc("spork", ["active"])
+        print("  spork show: " + (sp or "(unsupported)"))
+        # Batch all onetry calls into ONE ssh round (avoids opening 9 SSH channels/round).
+        onetry_cmd = "; ".join(
+            f"curl -s -m 8 -u '{rpc_user}:{rpc_pass}' -H 'Content-Type: application/json' "
+            f"-d '{{\"jsonrpc\":\"1.0\",\"id\":\"ops\",\"method\":\"addnode\",\"params\":[\"{ip}\",\"onetry\"]}}' {rpc_url}/ >/dev/null"
+            for ip in peers
+        )
+        for i in range(18):  # ~18 x 10s = ~3 min
+            sh(ssh, onetry_cmd)  # one SSH round fires fresh, unfulfilled connections to all peers
+            _t.sleep(10)
+            st = rpc("mnsync", ["status"])
+            gs = rpc("getstakingstatus")
+            asset = (_re.search(r'"RequestedMasternodeAssets":(\d+)', st or "") or [None, "?"])[1]
+            attempt = (_re.search(r'"RequestedMasternodeAttempt":(\d+)', st or "") or [None, "?"])[1]
+            fails = (_re.search(r'"nCountFailures":(\d+)', st or "") or [None, "?"])[1]
+            conns = (_re.search(r'"result":(\d+)', rpc("getconnectioncount") or "") or [None, "?"])[1]
+            mnsync_on = '"mnsync":true' in (gs or "").replace(" ", "")
+            staking_on = '"stakingstatus":true' in (gs or "").replace(" ", "") or '"staking_status":true' in (gs or "").replace(" ", "")
+            print(f"  [{(i+1)*10:>3}s] conns={conns}  asset={asset}  attempt={attempt}  fails={fails}  mnsync={'TRUE' if mnsync_on else 'false'}  staking={'TRUE' if staking_on else 'false'}")
+            if staking_on:
+                print("  >>> staking is now ACTIVE — the pool is minting. Done.")
+                break
+            if fails and fails not in ("0", "?"):
+                print("  !!! sync hit FAILED — SPORK_8 masternode-payment-enforcement is likely ACTIVE.")
+                print("      With spork 8 on, the winners stage can't time through. Next step: as chain")
+                print("      owner, disable it:  spork SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT 4070908800")
+                break
+        print("\nmnsync status (final): " + (rpc("mnsync", ["status"]) or "(no response)"))
+        print("getstakingstatus (final): " + (rpc("getstakingstatus") or "(no response)"))
+        ssh.close()
+        return 0
 
     # Opt-in: add peers that serve masternode data so mnsync can complete.
     # Persists addnode= lines to the daemon's config (survives restarts) AND adds each live via RPC.

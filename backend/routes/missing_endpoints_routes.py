@@ -36,6 +36,23 @@ from backend.routes.generator_shared import (
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def _settle_generator_entitlement(job: dict, *, abort: bool = False) -> None:
+    """Debit or release generation credits once per job."""
+    if not isinstance(job, dict) or job.get('_entitlement_settled'):
+        return
+    cfg = job.get('config') if isinstance(job.get('config'), dict) else {}
+    rid = cfg.get('entitlement_reservation_id')
+    if not rid:
+        return
+    try:
+        from backend.services.generator_entitlement_service import settle
+        settle(rid, abort=abort)
+        job['_entitlement_settled'] = True
+    except ImportError:
+        pass
+
+
 def _get_lab_page_path():
     """Resolve lab index.html path (works from project root or vidgenerator subdir)."""
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -2674,6 +2691,16 @@ def generator_generation_health():
         return jsonify({'success': False, 'ready': False, 'error': str(e)}), 500
 
 
+def generator_queue_status():
+    """Video job queue depth and optional user position."""
+    try:
+        from backend.services.video_job_queue import queue_status
+        user_id = request.args.get('user_id')
+        return jsonify(queue_status(user_id=user_id)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def generator_statistics():
     """Statistics for generator page: total_videos, themes_count, theme_distribution, etc."""
     try:
@@ -2954,6 +2981,13 @@ def generator_magic_generate():
             'content_category': (data.get('content_category') or 'general').strip().lower(),
             'content_context': (data.get('content_context') or '').strip() or None,
         }
+        try:
+            from backend.services.generator_mn2_service import charge_if_requested
+            mn2_res = charge_if_requested(user_id, doc_id, config, data)
+            if not mn2_res.get('success'):
+                return jsonify({'success': False, **mn2_res}), 402
+        except ImportError:
+            pass
         _ensure_video_job(doc_id, 'processing')
         job = _get_video_job(doc_id)
         job['type'] = 'documentary'
@@ -2991,6 +3025,14 @@ def generator_create():
                 return jsonify({'success': False, 'error': err or 'Not enough disk space for encoding'}), 503
         except Exception:
             pass
+        user_id = data.get('user_id', 'default_user')
+        try:
+            from backend.services.generator_entitlement_service import check_and_reserve
+            ent = check_and_reserve(user_id, duration, short_clip)
+            if not ent.get('success'):
+                return jsonify({'success': False, **ent}), 402
+        except ImportError:
+            ent = {}
         content_category = (data.get('content_category') or data.get('content_category_id') or 'general').strip().lower()
         content_context = (data.get('content_context') or '').strip() or None
         gm = (data.get('generation_method') or '').strip().lower()
@@ -3032,8 +3074,17 @@ def generator_create():
         pc = data.get('profile_context')
         if isinstance(pc, dict):
             config['profile_context'] = pc
+        if ent.get('reservation_id'):
+            config['entitlement_reservation_id'] = ent.get('reservation_id')
         if data.get('use_all_ais') is not None:
             config['use_all_ais'] = bool(data.get('use_all_ais'))
+        try:
+            from backend.services.generator_mn2_service import charge_if_requested
+            mn2_res = charge_if_requested(user_id, doc_id, config, data)
+            if not mn2_res.get('success'):
+                return jsonify({'success': False, **mn2_res}), 402
+        except ImportError:
+            pass
         _ensure_video_job(doc_id, 'processing')
         job = _get_video_job(doc_id)
         job['type'] = 'documentary'
@@ -3045,14 +3096,21 @@ def generator_create():
         except Exception:
             pass
         # Use in-process thread (same as Magic Generate) so jobs complete when subprocess is unavailable (e.g. uWSGI)
-        _start_video_generation(doc_id, config)
+        try:
+            from backend.services.video_job_queue import enqueue
+            q = enqueue(doc_id, config, runner=_start_video_generation)
+            queue_meta = {"queued": q.get("queued"), "position": q.get("position"), "priority": q.get("priority")}
+        except ImportError:
+            _start_video_generation(doc_id, config)
+            queue_meta = {"queued": False}
 
         return jsonify({
             'success': True,
             'documentary_id': doc_id,
             'message': 'Video generation started',
             'status': 'processing',
-            'implementation_status': 'complete'
+            'implementation_status': 'complete',
+            **queue_meta,
         }), 202
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -3204,6 +3262,7 @@ def documentary_progress(doc_id):
                     job['message'] = message
                     job['error_message'] = sidecar.get('error_message') or message
                     job['updated_at'] = datetime.utcnow().isoformat()
+                    _settle_generator_entitlement(job, abort=True)
                     _set_video_job(doc_id, job)
                 elif sc_status == 'processing':
                     progress = int(sidecar.get('progress', 0) or progress)
@@ -3223,6 +3282,7 @@ def documentary_progress(doc_id):
                     job['video_url'] = sidecar.get('video_url') or f'/api/documentary/video/{doc_id}'
                     job['updated_at'] = datetime.utcnow().isoformat()
                     job['providers_used'] = sidecar.get('providers_used') or []
+                    _settle_generator_entitlement(job, abort=False)
                     _set_video_job(doc_id, job)
             path = _get_video_file_path(doc_id)
             _valid_video = path and os.path.isfile(path) and os.path.getsize(path) >= 1024
@@ -3235,6 +3295,7 @@ def documentary_progress(doc_id):
                 job['message'] = 'Complete'
                 job['video_url'] = f'/api/documentary/video/{doc_id}'
                 job['updated_at'] = datetime.utcnow().isoformat()
+                _settle_generator_entitlement(job, abort=False)
                 _set_video_job(doc_id, job)
             elif status in ('pending', 'processing') and path and os.path.isfile(path) and not _valid_video:
                 # Partial/corrupt file detected (encoding was killed before completion).

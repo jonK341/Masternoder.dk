@@ -623,6 +623,7 @@ def _load_reserve() -> Dict[str, Any]:
     r.setdefault("reserve_mn2", 0.0)
     r.setdefault("lifetime_realized_yield", 0.0)
     r.setdefault("lifetime_paid", 0.0)
+    r.setdefault("counted_yield_txids", [])
     return r
 
 
@@ -632,24 +633,41 @@ def _save_reserve(r: Dict[str, Any]) -> None:
 
 # -------------------------------------------------------------- realized yield
 
-def _read_realized_yield_mn2() -> float:
-    """Best-effort: sum new daemon staking income (stake/generate). 0 on any error (APR fallback)."""
+def _read_realized_yield_mn2(seen_txids: Optional[set] = None) -> tuple:
+    """Sum daemon staking income (stake/generate/immature/mint) from recent wallet txns,
+    counting each coinstake txid only ONCE across accrual intervals.
+
+    `seen_txids` is the set of already-counted txids (from reserve state); it is mutated
+    in place with newly counted ids. Returns (new_yield_mn2, newly_counted_txids).
+    Without de-dup the same persistent coinstake txns would be re-counted every interval,
+    over-distributing rewards (violates the "never pay more than realized yield" invariant).
+    Returns (0.0, []) on any error so accrual falls back to APR display rate.
+    """
+    seen = seen_txids if seen_txids is not None else set()
     try:
         from backend.services.mn2_rpc_client import listtransactions
         r = listtransactions(count=200)
         if r.get("error") or not isinstance(r.get("result"), list):
-            return 0.0
+            return 0.0, []
         total = 0.0
+        new_ids: List[str] = []
         for tx in r["result"]:
             cat = str(tx.get("category") or "").lower()
-            if cat in ("stake", "generate", "immature", "mint"):
-                try:
-                    total += abs(float(tx.get("amount") or 0))
-                except (TypeError, ValueError):
-                    pass
-        return round(total, 8)
+            if cat not in ("stake", "generate", "immature", "mint"):
+                continue
+            txid = str(tx.get("txid") or "").strip()
+            if not txid or txid in seen:
+                continue
+            try:
+                amount = abs(float(tx.get("amount") or 0))
+            except (TypeError, ValueError):
+                continue
+            total += amount
+            seen.add(txid)
+            new_ids.append(txid)
+        return round(total, 8), new_ids
     except Exception:
-        return 0.0
+        return 0.0, []
 
 
 def _interval_id(now: Optional[datetime] = None) -> str:
@@ -714,8 +732,18 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
 
         # budget
         margin = float(cfg.get("site_margin_percent", 0)) / 100.0
-        realized = _read_realized_yield_mn2() if cfg.get("reward_pool_mode") == "realized_yield" else 0.0
         reserve = _load_reserve()
+        use_realized_mode = cfg.get("reward_pool_mode") == "realized_yield"
+        counted_txids = list(reserve.get("counted_yield_txids") or [])
+        seen_txids = set(counted_txids)
+        if use_realized_mode:
+            realized, new_yield_txids = _read_realized_yield_mn2(seen_txids)
+        else:
+            realized, new_yield_txids = 0.0, []
+        if new_yield_txids:
+            # keep ordered list, cap so the file stays bounded (covers many listtransactions windows)
+            counted_txids = (counted_txids + new_yield_txids)[-5000:]
+            reserve["counted_yield_txids"] = counted_txids
         apr = dynamic_apr()
         interval_fraction = float(cfg.get("accrual_interval_minutes", 60)) / (60.0 * 24.0 * 365.0)
 
@@ -785,6 +813,7 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
                 "weight": round(weights[uid], 8),
                 "pool_share_pct": round((weights[uid] / sum_weight * 100.0) if sum_weight else 0.0, 6),
                 "pool_budget_mn2": round(budget, 8) if use_realized else None,
+                "realized_yield_mn2": round(realized, 8) if use_realized else 0.0,
                 "reward_mn2": reward,
                 "compounded_mn2": round(compounded, 8),
                 "reserve_topup_mn2": round(reserve_topup, 8),
@@ -906,6 +935,51 @@ def _agent_actions_24h() -> int:
     return n
 
 
+def _yield_and_paid_24h() -> Dict[str, float]:
+    """Sum realized yield (once per interval) and rewards paid (per row) over the last 24h
+    from the reward rows. Used by the monitor for at-a-glance pool health."""
+    path = _path(_REWARDS_FILE)
+    out = {"realized_yield_24h_mn2": 0.0, "rewards_paid_24h_mn2": 0.0}
+    if not os.path.exists(path):
+        return out
+    cutoff = _now() - timedelta(hours=24)
+    seen_intervals: set = set()
+    realized = 0.0
+    paid = 0.0
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except Exception:
+                    continue
+                ts = _parse_iso(row.get("accrued_at"))
+                if not ts or ts < cutoff:
+                    continue
+                try:
+                    paid += float(row.get("reward_mn2") or 0)
+                except (TypeError, ValueError):
+                    pass
+                iid = row.get("interval_id")
+                if iid and iid not in seen_intervals:
+                    seen_intervals.add(iid)
+                    ry = row.get("realized_yield_mn2")
+                    if ry is None:
+                        ry = row.get("pool_budget_mn2")  # legacy rows: budget approximates yield
+                    try:
+                        realized += float(ry or 0)
+                    except (TypeError, ValueError):
+                        pass
+    except Exception:
+        return out
+    out["realized_yield_24h_mn2"] = round(realized, 8)
+    out["rewards_paid_24h_mn2"] = round(paid, 8)
+    return out
+
+
 def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
     stakes = _load_stakes()
     processes = []
@@ -949,6 +1023,7 @@ def get_staking_monitor(limit: int = 50) -> Dict[str, Any]:
         "pool_apr_percent": round(dynamic_apr(), 4),
         "rewards_paid_lifetime_mn2": round(reserve.get("lifetime_paid", 0.0), 8),
         "realized_yield_lifetime_mn2": round(reserve.get("lifetime_realized_yield", 0.0), 8),
+        **_yield_and_paid_24h(),
         "reserve_mn2": round(reserve.get("reserve_mn2", 0.0), 8),
         "agent_managed_stakers": agent_managed_count,
         "agent_staked_mn2": round(agent_staked, 8),

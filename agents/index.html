@@ -75,6 +75,16 @@
         .loading { text-align: center; padding: 40px; opacity: 0.5; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .tab-content.active { display: block; }
+        .mn2-panel { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+        .mn2-panel h3 { margin: 0 0 10px; color: #00d4ff; font-size: 1em; }
+        .mn2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .mn2-stat { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px; text-align: center; }
+        .mn2-stat .mv { font-size: 1.15em; font-weight: 700; color: #00ff88; }
+        .mn2-stat .ml { font-size: 0.75em; opacity: 0.65; margin-top: 4px; }
+        .mn2-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .mn2-links a { padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.85em; font-weight: 700; color: #041018; background: linear-gradient(135deg, #00d4ff, #00ff88); }
+        .mn2-links a.secondary { color: #00d4ff; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35); }
         @media (max-width: 600px) { h1 { font-size: 1.5rem; } .summary-bar { grid-template-columns: repeat(2, 1fr); } }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -129,6 +139,7 @@
             <button class="tab-btn active" data-tab="my-agents">My Agents</button>
             <button class="tab-btn" data-tab="activity">Activity Feed</button>
             <button class="tab-btn" data-tab="system">System Agents</button>
+            <button class="tab-btn" data-tab="mn2">MN2 &amp; Treasury</button>
             <button class="tab-btn" data-tab="report">Summary Report</button>
         </div>
 
@@ -159,6 +170,52 @@
             <p style="opacity:0.7;margin-bottom:16px;font-size:0.9em;">All 31 system agents running on MasterNoder. These agents operate globally across all users.</p>
             <div id="system-agents-grid" class="system-agents-grid">
                 <div class="loading">Loading system agents...</div>
+            </div>
+        </div>
+
+        <!-- MN2 & Treasury Tab -->
+        <div class="tab-content" id="tab-mn2">
+            <p style="opacity:0.75;margin-bottom:16px;font-size:0.9em;">Fund agent staking personas from your MN2 wallet — enable agents, set targets, and stake toward treasury goals.</p>
+            <div class="mn2-panel">
+                <h3>Your MN2 wallet</h3>
+                <div class="mn2-grid">
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-balance">—</div><div class="ml">Balance</div></div>
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-staked">—</div><div class="ml">Your staked</div></div>
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-rate">—</div><div class="ml">Coins / MN2</div></div>
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-apr">—</div><div class="ml">Staking APR</div></div>
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-pool">—</div><div class="ml">Pool (monitor)</div></div>
+                    <div class="mn2-stat"><div class="mv" id="agents-mn2-agent-staked">—</div><div class="ml">Agent-managed</div></div>
+                </div>
+                <div class="mn2-links">
+                    <a href="/profile#mn2-wallet">Open wallet</a>
+                    <a href="/shop" class="secondary">Shop MN2</a>
+                    <a href="/staking-monitor" class="secondary">Staking monitor</a>
+                    <a href="/proof-of-reserves" class="secondary">Proof of reserves</a>
+                </div>
+            </div>
+            <div class="mn2-panel">
+                <h3>Agent staking capabilities</h3>
+                <p id="agents-mn2-capabilities" style="margin:0;font-size:0.88em;opacity:0.8;">Loading…</p>
+            </div>
+            <div class="mn2-panel" id="ecosystem-control-board">
+                <h3>Ecosystem control board</h3>
+                <p style="margin:0 0 12px;font-size:0.85em;opacity:0.75;">Live ops snapshot — conservation gate, worker pressure, kill switch, webhook outbox.</p>
+                <div id="ecb-status-banner" style="padding:10px 14px;border-radius:8px;margin-bottom:12px;background:rgba(255,255,255,0.05);font-size:0.88em;">Connecting…</div>
+                <div class="mn2-grid" id="ecb-metrics">
+                    <div class="mn2-stat"><div class="mv" id="ecb-verdict">—</div><div class="ml">Conservation</div></div>
+                    <div class="mn2-stat"><div class="mv" id="ecb-pressure">—</div><div class="ml">Worker pressure</div></div>
+                    <div class="mn2-stat"><div class="mv" id="ecb-queue">—</div><div class="ml">Video queue</div></div>
+                    <div class="mn2-stat"><div class="mv" id="ecb-halt">—</div><div class="ml">Agent halt</div></div>
+                </div>
+                <pre id="ecb-log" style="max-height:160px;overflow:auto;font-size:0.75em;opacity:0.8;background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;margin-top:12px;"></pre>
+            </div>
+            <div class="report-section">
+                <h3>Assigned agents — MN2 readiness</h3>
+                <table>
+                    <tr><th>Agent</th><th>Level</th><th>Staking</th><th>MN2 actions</th></tr>
+                    <tbody id="agents-mn2-table"><tr><td colspan="4" style="opacity:0.5;">Loading…</td></tr></tbody>
+                </table>
+                <p id="agents-mn2-fund-status" style="margin-top:10px;font-size:0.85em;min-height:1.2em;color:#00ff88;"></p>
             </div>
         </div>
 
@@ -203,6 +260,7 @@
             document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
             if (btn.dataset.tab === 'activity') loadActivity();
             if (btn.dataset.tab === 'system') loadSystemAgents();
+            if (btn.dataset.tab === 'mn2') loadMn2Treasury();
             if (btn.dataset.tab === 'report') loadReport();
         });
     });
@@ -379,6 +437,109 @@
         }).join('');
     }
 
+    // --- Load MN2 & Treasury ---
+    async function agentMn2Action(action, agentId, amount) {
+        const statusEl = document.getElementById('agents-mn2-fund-status');
+        let url = `${API}/agents/mn2/stake-for-agent`;
+        if (action === 'enable') url = `${API}/agents/mn2/enable`;
+        else if (action === 'disable') url = `${API}/agents/mn2/disable`;
+        else if (action === 'unstake') url = `${API}/agents/mn2/unstake-for-agent`;
+        const body = { user_id: userId, agent_id: agentId };
+        if (action === 'enable') body.target_staked = amount;
+        else if (action === 'stake' || action === 'unstake') body.amount = amount;
+        if (statusEl) { statusEl.textContent = 'Processing…'; statusEl.style.color = '#00d4ff'; }
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const d = await r.json();
+            if (d.success) {
+                const msgs = {
+                    enable: 'Treasury persona enabled.',
+                    disable: 'Agent persona disabled.',
+                    unstake: 'Unstaked ' + fmt(amount) + ' MN2.',
+                    stake: 'Staked ' + fmt(amount) + ' MN2 for agent.',
+                };
+                if (statusEl) { statusEl.textContent = msgs[action] || 'Done.'; statusEl.style.color = '#00ff88'; }
+                loadMn2Treasury();
+            } else if (statusEl) {
+                statusEl.textContent = d.error || 'Action failed';
+                statusEl.style.color = '#ff8888';
+            }
+        } catch (e) {
+            if (statusEl) { statusEl.textContent = 'Network error'; statusEl.style.color = '#ff8888'; }
+        }
+    }
+
+    function agentMn2StakeFromInput(agentId) {
+        const inp = document.getElementById('stake-amt-' + agentId);
+        const val = inp ? parseFloat(inp.value) : NaN;
+        if (!isFinite(val) || val <= 0) {
+            const statusEl = document.getElementById('agents-mn2-fund-status');
+            if (statusEl) { statusEl.textContent = 'Enter a valid stake amount'; statusEl.style.color = '#ff8888'; }
+            return;
+        }
+        agentMn2Action('stake', agentId, val);
+    }
+
+    async function loadMn2Treasury() {
+        const capEl = document.getElementById('agents-mn2-capabilities');
+        const table = document.getElementById('agents-mn2-table');
+        try {
+            const [capR, readyR] = await Promise.all([
+                fetch(`${API}/agent/staking/capabilities`).then(x => x.json()).catch(() => null),
+                fetch(`${API}/agents/mn2-readiness?user_id=${encodeURIComponent(userId)}`).then(x => x.json()).catch(() => null),
+            ]);
+            if (readyR && readyR.success) {
+                const w = readyR.wallet || {};
+                const agg = readyR.aggregates || {};
+                if (w.mn2_balance != null) document.getElementById('agents-mn2-balance').textContent = fmt(w.mn2_balance) + ' MN2';
+                if (w.mn2_staked != null) document.getElementById('agents-mn2-staked').textContent = fmt(w.mn2_staked) + ' MN2';
+                if (w.coins_per_mn2 != null) document.getElementById('agents-mn2-rate').textContent = fmt(w.coins_per_mn2);
+                if (agg.total_staked != null) document.getElementById('agents-mn2-pool').textContent = fmt(agg.total_staked);
+                if (agg.agent_staked_mn2 != null) document.getElementById('agents-mn2-agent-staked').textContent = fmt(agg.agent_staked_mn2) + ' MN2';
+            }
+            if (capR && capR.success) {
+                const cfg = capR.config || {};
+                document.getElementById('agents-mn2-apr').textContent = (cfg.apr_percent != null ? cfg.apr_percent + '%' : '—');
+                const names = (capR.capabilities || []).slice(0, 6).map(c => c.action || c.label).filter(Boolean);
+                capEl.textContent = names.length
+                    ? ('Headless agent actions: ' + names.join(', ') + (capR.capabilities.length > 6 ? '…' : '') + '. ' + (capR.auth || ''))
+                    : (capR.auth || 'Agent staking API available.');
+            } else if (capEl) {
+                capEl.textContent = 'Agent staking capabilities unavailable.';
+            }
+            const agents = (readyR && readyR.success && readyR.agents) ? readyR.agents : [];
+            if (table) {
+                if (!agents.length) {
+                    table.innerHTML = '<tr><td colspan="4" style="opacity:0.5;text-align:center;">No assigned agents yet</td></tr>';
+                } else {
+                    table.innerHTML = agents.map(a => `
+                        <tr>
+                            <td>${a.icon || '🤖'} ${a.name}</td>
+                            <td>${a.level}</td>
+                            <td style="font-size:0.85em;">${a.has_persona ? (a.staking_enabled ? '✅ Persona' : '⏸ Persona') : '—'}${a.target_staked != null ? ' · target ' + fmt(a.target_staked) : ''}</td>
+                            <td style="font-size:0.82em;">
+                                <button type="button" class="tab-btn" style="padding:4px 8px;margin:2px;" onclick="agentMn2Action('enable','${a.agent_id}',0.1)">Enable</button>
+                                <button type="button" class="tab-btn" style="padding:4px 8px;margin:2px;" onclick="agentMn2Action('disable','${a.agent_id}',0)">Disable</button>
+                                <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                                    <input type="number" id="stake-amt-${a.agent_id}" min="0.001" step="0.001" value="0.05" style="width:72px;padding:4px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;font-size:0.82em;">
+                                    <button type="button" class="tab-btn" style="padding:4px 8px;" onclick="agentMn2StakeFromInput('${a.agent_id}')">Stake</button>
+                                    <button type="button" class="tab-btn" style="padding:4px 8px;" onclick="agentMn2Action('unstake','${a.agent_id}', parseFloat(document.getElementById('stake-amt-${a.agent_id}').value)||0.05)">Unstake</button>
+                                </div>
+                                <div style="opacity:0.7;margin-top:4px;">${a.note || ''}</div>
+                            </td>
+                        </tr>`).join('');
+                }
+            }
+        } catch (e) {
+            if (capEl) capEl.textContent = 'Could not load MN2 agent data.';
+            if (table) table.innerHTML = '<tr><td colspan="4" style="opacity:0.5;">Load failed</td></tr>';
+        }
+    }
+
     // --- Load Report ---
     async function loadReport() {
         const rc = document.getElementById('report-content');
@@ -456,6 +617,8 @@
         loadMyAgents();
     });
     </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/mn2-agent-control-board.js?v=20260614b"></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
 
     <!-- Hypnotic Point Counters -->

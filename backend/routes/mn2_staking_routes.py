@@ -5,6 +5,7 @@ User parity endpoints (resolve user via session > query > body, like other MN2 r
 plus ops accrual. See docs/MN2_STAKING_PLAN.md and docs/AGENTS_MN2.md.
 """
 import os
+import json
 from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
@@ -28,6 +29,45 @@ def _ops_authorized() -> bool:
 
 def _body() -> dict:
     return request.get_json(silent=True) or {}
+
+
+def _resolve_owner():
+    """
+    Identity for money-moving actions (stake/unstake): resolved server-side ONLY
+    (session > IP/fingerprint identification). Never from a caller-supplied user_id
+    in the body/query — otherwise anyone could act on another account by passing its id.
+    Returns (user_id, error_response_or_None).
+    """
+    uid = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    if not uid or uid == "default_user":
+        return None, (jsonify({
+            "success": False,
+            "error": "You must be signed in to perform this action.",
+            "code": "auth_required",
+        }), 401)
+    return uid, None
+
+
+@mn2_staking_bp.route("/api/mn2/staking/proof-of-reserves", methods=["GET"])
+def staking_proof_of_reserves():
+    """Public transparency: custodial assets vs user liabilities + coverage + reconcile (plan §20 #11)."""
+    try:
+        from backend.services.mn2_proof_of_reserves_service import proof_of_reserves
+        force = (request.args.get("force") or "").lower() in ("1", "true", "yes")
+        return jsonify(proof_of_reserves(force=force)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/yield-report", methods=["GET"])
+def staking_yield_report():
+    """Public transparency: realized daemon yield vs rewards paid vs site margin (plan §20 #12)."""
+    try:
+        from backend.services.mn2_proof_of_reserves_service import yield_report
+        force = (request.args.get("force") or "").lower() in ("1", "true", "yes")
+        return jsonify(yield_report(force=force)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @mn2_staking_bp.route("/api/mn2/staking/config", methods=["GET"])
@@ -73,7 +113,9 @@ def staking_accept_terms():
 @mn2_staking_bp.route("/api/mn2/staking/status", methods=["GET"])
 def staking_status():
     try:
-        user_id = resolve_user_id(from_body=False, from_query=True)
+        # Server-resolved identity only: a caller cannot read another account's
+        # balance/staked totals by passing ?user_id=. Falls back to identification.
+        user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
         return jsonify({"success": True, **staking.get_stake(user_id)}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -83,7 +125,9 @@ def staking_status():
 def staking_stake():
     try:
         data = _body()
-        user_id = resolve_user_id(from_body=True, from_query=True)
+        user_id, err = _resolve_owner()
+        if err:
+            return err
         result = staking.stake(user_id, data.get("amount"))
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
@@ -94,7 +138,9 @@ def staking_stake():
 def staking_unstake():
     try:
         data = _body()
-        user_id = resolve_user_id(from_body=True, from_query=True)
+        user_id, err = _resolve_owner()
+        if err:
+            return err
         result = staking.unstake(user_id, data.get("amount"))
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
@@ -147,7 +193,8 @@ def staking_calculator():
 @mn2_staking_bp.route("/api/mn2/staking/rewards-table", methods=["GET"])
 def staking_rewards_table():
     try:
-        user_id = resolve_user_id(from_body=False, from_query=True)
+        # Server-resolved identity only — your own reward history, not another user's.
+        user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
         limit = int(request.args.get("limit", 100))
         since = (request.args.get("from") or "").strip() or None
         result = staking.get_rewards_table(user_id, limit=limit, since_iso=since)
@@ -213,7 +260,82 @@ def network_overview():
             overview["p2p"] = mn2_p2p_service.p2p_stats()
         except Exception:
             overview["p2p"] = None
-        return jsonify({"success": True, **overview}), 200
+        try:
+            from backend.services import mn2_rpc_client
+            overview["staking_health"] = mn2_rpc_client.staking_health()
+        except Exception:
+            overview["staking_health"] = None
+        # Record a throttled snapshot for sparklines + run stop-staking/stall alerts (best-effort).
+        try:
+            from backend.services import mn2_network_stats
+            mn2_network_stats.record_snapshot(overview)
+        except Exception:
+            pass
+        payload = {"success": True, **overview}
+        resp = jsonify(payload)
+        # Short cache + weak ETag so clients/CDNs can revalidate cheaply (E4 #4).
+        import hashlib
+        try:
+            etag = 'W/"%s"' % hashlib.md5(
+                json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+            ).hexdigest()
+            resp.headers["ETag"] = etag
+            if request.headers.get("If-None-Match") == etag:
+                return ("", 304, {"ETag": etag, "Cache-Control": "public, max-age=30"})
+        except Exception:
+            pass
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/network-history", methods=["GET"])
+def network_history():
+    try:
+        from backend.services import mn2_network_stats
+        hours = float(request.args.get("hours", 24) or 24)
+        limit = int(request.args.get("limit", 500) or 500)
+        rows = mn2_network_stats.get_history(hours=hours, limit=limit)
+        resp = jsonify({"success": True, "history": rows, "count": len(rows)})
+        resp.headers["Cache-Control"] = "public, max-age=60"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/network-alerts", methods=["GET"])
+def network_alerts():
+    try:
+        from backend.services import mn2_network_stats
+        limit = int(request.args.get("limit", 20) or 20)
+        return jsonify({"success": True, "alerts": mn2_network_stats.get_alerts(limit=limit)}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/recent-blocks", methods=["GET"])
+def recent_blocks():
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 10) or 10)
+        blocks = mn2_explorer_data.recent_blocks(limit=limit)
+        resp = jsonify({"success": True, "blocks": blocks, "count": len(blocks)})
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/masternodes", methods=["GET"])
+def masternodes():
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 50) or 50)
+        data = mn2_explorer_data.masternodes(limit=limit)
+        resp = jsonify({"success": True, **data})
+        resp.headers["Cache-Control"] = "public, max-age=60"
+        return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

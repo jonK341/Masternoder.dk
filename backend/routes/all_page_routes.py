@@ -46,7 +46,8 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'explorer',
+    'aggregator', 'staking-monitor', 'explorer', 'proof-of-reserves',
+    'market', 'casino',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes

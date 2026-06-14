@@ -133,6 +133,22 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2: {e}")
     try:
+        from backend.routes.ops_stream_routes import ops_stream_bp
+        if "ops_stream" not in app.blueprints:
+            app.register_blueprint(ops_stream_bp)
+            n += 1
+            print("  [OK] Registered ops_stream blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP ops_stream: {e}")
+    try:
+        from backend.routes.activity_stream_routes import activity_stream_bp
+        if "activity_stream" not in app.blueprints:
+            app.register_blueprint(activity_stream_bp)
+            n += 1
+            print("  [OK] Registered activity_stream blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP activity_stream: {e}")
+    try:
         from backend.routes.mn2_staking_routes import mn2_staking_bp
         if 'mn2_staking' not in app.blueprints:
             app.register_blueprint(mn2_staking_bp)
@@ -236,6 +252,38 @@ def register_lite_blueprints(app):
         print("  [OK] Registered platform_news blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP platform_news: {e}")
+    try:
+        from backend.routes.discord_routes import discord_bp
+        if "discord" not in app.blueprints:
+            app.register_blueprint(discord_bp)
+            n += 1
+            print("  [OK] Registered discord blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP discord: {e}")
+    try:
+        from backend.routes.customer_aggregator_routes import customer_aggregator_bp
+        if "customer_aggregator" not in app.blueprints:
+            app.register_blueprint(customer_aggregator_bp)
+            n += 1
+            print("  [OK] Registered customer_aggregator blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP customer_aggregator: {e}")
+    try:
+        from backend.routes.agent_treasury_routes import agent_treasury_bp
+        if "agent_treasury" not in app.blueprints:
+            app.register_blueprint(agent_treasury_bp)
+            n += 1
+            print("  [OK] Registered agent_treasury blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_treasury: {e}")
+    try:
+        from backend.routes.security_cron_routes import security_cron_bp
+        if "security_cron" not in app.blueprints:
+            app.register_blueprint(security_cron_bp)
+            n += 1
+            print("  [OK] Registered security_cron blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP security_cron: {e}")
     try:
         from backend.routes.account_security_routes import account_security_bp
         app.register_blueprint(account_security_bp)
@@ -789,6 +837,16 @@ def register_all_blueprints(app):
     except Exception as e:
         print(f"  [ERROR] Error registering mn2: {e}")
     try:
+        from backend.routes.ops_stream_routes import ops_stream_bp
+        if "ops_stream" not in app.blueprints:
+            app.register_blueprint(ops_stream_bp)
+            registered_count += 1
+            print("  [OK] Registered ops_stream blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import ops_stream: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering ops_stream: {e}")
+    try:
         from backend.routes.mn2_staking_routes import mn2_staking_bp
         if 'mn2_staking' not in app.blueprints:
             app.register_blueprint(mn2_staking_bp)
@@ -1329,6 +1387,17 @@ def register_all_blueprints(app):
     except Exception as e:
         print(f"  [ERROR] Error registering shop: {e}")
 
+    # Shop V9.2 Monetization Routes (VIP, mystery boxes, spin, flash sales, gifting, loyalty)
+    try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        app.register_blueprint(shop_monetization_bp)
+        registered_count += 1
+        print("  [OK] Registered shop_monetization blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import shop_monetization: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering shop_monetization: {e}")
+
     # Social Auth Routes
     try:
         from backend.routes.social_auth_routes import social_auth_bp
@@ -1359,6 +1428,50 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import platform_news: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering platform_news: {e}")
+
+    try:
+        from backend.routes.discord_routes import discord_bp
+        if "discord" not in app.blueprints:
+            app.register_blueprint(discord_bp)
+            registered_count += 1
+            print("  [OK] Registered discord blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import discord: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering discord: {e}")
+
+    try:
+        from backend.routes.customer_aggregator_routes import customer_aggregator_bp
+        if "customer_aggregator" not in app.blueprints:
+            app.register_blueprint(customer_aggregator_bp)
+            registered_count += 1
+            print("  [OK] Registered customer_aggregator blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import customer_aggregator: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering customer_aggregator: {e}")
+
+    try:
+        from backend.routes.agent_treasury_routes import agent_treasury_bp
+        if "agent_treasury" not in app.blueprints:
+            app.register_blueprint(agent_treasury_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_treasury blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_treasury: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_treasury: {e}")
+
+    try:
+        from backend.routes.security_cron_routes import security_cron_bp
+        if "security_cron" not in app.blueprints:
+            app.register_blueprint(security_cron_bp)
+            registered_count += 1
+            print("  [OK] Registered security_cron blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import security_cron: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering security_cron: {e}")
 
     try:
         from backend.routes.account_security_routes import account_security_bp

@@ -27,6 +27,15 @@ def _body() -> dict:
     return request.get_json(silent=True) or {}
 
 
+@mn2_p2p_bp.route("/api/mn2/p2p/oracle", methods=["GET"])
+def p2p_oracle():
+    try:
+        from backend.services.mn2_p2p_oracle import get_corridor
+        return jsonify(get_corridor()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_p2p_bp.route("/api/mn2/p2p/config", methods=["GET"])
 def p2p_config():
     try:
@@ -124,10 +133,25 @@ def p2p_webhook():
             signature_ok = verify_paypal_webhook_signature(request.headers, event)
         except Exception:
             signature_ok = False
-        result = p2p.handle_webhook(event, signature_ok)
+        event_key = ""
+        try:
+            resource = event.get("resource") or {}
+            event_key = str(resource.get("id") or event.get("id") or "")
+        except Exception:
+            pass
+        try:
+            from backend.services.webhook_outbox import process_inline
+            result = process_inline(
+                "p2p_paypal",
+                event_key or "unknown",
+                {"event": event, "signature_ok": signature_ok},
+                handler="p2p_paypal",
+            )
+        except ImportError:
+            result = p2p.handle_webhook(event, signature_ok)
         if isinstance(result, dict) and result.get("error") == "Webhook signature not verified":
             return jsonify(result), 400
-        return jsonify(result), 200
+        return jsonify(result if isinstance(result, dict) else {"success": True}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

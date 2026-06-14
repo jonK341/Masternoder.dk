@@ -195,6 +195,13 @@ def get_b2b_studio_sku(sku_id: str) -> Dict[str, Any]:
     return dict(get_b2b_studio_sku_map().get((sku_id or "").strip()) or {})
 
 
+def get_shop_monetization() -> Dict[str, Any]:
+    """Shop V9.2 monetization block: VIP pass, mystery boxes, spin wheel, flash sales, loyalty, gifting, auction feature."""
+    raw = _load_raw()
+    block = raw.get("shop_monetization")
+    return dict(block) if isinstance(block, dict) else {}
+
+
 def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
     """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
     raw = _load_raw()

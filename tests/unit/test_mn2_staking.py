@@ -178,6 +178,34 @@ class TestAccrual(StakingTestBase):
         res2 = staking.accrue_rewards(force=False)
         self.assertTrue(res2.get("skipped"))
 
+    def test_realized_yield_counts_each_coinstake_once(self):
+        # Daemon coinstake txns persist in listtransactions across intervals; each txid
+        # must contribute to realized yield only once (no re-counting / over-distribution).
+        import backend.services.mn2_rpc_client as rpc
+        orig = rpc.listtransactions
+        rpc.listtransactions = lambda count=200, skip=0: {
+            "error": None,
+            "result": [
+                {"category": "stake", "amount": 2.0, "txid": "stake-aaa"},
+                {"category": "generate", "amount": 1.0, "txid": "gen-bbb"},
+            ],
+        }
+        try:
+            self._credit("u1", 100)
+            staking.accept_terms("u1")
+            staking.stake("u1", 100)
+
+            r1 = staking.accrue_rewards(force=True)
+            self.assertEqual(r1.get("source"), "realized_yield")
+            self.assertAlmostEqual(r1.get("realized_yield_mn2"), 3.0, places=6)
+
+            # Same coinstake txns still returned next interval -> must not be counted again.
+            r2 = staking.accrue_rewards(force=True)
+            self.assertEqual(r2.get("realized_yield_mn2"), 0.0)
+            self.assertEqual(r2.get("source"), "apr_fallback")
+        finally:
+            rpc.listtransactions = orig
+
     def test_rewards_table_records_rows(self):
         self._credit("u1", 100)
         staking.accept_terms("u1")

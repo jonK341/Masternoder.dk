@@ -14,6 +14,8 @@
     q('t-apr').textContent = fmt(a.pool_apr_percent, 2) + '%';
     q('t-paid').textContent = fmt(a.rewards_paid_lifetime_mn2, 4) + ' MN2';
     q('t-reserve').textContent = fmt(a.reserve_mn2, 2) + ' MN2';
+    q('t-yield24').textContent = fmt(a.realized_yield_24h_mn2, 6) + ' MN2';
+    q('t-paid24').textContent = fmt(a.rewards_paid_24h_mn2, 6) + ' MN2';
 
     var body = q('sm-body');
     var procs = data.processes || [];
