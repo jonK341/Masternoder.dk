@@ -265,6 +265,32 @@ def run_scanner() -> Dict[str, Any]:
                 continue
 
             user_id = address_to_user[address]
+            if user_id == "@agent_treasury":
+                try:
+                    from backend.services.activity_events_service import emit
+                    emit("agent_treasury_deposit", channel="agents", payload={"amount": amount, "txid": txid, "address": address})
+                    from backend.services.admin_audit_service import log_action
+                    log_action("treasury_onchain_deposit", actor="scanner", payload={"amount": amount, "txid": txid})
+                except Exception:
+                    pass
+                unified_points_db.add_points(
+                    "agent_treasury",
+                    "mn2_balance",
+                    amount,
+                    source="mn2_treasury_deposit",
+                    metadata={"txid": txid, "address": address, "confirmations": confirmations},
+                )
+                append_entry(
+                    user_id="agent_treasury",
+                    entry_type="treasury_deposit",
+                    amount=amount,
+                    txid=txid,
+                    address=address,
+                    metadata={"confirmations": confirmations},
+                )
+                credits += 1
+                continue
+
             unified_points_db.add_points(
                 user_id,
                 "mn2_balance",

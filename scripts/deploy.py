@@ -7,14 +7,15 @@ Usage:
   python scripts/deploy.py sync        # sync + agent DB
   python scripts/deploy.py loading     # loading optimizations
   python scripts/deploy.py static_pages  # root index.html pages + entire static/ folder
+  python scripts/deploy.py trophies      # trophy levels, MN2 income, routes + data + UI
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
-SSH password: set DEPLOY_PASS, or run from an interactive terminal to be prompted
-twice (enter + confirm); see deploy_ssh_env.require_deploy_pass.
+SSH password: set DEPLOY_PASS, or use --ask-pass to prompt (ignores .env), or run from an
+interactive terminal to be prompted twice when DEPLOY_PASS is unset.
 """
 import os
 import sys
@@ -28,7 +29,6 @@ from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
 
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
-SERVER_PASS = require_deploy_pass()
 REMOTE_BASE = "/var/www/html"
 
 
@@ -208,6 +208,30 @@ MANIFESTS = {
         "docs/ENCODER_FREE_TIER.md",
         "data/rulebook_v16_sync.json",
     ],
+    # Trophy system: collector levels, passive income (pts + MN2), social, agent tools
+    "trophies": [
+        "trophies/index.html",
+        "profile/index.html",
+        "backend/routes/trophies_routes.py",
+        "backend/services/trophy_level_service.py",
+        "backend/services/trophy_social_service.py",
+        "backend/services/trophy_quest_service.py",
+        "data/trophy_levels.json",
+        "data/trophy_definitions.json",
+    ],
+    # Unified Game Hub: frontpage tabs + quest unification (Option C)
+    "game_hub": [
+        "index.html",
+        "quests/index.html",
+        "trophies/index.html",
+        "static/css/frontpage-home.css",
+        "static/js/game-hub-panel.js",
+        "backend/routes/game_hub_routes.py",
+        "backend/services/game_hub_service.py",
+        "backend/services/trophy_quest_service.py",
+        "backend/routes/trophies_routes.py",
+        "backend/register_blueprints.py",
+    ],
     # Fix production 404s: routes + fallbacks + blueprint registration (see logs/production_404_deploy_checklist.txt)
     "fix_404": [
         "backend/routes/missing_endpoints_routes.py",
@@ -296,23 +320,40 @@ MANIFESTS = {
     "mn2_staking": [
         "backend/services/mn2_rpc_client.py",
         "backend/services/mn2_ledger.py",
+        "backend/services/mn2_deposit_scanner.py",
         "backend/services/mn2_chainz.py",
+        "backend/services/mn2_wallet_service.py",
+        "backend/services/mn2_network_stats.py",
+        "backend/services/mn2_explorer_data.py",
+        "backend/services/mn2_explorer_urls.py",
         "backend/services/mn2_staking_service.py",
         "backend/services/mn2_staking_reconcile_service.py",
         "backend/services/mn2_staking_agents_service.py",
         "backend/services/mn2_onramp_service.py",
         "backend/services/mn2_p2p_service.py",
+        "backend/services/discord_service.py",
+        "backend/services/discord_m8_streams.py",
         "backend/services/unified_points_database.py",
+        "backend/routes/health_routes.py",
+        "backend/routes/discord_routes.py",
+        "backend/routes/platform_news_routes.py",
+        "backend/services/video_generator_service.py",
         "backend/routes/mn2_routes.py",
         "backend/routes/mn2_staking_routes.py",
         "backend/routes/mn2_onramp_routes.py",
         "backend/routes/mn2_p2p_routes.py",
         "backend/routes/agent_staking_routes.py",
+        "backend/routes/agent_treasury_routes.py",
+        "backend/services/agent_wallet_service.py",
+        "backend/services/treasury_signoff_service.py",
+        "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
+        "data/mn2_config.json",
         "data/mn2_staking_config.json",
         "data/mn2_staking_terms.json",
         "data/monetization_config.json",
         "scripts/mn2_reconcile.py",
+        "scripts/treasury_signoff.py",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
     "knowledge_cron_env": [
@@ -362,6 +403,8 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "monitor",
     "mn2_env",
     "mn2_staking",
+    "trophies",
+    "game_hub",
     "config",
     "agent_daemon_env",
     "service_check_backend",
@@ -370,7 +413,9 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
 RESTART_NGINX_ONLY_FOR = frozenset({"static_pages"})
 
 
-def run(files, upload_only=False, restart_services=None, manifest_name=None):
+def run(files, upload_only=False, restart_services=None, manifest_name=None, server_pass=None):
+    if not server_pass:
+        server_pass = require_deploy_pass()
     ssh = None
     sftp = None
     try:
@@ -389,7 +434,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
         print(f"{step} Connecting...")
         ssh = __import__("paramiko").SSHClient()
         ssh.set_missing_host_key_policy(__import__("paramiko").AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
         sftp = ssh.open_sftp()
         print("  [OK] Connected")
         print()
@@ -588,14 +633,19 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
 
 def main():
     args = sys.argv[1:]
+    ask_pass = "--ask-pass" in args
+    if ask_pass:
+        args = [a for a in args if a != "--ask-pass"]
     upload_only = "--upload-only" in args
     if upload_only:
         args = [a for a in args if a != "--upload-only"]
     if not args:
-        print("Usage: python scripts/deploy.py <manifest> [--upload-only] | --files path1 path2 [--upload-only]")
+        print("Usage: python scripts/deploy.py <manifest> [--ask-pass] [--upload-only] | --files path1 path2 [--ask-pass] [--upload-only]")
+        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("Manifests:", ", ".join(MANIFESTS))
         sys.exit(1)
+    server_pass = require_deploy_pass(force_prompt=ask_pass)
     manifest_name = None
     if args[0] == "--files":
         files = args[1:]
@@ -616,7 +666,7 @@ def main():
     elif manifest_name and manifest_name in RESTART_NGINX_ONLY_FOR and not upload_only:
         restart_services = ["__nginx_static__"]
         print("(Restart: nginx reload only — static HTML/CSS/JS)")
-    ok = run(files, upload_only=upload_only, restart_services=restart_services, manifest_name=manifest_name)
+    ok = run(files, upload_only=upload_only, restart_services=restart_services, manifest_name=manifest_name, server_pass=server_pass)
     sys.exit(0 if ok else 1)
 
 
