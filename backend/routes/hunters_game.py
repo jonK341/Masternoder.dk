@@ -606,6 +606,19 @@ def award_xp(user_id: str, points: Dict, **kwargs) -> Dict:
         
         db.session.commit()
         
+        if level_up:
+            try:
+                from backend.services.activity_events_service import emit
+                emit(
+                    "hunter_level_up",
+                    user_id=user_id,
+                    channel="game",
+                    text=f"Level {new_level}",
+                    payload={"level": new_level, "xp_awarded": xp_amount},
+                )
+            except Exception:
+                pass
+
         try:
             from backend.services.ai_user_controller import on_user_activity
             on_user_activity(user_id, "xp_earned", {"amount": xp_amount, "level": new_level, "leveled_up": level_up})

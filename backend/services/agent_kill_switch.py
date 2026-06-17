@@ -18,6 +18,7 @@ _PATH = os.path.join(_BASE, "data", "agent_global_switches.json")
 _MONEY_VERBS = frozenset({
     "stake", "unstake", "p2p_create_listing", "p2p_buy", "onramp_order",
     "execute_mn2_purchase", "run_agent", "run_all", "copy_trade",
+    "run_casino_agent", "run_casino_all",
 })
 
 

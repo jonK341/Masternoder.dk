@@ -2,73 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MN2 Market — P2P Trade - MasterNoder</title>
-    <link rel="stylesheet" href="/static/css/modern-design-system.css">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
-    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .market-page { min-height: 100vh; padding: 100px 20px 60px; max-width: 960px; margin: 0 auto; }
-        .market-card { background: rgba(20,20,35,0.9); border: 1px solid rgba(170,0,255,0.35); border-radius: 16px; padding: 24px; margin-top: 20px; }
-        .market-card h2 { color: #c08cff; margin: 0 0 8px; }
-        #mn2-p2p-panel { display: block !important; }
-        .market-disabled { padding: 24px; text-align: center; color: rgba(255,255,255,0.65); }
-    </style>
+    <meta http-equiv="refresh" content="0;url=/explorer?tab=market">
+    <title>Redirect — MN2 Crypto Hub</title>
+    <link rel="canonical" href="/explorer?tab=market">
+    <script>location.replace('/explorer?tab=market');</script>
 </head>
 <body>
-    <div class="market-page">
-        <h1>📈 MN2 Market</h1>
-        <p class="subtitle">Peer-to-peer MN2 trades — list, buy, and sell with PayPal settlement (Model B)</p>
-
-        <section class="mn2-page-strip" data-mn2-auto data-balance-id="market-mn2-balance" data-rate-id="market-mn2-rate" aria-labelledby="market-mn2-title">
-            <h2 id="market-mn2-title">🪙 Your MN2 wallet</h2>
-            <p>Live balance and USD reference price. Purchased MN2 may be held until clearance; seller payouts release after the buyer chargeback window.</p>
-            <div class="mn2-page-metrics">
-                <div class="mn2-page-metric"><span>Balance</span><strong id="market-mn2-balance">—</strong></div>
-                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="market-mn2-rate">—</strong></div>
-                <div class="mn2-page-metric"><span>Open listings</span><strong id="market-open-listings" data-mn2-extra="/api/mn2/network-overview" data-mn2-extra-key="p2p.open_listings">—</strong></div>
-            </div>
-            <div class="mn2-page-actions">
-                <a href="/profile#mn2-wallet">Wallet</a>
-                <a href="/shop" class="secondary">Shop / withdraw</a>
-                <a href="/explorer" class="secondary">Explorer</a>
-            </div>
-        </section>
-
-        <div class="market-card">
-            <div id="market-disabled" class="market-disabled" style="display:none;">
-                <p>P2P market is disabled on this server. Enable it in staking/P2P config when ready.</p>
-                <a href="/profile#mn2-wallet">Open wallet</a>
-            </div>
-            <div id="mn2-p2p-panel">
-                <h2><i class="fas fa-exchange-alt"></i> Open listings</h2>
-                <p style="font-size:0.88rem;opacity:0.8;">Sell MN2 from your cleared balance or buy from other users via PayPal.</p>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:12px 0;">
-                    <label>Sell MN2 <input type="number" id="mn2-p2p-sell-amount" placeholder="amount" min="0" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
-                    <label>$/MN2 <input type="number" id="mn2-p2p-sell-price" placeholder="price" min="0" step="0.01" style="width:90px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
-                    <button type="button" id="mn2-p2p-list-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #c08cff;background:rgba(170,0,255,0.18);color:#c08cff;cursor:pointer;">List for sale</button>
-                </div>
-                <div id="mn2-p2p-listings" style="max-height:320px;overflow-y:auto;font-size:0.85rem;">Loading listings…</div>
-                <p id="mn2-p2p-msg" style="font-size:0.85rem;color:#c08cff;min-height:1.2em;"></p>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/js/error-manager.js"></script>
-    <script src="/static/js/navigation-toolbar.js"></script>
-    <script src="/static/js/mn2-site-bridge.js?v=20260614d"></script>
-    <script src="/static/js/mn2-page-strip-init.js?v=20260614d"></script>
-    <script src="/static/js/mn2-p2p.js?v=20260614d"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        fetch('/api/mn2/p2p/config').then(function (r) { return r.json(); }).then(function (cfg) {
-            if (!cfg || !cfg.success || !cfg.enabled) {
-                document.getElementById('market-disabled').style.display = 'block';
-                document.getElementById('mn2-p2p-panel').style.display = 'none';
-            }
-        }).catch(function () {});
-    });
-    </script>
+    <p>Moved to <a href="/explorer?tab=market">MN2 Crypto Hub — Market</a>.</p>
 </body>
 </html>

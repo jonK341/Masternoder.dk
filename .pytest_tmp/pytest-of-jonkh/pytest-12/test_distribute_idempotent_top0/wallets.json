@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "trader_agent_1": {
+      "mn2_balance": 100.0,
+      "history": [
+        {
+          "ts": "2026-06-16T22:23:53.106261Z",
+          "amount": 100.0,
+          "reference": "treasury-fund:trader_agent_1",
+          "source": "agent_treasury"
+        }
+      ]
+    }
+  },
+  "updated_at": "2026-06-16T22:23:53.106261Z"
+}

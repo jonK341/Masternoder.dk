@@ -1,6 +1,5 @@
-# Deployment credentials - DO NOT COMMIT
-deploy_credentials.bat
-deploy_credentials.ps1
+# Vendored coin source (clone separately; see docs/MN2_UPGRADE_PLAN_v123.md)
+external/
 
 # Python
 __pycache__/
@@ -32,6 +31,8 @@ logs/
 # Local scrape/cache artifacts
 .firecrawl/
 .pytest_cache/
+node_modules/
+tests/.pytest-tmp/
 
 # Backup/runtime artifacts
 *.backup

@@ -1,0 +1,1 @@
+{"models": {"casino_kelly_agent": {"name": "Kelly Optimizer", "strategy": "kelly_flat", "skills": ["kelly_sizing", "play_dice"], "preferred_games": ["dice"], "bet_fraction": 0.05, "currency": "coins", "task_kind": "casino_bet_plan"}}}

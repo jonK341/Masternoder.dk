@@ -139,12 +139,23 @@ MANIFESTS = {
         "backend/routes/missing_endpoints_routes.py",
         "backend/routes/generator_routes.py",
         "backend/routes/generator_shared.py",
+        "backend/routes/gallery_routes.py",
         "backend/register_blueprints.py",
         "backend/services/video_generator_service.py",
+        "backend/services/generator_crypto_rewards_service.py",
+        "backend/services/generator_mn2_service.py",
         "backend/services/video_ai_bridge.py",
         "backend/services/agent_support_service.py",
         "backend/services/user_identification.py",
         "backend/run_generator_job.py",
+        "data/generator_config.json",
+        "data/mn2_config.json",
+        "backend/services/generator_agent_service.py",
+        "backend/services/generator_encode_service.py",
+        "backend/services/generator_thumbnail_service.py",
+        "backend/services/tts_service.py",
+        "scripts/generator_stale_cleanup.py",
+        "static/js/unified-point-counters.js",
     ],
     # Gallery + compact nav (no restart override; use full restart)
     "gallery_nav": [
@@ -343,7 +354,6 @@ MANIFESTS = {
         "docs/USER_LOCATION_GPS_SYSTEM.md",
         "docs/AGENT_SKILLS_AND_CONCLUSIONS.md",
         "docs/AGENTS_SKILLS_SYNC.md",
-        "docs/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md",
     ],
     # MN2 401 fix: upload only .env + systemd units, install units, restart uwsgi-vidgenerator
     "mn2_env": [
@@ -357,6 +367,8 @@ MANIFESTS = {
         "cron/masternoder-mn2-scan.cron.d",
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
+        "cron/mn2_masternode_provision.sh",
+        "cron/masternoder-mn2-masternode-provision.cron.d",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
     # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;
@@ -384,8 +396,21 @@ MANIFESTS = {
         "backend/services/mn2_copy_trading.py",
         "backend/services/mn2_onramp_service.py",
         "backend/services/mn2_p2p_service.py",
+        "backend/services/mn2_masternode_service.py",
+        "backend/services/mn2_masternode_hosting_service.py",
+        "backend/services/mn2_services_hub.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
+        "backend/services/casino_discord_fanout.py",
+        "backend/services/market_discord_fanout.py",
+        "backend/services/game_discord_fanout.py",
+        "backend/services/discord_link_service.py",
+        "backend/services/shop_discord_promo_service.py",
+        "backend/routes/battle_routes.py",
+        "backend/routes/hunters_game.py",
+        "backend/routes/shop_routes.py",
+        "data/discord_promo_codes.json",
+        "profile/index.html",
         "backend/services/unified_points_database.py",
         "backend/routes/health_routes.py",
         "backend/routes/discord_routes.py",
@@ -395,6 +420,7 @@ MANIFESTS = {
         "backend/routes/mn2_staking_routes.py",
         "backend/routes/mn2_onramp_routes.py",
         "backend/routes/mn2_p2p_routes.py",
+        "backend/routes/mn2_masternode_routes.py",
         "backend/routes/agent_staking_routes.py",
         "backend/routes/agent_treasury_routes.py",
         "backend/routes/agent_trader_staking_routes.py",
@@ -408,17 +434,36 @@ MANIFESTS = {
         "data/mn2_config.json",
         "data/mn2_staking_config.json",
         "data/mn2_staking_terms.json",
+        "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "shop/index.html",
         "scripts/mn2_reconcile.py",
         "scripts/treasury_signoff.py",
         "scripts/trader_staking_join_server.sh",
+        "explorer/index.html",
+        "static/js/mn2-explorer-overview.js",
+        "static/js/mn2-internal-market.js",
+        "static/js/mn2-crypto-hub.js",
+        "static/css/mn2-crypto-hub.css",
+        "scripts/_verify_trader_market_remote.py",
+        "cron/discord_market_fanout.sh",
+        "cron/discord_game_fanout.sh",
+        "cron/masternoder-discord-game.cron.d",
+        "cron/masternoder-discord-market.cron.d",
+        "cron/monetization_cron.sh",
+        "cron/masternoder-monetization.cron.d",
+        "cron/discord_activity_funnel.sh",
+        "cron/mn2_read_ops_secret.sh",
     ],
     "camgirls": [
         "backend/services/camgirls_service.py",
         "backend/services/camgirls_payout_service.py",
         "backend/services/camgirls_agents_service.py",
+        "backend/services/camgirls_studio_service.py",
         "backend/services/mn2_wallet_service.py",
         "backend/services/mn2_rpc_client.py",
+        "backend/services/platform_news_publish.py",
+        "backend/services/discord_m8_streams.py",
         "backend/routes/camgirls_routes.py",
         "backend/services/mn2_earn_auth.py",
         "backend/services/mn2_ledger.py",
@@ -435,16 +480,25 @@ MANIFESTS = {
         "backend/routes/mn2_staking_routes.py",
         "data/camgirls_performers.json",
         "data/camgirls_agent_models.json",
-        "data/camgirls_payout_addresses.json",
+        "data/camgirls_studio_catalog.json",
+        # Runtime: provision on server via camgirls_provision_payout_addresses.py — do not deploy empty file.
         "data/camgirls_performers_production.json",
         "data/camgirls_performers_production.template.json",
         "scripts/camgirls_onboard_performers.py",
         "scripts/camgirls_provision_payout_addresses.py",
+        "scripts/camgirls_py.sh",
+        "scripts/project_env.py",
         "scripts/camgirls_post_deploy_verify.py",
+        "scripts/camgirls_remote_diag.py",
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "camgirls/index.html",
         "static/js/camgirls.js",
+        "static/js/camgirls-studio.js",
+        "scripts/camgirls_py.sh",
         "static/camgirls/avatar-demo.svg",
+        "static/camgirls/avatar-sage.svg",
+        "static/camgirls/avatar-ember.svg",
+        "static/camgirls/avatar-iris.svg",
         "static/camgirls/preview-demo.svg",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
@@ -675,6 +729,71 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
                   else "  [WARN] staking accrual cron.d install may have failed")
             print()
 
+        if manifest_name == "mn2_staking" and not upload_only:
+            print("[2f] MN2 masternode hosting post-deploy...")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_masternode_provision.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-mn2-masternode-provision.cron.d "
+                f"/etc/cron.d/masternoder-mn2-masternode-provision 2>/dev/null && "
+                f"chmod 644 /etc/cron.d/masternoder-mn2-masternode-provision 2>/dev/null || true",
+                timeout=10,
+            )
+            seed_cmd = (
+                f"cd {REMOTE_BASE} && "
+                "SECRET=$(grep -E '^(MN2_OPS_SECRET|MN2_SCAN_SECRET)=' .env | head -1 | cut -d= -f2- | tr -d '\\r\"') && "
+                "for n in 2 3 4 5; do "
+                "curl -s -X POST -H 'Content-Type: application/json' -H \"X-Ops-Secret: $SECRET\" "
+                "-d \"{\\\"id\\\":\\\"platform-mn-$n\\\",\\\"label\\\":\\\"Masternoder.dk fleet #$n\\\","
+                "\\\"status\\\":\\\"queued\\\",\\\"notes\\\":\\\"Platform expansion slot\\\"}\" "
+                "http://127.0.0.1:5000/api/mn2/masternode/hosts; echo; done && "
+                "curl -s http://127.0.0.1:5000/api/mn2/masternode/service | head -c 800"
+            )
+            stdin, stdout, stderr = ssh.exec_command(seed_cmd, timeout=60)
+            out = (stdout.read() or b"").decode(errors="replace").strip()
+            if out:
+                print(f"  {out[:600]}")
+            print("  [OK] masternode provision cron + fleet seed (platform-mn-2..5)")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/discord_game_fanout.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-discord-game.cron.d /etc/cron.d/masternoder-discord-game "
+                f"&& chmod 644 /etc/cron.d/masternoder-discord-game",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-discord-game && echo OK", timeout=5
+            )
+            out_dg = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-discord-game (every 15 min)" if out_dg == "OK"
+                  else "  [WARN] discord game cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/discord_market_fanout.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-discord-market.cron.d /etc/cron.d/masternoder-discord-market "
+                f"&& chmod 644 /etc/cron.d/masternoder-discord-market",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-discord-market && echo OK", timeout=5
+            )
+            out_dm = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-discord-market (every 15 min)" if out_dm == "OK"
+                  else "  [WARN] discord market cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/monetization_cron.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-monetization.cron.d /etc/cron.d/masternoder-monetization "
+                f"&& chmod 644 /etc/cron.d/masternoder-monetization",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-monetization && echo OK", timeout=5
+            )
+            out_mon = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-monetization (daily 09:00 UTC)" if out_mon == "OK"
+                  else "  [WARN] monetization cron.d install may have failed")
+            print()
+
         if manifest_name == "knowledge_cron_env" and not upload_only:
             print("[2d] Knowledge-sharing report cron (reporter_agent)...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/knowledge_sharing_report.sh 2>/dev/null || true", timeout=5)
@@ -718,6 +837,30 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
                 )
                 time.sleep(0.15)
             print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader)")
+            print()
+
+        if manifest_name == "camgirls" and not upload_only:
+            print("[2g] Camgirls post-deploy (venv deps + script perms)...")
+            ssh.exec_command(
+                f"chmod +x {REMOTE_BASE}/scripts/camgirls_py.sh 2>/dev/null || true",
+                timeout=5,
+            )
+            dep_cmd = (
+                f"cd {REMOTE_BASE} && "
+                "if [ -x ./.venv/bin/python ]; then "
+                "./.venv/bin/python -m ensurepip --upgrade 2>/dev/null || true; "
+                "./.venv/bin/python -m pip install -q 'requests>=2.32.0,<2.34' 2>/dev/null || "
+                "SITE=$(./.venv/bin/python -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null) && "
+                "[ -n \"$SITE\" ] && python3 -m pip install -q -t \"$SITE\" 'requests>=2.32.0,<2.34' 2>/dev/null || true; "
+                "fi"
+            )
+            stdin, stdout, stderr = ssh.exec_command(dep_cmd, timeout=120)
+            stdout.channel.recv_exit_status()
+            err = (stderr.read() or b"").decode(errors="replace").strip()
+            if err and "error" in err.lower():
+                print(f"  [WARN] pip install requests: {err[:200]}")
+            else:
+                print("  [OK] .venv requests (MN2 payout RPC)")
             print()
 
         if upload_only:

@@ -1,0 +1,24 @@
+{
+  "entries": [
+    {
+      "user_id": "agent_treasury",
+      "type": "treasury_deposit",
+      "amount": 200.0,
+      "txid": "treasury-tx-200",
+      "address": "JJi8g5CYTXL6NVW1za4tJtzC1X61M7WRZi",
+      "created_at": "2026-06-16T22:07:44.638174Z",
+      "metadata": {
+        "confirmations": 10
+      }
+    },
+    {
+      "user_id": "agent_treasury",
+      "type": "treasury_deposit",
+      "amount": 1.0,
+      "txid": "tx-treasury-1",
+      "address": null,
+      "created_at": "2026-06-16T22:07:44.670425Z",
+      "metadata": {}
+    }
+  ]
+}

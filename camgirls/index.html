@@ -32,13 +32,40 @@
         .cg-agents-strip { border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; background: rgba(0,212,255,0.06); }
         .cg-agents-strip h2 { margin: 0 0 8px; font-size: 1rem; color: #00d4ff; }
         .cg-agent-chip { display: inline-block; margin: 4px 8px 4px 0; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); font-size: 0.82rem; }
+        .cg-stage { border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 8px; background: rgba(0,0,0,0.35); position: relative; overflow: hidden; min-height: 120px; }
+        .cg-stage-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .cg-viewers { opacity: 0.7; }
+        .cg-studio-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 0.78rem; }
+        .cg-stage-avatar-wrap { text-align: center; position: relative; }
+        .cg-stage-avatar { width: 88px; height: 88px; border-radius: 14px; object-fit: cover; display: inline-block; transition: transform 0.2s; }
+        .cg-card-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+        .cg-buzz-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 8px auto 0; max-width: 120px; overflow: hidden; }
+        .cg-buzz-fill { height: 100%; width: 0; background: linear-gradient(90deg,#ff00aa,#00d4ff); transition: width 0.3s; }
+        .cg-buzz-pulse .cg-stage-avatar { transform: scale(1.08); filter: brightness(1.2); }
+        .cg-goal-wrap { margin: 10px 0 6px; font-size: 0.78rem; }
+        .cg-goal-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+        .cg-goal-fill { height: 100%; background: linear-gradient(90deg,#00ff88,#00d4ff); width: 0; transition: width 0.4s; }
+        .cg-studio-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .cg-studio-lock { font-size: 0.8rem; opacity: 0.65; margin: 8px 0 0; }
+        .cg-wheel-result { font-size: 0.82rem; min-height: 1.2em; margin: 6px 0; color: #00d4ff; }
+        .cg-emoji-float { position: absolute; top: 40%; font-size: 1.4rem; animation: cg-float 2s ease-out forwards; pointer-events: none; }
+        @keyframes cg-float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+        @keyframes cg-shimmy { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg) translateX(-4px); } 75% { transform: rotate(8deg) translateX(4px); } }
+        @keyframes cg-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        @keyframes cg-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes cg-wave { 0%,100% { transform: skewX(0); } 50% { transform: skewX(-6deg); } }
+        .cg-dance-shimmy { animation: cg-shimmy 0.5s ease-in-out 4; }
+        .cg-dance-spin { animation: cg-spin 1.2s linear 2; }
+        .cg-dance-bounce { animation: cg-bounce 0.45s ease 5; }
+        .cg-dance-wave { animation: cg-wave 1s ease-in-out 3; }
+        .cg-dance-vip { animation: cg-shimmy 0.7s ease 2, cg-spin 2s linear 1; }
     </style>
 </head>
 <body>
     <div class="cg-page">
         <div class="cg-header">
             <h1>Camgirls</h1>
-            <p style="opacity:0.75;">Browse performers · unlock with MN2 · tip · AI companion chat when unlocked</p>
+            <p style="opacity:0.75;">Browse performers · unlock with MN2 · tips & gifts · voice · music · dances · full studio stack</p>
             <p style="font-size:0.85rem;opacity:0.6;">Explorer lives at <a href="https://camgirls.masternoder.dk/" target="_blank" rel="noopener">camgirls.masternoder.dk</a> · Agents: <code>/api/camgirls/agent-tools</code></p>
         </div>
         <div id="cg-agents" class="cg-agents-strip" style="display:none;">
@@ -54,6 +81,7 @@
         <div id="cg-msg"></div>
         <div id="cg-grid" class="cg-grid">Loading performers…</div>
     </div>
-    <script src="/static/js/camgirls.js?v=20260617d"></script>
+    <script src="/static/js/camgirls-studio.js?v=20260617e"></script>
+    <script src="/static/js/camgirls.js?v=20260617e"></script>
 </body>
 </html>

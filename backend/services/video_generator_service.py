@@ -6,6 +6,7 @@ Phase 2: Errors are persisted to job (status=failed, error_message); run() wrapp
 import os
 import threading
 import math
+import re
 from datetime import datetime
 from typing import Dict, Optional, Callable, Tuple, List, Any
 import textwrap
@@ -778,6 +779,54 @@ def _status_sidecar_path(doc_id: str) -> str:
     return os.path.join(VIDEOS_DIR, f"{doc_id}.status.json")
 
 
+def _run_sidecar_path(doc_id: str) -> str:
+    return os.path.join(VIDEOS_DIR, f"{doc_id}.run.json")
+
+
+def write_run_sidecar(doc_id: str, pid: int, duration_sec: int = 180) -> None:
+    """Track subprocess PID for stale reaper (E10)."""
+    try:
+        payload = {
+            "doc_id": doc_id,
+            "pid": int(pid),
+            "started_at": datetime.utcnow().isoformat() + "Z",
+            "duration_sec": max(30, int(duration_sec or 180)),
+        }
+        with open(_run_sidecar_path(doc_id), "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception:
+        pass
+
+
+def clear_run_sidecar(doc_id: str) -> None:
+    try:
+        p = _run_sidecar_path(doc_id)
+        if os.path.isfile(p):
+            os.remove(p)
+    except Exception:
+        pass
+
+
+def _infer_encode_stage(message: str) -> str:
+    """Map progress message to encoder stage id (E9)."""
+    msg = (message or "").strip()
+    low = msg.lower()
+    if low.startswith("planning") or "scene plan" in low:
+        return "planning"
+    if low.startswith("enhancing") or "enhance segment" in low:
+        return "enhancing"
+    seg = re.search(r"building segment\s+(\d+)", low)
+    if seg:
+        return f"segment_{seg.group(1)}"
+    if "concat" in low:
+        return "concat"
+    if "encoding video" in low or low.startswith("encoding") or "mux" in low:
+        return "mux"
+    if any(k in low for k in ("generating ai", "runway", "heygen", "replicate", "pika", "modelslab")):
+        return "enhancing"
+    return "processing"
+
+
 def _service_check_summary(detail: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Slim dict for status sidecar / dashboards (avoids huge nested blobs)."""
     if not isinstance(detail, dict):
@@ -824,6 +873,7 @@ def _write_status_sidecar(
     prompt: Optional[str] = None,
     providers_used: Optional[List[str]] = None,
     generation_meta: Optional[Dict[str, Any]] = None,
+    stage: Optional[str] = None,
 ) -> None:
     try:
         now = datetime.utcnow()
@@ -836,6 +886,8 @@ def _write_status_sidecar(
             "video_url": video_url or (f"/api/documentary/video/{doc_id}" if status == "completed" else None),
             "updated_at": now.isoformat() + "Z",
         }
+        if stage:
+            payload["stage"] = str(stage)[:40]
         if status == "completed":
             from datetime import timedelta
             from backend.services.video_retention_service import TEMP_EXPIRY_MINUTES
@@ -943,7 +995,13 @@ def _resolve_audio_profile(config: Optional[Dict[str, Any]] = None, fallback_sty
 
     style = str(cfg.get("audio_style") or "auto").strip().lower()
     if style in ("", "auto", "default"):
-        if any(k in hint for k in ("epic", "battle", "heroic", "action", "war")):
+        preset = str(cfg.get("style_preset") or "").strip().lower()
+        tone = str(cfg.get("theme_tone") or "").strip().lower()
+        if preset == "documentary" or "documentary" in hint:
+            style = "documentary"
+        elif tone == "energetic" or any(k in hint for k in ("energetic", "upbeat", "action", "sport")):
+            style = "energetic"
+        elif any(k in hint for k in ("epic", "battle", "heroic", "war")):
             style = "epic"
         elif any(k in hint for k in ("dark", "mystery", "horror", "night", "conspiracy")):
             style = "dark"
@@ -952,6 +1010,9 @@ def _resolve_audio_profile(config: Optional[Dict[str, Any]] = None, fallback_sty
         else:
             style = fallback_style or "cinematic"
 
+    if style not in ("cinematic", "documentary", "energetic", "dark", "epic", "calm"):
+        style = "cinematic"
+
     intensity = str(cfg.get("audio_intensity") or "high").strip().lower()
     if intensity not in ("low", "medium", "high", "max"):
         intensity = "high"
@@ -959,11 +1020,21 @@ def _resolve_audio_profile(config: Optional[Dict[str, Any]] = None, fallback_sty
     transitions = str(cfg.get("audio_transitions") or "on").strip().lower() not in ("off", "false", "0", "none")
     fades = str(cfg.get("audio_fades") or "on").strip().lower() not in ("off", "false", "0", "none")
 
+    narration = cfg.get("narration_enabled")
+    if narration is None:
+        qm = str(cfg.get("quality_mode") or "").strip().lower()
+        ep = str(cfg.get("encode_profile") or "").strip().lower()
+        narration = qm in ("high", "best", "max", "ultra") or ep in ("premium", "ultra")
+    else:
+        narration = bool(narration)
+
     return {
         "style": style,
         "intensity": intensity,
         "transitions": transitions,
         "fades": fades,
+        "narration_enabled": narration,
+        "narration_voice": str(cfg.get("narration_voice") or "rachel").strip().lower(),
     }
 
 
@@ -992,11 +1063,22 @@ def _build_dynamic_audio_clip(
 
     palette_by_style = {
         "cinematic": [82.0, 98.0, 110.0, 123.47, 146.83, 164.81, 196.0, 220.0],
+        "documentary": [73.42, 82.41, 98.0, 110.0, 123.47, 130.81, 146.83],
+        "energetic": [110.0, 130.81, 146.83, 164.81, 196.0, 220.0, 246.94],
         "dark": [55.0, 65.4, 73.4, 82.4, 92.5, 98.0, 110.0],
         "epic": [98.0, 123.47, 146.83, 174.61, 196.0, 246.94],
         "calm": [130.81, 146.83, 164.81, 174.61, 196.0, 220.0],
     }
+    bed_params_by_style = {
+        "cinematic": {"base_hz": 42.0, "harm_hz": 84.0, "bed_gain": 0.06, "pulse_scale": 1.0},
+        "documentary": {"base_hz": 55.0, "harm_hz": 110.0, "bed_gain": 0.075, "pulse_scale": 0.65},
+        "energetic": {"base_hz": 62.0, "harm_hz": 124.0, "bed_gain": 0.05, "pulse_scale": 1.35},
+        "dark": {"base_hz": 38.0, "harm_hz": 76.0, "bed_gain": 0.07, "pulse_scale": 0.85},
+        "epic": {"base_hz": 48.0, "harm_hz": 96.0, "bed_gain": 0.065, "pulse_scale": 1.1},
+        "calm": {"base_hz": 52.0, "harm_hz": 104.0, "bed_gain": 0.055, "pulse_scale": 0.75},
+    }
     base_palette = palette_by_style.get(style, palette_by_style["cinematic"])
+    bed_cfg = bed_params_by_style.get(style, bed_params_by_style["cinematic"])
     if not segments:
         segments = [{"title": "Scene", "description": "", "duration": int(total_duration)}]
 
@@ -1043,10 +1125,20 @@ def _build_dynamic_audio_clip(
 
         bed_scale = 1.0 if style != "calm" else 1.15
         bed_dark = 0.95 if style != "dark" else 1.25
+        b_gain = float(bed_cfg.get("bed_gain", 0.06))
+        b_base = float(bed_cfg.get("base_hz", 42.0)) * bed_dark
+        b_harm = float(bed_cfg.get("harm_hz", 84.0)) * bed_dark
         bed = (
-            (0.06 * bed_scale) * np.sin(2.0 * math.pi * (42.0 * bed_dark) * arr) +
-            (0.035 * bed_scale) * np.sin(2.0 * math.pi * (84.0 * bed_dark) * arr + 0.75)
+            (b_gain * bed_scale) * np.sin(2.0 * math.pi * b_base * arr) +
+            (b_gain * 0.58 * bed_scale) * np.sin(2.0 * math.pi * b_harm * arr + 0.75)
         )
+        if style == "documentary":
+            bed += (0.022 * bed_scale) * np.sin(2.0 * math.pi * 27.5 * arr + 0.4)
+        elif style == "energetic":
+            beat_period = 0.55
+            phase = np.mod(arr, beat_period) / beat_period
+            tick = np.exp(-((phase - 0.06) ** 2) / (2.0 * (0.014 ** 2)))
+            bed += (0.038 * bed_scale) * tick * np.sin(2.0 * math.pi * 220.0 * arr)
         out[:, 0] += bed
         out[:, 1] += bed * 0.96
 
@@ -1069,7 +1161,7 @@ def _build_dynamic_audio_clip(
             fundamental = np.sin(2.0 * math.pi * (base * wobble) * local_t)
             harmonic = 0.44 * np.sin(2.0 * math.pi * (base * 1.5) * local_t + seg["phase"])
             shimmer = 0.22 * np.sin(2.0 * math.pi * (base * 2.02) * local_t + 0.3)
-            pulse = 0.82 + 0.18 * np.sin(2.0 * math.pi * seg["pulse"] * local_t)
+            pulse = 0.82 + 0.18 * np.sin(2.0 * math.pi * seg["pulse"] * local_t * float(bed_cfg.get("pulse_scale", 1.0)))
 
             signal = seg["gain"] * envelope * pulse * (0.62 * fundamental + harmonic + shimmer)
             if use_transitions:
@@ -1667,7 +1759,8 @@ def _plan_ai_segments(
 
 
 def _generate_video_sync(doc_id: str, prompt: str, title: str, duration_sec: int,
-                         width: int, height: int, on_progress: Optional[Callable[[int, str], None]] = None
+                         width: int, height: int, on_progress: Optional[Callable[[int, str], None]] = None,
+                         encode_profile: Optional[str] = None,
                          ) -> Tuple[Optional[str], Optional[str]]:
     """
     Generate a video file synchronously.
@@ -1733,15 +1826,12 @@ def _generate_video_sync(doc_id: str, prompt: str, title: str, duration_sec: int
                 clip = clips_to_concat[0] if clips_to_concat else ColorClip(size=(w, h), color=(15, 25, 45), duration=duration_sec)
             if on_progress:
                 on_progress(60, 'Encoding video...')
-            clip.write_videofile(
-                out_path,
-                fps=24,
-                codec='libx264',
-                audio=False,
-                logger=None,
-                preset='ultrafast',
-                ffmpeg_params=['-pix_fmt', 'yuv420p', '-movflags', '+faststart'],
-            )
+            from backend.services.generator_encode_service import build_write_kwargs, resolve_encode_profile, moviepy_write_kwargs
+            prof = str(encode_profile or "fast_ai").strip().lower()
+            if prof not in ("fast_ai", "standard", "premium", "ultra"):
+                prof = resolve_encode_profile({"encode_profile": encode_profile})
+            write_kw = build_write_kwargs(doc_id, prof, add_audio=False, videos_dir=VIDEOS_DIR)
+            clip.write_videofile(out_path, **moviepy_write_kwargs(write_kw))
             try:
                 if not os.path.isfile(out_path) or os.path.getsize(out_path) < _MIN_VALID_MP4_BYTES:
                     raise RuntimeError("Encoded file too small")
@@ -1820,6 +1910,11 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                 )
                 return
             _prepare_generation_config(job_id, config)
+            try:
+                from backend.services.generator_encode_service import resolve_encode_profile
+                config["encode_profile"] = resolve_encode_profile(config)
+            except Exception:
+                pass
             if "use_all_ais" not in config:
                 try:
                     from backend.services.llm_service import configured_providers
@@ -1922,6 +2017,13 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                     "segments": segments,
                 })
                 clip_vp = _visual_profile_from_seed(_generation_visual_seed(clip_doc_id))
+                clip_mode = str(config.get("clip_video_mode") or "auto").strip().lower()
+                if clip_mode in ("avatar", "heygen"):
+                    video_ai_pref = "heygen"
+                elif clip_mode in ("runway", "replicate", "auto", ""):
+                    video_ai_pref = clip_mode or "auto"
+                else:
+                    video_ai_pref = "auto"
                 path, err = generate_rich_video_sync(
                     clip_doc_id,
                     segments,
@@ -1931,6 +2033,8 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                     audio_profile=audio_profile,
                     on_progress=None,
                     visual_profile=clip_vp,
+                    video_ai_preference=video_ai_pref,
+                    encode_profile=str(config.get("encode_profile") or "fast_ai"),
                 )
                 if not path:
                     path, err = _generate_video_sync(
@@ -1945,6 +2049,11 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                 if path:
                     relative_clip_url = f'/api/documentary/video/{clip_doc_id}'
                     full_clip_url = f'/api/documentary/video/{clip_doc_id}'
+                    try:
+                        from backend.services.generator_thumbnail_service import build_video_thumbnails
+                        build_video_thumbnails(clip_doc_id, path)
+                    except Exception:
+                        pass
                     clips.append({
                         'clip_id': clip_doc_id,
                         'title': clip_title,
@@ -2004,6 +2113,22 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
             job['user_id'] = job.get('user_id') or user_id
             job['updated_at'] = datetime.utcnow().isoformat()
             job_store_set(job_id, job)
+
+            try:
+                from backend.services.discord_m8_streams import post_generator_showcase
+                post_generator_showcase(
+                    job_id=job_id,
+                    title=(prompt or "New AI clips")[:120],
+                    user_id=user_id,
+                )
+            except Exception:
+                pass
+
+            try:
+                from backend.routes.gallery_routes import invalidate_gallery_cache
+                invalidate_gallery_cache()
+            except Exception:
+                pass
 
             # Award points to user profile (same pipeline as documentary: generation_points, XP, activity, etc.)
             num_completed = len(completed)
@@ -2415,6 +2540,8 @@ def generate_rich_video_sync(
     on_progress: Optional[Callable[[int, str], None]] = None,
     visual_profile: Optional[Dict[str, Any]] = None,
     metrics_out: Optional[Dict[str, Any]] = None,
+    video_ai_preference: Optional[str] = None,
+    encode_profile: Optional[str] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Generate a longer video from segments (pictures/slides + optional text).
@@ -2433,55 +2560,65 @@ def generate_rich_video_sync(
         except ImportError:
             return (None, "moviepy not available")
 
+    pref = str(video_ai_preference or "auto").strip().lower()
+    if pref == "avatar":
+        pref = "heygen"
+    use_auto = not pref or pref == "auto"
+
     # Pre-generate AI video clips if ModelsLab is available
-    try:
-        from backend.services.modelslab_video_service import is_available as modelslab_ok, generate_segment_clips
-        if modelslab_ok():
-            if on_progress:
-                on_progress(3, "Generating AI video clips (ModelsLab)...")
-            segments = generate_segment_clips(segments, max_clips=min(3, len(segments)), timeout_per_clip=120)
-    except Exception:
-        pass
+    if use_auto:
+        try:
+            from backend.services.modelslab_video_service import is_available as modelslab_ok, generate_segment_clips
+            if modelslab_ok():
+                if on_progress:
+                    on_progress(3, "Generating AI video clips (ModelsLab)...")
+                segments = generate_segment_clips(segments, max_clips=min(3, len(segments)), timeout_per_clip=120)
+        except Exception:
+            pass
 
     # Upgrade key segments with RunwayML Gen-4 Turbo (premium cinematic quality)
-    try:
-        from backend.services.runwayml_service import is_available as runway_ok, generate_segment_clips as runway_clips
-        if runway_ok():
-            if on_progress:
-                on_progress(5, "Generating premium RunwayML Gen-4 clip...")
-            segments = runway_clips(segments, max_clips=1, duration=5, timeout_per_clip=90)
-    except Exception:
-        pass
+    if use_auto or pref == "runway":
+        try:
+            from backend.services.runwayml_service import is_available as runway_ok, generate_segment_clips as runway_clips
+            if runway_ok():
+                if on_progress:
+                    on_progress(5, "Generating premium RunwayML Gen-4 clip...")
+                segments = runway_clips(segments, max_clips=1, duration=5, timeout_per_clip=90)
+        except Exception:
+            pass
 
     # Pika 2.2 — secondary premium video provider for additional segments
-    try:
-        from backend.services.pika_service import is_available as pika_ok, generate_segment_clips as pika_clips
-        if pika_ok():
-            if on_progress:
-                on_progress(6, "Generating Pika 2.2 clip...")
-            segments = pika_clips(segments, max_clips=1, duration=5, timeout_per_clip=90)
-    except Exception:
-        pass
+    if use_auto:
+        try:
+            from backend.services.pika_service import is_available as pika_ok, generate_segment_clips as pika_clips
+            if pika_ok():
+                if on_progress:
+                    on_progress(6, "Generating Pika 2.2 clip...")
+                segments = pika_clips(segments, max_clips=1, duration=5, timeout_per_clip=90)
+        except Exception:
+            pass
 
     # HeyGen — 30s talking-avatar clips (script → avatar video)
-    try:
-        from backend.services.heygen_service import is_available as heygen_ok, generate_segment_clips as heygen_clips
-        if heygen_ok():
-            if on_progress:
-                on_progress(6, "Generating HeyGen avatar clip...")
-            segments = heygen_clips(segments, max_clips=1, timeout_per_clip=300)
-    except Exception:
-        pass
+    if use_auto or pref == "heygen":
+        try:
+            from backend.services.heygen_service import is_available as heygen_ok, generate_segment_clips as heygen_clips
+            if heygen_ok():
+                if on_progress:
+                    on_progress(6, "Generating HeyGen avatar clip...")
+                segments = heygen_clips(segments, max_clips=1, timeout_per_clip=300)
+        except Exception:
+            pass
 
     # Replicate — Stable Video Diffusion (image-to-video)
-    try:
-        from backend.services.replicate_video_service import is_available as replicate_ok, generate_segment_clips as replicate_clips
-        if replicate_ok():
-            if on_progress:
-                on_progress(6, "Generating Replicate SVD clip...")
-            segments = replicate_clips(segments, max_clips=1, timeout_per_clip=300)
-    except Exception:
-        pass
+    if use_auto or pref == "replicate":
+        try:
+            from backend.services.replicate_video_service import is_available as replicate_ok, generate_segment_clips as replicate_clips
+            if replicate_ok():
+                if on_progress:
+                    on_progress(6, "Generating Replicate SVD clip...")
+                segments = replicate_clips(segments, max_clips=1, timeout_per_clip=300)
+        except Exception:
+            pass
 
     # Pre-generate AI images — Stability AI (paid) then Pollinations.ai (free, no key)
     try:
@@ -2621,6 +2758,8 @@ def generate_rich_video_sync(
         final = concatenate_videoclips(clips_to_concat)
 
     if add_audio:
+        if on_progress:
+            on_progress(85, "Muxing audio...")
         profile = audio_profile or _resolve_audio_profile({}, fallback_style="cinematic")
         dynamic_audio = _build_dynamic_audio_clip(
             total_duration=float(getattr(final, "duration", 0) or 0),
@@ -2635,12 +2774,21 @@ def generate_rich_video_sync(
         if dynamic_audio is None:
             add_audio = False
 
-    # TTS narration — layer voice-over on top of background music
-    try:
-        from backend.services.tts_service import generate_narration_for_segments, is_available as tts_ok
-        if tts_ok():
-            narration_path = generate_narration_for_segments(segments)
-            if narration_path and os.path.isfile(narration_path):
+    # TTS narration — timed voice-over per segment (E5)
+    profile = audio_profile or {}
+    if profile.get("narration_enabled", False):
+        try:
+            from backend.services.tts_service import generate_timed_narration_for_segments, is_available as tts_ok
+            if tts_ok():
+                if on_progress:
+                    on_progress(88, "Generating TTS narration...")
+                voice_key = profile.get("narration_voice") or "rachel"
+                narration_path = generate_timed_narration_for_segments(
+                    segments,
+                    total_duration=float(getattr(final, "duration", 0) or 0),
+                    voice_key=voice_key,
+                )
+                if narration_path and os.path.isfile(narration_path):
                 # Optional: DeepFilterNet noise reduction + FFmpeg loudnorm (env AUDIO_ENHANCE=1)
                 path_to_use = narration_path
                 enhanced_path = None
@@ -2682,8 +2830,8 @@ def generate_rich_video_sync(
                             os.unlink(narration_path)
                         except Exception:
                             pass
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     ok, space_err = _check_disk_space()
     if not ok:
@@ -2695,7 +2843,7 @@ def generate_rich_video_sync(
         return (None, space_err)
 
     if on_progress:
-        on_progress(90, "Encoding video...")
+        on_progress(90, "Encoding video (mux)...")
 
     _encode_t0 = None
     try:
@@ -2714,33 +2862,26 @@ def generate_rich_video_sync(
 
     try:
         import gc
+        from backend.services.generator_encode_service import build_write_kwargs, resolve_encode_profile, ENCODE_CRF, moviepy_write_kwargs
         gc.collect()
-        write_kwargs = {
-            "fps": 16,
-            "codec": "libx264",
-            "audio": add_audio,
-            "logger": None,
-            "preset": "ultrafast",
-            "ffmpeg_params": ["-pix_fmt", "yuv420p", "-movflags", "+faststart"],
-        }
-        if add_audio:
-            write_kwargs["audio_codec"] = "aac"
-            write_kwargs["temp_audiofile"] = os.path.join(VIDEOS_DIR, f"{doc_id}_temp_audio.mp4")
-        final.write_videofile(out_path, **write_kwargs)
+        prof = str(encode_profile or "fast_ai").strip().lower()
+        if prof not in ENCODE_CRF:
+            prof = resolve_encode_profile({"encode_profile": encode_profile})
+        write_kwargs = build_write_kwargs(doc_id, prof, add_audio=add_audio, videos_dir=VIDEOS_DIR)
+        if metrics_out is not None:
+            metrics_out["encode_profile"] = prof
+            metrics_out["encode_crf"] = ENCODE_CRF.get(prof, 28)
+            if write_kwargs.get("hw_encode"):
+                metrics_out["hw_encode"] = write_kwargs.get("hw_encode")
+        final.write_videofile(out_path, **moviepy_write_kwargs(write_kwargs))
     except Exception as e1:
         _cleanup_partial(out_path)
         try:
             import gc
+            from backend.services.generator_encode_service import build_write_kwargs, moviepy_write_kwargs
             gc.collect()
-            final.write_videofile(
-                out_path,
-                fps=16,
-                codec="libx264",
-                audio=False,
-                logger=None,
-                preset="ultrafast",
-                ffmpeg_params=["-pix_fmt", "yuv420p", "-movflags", "+faststart"],
-            )
+            fallback = build_write_kwargs(doc_id, "fast_ai", add_audio=False, videos_dir=VIDEOS_DIR)
+            final.write_videofile(out_path, **moviepy_write_kwargs(fallback))
         except Exception as e2:
             _cleanup_partial(out_path)
             for c in clips_to_concat:
@@ -2845,6 +2986,19 @@ def write_job_config_for_subprocess(doc_id: str, config: Dict) -> bool:
         return False
 
 
+def read_job_config_for_subprocess(doc_id: str) -> Optional[Dict]:
+    """Load persisted job config written for subprocess encoding."""
+    try:
+        path = _job_config_path(doc_id)
+        if not os.path.isfile(path):
+            return None
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
 def run_video_generation_standalone(doc_id: str, config: Dict) -> None:
     """
     Run the full video generation pipeline in the current process (e.g. subprocess).
@@ -2855,7 +3009,10 @@ def run_video_generation_standalone(doc_id: str, config: Dict) -> None:
         return {}
     def _noop_set(_jid, _data):
         pass
-    _run_video_generation_impl(doc_id, config, _noop_get, _noop_set)
+    try:
+        _run_video_generation_impl(doc_id, config, _noop_get, _noop_set)
+    finally:
+        clear_run_sidecar(doc_id)
 
 
 # Points awarded per completed video (generation_points in unified DB + job.points_earned)
@@ -3103,10 +3260,18 @@ def _award_generation_points(
     except Exception:
         pass
 
-    # --- MN2 finish bonus ---
+    # --- MN2 / crypto finish rewards ---
     try:
-        from backend.services.generator_mn2_service import award_finish_bonus
-        award_finish_bonus(user_id, doc_id, cfg)
+        from backend.services.generator_crypto_rewards_service import award_generator_crypto_rewards
+        crypto = award_generator_crypto_rewards(user_id, doc_id, cfg)
+        cfg["_crypto_rewards"] = crypto
+    except Exception:
+        cfg["_crypto_rewards"] = {}
+
+    # --- Game Hub quests (daily generate_video + weekly_videos) ---
+    try:
+        from backend.services.generator_agent_service import record_video_quest_progress
+        cfg["_quest_progress"] = record_video_quest_progress(user_id)
     except Exception:
         pass
 
@@ -3141,6 +3306,13 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         return
 
     _prepare_generation_config(doc_id, config)
+
+    try:
+        from backend.services.generator_encode_service import resolve_encode_profile, is_fast_encode_profile
+        enc_prof = resolve_encode_profile(config)
+        config["encode_profile"] = enc_prof
+    except Exception:
+        enc_prof = str(config.get("encode_profile") or "fast_ai")
 
     _uid = config.get("user_id", "default_user")
 
@@ -3197,12 +3369,14 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
 
     def on_progress(percent: int, message: str):
         try:
+            encode_stage = _infer_encode_stage(message)
             job = job_store_get(doc_id)
             _is_final = percent >= 100 and 'complete' in (message or '').lower()
             _sidecar_status = 'completed' if _is_final else 'processing'
             if job:
                 job['progress'] = percent
                 job['message'] = message
+                job['encode_stage'] = encode_stage
                 job['updated_at'] = datetime.utcnow().isoformat()
                 if _is_final:
                     job['status'] = 'completed'
@@ -3217,6 +3391,7 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                 prompt=config.get('prompt') or config.get('description'),
                 video_url=f'/api/documentary/video/{doc_id}' if _is_final else None,
                 generation_meta=_generation_meta_for_sidecar(config),
+                stage=encode_stage,
             )
         except Exception:
             pass
@@ -3257,6 +3432,16 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         use_context = config.get('use_context', True)
         if use_context:
             try:
+                _write_status_sidecar(
+                    doc_id=doc_id,
+                    status="processing",
+                    message="Planning scenes with AI...",
+                    progress=8,
+                    title=config.get("title"),
+                    prompt=config.get("prompt") or config.get("description"),
+                    generation_meta=_generation_meta_for_sidecar(config),
+                    stage="planning",
+                )
                 short = config.get('short_clip', duration < 120)
                 require_ai_content = bool(config.get("require_ai_content", False))
                 quality_mode = str(config.get("quality_mode") or "").strip().lower()
@@ -3290,6 +3475,16 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                 if segments:
                     segments = _rearrange_segments_for_timeline(segments, target_duration=duration)
                     num_segments = len(segments)
+                    _write_status_sidecar(
+                        doc_id=doc_id,
+                        status="processing",
+                        message="Enhancing segments with AI...",
+                        progress=18,
+                        title=config.get("title"),
+                        prompt=config.get("prompt") or config.get("description"),
+                        generation_meta=_generation_meta_for_sidecar(config),
+                        stage="enhancing",
+                    )
                     # Enrich segments with mood/tagline/key_fact from AI (and track providers when use_all_ais).
                     segments = _ai_enhance_segments(
                         segments,
@@ -3321,7 +3516,13 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                         },
                     )
                     is_prod = os.environ.get("FLASK_ENV", "").strip().lower() != "development"
-                    fast_ai_profile = is_prod or str(config.get("encode_profile") or "").strip().lower() == "fast_ai"
+                    try:
+                        from backend.services.generator_encode_service import is_fast_encode_profile
+                        fast_ai_profile = is_fast_encode_profile(enc_prof) or (
+                            is_prod and str(config.get("encode_profile") or "").strip().lower() == "fast_ai"
+                        )
+                    except Exception:
+                        fast_ai_profile = is_prod or str(config.get("encode_profile") or "").strip().lower() == "fast_ai"
                     out_w = 854 if fast_ai_profile else w
                     out_h = 480 if fast_ai_profile else h
                     add_audio_flag = bool(config.get("audio_enabled", True))
@@ -3336,6 +3537,7 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                         on_progress=on_progress,
                         visual_profile=config.get("_visual_profile"),
                         metrics_out=video_cogs_metrics,
+                        encode_profile=enc_prof,
                     )
                     config["_video_cogs_metrics"] = video_cogs_metrics
                     try:
@@ -3363,7 +3565,9 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
 
         require_ai_content = bool(config.get("require_ai_content", False))
         if not path and not require_ai_content:
-            path, error_message = _generate_video_sync(doc_id, prompt, title, duration, w, h, on_progress)
+            path, error_message = _generate_video_sync(
+                doc_id, prompt, title, duration, w, h, on_progress, encode_profile=enc_prof,
+            )
         elif not path and require_ai_content:
             error_message = error_message or "AI content required, but AI scene planning/encoding failed"
 
@@ -3379,6 +3583,7 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
             award_config = dict(config)
             award_config["_providers_used"] = list(dict.fromkeys(providers_used))
             total_earned = _award_generation_points(user_id, doc_id, points, config=award_config)
+            crypto = award_config.get("_crypto_rewards") or {}
             try:
                 job = job_store_get(doc_id)
                 if job:
@@ -3389,10 +3594,18 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                     job['message'] = 'Complete'
                     job['video_url'] = f'/api/documentary/video/{doc_id}'
                     job['providers_used'] = list(dict.fromkeys(providers_used))
+                    if crypto.get('total_mn2'):
+                        job['mn2_earned'] = crypto.get('total_mn2')
+                        job['crypto_breakdown'] = crypto.get('breakdown')
                     job['updated_at'] = datetime.utcnow().isoformat()
                     job_store_set(doc_id, job)
             except Exception:
                 pass
+            gen_meta = _generation_meta_for_sidecar(config)
+            gen_meta['points_earned'] = total_earned
+            if crypto.get('total_mn2'):
+                gen_meta['mn2_earned'] = crypto.get('total_mn2')
+                gen_meta['crypto_breakdown'] = crypto.get('breakdown')
             _write_status_sidecar(
                 doc_id=doc_id,
                 status="completed",
@@ -3402,10 +3615,31 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                 title=config.get("title"),
                 prompt=config.get("prompt") or config.get("description"),
                 providers_used=providers_used,
-                generation_meta=_generation_meta_for_sidecar(config),
+                generation_meta=gen_meta,
+                stage="complete",
             )
             try:
+                from backend.services.generator_thumbnail_service import build_video_thumbnails
+                build_video_thumbnails(doc_id, path)
+            except Exception:
+                pass
+            try:
+                from backend.routes.gallery_routes import invalidate_gallery_cache
+                invalidate_gallery_cache()
+            except Exception:
+                pass
+            try:
                 print(f"[VideoGenerator] Generation finished doc_id={doc_id} status=completed", flush=True)
+            except Exception:
+                pass
+            try:
+                from backend.services.discord_m8_streams import post_generator_showcase
+                post_generator_showcase(
+                    job_id=doc_id,
+                    title=str(title)[:120],
+                    user_id=user_id,
+                    video_url=f"/api/documentary/video/{doc_id}",
+                )
             except Exception:
                 pass
             try:

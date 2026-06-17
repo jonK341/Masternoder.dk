@@ -145,6 +145,12 @@ def run_agent_cron_jobs(
             elif job == 'agent_treasury_distribute':
                 from backend.services.agent_wallet_service import distribute_agent_funding
                 out['results'][job] = distribute_agent_funding()
+            elif job == 'monetization_allowance_nudges':
+                from backend.services.monetization_allowance_service import run_allowance_nudge_scan
+                out['results'][job] = run_allowance_nudge_scan()
+            elif job == 'monetization_renewal_emails':
+                from backend.services.monetization_email_service import run_renewal_reminder_emails
+                out['results'][job] = run_renewal_reminder_emails()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False

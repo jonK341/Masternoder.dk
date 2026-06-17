@@ -126,3 +126,95 @@ def mirror_agent_run(leader_agent_id: str, leader_user_id: str, actions: List[Di
             mirrored.append(row)
             _append({"ts": _iso(), "leader_agent_id": leader_agent_id, **row})
     return {"success": True, "mirrored": len(mirrored), "results": mirrored}
+
+
+def mirror_leader_reward(
+    leader_agent_id: str,
+    leader_reward: float,
+    *,
+    interval_id: str = "",
+) -> Dict[str, Any]:
+    """Credit followers a scaled share of a trader agent's staking reward."""
+    reward = float(leader_reward or 0)
+    if reward <= 0:
+        return {"success": True, "mirrored": 0, "results": []}
+
+    data = _load()
+    followers = data.get("followers") or {}
+    mirrored: List[Dict[str, Any]] = []
+    import backend.services.mn2_staking_service as staking
+
+    for uid, cfg in followers.items():
+        if not isinstance(cfg, dict) or not cfg.get("enabled"):
+            continue
+        if cfg.get("leader_agent_id") != leader_agent_id:
+            continue
+        scale = float(cfg.get("scale") or 0.25)
+        cap = float(cfg.get("max_mn2_per_step") or 0)
+        bonus = round(reward * scale, 8)
+        if cap > 0:
+            bonus = min(bonus, cap)
+        if bonus <= 0:
+            continue
+        try:
+            from backend.services.agent_kill_switch import check_action
+            halt = check_action("copy_trade", agent_id=leader_agent_id)
+            if not halt.get("allowed"):
+                mirrored.append({"follower": uid, "skipped": halt.get("reason")})
+                continue
+        except ImportError:
+            pass
+        if not staking.has_accepted_terms(uid):
+            mirrored.append({"follower": uid, "skipped": "terms_not_accepted"})
+            continue
+        staking._points().add_points(
+            uid,
+            "mn2_balance",
+            bonus,
+            source="copy_trading_reward",
+            metadata={
+                "interval_id": interval_id,
+                "leader_agent_id": leader_agent_id,
+                "leader_reward": reward,
+                "scale": scale,
+            },
+        )
+        stakes = staking._load_stakes()
+        rec = staking._get_record(stakes, uid)
+        rec["total_earned"] = round(float(rec.get("total_earned", 0) or 0) + bonus, 8)
+        rec["last_accrued_iso"] = _iso()
+        stakes[uid] = rec
+        staking._save_stakes(stakes)
+        staking._ledger_append(
+            uid,
+            "copy_trading_reward",
+            bonus,
+            metadata={"leader_agent_id": leader_agent_id, "interval_id": interval_id},
+        )
+        row = {"follower": uid, "leader_agent_id": leader_agent_id, "reward_mn2": bonus, "scale": scale}
+        mirrored.append(row)
+        _append({"ts": _iso(), "event": "leader_reward_mirror", **row})
+    return {"success": True, "mirrored": len(mirrored), "results": mirrored}
+
+
+def get_follower(follower_user_id: str) -> Dict[str, Any]:
+    uid = str(follower_user_id or "").strip()
+    data = _load()
+    cfg = (data.get("followers") or {}).get(uid)
+    if not isinstance(cfg, dict):
+        return {"success": True, "following": False}
+    return {"success": True, "following": bool(cfg.get("enabled", True)), "follower": cfg}
+
+
+def unfollow(follower_user_id: str) -> Dict[str, Any]:
+    uid = str(follower_user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "follower_user_id required"}
+    data = _load()
+    followers = data.get("followers") or {}
+    if uid not in followers:
+        return {"success": True, "removed": False}
+    del followers[uid]
+    data["followers"] = followers
+    _save(data)
+    return {"success": True, "removed": True}

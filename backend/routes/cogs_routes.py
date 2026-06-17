@@ -53,6 +53,65 @@ def cogs_metering_stats():
     return jsonify({"success": True, **data}), 200
 
 
+@cogs_bp.route("/api/monetization/overage-offers", methods=["GET"])
+def monetization_overage_offers():
+    """
+    PayPal overage top-up SKUs for subscribed users near or over monthly allowance.
+
+    Query: user_id (required), period_days, required_credits (optional immediate need).
+    """
+    user_id = (request.args.get("user_id") or "").strip()
+    period_raw = (request.args.get("period_days") or "30").strip()
+    req_raw = (request.args.get("required_credits") or "").strip()
+    try:
+        period_days = max(1, int(float(period_raw)))
+    except (TypeError, ValueError):
+        period_days = 30
+    required_credits = None
+    if req_raw:
+        try:
+            required_credits = float(req_raw)
+        except (TypeError, ValueError):
+            required_credits = None
+    try:
+        from backend.services.monetization_overage_service import get_overage_offers
+
+        out = get_overage_offers(
+            user_id,
+            period_days=period_days,
+            required_credits=required_credits,
+        )
+        if not out.get("success"):
+            return jsonify(out), 400
+        return jsonify(out), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@cogs_bp.route("/api/monetization/usage-allowance", methods=["GET"])
+def monetization_usage_allowance():
+    """
+    Usage vs subscription allowance / wallet credits for in-app nudges (§8.2).
+
+    Query: user_id (required), period_days (optional, default 30).
+    """
+    user_id = (request.args.get("user_id") or "").strip()
+    period_raw = (request.args.get("period_days") or "30").strip()
+    try:
+        period_days = max(1, int(float(period_raw)))
+    except (TypeError, ValueError):
+        period_days = 30
+    try:
+        from backend.services.monetization_allowance_service import get_user_usage_allowance
+
+        out = get_user_usage_allowance(user_id, period_days=period_days)
+        if not out.get("success"):
+            return jsonify(out), 400
+        return jsonify(out), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @cogs_bp.route("/api/monetization/report", methods=["GET"])
 def monetization_revenue_report():
     """
@@ -130,6 +189,24 @@ def cogs_pricing_suggestion():
     try:
         from backend.services.generator_pricing_service import pricing_suggestion
         return jsonify(pricing_suggestion()), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@cogs_bp.route("/api/system/cogs/pricing-apply", methods=["POST"])
+def cogs_pricing_apply():
+    import os
+    key = (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+    if key:
+        got = (request.headers.get("X-Cogs-Admin-Key") or request.args.get("key") or "").strip()
+        if got != key:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    dry = not (data.get("apply") or request.args.get("apply") in ("1", "true", "yes"))
+    sku = (data.get("sku") or request.args.get("sku") or "generation_pack_ref").strip()
+    try:
+        from backend.services.generator_pricing_service import apply_suggested_pack_price
+        return jsonify(apply_suggested_pack_price(sku_key=sku, dry_run=dry)), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

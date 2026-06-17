@@ -1,0 +1,30 @@
+{
+  "trader_agent_1": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:05.937610Z"
+  },
+  "trader_agent_2": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:05.960558Z"
+  },
+  "trader_agent_3": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:05.994807Z"
+  },
+  "trader_agent_4": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:06.024147Z"
+  },
+  "trader_agent_5": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:06.065267Z"
+  },
+  "trader_agent_6": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:06.095169Z"
+  },
+  "follower_user": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:06.132385Z"
+  }
+}

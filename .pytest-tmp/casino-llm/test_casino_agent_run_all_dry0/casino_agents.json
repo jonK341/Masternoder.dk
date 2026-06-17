@@ -1,0 +1,28 @@
+{
+  "casino_kelly_agent": {
+    "user_id": "casino_kelly_user",
+    "model_id": "casino_kelly_agent",
+    "policy": {
+      "enabled": true,
+      "min_bet": 5,
+      "max_bet": 50
+    },
+    "last_outcome": "loss",
+    "last_game": "dice",
+    "last_net": -5,
+    "brain_log": [
+      {
+        "ts": "2026-06-14T14:00:01.598463Z",
+        "reasoning": "Kelly flat strategy suggests a bet of 8% of balance",
+        "spectator_line": "Kelly Optimizer rolls the dice",
+        "game": "dice",
+        "bet": 40.0,
+        "confidence": 0.4,
+        "provider": "groq",
+        "outcome": "loss",
+        "net": -5
+      }
+    ],
+    "last_run_at": "2026-06-14T14:02:32.671411Z"
+  }
+}

@@ -63,3 +63,17 @@ python scripts/camgirls_post_deploy_verify.py --remote-only --ask-pass
 - [ ] Daemon payout addresses provisioned (`camgirls_provision_payout_addresses.py`)
 - [ ] Unlock/tip/chat smoke test with test user MN2 balance
 - [ ] Age gate copy reviewed for jurisdiction
+
+## Discord cross-road
+
+Unlock/tip/chat events emit to `activity_events.jsonl` (`camgirl_unlock`, `camgirl_tip`, `camgirl_chat`) and surface in the M8 alert funnel (#53).
+
+When announcing a new performer:
+
+```bash
+curl -s -X POST -H "X-Ops-Secret: $SECRET" -H "Content-Type: application/json" \
+  -d '{"title":"New performer","summary":"…","href":"/camgirls/","channel":"market"}' \
+  http://127.0.0.1:5000/api/discord/m8/partner-spotlight
+```
+
+See [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md).

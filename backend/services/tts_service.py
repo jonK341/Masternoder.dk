@@ -119,6 +119,8 @@ def _piper_wav_to_mp3_if_needed(wav_path: str, dest_path: str) -> bool:
 
 def is_available() -> bool:
     """Check if any TTS engine is available."""
+    if _elevenlabs_key():
+        return True
     if _piper_model_path():
         return True
     try:
@@ -214,6 +216,103 @@ def generate_narration_for_segments(
     full_script = full_script[:8000]
 
     return generate_speech(full_script)
+
+
+def _segment_narration_text(seg: Dict) -> str:
+    title = (seg.get("title") or "").strip()
+    desc = (seg.get("description") or "").strip()
+    if title and desc:
+        return f"{title}. {desc}"[:320]
+    return (title or desc)[:320]
+
+
+def generate_timed_narration_for_segments(
+    segments: List[Dict],
+    total_duration: Optional[float] = None,
+    voice_key: str = "rachel",
+) -> Optional[str]:
+    """
+    Per-segment TTS aligned to segment start times (E5).
+    Returns path to combined narration audio or None.
+    """
+    if not segments or not is_available():
+        return None
+
+    try:
+        from moviepy import AudioFileClip, CompositeAudioClip
+    except ImportError:
+        try:
+            from moviepy.editor import AudioFileClip, CompositeAudioClip
+        except ImportError:
+            return generate_narration_for_segments(segments)
+
+    pieces = []
+    temp_paths: List[str] = []
+    cursor = 0.0
+    el_key = _elevenlabs_key()
+
+    for seg in segments:
+        seg_dur = max(1.2, min(30.0, float(seg.get("duration", 4) or 4)))
+        text = _segment_narration_text(seg)
+        if not text.strip():
+            cursor += seg_dur
+            continue
+
+        audio_path = None
+        if el_key:
+            audio_path = synthesize(text, voice_key=voice_key)
+        if not audio_path:
+            audio_path = generate_speech(text)
+        if not audio_path or not os.path.isfile(audio_path):
+            cursor += seg_dur
+            continue
+
+        temp_paths.append(audio_path)
+        try:
+            clip = AudioFileClip(audio_path)
+            max_d = max(0.5, seg_dur * 0.92)
+            if clip.duration > max_d:
+                clip = clip.subclipped(0, max_d)
+            clip = clip.with_start(cursor)
+            pieces.append(clip)
+        except Exception:
+            pass
+        cursor += seg_dur
+
+    if not pieces:
+        for p in temp_paths:
+            try:
+                os.unlink(p)
+            except Exception:
+                pass
+        return None
+
+    total_d = max(cursor, float(total_duration or 0) or cursor)
+    out_path = os.path.join(tempfile.gettempdir(), f"narr_timed_{int(time.time())}_{os.getpid()}.mp3")
+    result_path = None
+    try:
+        comp = CompositeAudioClip(pieces)
+        comp = comp.with_duration(total_d)
+        comp.write_audiofile(out_path, logger=None)
+        for c in pieces:
+            try:
+                if hasattr(c, "close"):
+                    c.close()
+            except Exception:
+                pass
+        result_path = out_path if os.path.isfile(out_path) else None
+        if not result_path:
+            result_path = generate_narration_for_segments(segments)
+        return result_path
+    except Exception:
+        return generate_narration_for_segments(segments)
+    finally:
+        for p in temp_paths:
+            try:
+                if p and p != result_path and os.path.isfile(p):
+                    os.unlink(p)
+            except Exception:
+                pass
 
 
 # ---------------------------------------------------------------------------

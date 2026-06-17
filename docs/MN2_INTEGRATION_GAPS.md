@@ -1,6 +1,6 @@
 # MN2 integration — what's missing
 
-Gap list vs the [MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md](MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md) and [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md). **Phases 1–7** and §8.3 items are implemented; Phase 7 closed the previously listed gaps.
+Gap list vs the [archived integration plan](archive/plans/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md) and [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md). **Phases 1–7** and §8.3 items are implemented; Phase 7 closed the previously listed gaps.
 
 ---
 

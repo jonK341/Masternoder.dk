@@ -44,8 +44,8 @@ FILES_TO_DEPLOY = [
     "vidgenerator/static/css/page-layout-metrics.css",
     "vidgenerator/static/js/navigation-toolbar.js",
     "logs/agent_triggers/triggers.json",
-    "docs/PHD_FINAL_CONCLUSION.md",
-    "docs/IMPLEMENTATION_TODO.md",
+    "docs/PLAN.md",
+    "docs/PLATFORM_TODO.md",
     "scripts/deploy_upload_update.py",
     "scripts/fix_gateways.py",
 ]

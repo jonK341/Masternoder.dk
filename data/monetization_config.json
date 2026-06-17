@@ -22,7 +22,8 @@
       "price_usd": 4.99,
       "coins_granted": 500,
       "generation_credits_granted": 1.5,
-      "icon": "🪙"
+      "icon": "🪙",
+      "featured": true
     },
     {
       "id": "coin-pack-l",
@@ -52,6 +53,57 @@
       "generation_credits_granted": 50.0,
       "icon": "💰",
       "tag": "mega"
+    },
+    {
+      "id": "overage-pack-2",
+      "name": "Overage top-up — 2 credits",
+      "description": "Extra generation credits when you've used your monthly Pro allowance. Priced above standard packs.",
+      "price_usd": 2.99,
+      "coins_granted": 800,
+      "generation_credits_granted": 2.0,
+      "icon": "⚡",
+      "tag": "overage"
+    },
+    {
+      "id": "overage-pack-4",
+      "name": "Overage top-up — 4 credits",
+      "description": "Best value when you need more generations this billing period.",
+      "price_usd": 4.99,
+      "coins_granted": 1600,
+      "generation_credits_granted": 4.0,
+      "icon": "⚡",
+      "tag": "overage"
+    }
+  ],
+  "overage_policy": {
+    "comment": "Subscription overage — offer PayPal top-ups when allowance is high (see monetization_overage_service).",
+    "show_offers_from_percent": 80,
+    "markup_note": "Overage SKUs priced above blended COGS; not below coin-pack-m per credit."
+  },
+  "shop_promo_codes": [
+    {
+      "code": "WELCOME10",
+      "discount_percent": 10,
+      "bonus_coins_on_purchase": 50,
+      "max_redemptions": 5000,
+      "per_user_once": true,
+      "affiliate_id": "welcome_campaign"
+    },
+    {
+      "code": "GENERATE10",
+      "discount_percent": 10,
+      "bonus_coins_on_purchase": 25,
+      "max_redemptions": 2000,
+      "per_user_once": true,
+      "affiliate_id": "generator_upsell"
+    },
+    {
+      "code": "HOSTMN5",
+      "discount_percent": 5,
+      "bonus_coins_on_purchase": 0,
+      "max_redemptions": 500,
+      "per_user_once": true,
+      "affiliate_id": "masternode_hosting"
     }
   ],
   "tiers": {
@@ -81,6 +133,12 @@
         "price_usd_monthly": 19.99,
         "monthly_generation_credits": 8.0,
         "tier": "pro"
+      },
+      "P-PLACEHOLDER-MN-HOST": {
+        "label": "Masternode hosting monthly",
+        "price_usd_monthly": 4.99,
+        "monthly_generation_credits": 0,
+        "tier": "creator"
       }
     }
   },
@@ -205,6 +263,89 @@
       "price_coins": 1500,
       "delivery": "vip_pass",
       "license": "Membership on MasterNoder surfaces for 30 days."
+    }
+  ],
+  "mn2_services": [
+    {
+      "id": "svc-mn2-masternode-hosting",
+      "line": "H",
+      "name": "Masternode Hosting — 30 days",
+      "description": "Platform-hosted MN2 masternode (10,000 MN2 collateral). Pay with PayPal, shop coins, in-wallet MN2, or on-chain MN2 — slot auto-provisions on shared infrastructure.",
+      "payment_rails": ["paypal", "mn2", "credits", "mn2_onchain"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "external_checkout",
+      "checkout_url": "/explorer?tab=masternodes",
+      "icon": "🛡️",
+      "service_id": "masternode_hosting",
+      "billing_label": "MN2 Masternode Hosting (30 days)",
+      "checkout_mode": "inline_paypal",
+      "max_slots_per_order": 5
+    },
+    {
+      "id": "svc-mn2-proof-of-reserves",
+      "line": "H",
+      "name": "Proof of Reserves Report",
+      "description": "Live custodial coverage report — platform assets vs user liabilities on the Explorer reserves tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=reserves",
+      "icon": "🔒",
+      "service_id": "proof_of_reserves"
+    },
+    {
+      "id": "svc-mn2-onramp",
+      "line": "H",
+      "name": "PayPal → MN2 On-Ramp",
+      "description": "Buy MN2 with PayPal. USD clears to your in-wallet balance after the hold window — spend in catalog or withdraw on-chain.",
+      "payment_rails": ["paypal"],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/profile#mn2-wallet",
+      "icon": "💳",
+      "service_id": "onramp"
+    },
+    {
+      "id": "svc-mn2-staking-pool",
+      "line": "H",
+      "name": "Staking Pool — Earn MN2",
+      "description": "Custodial PoS pool: stake in-app, daemon mints rewards with browser rig weighting. Open the Explorer staking tab to join.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=staking",
+      "icon": "⚡",
+      "service_id": "staking"
+    },
+    {
+      "id": "svc-mn2-p2p-market",
+      "line": "H",
+      "name": "P2P MN2 Marketplace",
+      "description": "Escrow MN2 listings with PayPal settlement — peer-to-peer trades on the Explorer market tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "🤝",
+      "service_id": "p2p"
+    },
+    {
+      "id": "svc-mn2-trader-market",
+      "line": "H",
+      "name": "Agent Trader Market",
+      "description": "Internal MN2 order book driven by agent traders — live ticker and trades on Explorer.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "📈",
+      "service_id": "trader_market"
     }
   ],
   "content_bundles": [
@@ -397,9 +538,9 @@
     {"id": "booster-gen-speed-3h", "name": "Generation Speed Booster 3h", "category": "boosts", "effect": "booster", "duration_minutes": 180},
     {"id": "gametime-weekend-pass", "name": "Weekend Pass Game Time", "category": "boosts", "effect": "game_time", "duration_minutes": 2880},
     {"id": "gametime-hunter-4h", "name": "Hunter Game Time +4h", "category": "boosts", "effect": "game_time", "duration_minutes": 240},
-    {"id": "booster-staking-150-24h", "name": "Staking Boost +50% 24h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 1440, "boost_multiplier": 1.5},
-    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0},
-    {"id": "booster-staking-300-12h", "name": "Staking Overdrive x3 12h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 720, "boost_multiplier": 3.0}
+    {"id": "booster-staking-150-24h", "name": "Staking Boost +50% 24h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 1440, "boost_multiplier": 1.5, "price_coins": 120, "price_usd": 1.99},
+    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0, "price_coins": 95, "price_usd": 1.49},
+    {"id": "booster-staking-300-12h", "name": "Staking Overdrive x3 12h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 720, "boost_multiplier": 3.0, "price_coins": 180, "price_usd": 2.99}
   ],
   "shop_monetization": {
     "version": "9.2.0",
@@ -529,6 +670,18 @@
         "trophy_name": "Top 25 Collector Trophy",
         "badge": "top25-collector"
       }
+    },
+    "battle_pass": {
+      "season_id": "season-2026-s1",
+      "name": "Creator Season Pass",
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "premium_instant_grant": {"coins": 300, "generation_credits": 1.0},
+      "rewards": [
+        {"tier": 1, "free": {"coins": 25}, "premium": {"coins": 100}},
+        {"tier": 5, "free": {"coins": 50}, "premium": {"booster": "booster-xp-2h-pack"}},
+        {"tier": 10, "premium": {"coins": 500, "generation_credits": 1.0}}
+      ]
     }
   }
 }

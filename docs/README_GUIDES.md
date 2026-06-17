@@ -1,93 +1,103 @@
-# 📚 Complete Documentation Index
+# Documentation index
 
-**Version:** 3.0.0  
-**Last Updated:** 2025-01-XX
+**Last updated:** 2026-06-17
 
----
+## Start here
 
-## 🎯 Quick Start Guides
+| Doc | Purpose |
+|-----|---------|
+| [PLAN.md](./PLAN.md) | Master build orchestrator — stages, gates, sub-plans |
+| [MN2_TODO.md](./MN2_TODO.md) | MN2 critical work + upgrades |
+| [PLATFORM_TODO.md](./PLATFORM_TODO.md) | Cross-site platform backlog |
+| [PROJECT_RETHINK.md](./PROJECT_RETHINK.md) | Architecture intent, agent parity, consolidation |
 
-### For Beginners
-1. **[Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)** - 15-minute beginner tutorial
-2. **[User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)** - Complete system overview
-3. **[Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md)** - Troubleshooting help
+## Operations & deploy
 
-### For Advanced Users
-1. **[178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)** - Complete system reference
-2. **[Skills & Abilities Guide](./SKILLS_ABILITIES_GUIDE.md)** - Skills tracking
-3. **[API Documentation](./API_DOCUMENTATION.md)** - Technical reference
+| Doc | Purpose |
+|-----|---------|
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Deploy workflow |
+| [DEPLOYMENT_PLAN.md](./DEPLOYMENT_PLAN.md) | uWSGI / server layout |
+| [MN2_OPS.md](./MN2_OPS.md) | MN2 daemon, RPC, reconcile |
+| [SERVER_QUICK_REFERENCE.md](./SERVER_QUICK_REFERENCE.md) | SSH / paths cheat sheet |
+| [SERVER_CLEANUP.md](./SERVER_CLEANUP.md) | Disk cleanup on production |
+| [UWSGI_EXIT1_TROUBLESHOOTING.md](./UWSGI_EXIT1_TROUBLESHOOTING.md) | uWSGI crash loop |
+| [GATEWAY_504_502.md](./GATEWAY_504_502.md) | Gateway timeouts |
+| [DATABASE_HEALTH_GREEN_CHECKLIST.md](./DATABASE_HEALTH_GREEN_CHECKLIST.md) | Health checks |
 
----
+## MN2 & crypto
 
-## 📖 Documentation Structure
+| Doc | Purpose |
+|-----|---------|
+| [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](./MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) | Canonical MN2 integration spec |
+| [MN2_STAKING_PLAN.md](./MN2_STAKING_PLAN.md) | Staking, P2P, on-ramp |
+| [MN2_EXPLORER_PLAN.md](./MN2_EXPLORER_PLAN.md) | Block explorer |
+| [MN2_TRADER_MARKET.md](./MN2_TRADER_MARKET.md) | Internal order book + trader agents |
+| [DISCORD_CROSSROADS.md](./DISCORD_CROSSROADS.md) | Discord ↔ platform integration map (M8 #51–60) |
+| [CAMGIRLS_PHASE1C.md](./CAMGIRLS_PHASE1C.md) | Camgirls production onboarding |
+| [EXPLORER_REINSTALL_CHECKLIST.md](./EXPLORER_REINSTALL_CHECKLIST.md) | Explorer reinstall |
+| [AGENTS_MN2.md](./AGENTS_MN2.md) | Agent-facing MN2 notes |
 
-### User Guides
-- **Getting Started** - Learn the basics
-- **User Guide** - Complete system overview
-- **Walkthrough** - All 178 systems explained
-- **Tutorials** - Step-by-step guides
+## Rulebooks & product
 
-### Technical Guides
-- **API Documentation** - API endpoints
-- **Middleware Guide** - Technical architecture
-- **Integration Guide** - System integration
+| Doc | Purpose |
+|-----|---------|
+| [RULEBOOK_CANON.md](./RULEBOOK_CANON.md) | Canonical cross-cutting rules |
+| [COMPENDIUM_RULEBOOK_V1_V15.md](./COMPENDIUM_RULEBOOK_V1_V15.md) | Full rulebook compendium (V1–V16) |
+| [RULEBOOK_READERS.md](./RULEBOOK_READERS.md) | Compendium viewers, progress tracking, story reader |
+| [RULEBOOK_AGENT_CONTEXT.md](./RULEBOOK_AGENT_CONTEXT.md) | Agent-context API schema |
+| [RULEBOOK_TODO_25.md](./RULEBOOK_TODO_25.md) | Rulebook maintenance checklist |
+| [LAB.md](./LAB.md) | Lab handbook (APIs, catalog, deploy) |
+| [MONETIZATION_PAYPAL.md](./MONETIZATION_PAYPAL.md) | PayPal / SCR monetization |
 
-### Revenue & unit economics
-- **[Monetization (PayPal)](./MONETIZATION_PAYPAL.md)** — packs, tiers, subscriptions, B2B, marketplace (phased), checklist  
-- **[Reference job & COGS](./REFERENCE_JOB_COGS.md)** — pricing anchor and `metering.jsonl`
-- **[Monetization investigation closeout](./MONETIZATION_INVESTIGATION_CLOSEOUT.md)** — conclusion, ref table, button notes, deploy list
+## Generator
 
-### Problem Solving
-- **Troubleshooting** - Common problems and solutions
-- **Problem TODOs** - Maintenance checklists
-- **FAQ** - Frequently asked questions
+| Doc | Purpose |
+|-----|---------|
+| [GENERATOR_UPGRADES_25.md](./GENERATOR_UPGRADES_25.md) | **25 prioritized upgrades** (plan + phases) |
+| [GENERATOR_ENCODER_IDEAS.md](./GENERATOR_ENCODER_IDEAS.md) | Encoder pipeline backlog (E1–E15) + crypto tie-ins |
+| [GENERATOR_AND_AI_OVERVIEW.md](./GENERATOR_AND_AI_OVERVIEW.md) | Pipeline, AI integration, 20 shipped fixes |
+| [GENERATOR_PAGE_AND_POINTS_OVERVIEW.md](./GENERATOR_PAGE_AND_POINTS_OVERVIEW.md) | UI components, points scale |
+| [plans/generator_page_roadmap.plan.md](./plans/generator_page_roadmap.plan.md) | Critical fixes + one-week roadmap |
 
----
+## API references
 
-## 🎓 Learning Path
+| Doc | Purpose |
+|-----|---------|
+| [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | General API index |
+| [STARMAP25_API_OPENAPI.md](./STARMAP25_API_OPENAPI.md) | Star Map API |
+| [TROPHIES_API_OPENAPI.md](./TROPHIES_API_OPENAPI.md) | Trophies API |
+| [SOCIAL_NETWORK_API_OPENAPI.md](./SOCIAL_NETWORK_API_OPENAPI.md) | Social API |
+| [PROFILE_PAGE_API_CONTRACT.md](./PROFILE_PAGE_API_CONTRACT.md) | Profile contract |
 
-### Day 1: Basics
-1. Read [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)
-2. Complete first activities
-3. Understand point display
+## Sub-plans (`docs/plans/`)
 
-### Day 2: Understanding
-1. Read [User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)
-2. Explore all pages
-3. Try different activities
+| Plan | Status |
+|------|--------|
+| [eu_crypto_casino_platform.plan.md](./plans/eu_crypto_casino_platform.plan.md) | **Done** (MVP + Discord casino fan-out) |
+| [generator_page_roadmap.plan.md](./plans/generator_page_roadmap.plan.md) | **Done** (P0/P1 criticals + M8 showcase hook) |
+| [masternoder_mn2_ecosystem.plan.md](./plans/masternoder_mn2_ecosystem.plan.md) | Active — Phase 14 (full pytest + finalize) |
+| [master_build_orchestrator.plan.md](./plans/master_build_orchestrator.plan.md) | Active — Stage 4 finalize |
+| [game_and_battle_review.plan.md](./plans/game_and_battle_review.plan.md) | Active — optional battle/Hunter follow-ups |
 
-### Day 3: Mastery
-1. Read [178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)
-2. Focus on favorite categories
-3. Develop strategies
+**Archived finished plans:** `docs/archive/plans/` (removed from production deploy). Re-audit anytime:
 
-### Week 2: Advanced
-1. Master skills and abilities
-2. Use multipliers effectively
-3. Optimize point earning
+```bash
+python scripts/plan_run_check.py
+python scripts/plan_run_check.py --apply --production-prune
+```
 
----
+## User guides (legacy)
 
-## 🔍 Finding What You Need
+- [GUIDE_INTELLIGENT_POINT_SYSTEM.md](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)
+- [WALKTHROUGH_178_SYSTEMS.md](./WALKTHROUGH_178_SYSTEMS.md)
+- [SKILLS_ABILITIES_GUIDE.md](./SKILLS_ABILITIES_GUIDE.md)
+- [PROBLEM_SOLVING_TODOS.md](./PROBLEM_SOLVING_TODOS.md)
 
-### I Want to...
-- **Learn the basics** → [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)
-- **Understand the system** → [User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)
-- **See all systems** → [178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)
-- **Fix a problem** → [Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md)
-- **Learn skills** → [Skills & Abilities Guide](./SKILLS_ABILITIES_GUIDE.md)
-- **Use API** → [API Documentation](./API_DOCUMENTATION.md)
-- **Price products / PayPal strategy** → [Monetization (PayPal)](./MONETIZATION_PAYPAL.md) and [Reference job & COGS](./REFERENCE_JOB_COGS.md)
+## Maintenance
 
----
+Re-run obsolete-doc cleanup when session reports pile up:
 
-## 📝 Documentation Updates
-
-**Last Updated:** 2025-01-XX  
-**Version:** 3.0.0  
-**Next Update:** As needed
-
----
-
-**Need Help?** Start with the [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md) or [Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md).
-
+```bash
+python scripts/cleanup_obsolete_docs.py --dry-run
+python scripts/cleanup_obsolete_docs.py
+```

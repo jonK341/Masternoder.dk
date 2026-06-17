@@ -11,27 +11,27 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    get_or_create_deposit_address,
+    list_user_addresses,
+    refresh_deposit_address,
+    connect_external_wallet,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
+from backend.services.mn2_explorer_urls import (
+    explorer_address_url,
+    explorer_base_url as _explorer_base_url_impl,
+    explorer_tx_url as _explorer_tx_url_impl,
+)
 
 
 def _explorer_base_url() -> str:
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(base, "data", "mn2_config.json")
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return (json.load(f).get("explorer_base_url") or "").strip() or "https://chainz.cryptoid.info/mn2/"
-        except Exception:
-            pass
-    return "https://chainz.cryptoid.info/mn2/"
+    return _explorer_base_url_impl()
 
 
 def _explorer_tx_url(txid: str) -> str:
-    if not (txid or "").strip():
-        return ""
-    base = _explorer_base_url().rstrip("/")
-    return f"{base}/tx.dws?txid={txid.strip()}"
+    return _explorer_tx_url_impl(txid)
 
 
 def _load_mn2_config() -> dict:
@@ -59,8 +59,7 @@ def mn2_balance():
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
-    base = _explorer_base_url().rstrip("/")
-    shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    shop_revenue_explorer_url = explorer_address_url(shop_revenue_address) if shop_revenue_address else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -103,12 +102,20 @@ def mn2_price():
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     payload = {"success": True, "coins_per_mn2": coins_per_mn2}
     try:
-        from backend.services.mn2_chainz import chainz_ticker_usd_with_updated
-        ticker = chainz_ticker_usd_with_updated()
-        if isinstance(ticker, dict) and ticker.get("price") is not None:
-            payload["mn2_usd_price"] = round(ticker["price"], 8)
-            if ticker.get("last_updated_iso"):
-                payload["last_updated_iso"] = ticker["last_updated_iso"]
+        from backend.services.mn2_chainz import mn2_usd_price_median, chainz_ticker_usd_with_updated
+        bundle = mn2_usd_price_median()
+        if isinstance(bundle, dict) and bundle.get("price") is not None:
+            payload["mn2_usd_price"] = round(float(bundle["price"]), 8)
+            payload["mn2_usd_price_sources"] = bundle.get("sources")
+            payload["mn2_usd_price_source"] = bundle.get("source_label")
+            if bundle.get("last_updated_iso"):
+                payload["last_updated_iso"] = bundle["last_updated_iso"]
+        else:
+            ticker = chainz_ticker_usd_with_updated()
+            if isinstance(ticker, dict) and ticker.get("price") is not None:
+                payload["mn2_usd_price"] = round(ticker["price"], 8)
+                if ticker.get("last_updated_iso"):
+                    payload["last_updated_iso"] = ticker["last_updated_iso"]
     except Exception:
         pass
     return jsonify(payload), 200
@@ -144,14 +151,74 @@ def mn2_deposit_address():
             "deposit_address": None,
         }), 200
     addr = result.get("deposit_address") or ""
-    base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={addr}" if addr else ""
     return jsonify({
         "success": True,
         "user_id": result.get("user_id"),
         "deposit_address": addr,
-        "explorer_address_url": explorer_address_url,
+        "explorer_address_url": explorer_address_url(addr) if addr else "",
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    return jsonify(list_user_addresses(user_id)), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@mn2_bp.route("/api/mn2/wallet/connect", methods=["POST"])
+def mn2_wallet_connect():
+    body = request.get_json(silent=True) or {}
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = connect_external_wallet(
+        user_id,
+        body.get("address") or "",
+        body.get("wallet_type") or "watch",
+    )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@mn2_bp.route("/api/mn2/send", methods=["POST"])
+def mn2_send_internal():
+    """User-to-user MN2 transfer (in-app ledger)."""
+    body = request.get_json(silent=True) or {}
+    from_user = resolve_user_id(from_body=True, from_query=True)
+    to_user = (body.get("to_user_id") or body.get("recipient") or "").strip()
+    amount = float(body.get("amount") or 0)
+    if not to_user or to_user == from_user:
+        return jsonify({"success": False, "error": "invalid_recipient"}), 400
+    if amount <= 0:
+        return jsonify({"success": False, "error": "invalid_amount"}), 400
+    ref = f"send:{from_user}:{to_user}:{amount}"
+    from backend.services.unified_points_database import unified_points_db
+    from backend.services.mn2_ledger import append_entry
+    debit = unified_points_db.add_points(
+        from_user, "mn2_balance", -amount, source="mn2_send",
+        metadata={"reference": ref, "to_user": to_user},
+    )
+    if not debit.get("success", True):
+        return jsonify(debit), 400
+    credit = unified_points_db.add_points(
+        to_user, "mn2_balance", amount, source="mn2_receive",
+        metadata={"reference": ref, "from_user": from_user},
+    )
+    if not credit.get("success", True):
+        unified_points_db.add_points(from_user, "mn2_balance", amount, source="mn2_send_reversal", metadata={"reference": ref})
+        return jsonify({"success": False, "error": "credit_failed"}), 500
+    try:
+        append_entry(user_id=from_user, entry_type="mn2_send", amount=-amount, metadata={"to_user": to_user, "reference": ref})
+        append_entry(user_id=to_user, entry_type="mn2_receive", amount=amount, metadata={"from_user": from_user, "reference": ref})
+    except Exception:
+        pass
+    return jsonify({"success": True, "from_user": from_user, "to_user": to_user, "amount": amount}), 200
 
 
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
@@ -162,7 +229,6 @@ def mn2_transactions():
     user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
     limit = min(100, max(1, int(request.args.get("limit", 50))))
     entries = get_entries_by_user(user_id, limit=limit)
-    base = _explorer_base_url().rstrip("/")
     out = []
     for e in entries:
         item = dict(e)
@@ -171,10 +237,7 @@ def mn2_transactions():
         else:
             item["explorer_tx_url"] = None
         addr = (e.get("address") or "").strip()
-        if addr:
-            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
-        else:
-            item["explorer_address_url"] = None
+        item["explorer_address_url"] = explorer_address_url(addr) if addr else None
         out.append(item)
     return jsonify({"success": True, "user_id": user_id, "transactions": out}), 200
 
@@ -192,8 +255,8 @@ def mn2_statement():
         return jsonify({"success": False, "error": "Sign in to view your statement.", "code": "auth_required"}), 401
 
     # Convention for the derived balance view (mn2_balance perspective):
-    _INFLOW = {"deposit", "staking_reward", "onramp_purchase", "unstake", "p2p_buy", "p2p_escrow_return"}
-    _OUTFLOW = {"withdrawal", "shop_payment", "onramp_clawback", "stake", "p2p_sell_escrow"}
+    _INFLOW = {"deposit", "staking_reward", "onramp_purchase", "unstake", "p2p_buy", "p2p_escrow_return", "gift_received"}
+    _OUTFLOW = {"withdrawal", "shop_payment", "onramp_clawback", "stake", "p2p_sell_escrow", "gift_sent"}
 
     entries = get_entries_by_user(user_id, limit=100000)  # newest-first
     chrono = list(reversed(entries))
@@ -270,6 +333,57 @@ def mn2_statement():
     }), 200
 
 
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_transfer():
+    """Internal MN2 gift/transfer to another user (Top-10 #6). Server-resolved sender."""
+    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to send MN2.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+    to = (data.get("to") or data.get("to_user") or data.get("address") or "").strip()
+    amount = data.get("amount")
+    note = (data.get("note") or "").strip()
+    try:
+        from backend.services.mn2_gift_service import transfer
+        result = transfer(user_id, to, amount, note=note)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["GET", "POST", "DELETE"])
+def mn2_address_book():
+    """Trusted withdrawal address book (Top-10 #8). GET list; POST add (step-up); DELETE remove."""
+    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in required.", "code": "auth_required"}), 401
+    from backend.services.mn2_address_book import list_addresses, add_address, remove_address
+    if request.method == "GET":
+        return jsonify({"success": True, "addresses": list_addresses(user_id)}), 200
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or request.args.get("address") or "").strip()
+    if request.method == "DELETE":
+        if not address:
+            return jsonify({"success": False, "error": "address required"}), 400
+        return jsonify(remove_address(user_id, address)), 200
+    # POST add — step-up required
+    try:
+        from backend.services.account_security_service import verify_action_token
+        token = (data.get("verification_token") or data.get("verify_token") or "").strip() or None
+        if not verify_action_token(user_id, token):
+            return jsonify({
+                "success": False,
+                "error": "Verify your password to add a trusted withdrawal address.",
+                "code": "step_up_required",
+            }), 403
+    except ImportError:
+        pass
+    label = (data.get("label") or "").strip()
+    if not address:
+        return jsonify({"success": False, "error": "address required"}), 400
+    return jsonify(add_address(user_id, address, label=label)), 200
+
+
 @mn2_bp.route("/api/mn2/wallet-activity", methods=["GET"])
 def mn2_wallet_activity():
     """Last N UTC days of MN2 ledger aggregates (deposits, outflows, net) for profile monitor."""
@@ -335,8 +449,6 @@ def mn2_create_order_payment():
         price_mn2=price_mn2,
         address=address,
     )
-    base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={address}" if address else ""
     return jsonify({
         "success": True,
         "payment_ref": order["payment_ref"],
@@ -346,7 +458,7 @@ def mn2_create_order_payment():
         "item_id": item_id,
         "item_name": order["item_name"],
         "quantity": quantity,
-        "explorer_address_url": explorer_address_url,
+        "explorer_address_url": explorer_address_url(address) if address else "",
     }), 200
 
 
@@ -700,6 +812,54 @@ def mn2_swap_execute():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@mn2_bp.route("/api/mn2/copy-trading/status", methods=["GET"])
+def mn2_copy_trading_status():
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    try:
+        from backend.services.mn2_copy_trading import get_follower
+        return jsonify(get_follower(user_id)), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/copy-trading/follow", methods=["POST"])
+def mn2_copy_trading_follow():
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    data = request.get_json(silent=True) or {}
+    leader = (data.get("leader_agent_id") or "").strip()
+    if not leader:
+        return jsonify({"success": False, "error": "leader_agent_id required"}), 400
+    try:
+        from backend.services.agent_kill_switch import check_action
+        halt = check_action("copy_trade", agent_id=leader)
+        if not halt.get("allowed"):
+            return jsonify({"success": False, "error": halt.get("reason"), "code": halt.get("code")}), 403
+    except Exception:
+        pass
+    try:
+        from backend.services.mn2_copy_trading import upsert_follower
+        r = upsert_follower(
+            user_id,
+            leader,
+            scale=float(data.get("scale") or 0.25),
+            max_mn2_per_step=float(data.get("max_mn2_per_step") or 1.0),
+            enabled=bool(data.get("enabled", True)),
+        )
+        return jsonify(r), 200 if r.get("success") else 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/copy-trading/unfollow", methods=["POST"])
+def mn2_copy_trading_unfollow():
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    try:
+        from backend.services.mn2_copy_trading import unfollow
+        return jsonify(unfollow(user_id)), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @mn2_bp.route("/api/mn2/ops/conservation-gate", methods=["GET"])
 def mn2_ops_conservation_gate():
     """Unified money conservation gate (staking + casino tournaments + arena + generation health)."""
@@ -796,7 +956,57 @@ def mn2_ops_stats():
         }
     except Exception:
         out["pool"] = None
+    try:
+        from backend.services.mn2_rpc_failover import status_summary
+        out["rpc_failover"] = status_summary()
+    except Exception as e:
+        out["rpc_failover"] = {"error": str(e)}
     return jsonify({"success": True, **out}), 200
+
+
+@mn2_bp.route("/api/mn2/ops/rpc-failover", methods=["GET"])
+def mn2_ops_rpc_failover_status():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.mn2_rpc_failover import status_summary, get_config
+        return jsonify({"success": True, "config": get_config(), "status": status_summary()}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_bp.route("/api/mn2/ops/rpc-failover/check", methods=["POST", "GET"])
+def mn2_ops_rpc_failover_check():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.mn2_rpc_failover import run_check
+        force = (request.args.get("force") or "").lower() in ("1", "true", "yes")
+        return jsonify(run_check(force=force)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_bp.route("/api/mn2/ops/rpc-failover/promote-standby", methods=["POST"])
+def mn2_ops_rpc_failover_promote():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.mn2_rpc_failover import force_promote_standby
+        return jsonify(force_promote_standby()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_bp.route("/api/mn2/ops/rpc-failover/failback-primary", methods=["POST"])
+def mn2_ops_rpc_failover_failback():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.mn2_rpc_failover import force_failback_primary
+        return jsonify(force_failback_primary()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @mn2_bp.route("/api/mn2/scan-deposits", methods=["POST"])
@@ -928,20 +1138,26 @@ def mn2_withdraw():
     cooldown_hours = float(config.get("withdrawal_new_address_cooldown_hours") or 0)
     if cooldown_hours > 0:
         try:
-            from backend.services.mn2_withdrawal_guard import check_address
-            gate = check_address(user_id, address, cooldown_hours)
-            if not gate.get("allowed"):
-                hrs = gate.get("seconds_remaining", 0) / 3600.0
-                return jsonify({
-                    "success": False,
-                    "error": (f"This is a new withdrawal address. For your security it can be used "
-                              f"after a {cooldown_hours:g}h review window (~{hrs:.1f}h remaining)."),
-                    "code": "address_cooldown",
-                    "seconds_remaining": gate.get("seconds_remaining"),
-                    "first_seen": gate.get("first_seen"),
-                }), 403
+            from backend.services.mn2_address_book import is_cleared_trusted
+            skip_cooldown = is_cleared_trusted(user_id, address)
         except ImportError:
-            pass
+            skip_cooldown = False
+        if not skip_cooldown:
+            try:
+                from backend.services.mn2_withdrawal_guard import check_address
+                gate = check_address(user_id, address, cooldown_hours)
+                if not gate.get("allowed"):
+                    hrs = gate.get("seconds_remaining", 0) / 3600.0
+                    return jsonify({
+                        "success": False,
+                        "error": (f"This is a new withdrawal address. For your security it can be used "
+                                  f"after a {cooldown_hours:g}h review window (~{hrs:.1f}h remaining)."),
+                        "code": "address_cooldown",
+                        "seconds_remaining": gate.get("seconds_remaining"),
+                        "first_seen": gate.get("first_seen"),
+                    }), 403
+            except ImportError:
+                pass
 
     # Rate limit: N withdrawals per 24h per user (Phase 9: configurable)
     since = (datetime.utcnow() - timedelta(hours=24)).isoformat() + "Z"
@@ -1103,6 +1319,11 @@ def mn2_withdraw():
     try:
         from backend.services.mn2_withdrawal_guard import record_success
         record_success(user_id, address)
+    except Exception:
+        pass
+    try:
+        from backend.services.mn2_address_book import mark_cleared
+        mark_cleared(user_id, address)
     except Exception:
         pass
 

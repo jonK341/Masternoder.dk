@@ -1,0 +1,12 @@
+{
+  "followers": {
+    "follower_user": {
+      "follower_user_id": "follower_user",
+      "leader_agent_id": "trader_agent_1",
+      "scale": 0.5,
+      "max_mn2_per_step": 100.0,
+      "enabled": true,
+      "updated_at": "2026-06-16T22:19:35.882603Z"
+    }
+  }
+}

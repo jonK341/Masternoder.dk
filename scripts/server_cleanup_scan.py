@@ -17,9 +17,13 @@ import os
 import sys
 import argparse
 
-SERVER_HOST = "masternoder.dk"
-SERVER_USER = "root"
-SERVER_PASS = (os.getenv("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS for SSH."))
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+
+SERVER_HOST = deploy_host()
+SERVER_USER = deploy_user()
 REMOTE_BASE = "/var/www/html"
 # Videos at root after move; fallback to legacy path
 VIDEOS_DIR_REMOTE = "/var/www/html/videos"
@@ -137,6 +141,7 @@ def main():
     parser.add_argument("--clean-btmp", action="store_true", help="Truncate /var/log/btmp (failed logins – frees ~80MB)")
     parser.add_argument("--clean-root-cache", action="store_true", help="Remove /root/.cache and /root/.pip/cache to free space")
     parser.add_argument("--yes", "-y", action="store_true", help="Skip confirmation when using --clean/--full")
+    parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (ignores DEPLOY_PASS in .env)")
     args = parser.parse_args()
     if args.full:
         args.clean = True
@@ -148,13 +153,16 @@ def main():
         print("pip install paramiko")
         sys.exit(1)
 
+    server_pass = require_deploy_pass(force_prompt=args.ask_pass)
     ssh = None
     try:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
     except Exception as e:
         print("SSH connection failed:", e)
+        if not args.ask_pass:
+            print("Hint: DEPLOY_PASS in .env may be stale — retry with --ask-pass")
         sys.exit(1)
 
     try:

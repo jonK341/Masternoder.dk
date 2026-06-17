@@ -1,0 +1,14 @@
+﻿Launch failed (msedge): BrowserType.launch: Chromium distribution 'msedge' is not found at C:\Users\jonkh\AppData\Local\Microsoft\Edge\Application\msedge.exe
+Run "playwright install msedge"
+Browser: chrome
+
+=== Profile ===
+  PASS tab click, panel visible, URL updated
+=== Casino ===
+  PASS tab click, panel visible, URL updated
+=== Lab ===
+  PASS tab click, panel visible, URL updated
+=== Monetization ===
+  PASS tab click, panel visible, URL updated
+
+ALL PASS

@@ -446,6 +446,50 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+
+        .milky-hub-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin-bottom: 24px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 14px;
+            border: 1px solid rgba(100, 200, 255, 0.35);
+        }
+        .milky-hub-nav::-webkit-scrollbar { height: 6px; }
+        .milky-hub-nav::-webkit-scrollbar-thumb {
+            background: rgba(100, 200, 255, 0.35);
+            border-radius: 999px;
+        }
+        .milky-hub-tab {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            background: rgba(100, 200, 255, 0.1);
+            color: #a0d0ff;
+            cursor: pointer;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .milky-hub-tab:hover, .milky-hub-tab.active {
+            background: rgba(100, 200, 255, 0.25);
+            color: #fff;
+        }
+        .milky-route-note {
+            margin-bottom: 20px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(100, 200, 255, 0.28);
+            background: rgba(100, 200, 255, 0.08);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.9rem;
+        }
+        .milky-tab-panel[hidden] { display: none !important; }
     </style>
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614c">
     <link rel="stylesheet" href="/static/css/image-support.css">
@@ -461,6 +505,18 @@
             <p>Exploring the Cosmos | Time Machine V2.0 | Project 600 Years Forward</p>
         </div>
 
+        <nav class="milky-hub-nav" id="milky-hub-nav" aria-label="Research station sections" role="tablist">
+            <button type="button" class="milky-hub-tab" data-milky-tab="network" role="tab" aria-selected="false">🪙 MN2 network</button>
+            <button type="button" class="milky-hub-tab active" data-milky-tab="time" role="tab" aria-selected="true">⏰ Time machine</button>
+            <button type="button" class="milky-hub-tab" data-milky-tab="greenhouse" role="tab" aria-selected="false">🌱 Greenhouse</button>
+            <button type="button" class="milky-hub-tab" data-milky-tab="magi" role="tab" aria-selected="false">✨ Mind Magi</button>
+            <button type="button" class="milky-hub-tab" data-milky-tab="hyperspace" role="tab" aria-selected="false">📡 Hyperspace</button>
+            <button type="button" class="milky-hub-tab" data-milky-tab="tech" role="tab" aria-selected="false">⚔️ 40K tech</button>
+            <button type="button" class="milky-hub-tab" data-milky-tab="status" role="tab" aria-selected="false">🚀 Status</button>
+        </nav>
+        <div id="milky-route-note" class="milky-route-note">Viewing: Time machine. Switch tabs above to browse other research systems.</div>
+
+        <section class="milky-tab-panel" data-milky-tab="network" aria-labelledby="milky-mn2-title">
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="milky-mn2-balance" data-rate-id="milky-mn2-rate" aria-labelledby="milky-mn2-title" style="margin-bottom:32px;">
             <h2 id="milky-mn2-title">🪙 Galactic research · MN2 network</h2>
             <p>Star-map and time-machine research pages share the live MN2 network — balance, price, and staking pool totals.</p>
@@ -476,7 +532,9 @@
                 <a href="/profile#mn2-wallet" class="secondary">Wallet</a>
             </div>
         </section>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="time">
         <div class="time-machine">
             <h2>⏰ Time Machine V2.0</h2>
             <div class="time-controls">
@@ -518,7 +576,9 @@
                 </div>
             </div>
         </div>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="greenhouse">
         <div class="greenhouse-section">
             <h2>🌱 Assgas V2.0 Greenhouse System</h2>
             <p style="font-size: 1.2em; color: #a0ffa0; line-height: 1.8; text-align: center;">
@@ -536,7 +596,9 @@
                 </ul>
             </div>
         </div>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="magi">
         <div class="mind-magi">
             <h2>✨ Love The Mind Magi</h2>
             <p>
@@ -552,7 +614,9 @@
                 moment of growth is shared and amplified through the power of love and unity.
             </p>
         </div>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="hyperspace">
         <!-- Hyperspace Tech Call Section -->
         <div class="hyperspace-call">
             <h2>📡 Hyperspace Tech Call Recorder</h2>
@@ -573,7 +637,9 @@
                 </div>
             </div>
         </div>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="tech">
         <!-- Warhammer 40K Tech Tree Section -->
         <div class="tech-tree">
             <h2>⚔️ Warhammer 40K Technology Tree</h2>
@@ -829,7 +895,9 @@
                 </div>
             </div>
         </div>
+        </section>
         
+        <section class="milky-tab-panel" data-milky-tab="status">
         <div class="deployment-status">
             <h2>🚀 Deployment Status</h2>
             <div class="status-item">
@@ -864,8 +932,56 @@
             <a href="/gallery/" class="nav-button">🖼️ Gallery</a>
             <a href="/stats/" class="nav-button">📊 Stats</a>
         </div>
+        </section>
     </div>
     
+    <script>
+        (function initMilkywayTabs() {
+            var TAB_LABELS = {
+                network: 'MN2 network',
+                time: 'Time machine',
+                greenhouse: 'Greenhouse',
+                magi: 'Mind Magi',
+                hyperspace: 'Hyperspace recorder',
+                tech: '40K tech tree',
+                status: 'Deployment status'
+            };
+            var nav = document.getElementById('milky-hub-nav');
+            var note = document.getElementById('milky-route-note');
+            var panels = Array.prototype.slice.call(document.querySelectorAll('.milky-tab-panel[data-milky-tab]'));
+            if (!nav || !panels.length) return;
+
+            function applyMilkyTab(tabId) {
+                panels.forEach(function (el) {
+                    el.hidden = el.getAttribute('data-milky-tab') !== tabId;
+                });
+                nav.querySelectorAll('.milky-hub-tab').forEach(function (btn) {
+                    var on = btn.getAttribute('data-milky-tab') === tabId;
+                    btn.classList.toggle('active', on);
+                    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                if (note) {
+                    note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other research systems.';
+                }
+                try {
+                    var url = new URL(window.location.href);
+                    if (tabId === 'time') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', tabId);
+                    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                } catch (e) { /* ignore */ }
+            }
+
+            nav.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-milky-tab]');
+                if (!btn || !nav.contains(btn)) return;
+                applyMilkyTab(btn.getAttribute('data-milky-tab'));
+            });
+
+            var requested = new URLSearchParams(window.location.search).get('tab');
+            var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, requested);
+            applyMilkyTab(valid ? requested : 'time');
+        })();
+    </script>
     <script>
         // Create animated starfield
         function createStarfield() {

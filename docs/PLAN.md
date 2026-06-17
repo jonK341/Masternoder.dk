@@ -4,13 +4,13 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 
 ## Sub-plans
 
-| Plan | Path | Scope |
-|------|------|-------|
-| MN2 Ecosystem | `docs/plans/masternoder_mn2_ecosystem.plan.md` | Wallet, market, agents, explorer, debugger, casino/generator/game crypto, monitoring |
-| EU Crypto Casino | `docs/plans/eu_crypto_casino_platform.plan.md` | Dual-currency casino + compliance |
-| Generator Roadmap | `docs/plans/generator_page_roadmap.plan.md` | Generator criticals + MN2 pay/earn foundation |
-| Game & Battle | `docs/plans/game_and_battle_review.plan.md` | Battle correctness + game crypto foundation |
-| Orchestrator | `docs/plans/master_build_orchestrator.plan.md` | Stage sequencing + gates |
+| Plan | Path | Scope | Status |
+|------|------|-------|--------|
+| MN2 Ecosystem | `docs/plans/masternoder_mn2_ecosystem.plan.md` | Wallet, market, agents, explorer, debugger, casino/generator/game crypto, monitoring | Phase 14 pending |
+| EU Crypto Casino | `docs/plans/eu_crypto_casino_platform.plan.md` | Dual-currency casino + compliance | **Done** |
+| Generator Roadmap | `docs/plans/generator_page_roadmap.plan.md` | Generator criticals + MN2 pay/earn foundation | **Done** |
+| Game & Battle | `docs/plans/game_and_battle_review.plan.md` | Battle correctness + game crypto foundation | Active (optional items) |
+| Orchestrator | `docs/plans/master_build_orchestrator.plan.md` | Stage sequencing + gates | Stage 4 pending |
 
 ## Build stages
 
@@ -39,22 +39,25 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 
 ## M8 — Discord channel economy (idéer 51–60)
 
-| # | Stream | Service hook |
-|---|--------|--------------|
-| 51 | Role gating | `discord_service` + linked account |
-| 52 | Promo codes | `shop_routes` / `data/discord_promo_codes.json` |
-| 53 | Alert funnel | `activity_events` → Discord embeds |
-| 54 | Partner spotlight | `platform_news` channel=market |
-| 55 | Daily digest | `platform_news_digest.run_daily_digest` |
-| 56 | Quest bot | `game_mn2_rewards` + daily quest links |
-| 57 | Affiliate rotator | `discord_clicks.jsonl` |
-| 58 | Casino highlights | `casino_service` opt-in wins |
-| 59 | Generator showcase | `video_generator_service` on complete |
-| 60 | Support bot | RAG + Customer Support Copilot |
+**Full map:** [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md)
 
-**Infrastructure:** `backend/services/discord_service.py`, `backend/routes/discord_routes.py`, `logs/discord_outbox.jsonl`
+| # | Stream | Service hook | Cross-road status |
+|---|--------|--------------|-------------------|
+| 51 | Role gating | `discord_service` + `/api/discord/link` | Partial — no Profile UI |
+| 52 | Promo codes | `casino_social_service` (casino only) | Shop-wide not built |
+| 53 | Alert funnel | `discord_m8_streams.run_alert_funnel` | Live — includes market, camgirls, agents |
+| 54 | Partner spotlight | `platform_news` channel=market | Live |
+| 55 | Daily digest | `platform_news_digest.run_daily_digest` | Live |
+| 56 | Quest bot | `user_engagement` daily quests | Live |
+| 57 | Affiliate rotator | Daily rotation → `#announcements` | Live — market, camgirls, compendium |
+| 58 | Casino highlights | `casino_discord_fanout` | Live |
+| 59 | Generator showcase | `video_generator_service` on complete | Live |
+| 60 | Support FAQ | `GET /api/discord/support/faq` | Live — market, camgirls topics |
+| — | **Market fan-out** | `market_discord_fanout` → `#market` | Code ready — deploy + cron |
 
-**M8 build order (after Gate S + Phase 5):** 51 Role Gating → 52+56 Promo/Quest → 53+55 Funnel/Digest → 58+59 Casino/Generator → 57+54+60 Affiliate/Partner/Support
+**Infrastructure:** `discord_service.py`, `discord_m8_streams.py`, `market_discord_fanout.py`, `casino_discord_fanout.py`, `discord_routes.py`, `logs/discord_outbox.jsonl`, `logs/activity_events.jsonl`
+
+**M8 build order (after Gate S + Phase 5):** 51 Role Gating → 52+56 Promo/Quest → 53+55 Funnel/Digest → 58+59 Casino/Generator → 57+54+60 Affiliate/Partner/Support → market fan-out
 
 **Compliance:** No custody on Discord; rewards on-site with auth; gambling promos geo-blocked; affiliate disclosure in embed footer.
 

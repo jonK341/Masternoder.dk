@@ -299,6 +299,68 @@
             .lab-product-output { grid-template-columns: 1fr; }
             .lab-agent-lab { grid-template-columns: 1fr; }
         }
+        .lab-hub-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            max-width: 1100px;
+            margin: 0 auto 20px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 14px;
+            border: 1px solid rgba(127, 219, 255, 0.28);
+        }
+        .lab-hub-nav::-webkit-scrollbar { height: 6px; }
+        .lab-hub-nav::-webkit-scrollbar-thumb {
+            background: rgba(127, 219, 255, 0.35);
+            border-radius: 999px;
+        }
+        .lab-hub-tab {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(127, 219, 255, 0.35);
+            background: rgba(127, 219, 255, 0.08);
+            color: #b8e8ff;
+            cursor: pointer;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .lab-hub-tab:hover, .lab-hub-tab.active {
+            background: rgba(127, 219, 255, 0.2);
+            color: #fff;
+        }
+        .lab-route-note {
+            max-width: 1100px;
+            margin: 0 auto 16px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(127, 219, 255, 0.28);
+            background: rgba(127, 219, 255, 0.08);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.88rem;
+        }
+        .lab-tab-panel[hidden] { display: none !important; }
+        .lab-muted { opacity: 0.78; font-size: 0.85rem; }
+        .lab-news-item { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .lab-news-item h3 { margin: 0 0 6px; font-size: 1rem; color: #7fdbff; }
+        .lab-news-item h3 a { color: inherit; text-decoration: none; }
+        .lab-news-meta { font-size: 0.72rem; opacity: 0.65; margin: 0 0 6px; }
+        .lab-news-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 999px; background: rgba(255,215,0,0.15); color: #FFD700; }
+        .lab-systems-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 10px; }
+        .lab-systems-table th, .lab-systems-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .lab-systems-table tr.ok td:last-child { color: #00ff88; }
+        .lab-systems-table tr.fail td:last-child { color: #ff6b8a; }
+        .lab-systems-summary { font-weight: 600; margin: 0 0 8px; }
+        .lab-idea-row { padding: 10px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.2); background: rgba(0,0,0,0.22); margin-bottom: 8px; }
+        .lab-idea-meta { font-size: 0.72rem; opacity: 0.7; }
+        .lab-v2-milestones { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; opacity: 0.9; }
+        .lab-rewards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+        .lab-reward-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.22); background: rgba(0,0,0,0.24); font-size: 0.82rem; }
+        .lab-reward-icon { font-size: 1.4rem; display: block; margin-bottom: 6px; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -307,12 +369,78 @@
     <div class="lab-page container" data-page-layout="standard">
         <header class="lab-header">
             <h1>🔬 Lab</h1>
-            <p class="subtitle">Experiments • Agent Tech • 3D Monitor</p>
+            <p class="subtitle">V2.1 Hub · News · AI · Chapter V · Crypto Rewards</p>
         </header>
         <div class="lab-placeholder">
-            <p><strong>Lab</strong> is the place for experiments, agent technologies, and advanced features.</p>
+            <nav class="lab-hub-nav" id="lab-hub-nav" aria-label="Lab sections" role="tablist"></nav>
+            <div id="lab-route-note" class="lab-route-note">One section per tab — use the bar above to switch.</div>
 
-            <div class="lab-doc-card" id="lab-documentation" aria-labelledby="lab-doc-title">
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-news" data-lab-tab="news" aria-label="Lab news">
+                <h2>📰 Lab news</h2>
+                <p class="lab-muted">Platform updates for the research hub — synced from <code>/api/lab/news</code>.</p>
+                <div class="lab-actions"><button type="button" id="btn-lab-refresh-news" class="lab-btn lab-btn-info">Refresh news</button></div>
+                <div id="lab-news-list" style="margin-top:12px;"></div>
+            </section>
+
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-v2" data-lab-tab="v2" aria-label="Lab V2.1 status">
+                <h2>✨ Lab V2.1 status</h2>
+                <p class="lab-muted">Rulebook-grounded progression, milestones, and agent knowledge readiness.</p>
+                <div id="lab-v2-status-panel"></div>
+                <div class="lab-actions"><button type="button" id="btn-lab-refresh-v2" class="lab-btn lab-btn-primary">Refresh V2 status</button></div>
+            </section>
+
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-systems" data-lab-tab="systems" aria-label="Systems audit">
+                <h2>⚙️ Systems audit</h2>
+                <p class="lab-muted">Recheck all lab hub functions — progression, overview, idea board, news, trophies, MN2, and shop.</p>
+                <div class="lab-actions"><button type="button" id="btn-lab-systems-check" class="lab-btn lab-btn-success">⚙️ Recheck all functions</button></div>
+                <div id="lab-systems-output" style="margin-top:12px;"></div>
+            </section>
+
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-ideas" data-lab-tab="ideas" aria-label="Idea board">
+                <h2>💡 Idea board</h2>
+                <p class="lab-muted">Pin contributor ideas — 30m spacing between new pins. Agents can read; writes need your click.</p>
+                <div id="lab-idea-form-status" style="display:none;margin:8px 0;padding:8px;border-radius:8px;background:rgba(0,0,0,0.3);"></div>
+                <p id="lab-idea-pin-cooldown" class="lab-cd"></p>
+                <div style="display:grid;gap:8px;max-width:720px;margin-bottom:12px;">
+                    <input id="lab-idea-title" type="text" maxlength="120" placeholder="Idea title" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;">
+                    <textarea id="lab-idea-body" rows="3" maxlength="2000" placeholder="Describe the idea, acceptance test, or tech pitch…" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;font-family:inherit;"></textarea>
+                    <select id="lab-idea-track" style="padding:8px;border-radius:8px;border:1px solid rgba(127,219,255,0.32);background:rgba(0,0,0,0.35);color:#fff;max-width:220px;">
+                        <option value="general">General</option>
+                        <option value="agents">Agents</option>
+                        <option value="ai">AI</option>
+                        <option value="crypto">Crypto</option>
+                        <option value="shop">Shop</option>
+                        <option value="trophies">Trophies</option>
+                    </select>
+                    <button type="button" id="btn-lab-idea-pin" class="lab-btn lab-btn-primary">Pin idea</button>
+                </div>
+                <div id="lab-idea-list"></div>
+            </section>
+
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-ai" data-lab-tab="ai" aria-label="AI and agents">
+                <h2>🧠 AI &amp; agents</h2>
+                <div id="lab-ai-recommendations" class="lab-muted">Loading copilot recommendations…</div>
+                <p style="margin-top:12px;font-size:0.82rem;opacity:0.85;">Named agent owners on research grid, projects, co-tech, roundtable, systems, and crypto bridge. Use the Agents tab for projects and the Co-tech tab for LLM refine.</p>
+                <div class="lab-actions">
+                    <a href="/dashboard/agents_control" class="lab-btn lab-btn-info">Agent control</a>
+                    <a href="/debugger" class="lab-btn lab-btn-primary">Debugger</a>
+                </div>
+            </section>
+
+            <section class="lab-doc-card lab-tab-panel" id="lab-panel-rewards" data-lab-tab="rewards" aria-label="Crypto rewards shop trophies">
+                <h2>🎁 Crypto rewards · trophies · shop</h2>
+                <p class="lab-muted">Lab-wave shop SKUs, lab mastery trophies with MN2 bonuses, and wallet balance (display-only from Lab).</p>
+                <div id="lab-rewards-mn2" style="margin:10px 0;"></div>
+                <div class="lab-actions"><button type="button" id="btn-lab-refresh-rewards" class="lab-btn lab-btn-info">Refresh rewards</button></div>
+                <h3 style="color:#FFD700;font-size:1rem;margin:16px 0 8px;">Shop — lab category</h3>
+                <div id="lab-rewards-shop" class="lab-rewards-grid"></div>
+                <h3 style="color:#FFD700;font-size:1rem;margin:16px 0 8px;">Trophies — lab mastery set</h3>
+                <div id="lab-rewards-trophies" class="lab-rewards-grid"></div>
+            </section>
+
+            <p data-lab-tab="docs" hidden><strong>Lab</strong> is the place for experiments, agent technologies, and advanced features.</p>
+
+            <div class="lab-doc-card lab-tab-panel" id="lab-documentation" data-lab-tab="docs" aria-labelledby="lab-doc-title">
                 <h2 id="lab-doc-title">📚 Documentation &amp; ideas</h2>
                 <p style="margin:0 0 10px;opacity:0.9;">Contributor handbook (APIs, profile keys, catalog, deploy, troubleshooting) lives in the repo at <code>docs/LAB.md</code> — also listed in <code>deploy.py</code> so it ships with production mirrors.</p>
                 <details style="margin-top:12px;">
@@ -346,7 +474,7 @@
                 </details>
             </div>
 
-            <section class="lab-product-workbench" id="lab-product-workbench" aria-labelledby="lab-product-title">
+            <section class="lab-product-workbench lab-tab-panel" id="lab-product-workbench" data-lab-tab="workbench" aria-labelledby="lab-product-title">
                 <div class="lab-product-head">
                     <div>
                         <h2 id="lab-product-title">🧫 Ideas backlog workbench</h2>
@@ -372,7 +500,7 @@
                 </div>
             </section>
 
-            <section class="lab-agent-lab" id="lab-agent-presence" aria-label="Lab agent presence and monitor">
+            <section class="lab-agent-lab lab-tab-panel" id="lab-panel-agents" data-lab-tab="agents" aria-label="Lab agent presence and monitor">
                 <div class="lab-panel">
                     <h2>🤖 Agent presence &amp; research projects</h2>
                     <p style="margin:0;opacity:0.82;font-size:0.86rem;">Tools now have named agent owners. Research projects use a 6h creation cooldown and appear in the Profile logbook.</p>
@@ -394,7 +522,10 @@
                     </div>
                     <div class="lab-project-list" id="lab-project-list"></div>
                 </div>
-                <div class="lab-panel lab-monitor-4d">
+            </section>
+
+            <section class="lab-tab-panel" id="lab-panel-monitor" data-lab-tab="monitor" aria-label="4D research monitor">
+                <div class="lab-panel lab-monitor-4d" style="max-width:1100px;margin:0 auto;">
                     <div class="lab-monitor-orb"></div>
                     <div class="lab-monitor-orb"></div>
                     <div class="lab-monitor-orb"></div>
@@ -408,7 +539,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="lab-panel">
+            </section>
+
+            <section class="lab-tab-panel" id="lab-panel-roundtable" data-lab-tab="roundtable" aria-label="Round table discussion">
+                <div class="lab-panel" style="max-width:1100px;margin:0 auto;">
                     <h2>🪑 Round table discussion room</h2>
                     <p style="margin:0;opacity:0.82;font-size:0.86rem;">Researchers and agents can add short notes. Tech progression and project status stay visible on the same table.</p>
                     <div style="display:grid;gap:8px;margin-top:10px;">
@@ -424,16 +558,19 @@
                     </div>
                     <div class="lab-roundtable-list" id="lab-roundtable-list"></div>
                 </div>
-                <div class="lab-panel">
+            </section>
+
+            <section class="lab-tab-panel" id="lab-panel-todos" data-lab-tab="todos" aria-label="Lab activity list">
+                <div class="lab-panel" style="max-width:1100px;margin:0 auto;">
                     <h2>✅ Always-on activity list</h2>
                     <p style="margin:0;opacity:0.82;font-size:0.86rem;">The monitor always returns ten lab todo points.</p>
                     <div class="lab-todo-list" id="lab-todo-list"></div>
                 </div>
             </section>
 
-            <section class="lab-chapter" id="lab-chapter-2" aria-labelledby="chapter-2-title">
-                <span class="lab-chapter-badge">Chapters II–III</span>
-                <h2 class="chapter-title" id="chapter-2-title">Resonance Foundry &amp; exploration rails</h2>
+            <section class="lab-chapter lab-tab-panel" id="lab-chapter-2" data-lab-tab="chapter" aria-labelledby="chapter-2-title">
+                <span class="lab-chapter-badge">Chapters II–V</span>
+                <h2 class="chapter-title" id="chapter-2-title">Resonance Foundry · exploration · sovereign core</h2>
                 <p class="lab-chapter-lede">
                     Research nodes unlock from <strong>hunter level</strong>, <strong>hunter XP</strong>, <strong>unified points</strong> (game, battle, …), and <strong>prerequisite nodes</strong>—same progression as the Hunters game and Profile economy.
                     First-time research grants unified points and hunter XP on the server. Some nodes use a <strong>1h / 3h / 10h re-research cooldown</strong> after you clear them. <strong>Exploration pulse</strong> uses a <strong>3h</strong> profile cooldown. Co-tech: <strong>1h</strong> between new drafts, <strong>10h</strong> between agent refines per draft.
@@ -463,7 +600,7 @@
                 <p class="lab-chapter-foot" id="lab-chapter2-progress"></p>
             </section>
 
-            <div class="lab-card" id="lab-co-tech-card">
+            <div class="lab-card lab-tab-panel" id="lab-co-tech-card" data-lab-tab="co-tech">
                 <h2>🧪 Co-create technologies (you + agents)</h2>
                 <p style="opacity:0.9;">Draft a new platform technology. Your <code>game_user_id</code> owns the draft; a partner agent id labels who should refine it. <strong>Agent refine</strong> runs an LLM pass when the server has a model configured, otherwise you get a structured stub.</p>
                 <div id="lab-tech-form-status" style="display:none;margin-bottom:12px;padding:10px;border-radius:8px;font-size:0.9rem;"></div>
@@ -499,7 +636,7 @@
                 <div id="lab-tech-list" style="display:flex;flex-direction:column;gap:12px;"></div>
             </div>
             
-            <div class="lab-card">
+            <div class="lab-card lab-tab-panel" id="lab-electric-magnet-card" data-lab-tab="magnet">
                 <h2>🧲 Electric Magnet Technology</h2>
                 <p style="opacity: 0.9;">Advanced agent technology with verification, DNA testing, and star map capabilities.</p>
                 <div id="em-tech-status" style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;"></div>
@@ -520,7 +657,7 @@
                 <div id="lab-em-result" style="margin-top: 12px; padding: 10px; border-radius: 8px; display: none; font-size: 0.95em;"></div>
             </div>
 
-            <div class="lab-card">
+            <div class="lab-card lab-tab-panel" id="lab-starmap-card" data-lab-tab="starmap">
                 <h2>🗺️ Star Map &amp; Trophies</h2>
                 <p style="opacity: 0.9;">7 nearest stars, host→b planets. Electric Magnet specials on Star Map tab.</p>
                 <div class="lab-actions">
@@ -530,7 +667,7 @@
                 <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.85;">Open Trophies → Star Map tab for 7 nearest stars and Electric Magnet specials.</p>
             </div>
 
-            <div class="lab-card">
+            <div class="lab-card lab-tab-panel" id="lab-events-card" data-lab-tab="events">
                 <h2>🎯 Event Tracker</h2>
                 <p style="opacity: 0.9;">Track new tasks. View recent tasks from agents.</p>
                 <div class="lab-actions">
@@ -540,7 +677,7 @@
                 <div id="lab-et-status" style="margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;"></div>
             </div>
 
-            <div class="lab-card" id="lab-agent-test-card">
+            <div class="lab-card lab-tab-panel" id="lab-agent-test-card" data-lab-tab="debugger">
                 <h2>🤖 Debugger agent test run</h2>
                 <p style="opacity: 0.9;">Runs assign → complete for a standard systems task. Awards unified points to your <code>game_user_id</code> (same as Profile).</p>
                 <div class="lab-actions">
@@ -550,7 +687,7 @@
                 <pre id="lab-agent-test-log" style="display:none;margin-top:12px;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;white-space:pre-wrap;font-size:0.8rem;max-height:280px;overflow:auto;"></pre>
             </div>
 
-            <div class="lab-card">
+            <div class="lab-card lab-tab-panel" id="lab-monitor-3d-card" data-lab-tab="placeholder">
                 <h2>🖥️ 3D Monitor</h2>
                 <p style="opacity: 0.9;">3D visual effects for the vidgenerator. Coming soon.</p>
                 <div class="lab-actions">
@@ -558,8 +695,8 @@
                 </div>
             </div>
 
-            <p style="margin-top: 30px; opacity: 0.7;">More agent technologies and experiments coming soon.</p>
-            <p>
+            <p class="lab-tab-panel" data-lab-tab="docs" style="margin-top: 30px; opacity: 0.7;">More agent technologies and experiments coming soon.</p>
+            <p class="lab-tab-panel" data-lab-tab="docs">
                 <a href="/debugger" class="nav-link">🔧 Debugger</a> ·
                 <a href="/trophies" class="nav-link">🏆 Trophies</a> ·
                 <a href="/profile?tab=activity" class="nav-link">📊 Profile activity</a>
@@ -568,8 +705,71 @@
     </div>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script>
+        (function initLabTabs() {
+            var TAB_DEFS = [
+                ['news', '📰 News'],
+                ['v2', '✨ V2.1'],
+                ['systems', '⚙️ Systems'],
+                ['ideas', '💡 Ideas'],
+                ['ai', '🧠 AI'],
+                ['rewards', '🎁 Rewards'],
+                ['workbench', '🧫 Workbench'],
+                ['agents', '🤖 Agents'],
+                ['monitor', '🖥️ 4D Monitor'],
+                ['roundtable', '🪑 Round table'],
+                ['todos', '✅ Activity'],
+                ['chapter', 'Ⅱ–Ⅴ Chapter'],
+                ['co-tech', '🧪 Co-tech'],
+                ['magnet', '🧲 Magnet'],
+                ['starmap', '🗺️ Star Map'],
+                ['events', '🎯 Events'],
+                ['debugger', '🔧 Debugger'],
+                ['docs', '📚 Docs'],
+                ['placeholder', '🖥️ 3D Placeholder']
+            ];
+            var nav = document.getElementById('lab-hub-nav');
+            var note = document.getElementById('lab-route-note');
+            var panels = Array.prototype.slice.call(document.querySelectorAll('.lab-tab-panel[data-lab-tab]'));
+            if (!nav || !panels.length) return;
+
+            function applyLabTab(tabId) {
+                panels.forEach(function (el) {
+                    el.hidden = el.getAttribute('data-lab-tab') !== tabId;
+                });
+                nav.querySelectorAll('.lab-hub-tab').forEach(function (btn) {
+                    var on = btn.getAttribute('data-lab-tab') === tabId;
+                    btn.classList.toggle('active', on);
+                    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                if (note) {
+                    var label = (TAB_DEFS.find(function (row) { return row[0] === tabId; }) || [])[1] || tabId;
+                    note.textContent = 'Viewing: ' + label + '. Switch tabs above to browse other lab sections.';
+                }
+                try {
+                    var url = new URL(window.location.href);
+                    if (tabId === TAB_DEFS[0][0]) url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', tabId);
+                    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                } catch (e) { /* ignore */ }
+            }
+
+            nav.innerHTML = TAB_DEFS.map(function (row, i) {
+                return '<button type="button" class="lab-hub-tab' + (i === 0 ? ' active' : '') + '" data-lab-tab="' + row[0] + '" role="tab" aria-selected="' + (i === 0 ? 'true' : 'false') + '">' + row[1] + '</button>';
+            }).join('');
+            nav.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-lab-tab]');
+                if (!btn || !nav.contains(btn)) return;
+                applyLabTab(btn.getAttribute('data-lab-tab'));
+            });
+
+            var requested = new URLSearchParams(window.location.search).get('tab');
+            var valid = TAB_DEFS.some(function (row) { return row[0] === requested; });
+            applyLabTab(valid ? requested : TAB_DEFS[0][0]);
+        })();
+
+        window.userId = localStorage.getItem('game_user_id') || 'default_user';
+        const userId = window.userId;
         const EM_API_BASE = '/api/agent-tech/agent_electric_magnet';
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
         const LAB_OFFLINE_QUEUE_KEY = 'lab_offline_queue_v1';
         const LAB_CATALOG_CACHE_KEY = 'lab_catalog_cache_v1';
         const LAB_PRODUCTS = [
@@ -1570,6 +1770,7 @@
             }
         });
     </script>
+    <script src="/static/js/lab-hub-v2.js"></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
 
     <!-- Hypnotic Point Counters -->

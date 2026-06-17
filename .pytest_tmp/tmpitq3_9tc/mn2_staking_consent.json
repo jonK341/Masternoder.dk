@@ -1,0 +1,14 @@
+{
+  "trader_agent_1": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:35.787191Z"
+  },
+  "trader_agent_2": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:35.822224Z"
+  },
+  "follower_user": {
+    "version": "1.0",
+    "accepted_at": "2026-06-16T22:19:35.882603Z"
+  }
+}

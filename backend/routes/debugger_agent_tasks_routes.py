@@ -73,6 +73,9 @@ TAB_POINTS = {
         'view_top10': {'xp': 10, 'activity_points': 5},  # New
         'get_insights': {'xp': 20, 'activity_points': 8}  # New
     },
+    'quiz': {
+        'submit_quiz': {'xp': 50, 'activity_points': 20},
+    },
     'ops-4d': {
         'ops_refresh_4d_hub': {'xp': 28, 'activity_points': 11},
         'ops_agent_video_troubleshoot': {'xp': 45, 'activity_points': 18},

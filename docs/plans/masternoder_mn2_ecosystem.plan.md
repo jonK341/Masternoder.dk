@@ -4,49 +4,49 @@ overview: "Retarget the whole effort to the real Masternoder.dk Flask app: audit
 todos:
   - id: audit
     content: "Phase 0: Audit MN2 mechanics end-to-end; start docs/MN2_ECOSYSTEM_REPORT.md"
-    status: pending
+    status: completed
   - id: daemon-health
     content: "Phase 1: mn2_health_routes.py (/api/mn2/health, /api/health), harden scanner/overview, add RPC-mocked tests"
-    status: pending
+    status: completed
   - id: wallet
     content: "Phase 2: Multi-address rotation/refresh + multi-wallet connect + top 10 wallet features (profile UI)"
-    status: pending
+    status: completed
   - id: market
     content: "Phase 3: p2p_market_service + /api/market order book, escrow, matching, points, tests"
-    status: pending
+    status: completed
   - id: agents
     content: "Phase 4: Agent wallets + treasury funding (one address auto-distributes 100k MN2 per trader agent), trader strategies, cron runner, leveling, restore point control board + agents_control dashboard, tests"
-    status: pending
+    status: completed
   - id: explorer
     content: "Phase 5: Explorer top 10 + multi-channel news (platform_news channels) + Discord outbound/inbound + Discord income streams (M8); resync news page; tests"
-    status: pending
+    status: completed
   - id: debugger-qa
     content: "Phase 6: Wire debugger Top 50 Q&A to backend with MN2 rewards + anti-farming, tests"
-    status: pending
+    status: completed
   - id: casino-crypto
     content: "Phase 7: Expand casino MN2 use (jackpots/tournaments/cashback/swap) + policy doc"
-    status: pending
+    status: completed
   - id: monitoring
     content: "Phase 8: Activity SSE stream + logs/activity_events.jsonl + monitor UI with visual effects and sounds, tests"
-    status: pending
+    status: completed
   - id: security-cron
     content: "Phase 9: Security cron jobs (withdrawal-risk sweep, anomaly/auto-freeze, reconciliation, session cleanup, address rescan), tests"
-    status: pending
+    status: completed
   - id: generator
     content: "Phase 10: Generator MN2 pay-to-generate + earn + top 10 encoder features, tests"
-    status: pending
+    status: completed
   - id: game-monitor
     content: "Phase 11: Unified multi-game monitor + game_mn2_rewards + top 10 earn functions + quest bug fix, tests"
-    status: pending
+    status: completed
   - id: customer-aggregator
     content: "Phase 12: Customer aggregator (unified customer directory across casino/generator/game/market) + auto avatars + monitoring tile + tests"
-    status: pending
+    status: completed
   - id: ai-intelligence
     content: "Phase 13: Advanced AI intelligence layer - 25 core + 25 monetization (M1-M7) + 10 Discord income streams (M8); all off-request and Gate S compliant"
-    status: pending
+    status: completed
   - id: tests-docs-commit
     content: "Phase 14: Run pytest, finalize report + Critical/Upgrades TODO, commit plan (after leaving plan mode)"
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -1,0 +1,1 @@
+{"casino_kelly_agent": {"user_id": "casino_kelly_user", "model_id": "casino_kelly_agent", "policy": {"enabled": true, "min_bet": 5, "max_bet": 50}}}

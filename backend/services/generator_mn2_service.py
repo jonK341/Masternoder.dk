@@ -168,6 +168,11 @@ def _debit(user_id: str, amount: float, meta: dict) -> Dict[str, Any]:
         append_entry(user_id=user_id, entry_type="generator_payment", amount=amount, metadata=meta)
     except Exception:
         pass
+    try:
+        from backend.services.activity_events_service import emit
+        emit("generator_mn2_pay", channel="generator", user_id=user_id, payload={"amount": amount, **meta})
+    except Exception:
+        pass
     new_bal = unified_points_db.get_all_points(user_id).get("points", {}) or {}
     return {
         "success": True,
@@ -189,6 +194,11 @@ def _credit(user_id: str, amount: float, source: str, meta: dict) -> bool:
         return False
     try:
         append_entry(user_id=user_id, entry_type=source, amount=amount, metadata=meta)
+    except Exception:
+        pass
+    try:
+        from backend.services.activity_events_service import emit
+        emit("generator_mn2_credit", channel="generator", user_id=user_id, payload={"amount": amount, "source": source, **meta})
     except Exception:
         pass
     return True
@@ -267,6 +277,11 @@ def refund_on_failure(doc_id: str, reason: str = "generation_failed") -> Dict[st
 
 
 def award_finish_bonus(user_id: str, doc_id: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    from backend.services.mn2_earn_auth import require_earn_user
+    ok, uid_or_err = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid_or_err, "awarded": 0.0}
+
     cfg = get_generator_config()
     if not cfg.get("enabled", True):
         return {"success": True, "awarded": 0.0, "skipped": "disabled"}
@@ -283,12 +298,12 @@ def award_finish_bonus(user_id: str, doc_id: str, config: Optional[Dict[str, Any
     if amount <= 0:
         return {"success": True, "awarded": 0.0}
 
-    meta = {"doc_id": doc_id, "tier": tier, "source": "generator_finish_bonus"}
-    if not _credit(user_id, amount, "generator_mn2_earn", meta):
+    meta = {"doc_id": doc_id, "tier": tier, "source": "generator_finish_bonus", "reference": f"gen-earn:{doc_id}"}
+    if not _credit(uid_or_err, amount, "generator_mn2_earn", meta):
         return {"success": False, "error": "Earn credit failed"}
 
     if doc_id not in charges:
-        charges[doc_id] = {"user_id": user_id, "amount": 0, "tier": tier}
+        charges[doc_id] = {"user_id": uid_or_err, "amount": 0, "tier": tier}
     charges[doc_id]["earned"] = True
     charges[doc_id]["earn_amount"] = amount
     charges[doc_id]["earned_at"] = _iso()

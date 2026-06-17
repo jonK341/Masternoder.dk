@@ -1,0 +1,12 @@
+{
+  "follower_user": {
+    "staked": 0.0,
+    "staking_since_iso": null,
+    "since_iso": null,
+    "last_accrued_iso": "2026-06-16T22:19:06.165216Z",
+    "total_earned": 5.0,
+    "auto_compound": false,
+    "streak_days": 0,
+    "last_stake_day": null
+  }
+}

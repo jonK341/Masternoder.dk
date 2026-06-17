@@ -4,7 +4,7 @@ overview: "A prioritized plan for the Generator page: critical fixes (missing AP
 todos:
   - id: discord-generator-channel
     content: "On video job complete, auto-post to platform_news channel=generator + Discord #generator via discord_service; showcase funnel (M8 #59)"
-    status: pending
+    status: completed
 isProject: false
 ---
 

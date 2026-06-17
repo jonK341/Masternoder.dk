@@ -25,15 +25,27 @@
     "large_withdrawal_mn2": 50000
   },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
+  "explorer_kind": "chainz",
+  "explorer_local_api_url": "http://127.0.0.1:3000",
+  "explorer_fallback_base_url": "https://chainz.cryptoid.info/mn2/",
+  "explorer_use_local_stats": false,
+  "mn2_usd_price": null,
   "coins_per_mn2": 100,
-  "generator": {
+    "generator": {
     "enabled": true,
     "earn_on_finish_mn2": 0.005,
     "express_pack_mn2": 0.5,
     "premium_encode_mn2": 0.1,
     "ultra_encode_mn2": 0.25,
     "duration_surcharge_per_min_mn2": 0.002,
-    "max_earn_per_video_mn2": 0.05
+    "max_earn_per_video_mn2": 0.05,
+    "crypto_rewards": {
+      "multi_ai_per_provider_mn2": 0.001,
+      "multi_ai_cap_mn2": 0.005,
+      "daily_first_video_mn2": 0.01,
+      "staking_bonus_percent_per_1000_mn2": 0.5,
+      "staking_bonus_cap_percent": 15
+    }
   },
   "aggregator": {
     "enabled": true,
@@ -62,5 +74,11 @@
   "order_payment_underpay_credit": true,
   "order_payment_combined_fulfill": true,
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
-  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
+  "gift": {
+    "enabled": true,
+    "max_per_transfer_mn2": 1000,
+    "max_per_day_mn2": 5000,
+    "min_balance_after_mn2": 0
+  }
 }

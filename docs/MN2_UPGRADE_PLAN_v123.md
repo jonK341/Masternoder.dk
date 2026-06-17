@@ -2,7 +2,7 @@
 
 Last updated: **2026-06-17** (full track execution)
 
-Related: [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) · [MN2_OPS.md](MN2_OPS.md) · [MN2_TODO.md](MN2_TODO.md) · [CAMGIRLS_PHASE0.md](CAMGIRLS_PHASE0.md)
+Related: [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) · [MN2_OPS.md](MN2_OPS.md) · [MN2_TODO.md](MN2_TODO.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE0.md](CAMGIRLS_PHASE0.md)
 
 ---
 
@@ -22,7 +22,7 @@ Related: [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) · [MN2_OPS.md](MN2_OPS.md) 
 | Step | Status |
 |------|--------|
 | Source patch (mnsync + `getstakinginfo`) | ✓ [PR #1](https://github.com/jonK341/MasterNoder2/pull/1) **merged** to `main` |
-| Release binaries `masternoder2d.tar.gz` | ⏳ Build on Linux, tag `v1.2.3.0`, attach assets |
+| Release binaries `masternoder2d.tar.gz` | ⏳ Build on Linux — `scripts/mn2_build_release.sh` + `mn2_publish_release.py` |
 | Production binary swap | ⏳ After release: `python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply` |
 
 ---
@@ -74,6 +74,26 @@ curl -s -X POST -H "X-Ops-Secret: $SECRET" -H "Content-Type: application/json" \
   -d '{"id":"performer_1","display_name":"…","unlock_price_mn2":50,"payout_address":"J…","active":true}' \
   http://127.0.0.1:5000/api/camgirls/ops/performers
 ```
+
+---
+
+## Phase 5 — Discord cross-roads (code shipped, deploy `mn2_staking`)
+
+| Item | Status |
+|------|--------|
+| Market fan-out → `#market` | ✓ `market_discord_fanout.py` + cron |
+| Alert funnel — market/camgirls/agent types | ✓ M8 #53 |
+| Affiliate rotator — market, camgirls, compendium | ✓ M8 #57 |
+| Support FAQ — market, camgirls | ✓ M8 #60 |
+| Trader tick → activity bus | ✓ `run_all_traders()` emit |
+
+**Deploy:**
+
+```powershell
+python scripts/deploy.py mn2_staking --ask-pass
+```
+
+**Post-deploy:** schedule `cron/discord_market_fanout.sh` — see [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [MN2_OPS.md](MN2_OPS.md) §10.
 
 ---
 

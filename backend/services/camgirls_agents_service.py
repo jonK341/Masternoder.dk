@@ -134,6 +134,13 @@ def persona_system_prompt(performer_row: Dict[str, Any]) -> tuple[str, str]:
     )
     if custom:
         base = f"{base}\n\nPersona notes: {custom}"
+    try:
+        from backend.services.camgirls_studio_service import lingo_for_prompt
+        extra = lingo_for_prompt(performer_row)
+        if extra:
+            base = f"{base}\n\nStudio lingo:\n{extra}"
+    except Exception:
+        pass
     return base, task
 
 

@@ -16,6 +16,46 @@
   function q(id) { return document.getElementById(id); }
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
 
+  var _mn2Usd = null;
+  var _fiatOn = localStorage.getItem('mn2_fiat_display') === '1';
+
+  function loadPrice() {
+    return fetch('/api/mn2/price', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (p) {
+        if (p && p.mn2_usd_price != null) _mn2Usd = Number(p.mn2_usd_price);
+        return _mn2Usd;
+      }).catch(function () { return null; });
+  }
+
+  function fiatHint(mn2) {
+    if (!_fiatOn || _mn2Usd == null) return '';
+    return ' (≈ $' + (Number(mn2 || 0) * _mn2Usd).toFixed(4) + ')';
+  }
+
+  function applyFiatToggle() {
+    var tg = q('mn2-fiat-toggle');
+    if (tg) {
+      tg.checked = _fiatOn;
+      tg.addEventListener('change', function () {
+        _fiatOn = tg.checked;
+        localStorage.setItem('mn2_fiat_display', _fiatOn ? '1' : '0');
+        refreshStatus();
+        runCalc();
+        runGoal();
+      });
+    }
+    var wtg = document.getElementById('mn2-fiat-toggle');
+    if (wtg && !tg) {
+      wtg.checked = _fiatOn;
+      wtg.addEventListener('change', function () {
+        _fiatOn = wtg.checked;
+        localStorage.setItem('mn2_fiat_display', _fiatOn ? '1' : '0');
+        if (window.profileManager && window.profileManager.loadProfileMn2Wallet) window.profileManager.loadProfileMn2Wallet();
+      });
+    }
+  }
+
   function api(path, opts) {
     opts = opts || {};
     var sep = path.indexOf('?') === -1 ? '?' : '&';
@@ -95,10 +135,10 @@
 
   function renderStatus(s) {
     if (!s) return;
-    q('mn2-staking-staked').textContent = fmt(s.staked);
-    q('mn2-staking-balance').textContent = fmt(s.mn2_balance);
+    q('mn2-staking-staked').textContent = fmt(s.staked) + fiatHint(s.staked);
+    q('mn2-staking-balance').textContent = fmt(s.mn2_balance) + fiatHint(s.mn2_balance);
     q('mn2-staking-apr').textContent = fmt(s.effective_apr_percent, 2);
-    q('mn2-staking-earned').textContent = fmt(s.total_earned);
+    q('mn2-staking-earned').textContent = fmt(s.total_earned) + fiatHint(s.total_earned);
     q('mn2-staking-tier').textContent = s.longevity_label || s.longevity_tier || '--';
     var prog = q('mn2-staking-tier-progress');
     if (prog) {
@@ -276,9 +316,136 @@
       .then(function (c) {
         if (!c || !c.success) return;
         q('mn2-calc-result').textContent =
-          '≈ ' + fmt(c.projected_reward_mn2, 6) + ' MN2 over ' + c.days + ' days at ' + fmt(c.apr_percent, 2) +
+          '≈ ' + fmt(c.projected_reward_mn2, 6) + ' MN2' + fiatHint(c.projected_reward_mn2) + ' over ' + c.days + ' days at ' + fmt(c.apr_percent, 2) +
           '% APR (total ≈ ' + fmt(c.projected_total_mn2, 4) + ' MN2). Estimate only — not guaranteed.';
       }).catch(function () {});
+  }
+
+  function runGoal() {
+    var targetEl = q('mn2-goal-target');
+    var dateEl = q('mn2-goal-date');
+    var out = q('mn2-goal-result');
+    if (!targetEl || !dateEl || !out) return;
+    var target = targetEl.value || 0;
+    var date = dateEl.value;
+    if (!date) {
+      var d = new Date(); d.setMonth(d.getMonth() + 3);
+      date = d.toISOString().slice(0, 10);
+      dateEl.value = date;
+    }
+    var bal = q('mn2-staking-balance');
+    var current = bal ? parseFloat(String(bal.textContent).split(' ')[0]) || 0 : 0;
+    var uptime = (q('mn2-calc-uptime') && q('mn2-calc-uptime').value || 100) / 100;
+    fetch('/api/mn2/staking/goal-planner?target_mn2=' + target + '&target_date=' + date + '&current_mn2=' + current + '&uptime=' + uptime, { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (g) {
+        if (!g || !g.success) { out.textContent = (g && g.error) || '—'; return; }
+        if (!g.required_stake_mn2) { out.textContent = g.note || 'Target already met.'; return; }
+        out.textContent = 'Stake ≈ ' + fmt(g.required_stake_mn2, 4) + ' MN2 now to reach ' + fmt(g.target_mn2, 4) +
+          ' MN2 in ' + g.days_remaining + ' days (' + g.note + ')';
+      }).catch(function () {});
+  }
+
+  function loadNotifyPrefs() {
+    fetch('/api/mn2/staking/notification-prefs', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.prefs) return;
+        var p = d.prefs;
+        if (q('mn2-notify-rewards')) q('mn2-notify-rewards').checked = !!p.reward_alerts;
+        if (q('mn2-notify-digest')) q('mn2-notify-digest').checked = !!p.weekly_digest;
+      }).catch(function () {});
+    fetch('/api/mn2/staking/leaderboard-settings', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.success) return;
+        if (q('mn2-leaderboard-optin')) q('mn2-leaderboard-optin').checked = !!d.staking_leaderboard_opt_in;
+        if (q('mn2-leaderboard-amounts')) q('mn2-leaderboard-amounts').checked = !!d.staking_show_amounts;
+        if (q('mn2-leaderboard-name')) q('mn2-leaderboard-name').value = d.staking_display_name || '';
+      }).catch(function () {});
+  }
+
+  function saveNotifyPref(key, val) {
+    var body = {}; body[key] = val;
+    fetch('/api/mn2/staking/notification-prefs', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () {});
+  }
+
+  function saveLeaderboardSettings() {
+    var body = {
+      staking_leaderboard_opt_in: !!(q('mn2-leaderboard-optin') && q('mn2-leaderboard-optin').checked),
+      staking_show_amounts: !!(q('mn2-leaderboard-amounts') && q('mn2-leaderboard-amounts').checked),
+      staking_display_name: (q('mn2-leaderboard-name') && q('mn2-leaderboard-name').value) || ''
+    };
+    fetch('/api/mn2/staking/leaderboard-settings', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () {});
+  }
+
+  function teamMsg(text, ok) {
+    var el = q('mn2-team-msg');
+    if (!el) return;
+    el.textContent = text || '';
+    el.style.color = ok ? '#00ff88' : '#ffaa44';
+  }
+
+  function renderTeam(t) {
+    var none = q('mn2-team-none');
+    var active = q('mn2-team-active');
+    if (!none || !active) return;
+    if (!t || !t.in_team) {
+      none.style.display = 'block';
+      active.style.display = 'none';
+      return;
+    }
+    none.style.display = 'none';
+    active.style.display = 'block';
+    if (q('mn2-team-name-display')) q('mn2-team-name-display').textContent = t.name || 'Team';
+    if (q('mn2-team-mult')) q('mn2-team-mult').textContent = fmt(t.team_multiplier, 3) + '×';
+    if (q('mn2-team-code')) q('mn2-team-code').textContent = t.invite_code || '';
+    var mem = q('mn2-team-members');
+    if (mem && t.members) {
+      mem.innerHTML = t.members.map(function (m) {
+        return '<div>' + (m.display_id || m.user_id) + (m.is_leader ? ' ★' : '') +
+          ' · ' + fmt(m.staked_mn2, 2) + ' MN2 · ' + fmt(m.longevity_days, 1) + 'd' +
+          (m.counts_for_boost ? '' : ' <span style="opacity:0.5;">(below min)</span>') + '</div>';
+      }).join('');
+    }
+  }
+
+  function refreshTeam() {
+    fetch('/api/mn2/staking/team', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(renderTeam)
+      .catch(function () {});
+  }
+
+  function wireTeam() {
+    var createBtn = q('mn2-team-create');
+    if (createBtn) createBtn.addEventListener('click', function () {
+      var name = (q('mn2-team-name') && q('mn2-team-name').value) || '';
+      post('/api/mn2/staking/team/create', { name: name }).then(function (res) {
+        if (res && res.success) { teamMsg('Team created', true); renderTeam(res.team); refreshStatus(); }
+        else teamMsg((res && res.error) || 'Failed', false);
+      });
+    });
+    var joinBtn = q('mn2-team-join');
+    if (joinBtn) joinBtn.addEventListener('click', function () {
+      var code = (q('mn2-team-join-code') && q('mn2-team-join-code').value) || '';
+      post('/api/mn2/staking/team/join', { code: code }).then(function (res) {
+        if (res && res.success) { teamMsg('Joined team', true); renderTeam(res.team); refreshStatus(); }
+        else teamMsg((res && res.error) || 'Failed', false);
+      });
+    });
+    var leaveBtn = q('mn2-team-leave');
+    if (leaveBtn) leaveBtn.addEventListener('click', function () {
+      post('/api/mn2/staking/team/leave', {}).then(function (res) {
+        if (res && res.success) { teamMsg('Left team', true); refreshTeam(); refreshStatus(); }
+        else teamMsg((res && res.error) || 'Failed', false);
+      });
+    });
+    var copyBtn = q('mn2-team-copy-code');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var c = q('mn2-team-code') && q('mn2-team-code').textContent;
+      if (c && navigator.clipboard) navigator.clipboard.writeText(c).then(function () { teamMsg('Code copied', true); });
+    });
   }
 
   // ----------------------------------------------------------- consent
@@ -341,7 +508,17 @@
       var el = q(id); if (el) el.addEventListener('input', runCalc);
     });
     var up = q('mn2-calc-uptime');
-    if (up) up.addEventListener('input', function () { q('mn2-calc-uptime-val').textContent = up.value; runCalc(); });
+    if (up) up.addEventListener('input', function () { q('mn2-calc-uptime-val').textContent = up.value; runCalc(); runGoal(); });
+
+    ['mn2-goal-target', 'mn2-goal-date'].forEach(function (id) {
+      var el = q(id); if (el) el.addEventListener('change', runGoal);
+    });
+    if (q('mn2-notify-rewards')) q('mn2-notify-rewards').addEventListener('change', function (e) { saveNotifyPref('reward_alerts', e.target.checked); });
+    if (q('mn2-notify-digest')) q('mn2-notify-digest').addEventListener('change', function (e) { saveNotifyPref('weekly_digest', e.target.checked); });
+    ['mn2-leaderboard-optin', 'mn2-leaderboard-amounts', 'mn2-leaderboard-name'].forEach(function (id) {
+      var el = q(id); if (el) el.addEventListener('change', saveLeaderboardSettings);
+      if (el && id === 'mn2-leaderboard-name') el.addEventListener('blur', saveLeaderboardSettings);
+    });
 
     var csv = q('mn2-staking-rewards-csv');
     if (csv) csv.href = '/api/mn2/staking/rewards-table?format=csv&user_id=' + encodeURIComponent(uid());
@@ -349,10 +526,17 @@
 
   function init() {
     wire();
+    wireTeam();
     loadTerms();
-    refreshStatus();
+    loadPrice().then(function () {
+      applyFiatToggle();
+      refreshStatus();
+      runCalc();
+      runGoal();
+    });
+    loadNotifyPrefs();
+    refreshTeam();
     refreshRewards();
-    runCalc();
     setInterval(refreshStatus, 30000);
     hookOpsKillSwitch();
     var rzT;

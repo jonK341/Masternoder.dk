@@ -69,6 +69,12 @@ _AGENT_DISPLAY = {
     'ai_intelligence_agent': ('🤖', 'AI Intelligence', '#818cf8'),
     'tester_agent': ('🧪', 'Tester Agent', '#4ade80'),
     'error_migration_agent': ('🔄', 'Migration Agent', '#facc15'),
+    'casino_kelly_agent': ('📐', 'Kelly Optimizer', '#22d3ee'),
+    'casino_martingale_agent': ('🔄', 'Martingale Conservative', '#a3e635'),
+    'casino_slot_hunter_agent': ('🎰', 'Slot Hunter', '#f472b6'),
+    'casino_tournament_agent': ('🏆', 'Tournament Grinder', '#fbbf24'),
+    'casino_crash_agent': ('📈', 'Crash Timer', '#fb7185'),
+    'casino_leaderboard_agent': ('🥇', 'Leaderboard Chaser', '#fcd34d'),
 }
 
 # Self-hosted agent profile pictures live at static/img/agents/<agent_id>.svg

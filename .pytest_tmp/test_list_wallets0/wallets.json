@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "trader_agent_2": {
+      "mn2_balance": 1.0,
+      "history": [
+        {
+          "ts": "2026-06-14T14:04:01.519392Z",
+          "amount": 1.0,
+          "reference": "r1",
+          "source": "test"
+        }
+      ]
+    }
+  },
+  "updated_at": "2026-06-14T14:04:01.519392Z"
+}

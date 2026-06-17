@@ -1,0 +1,1 @@
+{"type": "battle_win", "channel": "game", "ts": "t1", "payload": {"battle_id": "b1", "points_delta": 10, "difficulty": "balanced", "battle_mode": "rps"}}

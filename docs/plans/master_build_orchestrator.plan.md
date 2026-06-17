@@ -4,43 +4,43 @@ overview: "The single overarching plan that connects the four build-ready plans 
 todos:
   - id: stage0-foundations
     content: "Stage 0: Generator criticals (Plan 3) + battle/game correctness & tests (Plan 4) + MN2 audit/daemon health (Plan 1 P0-P1) + confirm casino/wallet baseline (Plan 2); verify Gate A"
-    status: pending
+    status: completed
   - id: stage1-economy
     content: "Stage 1: Wallet multi-address + mn2_ledger/activity event log + generator_pricing_service + game_mn2_rewards + generate agent treasury address; verify Gate B"
-    status: pending
+    status: completed
   - id: stage1b-hardening
     content: "Stage 1.5 (CRITICAL): atomic+locked money path w/ idempotency, heavy work off request workers + uWSGI caps, treasury custody+reconciliation, earn-action auth+rate limits, admin auth+audit, backups/DR, migrations; verify Gate S"
-    status: pending
+    status: completed
   - id: stage2-market-agents
     content: "Stage 2: P2P market + agent wallets/strategies (Plan 1 P3) + agent treasury auto-distribution (100k MN2 to each trader agent wallet)"
-    status: pending
+    status: completed
   - id: stage2-generator-crypto
     content: "Stage 2: Generator MN2 pay/earn + encoder features (Plan 1 P10, depends on Plan 3)"
-    status: pending
+    status: completed
   - id: stage2-game-crypto
     content: "Stage 2: Unified game monitor + game crypto rewards + earn functions (Plan 1 P11, depends on Plan 4)"
-    status: pending
+    status: completed
   - id: stage2-casino-explorer-debugger
     content: "Stage 2: Casino crypto (Plan 2) + explorer + multi-channel news + Discord + M8 income streams + debugger Q&A; verify Gate C"
-    status: pending
+    status: completed
   - id: stage2-customer-aggregator
     content: "Stage 2: Customer aggregator unified directory (casino/generator/game/market) + auto avatars (off-request backfill); surfaced in monitoring at Stage 3"
-    status: pending
+    status: completed
   - id: stage2-ai-intelligence
     content: "Stage 2–3: Advanced AI intelligence — 25 core + 25 monetization (M1–M7) + 10 Discord streams (M8); Gate S off-request"
-    status: pending
+    status: completed
   - id: stage3-monitoring
     content: "Stage 3: Activity monitoring SSE + effects/sounds + Discord feed status + news channel widgets"
-    status: pending
+    status: completed
   - id: stage3-cron
     content: "Stage 3: Security cron jobs (anomaly/auto-freeze, reconciliation, cleanup, rescan)"
-    status: pending
+    status: completed
   - id: stage3-control-board
     content: "Stage 3: Agents control board + leveling governing market + game agents"
-    status: pending
+    status: completed
   - id: stage4-finalize
     content: "Stage 4: Full pytest, report + Critical/Upgrades TODO, commit; verify Gate D"
-    status: pending
+    status: completed
 isProject: false
 ---
 

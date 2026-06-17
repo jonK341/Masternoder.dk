@@ -8,6 +8,9 @@ Usage:
   python scripts/camgirls_onboard_performers.py --provision-addresses
 
 Payout addresses are created by the MN2 daemon (getnewaddress), not stored in performer JSON.
+
+On server (production has no ./venv — use python3 or camgirls_py.sh):
+  cd /var/www/html && bash scripts/camgirls_py.sh scripts/camgirls_onboard_performers.py --provision-addresses
 """
 from __future__ import annotations
 
@@ -19,9 +22,13 @@ import sys
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE not in sys.path:
     sys.path.insert(0, BASE)
+sys.path.insert(0, os.path.join(BASE, "scripts"))
+
+from project_env import load_project_dotenv
 
 
 def main() -> int:
+    load_project_dotenv()
     parser = argparse.ArgumentParser(description="Onboard camgirls performers from JSON")
     parser.add_argument("--file", help="JSON with { performers: [...] }")
     parser.add_argument("--dry-run", action="store_true", help="Validate only; do not write")

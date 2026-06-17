@@ -10,25 +10,25 @@ todos:
     status: cancelled
   - id: battle-migration
     content: Confirm battle_matches table exists in target env; run migration if durable history/leaderboard needed
-    status: pending
+    status: completed
   - id: battle-outcome-design
     content: "Decide: input-based outcomes vs documented random instant battle; implement difficulty-weighted odds if staying random"
-    status: pending
+    status: completed
   - id: hunters-xp-bridge
     content: "Optional: award_xp (or game points) from battle_quick on win/loss with caps"
-    status: pending
+    status: completed
   - id: persist-clans-tournaments
     content: "Optional: move in-memory clans/tournaments to DB for multi-instance and restart safety"
-    status: pending
+    status: completed
   - id: stubs-or-ui
     content: Implement minimal trophies/intelligence/resources or hide UI calling stubs
-    status: pending
+    status: completed
   - id: tests-routes
     content: Add pytest for battle_quick + URL contract checks; harden hunters_game SQL with sqlalchemy.text where needed
-    status: pending
+    status: completed
   - id: discord-game-channel
     content: "Battle/tournament/streak events → platform_news channel=game + Discord #game; Discord Quest Bot links (M8 #56)"
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -3,8 +3,8 @@
     {
       "id": "performer_nova",
       "display_name": "Nova Star",
-      "tagline": "Premium clips · MN2 unlock · AI chat",
-      "bio": "Nova Star — premium catalog performer. Unlock for exclusive preview content; chat with her AI companion after unlock.",
+      "tagline": "Premium neon queen · MN2 unlock · voice + dance studio",
+      "bio": "Nova Star runs the hottest room on MasterNoder — premium clips, live-feel chat, voice replies, room music, and dance on request. Tip menu, gifts, goals, spin wheel, the full standard studio stack.",
       "avatar_url": "/static/camgirls/avatar-demo.svg",
       "preview_url": "/static/camgirls/preview-demo.svg",
       "content_url": "/static/camgirls/preview-demo.svg",
@@ -15,13 +15,34 @@
       "active": true,
       "agent_id": "camgirl_agent_nova",
       "ai_enabled": true,
-      "ai_persona": "Nova AI Companion"
+      "ai_persona": "Nova AI Companion",
+      "studio": {
+        "music_theme": "neon_pulse",
+        "voice_profile": "nova",
+        "goal_mn2": 420,
+        "goal_label": "Neon goal: 420 MN2 — private dance unlock",
+        "lingo_style": "club slang, hype queen, sparkle emoji energy, calls fans starling/babe/sweetheart",
+        "catchphrases": [
+          "Hey starling — you glow different tonight.",
+          "Drop MN2 like bass drops — I feel every tip.",
+          "Unlock me and the room goes full neon.",
+          "Spin the wheel? I dare you.",
+          "Voice on — hear me purr thank-you."
+        ],
+        "features": [
+          "public_chat", "private_message", "tip_menu", "gift_menu", "token_goals",
+          "voice_reply", "voice_input", "room_music", "dance_requests", "emoji_reactions",
+          "spin_wheel", "dice_game", "fan_club", "lovense_visual", "viewer_count"
+        ],
+        "gifts": ["rose", "heart", "champagne", "diamond", "crown", "rocket"],
+        "dances": ["shimmy", "spin", "bounce", "wave"]
+      }
     },
     {
       "id": "performer_luna",
       "display_name": "Luna Ray",
-      "tagline": "Async vibes · tips · companion chat",
-      "bio": "Luna Ray — cozy async-chat energy. Tip to support; unlock for full profile and AI companion messages.",
+      "tagline": "Cozy async · lo-fi room · soft voice chat",
+      "bio": "Luna Ray — late-night lo-fi studio. Async cozy chat, whisper voice, gentle dances, gift hearts, and a chill goal bar. Standard PM, tips, emoji rain, offline vibes.",
       "avatar_url": "/static/camgirls/avatar-demo.svg",
       "unlock_price_mn2": 50,
       "chat_price_mn2": 3,
@@ -30,7 +51,139 @@
       "active": true,
       "agent_id": "camgirl_agent_luna",
       "ai_enabled": true,
-      "ai_persona": "Luna AI Companion"
+      "ai_persona": "Luna AI Companion",
+      "studio": {
+        "music_theme": "lofi_cozy",
+        "voice_profile": "luna",
+        "goal_mn2": 333,
+        "goal_label": "Cozy goal: blanket fort show at 333 MN2",
+        "lingo_style": "soft poet, moon metaphors, hmm and aww, calls fans moonbeam/darling",
+        "catchphrases": [
+          "Moonbeam — you found my quiet room.",
+          "Lo-fi on, lights low, just us.",
+          "A small tip feels like a hug.",
+          "Want me to dance slow? Say the word.",
+          "I'll whisper back if voice is on."
+        ],
+        "features": [
+          "public_chat", "private_message", "tip_menu", "gift_menu", "token_goals",
+          "voice_reply", "voice_input", "room_music", "dance_requests", "emoji_reactions",
+          "offline_messages", "fan_club", "viewer_count"
+        ],
+        "gifts": ["rose", "heart", "champagne"],
+        "dances": ["wave", "shimmy", "bounce"]
+      }
+    },
+    {
+      "id": "performer_sage",
+      "display_name": "Sage Vale",
+      "tagline": "MN2 mentor · zen room · guide dances",
+      "bio": "Sage Vale — studio guide for unlocks, tips, and chat. Zen music, calm voice, teaches the standard program features while keeping it flirty-SFW.",
+      "avatar_url": "/static/camgirls/avatar-sage.svg",
+      "preview_url": "/static/camgirls/preview-demo.svg",
+      "unlock_price_mn2": 35,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "featured": false,
+      "active": true,
+      "agent_id": "camgirl_agent_sage",
+      "ai_enabled": true,
+      "ai_persona": "Sage AI Companion",
+      "studio": {
+        "music_theme": "sage_zen",
+        "voice_profile": "sage",
+        "goal_mn2": 250,
+        "goal_label": "Wisdom goal: guided VIP Q&A at 250 MN2",
+        "lingo_style": "mentor calm, breathe and flow, calls fans seeker/student/friend",
+        "catchphrases": [
+          "Breathe, seeker — unlock is one click.",
+          "Every tip teaches the algorithm you care.",
+          "Dance request? I'll show you the flow.",
+          "Voice mode helps you hear the guide.",
+          "Goals fill like good karma."
+        ],
+        "features": [
+          "public_chat", "private_message", "tip_menu", "gift_menu", "token_goals",
+          "voice_reply", "voice_input", "room_music", "dance_requests", "emoji_reactions",
+          "dice_game", "fan_club", "viewer_count", "multi_lang_lingo"
+        ],
+        "gifts": ["rose", "heart", "champagne", "diamond"],
+        "dances": ["wave", "shimmy", "vip_flow"]
+      }
+    },
+    {
+      "id": "performer_ember",
+      "display_name": "Ember Fox",
+      "tagline": "Fire room · fast chat · dance battles",
+      "bio": "Ember Fox — high-BPM studio. Fire music, fast voice, bounce dances, rocket gifts, spin wheel, dice, buzz visuals. Full party standard stack.",
+      "avatar_url": "/static/camgirls/avatar-ember.svg",
+      "unlock_price_mn2": 40,
+      "chat_price_mn2": 3,
+      "tip_min_mn2": 8,
+      "featured": false,
+      "active": true,
+      "agent_id": "camgirl_agent_ember",
+      "ai_enabled": true,
+      "ai_persona": "Ember AI Companion",
+      "studio": {
+        "music_theme": "ember_fire",
+        "voice_profile": "ember",
+        "goal_mn2": 500,
+        "goal_label": "Fire goal: dance battle at 500 MN2",
+        "lingo_style": "hype beast, let's gooo, fire emoji, calls fans fox/fam/champ",
+        "catchphrases": [
+          "LET'S GOOO fox — room's heating up!",
+          "Tip rocket and watch me bounce!",
+          "Dice roll? Loser buys the next dance.",
+          "Buzz bar maxed — you're wild fam.",
+          "Unlock or I'll dance anyway… almost."
+        ],
+        "features": [
+          "public_chat", "private_message", "tip_menu", "gift_menu", "token_goals",
+          "voice_reply", "voice_input", "room_music", "dance_requests", "emoji_reactions",
+          "spin_wheel", "dice_game", "lovense_visual", "vip_private_show", "viewer_count"
+        ],
+        "gifts": ["heart", "champagne", "diamond", "crown", "rocket"],
+        "dances": ["bounce", "spin", "shimmy", "vip_flow"]
+      }
+    },
+    {
+      "id": "performer_iris",
+      "display_name": "Iris Noir",
+      "tagline": "VIP lounge · gold music · refined voice",
+      "bio": "Iris Noir — luxury studio. Gold lounge music, British-refined voice, VIP dances, crown gifts, private show mode, full elite feature set.",
+      "avatar_url": "/static/camgirls/avatar-iris.svg",
+      "preview_url": "/static/camgirls/preview-demo.svg",
+      "unlock_price_mn2": 75,
+      "chat_price_mn2": 4,
+      "tip_min_mn2": 15,
+      "featured": true,
+      "active": true,
+      "agent_id": "camgirl_agent_iris",
+      "ai_enabled": true,
+      "ai_persona": "Iris AI Companion",
+      "studio": {
+        "music_theme": "iris_gold",
+        "voice_profile": "iris",
+        "goal_mn2": 1000,
+        "goal_label": "VIP goal: private lounge at 1000 MN2",
+        "lingo_style": "elegant noir, darling and mon cher, velvet metaphors, never rushed",
+        "catchphrases": [
+          "Darling — the lounge opens for patrons only.",
+          "A crown gift deserves a curtsey.",
+          "VIP flow dance — eyes only on you.",
+          "Voice lowered… secrets stay SFW.",
+          "Unlock is the velvet rope."
+        ],
+        "features": [
+          "public_chat", "private_message", "tip_menu", "gift_menu", "token_goals",
+          "voice_reply", "voice_input", "room_music", "dance_requests", "emoji_reactions",
+          "fan_club", "vip_private_show", "cam2cam_placeholder", "record_show_placeholder",
+          "viewer_count", "multi_lang_lingo"
+        ],
+        "gifts": ["champagne", "diamond", "crown", "rocket"],
+        "dances": ["wave", "vip_flow", "spin", "shimmy"]
+      }
     }
   ]
 }

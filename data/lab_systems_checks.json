@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "description": "Lab hub API line checks — recheck all lab functions from /api/lab/systems-check",
+  "checks": [
+    {"label": "GET /api/lab/v2/status", "path_template": "/api/lab/v2/status?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/progression", "path_template": "/api/lab/progression?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/overview", "path_template": "/api/lab/overview?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/research-log", "path_template": "/api/lab/research-log?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/share-card", "path_template": "/api/lab/share-card?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/chapter2-research", "path_template": "/api/lab/chapter2-research?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/projects", "path_template": "/api/lab/projects?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/technologies", "path_template": "/api/lab/technologies?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/idea-board", "path_template": "/api/lab/idea-board?user_id={{user_id}}", "kind": "success_true"},
+    {"label": "GET /api/lab/news", "path_template": "/api/lab/news?limit=5", "kind": "success_true"},
+    {"label": "GET /api/news/platform?channel=lab", "path_template": "/api/news/platform?channel=lab&limit=5", "kind": "success_not_false"},
+    {"label": "GET /api/trophies/definitions", "path_template": "/api/trophies/definitions", "kind": "trophy_defs_ok"},
+    {"label": "GET /api/mn2/balance", "path_template": "/api/mn2/balance?user_id={{user_id}}", "kind": "success_not_false"},
+    {"label": "GET /api/game/shop/items", "path_template": "/api/game/shop/items", "kind": "shop_items_ok"}
+  ]
+}

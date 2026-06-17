@@ -281,7 +281,11 @@ def complete_quest():
         awarded = False
         try:
             from backend.services.unified_points_database import unified_points_db
-            unified_points_db.add_points(user_id, xp_reward, "quest_complete", quest.get("title", "Quest"))
+            unified_points_db.add_points(
+                user_id, "xp_total", float(xp_reward),
+                source="quest_complete",
+                metadata={"quest_id": quest_id, "quest_title": quest.get("title", "Quest")},
+            )
             awarded = True
         except Exception:
             pass
@@ -392,6 +396,37 @@ def complete_quest():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@quest_bp.route("/api/quests/user/<user_id>", methods=["GET"])
+def quests_for_user(user_id: str):
+    """Alias for active quests by user id (Plan Phase 11)."""
+    user_id = (user_id or "").strip()
+    if not user_id:
+        return jsonify({"success": False, "error": "user_id required"}), 200
+    return _quests_for_user_impl(user_id)
+
+
+def _quests_for_user_impl(user_id: str):
+    today = _today_str()
+    daily = _daily_cache.get(today) or []
+    personal = [q for q in (_user_quests.get(user_id) or []) if q.get("personalised")]
+    completed_ids = {uq["quest_id"] for uq in (_user_quests.get(user_id) or []) if uq.get("completed")}
+    all_quests = [dict(q, completed=q["quest_id"] in completed_ids) for q in daily] + personal
+    total_xp_available = sum(q.get("xp_reward", 0) for q in all_quests if not q.get("completed"))
+    total_xp_earned = sum(q.get("xp_reward", 0) for q in all_quests if q.get("completed"))
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "date": today,
+        "quests": all_quests,
+        "stats": {
+            "total": len(all_quests),
+            "completed": len(completed_ids),
+            "xp_earned_today": total_xp_earned,
+            "xp_available": total_xp_available,
+        },
+    }), 200
+
+
 @quest_bp.route("/api/quests/active", methods=["GET"])
 def active_quests():
     """
@@ -403,29 +438,117 @@ def active_quests():
         if not user_id:
             return jsonify({"success": False, "error": "user_id required"}), 200
 
-        today  = _today_str()
-        daily  = _daily_cache.get(today) or []
-        personal = [q for q in (_user_quests.get(user_id) or []) if q.get("personalised")]
-
-        completed_ids = {uq["quest_id"] for uq in (_user_quests.get(user_id) or []) if uq.get("completed")}
-
-        all_quests = [dict(q, completed=q["quest_id"] in completed_ids) for q in daily] + personal
-
-        total_xp_available = sum(q.get("xp_reward", 0) for q in all_quests if not q.get("completed"))
-        total_xp_earned    = sum(q.get("xp_reward", 0) for q in all_quests if q.get("completed"))
-
-        return jsonify({
-            "success": True,
-            "user_id": user_id,
-            "date": today,
-            "quests": all_quests,
-            "stats": {
-                "total": len(all_quests),
-                "completed": len(completed_ids),
-                "xp_earned_today": total_xp_earned,
-                "xp_available": total_xp_available,
-            },
-        }), 200
+        return _quests_for_user_impl(user_id)
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+def get_daily_quests_for_hub(user_id: str = "") -> list:
+    """Today's AI daily quests with optional user completion flags (Game Hub #23)."""
+    today = _today_str()
+    if today not in _daily_cache:
+        _daily_cache.clear()
+        _daily_cache[today] = _generate_daily_quests()
+    quests = [_ensure_quest_mn2(q) for q in _daily_cache[today]]
+    if not user_id:
+        return quests
+    completed_ids = {
+        uq["quest_id"]
+        for uq in (_user_quests.get(user_id) or [])
+        if uq.get("completed")
+    }
+    return [dict(q, completed=q["quest_id"] in completed_ids) for q in quests]
+
+
+def complete_quest_for_user(user_id: str, quest_id: str) -> dict:
+    """Complete an AI daily/personal quest without HTTP (Game Hub unified claim)."""
+    user_id = (user_id or "").strip()
+    quest_id = (quest_id or "").strip()
+    if not user_id or not quest_id:
+        return {"success": False, "error": "user_id and quest_id required"}
+
+    user_list = _user_quests.get(user_id) or []
+    if any(uq.get("quest_id") == quest_id and uq.get("completed") for uq in user_list):
+        return {"success": False, "error": "Quest already completed", "already_claimed": True}
+
+    today = _today_str()
+    all_q = (_daily_cache.get(today) or []) + (_user_quests.get(user_id) or [])
+    quest = next((q for q in all_q if q.get("quest_id") == quest_id), None)
+    if not quest:
+        return {"success": False, "error": "Quest not found"}
+
+    quest = _ensure_quest_mn2(quest)
+    xp_reward = quest.get("xp_reward", 100)
+    mn2_reward = _mn2_reward_for_quest(quest)
+
+    awarded = False
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        unified_points_db.add_points(
+            user_id, "xp_total", float(xp_reward),
+            source="quest_complete",
+            metadata={"quest_id": quest_id, "quest_title": quest.get("title", "Quest")},
+        )
+        awarded = True
+    except Exception:
+        pass
+
+    mn2_awarded = 0.0
+    mn2_credited = False
+    if mn2_reward > 0:
+        try:
+            from backend.services.unified_points_database import unified_points_db
+            from backend.services.mn2_ledger import append_entry
+
+            meta = {
+                "quest_id": quest_id,
+                "quest_title": quest.get("title"),
+                "xp_reward": xp_reward,
+                "difficulty": quest.get("difficulty"),
+            }
+            result = unified_points_db.add_points(
+                user_id,
+                "mn2_balance",
+                mn2_reward,
+                source="quest_complete",
+                metadata=meta,
+            )
+            if result.get("success", True):
+                mn2_credited = True
+                mn2_awarded = mn2_reward
+                try:
+                    append_entry(
+                        user_id=user_id,
+                        entry_type="quest_reward",
+                        amount=mn2_reward,
+                        metadata=meta,
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    try:
+        from backend.services.unified_points_sync import unified_points_sync_device
+        unified_points_sync_device.record_domain_sync('quests')
+    except Exception:
+        pass
+
+    if user_id not in _user_quests:
+        _user_quests[user_id] = []
+    existing = next((uq for uq in _user_quests[user_id] if uq.get("quest_id") == quest_id), None)
+    if existing:
+        existing["completed"] = True
+        existing["completed_at"] = today
+    else:
+        _user_quests[user_id].append(dict(quest, completed=True, completed_at=today))
+
+    return {
+        "success": True,
+        "quest_id": quest_id,
+        "source": "ai",
+        "xp_awarded": xp_reward if awarded else 0,
+        "mn2_reward": mn2_awarded if mn2_credited else 0,
+        "credited": awarded or mn2_credited,
+    }

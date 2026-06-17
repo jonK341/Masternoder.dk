@@ -1,0 +1,55 @@
+{
+  "users": {
+    "battle-rps-user": {
+      "resource_ledger": [
+        {
+          "type": "quick_battle_reward",
+          "battle_id": "d6d84366",
+          "delta": {
+            "energy": 5,
+            "shards": 2
+          },
+          "result": "win",
+          "created_at": "2026-06-17T02:23:29.739178+00:00"
+        }
+      ],
+      "season_progress": {
+        "season_2026_06": {
+          "season_id": "season_2026_06",
+          "score": 17,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "matches": 1,
+          "points_delta": 10,
+          "started_at": "2026-06-17T02:23:29.739178+00:00",
+          "updated_at": "2026-06-17T02:23:29.739178+00:00"
+        }
+      },
+      "telemetry": [
+        {
+          "battle_id": "d6d84366",
+          "season_id": "season_2026_06",
+          "result": "win",
+          "points_delta": 10,
+          "difficulty": "balanced",
+          "opponent_type": "ai",
+          "battle_mode": "rps",
+          "player_move": "rock",
+          "opponent_move": "scissors",
+          "resource_delta": {
+            "energy": 5,
+            "shards": 2
+          },
+          "created_at": "2026-06-17T02:23:29.739178+00:00"
+        }
+      ],
+      "crypto": {
+        "total_mn2_earned": 0,
+        "claims": [],
+        "options": {}
+      },
+      "updated_at": "2026-06-17T02:23:29.739178+00:00"
+    }
+  }
+}

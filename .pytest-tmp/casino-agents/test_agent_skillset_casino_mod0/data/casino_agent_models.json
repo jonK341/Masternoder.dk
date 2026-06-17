@@ -1,0 +1,1 @@
+{"models": {"casino_kelly_agent": {"name": "Kelly", "skills": ["kelly_sizing"], "strategy": "kelly_flat"}}}

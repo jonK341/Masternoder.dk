@@ -154,6 +154,10 @@ def compute_user_metrics(user_id: str) -> dict:
         unlocked = get_user_trophies(user_id) or []
         if unlocked:
             metrics['trophies'] = max(metrics.get('trophies', 0), len(unlocked))
+        from backend.services.trophy_social_service import trophy_score
+        defs = _definitions_by_id()
+        rarities = [(defs.get(str(t.get('id')), {}) or {}).get('rarity', 'common') for t in unlocked]
+        metrics['trophy_score'] = trophy_score(rarities)
     except Exception:
         pass
     return metrics
@@ -404,11 +408,24 @@ def award_trophy_api():
         recorded = False
         defn = _definitions_by_id().get(str(trophy_id), {})
         reward = defn.get('reward')
+        already_owned = False
+        try:
+            from backend.services.trophies_db_service import get_user_trophies
+            already_owned = str(trophy_id) in {str(t.get('id')) for t in (get_user_trophies(user_id) or [])}
+        except Exception:
+            pass
         try:
             from backend.services.trophies_db_service import award_trophy
             recorded = award_trophy(user_id, trophy_id, reward=reward)
         except Exception:
-            pass
+            recorded = False
+        mn2_result = {}
+        if not already_owned:
+            try:
+                from backend.services.trophy_level_service import credit_trophy_unlock_mn2
+                mn2_result = credit_trophy_unlock_mn2(user_id, defn, str(trophy_id))
+            except Exception:
+                mn2_result = {}
         result = {'message': 'Trophy awarded' if recorded else 'Trophy awarded (simulated)'}
         try:
             from backend.services.trophy_system import trophy_system
@@ -420,6 +437,7 @@ def award_trophy_api():
             'user_id': user_id,
             'trophy_id': trophy_id,
             'reward': reward,
+            **mn2_result,
             **result
         }), 200
     except Exception as e:
@@ -449,17 +467,26 @@ def sync_trophies_api():
         defs = _definitions_by_id()
         newly = []
         for tid in eligible_trophy_ids(metrics, already):
-            reward = defs.get(tid, {}).get('reward')
+            defn = defs.get(tid, {})
+            reward = defn.get('reward')
             recorded = False
             try:
                 from backend.services.trophies_db_service import award_trophy
                 recorded = award_trophy(user_id, tid, reward=reward)
             except Exception:
                 pass
+            mn2_reward = 0
+            try:
+                from backend.services.trophy_level_service import credit_trophy_unlock_mn2
+                mn2_result = credit_trophy_unlock_mn2(user_id, defn, tid)
+                mn2_reward = mn2_result.get('mn2_reward', 0)
+            except Exception:
+                pass
             if recorded:
-                newly.append({'id': tid, 'name': defs.get(tid, {}).get('name', tid), 'reward': reward,
-                              'rarity': defs.get(tid, {}).get('rarity', 'common'),
-                              'icon': defs.get(tid, {}).get('icon', '🏆')})
+                newly.append({'id': tid, 'name': defn.get('name', tid), 'reward': reward,
+                              'mn2_reward': mn2_reward, 'crypto_currency': 'MN2',
+                              'rarity': defn.get('rarity', 'common'),
+                              'icon': defn.get('icon', '🏆')})
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -506,6 +533,13 @@ def claim_trophy_api():
             recorded = award_trophy(user_id, trophy_id, reward=reward)
         except Exception:
             pass
+        mn2_result = {}
+        if not already_owned:
+            try:
+                from backend.services.trophy_level_service import credit_trophy_unlock_mn2
+                mn2_result = credit_trophy_unlock_mn2(user_id, defn, str(trophy_id))
+            except Exception:
+                mn2_result = {}
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -513,6 +547,7 @@ def claim_trophy_api():
             'reward': reward,
             'recorded': recorded,
             'already_owned': already_owned,
+            **mn2_result,
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -521,65 +556,22 @@ def claim_trophy_api():
 @trophies_bp.route('/api/trophies/quests')
 @trophies_bp.route('/api/trophie/quests')
 def trophy_quests_api():
-    """Daily and weekly trophy quests (Feature 10).
-
-    Deterministically picks objectives from trophy categories seeded by the date so all
-    users see the same rotation, and marks completion against the user's unlocked trophies.
-    """
+    """Unified trophy + platform quests (Game Hub Option C)."""
     try:
-        import hashlib
-        from datetime import date, timedelta
-        user_id = _resolve_uid()
-        defs = _definitions_by_id()
-        # Group non-seasonal, non-hidden trophies by category
-        by_cat = {}
-        for tid, d in defs.items():
-            if d.get('hidden') or d.get('category') == 'seasonal':
-                continue
-            by_cat.setdefault(d.get('category', 'special'), []).append(tid)
-        cats = sorted(by_cat.keys())
+        from backend.services.trophy_quest_service import get_unified_quests
+        return jsonify(get_unified_quests(_resolve_uid())), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-        already = set()
-        try:
-            from backend.services.trophies_db_service import get_user_trophies
-            already = {str(t.get('id')) for t in (get_user_trophies(user_id) or [])}
-        except Exception:
-            pass
 
-        def seeded_index(seed_str, modulo):
-            h = int(hashlib.sha256(seed_str.encode('utf-8')).hexdigest(), 16)
-            return h % max(1, modulo)
-
-        def make_quest(seed_str, scope, expires_iso):
-            if not cats:
-                return None
-            cat = cats[seeded_index(seed_str + ':cat', len(cats))]
-            members = sorted(by_cat[cat])
-            completed = sum(1 for m in members if m in already)
-            return {
-                'id': scope + '_' + seed_str,
-                'scope': scope,
-                'category': cat,
-                'title': ('Daily' if scope == 'daily' else 'Weekly') + ': unlock a ' + cat + ' trophy',
-                'target': 1 if scope == 'daily' else 3,
-                'progress': completed,
-                'complete': completed >= (1 if scope == 'daily' else 3),
-                'reward': 100 if scope == 'daily' else 500,
-                'expires': expires_iso,
-            }
-
-        today = date.today()
-        # Weekly window starts Monday
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=7)
-        quests = []
-        dq = make_quest(today.isoformat(), 'daily', (today + timedelta(days=1)).isoformat())
-        wq = make_quest(week_start.isoformat(), 'weekly', week_end.isoformat())
-        if dq:
-            quests.append(dq)
-        if wq:
-            quests.append(wq)
-        return jsonify({'success': True, 'user_id': user_id, 'quests': quests, 'date': today.isoformat()}), 200
+@trophies_bp.route('/api/trophies/quests/claim', methods=['POST'])
+@trophies_bp.route('/api/trophie/quests/claim', methods=['POST'])
+def trophy_quest_claim_api():
+    try:
+        data = request.get_json() or {}
+        quest_id = data.get('quest_id') or request.args.get('quest_id')
+        from backend.services.trophy_quest_service import claim_quest
+        return jsonify(claim_quest(_resolve_uid(), str(quest_id or ''))), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -682,6 +674,32 @@ def set_showcase_api():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@trophies_bp.route('/api/trophies/level')
+@trophies_bp.route('/api/trophie/level')
+def trophy_level_api():
+    """Collector level status: rarity-weighted level, daily income, pending accrual."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import get_level_status
+        return jsonify({'success': True, **get_level_status(user_id)}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@trophies_bp.route('/api/trophies/level/collect', methods=['POST'])
+@trophies_bp.route('/api/trophie/level/collect', methods=['POST'])
+def trophy_level_collect_api():
+    """Collect accrued passive trophy_points income from collector level."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import collect_income
+        result = collect_income(user_id)
+        code = 200 if result.get('success') else 500
+        return jsonify(result), code
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @trophies_bp.route('/api/trophies/health')
 @trophies_bp.route('/api/trophie/health')
 def trophy_health_api():
@@ -728,10 +746,12 @@ _AGENT_TOOLS = [
     {'action': 'activity', 'method': 'GET', 'path': '/api/trophies/activity', 'mutating': False, 'description': 'Recent unlocks.'},
     {'action': 'compare', 'method': 'GET', 'path': '/api/trophies/compare', 'mutating': False, 'params': ['with'], 'description': 'Compare two users.'},
     {'action': 'showcase_get', 'method': 'GET', 'path': '/api/trophies/showcase', 'mutating': False, 'description': 'Pinned showcase.'},
+    {'action': 'level', 'method': 'GET', 'path': '/api/trophies/level', 'mutating': False, 'description': 'Collector level + pending income.'},
     {'action': 'health', 'method': 'GET', 'path': '/api/trophies/health', 'mutating': False, 'description': 'Health check.'},
     {'action': 'sync', 'method': 'POST', 'path': '/api/trophies/sync', 'mutating': True, 'description': 'Award all earned trophies.'},
     {'action': 'claim', 'method': 'POST', 'path': '/api/trophies/claim', 'mutating': True, 'params': ['trophy_id'], 'description': 'Claim a trophy reward.'},
     {'action': 'showcase_set', 'method': 'POST', 'path': '/api/trophies/showcase', 'mutating': True, 'params': ['trophy_ids'], 'description': 'Pin up to 6 trophies.'},
+    {'action': 'level_collect', 'method': 'POST', 'path': '/api/trophies/level/collect', 'mutating': True, 'description': 'Collect passive trophy income.'},
 ]
 
 
@@ -780,12 +800,16 @@ def trophy_agent_action_api():
         if action == 'showcase_get':
             from backend.services.trophy_social_service import get_showcase
             return jsonify({'success': True, 'user_id': user_id, 'trophy_ids': get_showcase(user_id)}), 200
+        if action == 'level':
+            return trophy_level_api()
         if action == 'sync':
             return sync_trophies_api()
         if action == 'claim':
             return claim_trophy_api()
         if action == 'showcase_set':
             return set_showcase_api()
+        if action == 'level_collect':
+            return trophy_level_collect_api()
         return jsonify({'success': False, 'error': 'Unhandled action'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

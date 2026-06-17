@@ -1,0 +1,12 @@
+[
+  {
+    "order_id": "44295cbd6a9c4531",
+    "user_id": "seller1",
+    "side": "sell",
+    "mn2_amount": 2.0,
+    "remaining_mn2": 2.0,
+    "price_coins_per_mn2": 50.0,
+    "status": "open",
+    "created_at": "2026-06-14T14:04:00.921891Z"
+  }
+]

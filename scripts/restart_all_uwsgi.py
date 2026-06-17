@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Restart both uWSGI backends (5000 + 5001) so nginx load-balancing stays in sync."""
+import argparse
 import os
 import sys
 import time
@@ -14,9 +15,12 @@ import paramiko
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Restart uWSGI backends on deploy server")
+    ap.add_argument("--ask-pass", action="store_true", help="Prompt SSH password (ignores .env DEPLOY_PASS)")
+    args = ap.parse_args()
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=require_deploy_pass(), timeout=30)
+    ssh.connect(deploy_host(), username=deploy_user(), password=require_deploy_pass(force_prompt=args.ask_pass), timeout=30)
     print("Restarting uWSGI backends (5000 + 5001)...")
     for unit in ("uwsgi-vidgenerator", "uwsgi-vidgenerator-5001", "uwsgi"):
         ssh.exec_command(f"systemctl restart {unit} 2>&1 || true", timeout=20)

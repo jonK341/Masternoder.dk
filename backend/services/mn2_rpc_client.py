@@ -10,7 +10,10 @@ Optional: MN2_PROFILE_LOG=1 to log each call to logs/mn2_rpc.jsonl.
 import os
 import json
 import time
-from typing import Any, Dict, List, Optional
+import base64
+import urllib.error
+import urllib.request
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import requests
@@ -23,11 +26,133 @@ _DEFAULT_URL_TESTNET = "http://127.0.0.1:19332"
 
 
 def _rpc_url() -> str:
+    try:
+        from backend.services.mn2_rpc_failover import resolve_active_endpoint
+        ep = resolve_active_endpoint()
+        if ep and ep.get("url"):
+            return ep["url"]
+    except Exception:
+        pass
     url = (os.environ.get("MN2_RPC_URL") or "").strip()
     if url:
         return url
     network = (os.environ.get("MN2_NETWORK") or "").strip().lower()
     return _DEFAULT_URL_TESTNET if network == "testnet" else _DEFAULT_URL_MAINNET
+
+
+def _rpc_auth() -> tuple:
+    try:
+        from backend.services.mn2_rpc_failover import resolve_active_endpoint
+        ep = resolve_active_endpoint()
+        if ep:
+            return (ep.get("user") or "").strip(), (ep.get("password") or "").strip()
+    except Exception:
+        pass
+    return (
+        (os.environ.get("MN2_RPC_USER") or "").strip(),
+        (os.environ.get("MN2_RPC_PASSWORD") or "").strip(),
+    )
+
+
+def _rpc_timeout(default: float = 30.0, *, cap: float = 120.0) -> float:
+    try:
+        timeout_sec = float((os.environ.get("MN2_RPC_TIMEOUT") or str(default)).strip() or default)
+    except (TypeError, ValueError):
+        timeout_sec = default
+    return max(1.0, min(timeout_sec, cap))
+
+
+def _parse_rpc_response(status_code: int, body: str) -> Tuple[Optional[Any], Optional[str]]:
+    if status_code != 200:
+        raw = f"HTTP {status_code}: {body[:200]}" if body else f"HTTP {status_code}"
+        if status_code == 401:
+            raw = "Wallet RPC authentication failed. Set MN2_RPC_USER and MN2_RPC_PASSWORD to match the wallet node."
+        elif status_code == 403:
+            raw = "Wallet RPC access forbidden. Check MN2_RPC_USER and MN2_RPC_PASSWORD."
+        return None, raw
+    try:
+        data = json.loads(body) if body else {}
+    except json.JSONDecodeError as exc:
+        return None, f"invalid_json: {exc}"
+    err = data.get("error")
+    if err:
+        msg = err if isinstance(err, str) else (err.get("message") or str(err))
+        return None, msg
+    return data.get("result"), None
+
+
+def _post_json_rpc(
+    url: str,
+    payload: Dict[str, Any],
+    *,
+    user: str = "",
+    password: str = "",
+    timeout_sec: float = 30.0,
+) -> Tuple[int, str]:
+    """POST JSON-RPC; returns (status_code, response_body_text)."""
+    if requests is not None:
+        r = requests.post(
+            url,
+            json=payload,
+            auth=(user, password) if user or password else None,
+            headers={"Content-Type": "application/json"},
+            timeout=timeout_sec,
+        )
+        return r.status_code, r.text or ""
+
+    body = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json", "Connection": "close"}
+    if user or password:
+        cred = base64.b64encode(f"{user}:{password}".encode()).decode("ascii")
+        headers["Authorization"] = f"Basic {cred}"
+    req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        return 0, str(exc)
+
+
+def probe_endpoint(
+    url: str,
+    user: str = "",
+    password: str = "",
+    timeout_sec: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Health probe for an arbitrary RPC endpoint (failover checks)."""
+    if timeout_sec is None:
+        try:
+            timeout_sec = float((os.environ.get("MN2_RPC_HEALTH_TIMEOUT") or "5").strip() or 5)
+        except (TypeError, ValueError):
+            timeout_sec = 5.0
+    timeout_sec = max(1.0, min(timeout_sec, 25.0))
+    t0 = time.perf_counter()
+    payload = {"jsonrpc": "1.0", "id": "probe", "method": "getblockcount", "params": []}
+    out: Dict[str, Any] = {"status": "unknown", "block_height": None, "latency_ms": None, "error": None, "url": url}
+    try:
+        status, body = _post_json_rpc(
+            url, payload, user=user, password=password, timeout_sec=timeout_sec,
+        )
+        out["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        if status != 200:
+            out["status"] = "auth_failed" if status in (401, 403) else "unreachable"
+            out["error"] = f"HTTP {status}"
+            return out
+        result, err = _parse_rpc_response(status, body)
+        if err:
+            out["status"] = "unreachable"
+            out["error"] = err
+            return out
+        out["block_height"] = int(result)
+        out["status"] = "healthy"
+        return out
+    except Exception as e:
+        out["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        out["status"] = "unreachable"
+        out["error"] = str(e)
+        return out
 
 
 def _profile_log_enabled() -> bool:
@@ -63,49 +188,23 @@ def _call(
     """
     Send a single JSON-RPC request. Returns {"result": ...} on success or {"error": "...", "result": None}.
     """
-    if requests is None:
-        return {"error": "requests not installed", "result": None}
     url = _rpc_url()
-    user = (os.environ.get("MN2_RPC_USER") or "").strip()
-    password = (os.environ.get("MN2_RPC_PASSWORD") or "").strip()
+    user, password = _rpc_auth()
     params = params if params is not None else []
-    if timeout_sec is None:
-        try:
-            timeout_sec = float((os.environ.get("MN2_RPC_TIMEOUT") or "30").strip() or 30)
-        except (TypeError, ValueError):
-            timeout_sec = 30.0
-    timeout_sec = max(1.0, min(timeout_sec, 120.0))
+    timeout = _rpc_timeout() if timeout_sec is None else max(1.0, min(float(timeout_sec), 120.0))
     payload = {"jsonrpc": "1.0", "id": "mn2", "method": method, "params": params}
     t0 = time.perf_counter()
     try:
-        r = requests.post(
-            url,
-            json=payload,
-            auth=(user, password) if user or password else None,
-            headers={"Content-Type": "application/json"},
-            timeout=timeout_sec,
+        status, body = _post_json_rpc(
+            url, payload, user=user, password=password, timeout_sec=timeout,
         )
         duration_ms = (time.perf_counter() - t0) * 1000
         if _profile_log_enabled():
-            _write_profile_log(method, duration_ms, r.status_code == 200)
-        if r.status_code != 200:
-            raw = f"HTTP {r.status_code}: {r.text[:200]}" if r.text else f"HTTP {r.status_code}"
-            if r.status_code == 401:
-                raw = "Wallet RPC authentication failed. Set MN2_RPC_USER and MN2_RPC_PASSWORD to match the wallet node."
-            elif r.status_code == 403:
-                raw = "Wallet RPC access forbidden. Check MN2_RPC_USER and MN2_RPC_PASSWORD."
-            return {"error": raw, "result": None}
-        data = r.json()
-        err = data.get("error")
+            _write_profile_log(method, duration_ms, status == 200)
+        result, err = _parse_rpc_response(status, body)
         if err:
-            msg = err if isinstance(err, str) else (err.get("message") or str(err))
-            return {"error": msg, "result": None}
-        return {"result": data.get("result"), "error": None}
-    except requests.exceptions.RequestException as e:
-        duration_ms = (time.perf_counter() - t0) * 1000
-        if _profile_log_enabled():
-            _write_profile_log(method, duration_ms, False, str(e))
-        return {"error": str(e), "result": None}
+            return {"error": err, "result": None}
+        return {"result": result, "error": None}
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
         if _profile_log_enabled():
@@ -123,6 +222,11 @@ def getblockcount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
 def getbalance() -> Dict[str, Any]:
     """Wallet total balance (all addresses in the daemon wallet)."""
     return _call("getbalance")
+
+
+def listunspent(minconf: int = 1, maxconf: int = 9999999) -> Dict[str, Any]:
+    """List spendable wallet UTXOs. Used to find 10k MN2 masternode collateral outputs."""
+    return _call("listunspent", [int(minconf), int(maxconf)])
 
 
 def getnewaddress() -> Dict[str, Any]:
@@ -218,9 +322,11 @@ def staking_health() -> Dict[str, Any]:
                 # PIVX-style flags; some forks use "staking status" / "staking_status"
                 active = bool(r.get("staking_status", r.get("staking status")))
                 out["staking_active"] = active
+                out["mnsync"] = r.get("mnsync")
                 out["mintable_coins"] = r.get("mintablecoins")
                 out["wallet_unlocked"] = r.get("walletunlocked")
                 out["have_connections"] = r.get("haveconnections")
+                out["walletunlocked"] = r.get("walletunlocked")
                 out["enough_coins"] = r.get("enoughcoins")
                 out["status"] = "active" if active else "inactive"
     else:
@@ -243,6 +349,9 @@ def staking_health() -> Dict[str, Any]:
             r = ss["result"]
             active = bool(r.get("staking status", r.get("staking_status")))
             out["staking_active"] = active
+            out["mnsync"] = r.get("mnsync")
+            out["have_connections"] = r.get("haveconnections")
+            out["walletunlocked"] = r.get("walletunlocked")
             out["status"] = "active" if active else "inactive"
             out["staking_status_detail"] = {
                 "validtime": r.get("validtime"),
@@ -271,6 +380,15 @@ def getmasternodecount() -> Dict[str, Any]:
 def listmasternodes() -> Dict[str, Any]:
     """Full masternode list (PIVX-style): rank, addr, status, lastpaid, activetime, version."""
     return _call("listmasternodes")
+
+
+def masternode_command(*args: Any) -> Dict[str, Any]:
+    """PIVX-style masternode subcommands (genkey, start, outputs, ...)."""
+    return _call("masternode", list(args))
+
+
+def walletpassphrase(passphrase: str, timeout_sec: int = 120, staking_only: bool = True) -> Dict[str, Any]:
+    return _call("walletpassphrase", [passphrase, int(timeout_sec), bool(staking_only)])
 
 
 def getbestblockhash() -> Dict[str, Any]:

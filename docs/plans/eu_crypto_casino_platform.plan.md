@@ -28,7 +28,7 @@ todos:
     status: completed
   - id: discord-casino-channel
     content: "Casino jackpots/big wins (RG-safe, opt-in) → news channel=casino + Discord #casino; VIP role gating + promo codes (M8 #52, #58)"
-    status: pending
+    status: completed
 isProject: false
 ---
 

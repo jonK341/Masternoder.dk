@@ -24,6 +24,16 @@ def deploy_user() -> str:
     return (os.environ.get("DEPLOY_USER") or "root").strip()
 
 
+def remote_py_prefix(web: str = "/var/www/html") -> str:
+    """Bash: cd web, set PY to app venv python (venv, .venv) or python3."""
+    return (
+        f"cd {web} && "
+        "if [ -x ./venv/bin/python ]; then PY=./venv/bin/python; "
+        "elif [ -x ./.venv/bin/python ]; then PY=./.venv/bin/python; "
+        "else PY=python3; fi && "
+    )
+
+
 def _load_deploy_pass_from_dotenv() -> None:
     """If DEPLOY_PASS is unset, set it from project .env (DEPLOY_PASS=...), if present."""
     if (os.environ.get("DEPLOY_PASS") or "").strip():
@@ -47,11 +57,14 @@ def _load_deploy_pass_from_dotenv() -> None:
         return
 
 
-def require_deploy_pass() -> str:
-    _load_deploy_pass_from_dotenv()
+def require_deploy_pass(*, force_prompt: bool = False) -> str:
+    if not force_prompt:
+        _load_deploy_pass_from_dotenv()
     v = (os.environ.get("DEPLOY_PASS") or "").strip()
-    if v:
+    if v and not force_prompt:
         return v
+    if force_prompt:
+        os.environ.pop("DEPLOY_PASS", None)
     if sys.stdin.isatty():
         host = deploy_host()
         user = deploy_user()

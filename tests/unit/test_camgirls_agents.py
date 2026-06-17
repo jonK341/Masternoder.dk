@@ -12,7 +12,7 @@ from backend.services.camgirls_agents_service import (
 
 def test_list_agent_models():
     agents = list_agent_models()
-    assert len(agents) >= 2
+    assert len(agents) >= 5
     assert agents[0].get("agent_id")
 
 
@@ -26,7 +26,13 @@ def test_persona_system_prompt():
     row = {"id": "performer_nova", "display_name": "Nova Star", "bio": "Test bio"}
     system, task = persona_system_prompt(row)
     assert "Nova Star" in system
-    assert task in ("speed", "free", "default")
+    assert task in ("speed", "free", "default", "creative")
+
+
+def test_agent_for_performer_sage():
+    m = agent_for_performer("performer_sage")
+    assert m is not None
+    assert m.get("agent_id") == "camgirl_agent_sage"
 
 
 def test_execute_agent_action_catalog():
@@ -57,4 +63,4 @@ def test_agents_roster_route():
     client = app.test_client()
     r = client.get("/api/camgirls/agents")
     assert r.status_code == 200
-    assert (r.get_json() or {}).get("count", 0) >= 2
+    assert (r.get_json() or {}).get("count", 0) >= 5

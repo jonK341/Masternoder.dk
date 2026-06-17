@@ -164,6 +164,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_staking: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if 'mn2_masternode' not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            n += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_masternode: {e}")
+    try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:
             app.register_blueprint(agent_staking_bp)
@@ -216,6 +224,20 @@ def register_lite_blueprints(app):
         print("  [OK] Registered paypal blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP paypal: {e}")
+    try:
+        from backend.routes.cogs_routes import cogs_bp
+        app.register_blueprint(cogs_bp)
+        n += 1
+        print("  [OK] Registered cogs blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP cogs: {e}")
+    try:
+        from backend.routes.monetization_expansion_routes import monetization_expansion_bp
+        app.register_blueprint(monetization_expansion_bp)
+        n += 1
+        print("  [OK] Registered monetization_expansion blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP monetization_expansion: {e}")
     try:
         from backend.routes.compendium_routes import compendium_bp
         app.register_blueprint(compendium_bp)
@@ -970,6 +992,16 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import mn2_p2p: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_p2p: {e}")
+    try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if 'mn2_masternode' not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
 
     # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
     try:
@@ -2191,6 +2223,17 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import cogs: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering cogs: {e}")
+
+    try:
+        from backend.routes.monetization_expansion_routes import monetization_expansion_bp
+        if "monetization_expansion" not in app.blueprints:
+            app.register_blueprint(monetization_expansion_bp)
+            registered_count += 1
+            print("  [OK] Registered monetization_expansion blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import monetization_expansion: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering monetization_expansion: {e}")
 
     # Quest Routes (AI-generated daily + personal quests)
     try:

@@ -22,6 +22,36 @@ python scripts/deploy_vidgenerator_solution.py
 
 **Verify:** https://masternoder.dk/vidgenerator/ (hard refresh Ctrl+F5). Check Generator → Agent Connections (20), Service Worker, Magic, Deployment tabs.
 
+## Generator (Phase 2 — queue, crypto rewards, gallery)
+
+```powershell
+python scripts/deploy.py generator_recent --ask-pass
+```
+
+**One-time on server (job persistence):**
+
+```bash
+cd /var/www/html && python scripts/generator_migration.py --standalone
+```
+
+**Weekly stale artifact cleanup (cron):**
+
+```bash
+python scripts/generator_stale_cleanup.py --days 7 --apply
+```
+
+**Config:** `data/generator_config.json` — `queue_enabled: true` limits concurrent encodes.  
+**Crypto earn:** MN2 finish bonus + multi-AI + daily-first + staking boost (`data/mn2_config.json` → `generator.crypto_rewards`).
+
+**Verify:**
+
+```powershell
+python scripts/test_generator_after_deploy.py
+python scripts/hard_test_generator_urls.py --quick
+```
+
+See [GENERATOR_UPGRADES_25.md](./GENERATOR_UPGRADES_25.md) · [GENERATOR_ENCODER_IDEAS.md](./GENERATOR_ENCODER_IDEAS.md).
+
 ## Full production pipeline
 
 ```bash
@@ -43,6 +73,25 @@ python scripts/full_deploy_and_restart.py
 - **Services:** `uwsgi-vidgenerator`, optional `uwsgi-vidgenerator-5001`, `python-proxy`, nginx  
 
 Do not start the legacy `uwsgi` wrapper for this app. It can race `uwsgi-vidgenerator` for `127.0.0.1:5000` and trigger 500/502 failures.
+
+## Manifest-based deploy (`scripts/deploy.py`)
+
+Targeted uploads + uWSGI restart. Use `--ask-pass` when `DEPLOY_PASS` in `.env` is stale.
+
+| Manifest | Ships | Doc |
+|----------|-------|-----|
+| `mn2_staking` | Trader market, Discord cross-roads, staking routes, explorer market UI | [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md), [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) |
+| `camgirls` | Camgirls API, page, agents, payout services | [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md) |
+| `compendium` | Rulebook viewers, calm reader, progress APIs | [RULEBOOK_READERS.md](RULEBOOK_READERS.md) |
+| `game_hub` | Game Hub panels, progress reader hooks | [GAME_HUB_UNIFIED_25.md](GAME_HUB_UNIFIED_25.md) |
+| `mn2_env` | Daemon scripts, deposit scanner cron, accrue cron | [MN2_OPS.md](MN2_OPS.md) |
+
+```powershell
+python scripts/deploy.py mn2_staking --ask-pass
+python scripts/deploy.py camgirls --ask-pass
+```
+
+List all manifests: `python scripts/deploy.py` (no args).
 
 ## Generator-specific deploy checklist
 

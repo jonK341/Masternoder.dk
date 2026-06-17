@@ -1,0 +1,129 @@
+{
+  "agents": {},
+  "trader_agent_1": {
+    "user_id": "trader_agent_1",
+    "policy": {
+      "enabled": true,
+      "target_staked": 21355.0,
+      "max_staked": 24558.25,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:05.937610Z"
+  },
+  "trader_agent_2": {
+    "user_id": "trader_agent_2",
+    "policy": {
+      "enabled": true,
+      "target_staked": 17304.0,
+      "max_staked": 19899.6,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:05.976865Z"
+  },
+  "trader_agent_3": {
+    "user_id": "trader_agent_3",
+    "policy": {
+      "enabled": true,
+      "target_staked": 25612.0,
+      "max_staked": 29453.8,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:06.007150Z"
+  },
+  "trader_agent_4": {
+    "user_id": "trader_agent_4",
+    "policy": {
+      "enabled": true,
+      "target_staked": 31177.0,
+      "max_staked": 35853.55,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:06.044146Z"
+  },
+  "trader_agent_5": {
+    "user_id": "trader_agent_5",
+    "policy": {
+      "enabled": true,
+      "target_staked": 23629.0,
+      "max_staked": 27173.35,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:06.082184Z"
+  },
+  "trader_agent_6": {
+    "user_id": "trader_agent_6",
+    "policy": {
+      "enabled": true,
+      "target_staked": 33011.0,
+      "max_staked": 37962.65,
+      "keep_balance_min": 5000.0,
+      "auto_compound": true,
+      "heartbeat": true,
+      "auto_accept_terms": true,
+      "allowed_actions": [
+        "accept_terms",
+        "heartbeat",
+        "set_auto_compound",
+        "stake",
+        "unstake"
+      ],
+      "rebalance_step_max": 0.0
+    },
+    "updated_at": "2026-06-16T22:19:06.114070Z"
+  }
+}

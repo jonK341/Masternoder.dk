@@ -1,0 +1,16 @@
+{
+  "codes": [
+    {
+      "code": "SHOP-F1A0E8",
+      "scope": "shop",
+      "reward_coins": 25,
+      "reward_mn2": 0.0,
+      "max_redemptions": 5,
+      "redeemed_by": [
+        "shop-promo-user"
+      ],
+      "expires_at": "2026-06-20T02:23:22.342253Z",
+      "created_at": "2026-06-17T02:23:22.342253Z"
+    }
+  ]
+}

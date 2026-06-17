@@ -196,4 +196,4 @@ tabs, Trophy Score stat, share button, showcase pin in modal), `profile/index.ht
 - Backend: `backend/routes/trophies_routes.py`, `backend/services/trophies_db_service.py`,
   `backend/services/video_generator_service.py` (`_check_and_award_trophies`).
 - Data: `data/trophy_definitions.json` (new), `data/achievements.json`.
-- Docs: `docs/TROPHY_SYSTEM_AND_POINTS_COMPLETE.md` (update once shipped).
+- Docs: `docs/TROPHIES_API_OPENAPI.md` (update once shipped).

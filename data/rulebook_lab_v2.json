@@ -1,8 +1,8 @@
 {
-  "name": "Lab V2.0",
-  "version": "LAB_V2",
-  "description": "Rulebook for the MasterNoder Lab V2.0: rulebook-grounded research, agent knowledge, user progression, and safe cross-system technology planning.",
-  "updated_at": "2026-04-28",
+  "name": "Lab V2.1",
+  "version": "LAB_V2.1",
+  "description": "Rulebook for the MasterNoder Lab V2.1 hub: news, systems audit, idea board, AI copilot, Chapter V upgrades, crypto/trophy/shop rewards bridge.",
+  "updated_at": "2026-06-16",
   "image_url": "/vidgenerator/static/img/rulebook-lab-v2.png",
   "image_alt": "Lab V2.0",
   "agent_prompt": "When working in the Lab, ground recommendations in the user's current Lab status, visible progression, and existing rulebooks. Prefer read-only status checks before proposing actions. Never invent balances, research state, purchases, or agent capabilities. Mutating actions require explicit user intent and the matching API/tool.",
@@ -59,9 +59,9 @@
       "text": "Rulebook guidance does not authorize invisible writes. Any project creation, technology draft, point award, wallet action, shop action, or profile write needs explicit user intent."
     },
     {
-      "id": "lab_v2_best_slice",
-      "name": "Best slice first",
-      "text": "Ship the smallest deployable slice first: status, rulebook data, documentation, and tests. UI panels and mutating workflows come after the read-only contract is stable."
+      "id": "lab_v21_hub",
+      "name": "Lab V2.1 hub",
+      "text": "GET /api/lab/news, /api/lab/systems-check, /api/lab/idea-board; Chapter V catalog nodes c5_*; rewards tab links shop lab category and lab_mastery trophies."
     }
   ],
   "milestone_model": [
@@ -72,6 +72,10 @@
     "First co-created technology",
     "First roundtable message",
     "Ten researched nodes",
-    "Strategist tier"
+    "Strategist tier",
+    "Chapter V first node",
+    "Systems audit all green",
+    "Architect tier",
+    "Sovereign Research Core"
   ]
 }

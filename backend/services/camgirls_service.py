@@ -86,6 +86,11 @@ def _public_performer(row: Dict[str, Any], *, unlocked: bool = False) -> Dict[st
         pub["preview_url"] = row.get("preview_url")
     if unlocked:
         pub["chat_price_mn2"] = float(row.get("chat_price_mn2") or _DEFAULT_CHAT_PRICE_MN2)
+    try:
+        from backend.services.camgirls_studio_service import public_studio
+        pub["studio"] = public_studio(row, unlocked=unlocked)
+    except Exception:
+        pass
     return pub
 
 
@@ -224,7 +229,73 @@ def unlock_performer(user_id: str, performer_id: str) -> Dict[str, Any]:
     return {"success": True, "performer_id": pid, "amount_mn2": price, "unlocked_at": data[uid][pid]["unlocked_at"]}
 
 
-def tip_performer(user_id: str, performer_id: str, amount_mn2: float) -> Dict[str, Any]:
+def grant_unlock_after_payment(
+    user_id: str,
+    performer_id: str,
+    *,
+    payment_ref: str,
+    provider: str = "paypal",
+) -> Dict[str, Any]:
+    """Fulfill unlock after PayPal capture (no MN2 debit)."""
+    uid = (user_id or "").strip()
+    gate = _require_age(uid)
+    if gate:
+        return gate
+    row = get_performer(performer_id)
+    if not row:
+        return {"success": False, "error": "performer_not_found"}
+    pid = (row.get("id") or "").strip()
+    if _user_unlocks(uid).get(pid):
+        return {"success": True, "already_unlocked": True, "performer_id": pid}
+    with _LOCK:
+        data = _read_json(_UNLOCKS_FILE, {})
+        if not isinstance(data, dict):
+            data = {}
+        data.setdefault(uid, {})[pid] = {
+            "unlocked_at": _iso(),
+            "payment_provider": provider,
+            "payment_ref": payment_ref,
+        }
+        _write_json(_UNLOCKS_FILE, data)
+    try:
+        from backend.services.activity_events_service import emit
+        emit("camgirl_unlock", channel="camgirls", user_id=uid, payload={"performer_id": pid, "provider": provider})
+    except Exception:
+        pass
+    return {"success": True, "performer_id": pid, "provider": provider, "payment_ref": payment_ref}
+
+
+def tip_performer_after_payment(
+    user_id: str,
+    performer_id: str,
+    amount_mn2: float,
+    *,
+    payment_ref: str,
+    provider: str = "paypal",
+) -> Dict[str, Any]:
+    """Record tip credited via fiat (performer payout queue — same log as MN2 tips)."""
+    uid = (user_id or "").strip()
+    gate = _require_age(uid)
+    if gate:
+        return gate
+    row = get_performer(performer_id)
+    if not row:
+        return {"success": False, "error": "performer_not_found"}
+    pid = (row.get("id") or "").strip()
+    amt = round(float(amount_mn2 or 0), 8)
+    tip_row = {
+        "ts": _iso(),
+        "user_id": uid,
+        "performer_id": pid,
+        "amount_mn2": amt,
+        "payment_provider": provider,
+        "payment_ref": payment_ref,
+        "fiat_settled": True,
+    }
+    _append_jsonl(_TIPS_FILE, tip_row)
+    return {"success": True, "performer_id": pid, "amount_mn2": amt, "provider": provider}
+
+
     uid = (user_id or "").strip()
     gate = _require_age(uid)
     if gate:

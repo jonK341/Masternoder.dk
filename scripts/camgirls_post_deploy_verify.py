@@ -13,11 +13,33 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-DEFAULT_BASE = os.environ.get("POST_DEPLOY_BASE_URL", "https://masternoder.dk").rstrip("/")
+WEB = "/var/www/html"
 
 
-def _fetch(url: str, *, timeout: int = 25) -> tuple[int, str]:
-    req = urllib.request.Request(url, headers={"User-Agent": "camgirls-post-deploy-verify/1.0"})
+def _default_base() -> str:
+    explicit = (os.environ.get("POST_DEPLOY_BASE_URL") or "").strip().rstrip("/")
+    if explicit:
+        return explicit
+    # On the server, hit uWSGI directly — avoids slow/hanging public HTTPS from localhost.
+    if os.path.isdir(WEB) and os.path.abspath(ROOT).startswith(WEB):
+        return "http://127.0.0.1:5000"
+    return "https://masternoder.dk"
+
+
+def _ops_secret_prefix(web: str = WEB) -> str:
+    return (
+        f"source {web}/cron/mn2_read_ops_secret.sh 2>/dev/null; "
+        "SECRET=$(mn2_read_ops_secret 2>/dev/null || true)"
+    )
+
+
+def _fetch(url: str, *, timeout: int | None = None) -> tuple[int, str]:
+    if timeout is None:
+        timeout = 25 if "127.0.0.1" in url or "localhost" in url else 30
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "camgirls-post-deploy-verify/1.0", "Connection": "close"},
+    )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, resp.read().decode("utf-8", errors="replace")
@@ -25,6 +47,19 @@ def _fetch(url: str, *, timeout: int = 25) -> tuple[int, str]:
         return exc.code, exc.read().decode("utf-8", errors="replace")
     except Exception as exc:
         return 0, str(exc)
+
+
+def _json_success(body: str) -> bool:
+    try:
+        data = json.loads(body)
+        return bool(data.get("success"))
+    except json.JSONDecodeError:
+        return False
+
+
+def _curl_json_ok(body: str) -> bool:
+    line = body.split("HTTP:")[0].strip()
+    return _json_success(line)
 
 
 def _check_json(label: str, url: str, *, expect_keys: list[str]) -> bool:
@@ -89,6 +124,7 @@ def verify_remote(*, force_prompt: bool = False) -> int:
     except Exception:
         pass
 
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
     from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
 
     pw = require_deploy_pass(force_prompt=force_prompt)
@@ -96,31 +132,80 @@ def verify_remote(*, force_prompt: bool = False) -> int:
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
 
-    def sh(cmd: str) -> str:
-        _, stdout, stderr = ssh.exec_command(cmd, timeout=90)
-        return (stdout.read() + stderr.read()).decode(errors="replace").strip()
+    secret = _ops_secret_prefix()
 
-    web = "/var/www/html"
-    cmds = [
-        ("local performers", "curl -s -w '\\nHTTP:%{http_code}' 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'"),
-        ("local agents", "curl -s -w '\\nHTTP:%{http_code}' http://127.0.0.1:5000/api/camgirls/agents"),
-        ("local page", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/"),
-        ("routes", f"cd {web} && PY=$(test -x .venv/bin/python && echo .venv/bin/python || echo python3) && "
-         f"$PY -c \"import sys; sys.path.insert(0,'{web}'); "
-         "from vidgenerator import create_app; app=create_app(); "
-         "print([str(r) for r in app.url_map.iter_rules() if 'camgirl' in str(r)])\""),
-        ("payout ops", "curl -s http://127.0.0.1:5000/api/camgirls/ops/payout-addresses 2>&1 | head -c 400"),
+    def sh(cmd: str, timeout: int = 90) -> tuple[int, str]:
+        _, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
+        code = stdout.channel.recv_exit_status()
+        text = (stdout.read() + stderr.read()).decode(errors="replace").strip()
+        return code, text
+
+    # HTTP-only checks — uwsgi already proves routes; no Flask import on system python3.
+    checks: list[tuple[str, str, object]] = [
+        (
+            "local performers",
+            "curl -s -w '\\nHTTP:%{http_code}' 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
+            lambda body: _curl_json_ok(body),
+        ),
+        (
+            "local agents",
+            "curl -s -w '\\nHTTP:%{http_code}' http://127.0.0.1:5000/api/camgirls/agents",
+            lambda body: _curl_json_ok(body),
+        ),
+        (
+            "local page",
+            "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/",
+            lambda body: body.strip() == "200",
+        ),
+        (
+            "agent-tools route",
+            "curl -s http://127.0.0.1:5000/api/camgirls/agent-tools",
+            _json_success,
+        ),
+        (
+            "chat route",
+            "curl -s -o /dev/null -w '%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/chat -H 'Content-Type: application/json' -d '{}'",
+            lambda body: body.strip() in ("400", "403", "200"),
+        ),
+        (
+            "blueprint registered",
+            f"grep -q camgirls {WEB}/backend/register_blueprints.py && echo registered",
+            lambda body: "registered" in body,
+        ),
+        (
+            "payout addresses",
+            f"{secret}; curl -s -H \"X-Ops-Secret: $SECRET\" "
+            "http://127.0.0.1:5000/api/camgirls/ops/payout-addresses",
+            _json_success,
+        ),
+        (
+            "payout provision",
+            f"{secret}; curl -s -X POST -H \"X-Ops-Secret: $SECRET\" "
+            "http://127.0.0.1:5000/api/camgirls/ops/payout-addresses",
+            _json_success,
+        ),
     ]
-    for label, cmd in cmds:
+
+    passed = 0
+    for label, cmd, ok_fn in checks:
         print(f"\n=== remote {label} ===")
-        print(sh(cmd))
+        code, body = sh(cmd)
+        print(body)
+        ok = ok_fn(body) if label in ("chat route", "blueprint registered", "local page") else (code == 0 and ok_fn(body))
+        print(f"{'PASS' if ok else 'FAIL'} (exit {code})")
+        if ok:
+            passed += 1
+
     ssh.close()
-    return 0
+    total = len(checks)
+    print(f"\nRemote result: {passed}/{total} checks passed")
+    return 0 if passed == total else 1
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify camgirls deploy")
-    parser.add_argument("--base-url", default=DEFAULT_BASE, help="Public origin (default masternoder.dk)")
+    parser.add_argument("--base-url", default=_default_base(), help="API origin (auto 127.0.0.1:5000 on server)")
     parser.add_argument("--remote", action="store_true", help="SSH curl checks on server :5000")
     parser.add_argument("--remote-only", action="store_true", help="Skip public HTTPS checks")
     parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (remote checks)")

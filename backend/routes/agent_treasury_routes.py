@@ -33,13 +33,19 @@ def treasury_address():
             log_action("treasury_address_view", actor="ops", payload={"configured": True})
         except Exception:
             pass
-        from backend.services.agent_wallet_service import get_treasury_pool_balance, sync_treasury_pool_from_ledger
+        from backend.services.agent_wallet_service import (
+            get_treasury_pool_balance,
+            scan_treasury_onchain_deposits,
+            sync_treasury_pool_from_ledger,
+        )
+        scan = scan_treasury_onchain_deposits()
         sync_treasury_pool_from_ledger()
         return jsonify({
             **public,
             **treasury,
             "treasury_pool_balance_mn2": get_treasury_pool_balance(),
             "required_total_mn2": (treasury.get("per_agent_mn2") or 100000) * (treasury.get("trader_agent_count") or 6),
+            "last_treasury_scan": scan,
         }), 200
 
     try:
@@ -88,6 +94,16 @@ def treasury_reconcile_snapshot():
     from backend.services.treasury_signoff_service import reconcile_snapshot
     snap = reconcile_snapshot()
     return jsonify({"success": True, **snap}), 200
+
+
+@agent_treasury_bp.route("/api/agents/treasury/scan-deposits", methods=["POST"])
+def treasury_scan_deposits():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.agent_wallet_service import scan_treasury_onchain_deposits
+    result = scan_treasury_onchain_deposits()
+    code = 200 if result.get("success") else 503
+    return jsonify(result), code
 
 
 @agent_treasury_bp.route("/api/agents/treasury/distribute", methods=["POST"])

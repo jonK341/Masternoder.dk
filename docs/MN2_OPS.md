@@ -194,9 +194,155 @@ Until sign-off is recorded, `distribute_agent_funding()` returns `treasury_signo
 
 ---
 
+## 10. Discord cross-roads (M8 #51–60)
+
+Outbound webhooks only — **Gate S:** no custody on Discord; users link accounts and claim rewards on-site.
+
+**Canonical doc:** [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · Trader market events: [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md)
+
+### 10.1 Environment
+
+| Variable | Purpose |
+|----------|---------|
+| `DISCORD_WEBHOOK_URL` | Default webhook (all channels if no per-channel override) |
+| `DISCORD_CHANNEL_ID_MARKET` | Optional dedicated webhook for `#market` |
+| `DISCORD_CHANNEL_ID_CASINO` | Optional dedicated webhook for `#casino` |
+| `DISCORD_OPS_SECRET` | Auth for cron + ops POST endpoints |
+| `BASE_URL` | Links in embeds (default `https://masternoder.dk`) |
+| `MARKET_DISCORD_MIN_MN2` | Min fill size to post to Discord (default `5`) |
+
+### 10.2 Crons
+
+Deploy via `python scripts/deploy.py mn2_staking --ask-pass` (uploads scripts under `cron/`).
+
+| Script | Endpoint | Purpose |
+|--------|----------|---------|
+| `cron/discord_digest.sh` | `POST /api/discord/digest/run` | Daily platform news → `#announcements` |
+| `cron/discord_activity_funnel.sh` | `POST /api/discord/m8/alert-funnel` | High-signal activity → `#activity` |
+| `cron/discord_casino_fanout.sh` | `POST /api/discord/casino/fanout` | Casino wins → `#casino` |
+| `cron/discord_market_fanout.sh` | `POST /api/discord/market/fanout` | Market fills + trader ticks → `#market` |
+
+Example install (read secret from deployed `.env`):
+
+```bash
+chmod +x /var/www/html/cron/discord_market_fanout.sh
+# Every 15 min — align with agents_trader.sh cadence
+*/15 * * * * /var/www/html/cron/discord_market_fanout.sh
+```
+
+### 10.3 Manual smoke tests
+
+```bash
+SECRET=$(grep '^DISCORD_OPS_SECRET=' /var/www/html/.env | cut -d= -f2- | tr -d '\r"')
+curl -s http://127.0.0.1:5000/api/discord/status | jq
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/market/fanout | jq
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/m8/alert-funnel | jq
+curl -s "http://127.0.0.1:5000/api/discord/support/faq?q=market" | jq
+```
+
+### 10.4 Health
+
+- `GET /api/mn2/health` → `components.discord_outbox` (success rate, recent posts)
+- Staking monitor → Health Ops Hub tile (`mn2-staking-monitor.js`)
+- Outbox log: `logs/discord_outbox.jsonl` (created on first post)
+
+### 10.5 Troubleshooting
+
+**`unauthorized` on fan-out endpoints**
+
+Discord ops routes accept `MN2_OPS_SECRET`, `DISCORD_OPS_SECRET`, or `ADMIN_OPS_SECRET` (same as trader market). Cron scripts read the first match from `/var/www/html/.env` via `cron/mn2_read_ops_secret.sh`.
+
+```bash
+# Use MN2_OPS_SECRET if DISCORD_OPS_SECRET is unset
+SECRET=$(grep -E '^(MN2_OPS_SECRET|DISCORD_OPS_SECRET|ADMIN_OPS_SECRET)=' /var/www/html/.env | head -1 | cut -d= -f2- | tr -d '\r"')
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/market/fanout | jq
+```
+
+**`market discord fanout failed` from cron**
+
+Cron does not load `.env` automatically — use the updated scripts (they source `mn2_read_ops_secret.sh`). After deploy:
+
+```bash
+chmod +x /var/www/html/cron/mn2_read_ops_secret.sh
+/var/www/html/cron/discord_market_fanout.sh
+```
+
+**Duplicate crontab lines**
+
+```bash
+crontab -l | sort -u | crontab -
+crontab -l | grep discord_market
+```
+
+**`discord_outbox.jsonl` missing**
+
+Normal until the first successful (or attempted) webhook post. Run fan-out once; then `tail logs/discord_outbox.jsonl`.
+
+**`webhook_not_configured` in outbox**
+
+Set `DISCORD_WEBHOOK_URL` in `.env` and restart uWSGI (`touch /var/www/html/.uwsgi_touch_reload`).
+
+---
+
+## 10. Masternode hosting (50 slots + PayPal)
+
+**Explorer UI:** `/explorer?tab=masternodes` — slot meter, fleet cards, PayPal checkout (**$4.99/slot**, max 5 per order). Purchase is **fully automated**: PayPal capture → slot reserved → collateral locked → masternode started (cron retries until live).
+
+**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 50`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
+
+**Env (automation):**
+
+| Variable | Purpose |
+|----------|---------|
+| `MN2_WALLET_PASSPHRASE` | Unlock wallet for `masternode start` (staking-only unlock) |
+| `MN2_MASTERNODE_BROADCAST_IP` | Public IP in masternode.conf (falls back to `ops.external_ip`) |
+| `MN2_MASTERNODE_PORT` | P2P port for masternode line (default `9333` in config) |
+
+**Public API**
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/mn2/masternode/service` | Capacity, fleet, network, PayPal pricing |
+| `GET /api/mn2/masternode/checkout/config` | Checkout limits |
+| `POST /api/mn2/masternode/checkout/quote` | Reserve slot count |
+| `POST /api/mn2/masternode/checkout/order` | Create PayPal order → `approve_url` |
+| `POST /api/mn2/masternode/checkout/capture` | After PayPal return — auto-provisions slot(s) |
+| `POST /api/mn2/masternode/webhook` | PayPal webhook — capture + provision without browser |
+| `POST /api/mn2/masternode/provision-pending` | Cron/ops — retry hosts still provisioning |
+
+**Ops (X-Ops-Secret / MN2_OPS_SECRET)**
+
+```bash
+curl -s -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/mn2/masternode/hosts | jq
+curl -s -X POST -H "Content-Type: application/json" -H "X-Ops-Secret: $SECRET" \
+  -d '{"id":"platform-mn-2","label":"Fleet #2","status":"queued"}' \
+  http://127.0.0.1:5000/api/mn2/masternode/hosts
+```
+
+**Deploy + seed from workstation**
+
+```powershell
+python scripts/deploy.py mn2_staking --ask-pass
+python scripts/mn2_seed_platform_hosts_remote.py --ask-pass
+```
+
+**On-chain enable (per node):** each masternode needs a **10,000 MN2** collateral UTXO. Check availability:
+
+```bash
+curl -s -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/mn2/masternode/collateral-outputs | jq
+```
+
+Then split/send collateral, add `masternode.conf` entries, and `masternode start` / broadcast. **Paid slots auto-run this** when `auto_provision: true` (default); cron `mn2_masternode_provision.sh` retries every 2 minutes.
+
+**PayPal webhook:** point PayPal Notifications to `https://masternoder.dk/api/mn2/masternode/webhook` (or reuse on-ramp webhook URL if you multiplex events). Requires `PAYPAL_WEBHOOK_ID` in `.env`.
+
+---
+
 ## 9. References
 
 - [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) — Install and run the daemon.
+- [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) — Discord integration map and cross-road backlog.
+- [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) — Internal order book + trader agents.
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.

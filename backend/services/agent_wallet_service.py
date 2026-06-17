@@ -126,7 +126,7 @@ def sync_treasury_pool_from_ledger() -> Dict[str, Any]:
         amount = float(entry.get("amount") or 0)
         if amount <= 0:
             continue
-        ref = f"treasury-pool-sync:{txid or entry.get('created_at')}"
+        ref = f"treasury-deposit:{txid}" if txid else f"treasury-pool-sync:{entry.get('created_at')}"
         r = unified_points_db.add_points(
             TREASURY_POOL_USER,
             "mn2_balance",
@@ -140,8 +140,103 @@ def sync_treasury_pool_from_ledger() -> Dict[str, Any]:
     return {"success": True, "synced_count": synced, "synced_total_mn2": round(total, 8)}
 
 
+def scan_treasury_onchain_deposits(*, max_pages: int = 10, page_size: int = 500) -> Dict[str, Any]:
+    """Scan daemon listtransactions for receives to the treasury hot address; credit pool + ledger."""
+    treasury = get_treasury()
+    addr = (treasury.get("address") or "").strip()
+    if not addr:
+        return {"success": False, "error": "treasury_address_not_configured"}
+
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    cfg_path = os.path.join(base, "data", "mn2_config.json")
+    required_confirmations = 6
+    try:
+        if os.path.isfile(cfg_path):
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                required_confirmations = int(json.load(f).get("confirmations") or 6)
+    except Exception:
+        pass
+
+    from backend.services.mn2_rpc_client import listtransactions
+    from backend.services.mn2_ledger import append_entry, is_treasury_deposit_recorded
+    from backend.services.unified_points_database import unified_points_db
+
+    txs_checked = 0
+    matched = 0
+    credited = 0
+    credited_total = 0.0
+    pending: List[Dict[str, Any]] = []
+    skipped: List[Dict[str, Any]] = []
+
+    for page in range(max_pages):
+        r = listtransactions(count=page_size, skip=page * page_size)
+        if r.get("error"):
+            return {"success": False, "error": r.get("error"), "txs_checked": txs_checked}
+        batch = r.get("result")
+        if not isinstance(batch, list) or not batch:
+            break
+        txs_checked += len(batch)
+        for tx in batch:
+            category = (tx.get("category") or tx.get("type") or "").strip().lower()
+            if category not in ("receive", "recv", "immature", "generate"):
+                continue
+            tx_address = (tx.get("address") or "").strip()
+            if tx_address != addr:
+                continue
+            matched += 1
+            txid = (tx.get("txid") or "").strip()
+            confirmations = int(tx.get("confirmations") or 0)
+            try:
+                amount = float(tx.get("amount") or 0)
+            except (TypeError, ValueError):
+                continue
+            if amount <= 0:
+                continue
+            if is_treasury_deposit_recorded(txid):
+                skipped.append({"txid": txid, "reason": "already_recorded", "amount": amount})
+                continue
+            if confirmations < required_confirmations:
+                pending.append({"txid": txid, "amount": amount, "confirmations": confirmations})
+                continue
+            ref = f"treasury-deposit:{txid}"
+            unified_points_db.add_points(
+                TREASURY_POOL_USER,
+                "mn2_balance",
+                amount,
+                source="mn2_treasury_deposit",
+                metadata={"reference": ref, "txid": txid, "address": addr, "confirmations": confirmations},
+            )
+            append_entry(
+                user_id=TREASURY_POOL_USER,
+                entry_type="treasury_deposit",
+                amount=amount,
+                txid=txid,
+                address=addr,
+                metadata={"confirmations": confirmations},
+            )
+            credited += 1
+            credited_total += amount
+        if len(batch) < page_size:
+            break
+
+    sync = sync_treasury_pool_from_ledger()
+    return {
+        "success": True,
+        "treasury_address": addr,
+        "txs_checked": txs_checked,
+        "matched_receive_txs": matched,
+        "credits_applied": credited,
+        "credited_total_mn2": round(credited_total, 8),
+        "treasury_pool_balance_mn2": get_treasury_pool_balance(),
+        "pending_confirmations": pending,
+        "skipped": skipped,
+        "ledger_backfill": sync,
+    }
+
+
 def distribute_agent_funding() -> Dict[str, Any]:
     """Idempotent top-up: debit treasury pool, credit each trader agent wallet."""
+    scan_treasury_onchain_deposits()
     sync_treasury_pool_from_ledger()
     treasury = get_treasury()
     per_agent = float(treasury.get("per_agent_mn2") or 100000)

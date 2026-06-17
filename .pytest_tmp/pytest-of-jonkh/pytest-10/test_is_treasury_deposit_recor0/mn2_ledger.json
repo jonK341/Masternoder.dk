@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "user_id": "agent_treasury",
+      "type": "treasury_deposit",
+      "amount": 5.0,
+      "txid": "tx1",
+      "address": null,
+      "created_at": "2026-06-16T22:07:44.543680Z",
+      "metadata": {}
+    }
+  ]
+}

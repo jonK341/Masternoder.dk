@@ -1,0 +1,53 @@
+{
+  "standard_program_features": [
+    "public_chat",
+    "private_message",
+    "tip_menu",
+    "gift_menu",
+    "token_goals",
+    "voice_reply",
+    "voice_input",
+    "room_music",
+    "dance_requests",
+    "emoji_reactions",
+    "spin_wheel",
+    "dice_game",
+    "fan_club",
+    "vip_private_show",
+    "lovense_visual",
+    "viewer_count",
+    "offline_messages",
+    "cam2cam_placeholder",
+    "record_show_placeholder",
+    "multi_lang_lingo"
+  ],
+  "gifts": {
+    "rose": {"label": "Rose", "emoji": "🌹", "mn2": 5, "buzz": 1},
+    "heart": {"label": "Heart", "emoji": "💖", "mn2": 10, "buzz": 2},
+    "champagne": {"label": "Champagne", "emoji": "🍾", "mn2": 25, "buzz": 3},
+    "diamond": {"label": "Diamond", "emoji": "💎", "mn2": 50, "buzz": 4},
+    "crown": {"label": "Crown", "emoji": "👑", "mn2": 100, "buzz": 5},
+    "rocket": {"label": "Rocket", "emoji": "🚀", "mn2": 200, "buzz": 6}
+  },
+  "dances": {
+    "shimmy": {"label": "Shimmy", "animation": "shimmy", "lingo": "Watch me shimmy — hips don't lie, babe."},
+    "spin": {"label": "Spin", "animation": "spin", "lingo": "Full spin for you — hold my gaze."},
+    "bounce": {"label": "Bounce", "animation": "bounce", "lingo": "Bounce bounce — feel that rhythm."},
+    "wave": {"label": "Wave", "animation": "wave", "lingo": "Slow wave… come closer in chat."},
+    "vip_flow": {"label": "VIP flow", "animation": "vip", "lingo": "VIP flow only — you earned this."}
+  },
+  "music_themes": {
+    "neon_pulse": {"label": "Neon pulse", "bpm": 118, "key": "Am", "mood": "club"},
+    "lofi_cozy": {"label": "Lo-fi cozy", "bpm": 82, "key": "Dm", "mood": "chill"},
+    "sage_zen": {"label": "Zen garden", "bpm": 72, "key": "Em", "mood": "ambient"},
+    "ember_fire": {"label": "Fire dance", "bpm": 128, "key": "Gm", "mood": "energetic"},
+    "iris_gold": {"label": "Gold lounge", "bpm": 95, "key": "Cm", "mood": "luxury"}
+  },
+  "voice_profiles": {
+    "nova": {"pitch": 1.08, "rate": 1.05, "lang": "en-US"},
+    "luna": {"pitch": 1.12, "rate": 0.92, "lang": "en-US"},
+    "sage": {"pitch": 0.95, "rate": 0.88, "lang": "en-US"},
+    "ember": {"pitch": 1.15, "rate": 1.12, "lang": "en-US"},
+    "iris": {"pitch": 0.9, "rate": 0.82, "lang": "en-GB"}
+  }
+}

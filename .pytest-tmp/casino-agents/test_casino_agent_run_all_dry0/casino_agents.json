@@ -1,0 +1,15 @@
+{
+  "casino_kelly_agent": {
+    "user_id": "casino_kelly_user",
+    "model_id": "casino_kelly_agent",
+    "policy": {
+      "enabled": true,
+      "min_bet": 5,
+      "max_bet": 50
+    },
+    "last_outcome": "loss",
+    "last_game": "dice",
+    "last_net": -5,
+    "last_run_at": "2026-06-14T12:54:56.310660Z"
+  }
+}

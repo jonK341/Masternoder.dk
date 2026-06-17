@@ -54,6 +54,42 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "task_type": "free",
         "description": "Free-tier only routing",
     },
+    "casino_bet_plan": {
+        "agent_id": "casino_kelly_agent",
+        "skill_name": "kelly_sizing",
+        "task_type": "reason",
+        "description": "Kelly-style bet plan for even-money casino games",
+    },
+    "casino_recovery_plan": {
+        "agent_id": "casino_martingale_agent",
+        "skill_name": "martingale_lite",
+        "task_type": "reason",
+        "description": "Conservative loss-recovery bet plan",
+    },
+    "casino_slot_pick": {
+        "agent_id": "casino_slot_hunter_agent",
+        "skill_name": "slot_selection",
+        "task_type": "speed",
+        "description": "Fast slot machine selection",
+    },
+    "casino_tournament_plan": {
+        "agent_id": "casino_tournament_agent",
+        "skill_name": "tournament_join",
+        "task_type": "reason",
+        "description": "Tournament join and scoring strategy",
+    },
+    "casino_crash_plan": {
+        "agent_id": "casino_crash_agent",
+        "skill_name": "crash_timing",
+        "task_type": "speed",
+        "description": "Crash auto-cashout target selection",
+    },
+    "casino_leaderboard_plan": {
+        "agent_id": "casino_leaderboard_agent",
+        "skill_name": "leaderboard_analysis",
+        "task_type": "reason",
+        "description": "Leaderboard gap analysis and bet sizing",
+    },
     "judge_output": {
         "agent_id": "content_generator_agent",
         "skill_name": "ai_assist_task",

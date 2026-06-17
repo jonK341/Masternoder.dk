@@ -42,6 +42,7 @@ def main() -> int:
     p.add_argument("--notes", default="MN2_OPS §8.6 treasury sign-off")
     p.add_argument("--skip-deploy", action="store_true")
     p.add_argument("--require-reconcile", action="store_true")
+    p.add_argument("--ask-pass", action="store_true", help="Prompt SSH password (ignores .env DEPLOY_PASS)")
     args = p.parse_args()
 
     if not args.skip_deploy:
@@ -58,7 +59,7 @@ def main() -> int:
     host, user = deploy_host(), deploy_user()
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=user, password=require_deploy_pass(), timeout=30)
+    ssh.connect(host, username=user, password=require_deploy_pass(force_prompt=args.ask_pass), timeout=30)
     print(f"\n== Connected {user}@{host} ==\n")
 
     web = "/var/www/html"

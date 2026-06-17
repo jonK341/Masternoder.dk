@@ -1,11 +1,12 @@
 """
 Social Auth Routes
-Unified top-5 social login endpoints.
+Unified social login endpoints (Google, GitHub, Facebook, Discord).
 """
 from flask import Blueprint, jsonify, redirect, request
 from backend.services.account_resolution_service import set_session_user
 
 from backend.services.social_auth_service import (
+    ALLOWED_OAUTH_PROVIDERS,
     build_start_url,
     handle_callback,
     list_providers,
@@ -14,7 +15,6 @@ from backend.services.social_auth_service import (
 
 social_auth_bp = Blueprint("social_auth", __name__)
 _AUTH_RATE = {}
-_ALLOWED_PROVIDERS = frozenset({"github", "google"})
 
 
 def _client_ip() -> str:
@@ -36,14 +36,13 @@ def _rate_limit(key: str, limit: int, window_sec: int) -> bool:
     return True
 
 
-@social_auth_bp.route("/api/auth/providers", methods=["GET"])
-def auth_providers():
-    """Return enabled social auth providers (GitHub, Google)."""
+def _public_provider_list():
     data = list_providers()
     providers = data.get("providers", []) if isinstance(data, dict) else []
+    by_id = {p.get("id"): p for p in providers if isinstance(p, dict)}
     out = []
-    for pid in _ALLOWED_PROVIDERS:
-        p = next((x for x in providers if x.get("id") == pid), {})
+    for pid in sorted(ALLOWED_OAUTH_PROVIDERS):
+        p = by_id.get(pid) or {}
         out.append({
             "id": pid,
             "enabled": bool(p.get("enabled")),
@@ -51,7 +50,13 @@ def auth_providers():
             "start_path": f"/api/auth/{pid}/start",
             "callback_path": f"/api/auth/{pid}/callback",
         })
-    return jsonify({"success": True, "providers": out}), 200
+    return out
+
+
+@social_auth_bp.route("/api/auth/providers", methods=["GET"])
+def auth_providers():
+    """Return enabled social auth providers."""
+    return jsonify({"success": True, "providers": _public_provider_list()}), 200
 
 
 @social_auth_bp.route("/api/auth/<provider>/start", methods=["GET"])
@@ -59,15 +64,15 @@ def auth_start(provider: str):
     """
     Start OAuth flow.
     Query:
-      user_id_hint - optional existing user
+      user_id_hint - optional existing user (link provider to logged-in account)
       return_url   - optional final redirect URL
       redirect     - if 1/true, respond with HTTP redirect to provider
     """
-    if provider not in _ALLOWED_PROVIDERS:
+    if provider not in ALLOWED_OAUTH_PROVIDERS:
         return jsonify({
             "success": False,
             "error": f"{provider} login disabled",
-            "allowed_providers": list(_ALLOWED_PROVIDERS),
+            "allowed_providers": sorted(ALLOWED_OAUTH_PROVIDERS),
         }), 400
 
     user_id_hint = request.args.get("user_id_hint")
@@ -89,11 +94,11 @@ def auth_callback(provider: str):
     OAuth callback endpoint.
     Returns JSON by default; if return_url exists, redirects with user_id and provider.
     """
-    if provider not in _ALLOWED_PROVIDERS:
+    if provider not in ALLOWED_OAUTH_PROVIDERS:
         return jsonify({
             "success": False,
             "error": f"{provider} callback disabled",
-            "allowed_providers": list(_ALLOWED_PROVIDERS),
+            "allowed_providers": sorted(ALLOWED_OAUTH_PROVIDERS),
         }), 400
 
     code = request.args.get("code")
@@ -106,7 +111,6 @@ def auth_callback(provider: str):
     if not result.get("success"):
         return jsonify(result), 400
 
-    # Bind account to current server session for same-window continuity.
     user_id = result.get("user_id")
     if user_id:
         set_session_user(user_id)
@@ -115,7 +119,7 @@ def auth_callback(provider: str):
     return_url = result.get("return_url")
     safe_return_url = validate_return_url(return_url)
     if safe_return_url:
-        sep = "&" if "?" in return_url else "?"
+        sep = "&" if "?" in safe_return_url else "?"
         url = (
             f"{safe_return_url}{sep}"
             f"auth_success=1&provider={provider}&user_id={result.get('user_id')}"

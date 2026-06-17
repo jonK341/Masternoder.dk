@@ -36,8 +36,16 @@ to pass `user_id` in normal use.
   params, and a `mutating` flag.
 - `POST /api/trophies/agent-action` — `{ action, ...params }` — dispatch an action. Read
   actions (`list`, `definitions`, `quests`, `leaderboard`, `activity`, `compare`,
-  `showcase_get`, `health`) run directly. Mutating actions (`sync`, `claim`, `showcase_set`)
-  require explicit `approved: true`, mirroring the UI's confirm step.
+  `showcase_get`, `level`, `health`) run directly. Mutating actions (`sync`, `claim`, `showcase_set`,
+  `level_collect`) require explicit `approved: true`, mirroring the UI's confirm step.
+
+## Collector Levels & Income
+
+- `GET /api/trophies/level?user_id=...` — collector level, daily/hourly income (trophy points + MN2),
+  pending accrual, progress to next level, unlock MN2-by-rarity table, and the full level ladder.
+- `POST /api/trophies/level/collect` — credit accrued passive trophy_points and MN2 (capped at 72h accrual).
+- Trophy unlock/claim/sync also credit MN2: explicit `mn2_reward` on a definition, else rarity table
+  in `data/trophy_levels.json`, scaled by collector `unlock_bonus_pct`.
 
 ## Ops & Authoring (Feature 25)
 

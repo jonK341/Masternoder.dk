@@ -1,0 +1,34 @@
+{
+  "trader_agent_1": {
+    "staked": 21355.0,
+    "staking_since_iso": "2026-06-16T22:23:52.882169Z",
+    "since_iso": "2026-06-16T22:23:52.882169Z",
+    "last_accrued_iso": null,
+    "total_earned": 0.0,
+    "auto_compound": false,
+    "streak_days": 1,
+    "last_stake_day": "2026-06-16",
+    "managed_by_agent": "trader_agent_1"
+  },
+  "trader_agent_2": {
+    "staked": 17304.0,
+    "staking_since_iso": "2026-06-16T22:23:52.931075Z",
+    "since_iso": "2026-06-16T22:23:52.931075Z",
+    "last_accrued_iso": null,
+    "total_earned": 0.0,
+    "auto_compound": false,
+    "streak_days": 1,
+    "last_stake_day": "2026-06-16",
+    "managed_by_agent": "trader_agent_2"
+  },
+  "follower_user": {
+    "staked": 0.0,
+    "staking_since_iso": null,
+    "since_iso": null,
+    "last_accrued_iso": "2026-06-16T22:23:52.975678Z",
+    "total_earned": 5.0,
+    "auto_compound": false,
+    "streak_days": 0,
+    "last_stake_day": null
+  }
+}
