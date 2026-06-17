@@ -2,11 +2,12 @@
 """Upsert camgirls performers from a JSON file (Phase 1c ops onboarding).
 
 Usage:
-  python scripts/camgirls_onboard_performers.py --file data/camgirls_performers_production.template.json
+  python scripts/camgirls_onboard_performers.py --file data/camgirls_performers_production.json
   python scripts/camgirls_onboard_performers.py --file performers.json --dry-run
   python scripts/camgirls_onboard_performers.py --deactivate-demos
+  python scripts/camgirls_onboard_performers.py --provision-addresses
 
-Each performer object must include: id, display_name, payout_address, unlock_price_mn2.
+Payout addresses are created by the MN2 daemon (getnewaddress), not stored in performer JSON.
 """
 from __future__ import annotations
 
@@ -29,7 +30,26 @@ def main() -> int:
         action="store_true",
         help="Set performer_demo_* rows to active=false (Phase 1c go-live)",
     )
+    parser.add_argument(
+        "--provision-addresses",
+        action="store_true",
+        help="Provision daemon payout addresses for all active performers",
+    )
     args = parser.parse_args()
+
+    if args.provision_addresses:
+        if args.dry_run:
+            print("[dry-run] would provision daemon payout addresses for active performers")
+            return 0
+        from backend.services.camgirls_payout_service import provision_payout_addresses
+        result = provision_payout_addresses()
+        print(f"Provisioned {result.get('provisioned')}/{result.get('total')} performers")
+        for row in result.get("results") or []:
+            if row.get("success"):
+                print(f"  {row.get('performer_id')}: {row.get('payout_address')}")
+            else:
+                print(f"  FAIL {row.get('performer_id')}: {row.get('error')}", file=sys.stderr)
+        return 0 if result.get("success") else 1
 
     if args.deactivate_demos:
         if args.dry_run:
@@ -41,7 +61,7 @@ def main() -> int:
         return 0 if result.get("success") else 1
 
     if not args.file:
-        print("--file required unless using --deactivate-demos", file=sys.stderr)
+        print("--file required unless using --deactivate-demos or --provision-addresses", file=sys.stderr)
         return 1
 
     path = args.file
@@ -69,8 +89,8 @@ def main() -> int:
         if not pid:
             print("Skip row missing id")
             continue
-        if not row.get("payout_address"):
-            print(f"Skip {pid}: payout_address required")
+        if not row.get("display_name"):
+            print(f"Skip {pid}: display_name required")
             continue
         if args.dry_run:
             print(f"[dry-run] would upsert {pid} ({row.get('display_name')})")
@@ -78,7 +98,12 @@ def main() -> int:
             continue
         result = upsert_performer(row)
         if result.get("success"):
-            print(f"Upserted {pid}")
+            extra = ""
+            if result.get("payout_address"):
+                extra = f" payout={result['payout_address']}"
+            elif result.get("payout_warning"):
+                extra = f" (payout pending: {result['payout_warning']})"
+            print(f"Upserted {pid}{extra}")
             ok += 1
         else:
             print(f"Failed {pid}: {result.get('error')}", file=sys.stderr)

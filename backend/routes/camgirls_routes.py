@@ -115,6 +115,21 @@ def ops_upsert_performer():
     return jsonify(result), code
 
 
+@camgirls_bp.route("/api/camgirls/ops/payout-addresses", methods=["GET", "POST"])
+def ops_payout_addresses():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.camgirls_payout_service import list_payout_addresses, provision_payout_addresses
+    if request.method == "GET":
+        return jsonify(list_payout_addresses()), 200
+    body = request.get_json(silent=True) or {}
+    performer_id = (body.get("performer_id") or body.get("id") or "").strip()
+    ids = [performer_id] if performer_id else None
+    result = provision_payout_addresses(performer_ids=ids)
+    code = 200 if result.get("success") else 502
+    return jsonify(result), code
+
+
 @camgirls_bp.route("/api/camgirls/chat", methods=["POST"])
 def camgirls_chat():
     from backend.services.camgirls_service import chat_with_performer
