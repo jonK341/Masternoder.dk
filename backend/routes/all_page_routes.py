@@ -46,8 +46,8 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'explorer', 'proof-of-reserves',
-    'market', 'casino',
+    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
+    'market', 'casino', 'customers', 'camgirls',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
@@ -378,6 +378,23 @@ def dashboard_master_control():
         200,
         {'Content-Type': 'text/html; charset=utf-8'},
     )
+
+
+@all_page_bp.route('/dashboard/agents_control', methods=['GET'])
+@all_page_bp.route('/dashboard/agents_control/', methods=['GET'])
+@all_page_bp.route('/dashboard/agents_control/index.html', methods=['GET'])
+def dashboard_agents_control():
+    """Serve dashboard/agents_control/index.html."""
+    try:
+        base_path = _base_path()
+        page_path = os.path.join(base_path, 'dashboard', 'agents_control', 'index.html')
+        if os.path.exists(page_path):
+            with open(page_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content, 200, {'Content-Type': 'text/html; charset=utf-8', 'X-Content-Version': CONTENT_VERSION}
+    except Exception:
+        pass
+    return '<html><body><h1>Agents Control</h1><p>Not found</p></body></html>', 404
 
 
 # Agents page — dedicated route to avoid endpoint-naming conflicts with create_page_route loop

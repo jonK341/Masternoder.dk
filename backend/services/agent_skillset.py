@@ -47,6 +47,8 @@ class AgentSkillset:
         self.ensure_criticism_skills_per_agent(count=DEFAULT_CRITICISM_SKILLS_PER_AGENT)
         self.ensure_blueprint_route_fixer_skills_per_agent()
         self.ensure_api_service_skills_per_agent()
+        self.ensure_casino_agent_skillsets()
+        self.ensure_camgirls_agent_skillsets()
         self.save_skillsets()
 
     def _ensure_tester_agent_skillset(self):
@@ -626,6 +628,103 @@ class AgentSkillset:
                     updated += 1
         self.save_skillsets()
         return {'success': True, 'agents_updated': updated, 'ai_skills': self.AI_SKILLS}
+
+    CASINO_SHARED_SKILLS = [
+        'leaderboard_racing', 'bankroll_mgmt', 'session_limits', 'play_dice', 'play_coin_flip',
+    ]
+
+    def ensure_casino_agent_skillsets(self) -> Dict:
+        """Register specialized casino AI personas from data/casino_agent_models.json."""
+        models_path = os.path.join(self.base_dir, 'data', 'casino_agent_models.json')
+        if not os.path.isfile(models_path):
+            return {'success': True, 'skipped': 'no_models_file'}
+        try:
+            with open(models_path, 'r', encoding='utf-8') as f:
+                raw = json.load(f)
+            models = raw.get('models') if isinstance(raw.get('models'), dict) else {}
+        except Exception:
+            return {'success': False, 'error': 'models_load_failed'}
+
+        agents = self.skillsets.setdefault('agents', {})
+        added = 0
+        for agent_id, model in models.items():
+            if not isinstance(model, dict):
+                continue
+            skills = list(model.get('skills') or [])
+            for sk in self.CASINO_SHARED_SKILLS:
+                if sk not in skills:
+                    skills.append(sk)
+            entry = agents.get(agent_id)
+            if not isinstance(entry, dict):
+                agents[agent_id] = {
+                    'name': model.get('name') or agent_id,
+                    'skills': skills,
+                    'level': 3,
+                    'experience': 600,
+                    'specialization': model.get('specialization'),
+                    'casino_strategy': model.get('strategy'),
+                }
+                added += 1
+            else:
+                entry.setdefault('name', model.get('name') or agent_id)
+                entry.setdefault('specialization', model.get('specialization'))
+                entry.setdefault('casino_strategy', model.get('strategy'))
+                existing = entry.setdefault('skills', [])
+                for sk in skills:
+                    if sk not in existing:
+                        existing.append(sk)
+                        added += 1
+        return {'success': True, 'casino_agents': len(models), 'skills_added': added}
+
+    CAMGIRLS_SHARED_SKILLS = [
+        'camgirls_catalog_read', 'camgirls_agent_action', 'persona_chat', 'mn2_unlock_guide',
+        'tip_suggest', 'age_gate_reminder',
+    ]
+
+    def ensure_camgirls_agent_skillsets(self) -> Dict:
+        """Register camgirl AI companion personas from data/camgirls_agent_models.json."""
+        models_path = os.path.join(self.base_dir, 'data', 'camgirls_agent_models.json')
+        if not os.path.isfile(models_path):
+            return {'success': True, 'skipped': 'no_models_file'}
+        try:
+            with open(models_path, 'r', encoding='utf-8') as f:
+                raw = json.load(f)
+            models = raw.get('models') if isinstance(raw.get('models'), dict) else {}
+        except Exception:
+            return {'success': False, 'error': 'models_load_failed'}
+
+        agents = self.skillsets.setdefault('agents', {})
+        added = 0
+        for agent_id, model in models.items():
+            if not isinstance(model, dict):
+                continue
+            skills = list(model.get('skills') or [])
+            for sk in self.CAMGIRLS_SHARED_SKILLS:
+                if sk not in skills:
+                    skills.append(sk)
+            entry = agents.get(agent_id)
+            if not isinstance(entry, dict):
+                agents[agent_id] = {
+                    'name': model.get('name') or agent_id,
+                    'skills': skills,
+                    'level': 3,
+                    'experience': 500,
+                    'specialization': model.get('specialization'),
+                    'camgirls_performer_id': model.get('performer_id'),
+                    'llm_task': model.get('llm_task'),
+                }
+                added += 1
+            else:
+                entry.setdefault('name', model.get('name') or agent_id)
+                entry.setdefault('specialization', model.get('specialization'))
+                entry.setdefault('camgirls_performer_id', model.get('performer_id'))
+                entry.setdefault('llm_task', model.get('llm_task'))
+                existing = entry.setdefault('skills', [])
+                for sk in skills:
+                    if sk not in existing:
+                        existing.append(sk)
+                        added += 1
+        return {'success': True, 'camgirls_agents': len(models), 'skills_added': added}
 
     def ensure_knowledge_skills_per_agent(self) -> Dict:
         """Ensure every agent has knowledge/compendium skills to maintain updated rulebook and page info."""

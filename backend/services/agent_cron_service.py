@@ -127,6 +127,24 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'casino_agents':
+                from backend.services import casino_agents_service
+                from backend.services.agent_skillset import agent_skillset
+                skill_sync = agent_skillset.ensure_casino_agent_skillsets()
+                play = casino_agents_service.run_all(dry_run=False)
+                out['results'][job] = {'skill_sync': skill_sync, 'play': play}
+            elif job == 'casino_agent_skillsets':
+                from backend.services.agent_skillset import agent_skillset
+                out['results'][job] = agent_skillset.ensure_casino_agent_skillsets()
+            elif job == 'camgirls_agent_skillsets':
+                from backend.services.agent_skillset import agent_skillset
+                out['results'][job] = agent_skillset.ensure_camgirls_agent_skillsets()
+            elif job == 'agent_trader':
+                from backend.services.agent_trader_service import run_all_traders
+                out['results'][job] = run_all_traders()
+            elif job == 'agent_treasury_distribute':
+                from backend.services.agent_wallet_service import distribute_agent_funding
+                out['results'][job] = distribute_agent_funding()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -165,4 +183,10 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
+    if n == 'casino':
+        return ['casino_agent_skillsets', 'casino_agents']
+    if n == 'camgirls':
+        return ['camgirls_agent_skillsets']
+    if n == 'trader':
+        return ['agent_trader']
     return []
