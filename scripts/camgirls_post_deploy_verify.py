@@ -105,9 +105,11 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         ("local performers", "curl -s -w '\\nHTTP:%{http_code}' 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'"),
         ("local agents", "curl -s -w '\\nHTTP:%{http_code}' http://127.0.0.1:5000/api/camgirls/agents"),
         ("local page", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/"),
-        ("routes", f"cd {web} && ./venv/bin/python -c \"import sys; sys.path.insert(0,'{web}'); "
+        ("routes", f"cd {web} && PY=$(test -x .venv/bin/python && echo .venv/bin/python || echo python3) && "
+         f"$PY -c \"import sys; sys.path.insert(0,'{web}'); "
          "from vidgenerator import create_app; app=create_app(); "
          "print([str(r) for r in app.url_map.iter_rules() if 'camgirl' in str(r)])\""),
+        ("payout ops", "curl -s http://127.0.0.1:5000/api/camgirls/ops/payout-addresses 2>&1 | head -c 400"),
     ]
     for label, cmd in cmds:
         print(f"\n=== remote {label} ===")

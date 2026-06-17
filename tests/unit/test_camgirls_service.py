@@ -14,6 +14,7 @@ class CamgirlsTestBase(StakingTestBase):
         self._age = os.path.join(self.tmp, "camgirls_age_verified.json")
         self._tips = os.path.join(self.tmp, "camgirls_tips.jsonl")
         self._chat = os.path.join(self.tmp, "camgirls_chat.jsonl")
+        self._payout = os.path.join(self.tmp, "camgirls_payout_addresses.json")
         with open(self._perf, "w", encoding="utf-8") as f:
             json.dump({
                 "performers": [{
@@ -23,25 +24,31 @@ class CamgirlsTestBase(StakingTestBase):
                     "unlock_price_mn2": 10,
                     "chat_price_mn2": 2,
                     "tip_min_mn2": 5,
-                    "payout_address": "JTest",
                     "active": True,
                 }],
             }, f)
+        with open(self._payout, "w", encoding="utf-8") as f:
+            json.dump({"performers": {"p1": {"address": "JTestDaemon", "created_at": "2026-01-01T00:00:00Z"}}}, f)
         import backend.services.camgirls_service as cg
+        import backend.services.camgirls_payout_service as cgp
         self._orig = (cg._PERFORMERS_FILE, cg._UNLOCKS_FILE, cg._AGE_FILE, cg._TIPS_FILE, cg._CHAT_FILE)
+        self._orig_payout = cgp._PAYOUT_FILE
         cg._PERFORMERS_FILE = self._perf
         cg._UNLOCKS_FILE = self._unlock
         cg._AGE_FILE = self._age
         cg._TIPS_FILE = self._tips
         cg._CHAT_FILE = self._chat
+        cgp._PAYOUT_FILE = self._payout
         import backend.services.unified_points_database as upd
         self._orig_upd = upd.unified_points_db
         upd.unified_points_db = self.fake
 
     def tearDown(self):
         import backend.services.camgirls_service as cg
+        import backend.services.camgirls_payout_service as cgp
         import backend.services.unified_points_database as upd
         cg._PERFORMERS_FILE, cg._UNLOCKS_FILE, cg._AGE_FILE, cg._TIPS_FILE, cg._CHAT_FILE = self._orig
+        cgp._PAYOUT_FILE = self._orig_payout
         upd.unified_points_db = self._orig_upd
         super().tearDown()
 
@@ -84,6 +91,7 @@ def test_tip_performer():
         ok = tip_performer("buyer", "p1", 10)
         assert ok.get("success") is True
         assert ok.get("amount_mn2") == 10
+        assert ok.get("payout_address") == "JTestDaemon"
     finally:
         t.tearDown()
 
