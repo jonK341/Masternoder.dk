@@ -1,0 +1,72 @@
+{
+  "performers": [
+    {
+      "id": "performer_demo_1",
+      "display_name": "Nova Star",
+      "tagline": "Premium clips \u00b7 MN2 unlock",
+      "bio": "Demo performer for Phase 1 catalog. Replace via ops API.",
+      "avatar_url": "/static/camgirls/avatar-demo.svg",
+      "preview_url": "/static/camgirls/preview-demo.svg",
+      "content_url": "/static/camgirls/preview-demo.svg",
+      "unlock_price_mn2": 25,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "payout_address": "JJi8g5CYTXL6NVW1za4tJtzC1X61M7WRZi",
+      "featured": true,
+      "active": false,
+      "agent_id": "camgirl_agent_nova",
+      "ai_enabled": true,
+      "ai_persona": "Nova AI Companion"
+    },
+    {
+      "id": "performer_demo_2",
+      "display_name": "Luna Ray",
+      "tagline": "Tips welcome \u00b7 async messages soon",
+      "bio": "Second demo slot for catalog layout testing.",
+      "avatar_url": "/static/camgirls/avatar-demo.svg",
+      "unlock_price_mn2": 50,
+      "chat_price_mn2": 3,
+      "tip_min_mn2": 10,
+      "payout_address": "JJi8g5CYTXL6NVW1za4tJtzC1X61M7WRZi",
+      "featured": false,
+      "active": false,
+      "agent_id": "camgirl_agent_luna",
+      "ai_enabled": true,
+      "ai_persona": "Luna AI Companion"
+    },
+    {
+      "id": "performer_nova",
+      "display_name": "Nova Star",
+      "tagline": "Premium clips \u00b7 MN2 unlock \u00b7 AI chat",
+      "bio": "Performer bio for AI chat persona (SFW, in-character).",
+      "avatar_url": "/static/camgirls/avatar-demo.svg",
+      "preview_url": "/static/camgirls/preview-demo.svg",
+      "content_url": "/static/camgirls/preview-demo.svg",
+      "unlock_price_mn2": 25,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "payout_address": "J_VERIFIED_MN2_PAYOUT_ADDRESS",
+      "featured": true,
+      "active": true,
+      "agent_id": "camgirl_agent_nova",
+      "ai_enabled": true,
+      "ai_persona": "Nova AI Companion"
+    },
+    {
+      "id": "performer_luna",
+      "display_name": "Luna Ray",
+      "tagline": "Async vibes \u00b7 tips \u00b7 companion chat",
+      "bio": "Luna Ray \u2014 cozy async-chat energy. Tip to support; unlock for full profile and AI companion messages.",
+      "avatar_url": "/static/camgirls/avatar-demo.svg",
+      "unlock_price_mn2": 50,
+      "chat_price_mn2": 3,
+      "tip_min_mn2": 10,
+      "payout_address": "JJi8g5CYTXL6NVW1za4tJtzC1X61M7WRZi",
+      "featured": false,
+      "active": true,
+      "agent_id": "camgirl_agent_luna",
+      "ai_enabled": true,
+      "ai_persona": "Luna AI Companion"
+    }
+  ]
+}

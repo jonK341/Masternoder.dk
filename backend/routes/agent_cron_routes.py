@@ -9,12 +9,29 @@ from flask import Blueprint, jsonify, request
 agent_cron_bp = Blueprint('agent_cron', __name__)
 
 
+def _cron_secrets_configured() -> bool:
+    return bool(
+        (os.environ.get('AGENT_CRON_SECRET') or '').strip()
+        or (os.environ.get('MN2_OPS_SECRET') or '').strip()
+        or (os.environ.get('MN2_SCAN_SECRET') or '').strip()
+    )
+
+
 def _agent_cron_authorized() -> bool:
-    secret = (os.environ.get('AGENT_CRON_SECRET') or '').strip()
-    if not secret:
-        return False
+    cron_secret = (os.environ.get('AGENT_CRON_SECRET') or '').strip()
     tok = (request.headers.get('X-Agent-Cron-Token') or request.args.get('token') or '').strip()
-    return tok == secret
+    if cron_secret and tok == cron_secret:
+        return True
+    ops_secret = (
+        (os.environ.get('MN2_OPS_SECRET') or '').strip()
+        or (os.environ.get('MN2_SCAN_SECRET') or '').strip()
+    )
+    ops_hdr = (request.headers.get('X-Ops-Secret') or '').strip()
+    if ops_secret and ops_hdr == ops_secret:
+        return True
+    if not _cron_secrets_configured():
+        return request.environ.get('REMOTE_ADDR') in ('127.0.0.1', '::1')
+    return False
 
 
 def _is_production() -> bool:
@@ -32,7 +49,7 @@ def _parse_jobs() -> list:
         preset = raw.strip().lower()
         if preset in (
             'daily', 'weekly', 'monthly', 'knowledge',
-            'blueprint_route', 'api_service', 'routes',
+            'blueprint_route', 'api_service', 'routes', 'casino', 'camgirls', 'trader',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)
@@ -45,18 +62,16 @@ def _parse_jobs() -> list:
 @agent_cron_bp.route('/api/agents/cron/run', methods=['POST'])
 def agents_cron_run():
     """
-    Run agent cron jobs (requires AGENT_CRON_SECRET).
-    Query/body: jobs=daily | weekly | monthly | knowledge | blueprint_route | api_service | routes | comma-separated.
+    Run agent cron jobs (requires AGENT_CRON_SECRET, or X-Ops-Secret with MN2_OPS_SECRET / MN2_SCAN_SECRET).
+    Query/body: jobs=daily | weekly | monthly | knowledge | blueprint_route | api_service | routes | trader | agent_trader | comma-separated.
     Jobs: skillsets_ensure, skillsets_rebalance, user_skills_maintenance, knowledge_ingredients,
           automation_maintenance, agent_health_check, research_rotation, llm_status_snapshot,
           blueprint_route_fixer, api_service_skill
     Optional: maintenance_max_batch, inactive_days, append_knowledge_log, record_reporter_activity
     """
-    secret = (os.environ.get('AGENT_CRON_SECRET') or '').strip()
-    if not secret:
-        if _is_production():
+    if not _agent_cron_authorized():
+        if _is_production() and not _cron_secrets_configured():
             return jsonify({'success': False, 'error': 'AGENT_CRON_SECRET not configured'}), 503
-    elif not _agent_cron_authorized():
         return jsonify({'success': False, 'error': 'unauthorized'}), 401
 
     jobs = _parse_jobs()
@@ -114,5 +129,8 @@ def agents_cron_presets():
             'blueprint_route': expand_preset('blueprint_route'),
             'api_service': expand_preset('api_service'),
             'routes': expand_preset('routes'),
+            'casino': expand_preset('casino'),
+            'camgirls': expand_preset('camgirls'),
+            'trader': expand_preset('trader'),
         },
     }), 200
