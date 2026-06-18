@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camgirls — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        .cg-page { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+        .cg-header { text-align: center; margin-bottom: 28px; }
+        .cg-header h1 { font-size: 2rem; margin: 0 0 8px; background: linear-gradient(135deg,#00d4ff,#ff00aa); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .cg-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 16px; }
+        .cg-card { border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; background: rgba(0,0,0,0.25); }
+        .cg-card img { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; }
+        .cg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .cg-actions button { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .cg-unlock { background: linear-gradient(135deg,#00d4ff,#0088cc); color: #000; }
+        .cg-tip { background: rgba(255,0,170,0.2); color: #ff66cc; border: 1px solid rgba(255,0,170,0.4); }
+        .cg-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(0,255,136,0.15); color: #00ff88; }
+        #cg-msg { margin: 12px 0; min-height: 1.2em; color: #ffaa44; }
+        #cg-age-gate { border: 1px solid rgba(255,170,0,0.4); border-radius: 12px; padding: 16px; margin-bottom: 20px; background: rgba(255,170,0,0.08); }
+        .cg-chat-panel { margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+        .cg-chat-log { max-height: 160px; overflow-y: auto; margin-bottom: 8px; font-size: 0.9rem; }
+        .cg-chat-line { padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; max-width: 92%; }
+        .cg-chat-user { background: rgba(0,212,255,0.15); margin-left: auto; text-align: right; }
+        .cg-chat-bot { background: rgba(255,0,170,0.12); }
+        .cg-chat-compose { display: flex; gap: 8px; }
+        .cg-chat-input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #161b22; color: #fff; }
+        .cg-chat-toggle { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.35); }
+        .cg-ai-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(0,212,255,0.15); color: #00d4ff; margin-left: 6px; }
+        .cg-agents-strip { border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; background: rgba(0,212,255,0.06); }
+        .cg-agents-strip h2 { margin: 0 0 8px; font-size: 1rem; color: #00d4ff; }
+        .cg-agent-chip { display: inline-block; margin: 4px 8px 4px 0; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); font-size: 0.82rem; }
+    </style>
+</head>
+<body>
+    <div class="cg-page">
+        <div class="cg-header">
+            <h1>Camgirls</h1>
+            <p style="opacity:0.75;">Browse performers · unlock with MN2 · tip · AI companion chat when unlocked</p>
+            <p style="font-size:0.85rem;opacity:0.6;">Explorer lives at <a href="https://camgirls.masternoder.dk/" target="_blank" rel="noopener">camgirls.masternoder.dk</a> · Agents: <code>/api/camgirls/agent-tools</code></p>
+        </div>
+        <div id="cg-agents" class="cg-agents-strip" style="display:none;">
+            <h2>🤖 AI companions</h2>
+            <p style="font-size:0.85rem;opacity:0.75;margin:0 0 8px;">Each performer has a linked agent persona. Platform agents can call <code>/api/camgirls/agent-action</code>.</p>
+            <div id="cg-agent-chips"></div>
+        </div>
+        <div id="cg-age-gate" style="display:none;">
+            <strong>18+ required</strong> before MN2 unlock or tip.
+            <label style="display:block;margin:8px 0;">Birth year <input type="number" id="cg-birth-year" min="1920" max="2010" style="width:100px;margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#161b22;color:#fff;"></label>
+            <button type="button" id="cg-age-btn" class="cg-unlock">I am 18 or older</button>
+        </div>
+        <div id="cg-msg"></div>
+        <div id="cg-grid" class="cg-grid">Loading performers…</div>
+    </div>
+    <script src="/static/js/camgirls.js?v=20260617d"></script>
+</body>
+</html>
