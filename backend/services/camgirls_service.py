@@ -241,8 +241,17 @@ def tip_performer(user_id: str, performer_id: str, amount_mn2: float) -> Dict[st
         "ledger_type": "camgirl_tip",
         "performer_id": pid,
         "display_name": row.get("display_name"),
-        "payout_address": row.get("payout_address"),
     }
+    from backend.services.camgirls_payout_service import get_or_create_payout_address
+    payout = get_or_create_payout_address(pid)
+    if not payout.get("success"):
+        return {
+            "success": False,
+            "error": payout.get("error") or "payout_address_unavailable",
+            "code": "payout_address_unavailable",
+        }
+    payout_addr = payout.get("payout_address")
+    meta["payout_address"] = payout_addr
     debit = _debit_mn2(uid, amt, source="camgirl_tip", metadata=meta)
     if not debit.get("success"):
         return debit
@@ -251,7 +260,7 @@ def tip_performer(user_id: str, performer_id: str, amount_mn2: float) -> Dict[st
         "user_id": uid,
         "performer_id": pid,
         "amount_mn2": amt,
-        "payout_address": row.get("payout_address"),
+        "payout_address": payout_addr,
     }
     with _LOCK:
         _append_jsonl(_TIPS_FILE, tip_row)
@@ -288,6 +297,8 @@ def upsert_performer(body: Dict[str, Any]) -> Dict[str, Any]:
     pid = (body.get("id") or "").strip()
     if not pid:
         return {"success": False, "error": "id_required"}
+    payload = dict(body)
+    payload.pop("payout_address", None)
     with _LOCK:
         data = _read_json(_PERFORMERS_FILE, {"performers": []})
         if not isinstance(data, dict):
@@ -296,14 +307,29 @@ def upsert_performer(body: Dict[str, Any]) -> Dict[str, Any]:
         found = False
         for i, row in enumerate(rows):
             if (row.get("id") or "").strip() == pid:
-                rows[i] = {**row, **body, "id": pid}
+                merged = {**row, **payload, "id": pid}
+                merged.pop("payout_address", None)
+                rows[i] = merged
                 found = True
                 break
         if not found:
-            rows.append({**body, "id": pid, "active": body.get("active", True)})
+            new_row = {**payload, "id": pid, "active": payload.get("active", True)}
+            new_row.pop("payout_address", None)
+            rows.append(new_row)
         data["performers"] = rows
         _write_json(_PERFORMERS_FILE, data)
-    return {"success": True, "performer_id": pid}
+    try:
+        from backend.services.camgirls_payout_service import get_or_create_payout_address
+        payout = get_or_create_payout_address(pid)
+    except Exception:
+        payout = {"success": False}
+    out = {"success": True, "performer_id": pid}
+    if payout.get("success"):
+        out["payout_address"] = payout.get("payout_address")
+        out["payout_created"] = bool(payout.get("created"))
+    elif payout.get("error"):
+        out["payout_warning"] = payout.get("error")
+    return out
 
 
 def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[str, Any]:
