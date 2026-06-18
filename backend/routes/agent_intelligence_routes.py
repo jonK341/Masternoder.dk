@@ -63,7 +63,23 @@ def feedback_outcome():
             points_delta=float(data.get("points_delta") or 0),
             notes=str(data.get("notes", "")),
         )
-        return jsonify({"success": True, "result": out}), 200
+        reward = None
+        uid = str(data.get("user_id") or "").strip()
+        if uid and uid not in ("default_user", "anonymous") and bool(data.get("success", False)):
+            try:
+                from backend.services.agent_crypto_rewards_service import award_agent_action
+
+                trace = str(data.get("trace_id") or "manual")
+                reward = award_agent_action(
+                    uid,
+                    "feedback_outcome",
+                    reference=f"feedback:{trace}",
+                    metadata={"task_kind": data.get("task_kind")},
+                    success=True,
+                )
+            except Exception:
+                pass
+        return jsonify({"success": True, "result": out, "reward": reward}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -84,7 +100,23 @@ def evaluate_output():
             title=str(data.get("title") or ""),
             strict=bool(data.get("strict", False)),
         )
-        return jsonify({"success": True, "evaluation": ev}), 200
+        reward = None
+        uid = str(data.get("user_id") or "").strip()
+        if uid and uid not in ("default_user", "anonymous") and ev.get("passed"):
+            try:
+                from backend.services.agent_crypto_rewards_service import award_agent_action
+
+                ref = f"eval:{uid}:{hash(str(text)[:200]) & 0xFFFFFFFF:08x}"
+                reward = award_agent_action(
+                    uid,
+                    "evaluate_output",
+                    reference=ref,
+                    metadata={"content_type": data.get("content_type")},
+                    success=True,
+                )
+            except Exception:
+                pass
+        return jsonify({"success": True, "evaluation": ev, "reward": reward}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -122,7 +154,19 @@ def router_routed_chat():
                 "provider": resp.provider,
                 "model": resp.model,
                 "routing": routing,
+                "reward": routing.get("crypto_reward"),
             }
         ), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@agent_intelligence_bp.route("/api/agents/rewards/info", methods=["GET"])
+def agent_rewards_info():
+    """Public agent/AI reward rates (MN2 + coins)."""
+    try:
+        from backend.services.agent_crypto_rewards_service import public_rewards_info
+
+        return jsonify(public_rewards_info()), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

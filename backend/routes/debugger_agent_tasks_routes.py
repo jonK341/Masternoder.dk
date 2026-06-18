@@ -73,6 +73,9 @@ TAB_POINTS = {
         'view_top10': {'xp': 10, 'activity_points': 5},  # New
         'get_insights': {'xp': 20, 'activity_points': 8}  # New
     },
+    'quiz': {
+        'submit_quiz': {'xp': 50, 'activity_points': 20},
+    },
     'ops-4d': {
         'ops_refresh_4d_hub': {'xp': 28, 'activity_points': 11},
         'ops_agent_video_troubleshoot': {'xp': 45, 'activity_points': 18},
@@ -529,6 +532,33 @@ def complete_debugger_task():
                 print(f"[WARN] Could not update intelligence: {e}")
         except Exception as e:
             print(f"[WARN] Could not save task to database: {e}")
+
+        crypto_reward = None
+        if target_user_id not in ("", "system", "default_user", "anonymous"):
+            try:
+                from backend.services.agent_crypto_rewards_service import award_agent_action
+
+                crypto_reward = award_agent_action(
+                    target_user_id,
+                    "debugger_task_complete",
+                    reference=f"dbg-complete:{task_id}:{target_user_id}",
+                    metadata={"tab": tab, "action": action, "agent_id": agent_id},
+                    success=True,
+                )
+                if result_data.get("ai_optimization"):
+                    ai_reward = award_agent_action(
+                        target_user_id,
+                        "debugger_task_ai",
+                        reference=f"dbg-ai:{task_id}:{target_user_id}",
+                        metadata={"tab": tab, "action": action},
+                        success=True,
+                    )
+                    crypto_reward = {
+                        "complete": crypto_reward,
+                        "ai": ai_reward,
+                    }
+            except Exception as e:
+                print(f"[WARN] Could not award agent crypto: {e}")
         
         return jsonify({
             'success': True,
@@ -537,7 +567,8 @@ def complete_debugger_task():
             'points_awarded': point_result.get('points_awarded', {}),
             'result_data': result_data,
             'task_marked_completed': True,
-            'achievements_unlocked': achievements_unlocked
+            'achievements_unlocked': achievements_unlocked,
+            'crypto_reward': crypto_reward,
         })
     except Exception as e:
         return jsonify({

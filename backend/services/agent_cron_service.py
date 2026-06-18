@@ -110,9 +110,22 @@ def run_agent_cron_jobs(
                 from backend.services.agent_research_tracker import agent_research_tracker
                 idx = datetime.now(timezone.utc).timetuple().tm_yday % len(_RESEARCH_TOPIC_IDS)
                 topic_id = _RESEARCH_TOPIC_IDS[idx]
-                out['results'][job] = agent_research_tracker.start_research(
+                started = agent_research_tracker.start_research(
                     topic_id, agent_id='ai_intelligence_agent'
                 )
+                insight = None
+                if started.get('success'):
+                    try:
+                        from backend.services.agent_ai_intelligence import agent_ai_intelligence
+                        insight = agent_ai_intelligence.llm_insight(
+                            'ai_intelligence_agent',
+                            topic=f'research_rotation:{topic_id}',
+                            context={'project': started.get('project'), 'topic_id': topic_id},
+                            task_type='context',
+                        )
+                    except Exception:
+                        insight = {'success': False, 'error': 'llm_insight_failed'}
+                out['results'][job] = {'started': started, 'llm_insight': insight}
             elif job == 'llm_status_snapshot':
                 from backend.services.llm_service import get_provider_status
                 snap = {
@@ -127,6 +140,33 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'casino_agents':
+                from backend.services import casino_agents_service
+                from backend.services.agent_skillset import agent_skillset
+                skill_sync = agent_skillset.ensure_casino_agent_skillsets()
+                play = casino_agents_service.run_all(dry_run=False)
+                out['results'][job] = {'skill_sync': skill_sync, 'play': play}
+            elif job == 'casino_agent_skillsets':
+                from backend.services.agent_skillset import agent_skillset
+                out['results'][job] = agent_skillset.ensure_casino_agent_skillsets()
+            elif job == 'camgirls_agent_skillsets':
+                from backend.services.agent_skillset import agent_skillset
+                out['results'][job] = agent_skillset.ensure_camgirls_agent_skillsets()
+            elif job == 'agent_trader':
+                from backend.services.agent_trader_service import run_all_traders
+                out['results'][job] = run_all_traders()
+            elif job == 'agent_treasury_distribute':
+                from backend.services.agent_wallet_service import distribute_agent_funding
+                out['results'][job] = distribute_agent_funding()
+            elif job == 'monetization_allowance_nudges':
+                from backend.services.monetization_allowance_service import run_allowance_nudge_scan
+                out['results'][job] = run_allowance_nudge_scan()
+            elif job == 'monetization_renewal_emails':
+                from backend.services.monetization_email_service import run_renewal_reminder_emails
+                out['results'][job] = run_renewal_reminder_emails()
+            elif job == 'monetization_weekly_revenue_pulse':
+                from backend.services.monetization_revenue_pulse_service import run_weekly_revenue_pulse
+                out['results'][job] = run_weekly_revenue_pulse()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -165,4 +205,10 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
+    if n == 'casino':
+        return ['casino_agent_skillsets', 'casino_agents']
+    if n == 'camgirls':
+        return ['camgirls_agent_skillsets']
+    if n == 'trader':
+        return ['agent_trader']
     return []
