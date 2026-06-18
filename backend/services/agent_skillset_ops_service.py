@@ -36,10 +36,22 @@ def run_blueprint_route_fixer_job() -> Dict[str, Any]:
         'potential_missing_sample': (report.get('discovery') or {}).get('potential_missing', [])[:20],
     }
     path = _append_jsonl('blueprint_route_fixer.jsonl', payload)
+    ai_summary = None
+    try:
+        from backend.services.agent_ai_intelligence import agent_ai_intelligence
+        ai_summary = agent_ai_intelligence.llm_insight(
+            'blueprint_route_fixer_agent',
+            topic='register_intelligence_audit',
+            context={'summary': summary, 'missing_sample': payload.get('potential_missing_sample')},
+            task_type='log_triage',
+        )
+    except Exception:
+        ai_summary = {'success': False, 'error': 'llm_insight_unavailable'}
     return {
         'success': True,
         'log_path': path,
         'summary': summary,
+        'ai_summary': ai_summary,
     }
 
 
@@ -66,8 +78,20 @@ def run_api_service_skill_job() -> Dict[str, Any]:
         'potential_missing_sample': list(missing)[:25],
     }
     path = _append_jsonl('api_service_skill.jsonl', payload)
+    ai_summary = None
+    try:
+        from backend.services.agent_ai_intelligence import agent_ai_intelligence
+        ai_summary = agent_ai_intelligence.llm_insight(
+            'api_service_agent',
+            topic='api_service_gap_scan',
+            context=summary,
+            task_type='debugger_challenge',
+        )
+    except Exception:
+        ai_summary = {'success': False, 'error': 'llm_insight_unavailable'}
     return {
         'success': True,
         'log_path': path,
         'summary': summary,
+        'ai_summary': ai_summary,
     }

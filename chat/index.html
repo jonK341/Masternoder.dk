@@ -521,7 +521,9 @@
     </div>
 
         <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/toast-notifications.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614b"></script>
+    <script src="/static/js/social-mn2-rewards.js?v=20260618d"></script>
     <script src="/static/js/chat-mn2-tips.js?v=20260614b"></script>
     <script src="/static/js/chat/main.js"></script>
     <script src="/static/js/chat/chat-points.js"></script>
@@ -630,6 +632,9 @@
                                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                                 } else if (evt.type === 'done') {
                                     contentEl.textContent = evt.full || fullText;
+                                    if (window.SocialMn2Rewards && SocialMn2Rewards.onChatStreamEvent) {
+                                        SocialMn2Rewards.onChatStreamEvent(evt);
+                                    }
                                 } else if (evt.type === 'error') {
                                     contentEl.textContent = '(AI unavailable)';
                                 }

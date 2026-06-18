@@ -6,8 +6,14 @@ import os
 import json
 import uuid
 import hashlib
+import time
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+
+_FEED_RANK_CACHE: dict = {}
+_FEED_RANK_TTL_SEC = 300
+_EARN_COACH_CACHE: dict = {}
+_EARN_COACH_TTL_SEC = 300
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SOCIAL_DATA_PATH = os.path.join(BASE_DIR, "data", "social_structure.json")
@@ -27,6 +33,7 @@ def _default_social() -> dict:
         "referrals": {"codes": {}, "signups": []},
         "crypto": {"claims": {}, "total_mn2_earned": 0},
         "chat_messages": [],
+        "posts": [],
         "moderation": {"blocks": {}, "reports": [], "hidden_activity": {}},
         "privacy": {},
         "schema_version": 2,
@@ -34,6 +41,7 @@ def _default_social() -> dict:
         "max_friends_per_user": 100,
         "max_crew_members": 50,
         "max_chat_messages": 500,
+        "max_posts": 1000,
     }
 
 
@@ -54,6 +62,9 @@ def _ensure_social_shape(data: dict) -> dict:
     data["crypto"].setdefault("total_mn2_earned", 0)
     if not isinstance(data.get("chat_messages"), list):
         data["chat_messages"] = []
+    if not isinstance(data.get("posts"), list):
+        data["posts"] = []
+    data.setdefault("max_posts", defaults.get("max_posts", 1000))
     if not isinstance(data.get("crew_invites"), list):
         data["crew_invites"] = []
     if not isinstance(data.get("moderation"), dict):
@@ -134,12 +145,14 @@ def _social_progress(social: dict, user_id: str) -> dict:
     ]
     chat_count = sum(1 for m in social.get("chat_messages", []) if (m.get("user_id") or "") == user_id)
     activity_count = sum(1 for e in social.get("activity_feed", []) if (e.get("user_id") or "") == user_id)
+    post_count = sum(1 for p in social.get("posts", []) if (p.get("user_id") or "") == user_id)
     return {
         "friends": len(friends),
         "crew_membership": 1 if crew_id else 0,
         "successful_referrals": len(successful_referrals),
         "chat_messages": chat_count,
         "activity_items": activity_count,
+        "posts": post_count,
     }
 
 
@@ -189,6 +202,15 @@ def _social_crypto_options() -> list:
             "requires": {"successful_referrals": 1},
             "repeatable": True,
             "cooldown_sec": 7 * 24 * 60 * 60,
+        },
+        {
+            "id": "first_post",
+            "name": "First Post",
+            "description": "Publish your first social feed post.",
+            "reward_mn2": 0.001,
+            "requires": {"posts": 1},
+            "repeatable": False,
+            "cooldown_sec": 0,
         },
     ]
 
@@ -687,6 +709,607 @@ def activity_push():
         return jsonify({"success": True, "user_id": user_id}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Social posts feed (UGC timeline)
+# ---------------------------------------------------------------------------
+
+_BLOCKED_CONTENT_FRAGMENTS = (
+    "kill yourself",
+    "kys ",
+    "nazi",
+    "child porn",
+    "cp link",
+)
+
+
+def _find_post(social: dict, post_id: str) -> dict:
+    return next((p for p in social.get("posts", []) if p.get("id") == post_id), None)
+
+
+def _prefilter_post_content(content: str) -> tuple:
+    text = (content or "").strip()
+    if not text:
+        return False, "content required"
+    if len(text) > 5000:
+        return False, "content too long (max 5000)"
+    lower = text.lower()
+    for frag in _BLOCKED_CONTENT_FRAGMENTS:
+        if frag in lower:
+            return False, "content blocked by safety filter"
+    return True, ""
+
+
+def _llm_moderate_post(content: str, user_id: str) -> dict:
+    """Lightweight LLM moderation; skips gracefully when LLM unavailable."""
+    try:
+        from backend.services.agent_ai_router import route
+        from backend.services.llm_service import chat
+
+        r = route("moderation_check", user_id=user_id)
+        resp = chat(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a content moderator. Reply with JSON only: "
+                        '{"approved": true|false, "reason": "short reason"}. '
+                        "Reject hate speech, harassment, spam, and explicit sexual content."
+                    ),
+                },
+                {"role": "user", "content": content[:800]},
+            ],
+            task_type=r["task_type"],
+            max_tokens=80,
+            temperature=0,
+        )
+        if not resp.success:
+            return {"approved": True, "skipped": True, "reason": "llm_unavailable"}
+        raw = (resp.content or "").strip()
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        parsed = json.loads(raw)
+        return {
+            "approved": bool(parsed.get("approved", True)),
+            "reason": (parsed.get("reason") or "")[:200],
+            "provider": getattr(resp, "provider", None),
+        }
+    except Exception:
+        return {"approved": True, "skipped": True, "reason": "moderation_parse_failed"}
+
+
+def _award_social_post_crypto(user_id: str, action: str, reference: str, metadata: dict = None) -> dict:
+    try:
+        from backend.services.agent_crypto_rewards_service import award_agent_action
+
+        return award_agent_action(
+            user_id,
+            action,
+            reference=reference,
+            metadata=metadata or {},
+            success=True,
+        )
+    except Exception:
+        return {"success": False, "skipped": "reward_service_unavailable"}
+
+
+def _format_post_row(post: dict, viewer_user_id: str) -> dict:
+    likes = list(post.get("likes") or [])
+    comments = list(post.get("comments") or [])
+    identity = _profile_identity(post.get("user_id", ""))
+    return {
+        "id": post.get("id"),
+        "user_id": post.get("user_id"),
+        "display_name": identity["display_name"],
+        "avatar": identity.get("avatar"),
+        "content": post.get("content"),
+        "post_type": post.get("post_type") or "text",
+        "media_url": post.get("media_url"),
+        "created_at": post.get("created_at"),
+        "likes_count": len(likes),
+        "comments_count": len(comments),
+        "liked_by_me": viewer_user_id in likes,
+        "moderation_status": (post.get("moderation") or {}).get("status"),
+    }
+
+
+def _rank_posts_for_user(posts: list, user_id: str, social: dict) -> list:
+    friends = set((social.get("friends") or {}).get(user_id, []))
+    my_crew_id = (social.get("user_crews") or {}).get(user_id)
+    crew_members = set()
+    if my_crew_id:
+        crew = next((c for c in social.get("crews", []) if c.get("id") == my_crew_id), None)
+        if crew:
+            crew_members = set(crew.get("member_ids") or [])
+
+    def _score(post: dict) -> int:
+        author = post.get("user_id")
+        score = 0
+        if author == user_id:
+            score += 2
+        if author in friends:
+            score += 10
+        if author in crew_members:
+            score += 8
+        score += len(post.get("likes") or []) * 2
+        score += len(post.get("comments") or [])
+        ts = _parse_utc_iso(post.get("created_at"))
+        if ts:
+            age_h = max(0, (datetime.utcnow() - ts).total_seconds() / 3600)
+            score += max(0, 50 - int(age_h))
+        return score
+
+    return sorted(posts, key=_score, reverse=True)
+
+
+def _feed_items_signature(posts: list) -> str:
+    parts = []
+    for post in posts[:20]:
+        parts.append(
+            f"{post.get('id')}:{len(post.get('likes') or [])}:{len(post.get('comments') or [])}"
+        )
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
+def _llm_feed_rank(posts: list, user_id: str) -> list:
+    """Optional LLM re-rank on top heuristic results; cached 5 min per user + feed signature."""
+    if not posts:
+        return posts
+    candidates = posts[:20]
+    rest = posts[20:]
+    sig = _feed_items_signature(candidates)
+    now = time.time()
+    cached = _FEED_RANK_CACHE.get(user_id)
+    if (
+        cached
+        and cached.get("sig") == sig
+        and (now - float(cached.get("at") or 0)) < _FEED_RANK_TTL_SEC
+    ):
+        order = list(cached.get("order") or [])
+        by_id = {p.get("id"): p for p in posts}
+        ordered = [by_id[pid] for pid in order if pid in by_id]
+        seen = set(order)
+        tail = [p for p in posts if p.get("id") not in seen]
+        return ordered + tail
+
+    try:
+        from backend.services.agent_ai_router import routed_chat
+
+        lines = []
+        for i, post in enumerate(candidates, 1):
+            preview = (post.get("content") or "")[:80].replace("\n", " ")
+            lines.append(
+                f"{i}. id={post.get('id')} author={post.get('user_id')} "
+                f"likes={len(post.get('likes') or [])} comments={len(post.get('comments') or [])} "
+                f"text={preview}"
+            )
+        resp, _routing = routed_chat(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "You rank a social feed for relevance and engagement. "
+                        'Reply with JSON only: {"order": ["post_id1", "post_id2", ...]} '
+                        "using only the given post ids, most relevant first."
+                    ),
+                },
+                {"role": "user", "content": "\n".join(lines)},
+            ],
+            "feed_rank",
+            user_id,
+            max_tokens=400,
+            temperature=0.2,
+        )
+        if not resp.success:
+            return posts
+        raw = (resp.content or "").strip()
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        parsed = json.loads(raw)
+        order = [x for x in (parsed.get("order") or []) if isinstance(x, str)]
+        valid_ids = {p.get("id") for p in candidates}
+        order = [pid for pid in order if pid in valid_ids]
+        for post in candidates:
+            pid = post.get("id")
+            if pid and pid not in order:
+                order.append(pid)
+        _FEED_RANK_CACHE[user_id] = {"at": now, "sig": sig, "order": order}
+        by_id = {p.get("id"): p for p in posts}
+        ordered = [by_id[pid] for pid in order if pid in by_id]
+        seen = set(order)
+        tail = [p for p in rest if p.get("id") not in seen]
+        return ordered + tail
+    except Exception:
+        return posts
+
+
+def _visible_posts(social: dict, viewer_user_id: str) -> list:
+    blocked = set(((social.get("moderation") or {}).get("blocks") or {}).get(viewer_user_id, []) or [])
+    friends = set((social.get("friends") or {}).get(viewer_user_id, []))
+    posts = []
+    for post in social.get("posts", []):
+        if post.get("hidden"):
+            continue
+        author = post.get("user_id")
+        if author in blocked:
+            continue
+        mod = (post.get("moderation") or {}).get("status")
+        if mod == "rejected":
+            continue
+        if author == viewer_user_id:
+            posts.append(post)
+            continue
+        visibility = _user_privacy(social, author).get("activity_visibility", "public")
+        if visibility == "public" or (visibility == "friends" and author in friends):
+            posts.append(post)
+    return posts
+
+
+def _friend_match_hints(social: dict, user_id: str, limit: int = 5) -> list:
+    friends = set((social.get("friends") or {}).get(user_id, []))
+    blocked = set(((social.get("moderation") or {}).get("blocks") or {}).get(user_id, []) or [])
+    candidates = set()
+    for uid, friend_ids in (social.get("friends") or {}).items():
+        if uid != user_id and uid not in friends:
+            candidates.add(uid)
+        for fid in friend_ids or []:
+            if fid != user_id and fid not in friends:
+                candidates.add(fid)
+    for post in social.get("posts", []):
+        uid = post.get("user_id")
+        if uid and uid != user_id:
+            candidates.add(uid)
+    for crew in social.get("crews", []):
+        for uid in crew.get("member_ids") or []:
+            if uid and uid != user_id:
+                candidates.add(uid)
+    for entry in social.get("activity_feed", []):
+        uid = entry.get("user_id")
+        if uid and uid != user_id:
+            candidates.add(uid)
+    candidates -= {user_id, *friends, *blocked}
+
+    my_crew = (social.get("user_crews") or {}).get(user_id)
+    my_signals = _member_game_signals(user_id)
+    rows = []
+    for uid in candidates:
+        their_friends = set((social.get("friends") or {}).get(uid, []))
+        mutual = len(friends & their_friends)
+        same_crew = (
+            my_crew
+            and (social.get("user_crews") or {}).get(uid) == my_crew
+        )
+        signals = _member_game_signals(uid)
+        xp_gap = abs(float(signals.get("xp_total") or 0) - float(my_signals.get("xp_total") or 0))
+        score = mutual * 15 + (20 if same_crew else 0) + max(0, 30 - int(xp_gap / 50))
+        if score <= 0:
+            score = 1
+        reason_parts = []
+        if mutual:
+            reason_parts.append(f"{mutual} mutual friend(s)")
+        if same_crew:
+            reason_parts.append("same crew")
+        if not reason_parts:
+            reason_parts.append("similar activity on leaderboard")
+        identity = _profile_identity(uid)
+        rows.append({
+            "user_id": uid,
+            "display_name": identity["display_name"],
+            "avatar": identity.get("avatar"),
+            "score": score,
+            "mutual_friends": mutual,
+            "same_crew": bool(same_crew),
+            "reason": ", ".join(reason_parts),
+        })
+    rows.sort(key=lambda r: r["score"], reverse=True)
+    return rows[:limit]
+
+
+@social_bp.route("/api/social/feed", methods=["GET"])
+def social_feed():
+    """GET ?user_id=&limit=30&ranked=0 — social posts timeline."""
+    try:
+        user_id = _resolve_uid()
+        limit = min(100, max(5, int(request.args.get("limit", 30))))
+        ranked = request.args.get("ranked", "0").strip().lower() in ("1", "true", "yes")
+        social = _load_social()
+        posts = _visible_posts(social, user_id)
+        llm_ranked = False
+        if ranked:
+            posts = _rank_posts_for_user(posts, user_id, social)
+            before_ids = [p.get("id") for p in posts[:20]]
+            posts = _llm_feed_rank(posts, user_id)
+            llm_ranked = [p.get("id") for p in posts[:20]] != before_ids or bool(
+                _FEED_RANK_CACHE.get(user_id)
+            )
+        else:
+            posts = sorted(posts, key=lambda p: p.get("created_at") or "", reverse=True)
+        feed = [_format_post_row(p, user_id) for p in posts[:limit]]
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "feed": feed,
+            "limit": limit,
+            "ranked": ranked,
+            "llm_ranked": llm_ranked,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "feed": []}), 500
+
+
+@social_bp.route("/api/social/posts/ai-draft", methods=["POST"])
+def social_posts_ai_draft():
+    """POST { user_id?, hint?, tone? } — AI draft for feed post via social_ai_draft task_kind."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        hint = (data.get("hint") or "").strip()[:500]
+        tone = (data.get("tone") or "casual").strip().lower()
+        if tone not in ("casual", "promo", "question"):
+            tone = "casual"
+        tone_guidance = {
+            "casual": "Use a casual, friendly tone.",
+            "promo": "Use an upbeat promotional tone that highlights MasterNoder features.",
+            "question": "Use an engaging tone and end with a question to invite replies.",
+        }
+
+        draft = None
+        reward = None
+        try:
+            from backend.services.agent_ai_router import routed_chat
+
+            user_msg = "Write a short social feed post for MasterNoder."
+            if hint:
+                user_msg += f" Topic or angle: {hint}"
+            user_msg += f" Tone: {tone}."
+
+            resp, routing = routed_chat(
+                [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Draft a friendly social feed post for MasterNoder "
+                            "(AI video creation + Hunters Game community). "
+                            f"{tone_guidance[tone]} "
+                            "Plain text only, max 280 characters, no markdown or hashtag spam."
+                        ),
+                    },
+                    {"role": "user", "content": user_msg},
+                ],
+                "social_ai_draft",
+                user_id,
+                max_tokens=120,
+                temperature=0.75,
+            )
+            if resp.success and (resp.content or "").strip():
+                draft = (resp.content or "").strip()[:500]
+                reward = routing.get("crypto_reward")
+        except Exception:
+            pass
+
+        if not draft:
+            draft = hint or "Having fun on MasterNoder — join me for AI video and Hunters Game!"
+
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "tone": tone,
+            "draft": draft,
+            "reward": reward,
+            "mutates": False,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "mutates": False}), 500
+
+
+@social_bp.route("/api/social/posts", methods=["POST"])
+def social_posts_create():
+    """POST { user_id, content, post_type?, media_url? } — create a feed post."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        content = (data.get("content") or "").strip()
+        post_type = (data.get("post_type") or "text").strip()[:32]
+        media_url = (data.get("media_url") or "").strip() or None
+        ok, err = _prefilter_post_content(content)
+        if not ok:
+            return jsonify({"success": False, "error": err}), 400
+        social = _load_social()
+        moderation = _llm_moderate_post(content, user_id)
+        if not moderation.get("approved", True):
+            return jsonify({
+                "success": False,
+                "error": "Post rejected by moderation",
+                "moderation": moderation,
+            }), 400
+        post_id = "post_" + str(uuid.uuid4())[:8]
+        post = {
+            "id": post_id,
+            "user_id": user_id,
+            "content": content,
+            "post_type": post_type,
+            "media_url": media_url,
+            "created_at": _utc_now_iso(),
+            "likes": [],
+            "comments": [],
+            "moderation": {
+                "status": "approved",
+                "checked_at": _utc_now_iso(),
+                "reason": moderation.get("reason"),
+                "skipped": moderation.get("skipped"),
+            },
+            "hidden": False,
+        }
+        posts = social.setdefault("posts", [])
+        posts.insert(0, post)
+        social["posts"] = posts[: int(social.get("max_posts", 1000) or 1000)]
+        _save_social(social)
+        push_activity(user_id, "social_post", content[:120], {"post_id": post_id})
+
+        user_post_count = sum(1 for p in social.get("posts", []) if p.get("user_id") == user_id)
+        rewards = []
+        if user_post_count == 1:
+            rewards.append(_award_social_post_crypto(
+                user_id, "first_post", f"social:first_post:{user_id}",
+                {"post_id": post_id},
+            ))
+        rewards.append(_award_social_post_crypto(
+            user_id, "post_created", f"social:post:{post_id}",
+            {"post_id": post_id},
+        ))
+
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "post": _format_post_row(post, user_id),
+            "rewards": [r for r in rewards if r.get("success")],
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@social_bp.route("/api/social/posts/<post_id>/like", methods=["POST"])
+def social_posts_like(post_id: str):
+    """POST { user_id } — toggle like on a post; author may earn like_received."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        social = _load_social()
+        post = _find_post(social, post_id)
+        if not post:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        if _is_blocked(social, user_id, post.get("user_id", "")):
+            return jsonify({"success": False, "error": "Blocked"}), 403
+        likes = post.setdefault("likes", [])
+        liked = user_id in likes
+        if liked:
+            likes.remove(user_id)
+            action = "unliked"
+        else:
+            likes.append(user_id)
+            action = "liked"
+            author_id = post.get("user_id")
+            if author_id and author_id != user_id:
+                _award_social_post_crypto(
+                    author_id,
+                    "like_received",
+                    f"social:like:{post_id}:{user_id}",
+                    {"post_id": post_id, "liker_user_id": user_id},
+                )
+        _save_social(social)
+        return jsonify({
+            "success": True,
+            "post_id": post_id,
+            "action": action,
+            "post": _format_post_row(post, user_id),
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@social_bp.route("/api/social/posts/<post_id>/comment", methods=["POST"])
+def social_posts_comment(post_id: str):
+    """POST { user_id, comment } — add a comment to a post."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        comment_text = (data.get("comment") or "").strip()
+        ok, err = _prefilter_post_content(comment_text)
+        if not ok:
+            return jsonify({"success": False, "error": err}), 400
+        social = _load_social()
+        post = _find_post(social, post_id)
+        if not post:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        if _is_blocked(social, user_id, post.get("user_id", "")):
+            return jsonify({"success": False, "error": "Blocked"}), 403
+        moderation = _llm_moderate_post(comment_text, user_id)
+        if not moderation.get("approved", True):
+            return jsonify({
+                "success": False,
+                "error": "Comment rejected by moderation",
+                "moderation": moderation,
+            }), 400
+        identity = _profile_identity(user_id)
+        comment = {
+            "id": "cmt_" + str(uuid.uuid4())[:8],
+            "user_id": user_id,
+            "display_name": identity["display_name"],
+            "comment": comment_text,
+            "created_at": _utc_now_iso(),
+        }
+        post.setdefault("comments", []).append(comment)
+        _save_social(social)
+        push_activity(user_id, "social_comment", f"Commented on a post", {"post_id": post_id, "comment_id": comment["id"]})
+        return jsonify({
+            "success": True,
+            "post_id": post_id,
+            "comment": comment,
+            "post": _format_post_row(post, user_id),
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@social_bp.route("/api/social/posts/<post_id>/moderate", methods=["POST"])
+def social_posts_moderate(post_id: str):
+    """POST { user_id, content? } — re-run moderation_check on post or supplied content."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        social = _load_social()
+        post = _find_post(social, post_id)
+        if not post:
+            return jsonify({"success": False, "error": "Post not found"}), 404
+        content = (data.get("content") or post.get("content") or "").strip()
+        ok, err = _prefilter_post_content(content)
+        if not ok:
+            return jsonify({"success": False, "error": err, "approved": False}), 400
+        moderation = _llm_moderate_post(content, user_id)
+        if post.get("id") == post_id and data.get("content") is None:
+            post["moderation"] = {
+                "status": "approved" if moderation.get("approved", True) else "rejected",
+                "checked_at": _utc_now_iso(),
+                "reason": moderation.get("reason"),
+                "checked_by": user_id,
+            }
+            if not moderation.get("approved", True):
+                post["hidden"] = True
+            _save_social(social)
+        return jsonify({
+            "success": True,
+            "post_id": post_id,
+            "moderation": moderation,
+            "task_kind": "moderation_check",
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@social_bp.route("/api/social/agent/matches", methods=["GET", "POST"])
+def social_agent_matches():
+    """Agent-safe friend/crew match hints (top 5 by graph overlap)."""
+    try:
+        user_id = _resolve_uid()
+        if request.method == "POST":
+            data = request.get_json(silent=True) or {}
+            user_id = (data.get("user_id") or user_id).strip()
+        social = _load_social()
+        matches = _friend_match_hints(social, user_id, limit=5)
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "matches": matches,
+            "task_kind": "friend_match_hint",
+            "mutates": False,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "matches": [], "mutates": False}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -1320,6 +1943,126 @@ def social_agent_status():
         return jsonify({"success": False, "error": str(e), "mutates": False}), 500
 
 
+def _static_earn_coach_tips(progress: dict, crypto_status: dict) -> list:
+    """Deterministic next MN2 actions from claimable rewards and progress gaps."""
+    tips = []
+    for opt in crypto_status.get("options") or []:
+        if opt.get("unlocked") and opt.get("ready"):
+            tips.append({
+                "id": "claim_" + str(opt.get("id") or ""),
+                "label": "Claim " + str(opt.get("name") or opt.get("id") or "reward"),
+                "reason": opt.get("description") or "Ready to claim now.",
+                "mn2": opt.get("reward_mn2"),
+                "kind": "claim",
+            })
+        elif not opt.get("unlocked"):
+            reqs = opt.get("requires") or {}
+            missing = [
+                f"{key} ({progress.get(key, 0)}/{req})"
+                for key, req in reqs.items()
+                if float(progress.get(key, 0) or 0) < float(req or 0)
+            ]
+            if missing:
+                tips.append({
+                    "id": "unlock_" + str(opt.get("id") or ""),
+                    "label": "Unlock " + str(opt.get("name") or opt.get("id") or "reward"),
+                    "reason": "Need: " + ", ".join(missing),
+                    "mn2": opt.get("reward_mn2"),
+                    "kind": "progress",
+                })
+    if int(progress.get("chat_messages") or 0) == 0:
+        tips.append({
+            "id": "ai_chat",
+            "label": "Post in social chat with AI assist",
+            "reason": "Turn on AI reply to earn routed_chat MN2 and coins.",
+            "kind": "action",
+        })
+    if int(progress.get("posts") or 0) == 0:
+        tips.append({
+            "id": "first_post",
+            "label": "Publish your first feed post",
+            "reason": "Unlocks first-post MN2 and feed engagement rewards.",
+            "kind": "action",
+        })
+    return tips[:6]
+
+
+def _llm_earn_coach_summary(progress: dict, crypto_status: dict, user_id: str, *, force_refresh: bool = False) -> tuple:
+    """Optional LLM earn coach blurb; cached 5 min per user."""
+    sig = hashlib.sha256(
+        json.dumps({"progress": progress, "options": crypto_status.get("options")}, sort_keys=True).encode()
+    ).hexdigest()[:16]
+    now = time.time()
+    if not force_refresh:
+        cached = _EARN_COACH_CACHE.get(user_id)
+        if (
+            cached
+            and cached.get("sig") == sig
+            and (now - float(cached.get("at") or 0)) < _EARN_COACH_TTL_SEC
+        ):
+            return cached.get("summary"), cached.get("source", "cache")
+
+    try:
+        from backend.services.agent_ai_router import routed_chat
+
+        claimable = [
+            o.get("name") for o in (crypto_status.get("options") or [])
+            if o.get("unlocked") and o.get("ready")
+        ]
+        resp, routing = routed_chat(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are the MasterNoder earn coach. Suggest 2-3 specific next MN2 or coin "
+                        "actions for this user. Be concise, under 60 words, plain text only."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {"progress": progress, "claimable_rewards": claimable},
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "earn_coach",
+            user_id,
+            max_tokens=120,
+            temperature=0.6,
+        )
+        if resp.success and (resp.content or "").strip():
+            summary = (resp.content or "").strip()[:500]
+            _EARN_COACH_CACHE[user_id] = {
+                "at": now,
+                "sig": sig,
+                "summary": summary,
+                "source": "llm",
+                "reward": routing.get("crypto_reward"),
+            }
+            return summary, "llm"
+    except Exception:
+        pass
+    return None, "static"
+
+
+def _load_social_networks_data() -> dict:
+    if os.path.exists(SOCIAL_NETWORKS_PATH):
+        try:
+            with open(SOCIAL_NETWORKS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+    return {
+        "share_base_url": "https://masternoder.dk",
+        "networks": [],
+        "default_share_text": "MasterNoder — AI video generation + Hunters Game",
+        "default_share_hashtags": "MasterNoder,HuntersGame",
+    }
+
+
 @social_bp.route("/api/social/agent/recommendations", methods=["GET"])
 def social_agent_recommendations():
     """Agent-safe read-only next-action recommendations for social growth."""
@@ -1327,6 +2070,7 @@ def social_agent_recommendations():
         user_id = _resolve_uid()
         social = _load_social()
         progress = _social_progress(social, user_id)
+        crypto_status = _social_crypto_status(social, user_id)
         recommendations = []
         if progress["friends"] == 0:
             recommendations.append({"id": "add_friend", "label": "Add a first friend", "reason": "Unlocks friend rewards and challenges."})
@@ -1336,9 +2080,40 @@ def social_agent_recommendations():
             recommendations.append({"id": "send_chat", "label": "Post in social chat", "reason": "Makes the profile visible in the social graph."})
         if progress["successful_referrals"] == 0:
             recommendations.append({"id": "share_referral", "label": "Share referral link", "reason": "Starts referral relay progress."})
-        return jsonify({"success": True, "user_id": user_id, "recommendations": recommendations, "mutates": False}), 200
+        matches = _friend_match_hints(social, user_id, limit=5)
+        coach_flag = str(request.args.get("coach", "")).strip().lower() in ("1", "true", "yes")
+        force_refresh = str(request.args.get("refresh", "")).strip().lower() in ("1", "true", "yes")
+        earn_coach = {
+            "tips": _static_earn_coach_tips(progress, crypto_status),
+            "source": "static",
+        }
+        if coach_flag:
+            summary, source = _llm_earn_coach_summary(
+                progress, crypto_status, user_id, force_refresh=force_refresh
+            )
+            if summary:
+                earn_coach["summary"] = summary
+                earn_coach["source"] = source
+                cached = _EARN_COACH_CACHE.get(user_id) or {}
+                if cached.get("reward"):
+                    earn_coach["reward"] = cached["reward"]
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "recommendations": recommendations,
+            "matches": matches,
+            "earn_coach": earn_coach,
+            "mutates": False,
+        }), 200
     except Exception as e:
-        return jsonify({"success": False, "error": str(e), "recommendations": [], "mutates": False}), 500
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "recommendations": [],
+            "matches": [],
+            "earn_coach": {"tips": [], "source": "static"},
+            "mutates": False,
+        }), 500
 
 
 @social_bp.route("/api/social/schema", methods=["GET"])
@@ -1472,6 +2247,92 @@ def social_referrals():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@social_bp.route("/api/social/referrals/promo", methods=["POST"])
+def social_referrals_promo():
+    """POST { user_id? } — generate referral promo copy via referral_content task_kind."""
+    try:
+        from urllib.parse import quote
+
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_uid()).strip()
+        social = _load_social()
+        referrals = social.setdefault("referrals", {"codes": {}, "signups": []})
+        code = _referral_code_for_user(user_id)
+        referrals.setdefault("codes", {})[code] = user_id
+        _save_social(social)
+        link = f"https://masternoder.dk/game?ref={code}#social"
+        networks_data = _load_social_networks_data()
+        default_text = networks_data.get("default_share_text") or "MasterNoder — AI video + Hunters Game"
+
+        promo_text = None
+        reward = None
+        try:
+            from backend.services.agent_ai_router import routed_chat
+
+            resp, routing = routed_chat(
+                [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Write short referral promo copy for MasterNoder (AI video + Hunters Game). "
+                            "Include the referral link. Max 280 characters. Friendly, no markdown."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": json.dumps(
+                            {
+                                "referral_code": code,
+                                "referral_link": link,
+                                "hint": default_text,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    },
+                ],
+                "referral_content",
+                user_id,
+                max_tokens=150,
+                temperature=0.7,
+            )
+            if resp.success and (resp.content or "").strip():
+                promo_text = (resp.content or "").strip()[:500]
+                reward = routing.get("crypto_reward")
+        except Exception:
+            pass
+
+        if not promo_text:
+            promo_text = f"{default_text} Join me: {link} (code {code})"
+
+        share_links = []
+        text_enc = quote(promo_text)
+        url_enc = quote(link)
+        hashtags_enc = quote(networks_data.get("default_share_hashtags") or "MasterNoder,HuntersGame")
+        for net in networks_data.get("networks") or []:
+            href = str(net.get("share_url") or "#")
+            href = href.replace("{text}", text_enc).replace("{url}", url_enc).replace("{hashtags}", hashtags_enc)
+            share_links.append({
+                "id": net.get("id"),
+                "name": net.get("name"),
+                "icon": net.get("icon"),
+                "color": net.get("color"),
+                "url": href,
+            })
+
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "referral_code": code,
+            "referral_link": link,
+            "promo_text": promo_text,
+            "share_links": share_links,
+            "reward": reward,
+            "mutates": False,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "mutates": False}), 500
+
+
 @social_bp.route("/api/social/referrals/register", methods=["POST"])
 def social_referrals_register():
     """POST { user_id, referral_code } — connect a signup to a referrer."""
@@ -1571,11 +2432,14 @@ def social_chat_messages():
 
 @social_bp.route("/api/social/chat/send", methods=["POST"])
 def social_chat_send():
-    """POST { user_id, message } — send a message to the social room and mirror it into chat history."""
+    """POST { user_id, message, ai_reply? } — social room chat; optional AI assist via routed_chat."""
     try:
         data = request.get_json(silent=True) or {}
         user_id = (data.get("user_id") or _resolve_uid()).strip()
         message = (data.get("message") or "").strip()
+        ai_reply = str(data.get("ai_reply", "")).strip().lower() in ("1", "true", "yes") or data.get(
+            "ai_reply"
+        ) is True
         if not message:
             return jsonify({"success": False, "error": "message required"}), 400
         message = message[:1000]
@@ -1601,7 +2465,60 @@ def social_chat_send():
             save_message("social_room", message, identity["display_name"], is_ai=False)
         except Exception:
             pass
-        return jsonify({"success": True, "message": msg}), 200
+
+        out = {"success": True, "message": msg}
+        if ai_reply:
+            try:
+                from backend.services.agent_ai_router import routed_chat
+
+                history = list(social.get("chat_messages", []))[-6:]
+                context = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are the MasterNoder social room copilot. Be friendly, concise, "
+                            "and helpful in under 80 words."
+                        ),
+                    },
+                ]
+                for row in history:
+                    context.append({"role": "user", "content": row.get("message", "")})
+                resp, routing = routed_chat(
+                    context,
+                    "support_copilot",
+                    user_id,
+                    max_tokens=200,
+                    temperature=0.7,
+                )
+                if resp.success and (resp.content or "").strip():
+                    ai_text = (resp.content or "").strip()[:1000]
+                    ai_msg = {
+                        "id": "msg_" + str(uuid.uuid4())[:8],
+                        "user_id": "ai_copilot",
+                        "display_name": "Social Copilot",
+                        "message": ai_text,
+                        "created_at": _utc_now_iso(),
+                        "room": "social",
+                        "is_ai": True,
+                    }
+                    social = _load_social()
+                    social.setdefault("chat_messages", []).append(ai_msg)
+                    social["chat_messages"] = social["chat_messages"][
+                        -int(social.get("max_chat_messages", 500) or 500):
+                    ]
+                    _save_social(social)
+                    try:
+                        from backend.routes.chat_routes import save_message
+
+                        save_message("social_room", ai_text, "Social Copilot", is_ai=True)
+                    except Exception:
+                        pass
+                    out["ai_reply"] = ai_msg
+                    if routing.get("crypto_reward"):
+                        out["reward"] = routing["crypto_reward"]
+            except Exception:
+                pass
+        return jsonify(out), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

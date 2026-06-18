@@ -3,6 +3,7 @@ Agent AI Intelligence Routes
 API endpoints for agent AI intelligence capabilities
 """
 from flask import Blueprint, jsonify, request
+from datetime import datetime
 from backend.services.agent_ai_intelligence import agent_ai_intelligence
 
 agent_ai_intelligence_bp = Blueprint('agent_ai_intelligence', __name__)
@@ -67,6 +68,24 @@ def llm_insight():
             context=context,
             task_type=task_type,
         )
+        reward = None
+        uid = str(data.get("user_id") or "").strip()
+        if result.get("success") and uid and uid not in ("default_user", "anonymous"):
+            try:
+                from backend.services.agent_crypto_rewards_service import award_agent_action
+
+                ref = f"insight:{agent_id}:{hash(topic) & 0xFFFFFFFF:08x}:{datetime.now().strftime('%Y-%m-%d')}"
+                reward = award_agent_action(
+                    uid,
+                    "llm_insight",
+                    reference=ref,
+                    metadata={"agent_id": agent_id, "topic": topic},
+                    success=True,
+                )
+            except Exception:
+                pass
+        if reward is not None:
+            result = {**result, "reward": reward}
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
