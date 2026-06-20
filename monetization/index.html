@@ -204,6 +204,55 @@
             transform: translateY(-3px);
             box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
         }
+
+        .mon-hub-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin-bottom: 24px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            background: var(--bg-card);
+            border-radius: 14px;
+            border: 1px solid var(--border-glow);
+        }
+        .mon-hub-nav::-webkit-scrollbar { height: 6px; }
+        .mon-hub-nav::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.35);
+            border-radius: 999px;
+        }
+        .mon-hub-tab {
+            flex-shrink: 0;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.08);
+            color: #b8ffd9;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .mon-hub-tab:hover, .mon-hub-tab.active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #fff;
+        }
+        .mon-route-note {
+            margin-bottom: 20px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.28);
+            background: rgba(0, 212, 255, 0.08);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.9rem;
+        }
+        .mon-tab-panel[hidden] { display: none !important; }
+
+        .mon-page-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
     </style>
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614a">
     <link rel="stylesheet" href="/static/css/image-support.css">
@@ -217,12 +266,21 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
 <body>
+    <div class="mon-page-wrap">
     <div class="header">
         <h1>💰 Monetization & Income Streams</h1>
         <p>Top 25 Income Streams — PayPal, credits, and MN2 payment rails</p>
     </div>
 
-    <section class="mn2-page-strip" aria-labelledby="monetization-mn2-title" style="margin-bottom: 32px;">
+    <nav class="mon-hub-nav" id="mon-hub-nav" aria-label="Monetization sections" role="tablist">
+        <button type="button" class="mon-hub-tab active" data-mon-tab="mn2" role="tab" aria-selected="true">🪙 MN2 rails</button>
+        <button type="button" class="mon-hub-tab" data-mon-tab="recap" role="tab" aria-selected="false">📊 Recap</button>
+        <button type="button" class="mon-hub-tab" data-mon-tab="streams" role="tab" aria-selected="false">💎 Top 25 streams</button>
+        <button type="button" class="mon-hub-tab" data-mon-tab="intelligence" role="tab" aria-selected="false">🧠 Intelligence</button>
+    </nav>
+    <div id="mon-route-note" class="mon-route-note">Viewing: MN2 rails. Switch tabs above to browse other sections.</div>
+
+    <section class="mn2-page-strip mon-tab-panel" data-mon-tab="mn2" aria-labelledby="monetization-mn2-title" style="margin-bottom: 32px;">
         <h2 id="monetization-mn2-title">🪙 MN2 payment rails</h2>
         <p>Monetization catalog supports PayPal packs, unified credits, and MN2 (in-wallet + on-chain checkout via Shop). Your balance and live rails load below.</p>
         <div class="mn2-page-metrics">
@@ -238,7 +296,7 @@
         </div>
     </section>
 
-    <div class="recap-section">
+    <div class="recap-section mon-tab-panel" data-mon-tab="recap">
         <h2 style="margin-bottom: 20px; color: var(--primary);">📊 Monetization Recap</h2>
         <div class="recap-grid" id="recap-grid">
             <div class="recap-card">
@@ -264,7 +322,7 @@
         </div>
     </div>
 
-    <div>
+    <div class="mon-tab-panel" data-mon-tab="streams">
         <h2 style="margin-bottom: 20px; color: var(--primary);">💎 Top 25 Income Streams</h2>
         <div class="streams-grid" id="streams-grid">
             <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
@@ -272,6 +330,19 @@
             </div>
         </div>
     </div>
+
+    <section id="intelligence-section" class="intelligence-section mon-tab-panel" data-mon-tab="intelligence" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
 
     <script>
         const BASE_URL = window.location.origin;
@@ -417,6 +488,49 @@
             loadRecap();
             loadTop25();
         }, 60000);
+
+        (function initMonetizationTabs() {
+            var TAB_LABELS = {
+                mn2: 'MN2 rails',
+                recap: 'Recap',
+                streams: 'Top 25 streams',
+                intelligence: 'Intelligence'
+            };
+            var nav = document.getElementById('mon-hub-nav');
+            var note = document.getElementById('mon-route-note');
+            var panels = Array.prototype.slice.call(document.querySelectorAll('.mon-tab-panel[data-mon-tab]'));
+            if (!nav || !panels.length) return;
+
+            function applyMonTab(tabId) {
+                panels.forEach(function (el) {
+                    el.hidden = el.getAttribute('data-mon-tab') !== tabId;
+                });
+                nav.querySelectorAll('.mon-hub-tab').forEach(function (btn) {
+                    var on = btn.getAttribute('data-mon-tab') === tabId;
+                    btn.classList.toggle('active', on);
+                    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                if (note) {
+                    note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other sections.';
+                }
+                try {
+                    var url = new URL(window.location.href);
+                    if (tabId === 'mn2') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', tabId);
+                    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                } catch (e) { /* ignore */ }
+            }
+
+            nav.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-mon-tab]');
+                if (!btn || !nav.contains(btn)) return;
+                applyMonTab(btn.getAttribute('data-mon-tab'));
+            });
+
+            var requested = new URLSearchParams(window.location.search).get('tab');
+            var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, requested);
+            applyMonTab(valid ? requested : 'mn2');
+        })();
     </script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -483,19 +597,7 @@
             }
         })();
     </script>
-
-    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
-        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
-        <div id="intelligence-content">
-            <div class="intelligence-subtabs">
-                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
-                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
-                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
-            </div>
-            <div id="intelligence-panels"></div>
-            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
-        </div>
-    </section>
+    </div>
 
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
