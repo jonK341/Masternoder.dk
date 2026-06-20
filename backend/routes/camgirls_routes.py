@@ -130,6 +130,51 @@ def ops_payout_addresses():
     return jsonify(result), code
 
 
+@camgirls_bp.route("/api/camgirls/studio/catalog", methods=["GET"])
+def camgirls_studio_catalog():
+    try:
+        from backend.services.camgirls_studio_service import studio_catalog
+        return jsonify(studio_catalog()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/gift", methods=["POST"])
+def performer_gift(performer_id: str):
+    from backend.services.camgirls_studio_service import tip_with_gift
+    uid = _resolve_user_id()
+    body = request.get_json(silent=True) or {}
+    gift_id = body.get("gift_id") or body.get("gift")
+    amount = body.get("amount_mn2") or body.get("amount")
+    result = tip_with_gift(
+        uid,
+        performer_id,
+        gift_id=str(gift_id) if gift_id else None,
+        amount_mn2=float(amount) if amount is not None else None,
+    )
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    if result.get("error") == "insufficient_mn2":
+        return jsonify(result), 402
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/dance", methods=["POST"])
+def performer_dance(performer_id: str):
+    from backend.services.camgirls_studio_service import request_dance
+    uid = _resolve_user_id()
+    body = request.get_json(silent=True) or {}
+    dance_id = body.get("dance_id") or body.get("dance") or ""
+    result = request_dance(uid, performer_id, str(dance_id))
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    if result.get("code") == "unlock_required":
+        return jsonify(result), 403
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
 @camgirls_bp.route("/api/camgirls/chat", methods=["POST"])
 def camgirls_chat():
     from backend.services.camgirls_service import chat_with_performer
@@ -153,9 +198,16 @@ def camgirls_agents_roster():
     try:
         from backend.services.camgirls_agents_service import list_agent_models
         agents = list_agent_models()
+        if not isinstance(agents, list):
+            agents = []
         return jsonify({"success": True, "agents": agents, "count": len(agents)}), 200
     except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({
+            "success": True,
+            "agents": [],
+            "count": 0,
+            "warning": str(exc),
+        }), 200
 
 
 @camgirls_bp.route("/api/camgirls/agent-tools", methods=["GET"])
