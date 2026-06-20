@@ -209,6 +209,17 @@ def on_bet(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     "pool_after": cur["pool"], "reason": "reseed", "at": _iso(),
                 })
                 award = {"currency": currency, "amount": amount, "reseed": reseed, "pool": cur["pool"]}
+                try:
+                    from backend.services.casino_social_service import on_jackpot_win
+                    on_jackpot_win(
+                        user_id=row.get("user_id") or "",
+                        currency=currency,
+                        amount=amount,
+                        reason=reason,
+                        bet_id=row.get("bet_id"),
+                    )
+                except Exception:
+                    pass
 
         _save_state(state)
         return award

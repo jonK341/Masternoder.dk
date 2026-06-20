@@ -2,20 +2,72 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "game-battle_win-b1d15310",
+      "title": "Battle win (+10 pts)",
+      "summary": "balanced rps_pvp victory",
+      "date": "2026-06-17",
+      "category": "game",
+      "channel": "game",
+      "href": "/battle/",
+      "featured": false
+    },
+    {
+      "id": "game-battle_win-7fdd0547",
+      "title": "Battle win (+10 pts)",
+      "summary": "balanced skirmish victory",
+      "date": "2026-06-17",
+      "category": "game",
+      "channel": "game",
+      "href": "/battle/",
+      "featured": false
+    },
+    {
+      "id": "game-battle_streak-d6d84366",
+      "title": "Win streak 13",
+      "summary": "Win streak 13",
+      "date": "2026-06-17",
+      "category": "game",
+      "channel": "game",
+      "href": "/battle/",
+      "featured": false
+    },
+    {
+      "id": "game-battle_win-d6d84366",
+      "title": "Battle win (+10 pts)",
+      "summary": "balanced rps victory",
+      "date": "2026-06-17",
+      "category": "game",
+      "channel": "game",
+      "href": "/battle/",
+      "featured": false
+    },
+    {
+      "id": "game-battle_tournament_join-tour_alpha",
+      "title": "Joined Alpha Clash Cup",
+      "summary": "Joined Alpha Clash Cup",
+      "date": "2026-06-17",
+      "category": "game",
+      "channel": "game",
+      "href": "/battle/",
+      "featured": false
+    },
+    {
       "id": "news-casino-real-money",
       "title": "Casino now supports MN2 and PayPal USD",
       "summary": "Stake with virtual coins, MN2 wallet balance, or PayPal-funded USD play balance. Deposit USD via PayPal, then switch currency in the casino.",
       "date": "2026-05-19",
-      "category": "launch",
+      "category": "casino",
+      "channel": "casino",
       "href": "/casino/",
       "featured": true
     },
     {
       "id": "news-casino-slots",
       "title": "New slot machines in the casino",
-      "summary": "Classic Reels and Diamond Rush slots are live — spin for multi-symbol payouts on coins, MN2, or USD.",
+      "summary": "Classic Reels and Diamond Rush slots are live \u2014 spin for multi-symbol payouts on coins, MN2, or USD.",
       "date": "2026-05-19",
-      "category": "feature",
+      "category": "casino",
+      "channel": "casino",
       "href": "/casino/",
       "featured": true
     },
@@ -53,6 +105,56 @@
       "date": "2026-03-01",
       "category": "game",
       "href": "/hunters-game/",
+      "featured": false
+    },
+    {
+      "id": "news-lab-v21-hub",
+      "title": "Lab V2.1 Hub \u2014 news, systems audit, idea board",
+      "summary": "The Lab hub now has dedicated tabs for platform news, full systems recheck, idea boards, AI copilot, and crypto/trophy/shop rewards. Chapter V adds 25 new research upgrades.",
+      "date": "2026-06-16",
+      "category": "lab",
+      "channel": "lab",
+      "href": "/lab/?tab=news",
+      "featured": true
+    },
+    {
+      "id": "news-lab-chapter5",
+      "title": "Chapter V research rail live",
+      "summary": "25 new upgrades unlock AI routing, MN2 micro-rewards, trophy forge bridge, shop beacon, and sovereign core capstone after Chapter IV.",
+      "date": "2026-06-16",
+      "category": "lab",
+      "channel": "lab",
+      "href": "/lab/?tab=chapter",
+      "featured": true
+    },
+    {
+      "id": "news-lab-agents-ai",
+      "title": "Agents + AI in the Lab",
+      "summary": "Named agent owners on every tool, AI copilot recommendations from V2 status, and LLM co-tech sandbox for draft refinement.",
+      "date": "2026-06-16",
+      "category": "lab",
+      "channel": "lab",
+      "href": "/lab/?tab=ai",
+      "featured": true
+    },
+    {
+      "id": "news-lab-crypto-rewards",
+      "title": "Lab crypto rewards & trophy bridge",
+      "summary": "New lab trophies with MN2 bonuses, shop SKUs for research grants and booster packs, and display-only crypto reward telemetry in the rewards tab.",
+      "date": "2026-06-16",
+      "category": "lab",
+      "channel": "lab",
+      "href": "/lab/?tab=rewards",
+      "featured": true
+    },
+    {
+      "id": "news-lab-systems-check",
+      "title": "Recheck all Lab functions",
+      "summary": "Run systems audit from the Lab to verify every hub API \u2014 progression, overview, idea board, news, trophies, MN2 balance, and shop items.",
+      "date": "2026-06-16",
+      "category": "lab",
+      "channel": "lab",
+      "href": "/lab/?tab=systems",
       "featured": false
     }
   ]
