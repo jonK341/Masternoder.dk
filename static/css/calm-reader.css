@@ -1,0 +1,346 @@
+/**
+ * Calm Reader — steady, accessible reading shell for compendium & rulebooks.
+ */
+:root {
+    --cr-bg: #0c0f14;
+    --cr-bg-soft: #121820;
+    --cr-text: #e8ecf1;
+    --cr-text-muted: #9aa8b8;
+    --cr-accent: #c9b896;
+    --cr-accent-soft: rgba(201, 184, 150, 0.15);
+    --cr-border: rgba(201, 184, 150, 0.18);
+    --cr-read-width: 42rem;
+    --cr-line: 1.78;
+    --cr-font: "Georgia", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --cr-ui-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body.calm-reading-active {
+    background: var(--cr-bg) !important;
+    color: var(--cr-text);
+}
+
+body.calm-reading-active #navigation-toolbar {
+    opacity: 0.72;
+    transition: opacity 0.4s ease;
+}
+
+body.calm-reading-active #navigation-toolbar:hover {
+    opacity: 1;
+}
+
+body.calm-reading-focus #navigation-toolbar,
+body.calm-reading-focus .hypnotic-point-counters,
+body.calm-reading-focus .agent-skill-sets-panel {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+body.calm-reading-focus .cr-launcher,
+body.calm-reading-focus .cr-chrome {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.calm-reader-page .comp-main,
+.calm-reader-page main.comp-main,
+.calm-reader-page .comp-main {
+    max-width: var(--cr-read-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 0.5rem;
+    padding-bottom: 5rem;
+}
+
+body.calm-reading-active .comp-main,
+body.calm-reading-active main.comp-main {
+    font-family: var(--cr-font);
+    font-size: 1.08rem;
+    line-height: var(--cr-line);
+    letter-spacing: 0.01em;
+}
+
+body.calm-reading-active .comp-main h1,
+body.calm-reading-active .comp-main h2,
+body.calm-reading-active .comp-main h3,
+body.calm-reading-active #rulebook-title {
+    font-family: var(--cr-ui-font);
+    color: var(--cr-accent);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+body.calm-reading-active .wiki-block,
+body.calm-reading-active .rule-block {
+    background: var(--cr-bg-soft);
+    border-color: var(--cr-border);
+    box-shadow: none;
+}
+
+body.calm-reading-active .wiki-desc,
+body.calm-reading-active .rule-block p,
+body.calm-reading-active .comp-desc {
+    color: var(--cr-text);
+    opacity: 0.92;
+}
+
+/* Reading chrome */
+.cr-chrome {
+    font-family: var(--cr-ui-font);
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    background: linear-gradient(180deg, rgba(12, 15, 20, 0.97) 0%, rgba(12, 15, 20, 0.85) 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--cr-border);
+}
+
+.cr-chrome-inner {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.cr-progress-wrap {
+    flex: 1 1 140px;
+    min-width: 120px;
+}
+
+.cr-progress-label {
+    font-size: 0.75rem;
+    color: var(--cr-text-muted);
+    margin-bottom: 4px;
+}
+
+.cr-progress-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.cr-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cr-accent), #8fa89a);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+}
+
+.cr-chrome-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.cr-btn {
+    appearance: none;
+    border: 1px solid var(--cr-border);
+    background: var(--cr-accent-soft);
+    color: var(--cr-accent);
+    font-size: 0.82rem;
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.2;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.cr-btn:hover,
+.cr-btn:focus-visible {
+    background: rgba(201, 184, 150, 0.28);
+    border-color: var(--cr-accent);
+    outline: none;
+}
+
+.cr-btn--ghost {
+    background: transparent;
+    color: var(--cr-text-muted);
+}
+
+.cr-btn--primary {
+    background: rgba(201, 184, 150, 0.22);
+    color: var(--cr-text);
+}
+
+/* Steady footer navigation */
+.cr-footer-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 880;
+    background: linear-gradient(0deg, rgba(12, 15, 20, 0.98) 0%, rgba(12, 15, 20, 0.88) 100%);
+    border-top: 1px solid var(--cr-border);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    font-family: var(--cr-ui-font);
+}
+
+.cr-footer-inner {
+    max-width: 56rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cr-footer-meta {
+    flex: 1;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--cr-text-muted);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cr-footer-meta strong {
+    color: var(--cr-accent);
+    font-weight: 600;
+}
+
+/* Continue card on index */
+.cr-continue-card {
+    background: var(--cr-bg-soft);
+    border: 1px solid var(--cr-border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+    font-family: var(--cr-ui-font);
+}
+
+.cr-continue-card h2 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    color: var(--cr-accent);
+    font-weight: 600;
+}
+
+.cr-continue-card p {
+    margin: 0 0 14px;
+    color: var(--cr-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.cr-continue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Global launcher (all pages) */
+.cr-launcher {
+    position: fixed;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: 16px;
+    z-index: 8500;
+    font-family: var(--cr-ui-font);
+    max-width: min(320px, calc(100vw - 32px));
+}
+
+.cr-launcher-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--cr-border);
+    background: rgba(12, 15, 20, 0.94);
+    backdrop-filter: blur(10px);
+    color: var(--cr-text);
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cr-launcher-btn:hover,
+.cr-launcher-btn:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--cr-accent);
+    outline: none;
+}
+
+.cr-launcher-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.cr-launcher-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.cr-launcher-title {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--cr-accent);
+}
+
+.cr-launcher-sub {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--cr-text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cr-launcher-menu {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--cr-border);
+    background: rgba(12, 15, 20, 0.96);
+    backdrop-filter: blur(10px);
+    display: none;
+}
+
+.cr-launcher-menu.open {
+    display: block;
+}
+
+.cr-launcher-menu a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--cr-text);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.cr-launcher-menu a:hover,
+.cr-launcher-menu a:focus-visible {
+    background: var(--cr-accent-soft);
+    outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cr-progress-fill,
+    .cr-launcher-btn,
+    body.calm-reading-active #navigation-toolbar {
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .cr-footer-inner {
+        flex-wrap: wrap;
+    }
+    .cr-footer-meta {
+        order: -1;
+        flex: 1 1 100%;
+    }
+}

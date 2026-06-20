@@ -1,8 +1,8 @@
 {
   "name": "MasterNoder Rulebook Index",
   "version": "V15",
-  "description": "Complete rulebook catalog V1–V15. All rules needed for galaxy-oriented intelligence, Hunters game, unified points, and platform systems.",
-  "updated_at": "2026-04-23",
+  "description": "Complete rulebook catalog V1–V16. All rules needed for galaxy-oriented intelligence, Hunters game, unified points, sync, and platform systems.",
+  "updated_at": "2026-06-17",
   "agent_schema": {
     "agent_prompt": "Instruction text injected into agent system prompts. Undergoing knowledge.",
     "tech_spec": "Technical specs, APIs, endpoints. For agent tool use.",

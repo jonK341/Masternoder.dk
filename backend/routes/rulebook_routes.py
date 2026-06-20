@@ -1,6 +1,7 @@
 """
-Rulebook V1–V15 API. Serves rulebook index, individual rulebooks, and agent context.
+Rulebook V1–V16 API. Serves rulebook index, individual rulebooks, and agent context.
 Agent context: aggregated agent_prompt, tech_spec, user_guide, manual for prompting agents.
+See docs/RULEBOOK_READERS.md for UI readers and compendium progress.
 """
 import os
 import json
@@ -35,7 +36,7 @@ def _load_rulebook_data(rb):
 
 @rulebook_bp.route("/api/rulebooks/index", methods=["GET"])
 def get_rulebook_index():
-    """Return master rulebook index V1–V15."""
+    """Return master rulebook index (catalog V1–V16)."""
     data = _load_json("rulebook_index_v15.json")
     if data:
         return jsonify({"success": True, "index": data}), 200
@@ -44,7 +45,7 @@ def get_rulebook_index():
 
 @rulebook_bp.route("/api/rulebooks/<version>", methods=["GET"])
 def get_rulebook(version):
-    """Return specific rulebook by version (v1, v2, v4, v5, ... v15)."""
+    """Return specific rulebook by version (v1, v2, v3.2, v4, ... v16)."""
     v = (version or "").lower().strip()
     if not v.startswith("v"):
         v = "v" + v
@@ -66,7 +67,7 @@ def get_rulebook(version):
 @rulebook_bp.route("/api/rulebooks/agent-context", methods=["GET"])
 def get_agent_context():
     """
-    Return agent-ready context from V15 rulebooks.
+    Return agent-ready context from rulebooks (V1–V16 catalog in rulebook_index_v15.json).
     Query params:
       versions: comma-separated (e.g. v1,v4,v7) or "all" for all
       format: "prompt" (plain text for system prompt) or "json" (default)

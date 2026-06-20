@@ -36,6 +36,12 @@ This document is the **short canon** for rules that also surface in the Battle p
 - **Rulebook data:** Shop rulebook **V9** (`data/rulebook_v9_shop.json`) includes **`cross_rulebook_routing.lab_research`** and a **`lab_handbook`** rule row pointing here and to `/lab`.
 - **Game bridge:** Where implemented, `battle-bridge-snapshot` / HUD helpers may surface **lab tier** and counts so progression stays visible outside the Lab page.
 
+## Sync (V16)
+
+- **Rulebook data:** `data/rulebook_v16_sync.json` — unified sync device, `record_domain_sync`, `GET /api/sync/status`.
+- **Reader:** `/compendium/rulebook-v16` · compendium page **25** awards points on view.
+- **Agents:** include V16 in `GET /api/rulebooks/agent-context` when implementing writes or dashboard sync widgets.
+
 ## Changes
 
-- Update this file when you change cross-cutting rules; keep the Battle **Rulebooks** tab in sync with one or two sentences pointing here, to **§ Lab** / **`docs/LAB.md`**, and to Compendium for detail.
+- Update this file when you change cross-cutting rules; keep the Battle **Rulebooks** tab in sync with one or two sentences pointing here, to **§ Lab** / **`docs/LAB.md`**, to **§ Sync (V16)**, and to Compendium for detail.

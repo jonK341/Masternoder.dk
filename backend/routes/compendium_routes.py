@@ -77,7 +77,7 @@ def record_view():
 
 @compendium_bp.route("/api/compendium/pages", methods=["GET"])
 def list_pages():
-    """Return unified compendium: Comm Psych, Hunters, Rulebooks V1–V15."""
+    """Return unified compendium: Comm Psych, Hunters, Rulebooks V1–V16."""
     part_i = [
         {"number": 1, "title": "Magtdynamikker 1-3", "url": "/compendium/page-1.html", "section": "I"},
         {"number": 2, "title": "Magt + Social 4-6", "url": "/compendium/page-2.html", "section": "I"},
@@ -112,11 +112,14 @@ def list_pages():
     pages = part_i + part_ii + part_iii
     return jsonify({
         "success": True,
-        "name": "Compendium V1–V15",
+        "name": "Compendium V1–V16",
         "pages": pages,
+        "extras": [
+            {"title": "V3.2 Systemic Protocols", "url": "/compendium/rulebook-v3-2.html", "section": "III", "note": "Browse-only; no compendium page number"},
+        ],
         "sections": [
             {"id": "I", "name": "Communication Psychology (25 teorier)", "pages": part_i},
             {"id": "II", "name": "Trophy Hunters Rulebook (19 spells)", "pages": part_ii},
-            {"id": "III", "name": "Rulebooks V1–V15", "pages": part_iii},
+            {"id": "III", "name": "Rulebooks V1–V16", "pages": part_iii},
         ],
     }), 200
