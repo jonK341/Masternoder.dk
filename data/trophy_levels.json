@@ -1,0 +1,30 @@
+{
+  "version": "1.1.0",
+  "updated": "2026-06-07",
+  "note": "Trophy Collector levels. Level is derived from rarity-weighted trophy score (common=1, rare=3, epic=8, legendary=20). daily_income = trophy_points/day; daily_income_mn2 = MN2 crypto/day (in-app balance). Both accrue up to max_accrual_hours and are collected together.",
+  "max_accrual_hours": 72,
+  "crypto_currency": "MN2",
+  "unlock_mn2_by_rarity": {
+    "common": 0.0001,
+    "rare": 0.0005,
+    "epic": 0.002,
+    "legendary": 0.01
+  },
+  "levels": [
+    {"level": 1, "name": "Novice Collector", "icon": "🥉", "min_score": 0, "daily_income": 5, "daily_income_mn2": 0.0001, "unlock_bonus_pct": 0},
+    {"level": 2, "name": "Bronze Hunter", "icon": "🪙", "min_score": 10, "daily_income": 12, "daily_income_mn2": 0.0002, "unlock_bonus_pct": 2},
+    {"level": 3, "name": "Silver Seeker", "icon": "🥈", "min_score": 25, "daily_income": 25, "daily_income_mn2": 0.0004, "unlock_bonus_pct": 3},
+    {"level": 4, "name": "Gold Gatherer", "icon": "🥇", "min_score": 50, "daily_income": 45, "daily_income_mn2": 0.0007, "unlock_bonus_pct": 5},
+    {"level": 5, "name": "Platinum Patron", "icon": "💠", "min_score": 100, "daily_income": 75, "daily_income_mn2": 0.001, "unlock_bonus_pct": 7},
+    {"level": 6, "name": "Diamond Dealer", "icon": "💎", "min_score": 175, "daily_income": 110, "daily_income_mn2": 0.0015, "unlock_bonus_pct": 9},
+    {"level": 7, "name": "Crystal Curator", "icon": "🔮", "min_score": 275, "daily_income": 160, "daily_income_mn2": 0.0025, "unlock_bonus_pct": 11},
+    {"level": 8, "name": "Mythic Maven", "icon": "✨", "min_score": 400, "daily_income": 225, "daily_income_mn2": 0.004, "unlock_bonus_pct": 13},
+    {"level": 9, "name": "Legend Keeper", "icon": "👑", "min_score": 550, "daily_income": 310, "daily_income_mn2": 0.006, "unlock_bonus_pct": 15},
+    {"level": 10, "name": "Trophy Tycoon", "icon": "🏛️", "min_score": 750, "daily_income": 420, "daily_income_mn2": 0.01, "unlock_bonus_pct": 18},
+    {"level": 11, "name": "Vault Master", "icon": "🏦", "min_score": 1000, "daily_income": 560, "daily_income_mn2": 0.015, "unlock_bonus_pct": 20},
+    {"level": 12, "name": "Empire Builder", "icon": "🌐", "min_score": 1400, "daily_income": 720, "daily_income_mn2": 0.022, "unlock_bonus_pct": 22},
+    {"level": 13, "name": "Dynasty Lord", "icon": "⚜️", "min_score": 1900, "daily_income": 900, "daily_income_mn2": 0.03, "unlock_bonus_pct": 25},
+    {"level": 14, "name": "Immortal Archivist", "icon": "🌟", "min_score": 2600, "daily_income": 1150, "daily_income_mn2": 0.04, "unlock_bonus_pct": 28},
+    {"level": 15, "name": "Collector Emperor", "icon": "🏆", "min_score": 3500, "daily_income": 1500, "daily_income_mn2": 0.055, "unlock_bonus_pct": 30}
+  ]
+}
