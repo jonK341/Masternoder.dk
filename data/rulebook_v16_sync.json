@@ -2,7 +2,7 @@
   "name": "Sync Mechanisms",
   "version": "V16",
   "description": "Unified sync device, domain sync, status API, and dashboard integration. All systems that write data call record_domain_sync for consistent status across dashboards.",
-  "updated_at": "2026-02-25",
+  "updated_at": "2026-06-17",
   "image_url": "/vidgenerator/static/img/rulebook-v7-unified-points.png",
   "image_alt": "Sync Mechanisms V16",
   "agent_prompt": "Sync device: unified_points_sync_device. Use record_domain_sync(domain) when your system writes data. Domains: unified_points, users, profiles, aggregator, trophies, achievements, battle, shop, quests, leaderboards, analytics, compendium, generator, gallery, stats, social, agent_skillsets, agent_knowledge, game, paypal, login, onboarding, communication_psychology, dna, game_save, agent_activity, referral, notifications, auto_save, templates. State in DB (sync_state, sync_domain_state); audit in sync_audit; health in sync_health.",

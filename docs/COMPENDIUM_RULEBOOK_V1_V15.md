@@ -1,7 +1,9 @@
 # MasterNoder Compendium — Rulebook V1–V15
 
-**Full rulebook collection.** Complete rules for galaxy-oriented intelligence, Hunters game, unified points, and platform systems.  
-Index version: **V15** · Last updated: 2026-04-20
+**Full rulebook collection.** Complete rules for galaxy-oriented intelligence, Hunters game, unified points, sync mechanisms, and platform systems.  
+Index version: **V15** (catalog includes **V16**) · Last updated: 2026-06-17
+
+**Readers & progress:** [RULEBOOK_READERS.md](./RULEBOOK_READERS.md)
 
 ---
 
@@ -16,8 +18,8 @@ Rulebooks and Communication Psychology pages are served at **`/compendium/...`**
 | V3 (25 theories) | `/compendium/page-1.html` … `/compendium/page-10.html` |
 | V3.2 | `/compendium/rulebook-v3-2` |
 | V4–V14 | `/compendium/rulebook-v4` … `/compendium/rulebook-v14` |
-| V15 Master index | `/compendium/` |
-| V16 Sync | `/compendium/rulebook-v16` |
+| V15 Master index | `/compendium/` (compendium page **24**) |
+| V16 Sync | `/compendium/rulebook-v16` (compendium page **25**) |
 
 **API (unchanged):** `GET /api/rulebooks/index` returns each entry’s `url_path` aligned with the table above.
 
@@ -499,6 +501,33 @@ dna_manipulation_points, dna_cloning_points
 | 13 | V13 | Geo & Session | Geo-ref, checkpoint og session length. |
 | 14 | V14 | Analytics & Dashboard | Tracking og analytics. |
 | 15 | V15 | Master Index | Overblik over alle rulebooks V1–V15. |
+| 16 | V16 | Sync Mechanisms | Unified sync device, domain sync, status API. |
+
+---
+
+# V16 — Sync Mechanisms
+
+**Name:** Sync Mechanisms  
+**Version:** V16  
+**Description:** Unified sync device, domain sync, status API, and dashboard integration.
+
+**Agent prompt:** Sync device: unified_points_sync_device. Use record_domain_sync(domain) when your system writes data.
+
+**Tech spec:** GET /api/sync/status · POST /api/sync/now · unified_points_sync_device.record_domain_sync(domain, count?, extra?)
+
+**User guide:** Sync status vises på dashboards (unified, profile, stats). Points, users, profiles, rulebooks, agents og knowledge er synkroniseret.
+
+**Manual:** Agent manual V16: When implementing a new feature that writes data, add record_domain_sync(domain) after successful write.
+
+### Rules
+| ID | Name | Text |
+|----|------|------|
+| sync_device | Unified Points Sync Device | unified_points_sync_device in backend/services/unified_points_sync.py |
+| domain_sync | Domain Sync | Call record_domain_sync after successful write |
+| sync_status_api | Sync Status API | GET /api/sync/status returns domains, rulebooks, agent_skillsets |
+| dashboard_widget | Dashboard Widget | sync-status-widget.js on unified_dashboard, profile, stats |
+
+**Data file:** `data/rulebook_v16_sync.json` · **Reader:** `/compendium/rulebook-v16` · **Compendium page:** 25
 
 ---
 
@@ -522,7 +551,8 @@ dna_manipulation_points, dna_cloning_points
 | V13 | data/rulebook_v13_geo_session.json |
 | V14 | data/rulebook_v14_analytics.json |
 | V15 | data/rulebook_index_v15.json |
+| V16 | data/rulebook_v16_sync.json |
 
 ---
 
-*End of Compendium — Rulebook V1–V15*
+*End of Compendium — Rulebook V1–V16*

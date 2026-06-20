@@ -271,19 +271,24 @@ LAB_TOOL_REGISTRY = [
     {"id": "research_logbook", "name": "Profile Logbook", "agent": "profile_agent", "status": "live", "cooldown": "read-only"},
     {"id": "point_results", "name": "Unified Point Results", "agent": "points_agent", "status": "live", "cooldown": "read-only"},
     {"id": "monitor_4d", "name": "4D Research Monitor", "agent": "monitor_agent", "status": "live", "cooldown": "sound is user-triggered"},
+    {"id": "idea_board", "name": "Idea Board", "agent": "idea_board_agent", "status": "live", "cooldown": "pin 30m spacing"},
+    {"id": "systems_check", "name": "Systems Audit", "agent": "systems_agent", "status": "live", "cooldown": "on-demand"},
+    {"id": "lab_news", "name": "Lab News Feed", "agent": "news_agent", "status": "live", "cooldown": "read-only"},
+    {"id": "ai_copilot", "name": "AI Copilot", "agent": "copilot_agent", "status": "live", "cooldown": "read-only recommendations"},
+    {"id": "crypto_rewards", "name": "Crypto Rewards Bridge", "agent": "mn2_lab_agent", "status": "live", "cooldown": "display-only"},
 ]
 
 LAB_TODO_TEMPLATE = [
+    "Read Lab V2.1 status and next milestone.",
+    "Scan lab news for platform updates.",
+    "Run systems check and fix any failing endpoints.",
+    "Pin one idea to the idea board.",
     "Check recommended next research node.",
     "Review active research project cooldown.",
     "Run exploration pulse when ready.",
     "Run deep scan when ready.",
-    "Read latest round table messages.",
     "Invite one agent to refine a co-tech draft.",
-    "Accept or archive stale co-tech suggestions.",
-    "Compare unified point deltas in lab results.",
-    "Open profile logbook and confirm progress.",
-    "Add one concrete next experiment to the table.",
+    "Browse lab shop SKUs and trophy rewards.",
 ]
 
 
@@ -341,6 +346,8 @@ def _lab_v2_milestones(summary: dict, prof: dict) -> list:
     techs = len(_lab_technologies_list_from_profile(prof))
     roundtable = len(_lab_roundtable_from_profile(prof))
     score = researched * 2 + explorations * 4 + deep_scans * 7 + projects * 5 + techs * 5 + roundtable
+    systems_ok = 1 if prof.get("lab_last_systems_check_ok_at") else 0
+    chapter5 = sum(1 for uid in (prof.get("lab_chapter2_research") or []) if isinstance(uid, str) and uid.startswith("c5_"))
     milestones = [
         {"id": "first_research", "name": "Research first lab node", "progress": min(researched, 1), "target": 1},
         {"id": "first_pulse", "name": "Run first exploration pulse", "progress": min(explorations, 1), "target": 1},
@@ -350,6 +357,9 @@ def _lab_v2_milestones(summary: dict, prof: dict) -> list:
         {"id": "first_roundtable", "name": "Post first roundtable message", "progress": min(roundtable, 1), "target": 1},
         {"id": "ten_nodes", "name": "Research ten lab nodes", "progress": min(researched, 10), "target": 10},
         {"id": "strategist_tier", "name": "Reach Strategist tier", "progress": min(score, 55), "target": 55},
+        {"id": "chapter5_first", "name": "Research first Chapter V node", "progress": min(chapter5, 1), "target": 1},
+        {"id": "systems_check", "name": "Run systems audit (all green)", "progress": systems_ok, "target": 1},
+        {"id": "architect_tier", "name": "Reach Architect tier", "progress": min(score, 90), "target": 90},
     ]
     for item in milestones:
         item["complete"] = int(item["progress"]) >= int(item["target"])
@@ -1044,7 +1054,7 @@ def lab_v2_status_get():
     )
     return jsonify({
         "success": True,
-        "version": "2.0-first-slice",
+        "version": "2.1-hub-upgrade",
         "user_id": user_id,
         "rulebook": {
             "id": "lab_v2",
@@ -1081,9 +1091,12 @@ def lab_v2_status_get():
                 "/api/lab/progression",
                 "/api/lab/overview",
                 "/api/lab/research-log",
+                "/api/lab/systems-check",
+                "/api/lab/idea-board",
+                "/api/lab/news",
                 "/api/rulebooks/agent-knowledge",
             ],
-            "bridges": ["star_map", "unified_points", "agents", "shop", "sync"],
+            "bridges": ["star_map", "unified_points", "agents", "shop", "sync", "trophies", "mn2_crypto"],
         },
     }), 200
 
@@ -1479,3 +1492,168 @@ def lab_technologies_status_post(tech_id: str):
     if not _hp_write(user_id, prof):
         return jsonify({"success": False, "error": "could not save profile"}), 500
     return jsonify({"success": True, "user_id": user_id, "technology": item, "storage": "db"}), 200
+
+
+MAX_LAB_IDEA_BOARD = 48
+LAB_IDEA_ID_RE = re.compile(r"^lib_[a-f0-9]{8,24}$")
+LAB_IDEA_PIN_COOLDOWN_SEC = 30 * 60
+
+
+def _lab_idea_board_from_profile(prof: dict) -> list:
+    raw = prof.get("lab_idea_board")
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for row in raw:
+        if isinstance(row, dict) and isinstance(row.get("id"), str):
+            out.append(row)
+    return out
+
+
+def _idea_pin_cooldown_remaining_sec(prof: dict) -> int:
+    until = prof.get("lab_next_idea_pin_at")
+    if not until:
+        return 0
+    dt = _parse_iso_utc(until)
+    if not dt:
+        return 0
+    return _seconds_remaining_until(dt)
+
+
+def _load_platform_news_lab(limit: int = 12) -> list:
+    data = _load_data_json("platform_news.json")
+    if not isinstance(data, dict):
+        return []
+    items = data.get("items") or []
+    lab_items = []
+    for row in items:
+        if not isinstance(row, dict):
+            continue
+        ch = (row.get("channel") or row.get("category") or "").lower()
+        if ch == "lab" or "lab" in (row.get("id") or "").lower():
+            lab_items.append(row)
+    lab_items.sort(key=lambda x: x.get("date") or "", reverse=True)
+    return lab_items[:limit] if limit > 0 else lab_items
+
+
+@lab_bp.route("/api/lab/news", methods=["GET"])
+def lab_news_get():
+    """Lab-channel news plus featured platform items tagged for the hub."""
+    limit = request.args.get("limit", 12, type=int)
+    items = _load_platform_news_lab(limit)
+    return jsonify({"success": True, "news": items, "count": len(items), "channel": "lab"}), 200
+
+
+@lab_bp.route("/api/lab/systems-check", methods=["GET"])
+def lab_systems_check_get():
+    """Recheck all lab hub API functions (in-process line checks)."""
+    from flask import current_app
+    from backend.services.lab_systems_checks import run_lab_systems_checks
+
+    user_id = _resolve_uid()
+    report = run_lab_systems_checks(current_app, user_id)
+    hp = _hp_read(user_id)
+    prof = dict(hp.get("profile") or {})
+    if report.get("all_ok"):
+        prof["lab_last_systems_check_ok_at"] = datetime.now(timezone.utc).isoformat()
+        if hp.get("db"):
+            _hp_write(user_id, prof)
+    return jsonify({"success": True, "user_id": user_id, **report}), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["GET"])
+def lab_idea_board_get():
+    """Pinned lab ideas for the hub idea board."""
+    user_id = _resolve_uid()
+    hp = _hp_read(user_id)
+    prof = hp.get("profile") or {}
+    ideas = _lab_idea_board_from_profile(prof) if hp.get("db") else []
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "ideas": ideas[-MAX_LAB_IDEA_BOARD:],
+        "pin_cooldown_remaining_sec": _idea_pin_cooldown_remaining_sec(prof) if hp.get("db") else 0,
+        "storage": "db" if hp.get("db") else "none",
+    }), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["POST"])
+def lab_idea_board_post():
+    """Pin a new idea to the lab idea board (30m spacing)."""
+    user_id = _resolve_uid()
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip()[:120]
+    body_text = (body.get("body") or body.get("pitch") or "").strip()[:2000]
+    track = (body.get("track") or "general").strip().lower()[:40]
+    if len(title) < 2 or len(body_text) < 4:
+        return jsonify({"success": False, "error": "title (2+) and body (4+) required"}), 400
+
+    hp = _hp_read(user_id)
+    if not hp.get("db"):
+        return jsonify({"success": False, "error": "database not available"}), 503
+
+    prof = dict(hp.get("profile") or {})
+    cd = _idea_pin_cooldown_remaining_sec(prof)
+    if cd > 0:
+        return jsonify({
+            "success": False,
+            "error": "pin_cooldown",
+            "pin_cooldown_remaining_sec": cd,
+        }), 429
+
+    ideas = _lab_idea_board_from_profile(prof)
+    now = datetime.now(timezone.utc)
+    item = {
+        "id": "lib_" + uuid.uuid4().hex[:12],
+        "title": title,
+        "body": body_text,
+        "track": track or "general",
+        "status": "pinned",
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat(),
+    }
+    ideas.append(item)
+    prof["lab_idea_board"] = ideas[-MAX_LAB_IDEA_BOARD:]
+    prof["lab_idea_board_updated_at"] = item["updated_at"]
+    prof["lab_next_idea_pin_at"] = (now + timedelta(seconds=LAB_IDEA_PIN_COOLDOWN_SEC)).isoformat()
+    if not _hp_write(user_id, prof):
+        return jsonify({"success": False, "error": "could not save profile"}), 500
+    return jsonify({"success": True, "user_id": user_id, "idea": item, "storage": "db"}), 200
+
+
+@lab_bp.route("/api/lab/idea-board/<idea_id>/status", methods=["POST"])
+def lab_idea_board_status_post(idea_id: str):
+    """Archive or promote an idea on the board."""
+    user_id = _resolve_uid()
+    iid = (idea_id or "").strip().lower()
+    if not LAB_IDEA_ID_RE.match(iid):
+        return jsonify({"success": False, "error": "invalid idea id"}), 400
+    body = request.get_json(silent=True) or {}
+    status = (body.get("status") or "").strip().lower()
+    allowed = {"pinned", "in_progress", "shipped", "archived"}
+    if status not in allowed:
+        return jsonify({"success": False, "error": "invalid status", "allowed": sorted(allowed)}), 400
+
+    hp = _hp_read(user_id)
+    if not hp.get("db"):
+        return jsonify({"success": False, "error": "database not available"}), 503
+
+    prof = dict(hp.get("profile") or {})
+    ideas = _lab_idea_board_from_profile(prof)
+    found = None
+    for i, row in enumerate(ideas):
+        if isinstance(row, dict) and row.get("id") == iid:
+            found = i
+            break
+    if found is None:
+        return jsonify({"success": False, "error": "idea not found"}), 404
+
+    item = dict(ideas[found])
+    item["status"] = status
+    item["updated_at"] = datetime.now(timezone.utc).isoformat()
+    ideas[found] = item
+    prof["lab_idea_board"] = ideas
+    prof["lab_idea_board_updated_at"] = item["updated_at"]
+    if not _hp_write(user_id, prof):
+        return jsonify({"success": False, "error": "could not save profile"}), 500
+    return jsonify({"success": True, "user_id": user_id, "idea": item, "storage": "db"}), 200

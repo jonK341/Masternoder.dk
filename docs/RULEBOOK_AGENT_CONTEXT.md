@@ -1,10 +1,12 @@
-# Rulebook V15 — Agent Context API
+# Rulebook V1–V16 — Agent Context API
 
-**Purpose:** Camouflage V15 rulebooks as undergoing knowledge, tech, user guides, and manuals. Feed to agents via prompts.
+**Purpose:** Serve rulebook knowledge (V1–V16) as agent prompts, tech specs, user guides, and manuals. Feed to agents via prompts.
+
+**Readers:** See [RULEBOOK_READERS.md](./RULEBOOK_READERS.md) for UI surfaces and progress APIs.
 
 ## Schema
 
-Each rulebook (V1–V15) includes:
+Each rulebook (V1–V16) includes:
 
 | Field | Purpose |
 |-------|---------|
@@ -50,8 +52,8 @@ GET /vidgenerator/api/rulebooks/agent-context?sections=agent_prompt,manual
 
 ## Data files
 
-- `data/rulebook_index_v15.json` — master index + agent_schema
-- `data/rulebook_v1_core.json` … `rulebook_v14_analytics.json`
+- `data/rulebook_index_v15.json` — master index (V1–V16 catalog) + agent_schema
+- `data/rulebook_v1_core.json` … `rulebook_v16_sync.json`
 - `data/hunters_rulebook_v2.json`
 - `data/communication_psychology_theories.json` (V3)
 - `docs/LAB.md` — **Lab companion** (not a numbered V1–V15 volume): `/api/lab/*`, profile keys, `lab_progression_catalog.json`, cooldowns; use with `rulebook_v9_shop.json` **`cross_rulebook_routing.lab_research`** when agents explain shop ↔ lab identity.
