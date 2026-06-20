@@ -115,10 +115,9 @@ One host now runs **masternoder2d + MongoDB + Node/iquidus + Flask**. Watch:
 - [x] Explorer install + `settings.json` + Mongo + PM2 + nginx/TLS. Initial full sync running.
 - [ ] Verify `/address/<addr>`, `/tx/<txid>`, rich list once the initial index finishes (`/ext/getmoneysupply` already live).
 
-**Phase E2 — Flask cutover (links)**
-- [ ] Add `explorer_kind` / local/fallback URLs to `mn2_config.json`.
-- [ ] Branch URL builders in `mn2_routes.py`; centralize into one helper. Tests for both shapes.
-- [ ] Flip `explorer_base_url` → self-hosted; Chainz becomes fallback.
+**Phase E2 — Flask cutover (links)** — **reverted 2026-06-14**
+- On-site tx/address/block links use **Chainz** (`explorer_kind: chainz`). Self-hosted eiquidus at camgirls.masternoder.dk remains a **standalone** install (see checklist); not linked from Masternoder.dk.
+- Optional: set `explorer_use_local_stats: true` + `explorer_kind: iquidus` in `mn2_config.json` to read block height/supply from localhost eiquidus for tiles only (links still follow `explorer_base_url`).
 
 **Phase E3 — Local-first stats + overview page**
 - [ ] iquidus tier in `network_overview()` (cached, `source`-tagged, RPC/Chainz fallback). *(added once iquidus is live; RPC→Chainz tiers exist today)*
@@ -191,4 +190,4 @@ Stood up a real block explorer from source at **https://camgirls.masternoder.dk/
 - **Sync:** initial `node scripts/sync.js index update` runs in the background (nohup, resumable). Cron `/etc/cron.d/eiquidus` drives ongoing `index update` (1 min, lock-guarded), `peers` (5 min), `masternodes` (10 min). Full historical index completes over a few hours; `/ext/getmoneysupply` + homepage already serve.
 - **Resourcing:** host is 1.9 GB RAM; added a 2 GB swapfile (`/swapfile2`, total ~4.3 GB) before installing the DB stack. Single PM2 worker + `block_parallel_tasks` defaults keep memory in check alongside `masternoder2d` + Mongo + Flask/uwsgi.
 
-**Next: Phase E2** — flip the on-site tx/address links from Chainz `.dws` to the self-hosted `/tx/…`,`/address/…` shape via `explorer_kind`, and optionally add an iquidus stats tier in `network_overview()`. Hold the final `explorer_base_url` flip until the initial index has fully populated address pages.
+**Next:** Verify E1 address/tx pages once the initial eiquidus index finishes; optional SSE (#9) and multi-source price (#6) remain deferred.

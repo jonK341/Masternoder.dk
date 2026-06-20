@@ -1,81 +1,88 @@
 # MN2 Ecosystem Report
 
-Audit and status for the Masternoder.dk MN2 crypto stack (Stage 0 baseline).
+Audit and status for the Masternoder.dk MN2 crypto stack (Master Build Orchestrator Stages 0–4).
 
 **Date:** 2026-06-14  
 **Repo:** Masternoder.dk Flask app
 
 ## Executive summary
 
-The platform has a working custodial MN2 wallet layer, staking, P2P marketplace (disabled by default), generator MN2 pay/earn, casino MN2/USD rails, activity SSE, and agent control board. This report documents the end-to-end money path and Stage 0 gate status.
+The platform has a working custodial MN2 wallet layer (multi-address), internal P2P MN2↔coins market, staking, generator MN2 pay/earn, casino MN2/USD rails, activity SSE, agent treasury, debugger Q&A rewards, customer aggregator, Discord funnel, and security cron with backup/anomaly sweep.
+
+## Stage gates
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| A — Foundations | Pass | `test_gate_a_orchestrator.py`, battle tests |
+| B — Economy core | Pass | `test_gate_b_orchestrator.py`, ledger + activity log |
+| S — Hardening | Pass | Atomic writes, earn auth, admin audit, backup cron |
+| C — Feature layers | Pass | Market, generator/casino/game crypto, quiz, news/Discord |
+| D — Full pytest | Pass | 50 MN2 ecosystem unit tests (`test_mn2_health`, gate A/B/S, p2p, quiz, generator, security cron, agents, customers, Discord, explorer) |
 
 ## Deposit path
 
-1. User receives deposit address via `mn2_wallet_service` / `mn2_routes`
-2. `mn2_deposit_scanner.run_scanner()` reads daemon RPC, credits via `unified_points_database.add_points(..., 'mn2_balance')`
+1. User receives deposit address via `mn2_wallet_service` (multi-address: `/api/mn2/wallet/addresses`, `/refresh`, `/connect`)
+2. `mn2_deposit_scanner.run_scanner()` credits users; treasury deposits logged as `@agent_treasury`
 3. `mn2_ledger.append_entry(..., type=deposit, txid=...)`
-4. Idempotency: `mn2_ledger.is_txid_processed(txid)`
-
-**Status:** Implemented. Scanner log: `logs/mn2_deposit_scanner.jsonl`
+4. Idempotency: `mn2_ledger.is_txid_processed(txid)` + `unified_points_db` reference keys
 
 ## Withdraw path
 
-1. User requests withdraw via `/api/mn2/withdraw`
-2. Risk checks: `mn2_withdrawal_security` (whitelist, TOTP)
-3. Two-phase commit: `mn2_balance_commit` reserve → daemon broadcast → finalize/abort
-4. Ledger entry type `withdrawal`
+Two-phase commit with risk gates (`mn2_withdrawal_security`). Daily caps in `data/mn2_config.json`.
 
-**Status:** Implemented with risk gates. Daily caps in `data/mn2_config.json`.
+## Internal P2P market (MN2 ↔ coins)
 
-## Staking
-
-- Service: `mn2_staking_service.py` — custodial pool + browser rig uptime weighting
-- Routes: `mn2_staking_routes.py`
-- Docs: `docs/MN2_STAKING_PLAN.md`
-- M7 advisor: `ai_staking_advisor_service.py` (informational only)
-
-**Status:** Implemented. Real yield requires daemon PoS online.
-
-## Unified balance read path
-
-- Canonical read: `unified_points_database.get_all_points(user_id)` merges file + DB with `max()` per scalar
-- File store: `logs/unified_points/<user_id>.json`
-
-**Status:** Implemented. **Gate S:** atomic writes + per-user lock + idempotency on money point types added.
-
-## Ledger reconcile
-
-- Append-only: `data/mn2_ledger.json`
-- Conservation check: `mn2_conservation_gate.conservation_gate()`
-
-**Status:** Implemented. Reconciliation cron via `security_cron_routes`.
+- Service: `p2p_market_service.py` — sell escrow, fill, ticker
+- Routes: `/api/market/orders`, `/api/market/fill`, `/api/market/ticker`, `/api/market/cancel`
+- Activity events: `p2p_market_order`, `p2p_market_fill`
+- Tests: `tests/unit/test_p2p_market.py`
 
 ## Generator MN2
 
-- Pay: `generator_mn2_service.py` debits before encode, refunds on failure
-- Earn: finish bonus credits `mn2_balance` + ledger
-
-**Status:** Implemented. Tests: `tests/unit/test_generator_mn2.py`
+- Pay/earn: `generator_mn2_service.py` with earn auth gate + activity emits
+- Pricing: `generator_pricing_service.py` (COGS advisory) + `generator_mn2_service.quote_generation`
 
 ## Casino MN2 rail
 
-- `casino_service.py` supports `mn2_balance`, `coins`, `casino_fiat_balance`
-- PayPal USD on-ramp via `mn2_onramp_routes` / `paypal_routes`
+- `casino_service.py` — MN2 bets emit `casino_mn2_bet` activity events
+- Responsible gaming + geo/KYC hooks via `casino_responsible_gaming`
 
-**Status:** Confirmed — MN2 rail active for casino play.
+## Debugger Q&A rewards
 
-## Stage 0 Gate A checklist
+- `POST /api/debugger/quiz/submit` — server-side score, MN2 via `game_mn2_rewards`
+- `TAB_POINTS['quiz']` in `debugger_agent_tasks_routes.py`
 
-| Check | Endpoint / test | Status |
-|-------|-----------------|--------|
-| Basic health | `GET /api/health` | Pass |
-| MN2 health | `GET /api/mn2/health` | Added |
-| Themes user | `GET /api/themes/user` | Pass |
-| Battle URLs | `tests/unit/test_02_battle.py` | Pass |
-| Unified points | Gate S atomic `add_points` | Pass |
-| Casino MN2 | `casino_service` currency rails | Pass |
+## Agent treasury
 
-## Critical / upgrades (see MN2_TODO.md)
+- Ops-gated `GET /api/agents/treasury/address` (address only with `X-Ops-Secret`)
+- `POST /api/agents/treasury/distribute` — 100k MN2 per trader agent
+- Admin audit: `logs/admin_audit.jsonl`
 
-- **Critical:** Gate S concurrency tests under load; treasury cold-wallet policy for 600k agent funding
-- **Upgrades:** Discord M8 streams 51–60 full rollout; customer avatar backfill cron; Health Ops Hub tile for MN2 health
+## Security cron
+
+- `POST /api/security/cron/sweep` — conservation, backup, deposit rescan, anomaly flags
+- `POST /api/security/cron/backup` — `backups/mn2/<timestamp>/`
+- Crons: `cron/backup_balances.sh`, `cron/discord_activity_funnel.sh`, `cron/security_sweep.sh`
+
+## Activity monitor
+
+- Shared log: `logs/activity_events.jsonl`
+- SSE: `GET /api/activity/stream`
+- Discord funnel: `POST /api/discord/activity-funnel`
+
+## Customer aggregator
+
+- Service: `customer_aggregator_service.py` — unified directory across casino/generator/game/market
+- Routes: `GET /api/customers` (ops-gated)
+- Page: `customers/index.html`
+- Tests: `tests/unit/test_customer_aggregator.py`
+
+## Agents control board
+
+- Routes: `agent_admin_routes.py`, `point_control_board_routes.py`
+- Pages: `dashboard/agents_control/index.html`, `dashboard/point_control_board.html`
+- Treasury distribute: idempotent top-up via `agent_wallet_service.distribute_agent_funding()`
+
+## Remaining ops items
+
+See `docs/MN2_TODO.md` — treasury cold-wallet policy, M8 streams 51–60, news HTML resync.

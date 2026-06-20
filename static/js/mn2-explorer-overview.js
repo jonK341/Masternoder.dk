@@ -174,6 +174,23 @@
       .catch(function () { q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
   }
 
+  function startExplorerStream() {
+    if (typeof EventSource === 'undefined') return false;
+    try {
+      var es = new EventSource('/api/mn2/explorer/stream?interval=30');
+      es.onmessage = function (ev) {
+        try {
+          var msg = JSON.parse(ev.data || '{}');
+          if (msg.type === 'overview' && msg.data) render(msg.data);
+        } catch (e) { /* ignore */ }
+      };
+      es.onerror = function () { es.close(); };
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function ageStr(unixTs) {
     if (!unixTs) return '—';
     var s = Math.max(0, Math.floor(Date.now() / 1000 - Number(unixTs)));
@@ -340,12 +357,31 @@
         var el = q('mon-alerts');
         if (!el) return;
         var alerts = (d && d.success && d.alerts) ? d.alerts : [];
-        if (!alerts.length) { el.innerHTML = ''; return; }
-        el.innerHTML = alerts.map(function (a) {
-          var bad = a.type === 'staking_stopped';
-          var when = a.ts ? new Date(a.ts).toLocaleString() : '';
-          return '<div class="mon-alert' + (bad ? ' bad' : '') + '">⚠️ ' + (a.message || a.type) + (when ? ' <span style="opacity:0.6">(' + when + ')</span>' : '') + '</div>';
-        }).join('');
+        return fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
+          .then(function (r2) { return r2.json(); })
+          .then(function (ov) {
+            var stakingOn = ov && ov.staking_health && ov.staking_health.staking_active === true;
+            if (stakingOn) {
+              alerts = alerts.filter(function (a) { return a.type !== 'staking_stopped'; });
+              if (!alerts.some(function (a) { return a.type === 'staking_resumed'; })) {
+                alerts.unshift({
+                  type: 'staking_resumed',
+                  message: 'MN2 daemon staking is active. Realized yield accrual is running.',
+                  ts: new Date().toISOString()
+                });
+              }
+            }
+            if (!alerts.length) { el.innerHTML = ''; return; }
+            el.innerHTML = alerts.slice(0, 3).map(function (a) {
+              var bad = a.type === 'staking_stopped';
+              var good = a.type === 'staking_resumed';
+              var when = a.ts ? new Date(a.ts).toLocaleString() : '';
+              var cls = good ? ' good' : (bad ? ' bad' : '');
+              var icon = good ? '✓' : '⚠️';
+              return '<div class="mon-alert' + cls + '">' + icon + ' ' + (a.message || a.type) +
+                (when ? ' <span style="opacity:0.6">(' + when + ')</span>' : '') + '</div>';
+            }).join('');
+          });
       })
       .catch(function () {});
   }
@@ -367,7 +403,9 @@
   loadBlocks();
   loadMasternodes();
   loadMonitor();
-  setInterval(refresh, 30000);
+  if (!startExplorerStream()) {
+    setInterval(refresh, 30000);
+  }
   setInterval(loadSparklines, 300000);
   setInterval(loadBlocks, 30000);
   setInterval(loadMasternodes, 60000);

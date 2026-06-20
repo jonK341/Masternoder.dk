@@ -1,0 +1,15 @@
+{
+  "enabled": false,
+  "fail_threshold": 3,
+  "failback_stable_minutes": 30,
+  "allow_auto_failback": false,
+  "block_height_tolerance": 2,
+  "standby": {
+    "label": "standby",
+    "url": "",
+    "comment": "Set url here or MN2_RPC_STANDBY_URL in .env. Leave empty until a second node is provisioned."
+  },
+  "primary": {
+    "label": "primary"
+  }
+}

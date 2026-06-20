@@ -99,5 +99,39 @@
   "agent": {
     "automation_enabled": true
   },
+  "trader_agents": {
+    "enabled": true,
+    "target_stake_mn2": 25000,
+    "stake_variance_mn2": 10000,
+    "min_target_stake_mn2": 1000,
+    "keep_balance_min_mn2": 5000,
+    "max_stake_per_user_override": 50000,
+    "max_staked_multiplier": 1.15,
+    "rebalance_step_max_mn2": 0,
+    "auto_compound": true,
+    "heartbeat": true,
+    "default_follow_scale": 0.25,
+    "default_max_mn2_per_step": 25,
+    "market": {
+      "enabled": true,
+      "sell_mn2_per_order": 50,
+      "fill_mn2_per_trade": 25,
+      "min_free_mn2": 100,
+      "coin_float_target": 10000,
+      "max_open_sells_per_agent": 2,
+      "reference_price_coins_per_mn2": 100,
+      "price_spread_bps": 50
+    }
+  },
+  "teams": {
+    "enabled": true,
+    "max_members": 8,
+    "max_teams_per_user": 1,
+    "min_member_staked_mn2": 0.1,
+    "max_team_multiplier": 1.15,
+    "per_member_bonus": 0.02,
+    "longevity_pool_factor": 0.05,
+    "longevity_pool_days_divisor": 90.0
+  },
   "disclaimer": "Staking moves your in-app MN2 into the staking pool to earn rewards from realized network staking yield. The browser staking rig uses your device's processor only as a participation signal that boosts your reward share - it does NOT validate MN2 blocks or mine MN2. Rewards are variable, estimated, and not guaranteed, and depend on actual pool yield. Not financial advice. See full terms and risk disclosure."
 }

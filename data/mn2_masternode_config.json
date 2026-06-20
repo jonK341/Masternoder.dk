@@ -1,0 +1,42 @@
+{
+  "enabled": true,
+  "collateral_mn2": 10000,
+  "max_hosted_nodes": 50,
+  "service_label": "MN2 Masternode Hosting",
+  "service_description": "Platform-hosted MasterNoder2 masternodes on shared infrastructure — one chain copy, 10,000 MN2 collateral per node, 50% of block rewards to the masternode tier.",
+  "hosting_fee_percent": 0,
+  "min_hosting_term_days": 30,
+  "public_notes": "Pay $4.99 with PayPal — your slot is reserved instantly and the platform provisions your masternode automatically (10,000 MN2 collateral lock + broadcast).",
+  "auto_provision": true,
+  "paypal": {
+    "enabled": true,
+    "price_usd_per_slot": 4.99,
+    "currency": "USD",
+    "billing_label": "MN2 Masternode Hosting (30 days)",
+    "quote_ttl_seconds": 900,
+    "max_slots_per_order": 5,
+    "return_path": "/explorer?tab=masternodes"
+  },
+  "shop_payments": {
+    "enabled": true,
+    "payment_rails": ["paypal", "mn2", "credits", "mn2_onchain"],
+    "price_coins_per_slot": null,
+    "comment": "null = derive from USD + coins_per_mn2 + live MN2/USD; override with fixed coin price per slot"
+  },
+  "paypal_monthly": {
+    "enabled": true,
+    "price_usd_monthly": 4.99,
+    "label": "MN2 Masternode hosting — monthly",
+    "plan_note": "Use PayPal subscription plan P-PLACEHOLDER-MN-HOST from monetization_config when live.",
+    "subscription_plan_key": "P-PLACEHOLDER-MN-HOST"
+  },
+  "ops": {
+    "datadir": "/var/www/html/config",
+    "masternode_port": 9333,
+    "min_collateral_confirmations": 10,
+    "daemon_unit": "masternoder2d",
+    "estimated_chain_gb": 4,
+    "estimated_mongo_gb": 6,
+    "disk_budget_gb": 60
+  }
+}

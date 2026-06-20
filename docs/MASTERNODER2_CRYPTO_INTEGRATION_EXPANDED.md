@@ -1,6 +1,6 @@
 # MasterNoder2 crypto integration — expanded plan, perspectives & synthesis
 
-This document expands [MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md](MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md) with: (1) block explorer integration, (2) concrete solutions, (3) multiple perspectives, (4) **monetization**, (5) **profiling**, (6) **prerequisites and completion checklist** (Phase 1 first), and (7) a synthesis and decision summary.
+This document expands [MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md](archive/plans/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md) with: (1) block explorer integration, (2) concrete solutions, (3) multiple perspectives, (4) **monetization**, (5) **profiling**, (6) **prerequisites and completion checklist** (Phase 1 first), and (7) a synthesis and decision summary.
 
 **Contents:** 1 [Block explorer](#1-block-explorer-chainz-cryptoid-mn2) · 2 [Open points](#2-solutions-to-open-points-from-original-plan-11) · 3 [Risks](#3-solutions-for-risks-from-original-plan-12) · 4 [Perspectives](#4-perspectives-brainstorm) · 5 [Monetization](#5-monetization) · 6 [Profiling](#6-profiling-and-observability) · 7 [Chainz by phase](#7-integration-of-chainz-into-implementation-phases) · 8 [Prerequisites](#8-prerequisites-and-whats-needed-to-complete-integration) (§8.4 [Account vs MN2 binding](#84-account-identity-vs-mn2-address-binding)) · 9 [Synthesis](#9-synthesis-and-decisions) · 10 [References](#10-references)
 
@@ -278,7 +278,7 @@ With this expansion, the plan has: (1) a defined role for the existing [Chainz M
 
 ## 10. References
 
-- Original plan: [MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md](MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md)
+- Original plan (archived): [MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md](archive/plans/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md)
 - Shop and addresses: [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) (which address the shop uses; optional `shop_revenue_address`)
 - Ops: [MN2_OPS.md](MN2_OPS.md) (daemon, env, scanner, reconciliation)
 - Agent parity: [AGENTS_MN2.md](AGENTS_MN2.md) (MN2 API for automation and agents)
