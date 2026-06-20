@@ -110,3 +110,35 @@ def recent_outbox(limit: int = 20) -> List[Dict[str, Any]]:
                 except Exception:
                     pass
     return list(reversed(rows[-limit:]))
+
+
+def outbox_stats(limit: int = 50) -> Dict[str, Any]:
+    """Summary for ops/health tiles — recent Discord post success rate."""
+    rows = recent_outbox(limit)
+    if not rows:
+        return {
+            "status": "unknown",
+            "configured": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
+            "total_recent": 0,
+            "failures_recent": 0,
+            "last_post": None,
+        }
+    failures = sum(1 for r in rows if r.get("success") is False)
+    last = rows[0]
+    status = "healthy"
+    if failures and failures >= max(3, len(rows) // 2):
+        status = "degraded"
+    elif not os.environ.get("DISCORD_WEBHOOK_URL"):
+        status = "unconfigured"
+    return {
+        "status": status,
+        "configured": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
+        "total_recent": len(rows),
+        "failures_recent": failures,
+        "last_post": {
+            "ts": last.get("ts"),
+            "channel": last.get("channel"),
+            "success": last.get("success"),
+            "error": last.get("error"),
+        },
+    }

@@ -813,3 +813,58 @@ def casino_callback_win():
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/preferences", methods=["GET", "POST"])
+def casino_social_preferences():
+    """Opt-in win sharing + geo country for Discord highlights."""
+    try:
+        from backend.services import casino_social_service
+        if request.method == "GET":
+            user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+            return jsonify({"success": True, "preferences": casino_social_service.get_preferences(user_id)}), 200
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        cc = data.get("country_code")
+        if cc is None:
+            cc = request.headers.get("CF-IPCountry") or request.headers.get("X-Country-Code")
+        return jsonify(
+            casino_social_service.set_preferences(
+                user_id,
+                share_wins=data.get("share_wins") if "share_wins" in data else None,
+                country_code=cc,
+            )
+        ), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/discord/promo/redeem", methods=["POST"])
+def casino_discord_promo_redeem():
+    try:
+        from backend.services import casino_social_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        return jsonify(casino_social_service.redeem_discord_promo(user_id, data.get("code") or "")), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/news/platform", methods=["GET"])
+def casino_platform_news():
+    """Casino channel feed from platform_news.json."""
+    try:
+        from backend.routes.platform_news_routes import _load_news
+        limit = request.args.get("limit", 10, type=int)
+        featured_only = request.args.get("featured", "").lower() in ("1", "true", "yes")
+        items = [
+            i for i in _load_news()
+            if (i.get("channel") or i.get("category") or "").lower() == "casino"
+        ]
+        if featured_only:
+            items = [i for i in items if i.get("featured")]
+        if limit > 0:
+            items = items[:limit]
+        return jsonify({"success": True, "news": items, "count": len(items), "channel": "casino"}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "news": []}), 500

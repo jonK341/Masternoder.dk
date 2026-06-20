@@ -183,10 +183,16 @@
         refreshSocialBoard();
         safeRefresh('jackpotMeter', refreshJackpotMeter);
         safeRefresh('tournaments', refreshTournaments);
+        safeRefresh('rg', refreshRgStatus);
     }
 
     function showDoubleOffer(data) {
         try { maybeCelebrate(data); } catch (e) { /* celebration optional */ }
+        if (data && data.success && data.trophy_rebate && data.trophy_rebate.rebate > 0) {
+            var tr = data.trophy_rebate;
+            showToast('Trophy rebate +' + tr.rebate + ' ' + currencyLabel(tr.currency || data.currency) +
+                ' (' + Math.round((tr.rebate_pct || 0) * 100) + '% back on loss)');
+        }
         const bar = $('casino-double-bar');
         if (!bar) return;
         if (data && data.success && data.can_double && data.bet_id) {
@@ -301,6 +307,9 @@
         if (!data.success) {
             el.textContent = data.error || 'Play failed';
             el.classList.add('loss');
+            if (data.error && String(data.error).toLowerCase().indexOf('responsible gaming') >= 0) {
+                safeRefresh('rg', refreshRgStatus);
+            }
             return;
         }
         el.classList.add(data.outcome || 'draw');
@@ -870,8 +879,37 @@
         await refreshPersonalBests();
         await refreshHouseStats();
         await refreshSocialBoard();
+        safeRefresh('rg', refreshRgStatus);
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
+    }
+
+    async function refreshRgStatus() {
+        var el = $('casino-rg-banner');
+        if (!el) return;
+        var data = await api('/api/casino/responsible-gaming/status?currency=' + encodeURIComponent(activeCurrency));
+        if (!data || !data.success || !data.enabled) {
+            el.classList.add('hidden');
+            return;
+        }
+        if (data.cooldown_active) {
+            el.textContent = 'Responsible gaming pause active until ' + (data.cooldown_until || 'later') +
+                '. Take a break — limits scale with XP.';
+            el.style.cssText = 'padding:10px 14px;margin:8px 0;border-radius:8px;background:rgba(255,100,80,0.15);border-left:4px solid #ff6655;font-size:0.9em;';
+            el.classList.remove('hidden');
+            return;
+        }
+        if (data.session_cap != null && data.session_loss > 0) {
+            var pct = Math.min(100, Math.round((data.session_loss / data.session_cap) * 100));
+            if (pct >= 70) {
+                el.textContent = 'Session loss ' + formatNet(data.session_loss) + ' / ' + data.session_cap +
+                    ' ' + currencyLabel(data.currency) + ' (' + pct + '% of limit).';
+                el.style.cssText = 'padding:10px 14px;margin:8px 0;border-radius:8px;background:rgba(255,170,68,0.12);border-left:4px solid #ffaa44;font-size:0.9em;';
+                el.classList.remove('hidden');
+                return;
+            }
+        }
+        el.classList.add('hidden');
     }
 
     async function playCoinFlip() {
@@ -2298,7 +2336,29 @@
                 lines.push('<div class="casino-tourney-you">Switch to ' + currencyLabel(t.currency) + ' to join.</div>');
             }
         }
+        if (t.fairness && t.fairness.server_seed_hash) {
+            var fairLine = 'Fairness: ' + String(t.fairness.server_seed_hash).slice(0, 12) + '…';
+            if (t.fairness.server_seed) {
+                fairLine += ' (revealed — <button type="button" class="casino-tourney-verify" data-id="' + t.id + '">verify</button>)';
+            } else if (t.fairness.chain && !t.fairness.chain.genesis) {
+                fairLine += ' (chained cup)';
+            }
+            lines.push('<div class="casino-tourney-fairness" style="font-size:0.78em;opacity:0.75;margin-top:6px;">' + fairLine + '</div>');
+        }
         return '<div class="casino-tourney' + (t.status === 'ended' ? ' ended' : '') + '">' + lines.join('') + '</div>';
+    }
+
+    async function verifyTournamentFairness(id) {
+        var data = await api('/api/casino/tournaments/' + encodeURIComponent(id) + '/fairness/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+        });
+        if (data && data.success) {
+            showToast('Tournament fairness verified (hash + chain OK)');
+        } else {
+            alert((data && (data.error || (data.revealed === false ? 'Seed not revealed until cup ends' : 'Verification failed'))) || 'Verify failed');
+        }
     }
 
     function formatScore(currency, value) {
@@ -2325,6 +2385,9 @@
         el.querySelectorAll('.casino-tourney-join').forEach(function (b) {
             b.addEventListener('click', function () { joinTournament(b.getAttribute('data-id')); });
         });
+        el.querySelectorAll('.casino-tourney-verify').forEach(function (b) {
+            b.addEventListener('click', function () { verifyTournamentFairness(b.getAttribute('data-id')); });
+        });
     }
 
     async function joinTournament(id) {
@@ -2347,7 +2410,49 @@
         safeRefresh('balance', refreshBalance);
     }
 
+    function initCasinoGamesTabs() {
+        var nav = $('casino-games-nav');
+        var grid = $('casino-games-grid');
+        if (!nav || !grid) return;
+        var cards = Array.prototype.slice.call(grid.querySelectorAll('[data-casino-game]'));
+        if (!cards.length) return;
+
+        function showGame(gameId) {
+            cards.forEach(function (card) {
+                card.classList.toggle('casino-game-active', card.getAttribute('data-casino-game') === gameId);
+            });
+            nav.querySelectorAll('.casino-game-tab').forEach(function (tab) {
+                var on = tab.getAttribute('data-game') === gameId;
+                tab.classList.toggle('active', on);
+                tab.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            try {
+                var url = new URL(window.location.href);
+                if (gameId === cards[0].getAttribute('data-casino-game')) url.searchParams.delete('game');
+                else url.searchParams.set('game', gameId);
+                window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+            } catch (e) { /* ignore */ }
+        }
+
+        nav.innerHTML = cards.map(function (card, i) {
+            var id = card.getAttribute('data-casino-game');
+            var label = card.getAttribute('data-casino-label') || id;
+            return '<button type="button" class="casino-game-tab' + (i === 0 ? ' active' : '') + '" data-game="' + id + '" role="tab" aria-selected="' + (i === 0 ? 'true' : 'false') + '">' + label + '</button>';
+        }).join('');
+
+        nav.addEventListener('click', function (ev) {
+            var btn = ev.target.closest('[data-game]');
+            if (!btn) return;
+            showGame(btn.getAttribute('data-game'));
+        });
+
+        var requested = new URLSearchParams(window.location.search).get('game');
+        var valid = cards.some(function (c) { return c.getAttribute('data-casino-game') === requested; });
+        showGame(valid ? requested : cards[0].getAttribute('data-casino-game'));
+    }
+
     async function initCasino() {
+        initCasinoGamesTabs();
         bindClick('coin-flip-play', playCoinFlip);
         bindClick('dice-play', playDice);
         bindClick('rps-play', playRps);
@@ -2421,6 +2526,7 @@
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
         safeRefresh('tournaments', refreshTournaments);
+        safeRefresh('rg', refreshRgStatus);
         safeRefresh('fairness', refreshFairnessState);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }

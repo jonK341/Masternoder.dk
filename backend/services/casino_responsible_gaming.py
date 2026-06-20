@@ -152,3 +152,38 @@ def record_after_bet(user_id: str, net: float, currency: str) -> None:
         rec["cooldown_until"] = (now + timedelta(minutes=cooldown_m)).isoformat().replace("+00:00", "Z")
     sessions[key] = rec
     _save_sessions(sessions)
+
+
+def status_for_user(user_id: str, currency: Optional[str] = None) -> Dict[str, Any]:
+    """Public RG status for casino UI."""
+    cfg = _config()
+    tier = _tier_for_user(user_id)
+    cur = (currency or "coins").strip().lower()
+    sessions = _load_sessions()
+    rec = sessions.get(_session_key(user_id, cur)) or {}
+    cooldown_active = False
+    cooldown_until = rec.get("cooldown_until")
+    if cooldown_until:
+        try:
+            end = datetime.fromisoformat(str(cooldown_until).replace("Z", "+00:00"))
+            cooldown_active = datetime.now(timezone.utc) < end
+        except Exception:
+            pass
+    cap_key = {
+        "coins": "max_loss_coins",
+        "mn2": "max_loss_mn2",
+        "usd": "max_loss_usd",
+    }.get(cur, "max_loss_coins")
+    cap = tier.get(cap_key) if tier else None
+    loss = float(rec.get("session_loss") or 0)
+    return {
+        "success": True,
+        "enabled": bool(cfg.get("enabled", True)),
+        "currency": cur,
+        "tier": tier,
+        "session_loss": round(loss, 8),
+        "session_cap": cap,
+        "cooldown_active": cooldown_active,
+        "cooldown_until": cooldown_until if cooldown_active else None,
+        "started_at": rec.get("started_at"),
+    }

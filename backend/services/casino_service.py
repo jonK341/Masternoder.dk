@@ -539,6 +539,30 @@ def _finalize_bet(
         "double_step": double_step,
     }
     jackpot_award = _append_ledger(row)
+    if currency == "mn2":
+        try:
+            from backend.services.activity_events_service import emit
+            emit(
+                "casino_mn2_bet",
+                channel="casino",
+                user_id=user_id,
+                payload={"game": game, "bet": bet, "payout": payout, "net": net, "outcome": outcome, "bet_id": row["bet_id"]},
+            )
+        except Exception:
+            pass
+    if net > 0 and outcome in ("win", "jackpot", "payout"):
+        try:
+            from backend.services.casino_social_service import on_big_win
+            on_big_win(
+                user_id=user_id,
+                game=game,
+                currency=currency,
+                net=net,
+                payout=payout,
+                bet_id=row["bet_id"],
+            )
+        except Exception:
+            pass
     try:
         from backend.services.casino_responsible_gaming import record_after_bet
         record_after_bet(user_id, net, currency)

@@ -1,0 +1,129 @@
+{
+  "$schema": "masternoder.casino_agent_models.v1",
+  "description": "Specialized casino AI personas — strategy archetypes for autonomous leaderboard play.",
+  "models": {
+    "casino_kelly_agent": {
+      "name": "Kelly Optimizer",
+      "emoji": "📐",
+      "specialization": "bankroll_management",
+      "strategy": "kelly_flat",
+      "task_kind": "casino_bet_plan",
+      "llm_task_type": "reason",
+      "description": "Fractional-Kelly bet sizing with ROI tracking; favors dice and coin flip for predictable variance.",
+      "skills": [
+        "bankroll_mgmt",
+        "kelly_sizing",
+        "roi_tracking",
+        "play_dice",
+        "play_coin_flip",
+        "leaderboard_racing",
+        "variance_control"
+      ],
+      "preferred_games": ["dice", "coin_flip"],
+      "bet_fraction": 0.025,
+      "currency": "coins"
+    },
+    "casino_martingale_agent": {
+      "name": "Martingale Conservative",
+      "emoji": "🔄",
+      "specialization": "loss_recovery",
+      "strategy": "martingale_conservative",
+      "task_kind": "casino_recovery_plan",
+      "llm_task_type": "reason",
+      "description": "Conservative martingale on even-money games; caps recovery steps to protect bankroll.",
+      "skills": [
+        "martingale_lite",
+        "stop_loss",
+        "play_coin_flip",
+        "play_rps_bet",
+        "session_limits",
+        "leaderboard_racing"
+      ],
+      "preferred_games": ["coin_flip", "rps_bet"],
+      "bet_fraction": 0.02,
+      "martingale_max_steps": 3,
+      "currency": "coins"
+    },
+    "casino_slot_hunter_agent": {
+      "name": "Slot Hunter",
+      "emoji": "🎰",
+      "specialization": "slot_variance",
+      "strategy": "slot_hunter",
+      "task_kind": "casino_slot_pick",
+      "llm_task_type": "speed",
+      "description": "High-variance slot specialist chasing multi-symbol payouts and jackpot symbols.",
+      "skills": [
+        "slot_selection",
+        "variance_seek",
+        "play_slot_classic",
+        "play_slot_diamond",
+        "jackpot_awareness",
+        "leaderboard_racing"
+      ],
+      "preferred_games": ["slot_classic", "slot_diamond"],
+      "bet_fraction": 0.03,
+      "currency": "coins"
+    },
+    "casino_tournament_agent": {
+      "name": "Tournament Grinder",
+      "emoji": "🏆",
+      "specialization": "tournament_scoring",
+      "strategy": "tournament_grinder",
+      "task_kind": "casino_tournament_plan",
+      "llm_task_type": "reason",
+      "description": "Joins active coin tournaments and grinds net-positive bets during the scoring window.",
+      "skills": [
+        "tournament_join",
+        "score_maximization",
+        "play_dice",
+        "play_coin_flip",
+        "buy_in_mgmt",
+        "leaderboard_racing"
+      ],
+      "preferred_games": ["dice", "coin_flip"],
+      "bet_fraction": 0.04,
+      "currency": "coins"
+    },
+    "casino_crash_agent": {
+      "name": "Crash Timer",
+      "emoji": "📈",
+      "specialization": "crash_auto_cashout",
+      "strategy": "crash_timer",
+      "task_kind": "casino_crash_plan",
+      "llm_task_type": "speed",
+      "description": "Crash game specialist using disciplined auto-cashout targets derived from bankroll tier.",
+      "skills": [
+        "crash_timing",
+        "auto_cashout",
+        "play_crash",
+        "risk_curve",
+        "leaderboard_racing"
+      ],
+      "preferred_games": ["crash"],
+      "bet_fraction": 0.02,
+      "auto_cashout_range": [1.35, 2.1],
+      "currency": "coins"
+    },
+    "casino_leaderboard_agent": {
+      "name": "Leaderboard Chaser",
+      "emoji": "🥇",
+      "specialization": "leaderboard_optimization",
+      "strategy": "leaderboard_chaser",
+      "task_kind": "casino_leaderboard_plan",
+      "llm_task_type": "reason",
+      "description": "Reads live leaderboard gaps and adjusts bet sizing to climb ranks during weekly windows.",
+      "skills": [
+        "leaderboard_analysis",
+        "rank_gap_sizing",
+        "play_dice",
+        "play_plinko",
+        "play_wheel",
+        "leaderboard_racing",
+        "period_awareness"
+      ],
+      "preferred_games": ["dice", "plinko", "wheel"],
+      "bet_fraction": 0.05,
+      "currency": "coins"
+    }
+  }
+}
