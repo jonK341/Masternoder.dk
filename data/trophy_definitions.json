@@ -1,13 +1,14 @@
 {
-  "version": "1.1.0",
-  "updated": "2026-06-06",
+  "version": "1.2.0",
+  "updated": "2026-06-07",
   "note": "Single source of truth for trophy definitions. Served via GET /api/trophies/definitions. The frontend TROPHY_DEFINITIONS map is an offline fallback only. 'set' links a trophy to a collection in 'sets'; 'hidden' trophies render as ??? until unlocked; seasonal trophies use category 'seasonal' with available_from/until (ISO dates).",
   "sets": [
     {"id": "video_mastery", "name": "Video Mastery", "icon": "🎬", "bonus": 5000, "description": "Master video generation from first clip to grandmaster.", "members": ["first_video", "video_creator", "video_master", "video_legend", "video_grandmaster"]},
     {"id": "battle_legend", "name": "Path of the Legend", "icon": "⚔️", "bonus": 5000, "description": "Rise from first battle to battle legend.", "members": ["first_battle", "first_victory", "battle_veteran", "battle_champion", "battle_legend"]},
     {"id": "point_climber", "name": "Point Climber", "icon": "📈", "bonus": 3000, "description": "Climb every total-points milestone.", "members": ["points_milestone_1k", "points_milestone_10k", "points_milestone_100k"]},
     {"id": "social_circle", "name": "Social Circle", "icon": "👥", "bonus": 1500, "description": "Grow your community.", "members": ["first_friend", "social_butterfly", "community_leader"]},
-    {"id": "content_creator", "name": "Content Creator", "icon": "🎨", "bonus": 2000, "description": "Create across images and audio.", "members": ["first_image", "image_master", "first_audio", "audio_master"]}
+    {"id": "content_creator", "name": "Content Creator", "icon": "🎨", "bonus": 2000, "description": "Create across images and audio.", "members": ["first_image", "image_master", "first_audio", "audio_master"]},
+    {"id": "lab_mastery", "name": "Lab Mastery", "icon": "🔬", "bonus": 4000, "description": "Master the research hub from first node to sovereign core.", "members": ["lab_first_research", "lab_explorer_pulse", "lab_deep_scan_pioneer", "lab_systems_auditor", "lab_idea_pioneer", "lab_chapter5_initiate", "lab_crypto_researcher", "lab_sovereign_architect"]}
   ],
   "trophies": [
     {"id": "first_video", "name": "First Video", "description": "Generate your first video", "icon": "🎬", "category": "generation", "reward": 100, "requirement": "Generate 1 video", "rarity": "common", "progress_metric": "videos", "progress_target": 1, "set": "video_mastery"},
@@ -82,6 +83,19 @@
 
     {"id": "summer_creator_2026", "name": "Summer Creator 2026", "description": "Generate 20 videos during summer 2026", "icon": "🏖️", "category": "seasonal", "reward": 1500, "requirement": "20 videos in summer 2026", "rarity": "rare", "progress_metric": "videos", "progress_target": 20, "season": "summer_2026", "available_from": "2026-06-01", "available_until": "2026-08-31"},
     {"id": "harvest_grinder_2026", "name": "Harvest Grinder 2026", "description": "Earn 25,000 generation points during autumn 2026", "icon": "🍂", "category": "seasonal", "reward": 2500, "requirement": "25,000 gen points in autumn 2026", "rarity": "epic", "progress_metric": "generation_points", "progress_target": 25000, "season": "autumn_2026", "available_from": "2026-09-01", "available_until": "2026-11-30"},
-    {"id": "winter_champion_2026", "name": "Winter Champion 2026", "description": "Win 25 battles during winter 2026", "icon": "❄️", "category": "seasonal", "reward": 2000, "requirement": "25 victories in winter 2026", "rarity": "epic", "progress_metric": "victories", "progress_target": 25, "season": "winter_2026", "available_from": "2026-12-01", "available_until": "2027-02-28"}
+    {"id": "winter_champion_2026", "name": "Winter Champion 2026", "description": "Win 25 battles during winter 2026", "icon": "❄️", "category": "seasonal", "reward": 2000, "requirement": "25 victories in winter 2026", "rarity": "epic", "progress_metric": "victories", "progress_target": 25, "season": "winter_2026", "available_from": "2026-12-01", "available_until": "2027-02-28"},
+
+    {"id": "collector_patron", "name": "Collector Patron", "description": "Reach trophy score 100 (Collector Level 5)", "icon": "💠", "category": "milestones", "reward": 500, "mn2_reward": 0.01, "requirement": "Trophy score 100", "rarity": "rare", "progress_metric": "trophy_score", "progress_target": 100},
+    {"id": "collector_tycoon", "name": "Trophy Tycoon", "description": "Reach trophy score 750 (Collector Level 10)", "icon": "🏛️", "category": "milestones", "reward": 2500, "mn2_reward": 0.05, "requirement": "Trophy score 750", "rarity": "epic", "progress_metric": "trophy_score", "progress_target": 750},
+    {"id": "collector_emperor", "name": "Collector Emperor", "description": "Reach trophy score 3500 (max Collector Level)", "icon": "👑", "category": "milestones", "reward": 10000, "mn2_reward": 0.25, "requirement": "Trophy score 3500", "rarity": "legendary", "progress_metric": "trophy_score", "progress_target": 3500},
+
+    {"id": "lab_first_research", "name": "Lab Initiate", "description": "Research your first lab node", "icon": "🔬", "category": "special", "reward": 150, "requirement": "1 lab research node", "rarity": "common", "progress_metric": "lab_research", "progress_target": 1, "set": "lab_mastery"},
+    {"id": "lab_explorer_pulse", "name": "Pulse Runner", "description": "Complete 5 exploration pulses", "icon": "🔭", "category": "special", "reward": 300, "requirement": "5 exploration pulses", "rarity": "common", "progress_metric": "lab_explorations", "progress_target": 5, "set": "lab_mastery"},
+    {"id": "lab_deep_scan_pioneer", "name": "Deep Scan Pioneer", "description": "Run your first deep scan", "icon": "🛰️", "category": "special", "reward": 400, "requirement": "1 deep scan", "rarity": "rare", "progress_metric": "lab_deep_scans", "progress_target": 1, "set": "lab_mastery"},
+    {"id": "lab_systems_auditor", "name": "Systems Auditor", "description": "Pass a full lab systems check", "icon": "⚙️", "category": "special", "reward": 250, "requirement": "All-green systems audit", "rarity": "rare", "progress_metric": null, "progress_target": null, "set": "lab_mastery"},
+    {"id": "lab_idea_pioneer", "name": "Idea Pioneer", "description": "Pin 3 ideas to the lab idea board", "icon": "💡", "category": "special", "reward": 200, "requirement": "3 pinned ideas", "rarity": "common", "progress_metric": "lab_ideas", "progress_target": 3, "set": "lab_mastery"},
+    {"id": "lab_chapter5_initiate", "name": "Chapter V Initiate", "description": "Research 5 Chapter V nodes", "icon": "🧠", "category": "special", "reward": 800, "mn2_reward": 0.02, "requirement": "5 Chapter V nodes", "rarity": "epic", "progress_metric": "lab_chapter5", "progress_target": 5, "set": "lab_mastery"},
+    {"id": "lab_crypto_researcher", "name": "Crypto Researcher", "description": "Earn lab-linked MN2 trophy bonus", "icon": "🪙", "category": "special", "reward": 500, "mn2_reward": 0.05, "requirement": "Lab crypto milestone", "rarity": "epic", "progress_metric": null, "progress_target": null, "set": "lab_mastery"},
+    {"id": "lab_sovereign_architect", "name": "Sovereign Architect", "description": "Research the Sovereign Research Core node", "icon": "👑", "category": "special", "reward": 2500, "mn2_reward": 0.1, "requirement": "c5_sovereign_core researched", "rarity": "legendary", "progress_metric": null, "progress_target": null, "set": "lab_mastery"}
   ]
 }
