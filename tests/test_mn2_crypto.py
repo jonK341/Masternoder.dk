@@ -396,7 +396,11 @@ class TestMN2DepositAddressSelfHeal(unittest.TestCase):
         res = w.get_or_create_deposit_address("u1")
         self.assertTrue(res.get("success"))
         self.assertEqual(res.get("deposit_address"), "MxFreshValidAddress")
-        self.assertEqual(saved.get("u1"), "MxFreshValidAddress")
+        saved_addr = saved.get("u1")
+        if isinstance(saved_addr, dict):
+            self.assertEqual(saved_addr.get("primary"), "MxFreshValidAddress")
+        else:
+            self.assertEqual(saved_addr, "MxFreshValidAddress")
 
     @patch("backend.services.mn2_rpc_client.getnewaddress")
     @patch("backend.services.mn2_rpc_client.validateaddress")

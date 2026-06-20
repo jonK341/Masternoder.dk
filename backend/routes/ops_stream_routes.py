@@ -74,7 +74,50 @@ def _snapshot() -> dict:
         out["house_income_24h"] = summarize(since_hours=24)
     except Exception as e:
         out["house_income_24h"] = {"error": str(e)}
+    try:
+        from backend.services.generator_agent_service import get_generator_ops_snapshot
+        gen = get_generator_ops_snapshot()
+        out["generator"] = {
+            "queue": gen.get("queue"),
+            "last_24h": gen.get("last_24h"),
+        }
+    except Exception as e:
+        out["generator"] = {"error": str(e)}
     return out
+
+
+def _public_snapshot() -> dict:
+    """Redacted ops view for browser control board (no RPC keys, no raw webhook payloads)."""
+    full = _snapshot()
+    wh = full.get("webhook_outbox") or {}
+    pending = 0
+    if isinstance(wh.get("by_status"), dict):
+        pending = int(wh["by_status"].get("pending") or 0)
+    fg = full.get("float_gate") or {}
+    return {
+        "ts": full.get("ts"),
+        "conservation": full.get("conservation"),
+        "worker_pressure": {
+            "score": (full.get("worker_pressure") or {}).get("score"),
+            "recommendation": (full.get("worker_pressure") or {}).get("recommendation"),
+        },
+        "video_queue": {
+            "queued": (full.get("video_queue") or {}).get("queued"),
+            "active": (full.get("video_queue") or {}).get("active"),
+        },
+        "generator": {
+            "last_24h_success_rate": ((full.get("generator") or {}).get("last_24h") or {}).get("success_rate_percent"),
+            "last_24h_total_jobs": ((full.get("generator") or {}).get("last_24h") or {}).get("total_jobs"),
+        },
+        "agent_kill_switch": {
+            "global_halt": (full.get("agent_kill_switch") or {}).get("global_halt"),
+        },
+        "webhook_outbox": {"pending": pending},
+        "float_gate": {"verdict": fg.get("verdict"), "allowed": fg.get("allowed")},
+        "house_income_24h": {
+            "combined_house": (full.get("house_income_24h") or {}).get("combined_house"),
+        },
+    }
 
 
 @ops_stream_bp.route("/api/ops/stream", methods=["GET"])
@@ -108,3 +151,32 @@ def ops_snapshot():
     if not _ops_authorized():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
     return jsonify({"success": True, **_snapshot()}), 200
+
+
+@ops_stream_bp.route("/api/ops/public-snapshot", methods=["GET"])
+def ops_public_snapshot():
+    """Browser-safe ops metrics for agents control board."""
+    from flask import jsonify
+    return jsonify({"success": True, **_public_snapshot()}), 200
+
+
+@ops_stream_bp.route("/api/ops/public-stream", methods=["GET"])
+def ops_public_stream():
+    """SSE stream with redacted ops metrics (no ops secret required)."""
+    interval = max(5, min(int(request.args.get("interval", 15)), 60))
+
+    def generate():
+        yield "data: " + json.dumps({"type": "connected", "interval_sec": interval}) + "\n\n"
+        while True:
+            try:
+                snap = _public_snapshot()
+                yield "data: " + json.dumps({"type": "ops", **snap}) + "\n\n"
+            except Exception as e:
+                yield "data: " + json.dumps({"type": "error", "error": str(e)}) + "\n\n"
+            time.sleep(interval)
+
+    resp = Response(stream_with_context(generate()), mimetype="text/event-stream")
+    resp.headers["X-Accel-Buffering"] = "no"
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["Connection"] = "keep-alive"
+    return resp

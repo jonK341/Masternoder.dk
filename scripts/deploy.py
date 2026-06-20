@@ -7,14 +7,16 @@ Usage:
   python scripts/deploy.py sync        # sync + agent DB
   python scripts/deploy.py loading     # loading optimizations
   python scripts/deploy.py static_pages  # root index.html pages + entire static/ folder
+  python scripts/deploy.py trophies      # trophy levels, MN2 income, routes + data + UI
+  python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
-SSH password: set DEPLOY_PASS, or run from an interactive terminal to be prompted
-twice (enter + confirm); see deploy_ssh_env.require_deploy_pass.
+SSH password: set DEPLOY_PASS, or use --ask-pass to prompt (ignores .env), or run from an
+interactive terminal to be prompted twice when DEPLOY_PASS is unset.
 """
 import os
 import sys
@@ -28,7 +30,6 @@ from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
 
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
-SERVER_PASS = require_deploy_pass()
 REMOTE_BASE = "/var/www/html"
 
 
@@ -138,12 +139,23 @@ MANIFESTS = {
         "backend/routes/missing_endpoints_routes.py",
         "backend/routes/generator_routes.py",
         "backend/routes/generator_shared.py",
+        "backend/routes/gallery_routes.py",
         "backend/register_blueprints.py",
         "backend/services/video_generator_service.py",
+        "backend/services/generator_crypto_rewards_service.py",
+        "backend/services/generator_mn2_service.py",
         "backend/services/video_ai_bridge.py",
         "backend/services/agent_support_service.py",
         "backend/services/user_identification.py",
         "backend/run_generator_job.py",
+        "data/generator_config.json",
+        "data/mn2_config.json",
+        "backend/services/generator_agent_service.py",
+        "backend/services/generator_encode_service.py",
+        "backend/services/generator_thumbnail_service.py",
+        "backend/services/tts_service.py",
+        "scripts/generator_stale_cleanup.py",
+        "static/js/unified-point-counters.js",
     ],
     # Gallery + compact nav (no restart override; use full restart)
     "gallery_nav": [
@@ -207,6 +219,76 @@ MANIFESTS = {
         "docs/LOADING_AND_VIDGENERATOR_STATE.md",
         "docs/ENCODER_FREE_TIER.md",
         "data/rulebook_v16_sync.json",
+    ],
+    # Trophy system: collector levels, passive income (pts + MN2), social, agent tools
+    "trophies": [
+        "trophies/index.html",
+        "profile/index.html",
+        "backend/routes/trophies_routes.py",
+        "backend/services/trophy_level_service.py",
+        "backend/services/trophy_social_service.py",
+        "backend/services/trophy_quest_service.py",
+        "data/trophy_levels.json",
+        "data/trophy_definitions.json",
+    ],
+    # Compendium + rulebook readers (V1–V16), view tracker, pages API
+    "compendium": [
+        "compendium/index.html",
+        "compendium/rulebook-viewer.html",
+        "compendium/hunters-rulebook.html",
+        "compendium/page-1.html",
+        "compendium/page-2.html",
+        "compendium/page-3.html",
+        "compendium/page-4.html",
+        "compendium/page-5.html",
+        "compendium/page-6.html",
+        "compendium/page-7.html",
+        "compendium/page-8.html",
+        "compendium/page-9.html",
+        "compendium/page-10.html",
+        "static/js/compendium-view-tracker.js",
+        "static/css/calm-reader.css",
+        "static/js/calm-reader.js",
+        "static/js/reader-launcher.js",
+        "static/js/navigation-toolbar.js",
+        "backend/routes/rulebook_routes.py",
+        "backend/routes/compendium_routes.py",
+        "backend/routes/all_page_routes.py",
+        "backend/register_blueprints.py",
+        "data/rulebook_index_v15.json",
+        "data/rulebook_v1_core.json",
+        "data/rulebook_v3_2_systemic_protocols.json",
+        "data/rulebook_v4_star_map.json",
+        "data/rulebook_v5_effect_clusters.json",
+        "data/rulebook_v6_electric_magnet.json",
+        "data/rulebook_v7_unified_points.json",
+        "data/rulebook_v8_agents.json",
+        "data/rulebook_v9_shop.json",
+        "data/rulebook_v10_battle.json",
+        "data/rulebook_v11_dna.json",
+        "data/rulebook_v12_generator.json",
+        "data/rulebook_v13_geo_session.json",
+        "data/rulebook_v14_analytics.json",
+        "data/rulebook_v16_sync.json",
+        "data/hunters_rulebook_v2.json",
+        "data/communication_psychology_theories.json",
+        "docs/RULEBOOK_READERS.md",
+    ],
+    # Unified Game Hub: frontpage tabs + quest unification (Option C)
+    "game_hub": [
+        "index.html",
+        "quests/index.html",
+        "trophies/index.html",
+        "static/css/frontpage-home.css",
+        "static/js/game-hub-panel.js",
+        "backend/routes/game_hub_routes.py",
+        "backend/services/game_hub_service.py",
+        "backend/services/trophy_quest_service.py",
+        "backend/routes/quest_routes.py",
+        "backend/services/trophies_db_service.py",
+        "backend/services/user_engagement.py",
+        "backend/routes/trophies_routes.py",
+        "backend/register_blueprints.py",
     ],
     # Fix production 404s: routes + fallbacks + blueprint registration (see logs/production_404_deploy_checklist.txt)
     "fix_404": [
@@ -272,7 +354,6 @@ MANIFESTS = {
         "docs/USER_LOCATION_GPS_SYSTEM.md",
         "docs/AGENT_SKILLS_AND_CONCLUSIONS.md",
         "docs/AGENTS_SKILLS_SYNC.md",
-        "docs/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md",
     ],
     # MN2 401 fix: upload only .env + systemd units, install units, restart uwsgi-vidgenerator
     "mn2_env": [
@@ -286,6 +367,8 @@ MANIFESTS = {
         "cron/masternoder-mn2-scan.cron.d",
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
+        "cron/mn2_masternode_provision.sh",
+        "cron/masternoder-mn2-masternode-provision.cron.d",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
     # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;
@@ -296,23 +379,127 @@ MANIFESTS = {
     "mn2_staking": [
         "backend/services/mn2_rpc_client.py",
         "backend/services/mn2_ledger.py",
+        "backend/services/mn2_deposit_scanner.py",
         "backend/services/mn2_chainz.py",
+        "backend/services/mn2_wallet_service.py",
+        "backend/services/mn2_network_stats.py",
+        "backend/services/mn2_explorer_data.py",
+        "backend/services/mn2_explorer_urls.py",
         "backend/services/mn2_staking_service.py",
         "backend/services/mn2_staking_reconcile_service.py",
         "backend/services/mn2_staking_agents_service.py",
+        "backend/services/agent_trader_staking_service.py",
+        "backend/services/agent_trader_service.py",
+        "backend/services/agent_kill_switch.py",
+        "backend/services/p2p_market_service.py",
+        "backend/services/mn2_earn_auth.py",
+        "backend/services/mn2_copy_trading.py",
         "backend/services/mn2_onramp_service.py",
         "backend/services/mn2_p2p_service.py",
+        "backend/services/mn2_masternode_service.py",
+        "backend/services/mn2_masternode_hosting_service.py",
+        "backend/services/mn2_services_hub.py",
+        "backend/services/discord_service.py",
+        "backend/services/discord_m8_streams.py",
+        "backend/services/casino_discord_fanout.py",
+        "backend/services/market_discord_fanout.py",
+        "backend/services/game_discord_fanout.py",
+        "backend/services/discord_link_service.py",
+        "backend/services/shop_discord_promo_service.py",
+        "backend/routes/battle_routes.py",
+        "backend/routes/hunters_game.py",
+        "backend/routes/shop_routes.py",
+        "data/discord_promo_codes.json",
+        "profile/index.html",
         "backend/services/unified_points_database.py",
+        "backend/routes/health_routes.py",
+        "backend/routes/discord_routes.py",
+        "backend/routes/platform_news_routes.py",
+        "backend/services/video_generator_service.py",
         "backend/routes/mn2_routes.py",
         "backend/routes/mn2_staking_routes.py",
         "backend/routes/mn2_onramp_routes.py",
         "backend/routes/mn2_p2p_routes.py",
+        "backend/routes/mn2_masternode_routes.py",
         "backend/routes/agent_staking_routes.py",
+        "backend/routes/agent_treasury_routes.py",
+        "backend/routes/agent_trader_staking_routes.py",
+        "backend/routes/p2p_market_routes.py",
+        "backend/routes/agent_cron_routes.py",
+        "backend/services/agent_cron_service.py",
+        "backend/services/agent_wallet_service.py",
+        "backend/services/treasury_signoff_service.py",
+        "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
+        "data/mn2_config.json",
         "data/mn2_staking_config.json",
         "data/mn2_staking_terms.json",
+        "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "shop/index.html",
         "scripts/mn2_reconcile.py",
+        "scripts/treasury_signoff.py",
+        "scripts/trader_staking_join_server.sh",
+        "explorer/index.html",
+        "static/js/mn2-explorer-overview.js",
+        "static/js/mn2-internal-market.js",
+        "static/js/mn2-crypto-hub.js",
+        "static/css/mn2-crypto-hub.css",
+        "scripts/_verify_trader_market_remote.py",
+        "cron/discord_market_fanout.sh",
+        "cron/discord_game_fanout.sh",
+        "cron/masternoder-discord-game.cron.d",
+        "cron/masternoder-discord-market.cron.d",
+        "cron/monetization_cron.sh",
+        "cron/masternoder-monetization.cron.d",
+        "cron/discord_activity_funnel.sh",
+        "cron/mn2_read_ops_secret.sh",
+    ],
+    "camgirls": [
+        "backend/services/camgirls_service.py",
+        "backend/services/camgirls_payout_service.py",
+        "backend/services/camgirls_agents_service.py",
+        "backend/services/camgirls_studio_service.py",
+        "backend/services/mn2_wallet_service.py",
+        "backend/services/mn2_rpc_client.py",
+        "backend/services/platform_news_publish.py",
+        "backend/services/discord_m8_streams.py",
+        "backend/routes/camgirls_routes.py",
+        "backend/services/mn2_earn_auth.py",
+        "backend/services/mn2_ledger.py",
+        "backend/services/unified_points_database.py",
+        "backend/services/llm_service.py",
+        "backend/services/agent_skillset.py",
+        "backend/services/agent_cron_service.py",
+        "backend/routes/agent_cron_routes.py",
+        "backend/routes/all_page_routes.py",
+        "backend/register_blueprints.py",
+        "backend/middleware/error_logging_middleware.py",
+        "backend/services/mn2_chainz.py",
+        "backend/routes/mn2_routes.py",
+        "backend/routes/mn2_staking_routes.py",
+        "data/camgirls_performers.json",
+        "data/camgirls_agent_models.json",
+        "data/camgirls_studio_catalog.json",
+        # Runtime: provision on server via camgirls_provision_payout_addresses.py — do not deploy empty file.
+        "data/camgirls_performers_production.json",
+        "data/camgirls_performers_production.template.json",
+        "scripts/camgirls_onboard_performers.py",
+        "scripts/camgirls_provision_payout_addresses.py",
+        "scripts/camgirls_py.sh",
+        "scripts/project_env.py",
+        "scripts/camgirls_post_deploy_verify.py",
+        "scripts/camgirls_remote_diag.py",
+        "docs/CAMGIRLS_PHASE4_NGINX.md",
+        "camgirls/index.html",
+        "static/js/camgirls.js",
+        "static/js/camgirls-studio.js",
+        "scripts/camgirls_py.sh",
+        "static/camgirls/avatar-demo.svg",
+        "static/camgirls/avatar-sage.svg",
+        "static/camgirls/avatar-ember.svg",
+        "static/camgirls/avatar-iris.svg",
+        "static/camgirls/preview-demo.svg",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
     "knowledge_cron_env": [
@@ -326,11 +513,13 @@ MANIFESTS = {
         "cron/agents_cron_monthly.sh",
         "cron/agents_blueprint_route_fixer.sh",
         "cron/agents_api_service_skill.sh",
+        "cron/agents_trader.sh",
         "cron/masternoder-agents-daily.cron.d",
         "cron/masternoder-agents-weekly.cron.d",
         "cron/masternoder-agents-monthly.cron.d",
         "cron/masternoder-agents-blueprint-route.cron.d",
         "cron/masternoder-agents-api-service.cron.d",
+        "cron/masternoder-agents-trader.cron.d",
     ],
     # MN2 daemon config (masternoder2.conf); deploy config folder to server
     "config": [
@@ -350,6 +539,12 @@ MANIFESTS = {
         "scripts/service_check_all_components.py",
         "docs/SERVICE_CHECK_LEADERBOARD_AGENTS_FIX.md",
     ],
+    # Investigate + remove leftover/outdated files on server (no uwsgi restart)
+    "server_prune": [
+        "scripts/server_orphan_scan.py",
+        "scripts/server_prune_remote.sh",
+        "scripts/server_cleanup_scan.py",
+    ],
 }
 
 # Built at import: every root */index.html + static/** (see _static_pages_manifest docstring)
@@ -362,6 +557,10 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "monitor",
     "mn2_env",
     "mn2_staking",
+    "camgirls",
+    "trophies",
+    "compendium",
+    "game_hub",
     "config",
     "agent_daemon_env",
     "service_check_backend",
@@ -370,7 +569,76 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
 RESTART_NGINX_ONLY_FOR = frozenset({"static_pages"})
 
 
-def run(files, upload_only=False, restart_services=None, manifest_name=None):
+def run_server_prune(server_pass=None, with_disk=False):
+    """SSH: upload prune scripts, print investigation, run safe cleanup (no service restart)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
+    import server_orphan_scan as orphan  # noqa: E402
+
+    if not server_pass:
+        server_pass = require_deploy_pass()
+    ssh = None
+    sftp = None
+    try:
+        print("=" * 60)
+        print("SERVER PRUNE — investigate + safe cleanup")
+        print("=" * 60)
+        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        print()
+
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        os.chdir(base)
+
+        ssh = __import__("paramiko").SSHClient()
+        ssh.set_missing_host_key_policy(__import__("paramiko").AutoAddPolicy())
+        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
+        sftp = ssh.open_sftp()
+        print("  [OK] Connected")
+        print()
+
+        for local in MANIFESTS["server_prune"]:
+            if not os.path.isfile(local):
+                continue
+            remote = f"{REMOTE_BASE}/{local.replace(os.sep, '/')}"
+            ssh.exec_command(f"mkdir -p '{os.path.dirname(remote)}'", timeout=5)
+            with open(local, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+            with sftp.file(remote, "w") as rf:
+                rf.write(content)
+            print(f"  [OK] uploaded {local}")
+        sftp.close()
+        print()
+
+        report = orphan.investigate(ssh)
+        print("\n".join(report))
+        print("\n--- CLEANUP ---")
+        for line in orphan.cleanup(ssh, yes=True, with_disk=with_disk):
+            print(f"  [OK] {line}")
+
+        print("\n" + "=" * 60)
+        print("SERVER PRUNE COMPLETE (no uwsgi restart)")
+        print("=" * 60)
+        return True
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    finally:
+        if sftp:
+            try:
+                sftp.close()
+            except Exception:
+                pass
+        if ssh:
+            try:
+                ssh.close()
+            except Exception:
+                pass
+
+
+def run(files, upload_only=False, restart_services=None, manifest_name=None, server_pass=None):
+    if not server_pass:
+        server_pass = require_deploy_pass()
     ssh = None
     sftp = None
     try:
@@ -389,7 +657,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
         print(f"{step} Connecting...")
         ssh = __import__("paramiko").SSHClient()
         ssh.set_missing_host_key_policy(__import__("paramiko").AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
         sftp = ssh.open_sftp()
         print("  [OK] Connected")
         print()
@@ -461,6 +729,71 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
                   else "  [WARN] staking accrual cron.d install may have failed")
             print()
 
+        if manifest_name == "mn2_staking" and not upload_only:
+            print("[2f] MN2 masternode hosting post-deploy...")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_masternode_provision.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-mn2-masternode-provision.cron.d "
+                f"/etc/cron.d/masternoder-mn2-masternode-provision 2>/dev/null && "
+                f"chmod 644 /etc/cron.d/masternoder-mn2-masternode-provision 2>/dev/null || true",
+                timeout=10,
+            )
+            seed_cmd = (
+                f"cd {REMOTE_BASE} && "
+                "SECRET=$(grep -E '^(MN2_OPS_SECRET|MN2_SCAN_SECRET)=' .env | head -1 | cut -d= -f2- | tr -d '\\r\"') && "
+                "for n in 2 3 4 5; do "
+                "curl -s -X POST -H 'Content-Type: application/json' -H \"X-Ops-Secret: $SECRET\" "
+                "-d \"{\\\"id\\\":\\\"platform-mn-$n\\\",\\\"label\\\":\\\"Masternoder.dk fleet #$n\\\","
+                "\\\"status\\\":\\\"queued\\\",\\\"notes\\\":\\\"Platform expansion slot\\\"}\" "
+                "http://127.0.0.1:5000/api/mn2/masternode/hosts; echo; done && "
+                "curl -s http://127.0.0.1:5000/api/mn2/masternode/service | head -c 800"
+            )
+            stdin, stdout, stderr = ssh.exec_command(seed_cmd, timeout=60)
+            out = (stdout.read() or b"").decode(errors="replace").strip()
+            if out:
+                print(f"  {out[:600]}")
+            print("  [OK] masternode provision cron + fleet seed (platform-mn-2..5)")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/discord_game_fanout.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-discord-game.cron.d /etc/cron.d/masternoder-discord-game "
+                f"&& chmod 644 /etc/cron.d/masternoder-discord-game",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-discord-game && echo OK", timeout=5
+            )
+            out_dg = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-discord-game (every 15 min)" if out_dg == "OK"
+                  else "  [WARN] discord game cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/discord_market_fanout.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-discord-market.cron.d /etc/cron.d/masternoder-discord-market "
+                f"&& chmod 644 /etc/cron.d/masternoder-discord-market",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-discord-market && echo OK", timeout=5
+            )
+            out_dm = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-discord-market (every 15 min)" if out_dm == "OK"
+                  else "  [WARN] discord market cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/monetization_cron.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-monetization.cron.d /etc/cron.d/masternoder-monetization "
+                f"&& chmod 644 /etc/cron.d/masternoder-monetization",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-monetization && echo OK", timeout=5
+            )
+            out_mon = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-monetization (daily 09:00 UTC)" if out_mon == "OK"
+                  else "  [WARN] monetization cron.d install may have failed")
+            print()
+
         if manifest_name == "knowledge_cron_env" and not upload_only:
             print("[2d] Knowledge-sharing report cron (reporter_agent)...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/knowledge_sharing_report.sh 2>/dev/null || true", timeout=5)
@@ -487,6 +820,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
                 "agents_cron_monthly.sh",
                 "agents_blueprint_route_fixer.sh",
                 "agents_api_service_skill.sh",
+                "agents_trader.sh",
             ):
                 ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/{sh} 2>/dev/null || true", timeout=5)
             for cd, remote_name in (
@@ -495,13 +829,38 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
                 ("masternoder-agents-monthly.cron.d", "masternoder-agents-monthly"),
                 ("masternoder-agents-blueprint-route.cron.d", "masternoder-agents-blueprint-route"),
                 ("masternoder-agents-api-service.cron.d", "masternoder-agents-api-service"),
+                ("masternoder-agents-trader.cron.d", "masternoder-agents-trader"),
             ):
                 ssh.exec_command(
                     f"cp {REMOTE_BASE}/cron/{cd} /etc/cron.d/{remote_name} && chmod 644 /etc/cron.d/{remote_name}",
                     timeout=10,
                 )
                 time.sleep(0.15)
-            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service)")
+            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader)")
+            print()
+
+        if manifest_name == "camgirls" and not upload_only:
+            print("[2g] Camgirls post-deploy (venv deps + script perms)...")
+            ssh.exec_command(
+                f"chmod +x {REMOTE_BASE}/scripts/camgirls_py.sh 2>/dev/null || true",
+                timeout=5,
+            )
+            dep_cmd = (
+                f"cd {REMOTE_BASE} && "
+                "if [ -x ./.venv/bin/python ]; then "
+                "./.venv/bin/python -m ensurepip --upgrade 2>/dev/null || true; "
+                "./.venv/bin/python -m pip install -q 'requests>=2.32.0,<2.34' 2>/dev/null || "
+                "SITE=$(./.venv/bin/python -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null) && "
+                "[ -n \"$SITE\" ] && python3 -m pip install -q -t \"$SITE\" 'requests>=2.32.0,<2.34' 2>/dev/null || true; "
+                "fi"
+            )
+            stdin, stdout, stderr = ssh.exec_command(dep_cmd, timeout=120)
+            stdout.channel.recv_exit_status()
+            err = (stderr.read() or b"").decode(errors="replace").strip()
+            if err and "error" in err.lower():
+                print(f"  [WARN] pip install requests: {err[:200]}")
+            else:
+                print("  [OK] .venv requests (MN2 payout RPC)")
             print()
 
         if upload_only:
@@ -588,14 +947,25 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None):
 
 def main():
     args = sys.argv[1:]
+    ask_pass = "--ask-pass" in args
+    if ask_pass:
+        args = [a for a in args if a != "--ask-pass"]
     upload_only = "--upload-only" in args
     if upload_only:
         args = [a for a in args if a != "--upload-only"]
+    with_disk = "--with-disk" in args
+    if with_disk:
+        args = [a for a in args if a != "--with-disk"]
     if not args:
-        print("Usage: python scripts/deploy.py <manifest> [--upload-only] | --files path1 path2 [--upload-only]")
+        print("Usage: python scripts/deploy.py <manifest> [--ask-pass] [--upload-only] | --files path1 path2 [--ask-pass] [--upload-only]")
+        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("Manifests:", ", ".join(MANIFESTS))
         sys.exit(1)
+    server_pass = require_deploy_pass(force_prompt=ask_pass)
+    if args and args[0].lower() == "server_prune":
+        ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
+        sys.exit(0 if ok else 1)
     manifest_name = None
     if args[0] == "--files":
         files = args[1:]
@@ -616,7 +986,7 @@ def main():
     elif manifest_name and manifest_name in RESTART_NGINX_ONLY_FOR and not upload_only:
         restart_services = ["__nginx_static__"]
         print("(Restart: nginx reload only — static HTML/CSS/JS)")
-    ok = run(files, upload_only=upload_only, restart_services=restart_services, manifest_name=manifest_name)
+    ok = run(files, upload_only=upload_only, restart_services=restart_services, manifest_name=manifest_name, server_pass=server_pass)
     sys.exit(0 if ok else 1)
 
 

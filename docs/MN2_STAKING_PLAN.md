@@ -606,12 +606,12 @@ Curated from §20 for **value ÷ (effort × risk)**, sequenced so trust/transpar
 | 2 | **Staking dashboard charts** (#1) — **✅ SHIPPED 2026‑06‑06** | Highest user‑visible value, near‑zero risk; §15 data already exists, just needs a view | M | ✅ done |
 | 3 | **Withdrawal anomaly detection + step‑up** (#21, #22) — **✅ SHIPPED 2026‑06‑06** | Directly extends the §9.2 hardening; with the allowlist now off, this is the smart risk control that scales | M | ✅ done |
 | 4 | **Personal audit log + tax export** (#14, #23) — **✅ SHIPPED 2026‑06‑07** | Cheap, compliance‑positive, leans on `mn2_ledger` + §15 CSV; pairs with #1 | S | ✅ done |
-| 5 | **Reward notifications & weekly digest** (#2) | Retention engine; low effort over existing accrual cron | S | ✅ |
-| 6 | **Gift / internal MN2 transfer** (#15) | Engagement + viral seeding of new wallets; reuses ledger + hold gate | M | 🟡 (KYC + caps + audit) |
-| 7 | **Public leaderboard + share cards** (#6, #10) | Growth flywheel once #1/#3 make exposure safe; opt‑in, amounts hidden | S | 🟡 (privacy opt‑in) |
-| 8 | **Withdrawal address book** (#5) | UX relief for the 2h cooldown we just shipped; trusted‑address management | M | 🟡 (step‑up to add) |
-| 9 | **Daemon failover / hot standby** (#19) | Protects the single real‑yield source; reliability debt worth paying before volume grows | L | 🟡 (strict single‑active lock) |
-| 10 | **Goal planner + fiat toggle** (#3, #4) | Polishes the wallet; pure reuse of §6 calculator + §16 price | S | ✅ |
+| 5 | **Reward notifications & weekly digest** (#2) — **✅ SHIPPED 2026‑06‑07** | Retention engine; low effort over existing accrual cron | S | ✅ done |
+| 6 | **Gift / internal MN2 transfer** (#15) — **✅ SHIPPED 2026‑06‑07** | Engagement + viral seeding of new wallets; reuses ledger + hold gate | M | ✅ done |
+| 7 | **Public leaderboard + share cards** (#6, #10) — **✅ SHIPPED 2026‑06‑07** | Growth flywheel once #1/#3 make exposure safe; opt‑in, amounts hidden | S | ✅ done |
+| 8 | **Withdrawal address book** (#5) — **✅ SHIPPED 2026‑06‑07** | UX relief for the 2h cooldown we just shipped; trusted‑address management | M | ✅ done |
+| 9 | **Daemon failover / hot standby** (#19) — **✅ SHIPPED 2026‑06‑14** | Protects the single real‑yield source; reliability debt worth paying before volume grows | L | ✅ done |
+| 10 | **Goal planner + fiat toggle** (#3, #4) — **✅ SHIPPED 2026‑06‑07** | Polishes the wallet; pure reuse of §6 calculator + §16 price | S | ✅ done |
 
 ### 21.1 #1 Proof‑of‑reserves — shipped (2026‑06‑04)
 - **Service:** `backend/services/mn2_proof_of_reserves_service.py` — `proof_of_reserves()` (on‑chain custodial assets via `getwalletinfo`/`getbalance` + stabilization reserve vs Σ user liquid+staked liabilities read straight from the file‑backed points store; coverage ratio; reconcile verdict gates the "fully backed" claim) and `yield_report()` (lifetime realized yield vs rewards paid vs site margin, plus per‑day from `mn2_staking_rewards.jsonl`). Short TTL cache so the public page can't hammer RPC.
@@ -637,6 +637,45 @@ Curated from §20 for **value ÷ (effort × risk)**, sequenced so trust/transpar
 - **Privacy hardening:** `GET /api/mn2/transactions` switched from `from_query=True` to server‑resolved identity so a caller can no longer read another account's ledger via `?user_id=`.
 - **UI:** profile MN2 wallet card gains a "Statement & tax export" block — year selector (auto‑populated from `by_year`), CSV export link (year‑aware), current‑balance/event summary, and a date/type/change/running‑balance table.
 
-**Sequencing:** Wave 1 (trust + safety): #1, #3, #4 — make the system provably honest and safe with withdrawals open to all. Wave 2 (delight + retention): #2, #2(dash), #10. Wave 3 (growth): #6, #7, #8. Wave 4 (scale infra): #9. **Deferred from §20:** teams (#7‑pools), seasonal prizes (#8), VIP/Pro subscription (#16, #18), treasury automation (#17, #20), agent marketplace (#24) — revisit after Wave 1–2 prove the books and the audits hold.
+**Sequencing:** Wave 1 (trust + safety): #1, #3, #4 — done. Wave 2 (delight + retention): #5, #10 — **✅ SHIPPED 2026‑06‑07**. Wave 3 (growth): #6, #7, #8 — **✅ SHIPPED 2026‑06‑07**. Wave 4 (scale infra): #9 pending.
+
+### 21.5 #5 Reward notifications & weekly digest — shipped (2026‑06‑07)
+- **Service:** `backend/services/mn2_staking_notifications.py` — per-user prefs in `data/mn2_staking_notify_prefs.json` (`reward_alerts`, `weekly_digest`, `large_reward_mn2`). `on_reward()` fires in-app notifications (via `user_engagement.add_notification`) on accrual — throttled to 1/24h unless tier-up or large reward. `run_weekly_digest()` summarizes last 7 days from reward rows.
+- **Hook:** `accrue_rewards()` calls `on_reward` per credited user.
+- **API:** `GET/POST /api/mn2/staking/notification-prefs` (auth). Ops: `POST /api/mn2/staking/ops/weekly-digest`.
+- **Cron:** `cron/mn2_weekly_digest.sh` (schedule e.g. Monday 09:00 UTC).
+- **UI:** profile staking card — Reward alerts + Weekly digest checkboxes.
+
+### 21.6 #10 Goal planner + fiat toggle — shipped (2026‑06‑07)
+- **Backend:** `goal_planner()` in `mn2_staking_service.py`; `GET /api/mn2/staking/goal-planner?target_mn2=&target_date=&current_mn2=&uptime=`.
+- **UI:** Goal planner block (target + date → required stake estimate). Fiat toggle (`localStorage mn2_fiat_display`) shows USD hints on wallet balance + staking amounts via `/api/mn2/price`.
+
+### 21.7 #6 Gift / internal MN2 transfer — shipped (2026‑06‑07)
+- **Service:** `backend/services/mn2_gift_service.py` — `transfer(from, to, amount)` resolves recipient by `user_id` or deposit address; hold-gate on sender; caps from `data/mn2_config.json` → `gift` block; ledger `gift_sent` / `gift_received`.
+- **API:** `POST /api/mn2/transfer` (auth). **UI:** profile wallet “Send MN2 (internal)”.
+
+### 21.8 #7 Public leaderboard + share cards — shipped (2026‑06‑07)
+- **Leaderboard:** `get_staking_leaderboard()` now **opt-in only** (`staking_leaderboard_opt_in` in user settings); amounts hidden unless `staking_show_amounts`. Page: `/staking-leaderboard/`.
+- **Settings API:** `GET/POST /api/mn2/staking/leaderboard-settings`.
+- **Share card:** `GET /api/mn2/staking/share-card` → SVG (staked + tier, no yield promise). Link on profile staking card.
+
+### 21.9 #8 Withdrawal address book — shipped (2026‑06‑07)
+- **Service:** `backend/services/mn2_address_book.py` — label + track clearance per address. After one successful withdrawal, `mark_cleared()` → future sends skip new-address cooldown (`mn2_withdraw` checks `is_cleared_trusted` before guard).
+- **API:** `GET/POST/DELETE /api/mn2/address-book` (POST requires password verification token). **UI:** profile wallet trusted-address list.
+
+### 21.10 #9 Daemon failover / hot standby — shipped (2026‑06‑14)
+- **Service:** `backend/services/mn2_rpc_failover.py` — single-active lock (`data/mn2_rpc_failover_state.json`). Probes primary + standby via `mn2_rpc_client.probe_endpoint()`. After `fail_threshold` consecutive primary failures, auto-promotes to standby if healthy and not stale. All RPC wallet calls route through `resolve_active_endpoint()` in `mn2_rpc_client`.
+- **Config:** `data/mn2_rpc_failover.json` (`enabled`, `fail_threshold`, `allow_auto_failback`, standby URL). Env: `MN2_RPC_STANDBY_URL` (+ optional standby creds).
+- **Ops:** `GET /api/mn2/ops/rpc-failover`, `POST /api/mn2/ops/rpc-failover/check`, `POST …/promote-standby`, `POST …/failback-primary`. Included in `/api/mn2/ops/stats` and `/api/mn2/network-overview`.
+- **Cron:** `cron/mn2_rpc_failover.sh`. **UI:** staking monitor banner when on standby. **Default:** disabled until a second node is provisioned.
+
+### 22.1 Staking teams/pools (§20 #7) — shipped (2026‑06‑14)
+- **Service:** `backend/services/mn2_staking_teams.py` — create/join/leave via invite code; `team_multiplier()` from pooled avg longevity + active member count, capped at `max_team_multiplier` (default 1.15×). Requires ≥2 members with `min_member_staked_mn2`.
+- **Integration:** `effective_multiplier()` includes `team` factor; reward rows log `team_mult`; status exposes `team_multiplier`.
+- **Config:** `teams` block in `data/mn2_staking_config.json`.
+- **API:** `GET /api/mn2/staking/team`, `POST …/team/create`, `POST …/team/join`, `POST …/team/leave`, `GET /api/mn2/staking/teams/leaderboard`.
+- **UI:** profile staking card team panel; public board at `/staking-teams/`.
+
+**Sequencing (updated):** Top-10 complete. **Deferred §20 next:** seasonal competitions, VIP tiers, treasury automation, agent marketplace.
 
 > **Decisions carried forward:** still **no** locked vaults, **no** staking↔casino financial coupling, **no** selling yield (the Pro subscription #18 sells analytics, never returns). New money‑movement features (#15 gift, #6 leaderboard exposure) ship **only after** the proof‑of‑reserves page (#1) is live and reconcile is green.
