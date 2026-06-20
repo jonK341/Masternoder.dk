@@ -712,6 +712,34 @@ def casino_paypal_deposit_packs():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/mn2-buyin-packs", methods=["GET"])
+def casino_mn2_buyin_packs():
+    try:
+        return jsonify(casino_service.get_mn2_buyin_packs()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/mn2-buyin/purchase", methods=["POST"])
+def casino_mn2_buyin_purchase():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        if user_id.strip().lower() == "default_user":
+            return jsonify({
+                "success": False,
+                "error": "Create an account first",
+                "code": "ACCOUNT_REQUIRED",
+            }), 400
+        result = casino_service.purchase_mn2_buyin_pack(
+            user_id=user_id,
+            pack_id=(data.get("pack_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/paypal/deposit", methods=["POST"])
 def casino_paypal_deposit():
     try:

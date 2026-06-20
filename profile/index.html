@@ -917,6 +917,8 @@
                 <button type="button" class="profile-hub-tab" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
                 <button type="button" class="profile-hub-tab" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
                 <button type="button" class="profile-hub-tab" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
                 <button type="button" class="profile-hub-tab" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
                 <button type="button" class="profile-hub-tab" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
                 <button type="button" class="profile-hub-tab" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
@@ -1011,22 +1013,36 @@
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet settings security" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address.</p>
-                        <div style="margin-bottom: 14px;">
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
+                        <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
+                            <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
+                            <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+                        </div>
+                        <nav id="profile-wallet-subnav" class="profile-wallet-subnav" role="tablist" aria-label="Wallet sections" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+                            <button type="button" class="profile-hub-tab active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="security" role="tab" aria-selected="false">Security</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
+                        </nav>
+                        <div data-wallet-panel="overview" style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Balance:</strong>
                             <span id="profile-mn2-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
                             <span id="profile-mn2-balance-fiat" style="font-size: 0.85rem; opacity: 0.75; margin-left: 6px;"></span>
                             <label style="display:inline-flex; align-items:center; gap:6px; margin-left:12px; font-size:0.78rem; opacity:0.85; cursor:pointer;">
                                 <input type="checkbox" id="mn2-fiat-toggle"> Show USD
                             </label>
+                            <div style="margin-top: 14px;">
+                                <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
+                                <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
+                                <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
+                            </div>
                         </div>
-                        <div style="margin-bottom: 14px;">
-                            <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
-                            <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals. Net shown under each day.</p>
-                            <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
-                        </div>
+                        <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Deposit address:</strong>
                             <p id="profile-mn2-deposit-error" style="display: none; font-size: 0.85rem; color: #ffaa00; margin: 6px 0;"></p>
@@ -1045,6 +1061,8 @@
                             </div>
                             <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
                         </div>
+                        </div>
+                        <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Withdraw:</strong>
                             <p id="profile-mn2-withdraw-verification-msg" style="display: none; margin: 6px 0; color: #ffaa00; font-size: 0.9rem;">Account verification required to withdraw. Contact support to verify.</p>
@@ -1056,16 +1074,6 @@
                             <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 4px;">Fee 0.001 MN2 deducted.</p>
                         </div>
                         <div style="margin-bottom: 14px;">
-                            <strong style="color: #00d4ff;">Trusted addresses:</strong>
-                            <p style="font-size:0.76rem; opacity:0.75; margin:4px 0;">Save payout addresses — after one successful withdrawal they skip the new-address cooldown.</p>
-                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
-                                <input type="text" id="mn2-addrbook-address" placeholder="MN2 address" style="min-width:200px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
-                                <input type="text" id="mn2-addrbook-label" placeholder="Label" style="width:100px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
-                                <button type="button" id="mn2-addrbook-add" style="padding:6px 12px; border-radius:6px; border:1px solid #00d4ff; background:rgba(0,212,255,0.12); color:#00d4ff; cursor:pointer;">Add (verify)</button>
-                            </div>
-                            <div id="mn2-addrbook-list" style="margin-top:8px; font-size:0.8rem; opacity:0.9;">Loading…</div>
-                        </div>
-                        <div style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Send MN2 (internal):</strong>
                             <p style="font-size:0.76rem; opacity:0.75; margin:4px 0;">Gift to another user by user_id or deposit address. Caps apply; not withdrawable-held MN2.</p>
                             <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
@@ -1075,6 +1083,22 @@
                             </div>
                             <p id="mn2-gift-msg" style="font-size:0.78rem; margin:6px 0 0; color:#ffaa44;"></p>
                         </div>
+                        </div>
+                        <div data-wallet-panel="trusted" style="margin-bottom: 14px; display:none;">
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: #00d4ff;">Trusted addresses:</strong>
+                            <p style="font-size:0.76rem; opacity:0.75; margin:4px 0;">Save payout addresses — pick from list when withdrawing. Verify with your profile password once.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <input type="text" id="mn2-addrbook-address" placeholder="MN2 address" style="min-width:200px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <input type="text" id="mn2-addrbook-label" placeholder="Label" style="width:100px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <input type="password" id="mn2-addrbook-password" placeholder="Profile password" style="width:140px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <button type="button" id="mn2-addrbook-add" style="padding:6px 12px; border-radius:6px; border:1px solid #00d4ff; background:rgba(0,212,255,0.12); color:#00d4ff; cursor:pointer;">Add trusted</button>
+                            </div>
+                            <div id="mn2-addrbook-list" style="margin-top:8px; font-size:0.8rem; opacity:0.9;">Loading…</div>
+                            <p style="font-size:0.72rem;opacity:0.65;margin-top:8px;"><a href="#password-protection-card" style="color:#00d4ff;">Set profile password</a> for faster trusted-address adds.</p>
+                        </div>
+                        </div>
+                        <div data-wallet-panel="transactions" style="display:none;">
                         <div id="profile-mn2-revenue-block" style="margin-bottom: 14px; display: none;">
                             <strong style="color: #00d4ff;">Shop revenue address:</strong>
                             <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
@@ -1098,9 +1122,28 @@
                             <div id="mn2-statement-summary" style="font-size: 0.75rem; opacity: 0.75; margin-top: 4px;"></div>
                             <div id="mn2-statement-rows" style="margin-top: 6px; max-height: 260px; overflow-y: auto; font-size: 0.8rem; opacity: 0.92;">Loading…</div>
                         </div>
+                        </div>
+                        <div data-wallet-panel="security" style="display:none; margin-bottom:14px;">
+                            <div id="mn2-withdraw-security">
+                                <strong style="color:#00d4ff;">Withdrawal security</strong>
+                                <p id="mn2-whitelist-required" style="font-size:0.8rem;opacity:0.75;"></p>
+                                <p style="font-size:0.85rem;">2FA: <span id="mn2-2fa-status">—</span></p>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;">
+                                    <button type="button" id="mn2-2fa-setup" style="padding:6px 12px;border-radius:6px;border:1px solid #00d4ff;background:rgba(0,212,255,0.12);color:#00d4ff;cursor:pointer;">Setup 2FA</button>
+                                    <input type="text" id="mn2-whitelist-address" placeholder="Whitelist MN2 address" style="min-width:200px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                                    <button type="button" id="mn2-whitelist-add" style="padding:6px 12px;border-radius:6px;border:1px solid #00ff88;background:rgba(0,255,136,0.12);color:#00ff88;cursor:pointer;">Add whitelist</button>
+                                </div>
+                                <code id="mn2-2fa-secret" style="font-size:0.75rem;opacity:0.7;"></code>
+                                <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
+                            </div>
+                        </div>
+                        <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
+                            <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
+                            <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7);">MN2 value can be volatile. Not financial advice.</p>
+                            <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a> · <a href="/explorer/" style="color:#00d4ff;">MN2 Explorer</a></p>
+                        </div>
 
-                        <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
-                        <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a></p>
+                        <p class="mn2-disclaimer" data-wallet-panel="overview" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
                     </div>
                     <script>
                     (function () {
@@ -1171,10 +1214,15 @@
                       if (addBtn) addBtn.addEventListener('click', function() {
                         var addr = (document.getElementById('mn2-addrbook-address') || {}).value || '';
                         var label = (document.getElementById('mn2-addrbook-label') || {}).value || '';
-                        var token = prompt('Enter password verification token (from profile security) or leave blank if not set:');
+                        var pwdEl = document.getElementById('mn2-addrbook-password');
+                        var token = pwdEl ? pwdEl.value : '';
                         fetch('/api/mn2/address-book', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ address: addr, label: label, verification_token: token || undefined }) })
-                          .then(function(r) { return r.json(); }).then(function(d) { alert(d.success ? 'Address saved.' : (d.error || 'Failed')); loadAddrBook(); });
+                          body: JSON.stringify({ address: addr, label: label, verification_token: token || undefined, password: token || undefined }) })
+                          .then(function(r) { return r.json(); }).then(function(d) {
+                            alert(d.success ? 'Trusted address saved.' : (d.error || 'Failed — set profile password in Security tab.'));
+                            if (d.success && pwdEl) pwdEl.value = '';
+                            loadAddrBook();
+                          });
                       });
                       var giftBtn = document.getElementById('mn2-gift-send');
                       if (giftBtn) giftBtn.addEventListener('click', function() {
@@ -1603,6 +1651,8 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260618a"></script>
+        <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
@@ -2494,182 +2544,8 @@
             }
 
             loadProfileMn2Wallet() {
-                var self = this;
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-                var base = window.location.origin;
-                var balanceEl = document.getElementById('profile-mn2-balance');
-                var addrEl = document.getElementById('profile-mn2-deposit-address');
-                var qrEl = document.getElementById('profile-mn2-qr');
-                var explorerLink = document.getElementById('profile-mn2-explorer-link');
-                var txList = document.getElementById('profile-mn2-transactions');
-                Promise.all([
-                    fetch(base + '/api/mn2/balance?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/transactions?user_id=' + encodeURIComponent(uid) + '&limit=20').then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/wallet-activity?user_id=' + encodeURIComponent(uid) + '&days=5').then(function(r) { return r.json(); })
-                ]).then(function(results) {
-                    var balData = results[0];
-                    var addrData = results[1];
-                    var txData = results[2];
-                    var actData = results[3];
-                    if (balData.success && balanceEl) {
-                        var balNum = Number(balData.mn2_balance) || 0;
-                        balanceEl.textContent = balNum.toFixed(8);
-                        var fiatEl = document.getElementById('profile-mn2-balance-fiat');
-                        if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
-                            fetch(base + '/api/mn2/price').then(function(r) { return r.json(); }).then(function(p) {
-                                if (p && p.mn2_usd_price != null) fiatEl.textContent = '(≈ $' + (balNum * Number(p.mn2_usd_price)).toFixed(4) + ')';
-                            }).catch(function() { fiatEl.textContent = ''; });
-                        } else if (fiatEl) fiatEl.textContent = '';
-                    }
-                    var revAddr = (balData.shop_revenue_address || '').trim();
-                    var revBlock = document.getElementById('profile-mn2-revenue-block');
-                    var revAddrEl = document.getElementById('profile-mn2-revenue-address');
-                    var revExplorer = document.getElementById('profile-mn2-revenue-explorer');
-                    if (revAddr && revBlock) {
-                        revBlock.style.display = 'block';
-                        if (revAddrEl) revAddrEl.textContent = revAddr;
-                        if (revExplorer && balData.shop_revenue_explorer_url) { revExplorer.href = balData.shop_revenue_explorer_url; revExplorer.style.display = ''; }
-                    } else if (revBlock) revBlock.style.display = 'none';
-                    var verificationMsg = document.getElementById('profile-mn2-withdraw-verification-msg');
-                    var profileWithdrawBtn = document.getElementById('profile-mn2-withdraw-btn');
-                    if (balData.withdrawal_verified === false) {
-                        if (verificationMsg) verificationMsg.style.display = 'block';
-                        if (profileWithdrawBtn) { profileWithdrawBtn.disabled = true; profileWithdrawBtn.title = 'Verification required'; }
-                    } else {
-                        if (verificationMsg) verificationMsg.style.display = 'none';
-                        if (profileWithdrawBtn) { profileWithdrawBtn.disabled = false; profileWithdrawBtn.title = ''; }
-                    }
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
-                    var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                    var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                    if (addrData && addrData.success && addrData.deposit_address) {
-                        if (addrEl) addrEl.textContent = addrData.deposit_address;
-                        if (depositErrEl) { depositErrEl.style.display = 'none'; depositErrEl.textContent = ''; }
-                        if (depositHintEl) depositHintEl.style.display = 'none';
-                        if (depositRetryBtn) depositRetryBtn.style.display = 'none';
-                        if (requestAddrBtn) requestAddrBtn.style.display = 'none';
-                        if (explorerLink && addrData.explorer_address_url) { explorerLink.href = addrData.explorer_address_url; explorerLink.style.display = ''; }
-                        if (qrEl && typeof QRCode !== 'undefined') {
-                            qrEl.innerHTML = '';
-                            try { new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 }); } catch (e) { qrEl.innerHTML = ''; }
-                        }
-                    } else {
-                        if (addrEl) addrEl.textContent = '—';
-                        var errMsg = (addrData && addrData.error) ? addrData.error : 'Deposit address unavailable. Wallet RPC may be offline. Use Request address or Retry when the wallet is back.';
-                        if (depositErrEl) { depositErrEl.textContent = errMsg; depositErrEl.style.display = 'block'; }
-                        if (depositHintEl) depositHintEl.style.display = 'block';
-                        if (depositRetryBtn) { depositRetryBtn.style.display = 'inline-block'; }
-                        if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
-                    }
-                    var txs = (txData.success && txData.transactions) ? txData.transactions : [];
-                    if (txList) {
-                        if (txs.length === 0) txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
-                        else txList.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + txs.map(function(t) {
-                            var type = t.type || '—';
-                            var amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
-                            var txLink = t.explorer_tx_url ? '<a href="' + t.explorer_tx_url + '" target="_blank" rel="noopener" style="color:#00d4ff;">Explorer tx</a>' : '';
-                            var addrLink = t.explorer_address_url ? ' <a href="' + t.explorer_address_url + '" target="_blank" rel="noopener" style="color:#88ccff;">Explorer address</a>' : '';
-                            var date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-                            return '<li>' + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
-                        }).join('') + '</ul>';
-                    }
-                    var chartEl = document.getElementById('profile-mn2-5d-chart');
-                    if (chartEl) {
-                        if (actData && actData.success && actData.buckets && actData.buckets.length) {
-                            var buckets = actData.buckets;
-                            var maxV = 1e-10;
-                            buckets.forEach(function(b) { maxV = Math.max(maxV, b.deposits_mn2 || 0, b.out_mn2 || 0); });
-                            chartEl.innerHTML = buckets.map(function(b) {
-                                var hIn = Math.max(2, Math.round(((b.deposits_mn2 || 0) / maxV) * 34));
-                                var hOut = Math.max(2, Math.round(((b.out_mn2 || 0) / maxV) * 34));
-                                var day = (b.date && b.date.length >= 10) ? b.date.slice(5) : (b.date || '');
-                                var netStr = ((b.net_mn2 || 0) >= 0 ? '+' : '') + (Number(b.net_mn2) || 0).toFixed(3);
-                                return '<div class="mn2-5d-col"><div class="mn2-5d-barstack"><div class="mn2-5d-bar-in" style="height:' + hIn + 'px"></div><div class="mn2-5d-bar-out" style="height:' + hOut + 'px"></div></div><div class="mn2-5d-label">' + day + '</div><div class="mn2-5d-net">' + netStr + '</div></div>';
-                            }).join('');
-                        } else {
-                            chartEl.innerHTML = '<span style="opacity:0.75;font-size:0.85rem;">No ledger activity in the last 5 UTC days.</span>';
-                        }
-                    }
-                }).catch(function() {
-                    if (balanceEl) balanceEl.textContent = '—';
-                    if (addrEl) addrEl.textContent = '—';
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
-                    var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                    var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                    if (depositErrEl) { depositErrEl.textContent = 'Could not load. Check connection and retry.'; depositErrEl.style.display = 'block'; }
-                    if (depositHintEl) depositHintEl.style.display = 'block';
-                    if (depositRetryBtn) depositRetryBtn.style.display = 'inline-block';
-                    if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
-                    if (txList) txList.innerHTML = '<p style="margin:0;">Could not load.</p>';
-                    var ch5 = document.getElementById('profile-mn2-5d-chart');
-                    if (ch5) ch5.innerHTML = '<span style="opacity:0.75;">Could not load activity.</span>';
-                });
-                var copyBtn = document.getElementById('profile-mn2-copy');
-                var withdrawBtn = document.getElementById('profile-mn2-withdraw-btn');
-                var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                function doRequestDepositAddress() {
-                    if (addrEl) addrEl.textContent = '…';
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    if (depositErrEl) { depositErrEl.style.display = 'none'; depositErrEl.textContent = ''; }
-                    self.loadProfileMn2Wallet();
-                }
-                if (depositRetryBtn && !depositRetryBtn._wired) {
-                    depositRetryBtn._wired = true;
-                    depositRetryBtn.addEventListener('click', doRequestDepositAddress);
-                }
-                var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                if (requestAddrBtn && !requestAddrBtn._wired) {
-                    requestAddrBtn._wired = true;
-                    requestAddrBtn.addEventListener('click', doRequestDepositAddress);
-                }
-                if (copyBtn && !copyBtn._wired) {
-                    copyBtn._wired = true;
-                    copyBtn.addEventListener('click', function() {
-                        var addr = (addrEl && addrEl.textContent) ? addrEl.textContent.trim() : '';
-                        if (!addr || addr === '--' || addr === '—') return;
-                        navigator.clipboard.writeText(addr).then(function() {
-                            if (typeof toast !== 'undefined') toast.success('Address copied');
-                        }).catch(function() {});
-                    });
-                }
-                var copyRevBtn = document.getElementById('profile-mn2-copy-revenue');
-                if (copyRevBtn && !copyRevBtn._wired) {
-                    copyRevBtn._wired = true;
-                    copyRevBtn.addEventListener('click', function() {
-                        var addr = (document.getElementById('profile-mn2-revenue-address') || {}).textContent.trim();
-                        if (!addr) return;
-                        navigator.clipboard.writeText(addr).then(function() {
-                            if (typeof toast !== 'undefined') toast.success('Address copied');
-                        }).catch(function() {});
-                    });
-                }
-                if (withdrawBtn && !withdrawBtn._wired) {
-                    withdrawBtn._wired = true;
-                    withdrawBtn.addEventListener('click', function() {
-                        var address = (document.getElementById('profile-mn2-withdraw-address') || {}).value.trim();
-                        var amount = parseFloat((document.getElementById('profile-mn2-withdraw-amount') || {}).value);
-                        if (!address) { if (typeof toast !== 'undefined') toast.error('Enter MN2 address'); return; }
-                        if (!(amount > 0)) { if (typeof toast !== 'undefined') toast.error('Enter amount'); return; }
-                        withdrawBtn.disabled = true;
-                        var origHtml = withdrawBtn.innerHTML;
-                        withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-                        fetch(base + '/api/mn2/withdraw', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid, address: address, amount: amount })
-                        }).then(function(r) { return r.json(); }).then(function(data) {
-                            if (data.success) {
-                                if (typeof toast !== 'undefined') toast.success('Withdrawal sent');
-                                document.getElementById('profile-mn2-withdraw-address').value = '';
-                                document.getElementById('profile-mn2-withdraw-amount').value = '';
-                                self.loadProfileMn2Wallet();
-                            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
-                        }).catch(function() { if (typeof toast !== 'undefined') toast.error('Withdrawal failed'); })
-                        .finally(function() { withdrawBtn.disabled = false; withdrawBtn.innerHTML = origHtml; });
-                    });
+                if (window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
+                    window.ProfileMn2Wallet.load();
                 }
             }
 
@@ -4000,6 +3876,8 @@
                 leaderboard: 'profile-section-leaderboard',
                 shop: 'profile-section-shop',
                 wallet: 'profile-mn2-wallet-card',
+                settings: 'profile-mn2-wallet-card',
+                security: 'password-protection-card',
                 agents: 'my-agents-card',
                 activity: 'profile-section-activity',
                 lab: 'profile-section-lab-logbook',

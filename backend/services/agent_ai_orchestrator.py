@@ -243,7 +243,7 @@ class AgentAIOrchestrator:
             "success",
             {"model": profile.get("model"), "usage": result.usage or {}},
         )
-        return {
+        out = {
             "used_ai": True,
             "success": True,
             "profile": profile.get("profile_name", profile_key),
@@ -256,6 +256,21 @@ class AgentAIOrchestrator:
             },
             "usage": result.usage or {},
         }
+        uid = str((safe_context or {}).get("user_id") or "").strip()
+        if uid and uid not in ("default_user", "anonymous"):
+            try:
+                from backend.services.agent_crypto_rewards_service import award_agent_action
+
+                out["reward"] = award_agent_action(
+                    uid,
+                    "agent_orchestrator",
+                    reference=f"orch:{profile_key}:{uid}:{datetime.now().strftime('%Y-%m-%d-%H')}",
+                    metadata={"profile_key": profile_key},
+                    success=True,
+                )
+            except Exception:
+                pass
+        return out
 
 
 agent_ai_orchestrator = AgentAIOrchestrator()

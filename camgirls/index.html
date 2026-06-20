@@ -3,6 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live AI performers on MasterNoder — Nova, Luna, Sage, Ember, Iris. Studio chat, gifts, fan club, tips via MN2 or PayPal. 18+ age gate.">
+    <meta name="keywords" content="AI camgirls, live performers, MN2 tips, MasterNoder studio, fan club">
+    <link rel="canonical" href="https://masternoder.dk/camgirls/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://masternoder.dk/camgirls/">
+    <meta property="og:title" content="Camgirls Studio — MasterNoder">
+    <meta property="og:description" content="Five live AI performers — unlock rooms, tip with MN2 or PayPal, fan club and studio gifts.">
+    <meta property="og:site_name" content="MasterNoder">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Camgirls Studio — MasterNoder">
+    <meta name="twitter:description" content="AI performer catalog with studio chat, gifts, and MN2 tipping.">
     <title>Camgirls — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
@@ -59,6 +70,19 @@
         .cg-dance-bounce { animation: cg-bounce 0.45s ease 5; }
         .cg-dance-wave { animation: cg-wave 1s ease-in-out 3; }
         .cg-dance-vip { animation: cg-shimmy 0.7s ease 2, cg-spin 2s linear 1; }
+        .cg-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .cg-filter-bar button { padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; }
+        .cg-filter-active { background: rgba(0,212,255,0.2) !important; border-color: rgba(0,212,255,0.5) !important; color: #00d4ff !important; }
+        .cg-leaderboard { font-size: 0.75rem; margin: 8px 0; opacity: 0.85; }
+        .cg-lb-title { display: block; margin-bottom: 4px; color: #ffd166; }
+        .cg-lb-row { display: block; }
+        .cg-fc-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(255,209,102,0.2); color: #ffd166; }
+        .cg-schedule { font-size: 0.72rem; opacity: 0.75; }
+        .cg-offline-compose { display: flex; gap: 6px; margin-top: 8px; }
+        .cg-offline-input { flex: 1; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #161b22; color: #fff; font-size: 0.85rem; }
+        .cg-private-timer { font-size: 0.8rem; color: #ff66cc; margin-top: 6px; min-height: 1.1em; }
+        .cg-private-active { box-shadow: 0 0 0 1px rgba(255,0,170,0.45); }
+        .cg-fav-btn { font-size: 1rem; padding: 4px 8px; }
     </style>
 </head>
 <body>
@@ -78,10 +102,15 @@
             <label style="display:block;margin:8px 0;">Birth year <input type="number" id="cg-birth-year" min="1920" max="2010" style="width:100px;margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#161b22;color:#fff;"></label>
             <button type="button" id="cg-age-btn" class="cg-unlock">I am 18 or older</button>
         </div>
+        <div id="cg-filter-bar" class="cg-filter-bar">
+            <button type="button" class="cg-filter-active" data-filter="all">All performers</button>
+            <button type="button" data-filter="favorites">⭐ Favorites</button>
+        </div>
         <div id="cg-msg"></div>
         <div id="cg-grid" class="cg-grid">Loading performers…</div>
     </div>
-    <script src="/static/js/camgirls-studio.js?v=20260617e"></script>
-    <script src="/static/js/camgirls.js?v=20260617e"></script>
+    <script src="/static/js/camgirls-studio.js?v=20260618c"></script>
+    <script src="/static/js/camgirls.js?v=20260618c"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
 </body>
 </html>

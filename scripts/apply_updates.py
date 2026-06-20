@@ -10,6 +10,7 @@ reload nginx → ensure no-cache headers for HTML. No Ubuntu reboot, no hard res
 Usage:
   python scripts/apply_updates.py
   python scripts/apply_updates.py --host masternoder.dk
+  python scripts/apply_updates.py --ask-pass
   DEPLOY_PASS=xxx python scripts/apply_updates.py
 
 After deploy, run this instead of rebooting the server. Users should refresh (Ctrl+F5)
@@ -19,31 +20,42 @@ import os
 import sys
 import time
 import re
+import argparse
+import socket
 from datetime import datetime
 
-SERVER_HOST = os.getenv("DEPLOY_HOST", "masternoder.dk")
-SERVER_USER = os.getenv("DEPLOY_USER", "root")
-SERVER_PASS = (os.getenv("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS for SSH."))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+
+SERVER_HOST = deploy_host()
+SERVER_USER = deploy_user()
 REMOTE_BASE = os.getenv("REMOTE_BASE", "/var/www/html")
 WAIT_AFTER_PROXY = 6
 WAIT_AFTER_UWSGI_STOP = 4
 WAIT_AFTER_UWSGI_START = 8
 WAIT_AFTER_UWSGI_MAIN = 4
+QUICK_CHECK_TIMEOUT = 20
 
 
 def sh(ssh, cmd, timeout=30):
+    """Run remote command; return (stdout, stderr). Never raises on SSH read timeout."""
     stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
-    out = (stdout.read() or b"").decode("utf-8", errors="replace").strip()
-    err = (stderr.read() or b"").decode("utf-8", errors="replace").strip()
-    return out, err
+    try:
+        out = (stdout.read() or b"").decode("utf-8", errors="replace").strip()
+        err = (stderr.read() or b"").decode("utf-8", errors="replace").strip()
+        return out, err
+    except (socket.timeout, TimeoutError):
+        return "", "timeout"
 
 
-def run():
+def run(force_prompt: bool = False):
     try:
         import paramiko
     except ImportError:
         print("Install paramiko: pip install paramiko")
         return 1
+
+    server_pass = require_deploy_pass(force_prompt=force_prompt)
 
     ssh = None
     try:
@@ -56,7 +68,7 @@ def run():
 
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
 
         # 1. Clear Python cache
         print("[1/6] Clearing Python cache...")
@@ -114,7 +126,7 @@ def run():
                 text=True,
                 timeout=60,
                 cwd=base,
-                env={**os.environ, "DEPLOY_HOST": SERVER_HOST, "DEPLOY_PASS": SERVER_PASS}
+                env={**os.environ, "DEPLOY_HOST": SERVER_HOST, "DEPLOY_PASS": server_pass}
             )
             if r.returncode == 0:
                 print("  no-cache rules OK")
@@ -123,12 +135,19 @@ def run():
         else:
             print("  [SKIP] setup_generator_no_cache.py not found")
 
-        # Quick sanity check
+        # Quick sanity check (non-fatal — restarts above may still be warming up)
         print()
         print("Quick check (backend :5000):")
         for path in ["/api/version", "/vidgenerator/api/version"]:
-            out, _ = sh(ssh, f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:5000{path} 2>/dev/null || echo '---'", timeout=5)
-            print(f"  {path}: {out}")
+            curl_cmd = (
+                f"curl -sS --max-time 8 -o /dev/null -w '%{{http_code}}' "
+                f"http://127.0.0.1:5000{path} 2>/dev/null || echo '---'"
+            )
+            out, err = sh(ssh, curl_cmd, timeout=QUICK_CHECK_TIMEOUT)
+            if err == "timeout" or not out:
+                print(f"  {path}: [WARN] timeout (app may still be starting — try curl manually in ~30s)")
+            else:
+                print(f"  {path}: {out}")
 
         print()
         print("=" * 60)
@@ -149,4 +168,7 @@ def run():
 
 
 if __name__ == "__main__":
-    sys.exit(run())
+    ap = argparse.ArgumentParser(description="Restart app services after deploy (no reboot)")
+    ap.add_argument("--ask-pass", action="store_true", help="Prompt SSH password (ignore stale .env DEPLOY_PASS)")
+    args = ap.parse_args()
+    sys.exit(run(force_prompt=args.ask_pass))

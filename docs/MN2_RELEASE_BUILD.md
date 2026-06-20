@@ -23,10 +23,12 @@ python scripts/mn2_daemon_upgrade_remote.py --check-release
 **Windows without WSL** — build on the Linux server (auto-installs `autoconf`, boost, ssl via apt):
 
 ```powershell
-python scripts/mn2_build_release_remote.py --ask-pass --publish
+python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
 ```
 
-If build fails on missing libs, the script runs `apt-get install` as root before compile.
+Uses **depends** by default (bundled OpenSSL — avoids `unsupported SSL version` on OpenSSL 3 hosts). First run ~30–60 min. Do **not** build on Windows native (`bash` / `configure` will fail).
+
+Fast path (may fail on Ubuntu 22.04+): add `--fast`
 
 **WSL or Linux build host** — needs **~2 GB RAM**, `git`, `build-essential`:
 
@@ -98,6 +100,17 @@ masternoder2d.tar.gz
 │   └── masternoder2-tx    # tx tool
 └── RELEASE_MANIFEST.json  # git sha, per-binary sha256, tarball sha256
 ```
+
+---
+
+## Troubleshooting
+
+| Error | Fix |
+|--------|-----|
+| `unsupported SSL version` | Do not build on Windows; use remote script (depends build). Avoid `--fast`. |
+| `undefined reference to arc4random_addrandom` | `libbsd-dev` + `-lbsd` (in build script). |
+| `undefined reference to __gmpz_*` | `libgmp-dev` + `-lgmp`; do not pass `LIBS=` on `make` cmdline (overrides Makefile). |
+| `Cannot --apply until v1.2.3.0 release asset exists` | Complete build + publish steps first. |
 
 ---
 

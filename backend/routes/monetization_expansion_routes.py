@@ -204,3 +204,71 @@ def masternode_hosting_subscription_info():
         "plan_note": sub.get("plan_note"),
         "create_subscription": "POST /api/monetization/subscription/create with plan_id from monetization_config",
     }), 200
+
+
+# --- Tier B bundles ---
+@monetization_expansion_bp.route("/api/shop/tier-b/onramp-hosting", methods=["GET"])
+def tier_b_onramp_hosting():
+    user_id = request.args.get("user_id") or _resolve_user_id()
+    from backend.services.tier_b_monetization_service import get_onramp_hosting_offer
+
+    return jsonify(get_onramp_hosting_offer(user_id)), 200
+
+
+@monetization_expansion_bp.route("/api/shop/tier-b/auction-fee", methods=["GET"])
+def tier_b_auction_fee():
+    from backend.services.tier_b_monetization_service import get_auction_fee_info
+
+    return jsonify(get_auction_fee_info()), 200
+
+
+@monetization_expansion_bp.route("/api/mn2/copy-trading/premium", methods=["GET"])
+def copy_trading_premium_status():
+    user_id = request.args.get("user_id") or _resolve_user_id()
+    from backend.services.tier_b_monetization_service import get_copy_trading_premium_status
+
+    return jsonify(get_copy_trading_premium_status(user_id)), 200
+
+
+@monetization_expansion_bp.route("/api/mn2/copy-trading/premium/purchase", methods=["POST"])
+def copy_trading_premium_purchase():
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id") or _resolve_user_id()
+    from backend.services.tier_b_monetization_service import purchase_copy_trading_premium
+
+    out = purchase_copy_trading_premium(user_id, source=data.get("source") or "shop_coins")
+    return jsonify(out), 200 if out.get("success") else 400
+
+
+@monetization_expansion_bp.route("/api/shop/battle-pass/quests", methods=["GET"])
+def battle_pass_quests():
+    user_id = request.args.get("user_id") or _resolve_user_id()
+    from backend.services.battle_pass_service import get_battle_pass_status
+
+    return jsonify(get_battle_pass_status(user_id)), 200
+
+
+# --- Tier D3 mobile IAP ---
+@monetization_expansion_bp.route("/api/mobile/iap/catalog", methods=["GET"])
+def mobile_iap_catalog():
+    from backend.services.mobile_iap_service import public_catalog
+    return jsonify(public_catalog()), 200
+
+
+@monetization_expansion_bp.route("/api/mobile/iap/fulfill", methods=["POST"])
+def mobile_iap_fulfill():
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id") or _resolve_user_id()
+    from backend.services.mobile_iap_service import fulfill_purchase
+
+    out = fulfill_purchase(
+        user_id,
+        platform=(data.get("platform") or "").strip(),
+        store_product_id=(data.get("store_product_id") or data.get("product_id") or "").strip(),
+        receipt_data=(data.get("receipt_data") or data.get("receipt") or "").strip(),
+        transaction_id=(data.get("transaction_id") or "").strip() or None,
+    )
+    code = 200 if out.get("success") else 400
+    if out.get("error") == "auth_required":
+        code = 401
+    return jsonify(out), code

@@ -17,6 +17,7 @@ _GAME_EVENT_TYPES = frozenset({
     "battle_tournament_join",
     "game_mn2_reward",
     "hunter_level_up",
+    "compendium_complete",
     "shop_discord_promo_created",
 })
 
@@ -162,6 +163,20 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     "Affiliate disclosure: platform-operated promotion."
                 ),
                 "color": 0xE67E22,
+            }],
+        }
+
+    if et == "compendium_complete":
+        pages = payload.get("total_pages") or 25
+        comp_url = f"{base_url}/compendium/?calm=1"
+        return {
+            "embeds": [{
+                "title": "Compendium library complete",
+                "description": (
+                    f"A reader finished **{pages}/{pages}** rulebook pages.\n\n"
+                    f"[Open calm library]({comp_url})"
+                ),
+                "color": 0x00FF88,
             }],
         }
 

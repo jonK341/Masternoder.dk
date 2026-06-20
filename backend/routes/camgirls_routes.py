@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import os
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 
 camgirls_bp = Blueprint("camgirls", __name__)
 
 
-def _resolve_user_id(*, from_body: bool = False) -> str:
+def _resolve_user_id(*, from_body: bool = False, anonymous_ok: bool = False) -> str:
     """Fast path for catalog polling — avoid user_identification timeouts."""
     uid = (request.args.get("user_id") or request.headers.get("X-User-Id") or "").strip()
     if uid:
@@ -18,6 +18,11 @@ def _resolve_user_id(*, from_body: bool = False) -> str:
         uid = (body.get("user_id") or "").strip()
         if uid:
             return uid
+    if anonymous_ok and request.method == "GET":
+        su = session.get("user_id")
+        if su and str(su).strip():
+            return str(su).strip()
+        return "default_user"
     try:
         from backend.services.account_resolution_service import resolve_user_id
         return resolve_user_id(
@@ -47,8 +52,9 @@ def _ops_ok() -> bool:
 def performers_list():
     try:
         from backend.services.camgirls_service import list_performers_catalog
-        uid = _resolve_user_id()
-        result = list_performers_catalog(user_id=uid)
+        lite = request.args.get("lite") in ("1", "true", "yes")
+        uid = _resolve_user_id(anonymous_ok=True)
+        result = list_performers_catalog(user_id=uid, lite=lite)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -175,6 +181,104 @@ def performer_dance(performer_id: str):
     return jsonify(result), code
 
 
+@camgirls_bp.route("/api/camgirls/favorites", methods=["GET"])
+def camgirls_favorites_list():
+    from backend.services.camgirls_social_service import list_favorites
+    uid = _resolve_user_id()
+    return jsonify(list_favorites(uid)), 200
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/favorite", methods=["POST"])
+def performer_favorite_toggle(performer_id: str):
+    from backend.services.camgirls_social_service import toggle_favorite
+    uid = _resolve_user_id()
+    return jsonify(toggle_favorite(uid, performer_id)), 200
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/fan-club", methods=["POST"])
+def performer_fan_club(performer_id: str):
+    from backend.services.camgirls_social_service import join_fan_club
+    uid = _resolve_user_id()
+    result = join_fan_club(uid, performer_id)
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    if result.get("code") == "unlock_required":
+        return jsonify(result), 403
+    if result.get("error") == "insufficient_mn2":
+        return jsonify(result), 402
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/offline", methods=["POST"])
+def performer_offline_message(performer_id: str):
+    from backend.services.camgirls_social_service import send_offline_message
+    uid = _resolve_user_id()
+    body = request.get_json(silent=True) or {}
+    message = body.get("message") or body.get("text") or ""
+    result = send_offline_message(uid, performer_id, str(message))
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    if result.get("error") == "insufficient_mn2":
+        return jsonify(result), 402
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/private-show", methods=["POST", "GET"])
+def performer_private_show(performer_id: str):
+    from backend.services.camgirls_social_service import get_private_show_status, start_private_show
+    uid = _resolve_user_id()
+    if request.method == "GET":
+        return jsonify(get_private_show_status(uid, performer_id)), 200
+    body = request.get_json(silent=True) or {}
+    minutes = int(body.get("minutes") or 5)
+    result = start_private_show(uid, performer_id, minutes)
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    if result.get("code") == "unlock_required":
+        return jsonify(result), 403
+    if result.get("error") == "insufficient_mn2":
+        return jsonify(result), 402
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/leaderboard", methods=["GET"])
+def performer_leaderboard(performer_id: str):
+    from backend.services.camgirls_social_service import get_leaderboard
+    limit = request.args.get("limit", 10)
+    return jsonify(get_leaderboard(performer_id, limit=int(limit or 10))), 200
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/chat/history", methods=["GET"])
+def performer_chat_history(performer_id: str):
+    from backend.services.camgirls_service import get_chat_history
+    uid = _resolve_user_id()
+    limit = request.args.get("limit", 30)
+    result = get_chat_history(uid, performer_id, limit=int(limit or 30))
+    if result.get("code") == "unlock_required":
+        return jsonify(result), 403
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/mood", methods=["POST"])
+def performer_mood(performer_id: str):
+    from backend.services.camgirls_service import get_performer, user_has_unlock
+    from backend.services.camgirls_social_service import pick_mood_lingo
+    uid = _resolve_user_id()
+    body = request.get_json(silent=True) or {}
+    mood_id = str(body.get("mood_id") or body.get("mood") or "cozy")
+    row = get_performer(performer_id)
+    if not row:
+        return jsonify({"success": False, "error": "performer_not_found"}), 404
+    if not user_has_unlock(uid, (row.get("id") or "")):
+        return jsonify({"success": False, "error": "unlock_required", "code": "unlock_required"}), 403
+    lingo = pick_mood_lingo(row, mood_id)
+    return jsonify({"success": True, "mood_id": mood_id, "lingo": lingo}), 200
+
+
 @camgirls_bp.route("/api/camgirls/chat", methods=["POST"])
 def camgirls_chat():
     from backend.services.camgirls_service import chat_with_performer
@@ -246,5 +350,29 @@ def camgirls_agent_action():
         if result.get("error") == "insufficient_mn2":
             code = 402
         return jsonify(result), code
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@camgirls_bp.route("/api/camgirls/livekit/status", methods=["GET"])
+def camgirls_livekit_status():
+    """D2 — LiveKit voice availability (configured vs stub)."""
+    from backend.services.camgirls_livekit_service import public_status
+    return jsonify(public_status()), 200
+
+
+@camgirls_bp.route("/api/camgirls/livekit/token", methods=["POST"])
+def camgirls_livekit_token():
+    """D2 — Issue LiveKit room token for unlocked fan voice session."""
+    try:
+        body = request.get_json(silent=True) or {}
+        uid = (body.get("user_id") or _resolve_user_id(from_body=True)).strip()
+        pid = (body.get("performer_id") or "").strip()
+        from backend.services.camgirls_livekit_service import issue_voice_token
+        out = issue_voice_token(uid, pid)
+        code = 200 if out.get("success") else 400
+        if out.get("error") == "unlock_required":
+            code = 403
+        return jsonify(out), code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

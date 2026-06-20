@@ -138,6 +138,14 @@ def paypal_capture():
 
             purchase_battle_pass_premium(user_id, source="paypal")
             item_granted = item_id
+        elif item_id == "copy-trading-premium":
+            from backend.services.tier_b_monetization_service import purchase_copy_trading_premium
+
+            ct = purchase_copy_trading_premium(user_id, source="paypal")
+            if not ct.get("success"):
+                fulfillment_error = ct.get("error") or "copy_trading_premium_failed"
+            else:
+                item_granted = item_id
         elif item_id == "premium-render-unlock":
             if unified_points_db:
                 unified_points_db.add_points(
@@ -245,6 +253,17 @@ def paypal_capture():
     except Exception:
         pass
 
+    if not fulfillment_error and user_id:
+        try:
+            from backend.services.battle_pass_service import record_battle_pass_action
+
+            if item_granted or (pack and (pack.get("coins_granted") or pack.get("generation_credits_granted"))):
+                record_battle_pass_action(user_id, "shop_purchase")
+            if item_id == "battle-pass-premium":
+                record_battle_pass_action(user_id, "shop_purchase")
+        except Exception:
+            pass
+
     # Notify admin of purchase (email + log)
     try:
         from backend.services.purchase_notification_service import notify_purchase
@@ -260,6 +279,35 @@ def paypal_capture():
         )
     except Exception:
         pass
+
+    referral_reward = None
+    upsell = []
+    if not fulfillment_error:
+        try:
+            from backend.services.referral_purchase_rewards_service import (
+                classify_purchase,
+                maybe_reward_referrer,
+            )
+            from backend.services.shop_upsell_service import upsell_suggestions
+
+            purchase_kind = classify_purchase(
+                item_id=item_id,
+                is_coin_pack=bool(pack and pack.get("coins_granted")),
+            )
+            referral_reward = maybe_reward_referrer(
+                user_id,
+                purchase_kind=purchase_kind,
+                item_id=item_id or "",
+                order_id=order_id or "",
+                amount_usd=amount,
+            )
+            upsell = upsell_suggestions(
+                item_id=item_id or "",
+                coins_granted=int(coins_granted or 0),
+                purchase_kind=purchase_kind,
+            )
+        except Exception:
+            pass
 
     payload = {
         "success": True,
@@ -283,6 +331,10 @@ def paypal_capture():
             "error": "PayPal payment captured, but item fulfillment failed",
             "details": fulfillment_error,
         })
+    if referral_reward and referral_reward.get("rewarded"):
+        payload["referral_reward"] = referral_reward
+    if upsell:
+        payload["upsell"] = upsell
 
     # Ledger for §0 phase C (gross margin vs revenue) — append-only JSONL
     try:

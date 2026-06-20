@@ -32,6 +32,8 @@ def main() -> int:
     p.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (required if .env DEPLOY_PASS is stale)")
     p.add_argument("--restore-staking", action="store_true", help="Unlock wallet + run trader market ticks")
     p.add_argument("--camgirls", action="store_true", help="Provision payout addresses + post-deploy verify + Discord spotlight")
+    p.add_argument("--optionals", action="store_true", help="After main ops, run mn2_ops_optionals_remote.py --all")
+    p.add_argument("--purge-stale-hosts", action="store_true", help="Purge stuck masternode provisioning ghosts")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -71,7 +73,47 @@ else
   echo "WARN monetization cron.d missing"
 fi
 
+echo ""
+echo "== weekly revenue pulse cron =="
+chmod +x cron/revenue_pulse_cron.sh 2>/dev/null || true
+if [ -f cron/masternoder-revenue-pulse.cron.d ]; then
+  cp cron/masternoder-revenue-pulse.cron.d /etc/cron.d/masternoder-revenue-pulse
+  chmod 644 /etc/cron.d/masternoder-revenue-pulse
+  echo "OK revenue pulse cron (Mon 10:00 UTC — needs NOTIFY_ADMIN_EMAIL + NOTIFY_SMTP_*)"
+else
+  echo "WARN revenue pulse cron.d missing"
+fi
+
+echo ""
+echo "== weekly margin report cron =="
+chmod +x cron/margin_report_cron.sh 2>/dev/null || true
+if [ -f cron/masternoder-margin-report.cron.d ]; then
+  cp cron/masternoder-margin-report.cron.d /etc/cron.d/masternoder-margin-report
+  chmod 644 /etc/cron.d/masternoder-margin-report
+  echo "OK margin report cron (Tue 10:00 UTC — needs NOTIFY_ADMIN_EMAIL + COGS_ADMIN_REPORT_KEY for API)"
+else
+  echo "WARN margin report cron.d missing"
+fi
+
 SECRET=$(grep -E '^(MN2_OPS_SECRET|MN2_SCAN_SECRET)=' .env | head -1 | cut -d= -f2- | tr -d '\r"')
+echo ""
+echo "== discord promo rotator cron =="
+chmod +x cron/discord_promo_rotator.sh 2>/dev/null || true
+if [ -f cron/masternoder-discord-promo.cron.d ]; then
+  cp cron/masternoder-discord-promo.cron.d /etc/cron.d/masternoder-discord-promo
+  chmod 644 /etc/cron.d/masternoder-discord-promo
+  echo "OK discord promo rotator cron"
+else
+  echo "WARN discord promo cron.d missing — deploy mn2_staking first"
+fi
+
+echo ""
+echo "== masternode.conf permissions =="
+touch /var/www/html/config/masternode.conf
+chown www-data:www-data /var/www/html/config/masternode.conf
+chmod 664 /var/www/html/config/masternode.conf
+ls -la /var/www/html/config/masternode.conf
+
 echo ""
 echo "== verify masternode service API =="
 curl -s http://127.0.0.1:5000/api/mn2/masternode/service | python3 -c "
@@ -113,15 +155,6 @@ ENDSCRIPT
     print(out)
     ok = "OK max_hosted_nodes=" in out and "FAIL" not in out
 
-    if args.restore_staking:
-        ssh.close()
-        import subprocess
-        restore = os.path.join(os.path.dirname(__file__), "mn2_restore_staking_and_market_remote.py")
-        cmd = [sys.executable, restore]
-        if args.ask_pass:
-            cmd.append("--ask-pass")
-        return subprocess.call(cmd)
-
     if args.camgirls:
         print("\n== Camgirls server ops ==")
         cg = rf'''bash -s <<'ENDCG'
@@ -139,6 +172,37 @@ ENDCG'''
         print(sh(ssh, cg, timeout=180))
 
     ssh.close()
+
+    if args.restore_staking:
+        import subprocess
+        restore = os.path.join(os.path.dirname(__file__), "mn2_restore_staking_and_market_remote.py")
+        cmd = [sys.executable, restore]
+        if args.ask_pass:
+            cmd.append("--ask-pass")
+        rc = subprocess.call(cmd)
+        if rc != 0:
+            return rc
+
+    if args.purge_stale_hosts:
+        import subprocess
+        cleanup = os.path.join(os.path.dirname(__file__), "mn2_hosting_cleanup_remote.py")
+        cmd = [sys.executable, cleanup, "--max-age-hours", "0"]
+        if args.ask_pass:
+            cmd.append("--ask-pass")
+        rc = subprocess.call(cmd)
+        if rc != 0:
+            return rc
+
+    if args.optionals:
+        import subprocess
+        opt = os.path.join(os.path.dirname(__file__), "mn2_ops_optionals_remote.py")
+        cmd = [sys.executable, opt, "--all"]
+        if args.ask_pass:
+            cmd.append("--ask-pass")
+        rc = subprocess.call(cmd)
+        if rc != 0:
+            return rc
+
     print("\nNext ops completed." if ok else "\n[WARN] Check output above.")
     return 0 if ok else 1
 

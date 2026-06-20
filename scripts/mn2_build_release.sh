@@ -18,19 +18,20 @@ SRC_DIR="${BUILD_ROOT}/MasterNoder2"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
 USE_DEPENDS="${USE_DEPENDS:-1}"
 INSTALL_BUILD_DEPS="${INSTALL_BUILD_DEPS:-1}"
+SKIP_DEPENDS_BUILD="${SKIP_DEPENDS_BUILD:-0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 ensure_build_deps() {
-  if command -v autoconf >/dev/null && command -v automake >/dev/null && command -v libtoolize >/dev/null; then
-    return 0
-  fi
   if [[ "${INSTALL_BUILD_DEPS}" != "1" ]]; then
+    if command -v autoconf >/dev/null && command -v automake >/dev/null && command -v libtoolize >/dev/null; then
+      return 0
+    fi
     echo "Missing autoconf/automake/libtool. Set INSTALL_BUILD_DEPS=1 or install build packages." >&2
     exit 1
   fi
   if [[ "$(id -u)" -ne 0 ]] || ! command -v apt-get >/dev/null; then
-    echo "Run as root on Debian/Ubuntu, or install: autoconf automake libtool build-essential libboost-all-dev libssl-dev libevent-dev" >&2
+    echo "Run as root on Debian/Ubuntu, or install: autoconf automake libtool build-essential libboost-all-dev libssl-dev libevent-dev libbsd-dev" >&2
     exit 1
   fi
   echo "=== Installing MN2 build dependencies (apt) ==="
@@ -39,7 +40,17 @@ ensure_build_deps() {
   apt-get install -y -qq \
     git build-essential autoconf automake libtool pkg-config \
     libboost-all-dev libssl-dev libevent-dev libzmq3-dev \
-    libdb-dev libminiupnpc-dev
+    libdb-dev libminiupnpc-dev libbsd-dev libgmp-dev
+}
+
+# Static depends: libevent → libbsd; zerocoin → libgmp. Set before configure + make (do not override on make cmdline).
+apply_depends_link_flags() {
+  local host_dir="$1"
+  export PKG_CONFIG_PATH="${host_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+  export CPPFLAGS="-I${host_dir}/include"
+  export LDFLAGS="-L${host_dir}/lib"
+  export LIBS="-lbsd -lgmp"
+  echo "Link flags: LDFLAGS=${LDFLAGS} LIBS=${LIBS}"
 }
 
 sha256_file() {
@@ -75,11 +86,16 @@ GIT_SUBJECT=$(git log -1 --format=%s)
 echo "Source at tag ${VERSION}: ${GIT_SHA:0:12} — ${GIT_SUBJECT}"
 
 if [[ "${USE_DEPENDS}" == "1" ]]; then
-  echo "=== depends (static, NO_QT) — first run can take 30–60 min ==="
-  cd depends
-  make -j"${JOBS}" HOST=x86_64-linux-gnu NO_QT=1
-  cd ..
   HOST_DIR="${SRC_DIR}/depends/x86_64-linux-gnu"
+  if [[ -d "${HOST_DIR}/lib" ]] && [[ "${SKIP_DEPENDS_BUILD}" == "1" ]]; then
+    echo "=== depends already built — skipping (SKIP_DEPENDS_BUILD=1) ==="
+  else
+    echo "=== depends (static, NO_QT) — first run can take 30–60 min ==="
+    cd depends
+    make -j"${JOBS}" HOST=x86_64-linux-gnu NO_QT=1
+    cd ..
+  fi
+  apply_depends_link_flags "${HOST_DIR}"
   ./autogen.sh
   CONFIGURE_FLAGS=(
     --prefix="${HOST_DIR}"
@@ -95,7 +111,35 @@ else
 fi
 
 ./configure "${CONFIGURE_FLAGS[@]}"
-make -j"${JOBS}" src/masternoder2d src/masternoder2-cli src/masternoder2-tx
+if [[ "${USE_DEPENDS}" == "1" ]]; then
+  apply_depends_link_flags "${HOST_DIR}"
+fi
+
+build_target() {
+  local target="$1"
+  local required="${2:-1}"
+  echo "=== make ${target} ==="
+  if ! make -j"${JOBS}" "${target}"; then
+    if [[ "${required}" == "1" ]]; then
+      echo "BUILD FAIL: make ${target}" >&2
+      exit 2
+    fi
+    echo "WARN: make ${target} failed (optional)" >&2
+    return 1
+  fi
+  return 0
+}
+
+build_target src/masternoder2d 1
+build_target src/masternoder2-cli 1
+build_target src/masternoder2-tx 0 || true
+
+for bin in masternoder2d masternoder2-cli; do
+  [[ -x "src/${bin}" ]] || { echo "BUILD FAIL: src/${bin} missing after make" >&2; exit 2; }
+done
+if [[ -f src/masternoder2-tx ]]; then
+  chmod +x src/masternoder2-tx 2>/dev/null || true
+fi
 
 strip -s src/masternoder2d src/masternoder2-cli src/masternoder2-tx 2>/dev/null || \
   strip -s src/masternoder2d src/masternoder2-cli || true
@@ -169,12 +213,8 @@ doc["tarball_name"] = "masternoder2d.tar.gz"
 with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
+print(f"Manifest tarball_sha256={tar_sha}")
 PY
-
-# Refresh tarball to include final manifest with tarball_sha256
-tar czf masternoder2d.tar.gz masternoder2d RELEASE_MANIFEST.json
-sha256sum masternoder2d.tar.gz > masternoder2d.tar.gz.sha256 2>/dev/null || \
-  shasum -a 256 masternoder2d.tar.gz > masternoder2d.tar.gz.sha256
 
 echo ""
 echo "=== Build OK ==="

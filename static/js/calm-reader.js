@@ -83,6 +83,13 @@
         }
     }
 
+    function fetchAccess() {
+        var uid = encodeURIComponent(getUserId());
+        return fetch('/api/compendium/access?user_id=' + uid)
+            .then(function (r) { return r.json(); })
+            .catch(function () { return {}; });
+    }
+
     function fetchPages() {
         return fetch('/api/compendium/pages')
             .then(function (r) { return r.json(); })
@@ -232,9 +239,14 @@
         ensureCss();
         var pos = parsePosition();
 
-        Promise.all([fetchPages(), fetchProgress()]).then(function (res) {
+        Promise.all([fetchPages(), fetchProgress(), fetchAccess()]).then(function (res) {
             var pages = res[0];
             var progress = res[1];
+            var access = res[2];
+            if (pos && pos.number && access && access.locked_pages && access.locked_pages.indexOf(pos.number) !== -1) {
+                window.location.replace('/compendium/?locked=' + pos.number);
+                return;
+            }
             if (pos && pos.url) saveSession(pos, pages);
             if (pos && pos.kind !== 'index') buildChrome(pages, pos, progress);
             injectContinueCard(pages, progress);

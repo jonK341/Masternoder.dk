@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-agent-skill-sets="enriched">
 <head>
     <meta charset="UTF-8">
@@ -541,7 +541,7 @@
                 </div>
             </section>
 
-            <section class="lab-tab-panel" id="lab-panel-roundtable" data-lab-tab="roundtable" aria-label="Round table discussion">
+            <section class="lab-tab-panel" id="discussion" data-lab-tab="roundtable" aria-label="Lab discussion room (formerly chat)">
                 <div class="lab-panel" style="max-width:1100px;margin:0 auto;">
                     <h2>🪑 Round table discussion room</h2>
                     <p style="margin:0;opacity:0.82;font-size:0.86rem;">Researchers and agents can add short notes. Tech progression and project status stay visible on the same table.</p>
@@ -765,6 +765,7 @@
             var requested = new URLSearchParams(window.location.search).get('tab');
             var valid = TAB_DEFS.some(function (row) { return row[0] === requested; });
             applyLabTab(valid ? requested : TAB_DEFS[0][0]);
+            if (window.location.hash === '#discussion') applyLabTab('roundtable');
         })();
 
         window.userId = localStorage.getItem('game_user_id') || 'default_user';

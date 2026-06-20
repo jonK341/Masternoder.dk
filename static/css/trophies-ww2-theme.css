@@ -1,0 +1,97 @@
+/* Trophies — WW2 primary theme + optional theme switcher */
+:root,
+body.trophy-theme-ww2 {
+  --trophy-primary: #c4a35a;
+  --trophy-secondary: #8b7355;
+  --trophy-danger: #8b2635;
+  --trophy-warning: #d4a017;
+  --trophy-success: #5a7a4a;
+  --trophy-dark: #1a1612;
+  --trophy-card: #252018;
+  --trophy-border: rgba(196, 163, 90, 0.35);
+}
+
+body.trophy-theme-ww2 {
+  background: linear-gradient(160deg, #0f0d0a 0%, #1f1810 45%, #12100c 100%) fixed;
+  background-image:
+    linear-gradient(160deg, rgba(15, 13, 10, 0.97) 0%, rgba(31, 24, 16, 0.95) 45%, rgba(18, 16, 12, 0.98) 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(196, 163, 90, 0.03) 2px,
+      rgba(196, 163, 90, 0.03) 4px
+    );
+}
+
+body.trophy-theme-ww2 .trophies-header h1 {
+  background: linear-gradient(135deg, #e8d5a8, #8b7355);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.04em;
+}
+
+body.trophy-theme-ww2 .stat-card,
+body.trophy-theme-ww2 .trophies-container .table-wrap {
+  border-color: var(--trophy-border);
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 40, 0.2);
+}
+
+body.trophy-theme-ww2 .tab,
+body.trophy-theme-ww2 .special-btn {
+  border-color: rgba(196, 163, 90, 0.35);
+  background: rgba(37, 32, 24, 0.85);
+}
+
+body.trophy-theme-ww2 .tab.active {
+  background: rgba(196, 163, 90, 0.18);
+  border-color: var(--trophy-primary);
+}
+
+body.trophy-theme-gold {
+  --trophy-primary: #ffd700;
+  --trophy-secondary: #ffa500;
+  --trophy-danger: #ff3366;
+  --trophy-warning: #ffaa00;
+  --trophy-success: #00ff88;
+  --trophy-dark: #0a0a0f;
+  --trophy-card: #151520;
+  --trophy-border: rgba(255, 215, 0, 0.2);
+}
+
+.trophy-theme-switcher {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 12px 0 20px;
+}
+
+.trophy-theme-switcher button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--trophy-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.trophy-theme-switcher button.active {
+  border-color: var(--trophy-primary);
+  background: rgba(196, 163, 90, 0.15);
+}
+
+/* No spinning wheel on trophy page — static loading text only */
+
+.trophies-container .intel-loading .fa-spinner,
+.trophies-container .intel-loading .fa-spin,
+.trophies-container .loading .fa-spinner {
+  display: none !important;
+}
+
+.trophies-container .intel-loading::before,
+.trophies-container .loading::before {
+  content: none !important;
+}

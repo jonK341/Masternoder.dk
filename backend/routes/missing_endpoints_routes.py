@@ -3036,15 +3036,23 @@ def generator_create():
         except Exception:
             pass
         user_id = data.get('user_id', 'default_user')
+        api_key_row = None
         try:
-            from backend.services.generator_api_key_service import resolve_api_key
-            raw_key = (request.headers.get('X-Generator-Api-Key') or '').strip()
-            if raw_key:
-                key_row = resolve_api_key(raw_key)
-                if key_row:
-                    user_id = key_row.get('user_id') or user_id
-                    if key_row.get('org_label'):
-                        data['scr_org_label'] = key_row.get('org_label')
+            from backend.services.generator_api_key_service import (
+                authenticate_request,
+                check_api_quota,
+                record_api_usage,
+            )
+            api_key_row, key_err = authenticate_request(dict(request.headers))
+            if key_err == "invalid_api_key":
+                return jsonify({'success': False, 'error': 'invalid_api_key'}), 401
+            if api_key_row:
+                user_id = api_key_row.get('user_id') or user_id
+                if api_key_row.get('org_label'):
+                    data['scr_org_label'] = api_key_row.get('org_label')
+                quota = check_api_quota(api_key_row, duration_sec=duration)
+                if not quota.get('success'):
+                    return jsonify({'success': False, **quota}), 402
         except Exception:
             pass
         try:
@@ -3126,6 +3134,13 @@ def generator_create():
         except ImportError:
             _start_video_generation(doc_id, config)
             queue_meta = {"queued": False}
+
+        if api_key_row:
+            try:
+                from backend.services.generator_api_key_service import record_api_usage
+                record_api_usage(api_key_row, job_id=doc_id, duration_sec=duration)
+            except Exception:
+                pass
 
         return jsonify({
             'success': True,

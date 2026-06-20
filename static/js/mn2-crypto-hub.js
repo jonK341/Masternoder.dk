@@ -256,7 +256,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || !d.success) return;
-        var max = d.max_hosted_nodes || 50;
+        var max = d.max_hosted_nodes || 100;
         var used = d.hosted_count || 0;
         var open = d.slots_available != null ? d.slots_available : Math.max(0, max - used);
         var pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
@@ -267,6 +267,8 @@
         if (q('mn-slots')) q('mn-slots').textContent = used;
         if (q('mn-collateral')) q('mn-collateral').textContent = fmtNum(d.collateral_mn2, 0) + ' MN2 each';
         if (q('mn-open-slots')) q('mn-open-slots').textContent = open;
+        if (q('mn-slots-cap')) q('mn-slots-cap').textContent = 'up to ' + max + ' total';
+        applyMasternodeCheckoutSoldOut(open);
         var daemon = d.daemon || {};
         if (q('mn-daemon')) {
           q('mn-daemon').textContent = daemon.staking_active ? 'Minting' : 'Idle';
@@ -362,6 +364,24 @@
     var mn2v = Number(sample.mn2_per_slot || (sample.mn2_total && sample.slots ? sample.mn2_total / sample.slots : coins / 100));
     if (q('mn-price-label')) q('mn-price-label').textContent = '$' + fmtNum(usd, 2);
     if (q('mn-price-alt')) q('mn-price-alt').textContent = coins + ' coins · ' + fmtNum(mn2v, 4) + ' MN2';
+  }
+
+  function applyMasternodeCheckoutSoldOut(openSlots) {
+    var soldOut = openSlots != null && Number(openSlots) <= 0;
+    var banner = q('mn-hosting-sold-out');
+    var card = q('mn-checkout-card');
+    if (banner) banner.hidden = !soldOut;
+    if (card) card.classList.toggle('mn-checkout-card--sold-out', soldOut);
+    var actions = q('mn-checkout-actions');
+    if (actions) {
+      actions.querySelectorAll('[data-mn-pay]').forEach(function (btn) {
+        btn.disabled = soldOut;
+        btn.style.opacity = soldOut ? '0.45' : '';
+        btn.style.cursor = soldOut ? 'not-allowed' : '';
+      });
+    }
+    var slotsInput = q('mn-checkout-slots');
+    if (slotsInput) slotsInput.disabled = soldOut;
   }
 
   function applyMasternodeCheckoutRails() {
@@ -507,6 +527,12 @@
 
   function runMasternodeHostingCheckout(method) {
     var msg = q('mn-checkout-msg');
+    var openEl = q('mn-open-slots');
+    var open = openEl ? Number(openEl.textContent) : null;
+    if (open != null && !isNaN(open) && open <= 0) {
+      if (msg) msg.textContent = 'Sold out — no hosting slots available right now.';
+      return;
+    }
     var slots = parseInt((q('mn-checkout-slots') || {}).value, 10) || 1;
     setCheckoutBusy(true);
     if (msg) msg.textContent = 'Creating quote…';

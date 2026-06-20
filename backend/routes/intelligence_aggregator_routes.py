@@ -113,7 +113,8 @@ _AGG_ACTION_POINTS = {
     'progress_refresh': ('activity_points', 0.5),
     'intel_loaded': ('knowledge_points', 0.5),
     'battle_overlay_enter': ('activity_points', 0.5),
-    'monitor_battle_complete': ('activity_points', 1.0),
+    'catalog_loaded': ('knowledge_points', 0.5),
+    'catalog_assign': ('activity_points', 1.0),
 }
 
 

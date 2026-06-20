@@ -39,7 +39,16 @@ def link_user(user_id: str, discord_id: str) -> Dict[str, Any]:
     path = _ident_path(discord_id)
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"user_id": user_id, "discord_id": discord_id, "linked": True}, f, indent=2)
-    return {"success": True, "user_id": user_id, "discord_id": discord_id, "linked": True}
+    out = {"success": True, "user_id": user_id, "discord_id": discord_id, "linked": True}
+    try:
+        from backend.services.discord_hosting_vip_service import sync_pending_for_user
+
+        vip = sync_pending_for_user(user_id)
+        if vip.get("granted") or vip.get("pending"):
+            out["hosting_vip"] = vip
+    except Exception:
+        pass
+    return out
 
 
 def unlink_user(user_id: str) -> Dict[str, Any]:
@@ -71,6 +80,13 @@ def link_status(user_id: str) -> Dict[str, Any]:
     except Exception:
         pass
     min_vip = float(os.environ.get("CASINO_DISCORD_VIP_MIN_MN2", "100"))
+    hosting_vip = {"hosting_customer": False, "hosting_vip_eligible": False}
+    try:
+        from backend.services.discord_hosting_vip_service import check_hosting_vip_eligibility
+
+        hosting_vip = check_hosting_vip_eligibility(user_id)
+    except Exception:
+        pass
     return {
         "success": True,
         "user_id": user_id,
@@ -79,4 +95,7 @@ def link_status(user_id: str) -> Dict[str, Any]:
         "mn2_balance": mn2_balance,
         "casino_vip_eligible": bool(discord_id) and mn2_balance >= min_vip,
         "min_mn2_for_vip": min_vip,
+        "hosting_customer": bool(hosting_vip.get("hosting_customer")),
+        "hosting_vip_eligible": bool(hosting_vip.get("eligible")),
+        "hosting_vip_message": hosting_vip.get("message"),
     }

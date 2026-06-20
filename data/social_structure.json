@@ -4,6 +4,16 @@
   "user_crews": {},
   "activity_feed": [
     {
+      "id": "c081d943",
+      "user_id": "player_a",
+      "action_type": "game_level_crypto_claim",
+      "label": "Claimed 0.00010000 MN2 for reaching level 1",
+      "ts": "2026-06-18T10:42:18.851282Z",
+      "extra": {
+        "level": 1
+      }
+    },
+    {
       "id": "75cd922a",
       "user_id": "user_b4984c3befca47a7",
       "action_type": "battle",
@@ -73,5 +83,25 @@
   "challenges": [],
   "max_activity_items": 500,
   "max_friends_per_user": 100,
-  "max_crew_members": 50
+  "max_crew_members": 50,
+  "crew_invites": [],
+  "referrals": {
+    "codes": {},
+    "signups": []
+  },
+  "crypto": {
+    "claims": {},
+    "total_mn2_earned": 0
+  },
+  "chat_messages": [],
+  "posts": [],
+  "moderation": {
+    "blocks": {},
+    "reports": [],
+    "hidden_activity": {}
+  },
+  "privacy": {},
+  "schema_version": 2,
+  "max_chat_messages": 500,
+  "max_posts": 1000
 }

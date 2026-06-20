@@ -1,0 +1,12 @@
+{
+  "test_agg_user": {
+    "assignments": {
+      "agg_001": {
+        "agent_id": "test_agent",
+        "assigned_at": "2026-06-18T06:24:42.028429Z"
+      }
+    },
+    "auto_run": false,
+    "updated_at": "2026-06-18T06:24:42.028429Z"
+  }
+}

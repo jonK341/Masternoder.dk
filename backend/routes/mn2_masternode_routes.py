@@ -160,6 +160,7 @@ def masternode_checkout_order():
             user_id=user_id,
             return_url=data.get("return_url"),
             cancel_url=data.get("cancel_url"),
+            promo_code=(data.get("promo_code") or "").strip() or None,
         )
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
@@ -257,7 +258,32 @@ def masternode_provision_pending():
     if not _ops_authorized():
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     try:
-        limit = request.args.get("limit", 20)
+        raw_limit = request.args.get("limit", 20)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 20
         return jsonify(mn_service.process_pending_hosts(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/purge-stale-hosts", methods=["POST"])
+def masternode_purge_stale_hosts():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        data = _body()
+        max_age = data.get("max_age_hours")
+        if max_age is None:
+            max_age = request.args.get("max_age_hours", 6)
+        force = bool(data.get("force_no_collateral") or request.args.get("force_no_collateral"))
+        dry_run = bool(data.get("dry_run") or request.args.get("dry_run"))
+        result = mn_service.purge_stale_provisioning_hosts(
+            max_age_hours=float(max_age),
+            force_no_collateral=force,
+            dry_run=dry_run,
+        )
+        return jsonify(result), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

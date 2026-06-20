@@ -27,10 +27,37 @@ def _append(path: str, row: dict) -> None:
             f.write(json.dumps(row, default=str) + "\n")
 
 
-def _webhook_for_channel(channel: str) -> Optional[str]:
+def _looks_like_webhook_url(url: str) -> bool:
+    u = url.strip()
+    return u.startswith("https://discord.com/api/webhooks/") or u.startswith(
+        "https://discordapp.com/api/webhooks/"
+    )
+
+
+def _webhook_config_error(url: str, env_key: str) -> Optional[str]:
+    v = url.strip()
+    if v.isdigit():
+        return (
+            f"invalid_webhook:{env_key} is a numeric channel ID; "
+            "use a full Discord webhook URL (Server Settings → Integrations → Webhooks)"
+        )
+    if not _looks_like_webhook_url(v):
+        return (
+            f"invalid_webhook:{env_key} is not a Discord webhook URL "
+            "(expected https://discord.com/api/webhooks/...)"
+        )
+    return None
+
+
+def _webhook_for_channel(channel: str) -> tuple[Optional[str], Optional[str]]:
     key = f"DISCORD_CHANNEL_ID_{channel.upper()}"
-    url = os.environ.get("DISCORD_WEBHOOK_URL") or os.environ.get(key)
-    return url.strip() if url else None
+    per = (os.environ.get(key) or "").strip()
+    if per:
+        return per, key
+    default = (os.environ.get("DISCORD_WEBHOOK_URL") or "").strip()
+    if default:
+        return default, "DISCORD_WEBHOOK_URL"
+    return None, None
 
 
 def post_message(
@@ -44,7 +71,7 @@ def post_message(
     if mid in _SENT_IDS:
         return {"success": True, "duplicate": True, "message_id": mid}
 
-    webhook = _webhook_for_channel(channel)
+    webhook, env_key = _webhook_for_channel(channel)
     row = {
         "ts": _iso(),
         "channel": channel,
@@ -55,22 +82,30 @@ def post_message(
     ok = False
     err = None
     if webhook:
-        body = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            webhook,
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                ok = 200 <= resp.status < 300
-        except urllib.error.HTTPError as exc:
-            err = f"HTTP {exc.code}"
-            if exc.code == 429:
-                err = "rate_limited"
-        except Exception as exc:
-            err = str(exc)
+        config_err = _webhook_config_error(webhook, env_key or "DISCORD_WEBHOOK_URL")
+        if config_err:
+            err = config_err
+        else:
+            body = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                webhook,
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    # Cloudflare blocks Python-urllib default UA (HTTP 403 / error 1010).
+                    "User-Agent": "MasternoderBot/1.0 (+https://masternoder.dk)",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    ok = 200 <= resp.status < 300
+            except urllib.error.HTTPError as exc:
+                err = f"HTTP {exc.code}"
+                if exc.code == 429:
+                    err = "rate_limited"
+            except Exception as exc:
+                err = str(exc)
     else:
         err = "webhook_not_configured"
 

@@ -296,6 +296,7 @@ FILES_TO_DEPLOY = [
     "backend/services/scr_checkout_service.py",
     "backend/services/generator_premium_checkout_service.py",
     "backend/services/battle_pass_service.py",
+    "backend/services/tier_b_monetization_service.py",
     "backend/services/generator_api_key_service.py",
     "backend/routes/monetization_expansion_routes.py",
     "backend/routes/shop_routes.py",

@@ -19,7 +19,16 @@
     "offline_messages",
     "cam2cam_placeholder",
     "record_show_placeholder",
-    "multi_lang_lingo"
+    "multi_lang_lingo",
+    "favorites",
+    "fan_club_tier",
+    "private_show_timer",
+    "show_schedule",
+    "tip_leaderboard",
+    "chat_history",
+    "offline_inbox",
+    "mood_switcher",
+    "scene_gallery"
   ],
   "gifts": {
     "rose": {"label": "Rose", "emoji": "🌹", "mn2": 5, "buzz": 1},
@@ -49,5 +58,19 @@
     "sage": {"pitch": 0.95, "rate": 0.88, "lang": "en-US"},
     "ember": {"pitch": 1.15, "rate": 1.12, "lang": "en-US"},
     "iris": {"pitch": 0.9, "rate": 0.82, "lang": "en-GB"}
+  },
+  "moods": {
+    "cozy": {"label": "Cozy", "emoji": "🛋️", "music_theme": "lofi_cozy"},
+    "party": {"label": "Party", "emoji": "🎉", "music_theme": "ember_fire"},
+    "vip": {"label": "VIP", "emoji": "👑", "music_theme": "iris_gold"},
+    "flirty_sfw": {"label": "Flirty", "emoji": "😘", "music_theme": "neon_pulse"},
+    "zen": {"label": "Zen", "emoji": "🧘", "music_theme": "sage_zen"}
+  },
+  "scenes": {
+    "neon_club": {"label": "Neon club", "filter": "hue-rotate(0deg)"},
+    "moonlit": {"label": "Moonlit", "filter": "hue-rotate(220deg) brightness(0.9)"},
+    "zen_garden": {"label": "Zen garden", "filter": "hue-rotate(90deg) saturate(0.8)"},
+    "fire_pit": {"label": "Fire pit", "filter": "hue-rotate(30deg) saturate(1.3)"},
+    "gold_lounge": {"label": "Gold lounge", "filter": "sepia(0.3) brightness(1.1)"}
   }
 }

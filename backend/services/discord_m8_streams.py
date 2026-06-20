@@ -26,6 +26,7 @@ _ALERT_TYPES = frozenset({
     "agent_funded",
     "agent_treasury_deposit",
     "game_mn2_reward",
+    "compendium_complete",
     "discord_post_failed",
 })
 
@@ -46,7 +47,7 @@ _SUPPORT_FAQ = [
     {"q": "withdraw", "a": "Withdraw from Profile when balance is liquid and verification/whitelist rules pass. The daemon broadcasts the tx."},
     {"q": "staking", "a": "Stake MN2 from Profile; rewards come from the pool daemon minting. Browser rig is engagement-only."},
     {"q": "casino", "a": "Casino supports coins, MN2, and PayPal USD. Enable account security on Profile for real-money play."},
-    {"q": "discord", "a": "Link Discord on Profile for VIP perks and promo codes. Redeem codes on-site only."},
+    {"q": "discord", "a": "Link Discord on Profile for VIP perks. Redeem **DISCORD-STARTER** (+100 coins) or **HOSTMN5** (5% off hosting) in the Shop promo box — on-site only."},
     {"q": "market", "a": "Trade MN2 for in-app coins at /explorer?tab=market — limit orders and agent liquidity. No custody on Discord."},
     {"q": "camgirls", "a": "Browse performers at /camgirls/ — unlock and tip with in-app coins. All rewards claimed on-site."},
     {"q": "compendium", "a": "Read V1–V16 rulebooks at /compendium/?calm=1 — calm mode syncs progress to Game Hub."},
@@ -145,6 +146,66 @@ def run_quest_bot_digest() -> Dict[str, Any]:
     return {"success": result.get("success"), "quests_listed": len(daily), "discord": result}
 
 
+_PROMO_ROTATION = [
+    {
+        "code": "DISCORD-STARTER",
+        "headline": "Discord welcome bonus",
+        "detail": "Redeem **DISCORD-STARTER** in Shop → +100 coins (one per user).",
+        "path": "/shop/",
+    },
+    {
+        "code": "HOSTMN5",
+        "headline": "Hosting checkout promo",
+        "detail": "Use **HOSTMN5** at checkout for 5% off masternode hosting slots.",
+        "path": "/shop?tab=mn2",
+    },
+    {
+        "code": "MARKET-BONUS",
+        "headline": "Trader market bonus",
+        "detail": "Redeem **MARKET-BONUS** in Shop → +75 coins and +0.25 MN2.",
+        "path": "/explorer?tab=market",
+    },
+    {
+        "code": "GENERATE10",
+        "headline": "Generator upsell",
+        "detail": "Checkout code **GENERATE10** — 10% off coin packs + 25 bonus coins.",
+        "path": "/generator/",
+    },
+]
+
+
+def _promo_for_affiliate_link(link_id: str) -> str:
+    hints = {
+        "shop": "Promo: **DISCORD-STARTER** (+100 coins) · **HOSTMN5** (5% hosting)",
+        "market": "Promo: **MARKET-BONUS** (+75 coins + 0.25 MN2)",
+        "generator": "Checkout: **GENERATE10** (10% off + bonus coins)",
+        "staking": "Bundle: **MN2 starter** — coins + 7-day staking boost",
+    }
+    return hints.get(link_id, "")
+
+
+def promo_rotator_payload() -> Dict[str, Any]:
+    """M8 #52 — rotate shop promo codes in Discord announcements."""
+    from backend.services.discord_service import post_message, track_click
+
+    if not _PROMO_ROTATION:
+        return {"success": False, "error": "no_promos"}
+    idx = datetime.now(timezone.utc).toordinal() % len(_PROMO_ROTATION)
+    promo = _PROMO_ROTATION[idx]
+    url = f"{_BASE_URL}{promo['path']}"
+    payload = {
+        "embeds": [{
+            "title": f"Shop promo: {promo['headline']}",
+            "description": f"{promo['detail']}\n\n→ {url}",
+            "url": url,
+            "footer": {"text": f"Code: {promo['code']} · redeem on masternoder.dk only"},
+        }],
+    }
+    result = post_message("announcements", payload, message_id=f"promo-rot:{promo['code']}:{_iso_day()}")
+    track_click(None, f"promo-{promo['code'].lower()}", {"source": "promo_rotator", "url": url})
+    return {"success": result.get("success"), "promo": promo, "discord": result}
+
+
 def affiliate_rotator_payload() -> Dict[str, Any]:
     """M8 #57 — rotate featured affiliate link by UTC day."""
     from backend.services.discord_service import post_message, track_click
@@ -154,10 +215,14 @@ def affiliate_rotator_payload() -> Dict[str, Any]:
     idx = datetime.now(timezone.utc).toordinal() % len(_AFFILIATE_ROTATION)
     link = _AFFILIATE_ROTATION[idx]
     url = f"{_BASE_URL}{link['path']}"
+    promo_hint = _promo_for_affiliate_link(link.get("id") or "")
+    description = f"Today's spotlight → {url}"
+    if promo_hint:
+        description += f"\n\n{promo_hint}"
     payload = {
         "embeds": [{
             "title": f"Featured: {link['label']}",
-            "description": f"Today's spotlight → {url}",
+            "description": description,
             "url": url,
             "footer": {"text": "Affiliate disclosure: platform-operated links."},
         }],

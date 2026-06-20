@@ -106,16 +106,69 @@ def test_bid_flow_accepts_highest_offer_and_records_history():
             with patch("backend.services.shop_db_service.shop_tables_exist", return_value=False):
                 assert shopdb.add_to_inventory("seller", "item-bid", "Bid Item", 1)
                 listing = auction.create_listing("seller", "item-bid", 1, 200)
-                bid_result = auction.place_bid("buyer", listing["listing_id"], 150)
+                with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+                    bid_result = auction.place_bid("buyer", listing["listing_id"], 150)
                 assert bid_result["listing"]["highest_bid_coins"] == 150
+                assert bid_result["bid"]["escrowed"] is True
+                assert bid_result["escrow_coins"] == 150
 
                 with patch("backend.services.unified_points_database.unified_points_db", mock_points):
                     sale = auction.accept_bid("seller", listing["listing_id"], bid_result["bid"]["bid_id"])
 
                 assert sale["listing"]["status"] == "sold"
                 assert sale["price_coins"] == 150
+                debits = [c.kwargs.get("amount") for c in mock_points.add_points.call_args_list if c.kwargs.get("amount", 0) < 0]
+                assert -150 in debits
+                assert -150 not in debits[1:] if len(debits) > 1 else True
                 history = auction.price_history("item-bid")
                 assert history and history[0]["price_coins"] == 150
+        finally:
+            os.environ.pop("MASTERNODER_LOG_DIR", None)
+
+
+def test_bid_escrow_released_on_outbid():
+    from backend.services import shop_auction_service as auction
+    from backend.services import shop_db_service as shopdb
+
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"success": True, "points": {"coins": 500}}
+    mock_points.add_points.return_value = {"success": True}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["MASTERNODER_LOG_DIR"] = tmp
+        try:
+            with patch("backend.services.shop_db_service.shop_tables_exist", return_value=False):
+                assert shopdb.add_to_inventory("seller", "item-out", "Out Item", 1)
+                listing = auction.create_listing("seller", "item-out", 1, 100)
+                with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+                    auction.place_bid("buyer_a", listing["listing_id"], 120)
+                    auction.place_bid("buyer_b", listing["listing_id"], 150)
+                sources = [c.kwargs.get("source") for c in mock_points.add_points.call_args_list]
+                assert "marketplace_bid_escrow" in sources
+                assert "marketplace_bid_escrow_release" in sources
+        finally:
+            os.environ.pop("MASTERNODER_LOG_DIR", None)
+
+
+def test_cancel_listing_releases_bid_escrow():
+    from backend.services import shop_auction_service as auction
+    from backend.services import shop_db_service as shopdb
+
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"success": True, "points": {"coins": 500}}
+    mock_points.add_points.return_value = {"success": True}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["MASTERNODER_LOG_DIR"] = tmp
+        try:
+            with patch("backend.services.shop_db_service.shop_tables_exist", return_value=False):
+                assert shopdb.add_to_inventory("seller", "item-cancel", "Cancel Item", 1)
+                listing = auction.create_listing("seller", "item-cancel", 1, 80)
+                with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+                    auction.place_bid("buyer", listing["listing_id"], 90)
+                    auction.cancel_listing("seller", listing["listing_id"])
+                sources = [c.kwargs.get("source") for c in mock_points.add_points.call_args_list]
+                assert "marketplace_bid_escrow_release" in sources
         finally:
             os.environ.pop("MASTERNODER_LOG_DIR", None)
 

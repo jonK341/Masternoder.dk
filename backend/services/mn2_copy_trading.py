@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -218,3 +218,40 @@ def unfollow(follower_user_id: str) -> Dict[str, Any]:
     data["followers"] = followers
     _save(data)
     return {"success": True, "removed": True}
+
+
+def get_premium_status(user_id: str) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
+    data = _load()
+    pu = data.get("premium_users") if isinstance(data.get("premium_users"), dict) else {}
+    row = pu.get(uid) or {}
+    exp = row.get("expires_at")
+    active = False
+    if exp:
+        try:
+            active = datetime.fromisoformat(str(exp).replace("Z", "+00:00")) > datetime.now(timezone.utc)
+        except Exception:
+            active = False
+    return {"active": active, "expires_at": exp if active else None, "source": row.get("source")}
+
+
+def activate_premium(user_id: str, *, days: int = 30, source: str = "shop") -> Dict[str, Any]:
+    uid = (user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required"}
+    data = _load()
+    premium = data.setdefault("premium_users", {})
+    now = datetime.now(timezone.utc)
+    current = premium.get(uid) or {}
+    start = now
+    if current.get("expires_at"):
+        try:
+            prev = datetime.fromisoformat(str(current["expires_at"]).replace("Z", "+00:00"))
+            if prev > now:
+                start = prev
+        except Exception:
+            pass
+    expires = (start + timedelta(days=max(1, int(days or 30)))).isoformat().replace("+00:00", "Z")
+    premium[uid] = {"expires_at": expires, "source": source, "updated_at": _iso()}
+    _save(data)
+    return {"success": True, "premium_until": expires, "active": True}

@@ -419,6 +419,40 @@
         });
     }
 
+    async function refreshMn2BuyinPacks() {
+        const el = $('casino-mn2-buyin-packs');
+        if (!el) return;
+        const data = await api('/api/casino/mn2-buyin-packs');
+        if (!data.success || !(data.packs || []).length) {
+            el.textContent = 'MN2 buy-in packs unavailable';
+            return;
+        }
+        el.innerHTML = '';
+        (data.packs || []).forEach(function (pack) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-deposit-pack-btn';
+            btn.textContent = (pack.label || pack.id) + ' (' + Number(pack.price_mn2).toFixed(2) + ' MN2 → $' + Number(pack.casino_usd_credit).toFixed(2) + ')';
+            btn.addEventListener('click', function () { purchaseMn2BuyinPack(pack.id); });
+            el.appendChild(btn);
+        });
+    }
+
+    async function purchaseMn2BuyinPack(packId) {
+        const data = await api('/api/casino/mn2-buyin/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, pack_id: packId }),
+        });
+        if (data.success) {
+            showToast('MN2 buy-in complete! USD balance: $' + Number(data.casino_usd_credited || 0).toFixed(2));
+            setActiveCurrency('usd');
+            refreshBalance();
+        } else {
+            alert(data.error || 'Could not purchase MN2 buy-in pack');
+        }
+    }
+
     async function startPayPalDeposit(packId) {
         const data = await api('/api/casino/paypal/deposit', {
             method: 'POST',
@@ -2522,6 +2556,7 @@
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);
+        safeRefresh('mn2BuyinPacks', refreshMn2BuyinPacks);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);

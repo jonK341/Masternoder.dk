@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "currency": "MN2",
+  "note": "One-time MN2 bonus when the hunter reaches each level. Claim from /game → Earn → Rewards.",
+  "levels": [
+    {"level": 1, "mn2": 0.0001, "label": "Welcome Hunter"},
+    {"level": 2, "mn2": 0.00015, "label": "Signal Scout"},
+    {"level": 3, "mn2": 0.0002, "label": "Combo Artisan"},
+    {"level": 4, "mn2": 0.00028, "label": "Quest Cartographer"},
+    {"level": 5, "mn2": 0.0004, "label": "Nexus Operator"},
+    {"level": 6, "mn2": 0.00055, "label": "Star Map Initiate"},
+    {"level": 7, "mn2": 0.00075, "label": "Battle Recruit"},
+    {"level": 8, "mn2": 0.001, "label": "Trophy Seeker"},
+    {"level": 9, "mn2": 0.0013, "label": "Constellation Runner"},
+    {"level": 10, "mn2": 0.0018, "label": "Industry Challenger"},
+    {"level": 11, "mn2": 0.0024, "label": "Veteran Hunter"},
+    {"level": 12, "mn2": 0.0031, "label": "Elite Pathfinder"},
+    {"level": 13, "mn2": 0.004, "label": "Master Cartographer"},
+    {"level": 14, "mn2": 0.0052, "label": "Nexus Veteran"},
+    {"level": 15, "mn2": 0.0065, "label": "Star Map Commander"},
+    {"level": 16, "mn2": 0.008, "label": "Battle Vanguard"},
+    {"level": 17, "mn2": 0.0095, "label": "Trophy Architect"},
+    {"level": 18, "mn2": 0.011, "label": "Constellation Master"},
+    {"level": 19, "mn2": 0.013, "label": "Season Contender"},
+    {"level": 20, "mn2": 0.015, "label": "Industry Champion"},
+    {"level": 25, "mn2": 0.025, "label": "Legendary Hunter"},
+    {"level": 30, "mn2": 0.04, "label": "Mythic Operator"},
+    {"level": 40, "mn2": 0.065, "label": "Empire Hunter"},
+    {"level": 50, "mn2": 0.1, "label": "Sovereign Champion"}
+  ]
+}

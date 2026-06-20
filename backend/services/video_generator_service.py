@@ -3633,6 +3633,14 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
             except Exception:
                 pass
             try:
+                bp_uid = str((job or {}).get("user_id") or user_id or "").strip()
+                if bp_uid:
+                    from backend.services.battle_pass_service import record_battle_pass_action
+
+                    record_battle_pass_action(bp_uid, "generator_complete")
+            except Exception:
+                pass
+            try:
                 from backend.services.discord_m8_streams import post_generator_showcase
                 post_generator_showcase(
                     job_id=doc_id,

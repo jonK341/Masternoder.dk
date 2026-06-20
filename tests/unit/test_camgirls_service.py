@@ -100,13 +100,17 @@ def test_chat_requires_unlock_then_debits(monkeypatch):
     t = CamgirlsTestBase()
     t.setUp()
     try:
-        from backend.services import llm_service
+        from backend.services import agent_ai_router
         from backend.services.camgirls_service import chat_with_performer, record_age_verification, unlock_performer
 
+        class _MockResp:
+            success = True
+            content = "Hey there!"
+
         monkeypatch.setattr(
-            llm_service,
-            "chat",
-            lambda **kwargs: llm_service.LLMResponse(success=True, content="Hey there!", model="test"),
+            agent_ai_router,
+            "routed_chat",
+            lambda messages, task_kind, user_id, **kwargs: (_MockResp(), {"trace_id": "t1"}),
         )
         t._credit("buyer", 50.0)
         record_age_verification("buyer", birth_year=1990)

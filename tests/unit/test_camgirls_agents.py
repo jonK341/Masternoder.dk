@@ -54,7 +54,11 @@ def test_agent_tools_route():
     assert tools.status_code == 200
     data = tools.get_json()
     assert data.get("success") is True
-    assert any(t.get("action") == "chat" for t in data.get("tools") or [])
+    actions = [t.get("action") for t in data.get("tools") or []]
+    assert "chat" in actions
+    assert "gift" in actions
+    assert "fan_club" in actions
+    assert len(actions) >= 15
 
 
 def test_agents_roster_route():

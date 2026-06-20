@@ -68,6 +68,59 @@ def generator_crypto_rewards_info():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+def _resolve_user_id():
+    from backend.services.account_resolution_service import resolve_user_id
+
+    return resolve_user_id()
+
+
+@generator_bp.route("/api/generator/api/tiers", methods=["GET"])
+def generator_api_tiers_list():
+    """Public metered API tier catalog (C7)."""
+    from backend.services.generator_api_key_service import list_public_tiers
+
+    return jsonify(list_public_tiers()), 200
+
+
+@generator_bp.route("/api/generator/api/status", methods=["GET"])
+def generator_api_status():
+    """Active subscriptions, usage, and keys for a user."""
+    user_id = (request.args.get("user_id") or _resolve_user_id() or "").strip()
+    from backend.services.generator_api_key_service import get_user_api_status
+
+    out = get_user_api_status(user_id)
+    return jsonify(out), 200 if out.get("success") else 400
+
+
+@generator_bp.route("/api/generator/api/keys", methods=["POST"])
+def generator_api_key_user_create():
+    """Issue an API key for an active tier subscription."""
+    data = request.get_json(silent=True) or {}
+    user_id = (data.get("user_id") or _resolve_user_id() or "").strip()
+    from backend.services.generator_api_key_service import create_api_key
+
+    out = create_api_key(
+        org_label=(data.get("org_label") or user_id or "org").strip(),
+        user_id=user_id,
+        label=data.get("label"),
+        tier_id=(data.get("tier_id") or "").strip(),
+        subscription_id=(data.get("subscription_id") or "").strip() or None,
+    )
+    return jsonify(out), 200 if out.get("success") else 400
+
+
+@generator_bp.route("/api/generator/api/purchase", methods=["POST"])
+def generator_api_tier_purchase():
+    """Buy an API tier with shop coins."""
+    data = request.get_json(silent=True) or {}
+    user_id = (data.get("user_id") or _resolve_user_id() or "").strip()
+    tier_id = (data.get("tier_id") or "").strip()
+    from backend.services.generator_api_key_service import purchase_tier_coins
+
+    out = purchase_tier_coins(user_id, tier_id)
+    return jsonify(out), 200 if out.get("success") else 400
+
+
 @generator_bp.route("/api/generator/agent-tools", methods=["GET"])
 def generator_agent_tools():
     """Capability map for agents (Generator #21)."""

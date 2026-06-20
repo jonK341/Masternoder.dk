@@ -58,10 +58,17 @@ def _load_performers_raw() -> List[Dict[str, Any]]:
     return out
 
 
-def _public_performer(row: Dict[str, Any], *, unlocked: bool = False) -> Dict[str, Any]:
+def _public_performer(
+    row: Dict[str, Any],
+    *,
+    unlocked: bool = False,
+    catalog_list: bool = False,
+    agent_hint: Optional[Dict[str, Any]] = None,
+    studio_cat: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     agent_id = (row.get("agent_id") or "").strip()
-    ai_agent = None
-    if not agent_id:
+    ai_agent = agent_hint
+    if not agent_id and ai_agent is None:
         try:
             from backend.services.camgirls_agents_service import agent_for_performer
             ai_agent = agent_for_performer(str(row.get("id") or ""))
@@ -69,6 +76,8 @@ def _public_performer(row: Dict[str, Any], *, unlocked: bool = False) -> Dict[st
                 agent_id = (ai_agent.get("agent_id") or "").strip()
         except Exception:
             pass
+    elif ai_agent:
+        agent_id = (ai_agent.get("agent_id") or agent_id or "").strip()
     pub = {
         "id": row.get("id"),
         "display_name": row.get("display_name"),
@@ -88,7 +97,12 @@ def _public_performer(row: Dict[str, Any], *, unlocked: bool = False) -> Dict[st
         pub["chat_price_mn2"] = float(row.get("chat_price_mn2") or _DEFAULT_CHAT_PRICE_MN2)
     try:
         from backend.services.camgirls_studio_service import public_studio
-        pub["studio"] = public_studio(row, unlocked=unlocked)
+        pub["studio"] = public_studio(
+            row,
+            unlocked=unlocked,
+            catalog_list=catalog_list,
+            cat=studio_cat,
+        )
     except Exception:
         pass
     return pub
@@ -102,13 +116,40 @@ def get_performer(performer_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def list_performers_catalog(*, user_id: Optional[str] = None) -> Dict[str, Any]:
+def list_performers_catalog(*, user_id: Optional[str] = None, lite: bool = False) -> Dict[str, Any]:
     uid = (user_id or "").strip()
     unlocks = _user_unlocks(uid) if uid else {}
+    rows = _load_performers_raw()
+    agent_by_pid: Dict[str, Dict[str, Any]] = {}
+    studio_cat: Optional[Dict[str, Any]] = None
+    if rows:
+        try:
+            from backend.services.camgirls_agents_service import _read_models_raw, _MODELS_CACHE
+            from backend.services.camgirls_studio_service import _read_catalog
+
+            _read_models_raw()
+            agent_by_pid = dict(_MODELS_CACHE.get("by_performer") or {})
+            studio_cat = _read_catalog()
+        except Exception:
+            pass
     performers = []
-    for row in _load_performers_raw():
+    for row in rows:
         pid = (row.get("id") or "").strip()
-        performers.append(_public_performer(row, unlocked=bool(unlocks.get(pid))))
+        performers.append(
+            _public_performer(
+                row,
+                unlocked=bool(unlocks.get(pid)),
+                catalog_list=True,
+                agent_hint=agent_by_pid.get(pid),
+                studio_cat=studio_cat,
+            )
+        )
+    if not lite:
+        try:
+            from backend.services.camgirls_social_service import enrich_catalog_performers
+            enrich_catalog_performers(performers, rows, user_id=uid)
+        except Exception:
+            pass
     performers.sort(key=lambda p: (not p.get("featured"), p.get("display_name") or ""))
     return {"success": True, "performers": performers, "count": len(performers)}
 
@@ -296,6 +337,7 @@ def tip_performer_after_payment(
     return {"success": True, "performer_id": pid, "amount_mn2": amt, "provider": provider}
 
 
+def tip_performer(user_id: str, performer_id: str, amount_mn2: float) -> Dict[str, Any]:
     uid = (user_id or "").strip()
     gate = _require_age(uid)
     if gate:
@@ -341,6 +383,47 @@ def tip_performer_after_payment(
     except Exception:
         pass
     return {"success": True, **tip_row}
+
+
+def user_has_unlock(user_id: str, performer_id: str) -> bool:
+    uid = (user_id or "").strip()
+    pid = (performer_id or "").strip()
+    return bool(_user_unlocks(uid).get(pid))
+
+
+def get_chat_history(user_id: str, performer_id: str, *, limit: int = 30) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
+    pid = (performer_id or "").strip()
+    if not uid or not pid:
+        return {"success": False, "error": "user_and_performer_required"}
+    if not user_has_unlock(uid, pid):
+        return {"success": False, "error": "unlock_required", "code": "unlock_required"}
+    lim = max(1, min(int(limit or 30), 100))
+    rows: List[Dict[str, Any]] = []
+    if not os.path.isfile(_CHAT_FILE):
+        return {"success": True, "messages": [], "count": 0}
+    try:
+        with open(_CHAT_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if row.get("user_id") == uid and row.get("performer_id") == pid:
+                    rows.append(row)
+    except OSError:
+        pass
+    rows = rows[-lim:]
+    messages = []
+    for row in rows:
+        if row.get("message"):
+            messages.append({"role": "user", "text": row["message"], "ts": row.get("ts")})
+        if row.get("reply"):
+            messages.append({"role": "bot", "text": row["reply"], "ts": row.get("ts")})
+    return {"success": True, "performer_id": pid, "messages": messages, "count": len(messages)}
 
 
 def deactivate_demo_performers(*, prefix: str = "performer_demo_") -> Dict[str, Any]:
@@ -446,19 +529,23 @@ def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[s
         )
         llm_task = "speed"
     reply = ""
+    crypto_reward = None
     try:
-        from backend.services.llm_service import chat
-        resp = chat(
+        from backend.services.agent_ai_router import routed_chat
+
+        resp, routing = routed_chat(
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": msg},
             ],
-            task_type=llm_task,
+            task_kind="chat_general",
+            user_id=uid,
             max_tokens=180,
             temperature=0.85,
         )
         if resp.success:
             reply = (resp.content or "").strip()
+        crypto_reward = routing.get("crypto_reward")
     except Exception:
         pass
     if not reply:
@@ -486,7 +573,7 @@ def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[s
             linked_agent_id = (agent_for_performer(pid) or {}).get("agent_id") or ""
         except Exception:
             linked_agent_id = ""
-    return {
+    out = {
         "success": True,
         "performer_id": pid,
         "reply": reply,
@@ -495,3 +582,6 @@ def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[s
         "agent_id": linked_agent_id or None,
         "ai_powered": True,
     }
+    if crypto_reward:
+        out["reward"] = crypto_reward
+    return out

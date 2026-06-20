@@ -106,6 +106,27 @@ def discord_casino_vip_check():
     return jsonify(casino_social_service.check_vip_discord_eligibility(user_id)), 200
 
 
+@discord_bp.route("/api/discord/hosting/vip-check", methods=["GET"])
+def discord_hosting_vip_check():
+    user_id = (request.args.get("user_id") or "").strip()
+    if not user_id:
+        return jsonify({"success": False, "error": "user_id required"}), 400
+    from backend.services.discord_hosting_vip_service import check_hosting_vip_eligibility
+
+    return jsonify(check_hosting_vip_eligibility(user_id)), 200
+
+
+@discord_bp.route("/api/discord/hosting/vip-sync", methods=["POST"])
+def discord_hosting_vip_sync():
+    data = request.get_json() or {}
+    user_id = (data.get("user_id") or request.args.get("user_id") or "").strip()
+    if not user_id:
+        return jsonify({"success": False, "error": "user_id required"}), 400
+    from backend.services.discord_hosting_vip_service import grant_hosting_vip_role
+
+    return jsonify(grant_hosting_vip_role(user_id, reason="manual_sync")), 200
+
+
 @discord_bp.route("/api/discord/activity-funnel", methods=["POST"])
 def discord_activity_funnel():
     if not _ops_ok():
@@ -158,6 +179,14 @@ def discord_m8_affiliate_rotator():
         return jsonify({"success": False, "error": "unauthorized"}), 403
     from backend.services.discord_m8_streams import affiliate_rotator_payload
     return jsonify(affiliate_rotator_payload()), 200
+
+
+@discord_bp.route("/api/discord/m8/promo-rotator", methods=["POST"])
+def discord_m8_promo_rotator():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services.discord_m8_streams import promo_rotator_payload
+    return jsonify(promo_rotator_payload()), 200
 
 
 @discord_bp.route("/api/discord/support/faq", methods=["GET"])

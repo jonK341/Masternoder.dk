@@ -127,6 +127,24 @@ def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: i
                     activate_vip(user_id, days=days, source="shop_purchase")
             except Exception:
                 pass
+        if dg and dg.get("delivery") == "compendium_unlock":
+            try:
+                from backend.services.compendium_access_service import grant_compendium_tier, tier_for_sku
+
+                tier = dg.get("compendium_tier") or tier_for_sku(item_id) or "full"
+                grant_compendium_tier(user_id, tier)
+            except Exception:
+                pass
+        if dg and dg.get("delivery") == "generator_api_tier":
+            try:
+                from backend.services.generator_api_key_service import grant_tier_subscription, tier_for_sku
+
+                tid = dg.get("generator_api_tier") or tier_for_sku(item_id)
+                if tid:
+                    for _ in range(max(1, int(quantity or 1))):
+                        grant_tier_subscription(user_id, tid, source="shop_purchase")
+            except Exception:
+                pass
         if category == "marketing" and "ptc" in (item.get("tags") or []):
             try:
                 from backend.services.ptc_ads_service import record_budget_event
@@ -1968,8 +1986,24 @@ def shop_purchase():
                     unified_points_sync_device.record_domain_sync('shop')
                 except Exception:
                     pass
+                referral_reward = None
+                try:
+                    from backend.services.referral_purchase_rewards_service import (
+                        classify_purchase,
+                        maybe_reward_referrer,
+                    )
+
+                    referral_reward = maybe_reward_referrer(
+                        user_id,
+                        purchase_kind=classify_purchase(item_id=item_id),
+                        item_id=item_id,
+                        order_id=str(purchase_id or ""),
+                        amount_usd=float(total_cost or 0),
+                    )
+                except Exception:
+                    referral_reward = None
                 # Purchase successful
-                return jsonify({
+                resp = {
                     'success': True,
                     'message': f'Purchased {quantity}x {item.get("name")}',
                     'item': item,
@@ -1980,7 +2014,10 @@ def shop_purchase():
                     'remaining_currency': user_currency - total_cost,
                     'loyalty_earned': loyalty_earned,
                     'purchase_id': purchase_id
-                }), 200
+                }
+                if referral_reward and referral_reward.get('rewarded'):
+                    resp['referral_reward'] = referral_reward
+                return jsonify(resp), 200
                 
             except ImportError:
                 # Unified points system not available - allow purchase without deduction
@@ -2259,6 +2296,17 @@ def shop_auction_cancel_listing():
         except AuctionError as ex:
             return jsonify({'success': False, 'error': str(ex)}), 400
         return jsonify({'success': True, 'listing': listing}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/marketplace/escrow', methods=['GET'])
+def shop_marketplace_escrow_summary():
+    """D1 — coins locked in active marketplace bids for a user."""
+    try:
+        user_id = (request.args.get('user_id') or _resolve_user_id() or '').strip()
+        from backend.services.shop_auction_service import get_user_bid_escrow_summary
+        return jsonify(get_user_bid_escrow_summary(user_id)), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

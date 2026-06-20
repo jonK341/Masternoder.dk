@@ -469,6 +469,16 @@ def record_compendium_page(user_id: str, page_number: int) -> Dict[str, Any]:
 
         update_quest_progress(user_id, "read_compendium", increment=1)
 
+        total_read = len(data["pages_read"])
+        total_pages = int(data.get("total_pages") or 25)
+        if total_read >= 3:
+            try:
+                from backend.services.compendium_milestone_service import maybe_celebrate_progress
+
+                maybe_celebrate_progress(user_id, total_read=total_read, total_pages=total_pages)
+            except Exception:
+                pass
+
     return {
         "success": True,
         "pages_read": data["pages_read"],

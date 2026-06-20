@@ -31,7 +31,20 @@ def _sha256(path: str) -> str:
     return h.hexdigest()
 
 
-def verify_tarball(tarball: str, manifest_path: str | None) -> int:
+def sync_manifest_tarball_sha(tarball: str, manifest_path: str) -> str:
+    tar_sha = _sha256(tarball)
+    with open(manifest_path, encoding="utf-8") as f:
+        doc = json.load(f)
+    doc["tarball_sha256"] = tar_sha
+    doc["tarball_name"] = os.path.basename(tarball)
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(doc, f, indent=2)
+        f.write("\n")
+    print(f"Synced manifest tarball_sha256 = {tar_sha}")
+    return tar_sha
+
+
+def verify_tarball(tarball: str, manifest_path: str | None, *, sync: bool = False) -> int:
     """Pre-publish checks. Returns 0 on success."""
     size = os.path.getsize(tarball)
     if size < 100_000:
@@ -56,8 +69,12 @@ def verify_tarball(tarball: str, manifest_path: str | None) -> int:
     tar_sha = _sha256(tarball)
     expected = doc.get("tarball_sha256")
     if expected and tar_sha != expected:
-        print(f"Tarball sha256 mismatch:\n  manifest: {expected}\n  actual:   {tar_sha}", file=sys.stderr)
-        return 1
+        if sync:
+            sync_manifest_tarball_sha(tarball, manifest_path)
+        else:
+            print(f"Tarball sha256 mismatch:\n  manifest: {expected}\n  actual:   {tar_sha}", file=sys.stderr)
+            print("Fix: python scripts/mn2_publish_release.py --tarball ... --manifest ... --sync-manifest", file=sys.stderr)
+            return 1
 
     print(f"Tarball OK ({size:,} bytes, sha256 {tar_sha[:16]}…)")
     for name, meta in (doc.get("binaries") or {}).items():
@@ -73,6 +90,8 @@ def main() -> int:
     p.add_argument("--draft", action="store_true", help="Create as draft release")
     p.add_argument("--promote", action="store_true", help="Publish existing draft release (no upload)")
     p.add_argument("--verify", action="store_true", help="Verify tarball + manifest only; do not publish")
+    p.add_argument("--sync-manifest", action="store_true",
+                   help="Update manifest tarball_sha256 to match tarball (fixes double-tar bug)")
     args = p.parse_args()
 
     tarball = os.path.abspath(args.tarball)
@@ -87,7 +106,10 @@ def main() -> int:
             manifest = candidate
     manifest = os.path.abspath(manifest) if manifest else None
 
-    if verify_tarball(tarball, manifest) != 0:
+    if args.sync_manifest and manifest and os.path.isfile(manifest):
+        sync_manifest_tarball_sha(tarball, manifest)
+
+    if verify_tarball(tarball, manifest, sync=args.sync_manifest) != 0:
         return 1
     if args.verify:
         print("Verify-only mode — OK")

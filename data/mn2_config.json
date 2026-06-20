@@ -47,6 +47,38 @@
       "staking_bonus_cap_percent": 15
     }
   },
+  "agent_rewards": {
+    "enabled": true,
+    "daily_cap_mn2": 0.5,
+    "action_rewards_mn2": {
+      "routed_chat": 0.002,
+      "llm_insight": 0.003,
+      "debugger_task_complete": 0.0005,
+      "debugger_task_ai": 0.001,
+      "feedback_outcome": 0.0003,
+      "agent_orchestrator": 0.001,
+      "research_rotation_insight": 0.002,
+      "cron_ai_summary": 0.001,
+      "evaluate_output": 0.0004,
+      "first_post": 0.001,
+      "post_created": 0.0003,
+      "like_received": 0.0002
+    },
+    "action_rewards_coins": {
+      "routed_chat": 5,
+      "llm_insight": 8,
+      "debugger_task_complete": 2,
+      "debugger_task_ai": 4,
+      "feedback_outcome": 2,
+      "agent_orchestrator": 3,
+      "research_rotation_insight": 5,
+      "cron_ai_summary": 3,
+      "evaluate_output": 2,
+      "first_post": 3,
+      "post_created": 1,
+      "like_received": 1
+    }
+  },
   "aggregator": {
     "enabled": true,
     "daily_cap_mn2": 0.25,

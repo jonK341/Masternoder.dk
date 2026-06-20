@@ -13,11 +13,11 @@ import json
 import os
 import threading
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 _LOCK = threading.RLock()
-_COLLATERAL_MN2 = 10000.0
+_COLLATERAL_MN2 = 5000.0
 _CONFIG_FILE = "mn2_masternode_config.json"
 _HOSTS_FILE = "mn2_masternode_hosts.json"
 
@@ -73,6 +73,74 @@ def _save_hosts_doc(hosts: List[Dict[str, Any]]) -> None:
     _write_json(_data_path(_HOSTS_FILE), {"hosts": hosts, "updated_at": _iso()})
 
 
+def _parse_iso_ts(value: Optional[str]) -> Optional[datetime]:
+    s = (value or "").strip()
+    if not s:
+        return None
+    try:
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        return datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
+
+
+def _host_reserves_slot(host: Dict[str, Any]) -> bool:
+    """Hosts that consume checkout capacity (excludes stuck empty provisioning rows)."""
+    st = (host.get("status") or "").lower()
+    if st in ("active", "queued", "planned"):
+        return True
+    if st == "provisioning":
+        return bool(host.get("collateral_txid"))
+    return False
+
+
+def _count_slots_used(hosts: List[Dict[str, Any]]) -> int:
+    return sum(1 for h in hosts if isinstance(h, dict) and _host_reserves_slot(h))
+
+
+def purge_stale_provisioning_hosts(
+    max_age_hours: float = 6,
+    *,
+    force_no_collateral: bool = False,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Drop provisioning rows with no collateral (failed checkout ghosts)."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=max(0.0, float(max_age_hours)))
+    removed: List[str] = []
+    with _LOCK:
+        doc = _load_hosts_doc()
+        hosts: List[Dict[str, Any]] = list(doc.get("hosts") or [])
+        kept: List[Dict[str, Any]] = []
+        for h in hosts:
+            if not isinstance(h, dict):
+                continue
+            st = (h.get("status") or "").lower()
+            hid = str(h.get("id") or "")
+            if st != "provisioning" or h.get("collateral_txid"):
+                kept.append(h)
+                continue
+            if force_no_collateral:
+                removed.append(hid)
+                continue
+            ts = _parse_iso_ts(h.get("created_at") or h.get("updated_at"))
+            if ts is None or ts <= cutoff:
+                removed.append(hid)
+            else:
+                kept.append(h)
+        if not dry_run and removed:
+            _save_hosts_doc(kept)
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "removed": removed,
+        "removed_count": len(removed),
+        "registry_count": len(kept) if not dry_run else len(hosts) - len(removed),
+        "slots_used": _count_slots_used(kept if not dry_run else [h for h in hosts if h.get("id") not in removed]),
+    }
+
+
 def list_hosts(include_internal: bool = False) -> List[Dict[str, Any]]:
     """Platform registry entries (may differ from live on-chain until broadcast)."""
     hosts = _load_hosts_doc().get("hosts") or []
@@ -99,21 +167,53 @@ def list_collateral_outputs() -> Dict[str, Any]:
             return {"success": False, "error": r["error"], "outputs": []}
         rows = r.get("result")
         if not isinstance(rows, list):
-            return {"success": True, "outputs": [], "collateral_mn2": collateral}
-        outputs = []
+            rows = []
+        by_key: Dict[tuple, Dict[str, Any]] = {}
         for utxo in rows:
             if not isinstance(utxo, dict):
                 continue
             amt = float(utxo.get("amount") or 0)
             if abs(amt - collateral) > 1e-8:
                 continue
-            outputs.append({
-                "txid": utxo.get("txid"),
-                "vout": utxo.get("vout"),
+            key = (str(utxo.get("txid")), int(utxo.get("vout")))
+            by_key[key] = {
+                "txid": key[0],
+                "vout": key[1],
                 "amount": amt,
                 "address": utxo.get("address"),
                 "confirmations": utxo.get("confirmations"),
-            })
+                "locked": False,
+            }
+        locked_r = rpc.listlockunspent()
+        locked_rows = locked_r.get("result") if not locked_r.get("error") else []
+        if isinstance(locked_rows, list):
+            for item in locked_rows:
+                if not isinstance(item, dict):
+                    continue
+                key = (str(item.get("txid")), int(item.get("vout")))
+                if key in by_key:
+                    by_key[key]["locked"] = True
+                    continue
+                detail = rpc.gettxout(key[0], key[1])
+                if detail.get("error") or not isinstance(detail.get("result"), dict):
+                    continue
+                val = float(detail["result"].get("value") or 0)
+                if abs(val - collateral) > 1e-8:
+                    continue
+                spk = detail["result"].get("scriptPubKey") or {}
+                addr = None
+                addrs = spk.get("addresses")
+                if isinstance(addrs, list) and addrs:
+                    addr = addrs[0]
+                by_key[key] = {
+                    "txid": key[0],
+                    "vout": key[1],
+                    "amount": val,
+                    "address": addr,
+                    "confirmations": detail["result"].get("confirmations"),
+                    "locked": True,
+                }
+        outputs = list(by_key.values())
         return {
             "success": True,
             "collateral_mn2": collateral,
@@ -172,11 +272,13 @@ def register_host(payload: Dict[str, Any]) -> Dict[str, Any]:
             "updated_at": _iso(),
         }
         if existing_idx is None:
-            if len(hosts) >= max_nodes:
+            slots_used = _count_slots_used(hosts)
+            if slots_used >= max_nodes:
                 return {
                     "success": False,
                     "error": "max_hosted_nodes reached (%d)" % max_nodes,
                     "max_hosted_nodes": max_nodes,
+                    "slots_used": slots_used,
                 }
             row["created_at"] = _iso()
             hosts.append(row)
@@ -217,11 +319,13 @@ def _masternode_conf_path() -> str:
 def _broadcast_endpoint() -> str:
     ip = (os.environ.get("MN2_MASTERNODE_BROADCAST_IP") or _ops_cfg().get("external_ip") or "").strip()
     if not ip:
-        ip = (os.environ.get("MN2_PUBLIC_IP") or "127.0.0.1").strip()
+        ip = (os.environ.get("MN2_PUBLIC_IP") or "").strip()
+    if not ip or ip in ("127.0.0.1", "localhost"):
+        ip = "140.82.39.124"
     try:
-        port = int(os.environ.get("MN2_MASTERNODE_PORT") or _ops_cfg().get("masternode_port") or 9333)
+        port = int(os.environ.get("MN2_MASTERNODE_PORT") or _ops_cfg().get("masternode_port") or 17646)
     except (TypeError, ValueError):
-        port = 9333
+        port = 17646
     return f"{ip}:{port}"
 
 
@@ -233,6 +337,21 @@ def _collateral_keys_in_use(hosts: List[Dict[str, Any]]) -> set:
         if txid is not None and vout is not None:
             keys.add((str(txid), int(vout)))
     return keys
+
+
+def _wallet_collateral_utxo(txid: str, vout: int) -> Optional[Dict[str, Any]]:
+    """Return a 10k UTXO from the wallet if txid:vout exists and is spendable."""
+    info = list_collateral_outputs()
+    if not info.get("success"):
+        return None
+    want = (str(txid), int(vout))
+    for utxo in info.get("outputs") or []:
+        if not isinstance(utxo, dict):
+            continue
+        key = (str(utxo.get("txid")), int(utxo.get("vout")))
+        if key == want:
+            return utxo
+    return None
 
 
 def _pick_collateral_utxo(exclude: set, min_conf: int = 10) -> Optional[Dict[str, Any]]:
@@ -251,8 +370,30 @@ def _pick_collateral_utxo(exclude: set, min_conf: int = 10) -> Optional[Dict[str
     return None
 
 
+def _lock_wallet_collateral_utxos() -> None:
+    """Prevent coin selection from spending existing 10k collateral outputs when funding new ones."""
+    collateral = float(get_config().get("collateral_mn2") or _COLLATERAL_MN2)
+    info = list_collateral_outputs()
+    if not info.get("success"):
+        return
+    outputs = []
+    for utxo in info.get("outputs") or []:
+        if not isinstance(utxo, dict):
+            continue
+        txid = utxo.get("txid")
+        vout = utxo.get("vout")
+        if txid is None or vout is None:
+            continue
+        outputs.append({"txid": str(txid), "vout": int(vout)})
+    if not outputs:
+        return
+    from backend.services import mn2_rpc_client as rpc
+    rpc.lockunspent(False, outputs)
+
+
 def _send_collateral_utxo(collateral: float) -> Dict[str, Any]:
     from backend.services import mn2_rpc_client as rpc
+    _lock_wallet_collateral_utxos()
     addr_r = rpc.getnewaddress()
     if addr_r.get("error"):
         return {"success": False, "error": addr_r["error"]}
@@ -273,7 +414,8 @@ def _unlock_wallet() -> bool:
 
 
 def _append_masternode_conf_line(alias: str, ip_port: str, txid: str, vout: int, privkey: str) -> None:
-    line = f"{alias} {ip_port} {txid} {vout} {privkey}\n"
+    # PIVX/MN2 format: alias IP:port masternodeprivkey collateral_txid collateral_index
+    line = f"{alias} {ip_port} {privkey} {txid} {vout}\n"
     path = _masternode_conf_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     existing = ""
@@ -290,8 +432,18 @@ def _start_masternode_alias(alias: str) -> Optional[str]:
     from backend.services import mn2_rpc_client as rpc
     _unlock_wallet()
     last_err = "masternode start failed"
-    for args in ((alias,), ("start", alias), ("start-all", "false")):
-        r = rpc.masternode_command(*args)
+    attempts: List[tuple] = [
+        ("alias", False, alias),
+        ("missing", False),
+        ("all", False),
+    ]
+    for item in attempts:
+        set_type, lock = item[0], item[1]
+        alias_arg = item[2] if len(item) > 2 else None
+        if alias_arg is not None:
+            r = rpc.startmasternode(set_type, lock, alias_arg)
+        else:
+            r = rpc.startmasternode(set_type, lock)
         if not r.get("error"):
             return None
         last_err = str(r.get("error") or last_err)
@@ -337,12 +489,20 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
 
     utxo = None
     if host.get("collateral_txid") is not None and host.get("collateral_vout") is not None:
-        utxo = {
-            "txid": host.get("collateral_txid"),
-            "vout": host.get("collateral_vout"),
-            "address": host.get("collateral_address"),
-            "confirmations": min_conf,
-        }
+        stored = _wallet_collateral_utxo(host.get("collateral_txid"), host.get("collateral_vout"))
+        if stored:
+            utxo = stored
+        elif host.get("collateral_txid"):
+            register_host({
+                "id": host_id,
+                "label": host.get("label") or host_id,
+                "status": "provisioning",
+                "collateral_txid": None,
+                "collateral_vout": None,
+                "collateral_address": None,
+                "owner_user_id": host.get("owner_user_id"),
+                "notes": "Stale collateral txid cleared — will rebind to wallet UTXO",
+            })
     if not utxo:
         utxo = _pick_collateral_utxo(used, min_conf=min_conf)
 
@@ -399,7 +559,7 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
         }
 
     from backend.services import mn2_rpc_client as rpc
-    gen = rpc.masternode_command("genkey")
+    gen = rpc.createmasternodekey()
     if gen.get("error"):
         return {"success": False, "error": gen.get("error"), "status": "provisioning"}
     privkey = gen.get("result")
@@ -478,6 +638,9 @@ def get_service_status() -> Dict[str, Any]:
     enabled = bool(cfg.get("enabled", True))
     collateral = float(cfg.get("collateral_mn2") or _COLLATERAL_MN2)
     max_nodes = int(cfg.get("max_hosted_nodes") or 3)
+    stale_hours = float(cfg.get("stale_provisioning_hours") or 6)
+    purge_stale_provisioning_hosts(max_age_hours=stale_hours, dry_run=False)
+    registry_hosts = list(_load_hosts_doc().get("hosts") or [])
     hosts = list_hosts(include_internal=False)
     net = network_masternodes(limit=100)
     chain_list = net.get("list") if isinstance(net.get("list"), list) else []
@@ -510,7 +673,13 @@ def get_service_status() -> Dict[str, Any]:
     except Exception:
         pass
 
-    slots_used = len(hosts)
+    slots_used = _count_slots_used(registry_hosts)
+    stale_provisioning = sum(
+        1 for h in registry_hosts
+        if isinstance(h, dict)
+        and (h.get("status") or "").lower() == "provisioning"
+        and not h.get("collateral_txid")
+    )
     out = {
         "success": True,
         "enabled": enabled,
@@ -519,6 +688,8 @@ def get_service_status() -> Dict[str, Any]:
         "collateral_mn2": collateral,
         "max_hosted_nodes": max_nodes,
         "hosted_count": slots_used,
+        "registry_count": len(registry_hosts),
+        "stale_provisioning_count": stale_provisioning,
         "slots_available": max(0, max_nodes - slots_used),
         "platform_enabled_on_chain": enabled_platform,
         "collateral_outputs_available": avail_outputs,

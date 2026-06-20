@@ -96,6 +96,80 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "task_type": "reason",
         "description": "Quality / criticism evaluation",
     },
+    "log_triage": {
+        "agent_id": "ai_intelligence_agent",
+        "skill_name": "ai_assist_task",
+        "task_type": "context",
+        "description": "Triage logs/errors — classify severity and next action",
+    },
+    "support_copilot": {
+        "agent_id": "learning_agent",
+        "skill_name": "ai_nice_and_easy",
+        "task_type": "speed",
+        "description": "Support copilot — fast user help drafts",
+    },
+    "pricing_brain": {
+        "agent_id": "analytics_agent",
+        "skill_name": "track_metrics",
+        "task_type": "reason",
+        "description": "Pricing / monetization advisory from metrics",
+    },
+    "social_ai_draft": {
+        "agent_id": "reporter_agent",
+        "skill_name": "broadcast",
+        "task_type": "speed",
+        "description": "Social/news post draft for platform channels",
+    },
+    "feed_rank": {
+        "agent_id": "social_engagement_agent",
+        "skill_name": "track_engagement",
+        "task_type": "context",
+        "description": "Rank social feed by relevance, friends, and engagement signals",
+    },
+    "earn_coach": {
+        "agent_id": "analytics_agent",
+        "skill_name": "track_metrics",
+        "task_type": "reason",
+        "description": "Earn-hub coaching — next MN2/coin actions from user progress",
+    },
+    "referral_content": {
+        "agent_id": "reporter_agent",
+        "skill_name": "broadcast",
+        "task_type": "speed",
+        "description": "Referral share copy and social snippets",
+    },
+    "moderation_check": {
+        "agent_id": "social_engagement_agent",
+        "skill_name": "moderate_content",
+        "task_type": "speed",
+        "description": "UGC moderation triage for posts and chat",
+    },
+    "friend_match_hint": {
+        "agent_id": "social_engagement_agent",
+        "skill_name": "manage_friends",
+        "task_type": "context",
+        "description": "Friend/crew match suggestions from leaderboard overlap",
+    },
+    "debugger_challenge": {
+        "agent_id": "master_fix_agent",
+        "skill_name": "ai_assist_task",
+        "task_type": "code",
+        "description": "Debugger challenge — route/API fix suggestions",
+    },
+}
+
+# task_kind → primary HTTP surface for capability map (agent-native parity)
+TASK_KIND_ENDPOINTS: Dict[str, str] = {
+    "social_ai_draft": "POST /api/agents/router/chat (task_kind=social_ai_draft)",
+    "feed_rank": "GET /api/social/feed?ranked=1",
+    "earn_coach": "GET /api/social/agent/recommendations",
+    "referral_content": "GET /api/social/referrals",
+    "moderation_check": "POST /api/social/posts/<id>/moderate",
+    "friend_match_hint": "GET /api/social/agent/recommendations (matches)",
+    "routed_chat": "POST /api/agents/router/chat",
+    "log_triage": "POST /api/agents/router/chat (task_kind=log_triage)",
+    "support_copilot": "POST /api/agents/router/chat (task_kind=support_copilot)",
+    "pricing_brain": "POST /api/agents/router/chat (task_kind=pricing_brain)",
 }
 
 
@@ -182,9 +256,30 @@ def routed_chat(
         record_llm_outcome(r["trace_id"], user_id, r, resp)
     except Exception:
         pass
+
+    crypto_reward = None
+    if resp.success and user_id and user_id not in ("", "default_user", "anonymous"):
+        try:
+            from backend.services.agent_crypto_rewards_service import award_agent_action
+
+            crypto_reward = award_agent_action(
+                user_id,
+                "routed_chat",
+                reference=f"routed-chat:{r['trace_id']}",
+                metadata={"task_kind": task_kind, "provider": getattr(resp, "provider", None)},
+                success=True,
+            )
+        except Exception:
+            pass
+    if crypto_reward:
+        r["crypto_reward"] = crypto_reward
+
     return resp, r
 
 
 def list_task_kinds() -> List[Dict[str, Any]]:
     """For capability map and docs."""
-    return [{"task_kind": k, **v} for k, v in sorted(TASK_ROUTING_TABLE.items())]
+    rows = []
+    for k, v in sorted(TASK_ROUTING_TABLE.items()):
+        rows.append({"task_kind": k, "endpoint": TASK_KIND_ENDPOINTS.get(k), **v})
+    return rows

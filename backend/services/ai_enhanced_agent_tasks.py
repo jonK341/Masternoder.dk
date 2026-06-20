@@ -125,6 +125,48 @@ class AIEnhancedAgentTasks:
         
         return recommendations
 
+    def enhance_task_assignment(self, task_data: Dict, agent_id: str) -> Dict:
+        """LLM-enhanced task assignment hint via agent_ai_router (log_triage task_kind)."""
+        tab = task_data.get("tab") or ""
+        action = task_data.get("action") or ""
+        description = task_data.get("description") or f"{tab} — {action}"
+        try:
+            from backend.services.agent_ai_router import routed_chat
+
+            messages = [
+                {
+                    "role": "user",
+                    "content": (
+                        f"Debugger task for agent {agent_id}.\n"
+                        f"Tab: {tab}\nAction: {action}\nDescription: {description}\n\n"
+                        "In 2-4 sentences: priority, risks, and first step."
+                    ),
+                }
+            ]
+            resp, routing = routed_chat(
+                messages,
+                "log_triage",
+                "system",
+                temperature=0.25,
+                max_tokens=220,
+            )
+            return {
+                "ai_enhanced": True,
+                "agent_id": agent_id,
+                "task_id": task_data.get("task_id"),
+                "routing": routing,
+                "suggestion": (resp.content or "").strip() if resp.success else None,
+                "llm_success": bool(resp.success),
+                "provider": resp.provider,
+            }
+        except Exception as e:
+            return {
+                "ai_enhanced": False,
+                "agent_id": agent_id,
+                "error": str(e)[:200],
+                "fallback": self.intelligent_task_assignment(task_data, [agent_id]),
+            }
+
 
 # Global instance
 ai_enhanced_agent_tasks = AIEnhancedAgentTasks()

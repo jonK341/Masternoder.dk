@@ -83,6 +83,18 @@ def onramp_capture():
         user_id = resolve_user_id(from_body=True, from_query=True)
         order_id = (data.get("order_id") or "").strip()
         result = onramp.capture(order_id, user_id)
+        if result.get("success"):
+            try:
+                from backend.services.tier_b_monetization_service import get_onramp_hosting_offer
+
+                offer = get_onramp_hosting_offer(user_id)
+                result["tier_b_hosting"] = {
+                    "eligible": bool(offer.get("eligible_for_hosting_step")),
+                    "promo_code": offer.get("auto_promo_code") or offer.get("promo_code"),
+                    "next_href": offer.get("next_href") or "/shop?tab=mn2&bundle=hosting",
+                }
+            except Exception:
+                pass
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

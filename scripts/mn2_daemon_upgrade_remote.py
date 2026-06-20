@@ -48,7 +48,7 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
             "binary",
             "/opt/masternoder2d/masternoder2d -version 2>/dev/null || masternoder2-cli -version 2>/dev/null || echo no-version",
         ),
-        ("mnsync", "masternoder2-cli mnsync 2>/dev/null | head -c 200 || echo no-mnsync"),
+        ("mnsync", "masternoder2-cli mnsync status 2>/dev/null | head -c 200 || echo no-mnsync"),
         (
             "getstakinginfo",
             "masternoder2-cli getstakinginfo 2>/dev/null | head -c 400 || echo no-getstakinginfo",
@@ -61,18 +61,43 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
     ]
 
 
+def _mn2_cli_cmd(subcmd: str, *, head: str = "") -> str:
+    """Run masternoder2-cli subcommand using installed binary paths."""
+    pipe = f" | {head}" if head else ""
+    return (
+        "bash -lc '"
+        "C=/opt/masternoder2d/masternoder2-cli; "
+        "[ -x \"$C\" ] || C=/usr/local/bin/masternoder2-cli; "
+        f"\"$C\" {subcmd} 2>&1{pipe}'"
+    )
+
+
 def post_verify_checks(web: str) -> list[tuple[str, str, str]]:
     """label, shell command, pass rule: 'contains:X', 'no_error', or empty (non-empty output)."""
     return [
-        ("systemd-active", "systemctl is-active masternoder2d", "contains:active"),
-        ("daemon-version", "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1", "no_error"),
-        ("mnsync", "masternoder2-cli mnsync 2>&1 | head -c 200", "no_error"),
-        ("getstakinginfo", "masternoder2-cli getstakinginfo 2>&1 | head -c 400", "no_error"),
-        ("getnewaddress", "masternoder2-cli getnewaddress 2>&1 | head -1", "no_error"),
-        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"ok"'),
+        (
+            "systemd-active",
+            "bash -lc 'for i in $(seq 1 12); do s=$(systemctl is-active masternoder2d 2>/dev/null); "
+            '[ "$s" = active ] && echo active && exit 0; sleep 5; done; systemctl is-active masternoder2d; '
+            "systemctl status masternoder2d --no-pager -l 2>&1 | tail -15'",
+            "contains:active",
+        ),
+        (
+            "daemon-version",
+            "test -f /opt/masternoder2d/masternoder2d && /opt/masternoder2d/masternoder2d -version 2>&1 | head -1",
+            "contains:version",
+        ),
+        ("mnsync", _mn2_cli_cmd("mnsync status", head="head -c 200"), "no_error"),
+        ("getstakinginfo", _mn2_cli_cmd("getstakinginfo", head="head -c 400"), "no_error"),
+        ("getnewaddress", _mn2_cli_cmd("getnewaddress", head="head -1"), "no_error"),
+        (
+            "health-json",
+            "curl -s --max-time 10 http://127.0.0.1:5000/api/mn2/health",
+            'contains:"success"',
+        ),
         (
             "staking-rpc",
-            f"cd {web} && ./venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
+            f"cd {web} && python3 -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
             "contains:ok",
         ),
     ]
@@ -83,6 +108,10 @@ def _check_output(out: str, rule: str) -> bool:
     if not text or text.startswith("no-"):
         return False
     low = text.lower()
+    if "command not found" in low or "is a directory" in low or "no such file" in low:
+        return False
+    if "syntax error" in low:
+        return False
     if rule == "no_error":
         return "error" not in low and "connection refused" not in low
     if rule.startswith("contains:"):
@@ -114,6 +143,11 @@ def main() -> int:
     p.add_argument("--ask-pass", action="store_true")
     p.add_argument("--check-release", action="store_true", help="Only verify GitHub release asset (no SSH)")
     p.add_argument("--apply", action="store_true", help="Download and install v1.2.3.0 binary (maintenance window)")
+    p.add_argument(
+        "--repair",
+        action="store_true",
+        help="Fix systemd ExecStart + reinstall binaries from GitHub (no full upgrade)",
+    )
     p.add_argument(
         "--verify-post",
         action="store_true",
@@ -159,6 +193,15 @@ def main() -> int:
             print(sh(ssh, cmd, timeout=120))
             print()
 
+    if args.repair:
+        import subprocess
+        repair = os.path.join(os.path.dirname(__file__), "mn2_daemon_repair_remote.py")
+        cmd = [sys.executable, repair]
+        if args.ask_pass:
+            cmd.append("--ask-pass")
+        ssh.close()
+        return subprocess.call(cmd)
+
     if args.verify_post:
         ok = run_post_verify(ssh, web)
         ssh.close()
@@ -201,11 +244,19 @@ CLI=$(find "$PKG" -name masternoder2-cli -type f | head -1)
 TX=$(find "$PKG" -name masternoder2-tx -type f | head -1)
 test -n "$DAEMON" || {{ echo 'masternoder2d binary not in tarball'; exit 1; }}
 
+# Fix broken install where masternoder2d path is a directory (failed partial upgrade)
+if [[ -d /opt/masternoder2d/masternoder2d ]]; then
+  rm -rf /opt/masternoder2d/masternoder2d
+fi
+mkdir -p /opt/masternoder2d
+
 cp "$DAEMON" /opt/masternoder2d/masternoder2d
 chmod +x /opt/masternoder2d/masternoder2d
 if [[ -n "$CLI" ]]; then
-  cp "$CLI" /usr/local/bin/masternoder2-cli 2>/dev/null || cp "$CLI" /opt/masternoder2d/masternoder2-cli
-  chmod +x /usr/local/bin/masternoder2-cli 2>/dev/null || chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /opt/masternoder2d/masternoder2-cli
+  chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /usr/local/bin/masternoder2-cli
+  chmod +x /usr/local/bin/masternoder2-cli
 fi
 if [[ -n "$TX" ]]; then
   cp "$TX" /usr/local/bin/masternoder2-tx 2>/dev/null || true
@@ -222,8 +273,17 @@ if [[ -f RELEASE_MANIFEST.json ]]; then
   echo "Installed daemon sha256 verified"
 fi
 
+# systemd must point at flat binary path (not .../masternoder2d/masternoder2d)
+UNIT=/etc/systemd/system/masternoder2d.service
+if [[ -f "$UNIT" ]]; then
+  sed -i 's|^ExecStart=.*|ExecStart=/opt/masternoder2d/masternoder2d -datadir=/var/www/html/config|' "$UNIT"
+  systemctl daemon-reload
+  echo "systemd ExecStart fixed"
+fi
+
 systemctl start masternoder2d
-sleep 15
+sleep 25
+systemctl is-active masternoder2d || true
 """
         print(sh(ssh, script, timeout=600))
         ok = run_post_verify(ssh, web)

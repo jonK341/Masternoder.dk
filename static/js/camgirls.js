@@ -7,6 +7,7 @@
   var agentsStrip = document.getElementById('cg-agents');
   var agentChips = document.getElementById('cg-agent-chips');
   var studio = window.CamgirlsStudio;
+  var catalogFilter = 'all';
 
   function msg(t, ok) {
     if (!msgEl) return;
@@ -16,16 +17,34 @@
 
   function api(path, opts) {
     opts = opts || {};
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, opts.timeout || 15000);
     return fetch(path, {
       method: opts.method || 'GET',
       credentials: 'same-origin',
       headers: Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {}),
       body: opts.body ? JSON.stringify(opts.body) : undefined,
-    }).then(function (r) {
-      return r.json().then(function (j) {
-        return { status: r.status, data: j };
+      signal: ctrl.signal,
+    })
+      .then(function (r) {
+        return r.text().then(function (text) {
+          clearTimeout(timer);
+          var j = {};
+          if (text && text.charAt(0) === '<') {
+            j = {
+              success: false,
+              error: r.status >= 500 ? 'Server error (' + r.status + ')' : 'Invalid response',
+            };
+          } else {
+            try { j = text ? JSON.parse(text) : {}; } catch (e) { j = { success: false, error: 'Invalid response' }; }
+          }
+          return { status: r.status, data: j };
+        });
+      })
+      .catch(function (e) {
+        clearTimeout(timer);
+        return { status: 0, data: { success: false, error: e.name === 'AbortError' ? 'Request timed out' : 'Network error' } };
       });
-    });
   }
 
   function showAgeGate(show) {
@@ -100,26 +119,41 @@
 
   function loadCatalog() {
     if (grid) grid.textContent = 'Loading performers…';
-    return api('/api/camgirls/performers')
+    var base = '/api/camgirls/performers?user_id=default_user&lite=1';
+    return api(base, { timeout: 20000 })
       .then(function (res) {
         var d = res.data || {};
-        if (!grid) return;
         if (!d.success) {
           var err = d.error || d.message || ('HTTP ' + res.status);
           msg('Could not load catalog: ' + err, false);
-          grid.textContent = 'Catalog unavailable. Try again in a moment.';
+          grid.textContent = 'Catalog unavailable. The API may be restarting — try again shortly.';
           return;
         }
-        grid.innerHTML = '';
-        (d.performers || []).forEach(function (p) {
-          grid.appendChild(renderCard(p));
-        });
-        if (!(d.performers || []).length) grid.textContent = 'No performers yet.';
+        renderCatalogList(d.performers || []);
+        return api('/api/camgirls/performers?user_id=default_user', { timeout: 25000 });
+      })
+      .then(function (res) {
+        if (!res || !res.data || !res.data.success) return;
+        renderCatalogList(res.data.performers || []);
       })
       .catch(function () {
-        msg('Could not load catalog (network error).', false);
+        msg('Could not load catalog (network or server timeout).', false);
         if (grid) grid.textContent = 'Catalog unavailable.';
       });
+  }
+
+  function renderCatalogList(list) {
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (catalogFilter === 'favorites') {
+      list = list.filter(function (p) { return p.favorite; });
+    }
+    list.forEach(function (p) {
+      grid.appendChild(renderCard(p));
+    });
+    if (!list.length) {
+      grid.textContent = catalogFilter === 'favorites' ? 'No favorites yet — star a performer.' : 'No performers yet.';
+    }
   }
 
   function sendChat(performerId, inputEl, logEl) {
@@ -165,7 +199,7 @@
   }
 
   function handleAction(e) {
-    if (studio && studio.handleStudioAction && studio.handleStudioAction(e, { msg: msg })) {
+    if (studio && studio.handleStudioAction && studio.handleStudioAction(e, { msg: msg, reloadCatalog: loadCatalog })) {
       return;
     }
     var btn = e.target.closest('button[data-action]');
@@ -215,7 +249,13 @@
         });
     } else if (action === 'chat-toggle') {
       var panel = document.getElementById('cg-chat-' + id);
-      if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      if (panel) {
+        var opening = panel.style.display === 'none';
+        panel.style.display = opening ? 'block' : 'none';
+        if (opening && studio && studio.loadChatHistory) {
+          studio.loadChatHistory(id, panel.querySelector('.cg-chat-log'));
+        }
+      }
     } else if (action === 'chat-send') {
       var chatPanel = document.getElementById('cg-chat-' + id);
       if (!chatPanel) return;
@@ -255,8 +295,20 @@
     grid.addEventListener('click', handleAction);
     grid.addEventListener('keydown', handleChatKey);
   }
+  var filterBar = document.getElementById('cg-filter-bar');
+  if (filterBar) {
+    filterBar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      catalogFilter = btn.getAttribute('data-filter') || 'all';
+      filterBar.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('cg-filter-active', b === btn);
+      });
+      loadCatalog();
+    });
+  }
+  loadCatalog();
   loadAgents().catch(function () {});
-  loadCatalog().catch(function () { msg('Failed to load catalog'); });
 
   (function handleCamgirlsPayPalReturn() {
     var params = new URLSearchParams(window.location.search);

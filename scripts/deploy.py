@@ -26,7 +26,7 @@ from datetime import datetime
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass, connect_deploy_ssh
 
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
@@ -305,6 +305,12 @@ MANIFESTS = {
     "battle_hunter_quick": [
         "backend/routes/battle_routes.py",
         "backend/routes/hunters_game.py",
+        "backend/services/game_level_crypto_service.py",
+        "data/game_level_crypto.json",
+        "game/index.html",
+        "static/css/game-tabulator.css",
+        "static/js/game-tabulator.js",
+        "static/js/game-level-crypto.js",
         "battle/index.html",
         "profile/index.html",
         "static/js/enhanced-game-mechanics.js",
@@ -372,10 +378,14 @@ MANIFESTS = {
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
     # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;
-    # cron + .env ship via "mn2_env". Restarts uwsgi-vidgenerator to load the new Python.
+    # cron + .env ship via "mn2_env". Restarts both uwsgi-vidgenerator units to load new env/Python.
     # NOTE: data/*.json here are CONFIG (safe to overwrite). Runtime state files (mn2_stakes.json,
     # mn2_ledger.json, reserve/rewards, onramp/p2p orders, agent_staking_agents.json) are intentionally
     # NOT deployed so the server's live state is never clobbered.
+    #
+    # REMEMBER: backend/services/monetization_config_service.py — required whenever
+    # monetization_config.json or get_* helpers change (generator API tiers, mobile_iap,
+    # coin packs). Missing on server => /api/generator/api/tiers returns tiers:[].
     "mn2_staking": [
         "backend/services/mn2_rpc_client.py",
         "backend/services/mn2_ledger.py",
@@ -404,11 +414,31 @@ MANIFESTS = {
         "backend/services/casino_discord_fanout.py",
         "backend/services/market_discord_fanout.py",
         "backend/services/game_discord_fanout.py",
+        "backend/services/compendium_milestone_service.py",
+        "backend/services/compendium_access_service.py",
+        "backend/services/generator_api_key_service.py",
+        "backend/services/camgirls_livekit_service.py",
+        "backend/services/mobile_iap_service.py",
+        "backend/services/shop_auction_service.py",
+        "backend/services/discord_hosting_vip_service.py",
+        "backend/services/tier_b_monetization_service.py",
+        "backend/services/referral_purchase_rewards_service.py",
+        "backend/services/shop_upsell_service.py",
+        "backend/services/monetization_revenue_pulse_service.py",
+        "backend/services/monetization_margin_report_service.py",
+        "backend/services/monetization_scr_blend_service.py",
+        "backend/services/monetization_config_service.py",
+        "backend/services/agent_cron_service.py",
+        "backend/routes/paypal_routes.py",
         "backend/services/discord_link_service.py",
         "backend/services/shop_discord_promo_service.py",
         "backend/routes/battle_routes.py",
         "backend/routes/hunters_game.py",
         "backend/routes/shop_routes.py",
+        "backend/routes/generator_routes.py",
+        "backend/routes/camgirls_routes.py",
+        "backend/routes/monetization_expansion_routes.py",
+        "backend/routes/cogs_routes.py",
         "data/discord_promo_codes.json",
         "profile/index.html",
         "backend/services/unified_points_database.py",
@@ -437,7 +467,12 @@ MANIFESTS = {
         "data/mn2_masternode_config.json",
         "data/monetization_config.json",
         "shop/index.html",
+        "hosting/index.html",
+        "generator/index.html",
+        "camgirls/index.html",
         "scripts/mn2_reconcile.py",
+        "scripts/mn2_next_ops_remote.py",
+        "scripts/mn2_ops_optionals_remote.py",
         "scripts/treasury_signoff.py",
         "scripts/trader_staking_join_server.sh",
         "explorer/index.html",
@@ -447,11 +482,17 @@ MANIFESTS = {
         "static/css/mn2-crypto-hub.css",
         "scripts/_verify_trader_market_remote.py",
         "cron/discord_market_fanout.sh",
+        "cron/discord_promo_rotator.sh",
         "cron/discord_game_fanout.sh",
         "cron/masternoder-discord-game.cron.d",
         "cron/masternoder-discord-market.cron.d",
+        "cron/masternoder-discord-promo.cron.d",
         "cron/monetization_cron.sh",
         "cron/masternoder-monetization.cron.d",
+        "cron/revenue_pulse_cron.sh",
+        "cron/masternoder-revenue-pulse.cron.d",
+        "cron/margin_report_cron.sh",
+        "cron/masternoder-margin-report.cron.d",
         "cron/discord_activity_funnel.sh",
         "cron/mn2_read_ops_secret.sh",
     ],
@@ -460,6 +501,7 @@ MANIFESTS = {
         "backend/services/camgirls_payout_service.py",
         "backend/services/camgirls_agents_service.py",
         "backend/services/camgirls_studio_service.py",
+        "backend/services/camgirls_social_service.py",
         "backend/services/mn2_wallet_service.py",
         "backend/services/mn2_rpc_client.py",
         "backend/services/platform_news_publish.py",
@@ -489,6 +531,7 @@ MANIFESTS = {
         "scripts/camgirls_py.sh",
         "scripts/project_env.py",
         "scripts/camgirls_post_deploy_verify.py",
+        "scripts/camgirls_discord_spotlight.py",
         "scripts/camgirls_remote_diag.py",
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "camgirls/index.html",
@@ -551,7 +594,7 @@ MANIFESTS = {
 MANIFESTS["static_pages"] = _static_pages_manifest()
 
 
-# When using this manifest, only restart uwsgi-vidgenerator (not uwsgi emperor or python-proxy)
+# When using this manifest, restart both vidgenerator uwsgi units (nginx upstream uses :5000 + :5001).
 RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "generator_recent",
     "monitor",
@@ -588,11 +631,9 @@ def run_server_prune(server_pass=None, with_disk=False):
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         os.chdir(base)
 
-        ssh = __import__("paramiko").SSHClient()
-        ssh.set_missing_host_key_policy(__import__("paramiko").AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
+        ssh, auth_method = connect_deploy_ssh(server_pass)
         sftp = ssh.open_sftp()
-        print("  [OK] Connected")
+        print(f"  [OK] Connected ({auth_method})")
         print()
 
         for local in MANIFESTS["server_prune"]:
@@ -655,11 +696,9 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
 
         step = "[1/2]" if upload_only else "[1/4]"
         print(f"{step} Connecting...")
-        ssh = __import__("paramiko").SSHClient()
-        ssh.set_missing_host_key_policy(__import__("paramiko").AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=server_pass, timeout=30)
+        ssh, auth_method = connect_deploy_ssh(server_pass)
         sftp = ssh.open_sftp()
-        print("  [OK] Connected")
+        print(f"  [OK] Connected ({auth_method})")
         print()
 
         step = "[2/2]" if upload_only else "[2/4]"
@@ -792,6 +831,32 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
             out_mon = (stdout.read() or b"").decode().strip()
             print("  [OK] /etc/cron.d/masternoder-monetization (daily 09:00 UTC)" if out_mon == "OK"
                   else "  [WARN] monetization cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/revenue_pulse_cron.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-revenue-pulse.cron.d /etc/cron.d/masternoder-revenue-pulse "
+                f"&& chmod 644 /etc/cron.d/masternoder-revenue-pulse",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-revenue-pulse && echo OK", timeout=5
+            )
+            out_rp = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-revenue-pulse (Mon 10:00 UTC)" if out_rp == "OK"
+                  else "  [WARN] revenue pulse cron.d install may have failed")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/margin_report_cron.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-margin-report.cron.d /etc/cron.d/masternoder-margin-report "
+                f"&& chmod 644 /etc/cron.d/masternoder-margin-report",
+                timeout=10,
+            )
+            time.sleep(0.3)
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-margin-report && echo OK", timeout=5
+            )
+            out_mr = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-margin-report (Tue 10:00 UTC)" if out_mr == "OK"
+                  else "  [WARN] margin report cron.d install may have failed")
             print()
 
         if manifest_name == "knowledge_cron_env" and not upload_only:
@@ -861,6 +926,15 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
                 print(f"  [WARN] pip install requests: {err[:200]}")
             else:
                 print("  [OK] .venv requests (MN2 payout RPC)")
+            onboard_cmd = (
+                f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
+                "scripts/camgirls_onboard_performers.py "
+                "--file data/camgirls_performers_production.json 2>&1 | tail -8"
+            )
+            _, ob_out, _ = ssh.exec_command(onboard_cmd, timeout=120)
+            ob_text = (ob_out.read() or b"").decode(errors="replace").strip()
+            if ob_text:
+                print(f"  [onboard] {ob_text.split(chr(10))[-1][:120]}")
             print()
 
         if upload_only:
@@ -981,8 +1055,8 @@ def main():
         files = MANIFESTS[name]
     restart_services = None
     if manifest_name and manifest_name in RESTART_VIDGENERATOR_ONLY_FOR:
-        restart_services = ["uwsgi-vidgenerator"]
-        print("(Restart: uwsgi-vidgenerator only)")
+        restart_services = ["uwsgi-vidgenerator", "uwsgi-vidgenerator-5001"]
+        print("(Restart: uwsgi-vidgenerator + uwsgi-vidgenerator-5001)")
     elif manifest_name and manifest_name in RESTART_NGINX_ONLY_FOR and not upload_only:
         restart_services = ["__nginx_static__"]
         print("(Restart: nginx reload only — static HTML/CSS/JS)")

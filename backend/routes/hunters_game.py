@@ -1455,3 +1455,35 @@ def nexus_claim():
         ), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@hunters_game_bp.route("/api/game/crypto/level-rewards", methods=["GET"])
+def game_level_crypto_status():
+    """Hunter level milestone MN2 rewards — status and claimable levels."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.game_level_crypto_service import level_rewards_status
+
+        payload = level_rewards_status(user_id)
+        return jsonify({"success": True, **payload}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@hunters_game_bp.route("/api/game/crypto/level-rewards/claim", methods=["POST"])
+def game_level_crypto_claim():
+    """Claim a one-time MN2 bonus for reaching a hunter level."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_uid()
+        level = data.get("level")
+        if level is None:
+            level = request.args.get("level", type=int)
+        if not level:
+            return jsonify({"success": False, "error": "level required"}), 400
+        from backend.services.game_level_crypto_service import claim_level_reward
+
+        body, status = claim_level_reward(user_id, int(level))
+        return jsonify(body), status
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

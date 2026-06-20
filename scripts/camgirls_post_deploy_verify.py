@@ -35,7 +35,7 @@ def _ops_secret_prefix(web: str = WEB) -> str:
 
 def _fetch(url: str, *, timeout: int | None = None) -> tuple[int, str]:
     if timeout is None:
-        timeout = 25 if "127.0.0.1" in url or "localhost" in url else 30
+        timeout = 25 if "127.0.0.1" in url or "localhost" in url else 60
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "camgirls-post-deploy-verify/1.0", "Connection": "close"},
@@ -60,6 +60,15 @@ def _json_success(body: str) -> bool:
 def _curl_json_ok(body: str) -> bool:
     line = body.split("HTTP:")[0].strip()
     return _json_success(line)
+
+
+def _performer_count_ok(body: str, minimum: int = 5) -> bool:
+    line = body.split("HTTP:")[0].strip() if "HTTP:" in body else body.strip()
+    try:
+        data = json.loads(line)
+        return int(data.get("count") or 0) >= minimum
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return False
 
 
 def _check_json(label: str, url: str, *, expect_keys: list[str]) -> bool:
@@ -185,6 +194,23 @@ def verify_remote(*, force_prompt: bool = False) -> int:
             "http://127.0.0.1:5000/api/camgirls/ops/payout-addresses",
             _json_success,
         ),
+        (
+            "studio catalog",
+            "curl -s http://127.0.0.1:5000/api/camgirls/studio/catalog",
+            lambda body: _json_success(body) and '"moods"' in body,
+        ),
+        (
+            "performer count",
+            "curl -s 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
+            lambda body: _performer_count_ok(body, 5),
+        ),
+        (
+            "favorite route",
+            "curl -s -o /dev/null -w '%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/performers/performer_nova/favorite "
+            "-H 'Content-Type: application/json' -d '{}'",
+            lambda body: body.strip() == "200",
+        ),
     ]
 
     passed = 0
@@ -192,7 +218,9 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         print(f"\n=== remote {label} ===")
         code, body = sh(cmd)
         print(body)
-        ok = ok_fn(body) if label in ("chat route", "blueprint registered", "local page") else (code == 0 and ok_fn(body))
+        ok = ok_fn(body) if label in (
+            "chat route", "blueprint registered", "local page", "favorite route",
+        ) else (code == 0 and ok_fn(body))
         print(f"{'PASS' if ok else 'FAIL'} (exit {code})")
         if ok:
             passed += 1

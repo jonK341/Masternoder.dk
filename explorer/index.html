@@ -354,7 +354,7 @@
                     <p>We run your MN2 masternode on shared infrastructure — one chain, <strong>10,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
                 </div>
                 <div class="mn-slot-meter" aria-label="Platform slot capacity">
-                    <div class="mn-slot-meter-label"><span id="mn-meter-label">— / 50 slots</span></div>
+                    <div class="mn-slot-meter-label"><span id="mn-meter-label">— / — slots</span></div>
                     <div class="mn-slot-meter-bar"><div class="mn-slot-meter-fill" id="mn-meter-fill"></div></div>
                 </div>
             </div>
@@ -362,7 +362,7 @@
             <div class="ex-tiles mn-stat-tiles" id="mn-host-tiles">
                 <div class="ex-tile"><div class="label">Live on network</div><div class="value" id="mn-net-enabled">--</div><div class="sub" id="mn-net-total">enabled masternodes</div></div>
                 <div class="ex-tile"><div class="label">Platform fleet</div><div class="value" id="mn-slots">--</div><div class="sub" id="mn-collateral">registered hosts</div></div>
-                <div class="ex-tile"><div class="label">Slots open</div><div class="value" id="mn-open-slots">--</div><div class="sub">up to 50 total</div></div>
+                <div class="ex-tile"><div class="label">Slots open</div><div class="value" id="mn-open-slots">--</div><div class="sub" id="mn-slots-cap">capacity loading…</div></div>
                 <div class="ex-tile"><div class="label">Daemon</div><div class="value" id="mn-daemon">--</div><div class="sub" id="mn-daemon-sub">minting status</div></div>
             </div>
 
@@ -376,6 +376,7 @@
                         <div class="mn-checkout-alt" id="mn-price-alt">— coins · — MN2</div>
                     </div>
                 </div>
+                <p class="mn-hosting-sold-out" id="mn-hosting-sold-out" hidden>Sold out — all slots are reserved. Check back soon.</p>
                 <div class="mn-checkout-actions" id="mn-checkout-actions">
                     <button type="button" class="mn-checkout-btn mn-checkout-btn--paypal" data-mn-pay="paypal">Pay with PayPal</button>
                     <button type="button" class="mn-checkout-btn mn-checkout-btn--coins" data-mn-pay="coins">Pay with coins</button>

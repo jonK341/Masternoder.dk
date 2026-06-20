@@ -54,6 +54,13 @@ else
   echo "WARN: cron file missing — run deploy mn2_staking first"
 fi
 
+echo ""
+echo "-- masternode.conf permissions (www-data append) --"
+touch /var/www/html/config/masternode.conf
+chown www-data:www-data /var/www/html/config/masternode.conf
+chmod 664 /var/www/html/config/masternode.conf
+ls -la /var/www/html/config/masternode.conf
+
 SECRET=$(grep -E '^(MN2_OPS_SECRET|MN2_SCAN_SECRET)=' .env | head -1 | cut -d= -f2- | tr -d '\r"')
 echo ""
 echo "-- seed platform-mn-2 .. 5 --"

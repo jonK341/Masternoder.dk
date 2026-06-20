@@ -215,6 +215,37 @@ Outbound webhooks only — **Gate S:** no custody on Discord; users link account
 
 Deploy via `python scripts/deploy.py mn2_staking --ask-pass` (uploads scripts under `cron/`).
 
+Optional env + verify in one SSH session:
+
+```powershell
+# 1) Audit only — see what is missing
+python scripts/mn2_ops_optionals_remote.py --ask-pass --audit
+
+# 2) Bootstrap auto-secrets, crons, reload, smoke
+python scripts/mn2_ops_optionals_remote.py --ask-pass --all
+
+# 3) Or chain with next-ops (market crons + optionals)
+python scripts/mn2_next_ops_remote.py --ask-pass --optionals
+```
+
+**Auto-generated on server** (if missing): `AGENT_CRON_SECRET`, `COGS_ADMIN_REPORT_KEY`.
+
+**Still manual** (pass flags or edit server `.env`):
+
+| Key | Flag / action |
+|-----|----------------|
+| `NOTIFY_ADMIN_EMAIL` | `--notify-email you@domain` |
+| `NOTIFY_SMTP_*` | edit server `.env` |
+| `LIVEKIT_*` | `--livekit-url` / `--livekit-api-key` / `--livekit-api-secret` |
+| `DISCORD_CHANNEL_ID_MARKET` | `--discord-market-webhook https://discord.com/api/webhooks/...` |
+
+**Deploy remember:** always ship `backend/services/monetization_config_service.py` with any `data/monetization_config.json` change (generator API tiers, `mobile_iap`, coin packs). It is in the `mn2_staking` manifest; minimal hotfix:
+
+```powershell
+python scripts/deploy.py --files backend/services/monetization_config_service.py --ask-pass
+python scripts/apply_updates.py --ask-pass
+```
+
 | Script | Endpoint | Purpose |
 |--------|----------|---------|
 | `cron/discord_digest.sh` | `POST /api/discord/digest/run` | Daily platform news → `#announcements` |

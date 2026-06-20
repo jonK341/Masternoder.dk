@@ -8,17 +8,27 @@ from typing import Any, Dict, List, Optional
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _CATALOG_FILE = os.path.join(_BASE, "data", "camgirls_studio_catalog.json")
+_CATALOG_CACHE: Dict[str, Any] = {"mtime": 0.0, "data": {}}
 
 
 def _read_catalog() -> Dict[str, Any]:
     if not os.path.isfile(_CATALOG_FILE):
         return {}
     try:
+        mtime = os.path.getmtime(_CATALOG_FILE)
+    except OSError:
+        return {}
+    if _CATALOG_CACHE.get("mtime") == mtime:
+        return _CATALOG_CACHE["data"]
+    try:
         with open(_CATALOG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data if isinstance(data, dict) else {}
+        data = data if isinstance(data, dict) else {}
     except Exception:
-        return {}
+        return _CATALOG_CACHE.get("data") or {}
+    _CATALOG_CACHE["mtime"] = mtime
+    _CATALOG_CACHE["data"] = data
+    return data
 
 
 def studio_catalog() -> Dict[str, Any]:
@@ -30,12 +40,15 @@ def studio_catalog() -> Dict[str, Any]:
         "dances": cat.get("dances") or {},
         "music_themes": cat.get("music_themes") or {},
         "voice_profiles": cat.get("voice_profiles") or {},
+        "moods": cat.get("moods") or {},
+        "scenes": cat.get("scenes") or {},
     }
 
 
-def _performer_studio(row: Dict[str, Any]) -> Dict[str, Any]:
+def _performer_studio(row: Dict[str, Any], *, cat: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     studio = row.get("studio") if isinstance(row.get("studio"), dict) else {}
-    cat = _read_catalog()
+    if cat is None:
+        cat = _read_catalog()
     gifts = studio.get("gifts") or list((cat.get("gifts") or {}).keys())
     dances = studio.get("dances") or list((cat.get("dances") or {}).keys())
     features = studio.get("features") or list(cat.get("standard_program_features") or [])
@@ -55,23 +68,30 @@ def _performer_studio(row: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def public_studio(row: Dict[str, Any], *, unlocked: bool) -> Dict[str, Any]:
+def public_studio(
+    row: Dict[str, Any],
+    *,
+    unlocked: bool,
+    catalog_list: bool = False,
+    cat: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Studio block for API — teaser when locked, full when unlocked."""
-    st = _performer_studio(row)
+    if cat is None:
+        cat = _read_catalog()
+    st = _performer_studio(row, cat=cat)
     teaser = {
         "voice_enabled": "voice_reply" in st["features"],
         "music_enabled": "room_music" in st["features"],
         "dance_enabled": "dance_requests" in st["features"],
         "feature_count": len(st["features"]),
     }
-    if not unlocked:
+    if not unlocked or catalog_list:
         return teaser
-    cat = _read_catalog()
     gift_defs = cat.get("gifts") or {}
     dance_defs = cat.get("dances") or {}
     music_defs = cat.get("music_themes") or {}
     voice_defs = cat.get("voice_profiles") or {}
-    return {
+    out = {
         **teaser,
         "features": st["features"],
         "gifts": {gid: gift_defs.get(gid) for gid in st["gifts"] if gid in gift_defs},
@@ -84,7 +104,15 @@ def public_studio(row: Dict[str, Any], *, unlocked: bool) -> Dict[str, Any]:
         "goal_label": st["goal_label"],
         "catchphrases": st["catchphrases"][:8],
         "lingo_style": st["lingo_style"],
+        "goal_progress": None,
     }
+    try:
+        from backend.services.camgirls_social_service import get_goal_status, _tip_index
+        tip_totals, _ = _tip_index()
+        out["goal_progress"] = get_goal_status(str(row.get("id") or ""), row, tip_totals=tip_totals)
+    except Exception:
+        pass
+    return out
 
 
 def lingo_for_prompt(row: Dict[str, Any]) -> str:
@@ -109,7 +137,7 @@ def lingo_for_prompt(row: Dict[str, Any]) -> str:
 
 
 def request_dance(user_id: str, performer_id: str, dance_id: str) -> Dict[str, Any]:
-    from backend.services.camgirls_service import get_performer, is_age_verified, _user_unlocks
+    from backend.services.camgirls_service import get_performer, is_age_verified, user_has_unlock
 
     uid = (user_id or "").strip()
     if not is_age_verified(uid):
@@ -118,7 +146,7 @@ def request_dance(user_id: str, performer_id: str, dance_id: str) -> Dict[str, A
     if not row:
         return {"success": False, "error": "performer_not_found"}
     pid = (row.get("id") or "").strip()
-    if not _user_unlocks(uid).get(pid):
+    if not user_has_unlock(uid, pid):
         return {"success": False, "error": "unlock_required", "code": "unlock_required"}
     st = _performer_studio(row)
     if "dance_requests" not in st["features"]:

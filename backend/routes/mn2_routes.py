@@ -137,11 +137,18 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
     return err
 
 
-@mn2_bp.route("/api/mn2/deposit-address", methods=["GET"])
+@mn2_bp.route("/api/mn2/deposit-address", methods=["GET", "POST"])
 def mn2_deposit_address():
-    """Return the deposit address for the current user (create via RPC if first time)."""
-    user_id = resolve_user_id(from_body=False, from_query=True)
-    result = get_or_create_deposit_address(user_id)
+    """Return the deposit address for the current user (create via RPC if first time). POST with refresh=1 rotates address."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        if request.args.get("refresh") == "1" or body.get("refresh"):
+            result = refresh_deposit_address(user_id)
+        else:
+            result = get_or_create_deposit_address(user_id)
+    else:
+        result = get_or_create_deposit_address(user_id)
     if not result.get("success"):
         err = result.get("error", "Unknown error")
         return jsonify({

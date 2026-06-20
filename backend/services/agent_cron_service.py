@@ -110,9 +110,22 @@ def run_agent_cron_jobs(
                 from backend.services.agent_research_tracker import agent_research_tracker
                 idx = datetime.now(timezone.utc).timetuple().tm_yday % len(_RESEARCH_TOPIC_IDS)
                 topic_id = _RESEARCH_TOPIC_IDS[idx]
-                out['results'][job] = agent_research_tracker.start_research(
+                started = agent_research_tracker.start_research(
                     topic_id, agent_id='ai_intelligence_agent'
                 )
+                insight = None
+                if started.get('success'):
+                    try:
+                        from backend.services.agent_ai_intelligence import agent_ai_intelligence
+                        insight = agent_ai_intelligence.llm_insight(
+                            'ai_intelligence_agent',
+                            topic=f'research_rotation:{topic_id}',
+                            context={'project': started.get('project'), 'topic_id': topic_id},
+                            task_type='context',
+                        )
+                    except Exception:
+                        insight = {'success': False, 'error': 'llm_insight_failed'}
+                out['results'][job] = {'started': started, 'llm_insight': insight}
             elif job == 'llm_status_snapshot':
                 from backend.services.llm_service import get_provider_status
                 snap = {
@@ -151,6 +164,12 @@ def run_agent_cron_jobs(
             elif job == 'monetization_renewal_emails':
                 from backend.services.monetization_email_service import run_renewal_reminder_emails
                 out['results'][job] = run_renewal_reminder_emails()
+            elif job == 'monetization_weekly_revenue_pulse':
+                from backend.services.monetization_revenue_pulse_service import run_weekly_revenue_pulse
+                out['results'][job] = run_weekly_revenue_pulse()
+            elif job == 'monetization_weekly_margin_report':
+                from backend.services.monetization_margin_report_service import run_weekly_margin_report
+                out['results'][job] = run_weekly_margin_report()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False

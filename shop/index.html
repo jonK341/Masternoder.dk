@@ -414,6 +414,82 @@
                 font-size: clamp(1.35rem, 5vw, var(--font-size-5xl));
             }
         }
+        .shop-upsell-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            background: rgba(0, 0, 0, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .shop-upsell-backdrop.open { display: flex; }
+        .shop-upsell-modal {
+            width: min(480px, 100%);
+            background: linear-gradient(160deg, rgba(18, 22, 34, 0.98), rgba(10, 12, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        }
+        .shop-upsell-modal h3 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+        }
+        .shop-upsell-modal p.lead {
+            margin: 0 0 14px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .shop-upsell-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .shop-upsell-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .shop-upsell-card strong {
+            display: block;
+            font-size: 0.92rem;
+            margin-bottom: 2px;
+        }
+        .shop-upsell-card span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .shop-upsell-card a {
+            white-space: nowrap;
+            font-size: 0.78rem;
+            padding: 7px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            background: var(--primary);
+            color: #fff;
+        }
+        .shop-upsell-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .shop-upsell-dismiss {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
     </style>
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
@@ -727,6 +803,12 @@
             <p id="mn2-hosting-checkout-msg" style="margin: 0 0 10px; font-size: 0.85rem; color: var(--text-secondary); min-height: 1.2em;"></p>
             <div id="mn2-services-shop-grid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));"></div>
         </div>
+        <div class="card" id="tier-b-onramp-card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(170,0,255,0.35); background: rgba(170,0,255,0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+            <h2 style="margin: 0 0 8px; font-size: 1.05rem; color: #cc88ff;">Tier B — On-ramp + hosting bundle</h2>
+            <p style="margin: 0 0 12px; font-size: 0.88rem; color: var(--text-secondary);">Buy MN2 via PayPal on-ramp, then reserve hosting with bundle promo within the window.</p>
+            <div id="tier-b-onramp-steps" style="font-size:0.9rem;color:var(--text-secondary);">Loading bundle steps…</div>
+            <p id="tier-b-auction-fee" style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);"></p>
+        </div>
         <div class="card" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';">
                 <h3 style="color: var(--secondary); margin: 0;">MN2 Wallet</h3>
@@ -826,6 +908,12 @@
             <div class="card" id="battle-pass-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:2px solid rgba(170,0,255,0.45);">
                 <h3 style="margin:0 0 8px; color:#cc88ff;">🎫 Season Battle Pass</h3>
                 <div id="battle-pass-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+            </div>
+
+            <!-- Copy-trading premium (B7) -->
+            <div class="card" id="copy-trading-premium-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:2px solid rgba(0,212,255,0.45);">
+                <h3 style="margin:0 0 8px; color:var(--secondary);">📈 Copy-trading premium</h3>
+                <div id="copy-trading-premium-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
             </div>
 
             <!-- VIP + Loyalty row -->
@@ -1212,7 +1300,7 @@
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
                     if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
-                    if (btn.dataset.tab === 'mn2') loadMn2HostingStatus();
+                    if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
                 });
             });
             const h = (location.hash || '').replace(/^#/, '');
@@ -1931,7 +2019,8 @@
                         quote_id: quote.quote_id,
                         user_id: userId,
                         return_url: returnUrl,
-                        cancel_url: cancelUrl
+                        cancel_url: cancelUrl,
+                        promo_code: getShopPromoCode() || tierBAutoPromo || undefined
                     })
                 });
                 const order = await orderRes.json();
@@ -1970,6 +2059,11 @@
                 if (typeof toast !== 'undefined') toast[d.success ? 'success' : 'error'](okMsg);
                 if (d.success) {
                     await Promise.all([loadPurchases(), loadMn2HostingStatus()]);
+                    if (Array.isArray(d.upsell) && d.upsell.length) {
+                        showPostPurchaseUpsell(d.upsell, {
+                            lead: 'Hosting slot confirmed — stack rewards with these add-ons.'
+                        });
+                    }
                 }
             } catch (_) {
                 if (msgEl) msgEl.textContent = 'Capture failed — contact support if PayPal charged you.';
@@ -2816,6 +2910,40 @@
             }
         }
         
+        function showPostPurchaseUpsell(upsellItems, opts) {
+            const list = Array.isArray(upsellItems) ? upsellItems : [];
+            if (!list.length) return;
+            const backdrop = document.getElementById('shop-post-purchase-upsell');
+            const listEl = document.getElementById('shop-upsell-list');
+            const leadEl = document.getElementById('shop-upsell-lead');
+            if (!backdrop || !listEl) return;
+            if (leadEl && opts && opts.lead) leadEl.textContent = opts.lead;
+            listEl.innerHTML = list.map(function (row) {
+                const href = row.href || '/shop';
+                const cta = row.cta || 'Open';
+                const title = row.title || 'Recommended';
+                const desc = row.desc || '';
+                return '<div class="shop-upsell-card"><div><strong>' + title + '</strong><span>' + desc + '</span></div>'
+                    + '<a href="' + href + '">' + cta + '</a></div>';
+            }).join('');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function initPostPurchaseUpsellModal() {
+            const backdrop = document.getElementById('shop-post-purchase-upsell');
+            const dismiss = document.getElementById('shop-upsell-dismiss');
+            if (!backdrop) return;
+            function closeUpsell() {
+                backdrop.classList.remove('open');
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+            if (dismiss) dismiss.addEventListener('click', closeUpsell);
+            backdrop.addEventListener('click', function (ev) {
+                if (ev.target === backdrop) closeUpsell();
+            });
+        }
+
         async function handlePayPalReturn() {
             const params = new URLSearchParams(window.location.search);
             const paypalStatus = params.get('paypal');
@@ -2852,6 +2980,9 @@
                         }
                         loadCurrency();
                         loadUnifiedPoints();
+                        if (Array.isArray(data.upsell) && data.upsell.length) {
+                            showPostPurchaseUpsell(data.upsell);
+                        }
                     } else if (typeof toast !== 'undefined') toast.error(data.error || 'Payment capture failed');
                 } catch (e) {
                     if (typeof toast !== 'undefined') toast.error('Failed to complete payment');
@@ -3042,7 +3173,78 @@
         }
 
         async function loadDealsPanel() {
-            await Promise.all([loadBattlePassCard(), loadVipCard(), loadLoyaltyCard(), loadSpinCard(), loadMysteryBoxes(), loadFlashSales(), loadTop25Card()]);
+            await Promise.all([loadBattlePassCard(), loadCopyTradingPremiumCard(), loadVipCard(), loadLoyaltyCard(), loadSpinCard(), loadMysteryBoxes(), loadFlashSales(), loadTop25Card()]);
+        }
+
+        let tierBAutoPromo = '';
+
+        async function loadTierBOnrampPanel() {
+            const stepsEl = document.getElementById('tier-b-onramp-steps');
+            const feeEl = document.getElementById('tier-b-auction-fee');
+            if (!stepsEl) return;
+            try {
+                const [offer, fee] = await Promise.all([
+                    fetch(`${BASE_URL}/api/shop/tier-b/onramp-hosting?user_id=${encodeURIComponent(userId)}`).then(r => r.json()),
+                    fetch(`${BASE_URL}/api/shop/tier-b/auction-fee`).then(r => r.json()),
+                ]);
+                tierBAutoPromo = (offer.auto_promo_code || '').trim().toUpperCase();
+                if (tierBAutoPromo) {
+                    const promoEl = document.getElementById('shop-promo-code');
+                    if (promoEl && !(promoEl.value || '').trim()) promoEl.value = tierBAutoPromo;
+                }
+                if (offer.success && (offer.steps || []).length) {
+                    stepsEl.innerHTML = (offer.steps || []).map(s => {
+                        const done = s.done ? '✓' : '○';
+                        const note = s.discount_note ? `<div style="font-size:0.8rem;margin-top:4px;color:var(--secondary);">${dealsEsc(s.discount_note)}</div>` : '';
+                        return `<div style="margin:8px 0;padding:10px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.2);">
+                            <div style="font-weight:600;color:var(--text-primary);">${done} Step ${s.step}: ${dealsEsc(s.title || '')}</div>
+                            ${note}
+                            <a href="${dealsEsc(s.href || '#')}" style="display:inline-block;margin-top:6px;color:var(--primary);font-size:0.85rem;">${dealsEsc(s.cta || 'Open')} →</a>
+                        </div>`;
+                    }).join('');
+                } else {
+                    stepsEl.textContent = offer.error || 'Bundle not configured.';
+                }
+                if (feeEl && fee.success) {
+                    feeEl.textContent = `Auction house fee: ${fee.fee_percent}% — ${fee.description || ''}`;
+                }
+            } catch (e) {
+                stepsEl.textContent = 'Could not load Tier B bundle.';
+            }
+        }
+
+        async function loadCopyTradingPremiumCard() {
+            const el = document.getElementById('copy-trading-premium-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/mn2/copy-trading/premium?user_id=' + encodeURIComponent(userId));
+                if (!d.success) {
+                    el.textContent = d.error || 'Copy-trading premium not configured.';
+                    return;
+                }
+                let html = '<div style="font-size:0.85rem;margin-bottom:8px;">' +
+                    (d.active ? '<span style="color:var(--secondary);">Premium active' + (d.expires_at ? ' until ' + dealsEsc(d.expires_at) : '') + '</span>' :
+                        'Unlock monthly premium: $' + Number(d.price_usd || 0).toFixed(2) + ' or ' + (d.price_coins || 0) + ' coins') + '</div>';
+                if ((d.perks || []).length) {
+                    html += '<ul style="margin:0 0 8px;padding-left:1.2rem;font-size:0.82rem;">' +
+                        d.perks.map(p => '<li>' + dealsEsc(p) + '</li>').join('') + '</ul>';
+                }
+                if (!d.active) {
+                    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+                        '<button type="button" id="ct-paypal-btn" class="btn-purchase" style="width:auto;"><i class="fab fa-paypal"></i> Pay $' + Number(d.price_usd || 0).toFixed(2) + '</button>' +
+                        '<button type="button" id="ct-coins-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);">Buy with ' + (d.price_coins || 0) + ' coins</button>' +
+                        '</div>';
+                }
+                el.innerHTML = html;
+                document.getElementById('ct-paypal-btn')?.addEventListener('click', () => buyItemWithPayPal('copy-trading-premium', parseFloat(d.price_usd || 0), 'Copy-trading premium'));
+                document.getElementById('ct-coins-btn')?.addEventListener('click', async () => {
+                    const res = await dealsApi('/api/mn2/copy-trading/premium/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, source: 'shop_coins' }) });
+                    dealsToast(res.success, res.success ? 'Copy-trading premium activated!' : (res.error || 'Purchase failed'));
+                    if (res.success) { loadCurrency(); loadUnifiedPoints(); loadCopyTradingPremiumCard(); }
+                });
+            } catch (e) {
+                el.textContent = 'Could not load copy-trading premium.';
+            }
         }
 
         async function loadBattlePassCard() {
@@ -3066,6 +3268,11 @@
                         '<button type="button" id="bp-paypal-btn" class="btn-purchase" style="width:auto;"><i class="fab fa-paypal"></i> Pay $' + usd + '</button>' +
                         '<button type="button" id="bp-coins-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00ff88,#00d4ff);">Buy with ' + coins + ' coins</button>' +
                         '</div>';
+                }
+                if ((d.quests || []).length) {
+                    html += '<div style="margin-top:12px;font-size:0.82rem;"><strong style="color:var(--text-primary);">Season quests</strong><ul style="margin:6px 0 0;padding-left:1.2rem;">' +
+                        d.quests.map(q => '<li style="' + (q.completed ? 'opacity:0.7;text-decoration:line-through;' : '') + '">' + dealsEsc(q.label || q.id) + ' (+' + (q.xp || 0) + ' XP)</li>').join('') +
+                        '</ul></div>';
                 }
                 el.innerHTML = html;
                 document.getElementById('bp-paypal-btn')?.addEventListener('click', () => buyItemWithPayPal('battle-pass-premium', parseFloat(d.price_usd || 0), d.name || 'Battle Pass'));
@@ -3328,7 +3535,12 @@
             }
             const tabParam = (params.get('tab') || '').trim().toLowerCase();
             if (tabParam) showShopTab(tabParam);
+            if (params.get('bundle') === 'hosting') {
+                showShopTab('mn2');
+                if (typeof toast !== 'undefined') toast.info('On-ramp bundle: reserve hosting — promo HOSTMN5 applies when eligible.');
+            }
             initShopTabs();
+            initPostPurchaseUpsellModal();
             initShopBoostersPanel();
             syncProfileBar();
             await handleMasternodePayPalReturn();
@@ -3397,6 +3609,7 @@
             loadMyAuctionState();
             loadShopItems();
             loadMn2Wallet();
+            loadTierBOnrampPanel();
             initMn2WalletHandlers();
             initDealsHandlers();
             if ((location.hash || '') === '#shop-deals') loadDealsPanel();
@@ -3404,6 +3617,16 @@
             setInterval(() => loadUnifiedPoints(), 10000);
         });
     </script>
+    <div id="shop-post-purchase-upsell" class="shop-upsell-backdrop" aria-hidden="true">
+        <div class="shop-upsell-modal" role="dialog" aria-labelledby="shop-upsell-title">
+            <h3 id="shop-upsell-title">You're all set — unlock more</h3>
+            <p class="lead" id="shop-upsell-lead">Your purchase completed. These picks pair well with what you just bought.</p>
+            <div class="shop-upsell-list" id="shop-upsell-list"></div>
+            <div class="shop-upsell-actions">
+                <button type="button" class="shop-upsell-dismiss" id="shop-upsell-dismiss">Continue shopping</button>
+            </div>
+        </div>
+    </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

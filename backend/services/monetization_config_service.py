@@ -286,6 +286,15 @@ def get_shop_monetization() -> Dict[str, Any]:
     return dict(block) if isinstance(block, dict) else {}
 
 
+def get_generator_api_tiers() -> Dict[str, Dict[str, Any]]:
+    """C7: metered generator API tier definitions (id → tier config)."""
+    raw = _load_raw()
+    block = raw.get("generator_api_tiers")
+    if isinstance(block, dict):
+        return {k: dict(v) for k, v in block.items() if isinstance(v, dict)}
+    return {}
+
+
 def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
     """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
     raw = _load_raw()

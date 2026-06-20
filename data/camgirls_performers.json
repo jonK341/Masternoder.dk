@@ -49,6 +49,19 @@
         "voice_profile": "nova",
         "goal_mn2": 420,
         "goal_label": "Neon goal: 420 MN2 \u2014 private dance unlock",
+        "fan_club_price_mn2": 12,
+        "private_show_mn2_per_min": 6,
+        "offline_message_price_mn2": 2,
+        "schedule": "Live daily 8pm UTC",
+        "moods": [
+          "party",
+          "flirty_sfw",
+          "vip"
+        ],
+        "scenes": [
+          "neon_club",
+          "gold_lounge"
+        ],
         "lingo_style": "club slang, hype queen, sparkle emoji energy, calls fans starling/babe/sweetheart",
         "catchphrases": [
           "Hey starling \u2014 you glow different tonight.",
@@ -109,6 +122,18 @@
         "voice_profile": "luna",
         "goal_mn2": 333,
         "goal_label": "Cozy goal: blanket fort show at 333 MN2",
+        "fan_club_price_mn2": 18,
+        "private_show_mn2_per_min": 5,
+        "schedule": "Late night 10pm UTC",
+        "moods": [
+          "cozy",
+          "zen",
+          "flirty_sfw"
+        ],
+        "scenes": [
+          "moonlit",
+          "zen_garden"
+        ],
         "lingo_style": "soft poet, moon metaphors, hmm and aww, calls fans moonbeam/darling",
         "catchphrases": [
           "Moonbeam \u2014 you found my quiet room.",
@@ -164,6 +189,18 @@
         "voice_profile": "sage",
         "goal_mn2": 250,
         "goal_label": "Wisdom goal: guided VIP Q&A at 250 MN2",
+        "fan_club_price_mn2": 10,
+        "private_show_mn2_per_min": 4,
+        "schedule": "Guide hours 6pm UTC",
+        "moods": [
+          "zen",
+          "cozy",
+          "vip"
+        ],
+        "scenes": [
+          "zen_garden",
+          "moonlit"
+        ],
         "lingo_style": "mentor calm, breathe and flow, calls fans seeker/student/friend",
         "catchphrases": [
           "Breathe, seeker \u2014 unlock is one click.",
@@ -220,6 +257,17 @@
         "voice_profile": "ember",
         "goal_mn2": 500,
         "goal_label": "Fire goal: dance battle at 500 MN2",
+        "fan_club_price_mn2": 20,
+        "private_show_mn2_per_min": 10,
+        "schedule": "Party Fridays 9pm UTC",
+        "moods": [
+          "party",
+          "flirty_sfw"
+        ],
+        "scenes": [
+          "fire_pit",
+          "neon_club"
+        ],
         "lingo_style": "hype beast, let's gooo, fire emoji, calls fans fox/fam/champ",
         "catchphrases": [
           "LET'S GOOO fox \u2014 room's heating up!",
@@ -280,6 +328,18 @@
         "voice_profile": "iris",
         "goal_mn2": 1000,
         "goal_label": "VIP goal: private lounge at 1000 MN2",
+        "fan_club_price_mn2": 35,
+        "private_show_mn2_per_min": 15,
+        "schedule": "VIP soir\u00e9e Sat 7pm UTC",
+        "moods": [
+          "vip",
+          "zen",
+          "flirty_sfw"
+        ],
+        "scenes": [
+          "gold_lounge",
+          "moonlit"
+        ],
         "lingo_style": "elegant noir, darling and mon cher, velvet metaphors, never rushed",
         "catchphrases": [
           "Darling \u2014 the lounge opens for patrons only.",

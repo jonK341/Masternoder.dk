@@ -21,6 +21,10 @@
         .page-link:hover { border-color: var(--cp-primary); box-shadow: 0 0 20px rgba(255,215,0,0.2); }
         .page-link strong { display: block; color: var(--cp-primary); margin-bottom: 4px; }
         .page-link span { font-size: 0.9em; opacity: 0.8; }
+        .page-link--locked { opacity: 0.55; pointer-events: none; border-style: dashed; }
+        .page-link--locked::after { content: ' 🔒 Premium'; font-size: 0.72rem; color: #ffaa44; display: block; margin-top: 6px; }
+        .comp-premium-banner { border: 1px solid rgba(255,170,0,0.35); background: rgba(255,170,0,0.08); border-radius: 12px; padding: 16px 18px; margin-bottom: 24px; }
+        .comp-premium-banner a { color: var(--cp-primary); font-weight: 700; }
         .page-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--cp-border); }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -35,6 +39,11 @@
         <h1>📚 Compendium — Rulebook V1–V16</h1>
         <img src="/static/img/rulebook-compendium-v15.png" alt="Compendium V15" style="max-width: 100%; border-radius: 12px; border: 2px solid var(--cp-border); margin-bottom: 20px;">
         <p class="comp-desc">Alle rulebooks samlet ét sted. Læs roligt med steady navigation — brug Library i menuen eller fortsæt hvor du slap. Communication Psychology, Hunters, Star Map, Shop, Sync og mere. Læsning giver compendium-point.</p>
+        <div id="comp-premium-banner" class="comp-premium-banner" hidden>
+            <strong>Pages 1–3 are free.</strong> Unlock volumes 4–25 in the
+            <a href="/shop?category=digital_goods">Shop → Digital goods</a>
+            (<em>Compendium — Chapters 4–12</em> or <em>Full library</em>).
+        </div>
         <h2 class="section-title">Communication Psychology (V3) — 10 sider</h2>
         <div class="page-grid">
             <a class="page-link" href="/compendium/page-1.html"><strong>Side 1</strong><span>Magtdynamikker 1–3</span></a>
@@ -132,6 +141,33 @@
             window.addEventListener('hashchange', fromHash);
             fromHash();
         })();
+    </script>
+    <script>
+    (function () {
+        var uid = localStorage.getItem('game_user_id') || 'default_user';
+        fetch('/api/compendium/pages?user_id=' + encodeURIComponent(uid))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var access = data && data.access;
+                var pages = (data && data.pages) || [];
+                if (access && !access.has_full_premium) {
+                    var banner = document.getElementById('comp-premium-banner');
+                    if (banner) banner.hidden = false;
+                }
+                var locked = new Set((access && access.locked_pages) || []);
+                document.querySelectorAll('.page-link[href]').forEach(function (a) {
+                    var href = a.getAttribute('href') || '';
+                    var m = href.match(/page-(\d+)/);
+                    var num = m ? parseInt(m[1], 10) : null;
+                    if (num && locked.has(num)) a.classList.add('page-link--locked');
+                });
+                if (new URLSearchParams(location.search).get('locked')) {
+                    var banner = document.getElementById('comp-premium-banner');
+                    if (banner) { banner.hidden = false; banner.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                }
+            })
+            .catch(function () {});
+    })();
     </script>
     <script src="/static/js/compendium-view-tracker.js"></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>

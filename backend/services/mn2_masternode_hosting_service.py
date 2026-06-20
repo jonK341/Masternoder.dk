@@ -89,7 +89,7 @@ def get_paypal_config() -> Dict[str, Any]:
         "quote_ttl_seconds": int(pp.get("quote_ttl_seconds") or 900),
         "max_slots_per_order": int(pp.get("max_slots_per_order") or 5),
         "return_path": pp.get("return_path") or "/explorer?tab=masternodes",
-        "collateral_mn2": float(cfg.get("collateral_mn2") or 10000),
+        "collateral_mn2": float(cfg.get("collateral_mn2") or 5000),
         "max_hosted_nodes": int(cfg.get("max_hosted_nodes") or 50),
         "auto_provision": bool(cfg.get("auto_provision", True)),
         "shop_payments": {
@@ -252,7 +252,8 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
 
 
 def create_order(quote_id: str, user_id: str,
-                 return_url: Optional[str] = None, cancel_url: Optional[str] = None) -> Dict[str, Any]:
+                 return_url: Optional[str] = None, cancel_url: Optional[str] = None,
+                 promo_code: Optional[str] = None) -> Dict[str, Any]:
     uid = str(user_id or "").strip()
     qid = str(quote_id or "").strip()
     with _LOCK:
@@ -276,10 +277,27 @@ def create_order(quote_id: str, user_id: str,
 
     slots = int(order.get("slots") or 1)
     item = f"{pp['billing_label']} × {slots} slot(s)"
+    usd_charge = float(order["usd_total"])
+    applied_promo = (promo_code or "").strip().upper() or None
+    if not applied_promo:
+        try:
+            from backend.services.tier_b_monetization_service import get_auto_hosting_promo
+
+            applied_promo = get_auto_hosting_promo(uid)
+        except Exception:
+            applied_promo = None
+    promo_meta: Dict[str, Any] = {"promo_applied": False}
+    if applied_promo:
+        try:
+            from backend.services.shop_checkout_promo_service import apply_discounted_amount
+
+            usd_charge, promo_meta = apply_discounted_amount(usd_charge, applied_promo, uid)
+        except Exception:
+            pass
     try:
         from backend.services.paypal_service import create_order as pp_create
         result = pp_create(
-            amount=float(order["usd_total"]),
+            amount=float(usd_charge),
             currency=str(order.get("currency") or "USD"),
             item_name=item,
             return_url=return_url,
@@ -297,16 +315,23 @@ def create_order(quote_id: str, user_id: str,
         order = orders.get(qid)
         order["status"] = "pending_payment"
         order["paypal_order_id"] = result.get("order_id")
+        if promo_meta.get("promo_applied"):
+            order["promo_code"] = applied_promo
+            order["usd_total_original"] = float(order.get("usd_total") or 0)
+            order["usd_total"] = float(usd_charge)
         order["updated_at"] = _iso()
         _save_orders(orders)
-    _audit(qid, "pending_payment", {"paypal_order_id": result.get("order_id")})
+    _audit(qid, "pending_payment", {"paypal_order_id": result.get("order_id"), "promo": applied_promo})
 
     return {
         "success": True,
         "order_id": qid,
         "paypal_order_id": result.get("order_id"),
         "approve_url": result.get("approve_url"),
-        "usd_total": order["usd_total"],
+        "usd_total": usd_charge,
+        "usd_total_original": float(order.get("usd_total_original") or order.get("usd_total") or usd_charge),
+        "promo_code": applied_promo if promo_meta.get("promo_applied") else None,
+        "promo_applied": bool(promo_meta.get("promo_applied")),
         "slots": slots,
     }
 
@@ -375,7 +400,7 @@ def _mark_paid(order: Dict[str, Any], payment_ref: str, source: str, payment_met
         "host_ids": order["host_ids"],
         "source": source,
     })
-    return {
+    out = {
         "success": True,
         "order_id": order.get("order_id"),
         "slots": order.get("slots"),
@@ -384,6 +409,55 @@ def _mark_paid(order: Dict[str, Any], payment_ref: str, source: str, payment_met
         "message": fulfilled.get("message"),
         "payment_method": payment_method,
     }
+    try:
+        from backend.services.referral_purchase_rewards_service import maybe_reward_referrer
+
+        ref = maybe_reward_referrer(
+            str(order.get("user_id") or ""),
+            purchase_kind="hosting",
+            item_id=str(order.get("product_sku") or "mn2_masternode_hosting"),
+            order_id=str(order.get("order_id") or ""),
+            amount_usd=float(order.get("total_usd") or order.get("amount_usd") or 0),
+        )
+        if ref.get("rewarded"):
+            out["referral_reward"] = ref
+    except Exception:
+        pass
+    try:
+        from backend.services.shop_upsell_service import upsell_suggestions
+
+        out["upsell"] = upsell_suggestions(
+            item_id=str(order.get("product_sku") or "mn2_masternode_hosting"),
+            purchase_kind="hosting",
+        )
+    except Exception:
+        pass
+    try:
+        uid = str(order.get("user_id") or "").strip()
+        if uid:
+            from backend.services.battle_pass_service import record_battle_pass_action
+
+            record_battle_pass_action(uid, "hosting_purchase")
+    except Exception:
+        uid = str(order.get("user_id") or "").strip()
+    promo = (order.get("promo_code") or "").strip()
+    if promo and not order.get("promo_redeemed_at"):
+        try:
+            from backend.services.shop_checkout_promo_service import record_promo_redemption
+
+            record_promo_redemption(promo, uid)
+            order["promo_redeemed_at"] = _iso()
+        except Exception:
+            pass
+    try:
+        from backend.services.discord_hosting_vip_service import grant_hosting_vip_role
+
+        vip = grant_hosting_vip_role(uid, reason="hosting_paid")
+        if vip.get("granted") or vip.get("pending"):
+            out["hosting_vip_discord"] = vip
+    except Exception:
+        pass
+    return out
 
 
 def _apply_capture(order: Dict[str, Any], capture_id: str, source: str) -> Dict[str, Any]:

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20260618a">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -239,6 +240,7 @@
             padding: 40px;
             color: rgba(255, 255, 255, 0.5);
         }
+        .loading .fa-spinner, .loading .fa-spin { display: none !important; }
 
         /* Table: checklist style — unchecked (☐) for locked, checked (☑) for unlocked */
         .trophies-container .table .col-check { width: 2em; text-align: center; font-size: 1.2em; color: rgba(255,255,255,0.5); }
@@ -675,6 +677,10 @@
     <div class="trophies-container">
         <div class="trophies-header">
             <h1>🏆 Trophy Collection</h1>
+            <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
+                <button type="button" id="trophy-theme-ww2" class="active">WW2 War Room</button>
+                <button type="button" id="trophy-theme-gold">Gold Classic</button>
+            </div>
             <p>Unlock trophies by completing achievements and milestones</p>
         </div>
 
@@ -2690,7 +2696,7 @@
                 <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
             </div>
             <div id="intelligence-panels"></div>
-            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            <div class="loading intel-loading"><p>Loading intelligence…</p></div>
         </div>
     </section>
 
@@ -2699,6 +2705,22 @@
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('trophy-theme-ww2');
+        var ww2 = document.getElementById('trophy-theme-ww2');
+        var gold = document.getElementById('trophy-theme-gold');
+        function setTheme(name) {
+            document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
+            document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
+            if (ww2) ww2.classList.toggle('active', name !== 'gold');
+            if (gold) gold.classList.toggle('active', name === 'gold');
+            try { localStorage.setItem('trophy_page_theme', name); } catch (e) {}
+        }
+        try {
+            var saved = localStorage.getItem('trophy_page_theme');
+            if (saved === 'gold') setTheme('gold');
+        } catch (e) {}
+        if (ww2) ww2.addEventListener('click', function() { setTheme('ww2'); });
+        if (gold) gold.addEventListener('click', function() { setTheme('gold'); });
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
         }

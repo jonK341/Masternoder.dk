@@ -239,6 +239,21 @@ def sendtoaddress(address: str, amount: float) -> Dict[str, Any]:
     return _call("sendtoaddress", [address, amount])
 
 
+def lockunspent(unlock: bool, outputs: list) -> Dict[str, Any]:
+    """Lock or unlock UTXOs. unlock=False locks outputs (prevents coin selection from spending them)."""
+    return _call("lockunspent", [bool(unlock), outputs])
+
+
+def listlockunspent() -> Dict[str, Any]:
+    """List currently locked UTXOs."""
+    return _call("listlockunspent")
+
+
+def gettxout(txid: str, vout: int, include_mempool: bool = True) -> Dict[str, Any]:
+    """Return details about an unspent tx output."""
+    return _call("gettxout", [txid, int(vout), include_mempool])
+
+
 def listtransactions(count: int = 100, skip: int = 0) -> Dict[str, Any]:
     """List recent wallet transactions."""
     return _call("listtransactions", ["*", count, skip])
@@ -383,8 +398,27 @@ def listmasternodes() -> Dict[str, Any]:
 
 
 def masternode_command(*args: Any) -> Dict[str, Any]:
-    """PIVX-style masternode subcommands (genkey, start, outputs, ...)."""
+    """Legacy PIVX-style masternode subcommands — not exposed on MasterNoder2 v1.2.3+ RPC."""
     return _call("masternode", list(args))
+
+
+def createmasternodekey() -> Dict[str, Any]:
+    """Create a new masternode private key (replaces legacy ``masternode genkey``)."""
+    return _call("createmasternodekey")
+
+
+def startmasternode(
+    set_type: str,
+    lock_wallet: bool = False,
+    alias: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Start masternode(s). set_type: local|all|many|missing|disabled|alias."""
+    # MasterNoder2 RPC parses lockwallet via params[1].get_str() — must be "true"/"false", not JSON bool.
+    lock_str = "true" if lock_wallet else "false"
+    params: List[Any] = [set_type, lock_str]
+    if alias is not None:
+        params.append(alias)
+    return _call("startmasternode", params)
 
 
 def walletpassphrase(passphrase: str, timeout_sec: int = 120, staking_only: bool = True) -> Dict[str, Any]:

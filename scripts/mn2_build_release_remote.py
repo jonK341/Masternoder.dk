@@ -54,7 +54,10 @@ def main() -> int:
     parser.add_argument("--ask-pass", action="store_true")
     parser.add_argument("--publish", action="store_true", help="Run mn2_publish_release.py after download")
     parser.add_argument("--draft", action="store_true", help="With --publish: create draft release")
-    parser.add_argument("--use-depends", action="store_true", help="Static depends build (slow, portable)")
+    parser.add_argument("--fast", action="store_true",
+                        help="System libs only (faster; often fails with OpenSSL 3.x — default is depends)")
+    parser.add_argument("--rebuild-depends", action="store_true",
+                        help="Force full depends rebuild (default: skip if already built)")
     parser.add_argument("--skip-deps", action="store_true", help="Do not apt-install build dependencies")
     parser.add_argument("--jobs", type=int, default=2, help="make -j")
     args = parser.parse_args()
@@ -67,12 +70,15 @@ def main() -> int:
     remote_build = upload_script(ssh, "mn2_build_release.sh", "mn2_build_release.sh")
     upload_script(ssh, "mn2_build_smoke.sh", "mn2_build_smoke.sh")
 
-    use_dep = "1" if args.use_depends else "0"
+    use_dep = "0" if args.fast else "1"
     install_deps = "0" if args.skip_deps else "1"
+    skip_dep_build = "0" if args.rebuild_depends else "1"
     cmd = (
         f"export BUILD_ROOT={BUILD_ROOT} JOBS={args.jobs} USE_DEPENDS={use_dep} "
-        f"INSTALL_BUILD_DEPS={install_deps} VERSION={TARGET_VERSION}; "
-        f"bash {remote_build}"
+        f"INSTALL_BUILD_DEPS={install_deps} SKIP_DEPENDS_BUILD={skip_dep_build} "
+        f"VERSION={TARGET_VERSION}; "
+        f"bash {remote_build} 2>&1 | tee /tmp/mn2-build.log; "
+        f"test ${{PIPESTATUS[0]}} -eq 0"
     )
     print(
         f"=== Remote build (USE_DEPENDS={use_dep}, INSTALL_BUILD_DEPS={install_deps}, "
@@ -87,7 +93,16 @@ def main() -> int:
         print(err, file=sys.stderr)
     if exit_code != 0:
         print(f"\nBuild failed (exit {exit_code})", file=sys.stderr)
-        print("Tip: re-run with --use-depends for a portable static binary (slower).", file=sys.stderr)
+        _, tail_out, _ = ssh.exec_command("tail -n 80 /tmp/mn2-build.log 2>/dev/null", timeout=30)
+        tail = tail_out.read().decode(errors="replace").strip()
+        if tail:
+            print("\n=== Last 80 lines of /tmp/mn2-build.log ===", file=sys.stderr)
+            print(tail, file=sys.stderr)
+        print(
+            "Tip: look for BUILD FAIL / SMOKE FAIL / Error 1 above. "
+            "Depends is skipped by default; use --rebuild-depends only if needed.",
+            file=sys.stderr,
+        )
         ssh.close()
         return exit_code
 

@@ -1,0 +1,1469 @@
+{
+  "version": "2.0",
+  "count": 75,
+  "aggregators": [
+    {
+      "id": "agg_001",
+      "name": "Research Pulse",
+      "category": "intelligence",
+      "tech": "LLM + arXiv RSS",
+      "technologies": [
+        "LLM + arXiv RSS",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "research_agent",
+      "ai_enabled": true,
+      "use": "Summarize papers for lab",
+      "function": "Summarize papers for lab",
+      "api": "/api/aggregators/intelligence/research",
+      "href": "/lab",
+      "status": "active",
+      "score": 99
+    },
+    {
+      "id": "agg_002",
+      "name": "News Wire",
+      "category": "intelligence",
+      "tech": "Multi-source fetch",
+      "technologies": [
+        "Multi-source fetch",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "news_agent",
+      "ai_enabled": true,
+      "use": "Platform news digest",
+      "function": "Platform news digest",
+      "api": "/api/aggregators/intelligence/news",
+      "href": "/news",
+      "status": "active",
+      "score": 98
+    },
+    {
+      "id": "agg_003",
+      "name": "Trend Scanner",
+      "category": "intelligence",
+      "tech": "Topic clustering",
+      "technologies": [
+        "Topic clustering",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "trend_agent",
+      "ai_enabled": true,
+      "use": "Spot rising topics",
+      "function": "Spot rising topics",
+      "api": "/api/aggregators/intelligence/trending",
+      "href": "/aggregator?tab=top25",
+      "status": "active",
+      "score": 97
+    },
+    {
+      "id": "agg_004",
+      "name": "Weather Context",
+      "category": "intelligence",
+      "tech": "Open-Meteo API",
+      "technologies": [
+        "Open-Meteo API",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "context_agent",
+      "ai_enabled": true,
+      "use": "Content weather overlay",
+      "function": "Content weather overlay",
+      "api": "/api/aggregators/intelligence/weather",
+      "href": "/generator",
+      "status": "active",
+      "score": 96
+    },
+    {
+      "id": "agg_005",
+      "name": "Source Health",
+      "category": "intelligence",
+      "tech": "API key monitor",
+      "technologies": [
+        "API key monitor",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "ops_agent",
+      "ai_enabled": true,
+      "use": "Intel source status",
+      "function": "Intel source status",
+      "api": "/api/aggregators/intelligence/sources",
+      "href": "/debugger",
+      "status": "active",
+      "score": 95
+    },
+    {
+      "id": "agg_006",
+      "name": "Content Generator",
+      "category": "ai_agents",
+      "tech": "GPT pipeline",
+      "technologies": [
+        "GPT pipeline",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "content_generator_agent",
+      "ai_enabled": true,
+      "use": "Video script drafts",
+      "function": "Video script drafts",
+      "api": "/api/generator/create",
+      "href": "/generator",
+      "status": "active",
+      "score": 94
+    },
+    {
+      "id": "agg_007",
+      "name": "Battle Advisor",
+      "category": "ai_agents",
+      "tech": "RPS predictor",
+      "technologies": [
+        "RPS predictor",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "battle_agent",
+      "ai_enabled": true,
+      "use": "Holodeck duel hints",
+      "function": "Holodeck duel hints",
+      "api": "/api/battle/quick",
+      "href": "/battle",
+      "status": "active",
+      "score": 93
+    },
+    {
+      "id": "agg_008",
+      "name": "Lab Researcher",
+      "category": "ai_agents",
+      "tech": "Science cron",
+      "technologies": [
+        "Science cron",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "lab_research_agent",
+      "ai_enabled": true,
+      "use": "Daily science levels",
+      "function": "Daily science levels",
+      "api": "/api/lab/progression",
+      "href": "/lab",
+      "status": "active",
+      "score": 92
+    },
+    {
+      "id": "agg_009",
+      "name": "Customer Scout",
+      "category": "ai_agents",
+      "tech": "CRM matcher",
+      "technologies": [
+        "CRM matcher",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "customer_agent",
+      "ai_enabled": true,
+      "use": "Find buyer leads",
+      "function": "Find buyer leads",
+      "api": "/api/customers",
+      "href": "/customers",
+      "status": "active",
+      "score": 91
+    },
+    {
+      "id": "agg_010",
+      "name": "Camgirl Companion",
+      "category": "ai_agents",
+      "tech": "Persona chat",
+      "technologies": [
+        "Persona chat",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "camgirl_agent_nova",
+      "ai_enabled": true,
+      "use": "Performer AI chat",
+      "function": "Performer AI chat",
+      "api": "/api/camgirls/chat",
+      "href": "/camgirls",
+      "status": "active",
+      "score": 90
+    },
+    {
+      "id": "agg_011",
+      "name": "MN2 Balance Sync",
+      "category": "crypto_mn2",
+      "tech": "Ledger read",
+      "technologies": [
+        "Ledger read",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "wallet_agent",
+      "ai_enabled": true,
+      "use": "Wallet HUD tiles",
+      "function": "Wallet HUD tiles",
+      "api": "/api/mn2/balance",
+      "href": "/profile?tab=wallet",
+      "status": "active",
+      "score": 89
+    },
+    {
+      "id": "agg_012",
+      "name": "Staking Monitor",
+      "category": "crypto_mn2",
+      "tech": "Pool stats",
+      "technologies": [
+        "Pool stats",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "staking_agent",
+      "ai_enabled": true,
+      "use": "APY + pool size",
+      "function": "APY + pool size",
+      "api": "/api/mn2/staking/stats",
+      "href": "/staking-monitor",
+      "status": "active",
+      "score": 88
+    },
+    {
+      "id": "agg_013",
+      "name": "Market P2P",
+      "category": "crypto_mn2",
+      "tech": "Order book",
+      "technologies": [
+        "Order book",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "market_agent",
+      "ai_enabled": true,
+      "use": "MN2 marketplace",
+      "function": "MN2 marketplace",
+      "api": "/api/market/listings",
+      "href": "/market",
+      "status": "active",
+      "score": 87
+    },
+    {
+      "id": "agg_014",
+      "name": "Engagement MN2",
+      "category": "crypto_mn2",
+      "tech": "Micro-rewards",
+      "technologies": [
+        "Micro-rewards",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "engagement_agent",
+      "ai_enabled": true,
+      "use": "Session MN2 drip",
+      "function": "Session MN2 drip",
+      "api": "/api/aggregators/engagement/award",
+      "href": "/aggregator",
+      "status": "active",
+      "score": 86
+    },
+    {
+      "id": "agg_015",
+      "name": "Proof Reserves",
+      "category": "crypto_mn2",
+      "tech": "On-chain audit",
+      "technologies": [
+        "On-chain audit",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "audit_agent",
+      "ai_enabled": true,
+      "use": "Transparency feed",
+      "function": "Transparency feed",
+      "api": "/api/mn2/proof-of-reserves",
+      "href": "/proof-of-reserves",
+      "status": "active",
+      "score": 85
+    },
+    {
+      "id": "agg_016",
+      "name": "Magnet Tech Lab",
+      "category": "lab_science",
+      "tech": "EM research",
+      "technologies": [
+        "EM research",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "magnet_agent",
+      "ai_enabled": true,
+      "use": "Electric magnet R&D",
+      "function": "Electric magnet R&D",
+      "api": "/api/lab/chapter2-research",
+      "href": "/lab?tab=magnet",
+      "status": "active",
+      "score": 84
+    },
+    {
+      "id": "agg_017",
+      "name": "Co-tech Lifecycle",
+      "category": "lab_science",
+      "tech": "Draft pipeline",
+      "technologies": [
+        "Draft pipeline",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "cotech_agent",
+      "ai_enabled": true,
+      "use": "Accept/archive drafts",
+      "function": "Accept/archive drafts",
+      "api": "/api/lab/idea-board",
+      "href": "/lab",
+      "status": "active",
+      "score": 83
+    },
+    {
+      "id": "agg_018",
+      "name": "Roundtable",
+      "category": "lab_science",
+      "tech": "Discussion sync",
+      "technologies": [
+        "Discussion sync",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "roundtable_agent",
+      "ai_enabled": true,
+      "use": "Lab chat room",
+      "function": "Lab chat room",
+      "api": "/api/lab/roundtable/messages",
+      "href": "/lab#discussion",
+      "status": "active",
+      "score": 82
+    },
+    {
+      "id": "agg_019",
+      "name": "Systems Check",
+      "category": "lab_science",
+      "tech": "Health matrix",
+      "technologies": [
+        "Health matrix",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "systems_agent",
+      "ai_enabled": true,
+      "use": "Lab systems table",
+      "function": "Lab systems table",
+      "api": "/api/lab/systems-check",
+      "href": "/lab",
+      "status": "active",
+      "score": 81
+    },
+    {
+      "id": "agg_020",
+      "name": "Hunter Nexus",
+      "category": "game_battle",
+      "tech": "Campaign XP",
+      "technologies": [
+        "Campaign XP",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "hunter_agent",
+      "ai_enabled": true,
+      "use": "Campaign progress",
+      "function": "Campaign progress",
+      "api": "/api/game/hunters/status",
+      "href": "/game",
+      "status": "active",
+      "score": 80
+    },
+    {
+      "id": "agg_021",
+      "name": "Battlegrounds",
+      "category": "game_battle",
+      "tech": "Zone MN2",
+      "technologies": [
+        "Zone MN2",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "bg_agent",
+      "ai_enabled": true,
+      "use": "Mass PvP rewards",
+      "function": "Mass PvP rewards",
+      "api": "/api/battlegrounds/status",
+      "href": "/battlegrounds",
+      "status": "active",
+      "score": 79
+    },
+    {
+      "id": "agg_022",
+      "name": "Trophy Sync",
+      "category": "game_battle",
+      "tech": "Unlock wiring",
+      "technologies": [
+        "Unlock wiring",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "trophy_agent",
+      "ai_enabled": true,
+      "use": "Trophy definitions",
+      "function": "Trophy definitions",
+      "api": "/api/trophies/list",
+      "href": "/trophies",
+      "status": "active",
+      "score": 78
+    },
+    {
+      "id": "agg_023",
+      "name": "Quest Board",
+      "category": "game_battle",
+      "tech": "Daily quests",
+      "technologies": [
+        "Daily quests",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "quest_agent",
+      "ai_enabled": true,
+      "use": "Quest MN2",
+      "function": "Quest MN2",
+      "api": "/api/quests/list",
+      "href": "/quests",
+      "status": "active",
+      "score": 77
+    },
+    {
+      "id": "agg_024",
+      "name": "Video Queue",
+      "category": "generator_media",
+      "tech": "Job pipeline",
+      "technologies": [
+        "Job pipeline",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "generator_agent",
+      "ai_enabled": true,
+      "use": "Render queue status",
+      "function": "Render queue status",
+      "api": "/api/generator/queue-status",
+      "href": "/generator",
+      "status": "active",
+      "score": 76
+    },
+    {
+      "id": "agg_025",
+      "name": "AI Clips",
+      "category": "generator_media",
+      "tech": "Short-form",
+      "technologies": [
+        "Short-form",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "clips_agent",
+      "ai_enabled": true,
+      "use": "Clip generation",
+      "function": "Clip generation",
+      "api": "/api/generator/ai-clips",
+      "href": "/generator",
+      "status": "active",
+      "score": 75
+    },
+    {
+      "id": "agg_026",
+      "name": "Theme Timeline",
+      "category": "generator_media",
+      "tech": "Template rotator",
+      "technologies": [
+        "Template rotator",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "theme_agent",
+      "ai_enabled": true,
+      "use": "Ever-changing templates",
+      "function": "Ever-changing templates",
+      "api": "/api/generator/history",
+      "href": "/generator",
+      "status": "active",
+      "score": 74
+    },
+    {
+      "id": "agg_027",
+      "name": "Lead Capture",
+      "category": "customer_fulfillment",
+      "tech": "Form \u2192 CRM",
+      "technologies": [
+        "Form \u2192 CRM",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "lead_agent",
+      "ai_enabled": true,
+      "use": "Attract new customers",
+      "function": "Attract new customers",
+      "api": "/customers",
+      "href": "/customers",
+      "status": "active",
+      "score": 73
+    },
+    {
+      "id": "agg_028",
+      "name": "Shop Fulfillment",
+      "category": "customer_fulfillment",
+      "tech": "Order bridge",
+      "technologies": [
+        "Order bridge",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "shop_agent",
+      "ai_enabled": true,
+      "use": "MN2 + PayPal checkout",
+      "function": "MN2 + PayPal checkout",
+      "api": "/api/shop/catalog",
+      "href": "/shop",
+      "status": "active",
+      "score": 72
+    },
+    {
+      "id": "agg_029",
+      "name": "Onboarding",
+      "category": "customer_fulfillment",
+      "tech": "User journey",
+      "technologies": [
+        "User journey",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "onboard_agent",
+      "ai_enabled": true,
+      "use": "First-session flow",
+      "function": "First-session flow",
+      "api": "/api/user/onboarding",
+      "href": "/profile",
+      "status": "active",
+      "score": 71
+    },
+    {
+      "id": "agg_030",
+      "name": "Social Tips",
+      "category": "social_monetization",
+      "tech": "MN2 tips",
+      "technologies": [
+        "MN2 tips",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "social_agent",
+      "ai_enabled": true,
+      "use": "Creator tips",
+      "function": "Creator tips",
+      "api": "/api/social/tips",
+      "href": "/social",
+      "status": "active",
+      "score": 70
+    },
+    {
+      "id": "agg_031",
+      "name": "Monetization 25",
+      "category": "social_monetization",
+      "tech": "Lever assign",
+      "technologies": [
+        "Lever assign",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "monetization_agent",
+      "ai_enabled": true,
+      "use": "Revenue levers",
+      "function": "Revenue levers",
+      "api": "/api/monetization/levers",
+      "href": "/monetization",
+      "status": "active",
+      "score": 69
+    },
+    {
+      "id": "agg_032",
+      "name": "Register Intel",
+      "category": "data_pipeline",
+      "tech": "404 audit",
+      "technologies": [
+        "404 audit",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "register_agent",
+      "ai_enabled": true,
+      "use": "Route gap scan",
+      "function": "Route gap scan",
+      "api": "/api/register-intelligence/audit",
+      "href": "/debugger",
+      "status": "active",
+      "score": 68
+    },
+    {
+      "id": "agg_033",
+      "name": "Unified Points",
+      "category": "data_pipeline",
+      "tech": "Cross-domain sync",
+      "technologies": [
+        "Cross-domain sync",
+        "Flask API",
+        "Agent bridge"
+      ],
+      "agent_id": "points_agent",
+      "ai_enabled": true,
+      "use": "All point types",
+      "function": "All point types",
+      "api": "/api/points/all",
+      "href": "/profile?tab=points",
+      "status": "active",
+      "score": 67
+    },
+    {
+      "id": "agg_034",
+      "name": "Fulfillment Hub 34",
+      "category": "customer_fulfillment",
+      "tech": "Prompt chaining",
+      "technologies": [
+        "Prompt chaining",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "customer_fulfillment_agent_10",
+      "ai_enabled": true,
+      "use": "Automate customer fulfillment workflow #34",
+      "function": "Route data through prompt chaining",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 87
+    },
+    {
+      "id": "agg_035",
+      "name": "Social Relay 35",
+      "category": "social_monetization",
+      "tech": "Tool-use API",
+      "technologies": [
+        "Tool-use API",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "social_monetization_agent_11",
+      "ai_enabled": true,
+      "use": "Automate social monetization workflow #35",
+      "function": "Route data through tool-use api",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 90
+    },
+    {
+      "id": "agg_036",
+      "name": "Data Stream 36",
+      "category": "data_pipeline",
+      "tech": "Fine-tuned LoRA",
+      "technologies": [
+        "Fine-tuned LoRA",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "data_pipeline_agent_0",
+      "ai_enabled": true,
+      "use": "Automate data pipeline workflow #36",
+      "function": "Route data through fine-tuned lora",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 93
+    },
+    {
+      "id": "agg_037",
+      "name": "Intel Node 37",
+      "category": "intelligence",
+      "tech": "Vector embeddings",
+      "technologies": [
+        "Vector embeddings",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "intelligence_agent_1",
+      "ai_enabled": true,
+      "use": "Automate intelligence workflow #37",
+      "function": "Route data through vector embeddings",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 41
+    },
+    {
+      "id": "agg_038",
+      "name": "Agent Module 38",
+      "category": "ai_agents",
+      "tech": "RAG retrieval",
+      "technologies": [
+        "RAG retrieval",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "ai_agents_agent_2",
+      "ai_enabled": true,
+      "use": "Automate ai agents workflow #38",
+      "function": "Route data through rag retrieval",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 44
+    },
+    {
+      "id": "agg_039",
+      "name": "MN2 Bridge 39",
+      "category": "crypto_mn2",
+      "tech": "Cron scheduler",
+      "technologies": [
+        "Cron scheduler",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "crypto_mn2_agent_3",
+      "ai_enabled": true,
+      "use": "Automate crypto mn2 workflow #39",
+      "function": "Route data through cron scheduler",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 47
+    },
+    {
+      "id": "agg_040",
+      "name": "Lab Sensor 40",
+      "category": "lab_science",
+      "tech": "WebSocket push",
+      "technologies": [
+        "WebSocket push",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "lab_science_agent_4",
+      "ai_enabled": true,
+      "use": "Automate lab science workflow #40",
+      "function": "Route data through websocket push",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 50
+    },
+    {
+      "id": "agg_041",
+      "name": "Game Link 41",
+      "category": "game_battle",
+      "tech": "Edge cache ETag",
+      "technologies": [
+        "Edge cache ETag",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "game_battle_agent_5",
+      "ai_enabled": true,
+      "use": "Automate game battle workflow #41",
+      "function": "Route data through edge cache etag",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 53
+    },
+    {
+      "id": "agg_042",
+      "name": "Media Pipe 42",
+      "category": "generator_media",
+      "tech": "SQLite mirror",
+      "technologies": [
+        "SQLite mirror",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "generator_media_agent_6",
+      "ai_enabled": true,
+      "use": "Automate generator media workflow #42",
+      "function": "Route data through sqlite mirror",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 56
+    },
+    {
+      "id": "agg_043",
+      "name": "Fulfillment Hub 43",
+      "category": "customer_fulfillment",
+      "tech": "Agent skill graph",
+      "technologies": [
+        "Agent skill graph",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "customer_fulfillment_agent_7",
+      "ai_enabled": true,
+      "use": "Automate customer fulfillment workflow #43",
+      "function": "Route data through agent skill graph",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 59
+    },
+    {
+      "id": "agg_044",
+      "name": "Social Relay 44",
+      "category": "social_monetization",
+      "tech": "MN2 micro-pay",
+      "technologies": [
+        "MN2 micro-pay",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "social_monetization_agent_8",
+      "ai_enabled": true,
+      "use": "Automate social monetization workflow #44",
+      "function": "Route data through mn2 micro-pay",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 62
+    },
+    {
+      "id": "agg_045",
+      "name": "Data Stream 45",
+      "category": "data_pipeline",
+      "tech": "Multi-agent orchestration",
+      "technologies": [
+        "Multi-agent orchestration",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "data_pipeline_agent_9",
+      "ai_enabled": true,
+      "use": "Automate data pipeline workflow #45",
+      "function": "Route data through multi-agent orchestration",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 65
+    },
+    {
+      "id": "agg_046",
+      "name": "Intel Node 46",
+      "category": "intelligence",
+      "tech": "Prompt chaining",
+      "technologies": [
+        "Prompt chaining",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "intelligence_agent_10",
+      "ai_enabled": true,
+      "use": "Automate intelligence workflow #46",
+      "function": "Route data through prompt chaining",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 68
+    },
+    {
+      "id": "agg_047",
+      "name": "Agent Module 47",
+      "category": "ai_agents",
+      "tech": "Tool-use API",
+      "technologies": [
+        "Tool-use API",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "ai_agents_agent_11",
+      "ai_enabled": true,
+      "use": "Automate ai agents workflow #47",
+      "function": "Route data through tool-use api",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 71
+    },
+    {
+      "id": "agg_048",
+      "name": "MN2 Bridge 48",
+      "category": "crypto_mn2",
+      "tech": "Fine-tuned LoRA",
+      "technologies": [
+        "Fine-tuned LoRA",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "crypto_mn2_agent_0",
+      "ai_enabled": true,
+      "use": "Automate crypto mn2 workflow #48",
+      "function": "Route data through fine-tuned lora",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 74
+    },
+    {
+      "id": "agg_049",
+      "name": "Lab Sensor 49",
+      "category": "lab_science",
+      "tech": "Vector embeddings",
+      "technologies": [
+        "Vector embeddings",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "lab_science_agent_1",
+      "ai_enabled": true,
+      "use": "Automate lab science workflow #49",
+      "function": "Route data through vector embeddings",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 77
+    },
+    {
+      "id": "agg_050",
+      "name": "Game Link 50",
+      "category": "game_battle",
+      "tech": "RAG retrieval",
+      "technologies": [
+        "RAG retrieval",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "game_battle_agent_2",
+      "ai_enabled": true,
+      "use": "Automate game battle workflow #50",
+      "function": "Route data through rag retrieval",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 80
+    },
+    {
+      "id": "agg_051",
+      "name": "Media Pipe 51",
+      "category": "generator_media",
+      "tech": "Cron scheduler",
+      "technologies": [
+        "Cron scheduler",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "generator_media_agent_3",
+      "ai_enabled": true,
+      "use": "Automate generator media workflow #51",
+      "function": "Route data through cron scheduler",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 83
+    },
+    {
+      "id": "agg_052",
+      "name": "Fulfillment Hub 52",
+      "category": "customer_fulfillment",
+      "tech": "WebSocket push",
+      "technologies": [
+        "WebSocket push",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "customer_fulfillment_agent_4",
+      "ai_enabled": true,
+      "use": "Automate customer fulfillment workflow #52",
+      "function": "Route data through websocket push",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 86
+    },
+    {
+      "id": "agg_053",
+      "name": "Social Relay 53",
+      "category": "social_monetization",
+      "tech": "Edge cache ETag",
+      "technologies": [
+        "Edge cache ETag",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "social_monetization_agent_5",
+      "ai_enabled": true,
+      "use": "Automate social monetization workflow #53",
+      "function": "Route data through edge cache etag",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 89
+    },
+    {
+      "id": "agg_054",
+      "name": "Data Stream 54",
+      "category": "data_pipeline",
+      "tech": "SQLite mirror",
+      "technologies": [
+        "SQLite mirror",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "data_pipeline_agent_6",
+      "ai_enabled": true,
+      "use": "Automate data pipeline workflow #54",
+      "function": "Route data through sqlite mirror",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 92
+    },
+    {
+      "id": "agg_055",
+      "name": "Intel Node 55",
+      "category": "intelligence",
+      "tech": "Agent skill graph",
+      "technologies": [
+        "Agent skill graph",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "intelligence_agent_7",
+      "ai_enabled": true,
+      "use": "Automate intelligence workflow #55",
+      "function": "Route data through agent skill graph",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 40
+    },
+    {
+      "id": "agg_056",
+      "name": "Agent Module 56",
+      "category": "ai_agents",
+      "tech": "MN2 micro-pay",
+      "technologies": [
+        "MN2 micro-pay",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "ai_agents_agent_8",
+      "ai_enabled": true,
+      "use": "Automate ai agents workflow #56",
+      "function": "Route data through mn2 micro-pay",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 43
+    },
+    {
+      "id": "agg_057",
+      "name": "MN2 Bridge 57",
+      "category": "crypto_mn2",
+      "tech": "Multi-agent orchestration",
+      "technologies": [
+        "Multi-agent orchestration",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "crypto_mn2_agent_9",
+      "ai_enabled": true,
+      "use": "Automate crypto mn2 workflow #57",
+      "function": "Route data through multi-agent orchestration",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 46
+    },
+    {
+      "id": "agg_058",
+      "name": "Lab Sensor 58",
+      "category": "lab_science",
+      "tech": "Prompt chaining",
+      "technologies": [
+        "Prompt chaining",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "lab_science_agent_10",
+      "ai_enabled": true,
+      "use": "Automate lab science workflow #58",
+      "function": "Route data through prompt chaining",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 49
+    },
+    {
+      "id": "agg_059",
+      "name": "Game Link 59",
+      "category": "game_battle",
+      "tech": "Tool-use API",
+      "technologies": [
+        "Tool-use API",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "game_battle_agent_11",
+      "ai_enabled": true,
+      "use": "Automate game battle workflow #59",
+      "function": "Route data through tool-use api",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 52
+    },
+    {
+      "id": "agg_060",
+      "name": "Media Pipe 60",
+      "category": "generator_media",
+      "tech": "Fine-tuned LoRA",
+      "technologies": [
+        "Fine-tuned LoRA",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "generator_media_agent_0",
+      "ai_enabled": true,
+      "use": "Automate generator media workflow #60",
+      "function": "Route data through fine-tuned lora",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 55
+    },
+    {
+      "id": "agg_061",
+      "name": "Fulfillment Hub 61",
+      "category": "customer_fulfillment",
+      "tech": "Vector embeddings",
+      "technologies": [
+        "Vector embeddings",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "customer_fulfillment_agent_1",
+      "ai_enabled": true,
+      "use": "Automate customer fulfillment workflow #61",
+      "function": "Route data through vector embeddings",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 58
+    },
+    {
+      "id": "agg_062",
+      "name": "Social Relay 62",
+      "category": "social_monetization",
+      "tech": "RAG retrieval",
+      "technologies": [
+        "RAG retrieval",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "social_monetization_agent_2",
+      "ai_enabled": true,
+      "use": "Automate social monetization workflow #62",
+      "function": "Route data through rag retrieval",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 61
+    },
+    {
+      "id": "agg_063",
+      "name": "Data Stream 63",
+      "category": "data_pipeline",
+      "tech": "Cron scheduler",
+      "technologies": [
+        "Cron scheduler",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "data_pipeline_agent_3",
+      "ai_enabled": true,
+      "use": "Automate data pipeline workflow #63",
+      "function": "Route data through cron scheduler",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 64
+    },
+    {
+      "id": "agg_064",
+      "name": "Intel Node 64",
+      "category": "intelligence",
+      "tech": "WebSocket push",
+      "technologies": [
+        "WebSocket push",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "intelligence_agent_4",
+      "ai_enabled": true,
+      "use": "Automate intelligence workflow #64",
+      "function": "Route data through websocket push",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 67
+    },
+    {
+      "id": "agg_065",
+      "name": "Agent Module 65",
+      "category": "ai_agents",
+      "tech": "Edge cache ETag",
+      "technologies": [
+        "Edge cache ETag",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "ai_agents_agent_5",
+      "ai_enabled": true,
+      "use": "Automate ai agents workflow #65",
+      "function": "Route data through edge cache etag",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 70
+    },
+    {
+      "id": "agg_066",
+      "name": "MN2 Bridge 66",
+      "category": "crypto_mn2",
+      "tech": "SQLite mirror",
+      "technologies": [
+        "SQLite mirror",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "crypto_mn2_agent_6",
+      "ai_enabled": true,
+      "use": "Automate crypto mn2 workflow #66",
+      "function": "Route data through sqlite mirror",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 73
+    },
+    {
+      "id": "agg_067",
+      "name": "Lab Sensor 67",
+      "category": "lab_science",
+      "tech": "Agent skill graph",
+      "technologies": [
+        "Agent skill graph",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "lab_science_agent_7",
+      "ai_enabled": true,
+      "use": "Automate lab science workflow #67",
+      "function": "Route data through agent skill graph",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 76
+    },
+    {
+      "id": "agg_068",
+      "name": "Game Link 68",
+      "category": "game_battle",
+      "tech": "MN2 micro-pay",
+      "technologies": [
+        "MN2 micro-pay",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "game_battle_agent_8",
+      "ai_enabled": true,
+      "use": "Automate game battle workflow #68",
+      "function": "Route data through mn2 micro-pay",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 79
+    },
+    {
+      "id": "agg_069",
+      "name": "Media Pipe 69",
+      "category": "generator_media",
+      "tech": "Multi-agent orchestration",
+      "technologies": [
+        "Multi-agent orchestration",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "generator_media_agent_9",
+      "ai_enabled": true,
+      "use": "Automate generator media workflow #69",
+      "function": "Route data through multi-agent orchestration",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 82
+    },
+    {
+      "id": "agg_070",
+      "name": "Fulfillment Hub 70",
+      "category": "customer_fulfillment",
+      "tech": "Prompt chaining",
+      "technologies": [
+        "Prompt chaining",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "customer_fulfillment_agent_10",
+      "ai_enabled": true,
+      "use": "Automate customer fulfillment workflow #70",
+      "function": "Route data through prompt chaining",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "beta",
+      "score": 85
+    },
+    {
+      "id": "agg_071",
+      "name": "Social Relay 71",
+      "category": "social_monetization",
+      "tech": "Tool-use API",
+      "technologies": [
+        "Tool-use API",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "social_monetization_agent_11",
+      "ai_enabled": true,
+      "use": "Automate social monetization workflow #71",
+      "function": "Route data through tool-use api",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 88
+    },
+    {
+      "id": "agg_072",
+      "name": "Data Stream 72",
+      "category": "data_pipeline",
+      "tech": "Fine-tuned LoRA",
+      "technologies": [
+        "Fine-tuned LoRA",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "data_pipeline_agent_0",
+      "ai_enabled": true,
+      "use": "Automate data pipeline workflow #72",
+      "function": "Route data through fine-tuned lora",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 91
+    },
+    {
+      "id": "agg_073",
+      "name": "Intel Node 73",
+      "category": "intelligence",
+      "tech": "Vector embeddings",
+      "technologies": [
+        "Vector embeddings",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "intelligence_agent_1",
+      "ai_enabled": true,
+      "use": "Automate intelligence workflow #73",
+      "function": "Route data through vector embeddings",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 94
+    },
+    {
+      "id": "agg_074",
+      "name": "Agent Module 74",
+      "category": "ai_agents",
+      "tech": "RAG retrieval",
+      "technologies": [
+        "RAG retrieval",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "ai_agents_agent_2",
+      "ai_enabled": true,
+      "use": "Automate ai agents workflow #74",
+      "function": "Route data through rag retrieval",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 42
+    },
+    {
+      "id": "agg_075",
+      "name": "MN2 Bridge 75",
+      "category": "crypto_mn2",
+      "tech": "Cron scheduler",
+      "technologies": [
+        "Cron scheduler",
+        "AI agent",
+        "Aggregator v2"
+      ],
+      "agent_id": "crypto_mn2_agent_3",
+      "ai_enabled": true,
+      "use": "Automate crypto mn2 workflow #75",
+      "function": "Route data through cron scheduler",
+      "api": "/api/aggregators/catalog",
+      "href": "/aggregator?tab=catalog",
+      "status": "active",
+      "score": 45
+    }
+  ],
+  "top25_ids": [
+    "agg_001",
+    "agg_002",
+    "agg_003",
+    "agg_004",
+    "agg_005",
+    "agg_006",
+    "agg_073",
+    "agg_007",
+    "agg_036",
+    "agg_008",
+    "agg_054",
+    "agg_009",
+    "agg_072",
+    "agg_010",
+    "agg_035",
+    "agg_011",
+    "agg_053",
+    "agg_012",
+    "agg_071",
+    "agg_013",
+    "agg_034",
+    "agg_014",
+    "agg_052",
+    "agg_015",
+    "agg_070"
+  ],
+  "categories": [
+    "intelligence",
+    "ai_agents",
+    "crypto_mn2",
+    "lab_science",
+    "game_battle",
+    "generator_media",
+    "customer_fulfillment",
+    "social_monetization",
+    "data_pipeline"
+  ]
+}

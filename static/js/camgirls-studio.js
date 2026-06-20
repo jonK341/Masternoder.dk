@@ -122,15 +122,39 @@
   }
 
   function updateGoal(card, pid, studio, addedMn2) {
-    if (!studio || !studio.goal_mn2) return;
-    var g = goalProgress[pid] || 0;
+    var goal = (studio && studio.goal_progress) || {};
+    var goalMn2 = goal.goal_mn2 || (studio && studio.goal_mn2);
+    if (!goalMn2) return;
+    var g = goalProgress[pid];
+    if (g == null) g = goal.raised_mn2 || 0;
     g += addedMn2 || 0;
     goalProgress[pid] = g;
-    var pct = Math.min(100, Math.round((g / studio.goal_mn2) * 100));
+    var pct = Math.min(100, Math.round((g / goalMn2) * 100));
     var fill = card.querySelector('.cg-goal-fill');
     var label = card.querySelector('.cg-goal-label');
     if (fill) fill.style.width = pct + '%';
-    if (label) label.textContent = (studio.goal_label || 'Goal') + ' — ' + pct + '%';
+    if (label) label.textContent = (goal.label || studio.goal_label || 'Goal') + ' — ' + pct + '%';
+  }
+
+  function applyScene(card, sceneId) {
+    var av = card.querySelector('.cg-stage-avatar');
+    var filters = {
+      neon_club: 'none',
+      moonlit: 'hue-rotate(220deg) brightness(0.9)',
+      zen_garden: 'hue-rotate(90deg) saturate(0.8)',
+      fire_pit: 'hue-rotate(30deg) saturate(1.3)',
+      gold_lounge: 'sepia(0.3) brightness(1.1)',
+    };
+    if (av) av.style.filter = filters[sceneId] || 'none';
+  }
+
+  function buildLeaderboardHtml(leaders) {
+    if (!leaders || !leaders.length) return '';
+    var html = '<div class="cg-leaderboard"><span class="cg-lb-title">🏆 Top tippers</span>';
+    leaders.forEach(function (L) {
+      html += '<span class="cg-lb-row">#' + L.rank + ' ' + (L.user_label || 'fan') + ' · ' + L.amount_mn2 + ' MN2</span>';
+    });
+    return html + '</div>';
   }
 
   function fakeViewers() {
@@ -168,12 +192,18 @@
     if (!studio) return '';
     var unlocked = p.unlocked;
     var feats = studio.features || [];
+    var social = p.social || {};
     var viewers = fakeViewers();
-    var goalPct = 0;
+    var goal = p.goal || studio.goal_progress || {};
+    var goalPct = goal.percent || 0;
+    var favIcon = p.favorite ? '⭐' : '☆';
+    var fcBadge = p.fan_club_member ? '<span class="cg-fc-badge">Fan club</span>' : '';
+    var sched = p.next_show ? '<span class="cg-schedule">📅 ' + p.next_show + '</span>' : '';
     var html =
       '<div class="cg-stage" data-pid="' + p.id + '">' +
       '<div class="cg-stage-top">' +
-      '<span class="cg-viewers">👁 ' + viewers + ' in room</span>' +
+      '<button type="button" class="cg-studio-btn cg-fav-btn" data-action="favorite" data-id="' + p.id + '" title="Favorite">' + favIcon + '</button>' +
+      '<span class="cg-viewers">👁 ' + viewers + '</span>' + fcBadge + sched +
       (studio.music_enabled || feats.indexOf('room_music') >= 0
         ? '<button type="button" class="cg-studio-btn" data-action="music-toggle" data-id="' + p.id + '">🎵 Music</button>'
         : '') +
@@ -185,17 +215,18 @@
       '<img class="cg-stage-avatar" src="' + (p.avatar_url || '/static/camgirls/avatar-demo.svg') + '" alt="">' +
       '<div class="cg-buzz-bar"><div class="cg-buzz-fill"></div></div>' +
       '</div>';
-    if (feats.indexOf('token_goals') >= 0 && studio.goal_mn2) {
+    if (feats.indexOf('token_goals') >= 0 && (studio.goal_mn2 || goal.goal_mn2)) {
       html +=
         '<div class="cg-goal-wrap">' +
-        '<div class="cg-goal-label">' + (studio.goal_label || 'Goal') + ' — ' + goalPct + '%</div>' +
-        '<div class="cg-goal-bar"><div class="cg-goal-fill" style="width:0%"></div></div></div>';
+        '<div class="cg-goal-label">' + (goal.label || studio.goal_label || 'Goal') + ' — ' + goalPct + '%</div>' +
+        '<div class="cg-goal-bar"><div class="cg-goal-fill" style="width:' + goalPct + '%"></div></div></div>';
     }
+    html += buildLeaderboardHtml(p.leaderboard);
     if (!unlocked) {
-      html += '<p class="cg-studio-lock">Unlock for gifts, dances, voice & PM</p></div>';
+      html += '<p class="cg-studio-lock">Unlock for gifts, dances, voice, fan club & PM</p></div>';
       return html;
     }
-    html += '<div class="cg-wheel-result"></div><div class="cg-studio-actions">';
+    html += '<div class="cg-wheel-result"></div><div class="cg-studio-actions cg-studio-actions-main">';
     if (feats.indexOf('tip_menu') >= 0) {
       html +=
         '<button type="button" class="cg-tip cg-studio-btn" data-action="tip" data-id="' + p.id + '" data-amount="5">5</button>' +
@@ -233,7 +264,28 @@
     if (feats.indexOf('voice_input') >= 0) {
       html += '<button type="button" class="cg-studio-btn" data-action="mic" data-id="' + p.id + '">🎤 Mic</button>';
     }
-    html += '</div></div>';
+    if (feats.indexOf('fan_club') >= 0 || social.fan_club_price_mn2) {
+      html += '<button type="button" class="cg-studio-btn" data-action="fan-club" data-id="' + p.id + '">🎟 Fan club (' + (social.fan_club_price_mn2 || 15) + ')</button>';
+    }
+    if (feats.indexOf('vip_private_show') >= 0 || social.private_show_mn2_per_min) {
+      html += '<button type="button" class="cg-studio-btn" data-action="private-show" data-id="' + p.id + '" data-minutes="5">🔒 Private 5m</button>';
+    }
+    if (feats.indexOf('offline_messages') >= 0) {
+      html += '<button type="button" class="cg-studio-btn" data-action="offline" data-id="' + p.id + '">📬 Offline</button>';
+    }
+    if ((social.moods || []).length) {
+      (social.moods || []).slice(0, 4).forEach(function (m) {
+        html += '<button type="button" class="cg-studio-btn" data-action="mood" data-id="' + p.id + '" data-mood="' + m + '">🎭 ' + m + '</button>';
+      });
+    }
+    if ((social.scenes || []).length) {
+      html += '<button type="button" class="cg-studio-btn" data-action="scene" data-id="' + p.id + '" data-scene="' + (social.scenes[0] || 'neon_club') + '">🖼 Scene</button>';
+    }
+    html += '</div>';
+    html += '<div class="cg-offline-compose" id="cg-offline-' + p.id + '" style="display:none;">' +
+      '<input type="text" class="cg-offline-input" maxlength="500" placeholder="Offline note…">' +
+      '<button type="button" class="cg-studio-btn" data-action="offline-send" data-id="' + p.id + '">Send</button></div>';
+    html += '<div class="cg-private-timer" id="cg-private-' + p.id + '"></div></div>';
     return html;
   }
 
@@ -347,6 +399,83 @@
       helpers.msg('Listening…', true);
       return true;
     }
+    if (action === 'favorite') {
+      api('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite', { method: 'POST', body: {} })
+        .then(function (res) {
+          if (res.data && res.data.success) {
+            btn.textContent = res.data.favorite ? '⭐' : '☆';
+            helpers.msg(res.data.favorite ? 'Added to favorites' : 'Removed from favorites', true);
+            if (helpers.reloadCatalog) helpers.reloadCatalog();
+          }
+        });
+      return true;
+    }
+    if (action === 'fan-club') {
+      api('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club', { method: 'POST', body: {} })
+        .then(function (res) {
+          if (res.data && res.data.success) {
+            helpers.msg(res.data.performer_reply || 'Fan club joined!', true);
+            speak(res.data.performer_reply, (JSON.parse(card.getAttribute('data-studio') || '{}')).voice);
+            if (helpers.reloadCatalog) helpers.reloadCatalog();
+          } else helpers.msg((res.data && res.data.error) || 'Fan club failed');
+        });
+      return true;
+    }
+    if (action === 'private-show') {
+      var mins = parseInt(btn.getAttribute('data-minutes') || '5', 10);
+      api('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
+        method: 'POST',
+        body: { minutes: mins },
+      }).then(function (res) {
+        if (res.data && res.data.success) {
+          helpers.msg(res.data.performer_reply || 'Private show started', true);
+          var el = document.getElementById('cg-private-' + id);
+          if (el) el.textContent = '🔒 Private ' + mins + 'm — ends in ' + (res.data.seconds_left || mins * 60) + 's';
+          card.classList.add('cg-private-active');
+          triggerDance(card, 'vip');
+        } else helpers.msg((res.data && res.data.error) || 'Private show failed');
+      });
+      return true;
+    }
+    if (action === 'offline') {
+      var panel = document.getElementById('cg-offline-' + id);
+      if (panel) panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+      return true;
+    }
+    if (action === 'offline-send') {
+      var offInput = card.querySelector('.cg-offline-input');
+      var text = (offInput && offInput.value || '').trim();
+      if (!text) { helpers.msg('Type an offline message'); return true; }
+      api('/api/camgirls/performers/' + encodeURIComponent(id) + '/offline', {
+        method: 'POST',
+        body: { message: text },
+      }).then(function (res) {
+        if (res.data && res.data.success) {
+          offInput.value = '';
+          helpers.msg(res.data.performer_reply || 'Offline message queued', true);
+        } else helpers.msg((res.data && res.data.error) || 'Offline failed');
+      });
+      return true;
+    }
+    if (action === 'mood') {
+      var mood = btn.getAttribute('data-mood');
+      api('/api/camgirls/performers/' + encodeURIComponent(id) + '/mood', {
+        method: 'POST',
+        body: { mood_id: mood },
+      }).then(function (res) {
+        if (res.data && res.data.success) {
+          helpers.msg(res.data.lingo || 'Mood set', true);
+          speak(res.data.lingo, (JSON.parse(card.getAttribute('data-studio') || '{}')).voice);
+        }
+      });
+      return true;
+    }
+    if (action === 'scene') {
+      var scene = btn.getAttribute('data-scene') || 'neon_club';
+      applyScene(card, scene);
+      helpers.msg('Scene: ' + scene, true);
+      return true;
+    }
     return false;
   }
 
@@ -366,5 +495,20 @@
     handleStudioAction: handleStudioAction,
     enrichCard: enrichCard,
     onChatReply: onChatReply,
+    loadChatHistory: function (performerId, logEl) {
+      if (!logEl) return;
+      api('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/history?limit=20')
+        .then(function (res) {
+          if (!(res.data && res.data.success)) return;
+          logEl.innerHTML = '';
+          (res.data.messages || []).forEach(function (m) {
+            var line = document.createElement('div');
+            line.className = 'cg-chat-line cg-chat-' + (m.role === 'user' ? 'user' : 'bot');
+            line.textContent = m.text;
+            logEl.appendChild(line);
+          });
+          logEl.scrollTop = logEl.scrollHeight;
+        });
+    },
   };
 })(typeof window !== 'undefined' ? window : this);

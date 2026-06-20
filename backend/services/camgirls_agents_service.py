@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _MODELS_FILE = os.path.join(_BASE, "data", "camgirls_agent_models.json")
+_MODELS_CACHE: Dict[str, Any] = {"mtime": 0.0, "models": {}, "by_performer": {}}
 
 AGENT_TOOLS: List[Dict[str, Any]] = [
     {
@@ -62,6 +63,77 @@ AGENT_TOOLS: List[Dict[str, Any]] = [
         "params": ["performer_id", "amount_mn2"],
         "description": "Tip performer; debits MN2. approved=true required.",
     },
+    {
+        "action": "gift",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/gift",
+        "mutating": True,
+        "params": ["performer_id", "gift_id"],
+        "description": "Send catalog gift (rose, heart, etc.); debits MN2. approved=true required.",
+    },
+    {
+        "action": "dance",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/dance",
+        "mutating": False,
+        "params": ["performer_id", "dance_id"],
+        "description": "Request a dance animation + lingo (unlock required).",
+    },
+    {
+        "action": "favorite",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/favorite",
+        "mutating": True,
+        "params": ["performer_id"],
+        "description": "Toggle favorite performer for user_id. approved=true required.",
+    },
+    {
+        "action": "fan_club",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/fan-club",
+        "mutating": True,
+        "params": ["performer_id"],
+        "description": "Join fan club (MN2); unlock required. approved=true required.",
+    },
+    {
+        "action": "offline",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/offline",
+        "mutating": True,
+        "params": ["performer_id", "message"],
+        "description": "Queue offline message. approved=true required.",
+    },
+    {
+        "action": "private_show",
+        "method": "POST",
+        "path": "/api/camgirls/performers/{performer_id}/private-show",
+        "mutating": True,
+        "params": ["performer_id", "minutes"],
+        "description": "Start timed private show; debits MN2. approved=true required.",
+    },
+    {
+        "action": "studio_catalog",
+        "method": "GET",
+        "path": "/api/camgirls/studio/catalog",
+        "mutating": False,
+        "description": "Gifts, dances, moods, scenes, standard program features.",
+    },
+    {
+        "action": "leaderboard",
+        "method": "GET",
+        "path": "/api/camgirls/performers/{performer_id}/leaderboard",
+        "mutating": False,
+        "params": ["performer_id"],
+        "description": "Top tippers for a performer room.",
+    },
+    {
+        "action": "chat_history",
+        "method": "GET",
+        "path": "/api/camgirls/performers/{performer_id}/chat/history",
+        "mutating": False,
+        "params": ["performer_id"],
+        "description": "Chat history for unlocked performer.",
+    },
 ]
 
 
@@ -69,12 +141,27 @@ def _read_models_raw() -> Dict[str, Dict[str, Any]]:
     if not os.path.isfile(_MODELS_FILE):
         return {}
     try:
+        mtime = os.path.getmtime(_MODELS_FILE)
+    except OSError:
+        return {}
+    if _MODELS_CACHE.get("mtime") == mtime:
+        return _MODELS_CACHE["models"]
+    try:
         with open(_MODELS_FILE, "r", encoding="utf-8") as f:
             raw = json.load(f)
         models = raw.get("models") if isinstance(raw.get("models"), dict) else {}
-        return {k: v for k, v in models.items() if isinstance(v, dict)}
+        models = {k: v for k, v in models.items() if isinstance(v, dict)}
     except Exception:
-        return {}
+        return _MODELS_CACHE.get("models") or {}
+    by_performer: Dict[str, Dict[str, Any]] = {}
+    for agent_id, model in models.items():
+        pid = (model.get("performer_id") or "").strip()
+        if pid:
+            by_performer[pid] = {"agent_id": agent_id, **model}
+    _MODELS_CACHE["mtime"] = mtime
+    _MODELS_CACHE["models"] = models
+    _MODELS_CACHE["by_performer"] = by_performer
+    return models
 
 
 def list_agent_models() -> List[Dict[str, Any]]:
@@ -103,10 +190,11 @@ def get_agent_model(agent_id: str) -> Optional[Dict[str, Any]]:
 
 def agent_for_performer(performer_id: str) -> Optional[Dict[str, Any]]:
     pid = (performer_id or "").strip()
-    for agent_id, model in _read_models_raw().items():
-        if (model.get("performer_id") or "").strip() == pid:
-            return {"agent_id": agent_id, **model}
-    return None
+    if not pid:
+        return None
+    _read_models_raw()
+    rec = _MODELS_CACHE.get("by_performer", {}).get(pid)
+    return dict(rec) if isinstance(rec, dict) else None
 
 
 def persona_system_prompt(performer_row: Dict[str, Any]) -> tuple[str, str]:
@@ -203,5 +291,59 @@ def execute_agent_action(
             return {"success": False, "error": "performer_id_required"}
         amt = float(amount_mn2 if amount_mn2 is not None else 10)
         return cg.tip_performer(uid, pid, amt)
+    if action == "gift":
+        from backend.services.camgirls_studio_service import tip_with_gift
+        pid = (performer_id or "").strip()
+        gift_id = (message or "").strip()  # agents may pass gift_id via message field
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return tip_with_gift(uid, pid, gift_id=gift_id or None, amount_mn2=amount_mn2)
+    if action == "dance":
+        from backend.services.camgirls_studio_service import request_dance
+        pid = (performer_id or "").strip()
+        dance_id = (message or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return request_dance(uid, pid, dance_id)
+    if action == "favorite":
+        from backend.services.camgirls_social_service import toggle_favorite
+        pid = (performer_id or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return toggle_favorite(uid, pid)
+    if action == "fan_club":
+        from backend.services.camgirls_social_service import join_fan_club
+        pid = (performer_id or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return join_fan_club(uid, pid)
+    if action == "offline":
+        from backend.services.camgirls_social_service import send_offline_message
+        pid = (performer_id or "").strip()
+        msg = (message or "").strip()
+        if not pid or not msg:
+            return {"success": False, "error": "performer_id_and_message_required"}
+        return send_offline_message(uid, pid, msg)
+    if action == "private_show":
+        from backend.services.camgirls_social_service import start_private_show
+        pid = (performer_id or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        mins = int(amount_mn2 if amount_mn2 is not None else 5)
+        return start_private_show(uid, pid, mins)
+    if action == "studio_catalog":
+        from backend.services.camgirls_studio_service import studio_catalog
+        return studio_catalog()
+    if action == "leaderboard":
+        from backend.services.camgirls_social_service import get_leaderboard
+        pid = (performer_id or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return get_leaderboard(pid)
+    if action == "chat_history":
+        pid = (performer_id or "").strip()
+        if not pid:
+            return {"success": False, "error": "performer_id_required"}
+        return cg.get_chat_history(uid, pid)
 
     return {"success": False, "error": "unhandled_action"}
