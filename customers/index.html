@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        body { background: #0a0a12; color: #eee; min-height: 100vh; padding: 90px 20px 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+        .card { background: rgba(30,30,50,0.9); border: 1px solid rgba(170,0,255,0.3); border-radius: 12px; padding: 16px; text-align: center; }
+        .card img { width: 64px; height: 64px; border-radius: 12px; }
+        .stats { max-width: 1100px; margin: 0 auto 20px; opacity: 0.85; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">Customers</h1>
+    <p class="stats" id="stats">Loading…</p>
+    <div class="grid" id="grid"></div>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+    (async function() {
+        const secret = new URLSearchParams(location.search).get('ops_secret') || '';
+        const hdr = secret ? {'X-Ops-Secret': secret} : {};
+        try {
+            const s = await fetch('/api/customers/stats', {headers: hdr}).then(r => r.json());
+            if (s.success) document.getElementById('stats').textContent = `Total: ${s.total || 0} · Active: ${s.active || 0}`;
+        } catch (e) {}
+        try {
+            const r = await fetch('/api/customers?limit=48', {headers: hdr}).then(r => r.json());
+            const grid = document.getElementById('grid');
+            if (!r.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
+            grid.innerHTML = (r.customers || []).map(c => `
+                <div class="card">
+                    <img src="${c.avatar_url || '/static/img/agents/default.svg'}" alt="">
+                    <div>${c.user_id}</div>
+                    <small>${(c.mn2_balance || 0).toFixed(4)} MN2</small>
+                </div>`).join('');
+        } catch (e) {
+            document.getElementById('grid').textContent = 'Failed to load customers.';
+        }
+    })();
+    </script>
+</body>
+</html>
