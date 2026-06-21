@@ -53,6 +53,18 @@
     filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.6));
 }
 
+.nav-toolbar-brand-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nav-toolbar-brand-icon-wrap .nav-toolbar-link-img--lg {
+    width: 22px;
+    height: 22px;
+}
+
 /* Navigation Links Container */
 .nav-toolbar-links {
     display: flex;
@@ -123,8 +135,78 @@
 }
 
 .nav-toolbar-link-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     font-size: 1.1rem;
     filter: drop-shadow(0 0 4px rgba(57, 255, 20, 0.4));
+}
+
+.nav-toolbar-link-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    border-radius: 4px;
+    filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.45));
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.nav-toolbar-link-img--lg {
+    width: 20px;
+    height: 20px;
+}
+
+.nav-toolbar-link-img--avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(57, 255, 20, 0.35);
+}
+
+.nav-toolbar-link:hover .nav-toolbar-link-img,
+.nav-toolbar-mobile-link:hover .nav-toolbar-link-img,
+.nav-toolbar-portal-grid-link:hover .nav-toolbar-link-img {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.7));
+}
+
+.nav-toolbar-link-img--pulse {
+    animation: navIconPulse 2.4s ease-in-out infinite;
+}
+
+.nav-toolbar-link-emoji-fallback:not([hidden]) {
+    display: inline;
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+@keyframes navIconPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(57, 255, 20, 0.4)); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.75)); }
+}
+
+.nav-toolbar-portal-trigger-icon--spin {
+    display: inline-block;
+    animation: navPortalSpin 6s linear infinite;
+}
+
+@keyframes navPortalSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.nav-toolbar-portal-grid .nav-toolbar-link-icon {
+    margin-bottom: 4px;
+}
+
+.nav-toolbar-portal-grid .nav-toolbar-link-img {
+    width: 28px;
+    height: 28px;
+}
+
+.nav-toolbar-portal-grid .nav-toolbar-link-img--avatar {
+    width: 32px;
+    height: 32px;
 }
 
 /* User Menu (Right Side) */
