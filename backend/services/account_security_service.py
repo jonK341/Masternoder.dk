@@ -18,7 +18,7 @@ def _utcnow() -> datetime:
 
 def _load_settings() -> Dict[str, Any]:
     if not os.path.exists(_SETTINGS_PATH):
-        return {"users": {}, "defaults": {"require_password_login": True, "require_password_real_money": True, "require_password_purchases": False}}
+        return {"users": {}, "defaults": {"security_preset": "balanced", "require_password_login": True, "require_password_real_money": True, "require_password_purchases": False, "require_password_bind_session": False}}
     try:
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -50,17 +50,75 @@ def get_security_settings(user_id: str) -> Dict[str, Any]:
     defaults = data.get("defaults") or {}
     user = (data.get("users") or {}).get(user_id) or {}
     merged = {
+        "security_preset": defaults.get("security_preset", "balanced"),
         "require_password_login": defaults.get("require_password_login", True),
         "require_password_real_money": defaults.get("require_password_real_money", True),
         "require_password_purchases": defaults.get("require_password_purchases", False),
+        "require_password_bind_session": defaults.get("require_password_bind_session", False),
     }
-    merged.update({k: v for k, v in user.items() if k.startswith("require_")})
+    merged.update({k: v for k, v in user.items() if k.startswith("require_") or k == "security_preset"})
     return merged
 
 
+SECURITY_PRESETS = {
+    "balanced": {
+        "require_password_login": False,
+        "require_password_real_money": True,
+        "require_password_purchases": False,
+        "require_password_bind_session": False,
+    },
+    "secure": {
+        "require_password_login": True,
+        "require_password_real_money": True,
+        "require_password_purchases": False,
+        "require_password_bind_session": True,
+    },
+    "maximum": {
+        "require_password_login": True,
+        "require_password_real_money": True,
+        "require_password_purchases": True,
+        "require_password_bind_session": True,
+    },
+}
+
+
+def apply_security_preset(preset: str) -> Dict[str, bool]:
+    key = (preset or "balanced").strip().lower()
+    return dict(SECURITY_PRESETS.get(key, SECURITY_PRESETS["balanced"]))
+
+
+def bind_session_requires_password(user_id: str) -> bool:
+    settings = get_security_settings(user_id)
+    if settings.get("require_password_bind_session"):
+        return True
+    try:
+        from backend.services.password_protection_service import get_password_status
+
+        pwd = get_password_status(user_id)
+        if pwd.get("has_password") and settings.get("security_preset") in ("secure", "maximum"):
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def update_security_settings(user_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
-    allowed = {"require_password_login", "require_password_real_money", "require_password_purchases"}
-    clean = {k: bool(v) for k, v in updates.items() if k in allowed}
+    allowed = {
+        "require_password_login",
+        "require_password_real_money",
+        "require_password_purchases",
+        "require_password_bind_session",
+        "security_preset",
+    }
+    clean: Dict[str, Any] = {}
+    preset = (updates.get("security_preset") or "").strip().lower()
+    if preset in SECURITY_PRESETS:
+        clean["security_preset"] = preset
+        for k, v in apply_security_preset(preset).items():
+            clean[k] = bool(v)
+    for k, v in updates.items():
+        if k in allowed and k != "security_preset":
+            clean[k] = bool(v) if k.startswith("require_") else v
     data = _load_settings()
     users = data.setdefault("users", {})
     row = dict(users.get(user_id) or {})
@@ -98,6 +156,10 @@ def _recommendations(pwd: dict, balances: dict, settings: dict) -> list:
         recs.append("Enable real-money protection to require password before MN2/USD casino bets.")
     if pwd.get("has_password") and not settings.get("require_password_login"):
         recs.append("Consider enabling password-on-login for this account.")
+    if settings.get("security_preset") == "balanced" and balances.get("has_real_money"):
+        recs.append("Switch security preset to Secure or Maximum — you hold real-money balance.")
+    if not settings.get("require_password_bind_session") and pwd.get("has_password"):
+        recs.append("Enable bind-session password so others cannot hijack your user ID in this browser.")
     return recs
 
 

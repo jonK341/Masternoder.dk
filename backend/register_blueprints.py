@@ -202,6 +202,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP paypal: {e}")
     try:
+        from backend.routes.cogs_routes import cogs_bp
+        app.register_blueprint(cogs_bp)
+        n += 1
+        print("  [OK] Registered cogs blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP cogs: {e}")
+    try:
         from backend.routes.compendium_routes import compendium_bp
         app.register_blueprint(compendium_bp)
         from backend.routes.rulebook_routes import rulebook_bp
@@ -284,6 +291,14 @@ def register_lite_blueprints(app):
             print("  [OK] Registered security_cron blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP security_cron: {e}")
+    try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            n += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_admin: {e}")
     try:
         from backend.routes.account_security_routes import account_security_bp
         app.register_blueprint(account_security_bp)
@@ -1472,6 +1487,17 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import security_cron: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering security_cron: {e}")
+
+    try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_admin: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_admin: {e}")
 
     try:
         from backend.routes.account_security_routes import account_security_bp
