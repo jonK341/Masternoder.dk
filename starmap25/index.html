@@ -606,6 +606,48 @@
             .lore-long { display: block !important; color: #111 !important; }
             .points-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
         }
+
+        .starmap-hub-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin: 20px 0 14px;
+            padding: 12px 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 215, 0, 0.35);
+        }
+        .starmap-hub-nav::-webkit-scrollbar { height: 6px; }
+        .starmap-hub-nav::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.35); border-radius: 999px; }
+        .starmap-hub-tab {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            background: rgba(255, 215, 0, 0.08);
+            color: #ffd966;
+            cursor: pointer;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .starmap-hub-tab:hover, .starmap-hub-tab.active {
+            background: rgba(255, 215, 0, 0.22);
+            color: #fff;
+        }
+        .starmap-route-note {
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.28);
+            background: rgba(255, 215, 0, 0.06);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.88rem;
+        }
+        .starmap-tab-panel[hidden] { display: none !important; }
+        #content.starmap-play-hidden { display: none !important; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -640,11 +682,29 @@
             </span>
             <span class="live-indicator" style="color: var(--text-secondary);" id="last-updated">—</span>
         </div>
+
+        <nav class="starmap-hub-nav" id="starmap-hub-nav" aria-label="Star Map sections" role="tablist">
+            <button type="button" class="starmap-hub-tab active" data-starmap-tab="play" role="tab" aria-selected="true">🎮 Play</button>
+            <button type="button" class="starmap-hub-tab" data-starmap-tab="progress" role="tab" aria-selected="false">📈 Progress</button>
+            <button type="button" class="starmap-hub-tab" data-starmap-tab="economy" role="tab" aria-selected="false">💰 Economy</button>
+            <button type="button" class="starmap-hub-tab" data-starmap-tab="guide" role="tab" aria-selected="false">🤖 AI Guide</button>
+            <button type="button" class="starmap-hub-tab" data-starmap-tab="monitor" role="tab" aria-selected="false">📡 Monitor</button>
+        </nav>
+        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid. Switch tabs to browse progress, economy, AI guide, and monitor tools.</div>
+
+        <section class="starmap-tab-panel" data-starmap-tab="progress" hidden>
         <div class="walkthrough-panel" id="walkthrough-panel">
             <h4>Profile walkthrough — 10 levels (tutorial game)</h4>
             <p id="walkthrough-summary" style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:8px;">Loading…</p>
             <div class="walkthrough-track" id="walkthrough-track"></div>
         </div>
+        <div class="events-panel" id="events-panel" style="display:none;">
+            <h4>Temporary Star Map events</h4>
+            <div class="event-list" id="events-list"></div>
+        </div>
+        </section>
+
+        <section class="starmap-tab-panel" data-starmap-tab="guide" hidden>
         <div class="ai-guide-panel" id="ai-guide-panel">
             <h4>AI field guide — unknown features &amp; proofs</h4>
             <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Grounded on server proof docs; refreshes your next unlocks and cites canonical APIs.</p>
@@ -653,10 +713,9 @@
             <div class="ai-guide-narrative" id="ai-guide-narrative">Loading…</div>
             <div id="ai-guide-proofs"></div>
         </div>
-        <div class="events-panel" id="events-panel" style="display:none;">
-            <h4>Temporary Star Map events</h4>
-            <div class="event-list" id="events-list"></div>
-        </div>
+        </section>
+
+        <section class="starmap-tab-panel" data-starmap-tab="economy" hidden>
         <div class="economy-panel" id="economy-panel">
             <h4>Economy, trophies, and quests</h4>
             <div class="economy-grid">
@@ -679,12 +738,18 @@
                 <div class="crypto-status" id="crypto-status"></div>
             </div>
         </div>
+        </section>
+
+        <section class="starmap-tab-panel" data-starmap-tab="play">
         <div class="view-toggles">
             <button type="button" class="active" id="btn-view-grid">Grid</button>
             <button type="button" id="btn-view-3d">3D Map</button>
             <button type="button" id="btn-view-4d">4D Map</button>
         </div>
         <div id="canvas-3d-wrap" style="display: none;"><div class="hud-label" id="hud-3d">Hover a system — click to jump to card</div></div>
+        </section>
+
+        <section class="starmap-tab-panel" data-starmap-tab="monitor" hidden>
         <div class="monitor-panel" id="monitor-panel">
             <h3>Coordinated monitoring — 25 points</h3>
             <div class="monitor-grid" id="monitor-grid"></div>
@@ -780,6 +845,8 @@
             <div class="shop-hint" id="buildup-shop-hint">Short on game_points or want a booster? <a href="/shop?category=starmap25">Open Star Map shop</a>.</div>
             <div class="placement-list" id="buildup-placements"></div>
         </div>
+        </section>
+
         <div class="nav-links">
             <a href="/trophies">Trophies &amp; Star Map</a>
             <a href="/shop?category=starmap25">Star Map Shop</a>
@@ -803,6 +870,55 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        (function initStarmapTabs() {
+            var TAB_LABELS = {
+                play: 'Play grid',
+                progress: 'Progress & walkthrough',
+                economy: 'Economy & crypto',
+                guide: 'AI field guide',
+                monitor: 'Monitor & buildup'
+            };
+            var nav = document.getElementById('starmap-hub-nav');
+            var note = document.getElementById('starmap-route-note');
+            var content = document.getElementById('content');
+            var panels = Array.prototype.slice.call(document.querySelectorAll('.starmap-tab-panel[data-starmap-tab]'));
+            if (!nav || !panels.length) return;
+
+            function applyStarmapTab(tabId) {
+                panels.forEach(function (el) {
+                    el.hidden = el.getAttribute('data-starmap-tab') !== tabId;
+                });
+                nav.querySelectorAll('.starmap-hub-tab').forEach(function (btn) {
+                    var on = btn.getAttribute('data-starmap-tab') === tabId;
+                    btn.classList.toggle('active', on);
+                    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                if (content) {
+                    content.classList.toggle('starmap-play-hidden', tabId !== 'play');
+                }
+                if (note) {
+                    note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other Star Map systems.';
+                }
+                try {
+                    var url = new URL(window.location.href);
+                    if (tabId === 'play') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', tabId);
+                    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                } catch (e) { /* ignore */ }
+            }
+
+            nav.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-starmap-tab]');
+                if (!btn || !nav.contains(btn)) return;
+                applyStarmapTab(btn.getAttribute('data-starmap-tab'));
+            });
+
+            var requested = new URLSearchParams(window.location.search).get('tab');
+            var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, requested);
+            applyStarmapTab(valid ? requested : 'play');
+        })();
+    </script>
     <script>
         const API_BASE = '/api';
         const userId = localStorage.getItem('game_user_id') || 'default_user';
