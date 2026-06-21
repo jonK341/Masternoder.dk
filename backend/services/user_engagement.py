@@ -122,9 +122,11 @@ _QUEST_TEMPLATES = [
     {"id": "weekly_social", "title": "Social Week", "description": "Visit Social and Chat 3 times this week", "target": 3, "xp_reward": 80, "coin_reward": 8, "type": "weekly"},
 ]
 
+WEEKLY_TROPHIES_QUEST_ID = "weekly_trophies"
 
-def get_quests(user_id: str) -> Dict[str, Any]:
-    """Get current daily/weekly quests with progress."""
+
+def _ensure_quest_week_state(user_id: str) -> Dict[str, Any]:
+    """Ensure quests.json exists for today/week (no trophy sync)."""
     today = datetime.utcnow().strftime("%Y-%m-%d")
     week_start = (datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())).strftime("%Y-%m-%d")
     data = _load(user_id, "quests.json")
@@ -141,6 +143,74 @@ def get_quests(user_id: str) -> Dict[str, Any]:
                 data["quests"][q["id"]] = {"progress": 0, "completed": False, "claimed": False}
         data["week"] = week_start
         _save(user_id, "quests.json", data)
+
+    return data
+
+
+def count_trophy_unlocks_this_week(user_id: str) -> int:
+    """Count trophy unlocks since Monday 00:00 UTC (source of truth for weekly_trophies quest)."""
+    try:
+        from backend.services.trophies_db_service import trophies_tables_exist, _get_db
+        if not trophies_tables_exist():
+            return 0
+        from sqlalchemy import text
+        week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        row = _get_db().session.execute(
+            text("""
+                SELECT COUNT(*) FROM user_trophy_unlocks
+                WHERE user_id = :uid AND unlocked_at >= :week_start
+            """),
+            {"uid": user_id, "week_start": week_start.isoformat(sep=" ")},
+        ).scalar()
+        return int(row or 0)
+    except Exception:
+        return 0
+
+
+def sync_weekly_trophies_quest(user_id: str) -> Dict[str, Any]:
+    """Align weekly_trophies quest progress with DB unlock count for the current week."""
+    count = count_trophy_unlocks_this_week(user_id)
+    data = _ensure_quest_week_state(user_id)
+    state = data.get("quests", {}).get(WEEKLY_TROPHIES_QUEST_ID)
+    if not state:
+        return {"success": False, "error": "Quest state missing"}
+    if state.get("claimed"):
+        return {"success": True, "skipped": "claimed", "progress": state.get("progress", 0)}
+
+    template = next((q for q in _QUEST_TEMPLATES if q["id"] == WEEKLY_TROPHIES_QUEST_ID), None)
+    if not template:
+        return {"success": False, "error": "Unknown quest"}
+
+    target = int(template.get("target", 3))
+    new_progress = min(count, target)
+    changed = new_progress != int(state.get("progress", 0))
+    state["progress"] = new_progress
+    state["completed"] = new_progress >= target
+    data["quests"][WEEKLY_TROPHIES_QUEST_ID] = state
+    if changed:
+        _save(user_id, "quests.json", data)
+    return {
+        "success": True,
+        "quest_id": WEEKLY_TROPHIES_QUEST_ID,
+        "progress": new_progress,
+        "completed": state["completed"],
+        "synced_from_db": count,
+    }
+
+
+def on_trophy_unlocked(user_id: str) -> Dict[str, Any]:
+    """Called when a trophy is newly unlocked — refreshes weekly_trophies from DB."""
+    return sync_weekly_trophies_quest(user_id)
+
+
+def get_quests(user_id: str) -> Dict[str, Any]:
+    """Get current daily/weekly quests with progress."""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    week_start = (datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())).strftime("%Y-%m-%d")
+    _ensure_quest_week_state(user_id)
+    sync_weekly_trophies_quest(user_id)
+    data = _load(user_id, "quests.json")
 
     quests_out = []
     for q in _QUEST_TEMPLATES:
@@ -473,6 +543,9 @@ DEFAULT_SETTINGS = {
     "default_difficulty": "balanced",
     "show_leaderboard": True,
     "privacy": "public",
+    "staking_leaderboard_opt_in": False,
+    "staking_display_name": "",
+    "staking_show_amounts": False,
 }
 
 
