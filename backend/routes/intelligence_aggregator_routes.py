@@ -133,14 +133,84 @@ def aggregator_engagement_award():
         meta = {'action': action, 'source': 'aggregator_engagement'}
         r = unified_points_db.add_points(user_id, pt, amt, 'aggregator_engagement', meta)
         ok = isinstance(r, dict) and r.get('success', True)
+        mn2_result = {}
+        mn2_awarded = 0.0
+        try:
+            from backend.services.aggregator_mn2_service import award_for_action
+            mn2_result = award_for_action(user_id, action, meta)
+            if mn2_result.get('success'):
+                mn2_awarded = float(mn2_result.get('mn2_awarded') or 0)
+        except Exception:
+            pass
         return jsonify({
             'success': ok,
             'user_id': user_id,
             'action': action,
             'point_type': pt,
             'awarded': amt,
+            'mn2_awarded': mn2_awarded,
+            'mn2': mn2_result,
             'result': r,
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/mn2/stats', methods=['GET'])
+def aggregator_mn2_stats():
+    """User or platform aggregator MN2 generation stats for HUD."""
+    try:
+        from backend.services.aggregator_mn2_service import get_public_stats, get_user_stats
+        scope = (request.args.get('scope') or '').strip().lower()
+        if scope == 'platform':
+            return jsonify(get_public_stats()), 200
+        user_id = request.args.get('user_id') or _resolve_uid_agg()
+        stats = get_user_stats(user_id)
+        stats['platform'] = get_public_stats()
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/callback/bet', methods=['POST'])
+def aggregator_callback_bet():
+    """External aggregator bet — debit user MN2. Requires MN2_CALLBACK_SECRET."""
+    from backend.services.mn2_callback_auth import callback_authorized
+    if not callback_authorized():
+        return jsonify({'success': False, 'error': 'Unauthorized callback'}), 403
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get('user_id') or '').strip()
+        amount = float(data.get('amount') or data.get('bet') or 0)
+        if not user_id or amount <= 0:
+            return jsonify({'success': False, 'error': 'user_id and positive amount required'}), 400
+        from backend.services.aggregator_mn2_service import process_external_bet
+        meta = {'game': data.get('game'), 'aggregator_id': data.get('aggregator_id'), **(data.get('meta') or {})}
+        result = process_external_bet(user_id, amount, meta)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/callback/win', methods=['POST'])
+def aggregator_callback_win():
+    """External aggregator win — credit user MN2 (daily-capped). Requires MN2_CALLBACK_SECRET."""
+    from backend.services.mn2_callback_auth import callback_authorized
+    if not callback_authorized():
+        return jsonify({'success': False, 'error': 'Unauthorized callback'}), 403
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get('user_id') or '').strip()
+        amount = float(data.get('amount') or data.get('payout') or 0)
+        if not user_id or amount <= 0:
+            return jsonify({'success': False, 'error': 'user_id and positive amount required'}), 400
+        from backend.services.aggregator_mn2_service import process_external_win
+        meta = {'game': data.get('game'), 'aggregator_id': data.get('aggregator_id'), **(data.get('meta') or {})}
+        result = process_external_win(user_id, amount, meta)
+        return jsonify(result), 200 if result.get('success') else 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -156,6 +226,7 @@ def aggregator_hub_links():
             {'id': 'intel_all', 'label': 'Intelligence API (combined JSON)', 'href': '/api/aggregators/intelligence/all', 'external': True},
             {'id': 'battle_stats', 'label': 'Battle stats (JSON)', 'href': '/api/battle/stats', 'external': True},
             {'id': 'shop_boosters', 'label': 'Shop — boosters & events', 'href': '/shop#shop-boosters'},
+            {'id': 'mn2_market', 'label': 'MN2 P2P market', 'href': '/market'},
         ],
     }), 200
 

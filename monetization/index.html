@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
@@ -205,6 +205,7 @@
             box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614a">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -218,12 +219,32 @@
 <body>
     <div class="header">
         <h1>💰 Monetization & Income Streams</h1>
-        <p>Top 25 Income Streams - Revenue Generation</p>
+        <p>Top 25 Income Streams — PayPal, credits, and MN2 payment rails</p>
     </div>
+
+    <section class="mn2-page-strip" aria-labelledby="monetization-mn2-title" style="margin-bottom: 32px;">
+        <h2 id="monetization-mn2-title">🪙 MN2 payment rails</h2>
+        <p>Monetization catalog supports PayPal packs, unified credits, and MN2 (in-wallet + on-chain checkout via Shop). Your balance and live rails load below.</p>
+        <div class="mn2-page-metrics">
+            <div class="mn2-page-metric"><span>Your MN2</span><strong id="monetization-mn2-balance">—</strong></div>
+            <div class="mn2-page-metric"><span>Coins / MN2</span><strong id="monetization-mn2-rate">—</strong></div>
+            <div class="mn2-page-metric"><span>Coin packs</span><strong id="monetization-pack-count">—</strong></div>
+        </div>
+        <div id="monetization-rails-grid" class="mn2-rails-grid"><span style="opacity:0.6;">Loading rails…</span></div>
+        <div class="mn2-page-actions" style="margin-top:14px;">
+            <a href="/shop">Open Shop (MN2 checkout)</a>
+            <a href="/profile#mn2-wallet" class="secondary">Wallet</a>
+            <a href="/casino/" class="secondary">Casino MN2</a>
+        </div>
+    </section>
 
     <div class="recap-section">
         <h2 style="margin-bottom: 20px; color: var(--primary);">📊 Monetization Recap</h2>
         <div class="recap-grid" id="recap-grid">
+            <div class="recap-card">
+                <div class="recap-value" id="monetization-mn2-recap">—</div>
+                <div class="recap-label">MN2 Balance</div>
+            </div>
             <div class="recap-card">
                 <div class="recap-value" id="total-revenue">$0</div>
                 <div class="recap-label">Total Revenue</div>
@@ -254,6 +275,46 @@
 
     <script>
         const BASE_URL = window.location.origin;
+        const monetizationUserId = localStorage.getItem('game_user_id') || 'default_user';
+
+        async function loadMn2Rails() {
+            try {
+                const [configRes, balRes] = await Promise.all([
+                    fetch(`${BASE_URL}/api/monetization/config`),
+                    fetch(`${BASE_URL}/api/mn2/balance?user_id=${encodeURIComponent(monetizationUserId)}`),
+                ]);
+                const railsGrid = document.getElementById('monetization-rails-grid');
+                if (configRes.ok) {
+                    const cfg = await configRes.json();
+                    const catalog = cfg.payment_rails_catalog || {};
+                    const rails = catalog.rails || ['paypal', 'mn2', 'credits'];
+                    if (railsGrid) {
+                        railsGrid.innerHTML = rails.map(function (rail) {
+                            var cls = rail.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            return '<div class="mn2-rail-chip ' + cls + '">' + rail + '</div>';
+                        }).join('');
+                    }
+                    var packs = cfg.coin_packs || [];
+                    var packEl = document.getElementById('monetization-pack-count');
+                    if (packEl) packEl.textContent = String(packs.length);
+                }
+                if (balRes.ok) {
+                    const bal = await balRes.json();
+                    if (bal.success) {
+                        var fmt = function (n) { return (parseFloat(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 4 }); };
+                        var text = fmt(bal.mn2_balance) + ' MN2';
+                        ['monetization-mn2-balance', 'monetization-mn2-recap'].forEach(function (id) {
+                            var el = document.getElementById(id);
+                            if (el) el.textContent = text;
+                        });
+                        var rateEl = document.getElementById('monetization-mn2-rate');
+                        if (rateEl) rateEl.textContent = (bal.coins_per_mn2 || 100).toLocaleString();
+                    }
+                }
+            } catch (e) {
+                console.warn('[Monetization] MN2 rails', e);
+            }
+        }
 
         // Load monetization recap
         async function loadRecap() {
@@ -348,13 +409,16 @@
         }
 
         // Initialize
+        loadMn2Rails();
         loadRecap();
         loadTop25();
-        setInterval(() => {
+        setInterval(function () {
+            loadMn2Rails();
             loadRecap();
             loadTop25();
-        }, 60000); // Refresh every minute
+        }, 60000);
     </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260115"></script>
     

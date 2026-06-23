@@ -82,17 +82,28 @@ class MasterFixAgentSkills:
             scanner = APIScanner(self.base_dir)
             blueprints = scanner.scan_blueprints()
             
-            # Check registration
+            # Check registration against the already-running app (cheap). Building a
+            # throwaway Flask app and re-importing every blueprint here costs ~50s, so
+            # only fall back to that when no application context is available.
+            # Inspect the already-running app only. Building a throwaway Flask
+            # app + re-importing every blueprint here costs ~50s per call (and
+            # this skill runs multiple times per diagnostic), which previously
+            # blew past the uWSGI worker timeout in production. If there is no
+            # application context we simply report registration as unknown.
+            registered = []
+            registration_source = 'current_app'
             try:
-                from flask import Flask
-                from backend.register_blueprints import register_all_blueprints
-                app = Flask(__name__)
-                register_all_blueprints(app)
-                registered = list(app.blueprints.keys())
-            except:
+                from flask import current_app
+                registered = list(current_app.blueprints.keys())
+            except Exception:
                 registered = []
+                registration_source = 'unavailable'
             
-            unregistered = [bp for bp in blueprints if bp.get('name') not in registered]
+            if registration_source == 'unavailable':
+                # No app context: we can't reliably tell what's registered.
+                unregistered = []
+            else:
+                unregistered = [bp for bp in blueprints if bp.get('name') not in registered]
             
             self._record_skill_use('check_blueprints', {
                 'total': len(blueprints),
@@ -105,7 +116,8 @@ class MasterFixAgentSkills:
                 'total_blueprints': len(blueprints),
                 'registered': len(registered),
                 'unregistered': len(unregistered),
-                'unregistered_list': [bp['name'] for bp in unregistered]
+                'unregistered_list': [bp['name'] for bp in unregistered],
+                'registration_source': registration_source
             }
         except Exception as e:
             return {'success': False, 'error': str(e)}
@@ -194,18 +206,37 @@ class MasterFixAgentSkills:
     def skill_check_navigation(self) -> Dict:
         """Skill: Check navigation links"""
         try:
-            html_files = list(Path(self.base_dir).rglob('*.html'))
+            # Collect up to 50 HTML files using a pruned walk. A plain
+            # rglob('*.html') enumerates the ENTIRE tree first (node_modules,
+            # .git, venv, media uploads, ...) which can take >2min on the
+            # production box, so prune heavy dirs and stop early instead.
+            skip_dirs = {
+                'node_modules', '.git', 'venv', 'env', '.venv', '__pycache__',
+                'site-packages', 'dist', 'build', '.cache', '.next', 'coverage',
+                'uploads', 'media', 'static_videos', 'generated_videos', 'tmp',
+            }
+            html_files = []
+            for root, dirs, files in os.walk(self.base_dir):
+                dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith('.')]
+                for name in files:
+                    if name.endswith('.html'):
+                        html_files.append(os.path.join(root, name))
+                        if len(html_files) >= 50:
+                            break
+                if len(html_files) >= 50:
+                    break
+
             points_links = 0
             missing_links = []
-            
-            for html_file in html_files[:50]:  # Limit to first 50
+
+            for html_file in html_files:
                 try:
                     with open(html_file, 'r', encoding='utf-8') as f:
                         content = f.read()
                         if '/vidgenerator/points' in content or 'points/index.html' in content:
                             points_links += 1
                         elif 'navigation' in content.lower():
-                            missing_links.append(str(html_file.relative_to(self.base_dir)))
+                            missing_links.append(os.path.relpath(html_file, self.base_dir))
                 except:
                     pass
             
@@ -245,6 +276,7 @@ class MasterFixAgentSkills:
     def skill_check_service_health(self) -> Dict:
         """Skill: Check service health"""
         try:
+            import ast
             services_dir = os.path.join(self.base_dir, 'backend', 'services')
             services = []
             errors = []
@@ -253,11 +285,14 @@ class MasterFixAgentSkills:
                 for file in glob.glob(os.path.join(services_dir, '**/*.py'), recursive=True):
                     if '__pycache__' in file:
                         continue
+                    rel_path = os.path.relpath(file, self.base_dir)
                     try:
-                        # Try to import
-                        rel_path = os.path.relpath(file, self.base_dir)
-                        module_path = rel_path.replace('/', '.').replace('\\', '.').replace('.py', '')
-                        __import__(module_path)
+                        # Verify the file parses WITHOUT executing it. Importing
+                        # every service module here would run module-level code
+                        # (DB/network/model init) and could hang for minutes in
+                        # production, so we only check syntax validity.
+                        with open(file, 'r', encoding='utf-8') as f:
+                            ast.parse(f.read(), filename=rel_path)
                         services.append({
                             'file': rel_path,
                             'status': 'ok'
@@ -712,6 +747,13 @@ class MasterFixAgentSkills:
         
         self._save_json(self.history_file, self.history)
         
+        # During a full diagnostic we skip point-awarding entirely. The award
+        # path funnels into agent_trigger_system.award_points which can block
+        # ~30s per call (a trigger/DB timeout in LITE production); running it
+        # 8+ times serially made the diagnostic exceed the worker timeout.
+        if getattr(self, '_suppress_point_award', False):
+            return
+        
         # Award points for skill execution - creates real value
         try:
             from backend.services.agent_point_creator import agent_point_creator
@@ -839,18 +881,31 @@ class MasterFixAgentSkills:
     def skill_run_full_diagnostic(self) -> Dict:
         """Skill: Run full system diagnostic"""
         try:
+            import time as _time
             results = {}
-            
-            # Run all diagnostic skills
-            results['blueprints'] = self.skill_check_blueprints()
-            results['database'] = self.skill_verify_database()
-            results['file_integrity'] = self.skill_check_file_integrity()
-            results['navigation'] = self.skill_check_navigation()
-            results['missing_methods'] = self.skill_scan_missing_methods()
-            results['service_health'] = self.skill_check_service_health()
-            results['code_quality'] = self.skill_analyze_code_quality()
-            results['system_health'] = self.skill_monitor_system_health()
-            
+            timings = {}
+            self._suppress_point_award = True
+
+            checks = [
+                ('blueprints', self.skill_check_blueprints),
+                ('database', self.skill_verify_database),
+                ('file_integrity', self.skill_check_file_integrity),
+                ('navigation', self.skill_check_navigation),
+                ('missing_methods', self.skill_scan_missing_methods),
+                ('service_health', self.skill_check_service_health),
+                ('code_quality', self.skill_analyze_code_quality),
+                ('system_health', self.skill_monitor_system_health),
+            ]
+            for name, fn in checks:
+                _t = _time.time()
+                try:
+                    results[name] = fn()
+                except Exception as e:
+                    results[name] = {'success': False, 'error': str(e)}
+                timings[name] = round(_time.time() - _t, 3)
+
+            results['_timings'] = timings
+
             # Calculate overall health score
             health_score = results['system_health'].get('health_score', 0)
             
@@ -867,6 +922,8 @@ class MasterFixAgentSkills:
             }
         except Exception as e:
             return {'success': False, 'error': str(e)}
+        finally:
+            self._suppress_point_award = False
     
     # ========== CALCULATOR SKILLS ==========
     

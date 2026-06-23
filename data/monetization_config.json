@@ -22,7 +22,8 @@
       "price_usd": 4.99,
       "coins_granted": 500,
       "generation_credits_granted": 1.5,
-      "icon": "🪙"
+      "icon": "🪙",
+      "featured": true
     },
     {
       "id": "coin-pack-l",
@@ -32,8 +33,85 @@
       "coins_granted": 2000,
       "generation_credits_granted": 4.0,
       "icon": "🪙"
+    },
+    {
+      "id": "coin-pack-xl",
+      "name": "11,500 Coins",
+      "description": "10000 coins + 1500 bonus via PayPal — whale pack",
+      "price_usd": 39.99,
+      "coins_granted": 11500,
+      "generation_credits_granted": 20.0,
+      "icon": "🪙",
+      "tag": "best_bonus"
+    },
+    {
+      "id": "coin-pack-xxl",
+      "name": "30,000 Coins",
+      "description": "25000 coins + 5000 bonus via PayPal — mega whale pack",
+      "price_usd": 89.99,
+      "coins_granted": 30000,
+      "generation_credits_granted": 50.0,
+      "icon": "💰",
+      "tag": "mega"
+    },
+    {
+      "id": "overage-pack-2",
+      "name": "Overage top-up — 2 credits",
+      "description": "Extra generation credits when you've used your monthly Pro allowance. Priced above standard packs.",
+      "price_usd": 2.99,
+      "coins_granted": 800,
+      "generation_credits_granted": 2.0,
+      "icon": "⚡",
+      "tag": "overage"
+    },
+    {
+      "id": "overage-pack-4",
+      "name": "Overage top-up — 4 credits",
+      "description": "Best value when you need more generations this billing period.",
+      "price_usd": 4.99,
+      "coins_granted": 1600,
+      "generation_credits_granted": 4.0,
+      "icon": "⚡",
+      "tag": "overage"
     }
   ],
+  "overage_policy": {
+    "comment": "Subscription overage — offer PayPal top-ups when allowance is high (see monetization_overage_service).",
+    "show_offers_from_percent": 80,
+    "markup_note": "Overage SKUs priced above blended COGS; not below coin-pack-m per credit."
+  },
+  "shop_promo_codes": [
+    {
+      "code": "WELCOME10",
+      "discount_percent": 10,
+      "bonus_coins_on_purchase": 50,
+      "max_redemptions": 5000,
+      "per_user_once": true,
+      "affiliate_id": "welcome_campaign"
+    },
+    {
+      "code": "GENERATE10",
+      "discount_percent": 10,
+      "bonus_coins_on_purchase": 25,
+      "max_redemptions": 2000,
+      "per_user_once": true,
+      "affiliate_id": "generator_upsell"
+    },
+    {
+      "code": "HOSTMN5",
+      "discount_percent": 5,
+      "bonus_coins_on_purchase": 0,
+      "max_redemptions": 500,
+      "per_user_once": true,
+      "affiliate_id": "masternode_hosting"
+    }
+  ],
+  "referral_purchase_rewards": {
+    "coin_pack": {"referrer_coins": 100},
+    "hosting": {"referrer_coins": 150},
+    "bundle": {"referrer_coins": 125},
+    "shop_item": {"referrer_coins": 75}
+  },
   "tiers": {
     "creator": {
       "label": "Creator",
@@ -61,6 +139,12 @@
         "price_usd_monthly": 19.99,
         "monthly_generation_credits": 8.0,
         "tier": "pro"
+      },
+      "P-PLACEHOLDER-MN-HOST": {
+        "label": "Masternode hosting monthly",
+        "price_usd_monthly": 4.99,
+        "monthly_generation_credits": 0,
+        "tier": "creator"
       }
     }
   },
@@ -86,5 +170,796 @@
         "currency": "USD"
       }
     ]
+  },
+  "payment_rails_catalog": {
+    "comment": "Phase 1 — single source for which checkout rails apply per SKU family (paypal | mn2 | credits). credits = unified points/coins balance (funded by PayPal or MN2 deposit).",
+    "rails": ["paypal", "mn2", "credits"],
+    "defaults": {
+      "coin_pack": ["paypal", "credits"],
+      "digital_good": ["paypal", "mn2", "credits"],
+      "subscription": ["paypal"],
+      "b2b_studio": ["invoice", "paypal"]
+    },
+    "sku_overrides": {
+      "coin-pack-m": ["paypal", "mn2", "credits"],
+      "coin-pack-l": ["paypal", "mn2", "credits"]
+    }
+  },
+  "digital_goods": [
+    {
+      "id": "dg-theme-pack-starter",
+      "line": "B",
+      "name": "Theme pack — Starter",
+      "description": "Galaxy Dark + Neon Green presets (CSS bundle placeholder). Deliver download link after purchase (Phase 2).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/theme-pack-starter.md",
+      "download_filename": "masternoder-theme-pack-starter.md",
+      "license": "Personal use on MasterNoder surfaces only."
+    },
+    {
+      "id": "dg-prompt-pack-video",
+      "line": "B",
+      "name": "Prompt pack — Rich video starters",
+      "description": "Curated prompt snippets for generator workflows.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/rich-video-prompt-pack.md",
+      "download_filename": "masternoder-rich-video-prompt-pack.md",
+      "license": "Personal use; redistribution prohibited."
+    },
+    {
+      "id": "dg-edu-monetization-onepager",
+      "line": "G",
+      "name": "Guide — PayPal + MN2 rails (PDF)",
+      "description": "Internal ops one-pager; link to downloadable asset when hosted (Phase 2).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "free_info",
+      "artifact_path": "content/digital_goods/paypal-mn2-rails-onepager.md",
+      "download_filename": "masternoder-paypal-mn2-rails-onepager.md",
+      "license": "MasterNoder internal documentation."
+    },
+    {
+      "id": "compendium-chapters-4-12",
+      "line": "B",
+      "name": "Compendium — Chapters 4–12",
+      "description": "Unlock premium rulebook volumes 4–12 (Communication Psychology finish + Hunters + early V-series). Pages 1–3 stay free.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "delivery": "compendium_unlock",
+      "compendium_tier": "volume_2",
+      "license": "Personal reading on MasterNoder only."
+    },
+    {
+      "id": "compendium-premium-full",
+      "line": "B",
+      "name": "Compendium — Full library (4–25)",
+      "description": "Unlock all premium compendium volumes — pages 4 through 25 including Hunters rulebook and Rulebooks V1–V16.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 7.99,
+      "price_coins": 799,
+      "delivery": "compendium_unlock",
+      "compendium_tier": "full",
+      "license": "Personal reading on MasterNoder only."
+    },
+    {
+      "id": "gen-api-starter-monthly",
+      "line": "B",
+      "name": "Generator API — Starter (30 days)",
+      "description": "50 metered API jobs/month · 1 key · 120s max clip · white-label generator integrations.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "delivery": "generator_api_tier",
+      "generator_api_tier": "gen-api-starter",
+      "license": "30-day API access; send X-Generator-Api-Key on POST /api/generator/create."
+    },
+    {
+      "id": "gen-api-pro-monthly",
+      "line": "B",
+      "name": "Generator API — Pro (30 days)",
+      "description": "300 API jobs/month · 3 keys · 180s max · 10 req/min rate limit.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 29.99,
+      "price_coins": 2999,
+      "delivery": "generator_api_tier",
+      "generator_api_tier": "gen-api-pro",
+      "license": "30-day API access on MasterNoder generator endpoints."
+    },
+    {
+      "id": "gen-api-enterprise-monthly",
+      "line": "B",
+      "name": "Generator API — Enterprise (30 days)",
+      "description": "2000 API jobs/month · 10 keys · 300s max · priority queue hint for integrations.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 99.99,
+      "price_coins": 9999,
+      "delivery": "generator_api_tier",
+      "generator_api_tier": "gen-api-enterprise",
+      "license": "30-day enterprise API access; contact ops for SLA add-ons."
+    },
+    {
+      "id": "badge-mn2-starter",
+      "line": "B",
+      "name": "MN2 starter badge",
+      "description": "Profile badge for MN2 economy starters — included in the MN2 starter bundle.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 2.99,
+      "price_coins": 299,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "exclusive-vip-badge",
+      "line": "exclusive",
+      "name": "VIP profile badge",
+      "description": "Exclusive gold VIP badge displayed on your public profile.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 7.99,
+      "price_coins": 799,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "exclusive-neon-frame",
+      "line": "exclusive",
+      "name": "Neon exclusive avatar frame",
+      "description": "Limited neon avatar frame — shop exclusive, not in regular catalog rotation.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 5.99,
+      "price_coins": 599,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "exclusive-casino-bonus",
+      "line": "exclusive",
+      "name": "Casino welcome bonus (+200 coins)",
+      "description": "One-time exclusive casino coin bonus credited on purchase.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 2.99,
+      "price_coins": 299,
+      "delivery": "coins_grant",
+      "coins_granted": 200,
+      "license": "Virtual coins only."
+    },
+    {
+      "id": "dg-compendium-premium-ch4",
+      "line": "B",
+      "name": "Compendium — Premium chapter IV (PDF)",
+      "description": "Advanced MN2 economy chapter — downloadable guide.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/compendium-chapter-iv.md",
+      "download_filename": "masternoder-compendium-chapter-iv.md",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "dg-sound-pack-cinematic",
+      "line": "B",
+      "name": "Sound pack — Cinematic stingers",
+      "description": "Curated SFX list + licensing notes for video overlays.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 6.99,
+      "price_coins": 699,
+      "delivery": "download",
+      "artifact_path": "content/digital_goods/sound-pack-cinematic.md",
+      "download_filename": "masternoder-sound-pack-cinematic.md",
+      "license": "Personal use; no redistribution."
+    },
+    {
+      "id": "dg-avatar-frame-creator",
+      "line": "B",
+      "name": "Avatar frame — Creator edition",
+      "description": "Animated-style profile frame for shop collectors.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 4.49,
+      "price_coins": 449,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "vip-pass-monthly",
+      "line": "exclusive",
+      "name": "VIP Pass — 30 days",
+      "description": "Daily 100-coin claim, 10% catalog discount, VIP gold badge, and 2 free daily wheel spins for 30 days.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 9.99,
+      "price_coins": 1500,
+      "delivery": "vip_pass",
+      "license": "Membership on MasterNoder surfaces for 30 days."
+    },
+    {
+      "id": "podcast-premium-ep-unlock",
+      "line": "B",
+      "name": "Podcast — Premium Episode Unlock",
+      "description": "Unlock one premium podcast episode (MN2 shop checkout).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "delivery": "podcast_unlock",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "podcast-pro-pass",
+      "line": "B",
+      "name": "Podcast Pro Pass",
+      "description": "Unlock all premium podcast episodes + ultra AI encode profile.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 7.99,
+      "price_coins": 799,
+      "delivery": "podcast_unlock",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "podcast-generate-credits",
+      "line": "B",
+      "name": "Podcast AI Generate Credits (5)",
+      "description": "Five generator-intelligence podcast episodes with AI encoder.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    }
+  ],
+  "mn2_services": [
+    {
+      "id": "svc-mn2-masternode-hosting",
+      "line": "H",
+      "name": "Masternode Hosting — 30 days",
+      "description": "Platform-hosted MN2 masternode (5,000 MN2 collateral per slot). Pay with PayPal, shop coins, in-wallet MN2, or on-chain MN2 — slot auto-provisions on shared infrastructure (fleet cap from live service status).",
+      "payment_rails": ["paypal", "mn2", "credits", "mn2_onchain"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "external_checkout",
+      "checkout_url": "/explorer?tab=masternodes",
+      "icon": "🛡️",
+      "service_id": "masternode_hosting",
+      "billing_label": "MN2 Masternode Hosting (30 days)",
+      "checkout_mode": "inline_paypal",
+      "max_slots_per_order": 5
+    },
+    {
+      "id": "svc-mn2-proof-of-reserves",
+      "line": "H",
+      "name": "Proof of Reserves Report",
+      "description": "Live custodial coverage report — platform assets vs user liabilities on the Explorer reserves tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=reserves",
+      "icon": "🔒",
+      "service_id": "proof_of_reserves"
+    },
+    {
+      "id": "svc-mn2-onramp",
+      "line": "H",
+      "name": "PayPal → MN2 On-Ramp",
+      "description": "Buy MN2 with PayPal. USD clears to your in-wallet balance after the hold window — spend in catalog or withdraw on-chain.",
+      "payment_rails": ["paypal"],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/profile#mn2-wallet",
+      "icon": "💳",
+      "service_id": "onramp"
+    },
+    {
+      "id": "svc-mn2-staking-pool",
+      "line": "H",
+      "name": "Staking Pool — Earn MN2",
+      "description": "Custodial PoS pool: stake in-app, daemon mints rewards with browser rig weighting. Open the Explorer staking tab to join.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=staking",
+      "icon": "⚡",
+      "service_id": "staking"
+    },
+    {
+      "id": "svc-mn2-p2p-market",
+      "line": "H",
+      "name": "P2P MN2 Marketplace",
+      "description": "Escrow MN2 listings with PayPal settlement — peer-to-peer trades on the Explorer market tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "🤝",
+      "service_id": "p2p"
+    },
+    {
+      "id": "svc-mn2-trader-market",
+      "line": "H",
+      "name": "Agent Trader Market",
+      "description": "Internal MN2 order book driven by agent traders — live ticker and trades on Explorer.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "📈",
+      "service_id": "trader_market"
+    }
+  ],
+  "content_bundles": [
+    {
+      "id": "bundle-mn2-starter",
+      "name": "MN2 starter bundle",
+      "description": "500 coins + 7-day staking booster (+50%) + MN2 starter profile badge — Tier B1 entry bundle.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 6.99,
+      "price_coins": 699,
+      "coins_granted": 500,
+      "generation_credits_granted": 0.5,
+      "items": [
+        {"item_id": "booster-staking-150-7d", "quantity": 1},
+        {"item_id": "badge-mn2-starter", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "tier": "B1", "includes_staking_booster": true, "includes_badge": true}
+    },
+    {
+      "id": "bundle-creator-starter",
+      "name": "Creator starter bundle",
+      "description": "One checkout for 500 coins plus the starter theme pack and rich video prompt pack.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 12.99,
+      "price_coins": 1299,
+      "coins_granted": 500,
+      "generation_credits_granted": 1.5,
+      "items": [
+        {"item_id": "dg-theme-pack-starter", "quantity": 1},
+        {"item_id": "dg-prompt-pack-video", "quantity": 1}
+      ],
+      "attribution": {
+        "line": "bundle",
+        "includes_generator_pack": true,
+        "includes_digital_goods": true
+      }
+    },
+    {
+      "id": "bundle-theme-growth",
+      "name": "Theme growth bundle",
+      "description": "Starter theme plus monetization one-pager for building paid content rails.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 5.99,
+      "price_coins": 599,
+      "coins_granted": 100,
+      "generation_credits_granted": 0.25,
+      "items": [
+        {"item_id": "dg-theme-pack-starter", "quantity": 1},
+        {"item_id": "dg-edu-monetization-onepager", "quantity": 1}
+      ],
+      "attribution": {
+        "line": "bundle",
+        "includes_generator_pack": true,
+        "includes_digital_goods": true
+      }
+    },
+    {
+      "id": "bundle-booster-starter",
+      "name": "Booster starter pack",
+      "description": "XP Booster 2h + Quest Booster 24h + Battle Power 1h — activate on purchase via shop effects.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "coins_granted": 50,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "booster-xp-2h-pack", "quantity": 1},
+        {"item_id": "booster-quest-24h-pack", "quantity": 1},
+        {"item_id": "booster-battle-1h-pack", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true}
+    },
+    {
+      "id": "bundle-booster-pro",
+      "name": "Booster pro pack",
+      "description": "XP 24h + Casino luck booster 6h + Generation Speed booster 3h.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 8.99,
+      "price_coins": 899,
+      "coins_granted": 150,
+      "generation_credits_granted": 0.5,
+      "items": [
+        {"item_id": "booster-xp-24h-pack", "quantity": 1},
+        {"item_id": "booster-casino-luck-6h", "quantity": 1},
+        {"item_id": "booster-gen-speed-3h", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true}
+    },
+    {
+      "id": "bundle-game-time-weekend",
+      "name": "Weekend game time bundle",
+      "description": "48h weekend pass + 4h extra Hunter session time.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 6.99,
+      "price_coins": 699,
+      "coins_granted": 75,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "gametime-weekend-pass", "quantity": 1},
+        {"item_id": "gametime-hunter-4h", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_game_time": true}
+    },
+    {
+      "id": "bundle-exclusive-vip",
+      "name": "Exclusive VIP bonus bundle",
+      "description": "VIP profile badge, casino coin bonus, and exclusive neon avatar frame.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 14.99,
+      "price_coins": 1499,
+      "coins_granted": 300,
+      "generation_credits_granted": 1.0,
+      "items": [
+        {"item_id": "exclusive-vip-badge", "quantity": 1},
+        {"item_id": "exclusive-neon-frame", "quantity": 1},
+        {"item_id": "exclusive-casino-bonus", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_exclusive": true}
+    },
+    {
+      "id": "bundle-whale-mega",
+      "name": "Whale mega bundle",
+      "description": "3000 coins, a 24h XP booster, a Staking Surge x2, and the exclusive neon frame — one checkout, best value.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 29.99,
+      "price_coins": 2999,
+      "coins_granted": 3000,
+      "generation_credits_granted": 3.0,
+      "items": [
+        {"item_id": "booster-xp-24h-pack", "quantity": 1},
+        {"item_id": "booster-staking-200-6h", "quantity": 1},
+        {"item_id": "exclusive-neon-frame", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "includes_boosters": true, "includes_exclusive": true}
+    },
+    {
+      "id": "bundle-top25-starter",
+      "name": "Top 25 Legends — Starter (ranks 1–5)",
+      "description": "Ranks #01–#05 of the Top 25 Legends collectible series in one checkout — ~21% off buying them separately.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 12.99,
+      "price_coins": 1299,
+      "coins_granted": 0,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "top25-01", "quantity": 1},
+        {"item_id": "top25-02", "quantity": 1},
+        {"item_id": "top25-03", "quantity": 1},
+        {"item_id": "top25-04", "quantity": 1},
+        {"item_id": "top25-05", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true}
+    },
+    {
+      "id": "bundle-top25-elite",
+      "name": "Top 25 Legends — Elite (ranks 21–25)",
+      "description": "The five legendary capstones (#21–#25), including the Masternoder Sovereign Crown — ~21% off.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 169.99,
+      "price_coins": 16999,
+      "coins_granted": 0,
+      "generation_credits_granted": 0,
+      "items": [
+        {"item_id": "top25-21", "quantity": 1},
+        {"item_id": "top25-22", "quantity": 1},
+        {"item_id": "top25-23", "quantity": 1},
+        {"item_id": "top25-24", "quantity": 1},
+        {"item_id": "top25-25", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true}
+    },
+    {
+      "id": "bundle-top25-complete",
+      "name": "Top 25 Legends — Complete Collection",
+      "description": "All 25 Legends in one purchase (~30% off) plus 2500 bonus coins. Completes the collection and unlocks the Collector Trophy.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 299.99,
+      "price_coins": 29999,
+      "coins_granted": 2500,
+      "generation_credits_granted": 5.0,
+      "items": [
+        {"item_id": "top25-01", "quantity": 1}, {"item_id": "top25-02", "quantity": 1},
+        {"item_id": "top25-03", "quantity": 1}, {"item_id": "top25-04", "quantity": 1},
+        {"item_id": "top25-05", "quantity": 1}, {"item_id": "top25-06", "quantity": 1},
+        {"item_id": "top25-07", "quantity": 1}, {"item_id": "top25-08", "quantity": 1},
+        {"item_id": "top25-09", "quantity": 1}, {"item_id": "top25-10", "quantity": 1},
+        {"item_id": "top25-11", "quantity": 1}, {"item_id": "top25-12", "quantity": 1},
+        {"item_id": "top25-13", "quantity": 1}, {"item_id": "top25-14", "quantity": 1},
+        {"item_id": "top25-15", "quantity": 1}, {"item_id": "top25-16", "quantity": 1},
+        {"item_id": "top25-17", "quantity": 1}, {"item_id": "top25-18", "quantity": 1},
+        {"item_id": "top25-19", "quantity": 1}, {"item_id": "top25-20", "quantity": 1},
+        {"item_id": "top25-21", "quantity": 1}, {"item_id": "top25-22", "quantity": 1},
+        {"item_id": "top25-23", "quantity": 1}, {"item_id": "top25-24", "quantity": 1},
+        {"item_id": "top25-25", "quantity": 1}
+      ],
+      "attribution": {"line": "bundle", "series": "top25", "includes_collectibles": true, "completes_collection": true}
+    }
+  ],
+  "shop_booster_skus": [
+    {"id": "booster-xp-2h-pack", "name": "XP Booster 2h", "category": "boosts", "effect": "booster", "duration_minutes": 120},
+    {"id": "booster-quest-24h-pack", "name": "Quest Booster 24h", "category": "boosts", "effect": "booster", "duration_minutes": 1440},
+    {"id": "booster-battle-1h-pack", "name": "Battle Power 1h", "category": "boosts", "effect": "booster", "duration_minutes": 60},
+    {"id": "booster-xp-24h-pack", "name": "XP Booster 24h", "category": "boosts", "effect": "booster", "duration_minutes": 1440},
+    {"id": "booster-casino-luck-6h", "name": "Casino Luck Booster 6h", "category": "boosts", "effect": "booster", "duration_minutes": 360},
+    {"id": "booster-gen-speed-3h", "name": "Generation Speed Booster 3h", "category": "boosts", "effect": "booster", "duration_minutes": 180},
+    {"id": "gametime-weekend-pass", "name": "Weekend Pass Game Time", "category": "boosts", "effect": "game_time", "duration_minutes": 2880},
+    {"id": "gametime-hunter-4h", "name": "Hunter Game Time +4h", "category": "boosts", "effect": "game_time", "duration_minutes": 240},
+    {"id": "booster-staking-150-24h", "name": "Staking Boost +50% 24h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 1440, "boost_multiplier": 1.5, "price_coins": 120, "price_usd": 1.99},
+    {"id": "booster-staking-150-7d", "name": "Staking Boost +50% 7 days", "category": "boosts", "effect": "staking_boost", "duration_minutes": 10080, "boost_multiplier": 1.5, "price_coins": 450, "price_usd": 5.99},
+    {"id": "booster-staking-200-6h", "name": "Staking Surge x2 6h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 360, "boost_multiplier": 2.0, "price_coins": 95, "price_usd": 1.49},
+    {"id": "booster-staking-300-12h", "name": "Staking Overdrive x3 12h", "category": "boosts", "effect": "staking_boost", "duration_minutes": 720, "boost_multiplier": 3.0, "price_coins": 180, "price_usd": 2.99}
+  ],
+  "generator_api_tiers": {
+    "gen-api-starter": {
+      "id": "gen-api-starter",
+      "name": "Starter",
+      "monthly_jobs": 50,
+      "rate_limit_per_minute": 5,
+      "max_duration_sec": 120,
+      "max_keys": 1,
+      "subscription_days": 30,
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "sku_id": "gen-api-starter-monthly"
+    },
+    "gen-api-pro": {
+      "id": "gen-api-pro",
+      "name": "Pro",
+      "monthly_jobs": 300,
+      "rate_limit_per_minute": 10,
+      "max_duration_sec": 180,
+      "max_keys": 3,
+      "subscription_days": 30,
+      "price_usd": 29.99,
+      "price_coins": 2999,
+      "sku_id": "gen-api-pro-monthly"
+    },
+    "gen-api-enterprise": {
+      "id": "gen-api-enterprise",
+      "name": "Enterprise",
+      "monthly_jobs": 2000,
+      "rate_limit_per_minute": 30,
+      "max_duration_sec": 300,
+      "max_keys": 10,
+      "subscription_days": 30,
+      "price_usd": 99.99,
+      "price_coins": 9999,
+      "sku_id": "gen-api-enterprise-monthly",
+      "queue_priority_bonus": 2
+    }
+  },
+  "mobile_iap": {
+    "enabled": true,
+    "validation_mode": "stub",
+    "platforms": ["apple", "google"],
+    "products": [
+      {
+        "id": "com.masternoder.coins100",
+        "shop_sku": "coin-pack-s",
+        "price_usd": 0.99,
+        "coins_granted": 100,
+        "platforms": ["apple", "google"]
+      },
+      {
+        "id": "com.masternoder.coins500",
+        "shop_sku": "coin-pack-m",
+        "price_usd": 4.99,
+        "coins_granted": 500,
+        "platforms": ["apple", "google"]
+      },
+      {
+        "id": "com.masternoder.coins2000",
+        "shop_sku": "coin-pack-l",
+        "price_usd": 9.99,
+        "coins_granted": 2000,
+        "platforms": ["apple", "google"]
+      }
+    ]
+  },
+  "shop_monetization": {
+    "version": "9.2.0",
+    "comment": "Shop V9.2 monetization update — VIP pass, mystery boxes, spin wheel, flash sales, gifting, loyalty/cashback, featured auction listings. Logic in backend/services/shop_monetization_service.py; surfaced via /api/shop/* endpoints and the Deals & VIP tab.",
+    "vip_pass": {
+      "sku_id": "vip-pass-monthly",
+      "name": "VIP Pass (30 days)",
+      "price_usd": 9.99,
+      "price_coins": 1500,
+      "duration_days": 30,
+      "daily_coins": 100,
+      "discount_pct": 10,
+      "badge": "vip-gold",
+      "perks": [
+        "Claim 100 coins every day",
+        "10% discount on mystery boxes and spins",
+        "VIP gold profile badge",
+        "2 free wheel spins per day",
+        "+5% loyalty cashback"
+      ]
+    },
+    "mystery_boxes": [
+      {
+        "id": "mystery-box-bronze",
+        "name": "Bronze Mystery Box",
+        "description": "Affordable crate — coins, a booster, or loyalty points.",
+        "icon": "📦",
+        "rarity": "common",
+        "price_coins": 150,
+        "price_usd": 1.99,
+        "loot": [
+          {"type": "coins", "amount": 50, "weight": 25, "label": "50 coins"},
+          {"type": "coins", "amount": 150, "weight": 35, "label": "150 coins (break even)"},
+          {"type": "coins", "amount": 350, "weight": 12, "label": "350 coins"},
+          {"type": "booster", "ref": "booster-xp-2h-pack", "weight": 20, "label": "XP Booster 2h"},
+          {"type": "loyalty", "amount": 50, "weight": 8, "label": "50 loyalty points"}
+        ]
+      },
+      {
+        "id": "mystery-box-silver",
+        "name": "Silver Mystery Box",
+        "description": "Better odds and bigger coin hits, plus 24h boosters.",
+        "icon": "🎁",
+        "rarity": "rare",
+        "price_coins": 400,
+        "price_usd": 4.99,
+        "loot": [
+          {"type": "coins", "amount": 200, "weight": 25, "label": "200 coins"},
+          {"type": "coins", "amount": 400, "weight": 30, "label": "400 coins (break even)"},
+          {"type": "coins", "amount": 900, "weight": 14, "label": "900 coins"},
+          {"type": "booster", "ref": "booster-xp-24h-pack", "weight": 18, "label": "XP Booster 24h"},
+          {"type": "booster", "ref": "booster-casino-luck-6h", "weight": 8, "label": "Casino Luck 6h"},
+          {"type": "loyalty", "amount": 150, "weight": 5, "label": "150 loyalty points"}
+        ]
+      },
+      {
+        "id": "mystery-box-gold",
+        "name": "Gold Mystery Box",
+        "description": "Whale crate — staking surges, big coin jackpots, and an exclusive frame.",
+        "icon": "🏆",
+        "rarity": "legendary",
+        "price_coins": 1000,
+        "price_usd": 9.99,
+        "loot": [
+          {"type": "coins", "amount": 500, "weight": 22, "label": "500 coins"},
+          {"type": "coins", "amount": 1000, "weight": 30, "label": "1000 coins (break even)"},
+          {"type": "coins", "amount": 2500, "weight": 16, "label": "2500 coins jackpot"},
+          {"type": "booster", "ref": "booster-staking-200-6h", "weight": 16, "label": "Staking Surge x2 6h"},
+          {"type": "booster", "ref": "booster-staking-300-12h", "weight": 6, "label": "Staking Overdrive x3 12h"},
+          {"type": "item", "ref": "exclusive-neon-frame", "label": "Exclusive Neon Frame", "weight": 5},
+          {"type": "loyalty", "amount": 400, "weight": 5, "label": "400 loyalty points"}
+        ]
+      }
+    ],
+    "spin_wheel": {
+      "free_cooldown_hours": 24,
+      "spin_cost_coins": 50,
+      "vip_free_spins_per_day": 2,
+      "prizes": [
+        {"type": "coins", "amount": 25, "weight": 32, "label": "25 coins"},
+        {"type": "coins", "amount": 75, "weight": 22, "label": "75 coins"},
+        {"type": "coins", "amount": 200, "weight": 9, "label": "200 coins"},
+        {"type": "coins", "amount": 500, "weight": 3, "label": "500 coins JACKPOT"},
+        {"type": "booster", "ref": "booster-xp-2h-pack", "weight": 14, "label": "XP Booster 2h"},
+        {"type": "loyalty", "amount": 40, "weight": 12, "label": "40 loyalty points"},
+        {"type": "nothing", "weight": 8, "label": "No win — spin again!"}
+      ]
+    },
+    "flash_sales": {
+      "count": 3,
+      "min_discount": 20,
+      "max_discount": 50,
+      "rotate_hours": 6,
+      "min_price_coins": 30
+    },
+    "loyalty": {
+      "earn_per_100_coins": 5,
+      "tiers": [
+        {"id": "bronze", "name": "Bronze", "min_points": 0, "cashback_pct": 0},
+        {"id": "silver", "name": "Silver", "min_points": 500, "cashback_pct": 3},
+        {"id": "gold", "name": "Gold", "min_points": 2000, "cashback_pct": 7},
+        {"id": "platinum", "name": "Platinum", "min_points": 5000, "cashback_pct": 12}
+      ],
+      "redeem": [
+        {"id": "loyalty-coins-500", "name": "500 coins", "cost_points": 400, "grant": {"type": "coins", "amount": 500}},
+        {"id": "loyalty-coins-1500", "name": "1500 coins", "cost_points": 1000, "grant": {"type": "coins", "amount": 1500}},
+        {"id": "loyalty-xp-24h", "name": "XP Booster 24h", "cost_points": 300, "grant": {"type": "booster", "ref": "booster-xp-24h-pack"}},
+        {"id": "loyalty-staking-x2", "name": "Staking Surge x2 6h", "cost_points": 600, "grant": {"type": "booster", "ref": "booster-staking-200-6h"}}
+      ]
+    },
+    "gifting": {
+      "min_coins": 10,
+      "max_coins": 100000,
+      "fee_pct": 0
+    },
+    "auction_feature": {
+      "price_coins": 200,
+      "duration_hours": 48
+    },
+    "top25_collection": {
+      "series_prefix": "top25-",
+      "total": 25,
+      "completion_reward": {
+        "coins": 5000,
+        "loyalty_points": 1000,
+        "trophy_item_id": "top25-collector-trophy",
+        "trophy_name": "Top 25 Collector Trophy",
+        "badge": "top25-collector"
+      }
+    },
+    "battle_pass": {
+      "season_id": "season-2026-s1",
+      "name": "Creator Season Pass",
+      "price_usd": 9.99,
+      "price_coins": 999,
+      "xp_per_tier": 100,
+      "premium_instant_grant": {"coins": 300, "generation_credits": 1.0},
+      "quests": [
+        {"id": "bp-shop-1", "label": "Buy any shop item", "action": "shop_purchase", "xp": 75},
+        {"id": "bp-gen-1", "label": "Complete a generator job", "action": "generator_complete", "xp": 100},
+        {"id": "bp-host-1", "label": "Reserve masternode hosting", "action": "hosting_purchase", "xp": 150},
+        {"id": "bp-casino-1", "label": "Place a casino bet", "action": "casino_bet", "xp": 50}
+      ],
+      "rewards": [
+        {"tier": 1, "free": {"coins": 25}, "premium": {"coins": 100}},
+        {"tier": 5, "free": {"coins": 50}, "premium": {"booster": "booster-xp-2h-pack"}},
+        {"tier": 10, "premium": {"coins": 500, "generation_credits": 1.0}}
+      ]
+    },
+    "tier_b": {
+      "onramp_hosting": {
+        "window_days": 7,
+        "hosting_discount_percent": 10,
+        "promo_code": "HOSTMN5",
+        "description": "Buy MN2 via PayPal on-ramp, then reserve hosting with bundle promo."
+      },
+      "auction": {
+        "fee_rate": 0.05,
+        "description": "5% platform fee on auction sales — enforced in shop_auction_service."
+      },
+      "copy_trading_premium": {
+        "price_usd": 4.99,
+        "price_coins": 499,
+        "duration_days": 30,
+        "perks": [
+          "Higher copy scale (up to 50%)",
+          "Priority leader reward mirror",
+          "Premium trader badge"
+        ]
+      }
+    }
+  },
+  "agent_ai_rewards": {
+    "comment": "Rates mirrored in data/mn2_config.json agent_rewards; logic in agent_crypto_rewards_service.py",
+    "enabled": true,
+    "daily_cap_mn2": 0.5,
+    "actions": {
+      "routed_chat": {"mn2": 0.002, "coins": 5, "label": "AI routed chat completion"},
+      "llm_insight": {"mn2": 0.003, "coins": 8, "label": "Agent LLM tactical insight"},
+      "debugger_task_complete": {"mn2": 0.0005, "coins": 2, "label": "Debugger task completed"},
+      "debugger_task_ai": {"mn2": 0.001, "coins": 4, "label": "Debugger task with AI optimization"},
+      "feedback_outcome": {"mn2": 0.0003, "coins": 2, "label": "AI feedback outcome recorded"},
+      "agent_orchestrator": {"mn2": 0.001, "coins": 3, "label": "Manager/secretary AI assist"},
+      "research_rotation_insight": {"mn2": 0.002, "coins": 5, "label": "Weekly research rotation insight"},
+      "cron_ai_summary": {"mn2": 0.001, "coins": 3, "label": "Cron AI audit summary"},
+      "evaluate_output": {"mn2": 0.0004, "coins": 2, "label": "AI content evaluation"},
+      "first_post": {"mn2": 0.001, "coins": 3, "label": "First social feed post"},
+      "post_created": {"mn2": 0.0003, "coins": 1, "label": "Social post published"},
+      "like_received": {"mn2": 0.0002, "coins": 1, "label": "Like received on your post"}
+    }
   }
 }

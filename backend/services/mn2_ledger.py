@@ -54,7 +54,7 @@ def append_entry(
     address: str = None,
     metadata: Dict[str, Any] = None,
 ) -> None:
-    """Append a ledger entry. entry_type: deposit | withdrawal | shop_payment."""
+    """Append a ledger entry. entry_type: deposit | withdrawal | shop_payment | stake | unstake | staking_reward | onramp_purchase | onramp_clawback."""
     entries = _load_entries()
     entries.append({
         "user_id": str(user_id),
@@ -131,10 +131,11 @@ def get_wallet_activity_days(user_id: str, days: int = 5) -> List[Dict[str, Any]
         except (TypeError, ValueError):
             continue
         buckets[day]["events"] += 1
-        if t == "deposit":
+        if t in ("deposit", "staking_reward", "onramp_purchase"):
             buckets[day]["deposits_mn2"] += amt
-        elif t in ("withdrawal", "shop_payment"):
+        elif t in ("withdrawal", "shop_payment", "onramp_clawback"):
             buckets[day]["out_mn2"] += abs(amt)
+        # stake / unstake are internal balance<->staked moves: neutral (counted as events only)
     for k in day_keys:
         b = buckets[k]
         b["net_mn2"] = round(b["deposits_mn2"] - b["out_mn2"], 8)
