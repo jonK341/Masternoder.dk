@@ -1,0 +1,100 @@
+.ptc-slot {
+    margin: 18px 0;
+}
+
+.ptc-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.ptc-card {
+    position: relative;
+    padding: 16px;
+    border: 1px solid rgba(0, 255, 136, 0.28);
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at top right, rgba(0, 212, 255, 0.14), transparent 34%),
+        linear-gradient(135deg, rgba(0, 255, 136, 0.08), rgba(8, 10, 26, 0.78));
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.24);
+    color: var(--text-primary, #fff);
+}
+
+.ptc-card-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 212, 255, 0.36);
+    color: var(--secondary, #00d4ff);
+    background: rgba(0, 212, 255, 0.08);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.ptc-card h3 {
+    margin: 10px 0 6px;
+    color: var(--primary, #00ff88);
+    font-size: 1rem;
+}
+
+.ptc-card p {
+    margin: 0;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    line-height: 1.45;
+}
+
+.ptc-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 0.78rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.62));
+}
+
+.ptc-card-meta span {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.ptc-card-cta {
+    width: 100%;
+    margin-top: 2px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary, #00ff88), var(--secondary, #00d4ff));
+    color: #00130d;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.ptc-card-cta:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.ptc-card-cta.ptc-claimed {
+    background: rgba(0, 255, 136, 0.18);
+    color: var(--primary, #00ff88);
+    border: 1px solid rgba(0, 255, 136, 0.32);
+}
+
+.ptc-disclosure {
+    margin-top: 10px !important;
+    font-size: 0.72rem;
+    opacity: 0.78;
+}
+
+.ptc-loading {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(0, 255, 136, 0.26);
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+    background: rgba(0, 0, 0, 0.16);
+    font-size: 0.86rem;
+}

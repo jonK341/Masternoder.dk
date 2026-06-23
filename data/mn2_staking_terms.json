@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "effective_date": "2026-06-03",
+  "title": "MN2 Staking Program - Terms & Risk Disclosure",
+  "summary": "By staking MN2 on Masternoder.dk you accept the following terms and risk disclosures.",
+  "sections": [
+    {
+      "id": "not_advice",
+      "heading": "Not financial advice",
+      "body": "Nothing in the staking program is financial, investment, legal, or tax advice, and nothing constitutes a solicitation or recommendation to acquire, stake, or hold MN2."
+    },
+    {
+      "id": "variable_rewards",
+      "heading": "Variable, non-guaranteed rewards",
+      "body": "Staking rewards are variable and are NOT guaranteed. Displayed APR and projections are estimates only, may change at any time, and may be zero. Rewards are paid solely from realized network staking yield of the pooled coins, less an operating margin."
+    },
+    {
+      "id": "browser_rig",
+      "heading": "Browser staking rig",
+      "body": "The optional browser staking rig uses your device's processor only as a participation/engagement signal that can modestly boost your reward share. It does NOT validate MN2 blocks, does NOT mine MN2, and confers no on-chain rights. You may turn it off at any time."
+    },
+    {
+      "id": "custodial_risk",
+      "heading": "Custodial model and risk",
+      "body": "Staked MN2 is held custodially by Masternoder.dk. Funds are not bank deposits and are not insured. Risks include price volatility, operational and software risk, loss of access, and the possibility of zero rewards."
+    },
+    {
+      "id": "eligibility",
+      "heading": "Eligibility and jurisdiction",
+      "body": "You must be at least 18 (or the age of majority in your jurisdiction) and not located in a restricted jurisdiction. The program is void where prohibited. We may geofence or restrict access at our discretion."
+    },
+    {
+      "id": "aml_kyc",
+      "heading": "AML / KYC",
+      "body": "Identity verification may be required to stake, withdraw, or purchase above certain thresholds. We may freeze, delay, or reverse activity we reasonably suspect to be fraudulent, abusive, or unlawful."
+    },
+    {
+      "id": "tax",
+      "heading": "Taxes",
+      "body": "You are solely responsible for any taxes arising from staking rewards or purchases. Rewards may be taxable. A history export is available for your records."
+    },
+    {
+      "id": "onramp",
+      "heading": "PayPal purchases",
+      "body": "MN2 purchased with PayPal may be subject to a holding period before withdrawal. Because card/PayPal payments are reversible and on-chain transfers are not, chargebacks or disputes may result in clawback of un-withdrawn MN2 and account suspension."
+    },
+    {
+      "id": "changes",
+      "heading": "Changes and suspension",
+      "body": "We may modify, suspend, or terminate the staking program, rates, boosts, or availability at any time, with or without notice."
+    },
+    {
+      "id": "privacy",
+      "heading": "Privacy",
+      "body": "Public staking monitor data is anonymized. Your use is subject to our privacy policy."
+    }
+  ],
+  "acceptance_statement": "I am 18+ and eligible, I understand rewards are variable and not guaranteed, that the browser rig is engagement-only and not block validation or mining, that staked MN2 is custodial and not insured, and I accept the Staking Terms & Risk Disclosure v1.0."
+}

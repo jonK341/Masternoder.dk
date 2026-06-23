@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="da">
 <head>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
@@ -260,6 +260,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614a">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -272,9 +273,28 @@
     <div class="quests-page">
         <div class="page-header">
             <h1>📋 Quests</h1>
-            <p style="color: rgba(255, 255, 255, 0.7);">Complete quests to earn points and rewards</p>
+            <p style="color: rgba(255, 255, 255, 0.7);">Complete quests to earn points, MN2, and rewards</p>
+
+            <section class="mn2-page-strip" aria-labelledby="quests-mn2-title">
+                <h2 id="quests-mn2-title">🪙 Quest MN2 rewards</h2>
+                <p>Daily and stage quests pay MN2 on completion via <code>/api/quests/complete</code>. Easy ~0.01 · medium ~0.025 · hard ~0.05 MN2.</p>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Your MN2</span><strong id="quests-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>Coins / MN2</span><strong id="quests-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>Daily quests</span><strong id="quests-daily-count">—</strong></div>
+                </div>
+                <div class="mn2-page-actions">
+                    <a href="/profile#mn2-wallet">Wallet</a>
+                    <a href="/shop" class="secondary">Shop MN2</a>
+                    <a href="/game#social" class="secondary">Earn in Game</a>
+                </div>
+            </section>
             
             <div class="stats-bar">
+                <div class="stat-box">
+                    <div class="stat-value" id="stat-mn2-balance">—</div>
+                    <div class="stat-label">MN2 Balance</div>
+                </div>
                 <div class="stat-box">
                     <div class="stat-value" id="stat-active-quests">0</div>
                     <div class="stat-label">Active Quests</div>
@@ -409,18 +429,49 @@
                 'trophies': '🏆',
                 'coins': '🪙',
                 'credits': '💎',
+                'mn2': '🪙',
+                'mn2_balance': '🪙',
             };
             return icons[type] || '🎁';
         }
 
+        async function loadQuestMn2Strip() {
+            try {
+                const [balRes, dailyRes] = await Promise.all([
+                    fetch(`${BASE_URL}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL}/api/quests/daily?user_id=${encodeURIComponent(userId)}`),
+                ]);
+                if (balRes.ok) {
+                    const bal = await balRes.json();
+                    if (bal.success) {
+                        const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                        document.getElementById('quests-mn2-balance').textContent = fmt(bal.mn2_balance) + ' MN2';
+                        document.getElementById('stat-mn2-balance').textContent = fmt(bal.mn2_balance);
+                        document.getElementById('quests-mn2-rate').textContent = (bal.coins_per_mn2 || 100).toLocaleString();
+                    }
+                }
+                if (dailyRes.ok) {
+                    const daily = await dailyRes.json();
+                    if (daily.success && daily.quests) {
+                        document.getElementById('quests-daily-count').textContent = String(daily.quests.length);
+                    }
+                }
+            } catch (e) {
+                console.warn('[Quests] MN2 strip', e);
+            }
+        }
+
         // Load quests on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadQuestMn2Strip();
             loadQuests();
             
             // Refresh every 30 seconds
             setInterval(loadQuests, 30000);
+            setInterval(loadQuestMn2Strip, 120000);
         });
     </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
     
     
     <script src="/static/js/progression-display.js"></script>

@@ -53,6 +53,50 @@ def cogs_metering_stats():
     return jsonify({"success": True, **data}), 200
 
 
+@cogs_bp.route("/api/monetization/report", methods=["GET"])
+def monetization_revenue_report():
+    """
+    Phase 4 report: payment ledger + MN2 shop ledger + COGS metering.
+
+    Requires COGS_ADMIN_REPORT_KEY via X-Cogs-Admin-Key or ?key=.
+    Query:
+      since_days=N
+      scr_only=1
+      mn2_usd_price=0.001  (optional estimate; otherwise env MN2_USD_PRICE)
+    """
+    expected = (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+    if not expected:
+        return jsonify({"success": False, "error": "monetization_report_disabled", "hint": "set COGS_ADMIN_REPORT_KEY"}), 503
+    supplied = (request.headers.get("X-Cogs-Admin-Key") or request.args.get("key") or "").strip()
+    if supplied != expected:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+
+    def _float_arg(name):
+        raw = (request.args.get(name) or "").strip()
+        if not raw:
+            return None
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            return None
+
+    since_days = _float_arg("since_days")
+    mn2_usd_price = _float_arg("mn2_usd_price")
+    scr_only = (request.args.get("scr_only") or "").strip().lower() in ("1", "true", "yes")
+
+    from backend.services.monetization_scr_blend_service import run_ledger_metering_blend
+
+    out = run_ledger_metering_blend(
+        ledger_path=None,
+        metering_path=None,
+        mn2_ledger_path=None,
+        mn2_usd_price=mn2_usd_price,
+        since_days=since_days,
+        scr_only=scr_only,
+    )
+    return jsonify(out), 200
+
+
 @cogs_bp.route("/api/monetization/config", methods=["GET"])
 def monetization_public_config():
     """Pack SKUs, credit ↔ reference definition, tier ids — from data/monetization_config.json."""
@@ -73,6 +117,21 @@ def monetization_public_config():
             "subscriptions": {"plans": {}},
             "b2b_studio_skus": [],
         }), 200
+
+
+@cogs_bp.route("/api/system/cogs/pricing-suggestion", methods=["GET"])
+def cogs_pricing_suggestion():
+    import os
+    key = (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+    if key:
+        got = (request.headers.get("X-Cogs-Admin-Key") or request.args.get("key") or "").strip()
+        if got != key:
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.generator_pricing_service import pricing_suggestion
+        return jsonify(pricing_suggestion()), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @cogs_bp.route("/api/monetization/webhooks/paypal-subscription", methods=["POST"])
@@ -108,10 +167,21 @@ def monetization_paypal_subscription_webhook():
         if not verify_paypal_webhook_signature(request.headers, body):
             return jsonify({"success": False, "error": "webhook_verification_failed"}), 401
 
-    from backend.services.monetization_subscription_service import process_paypal_webhook_event
-
-    payload, status = process_paypal_webhook_event(body)
-    return jsonify(payload), status
+    event_key = str(body.get("id") or (body.get("resource") or {}).get("id") or "")
+    try:
+        from backend.services.webhook_outbox import process_inline
+        result = process_inline(
+            "paypal_subscription",
+            event_key or "unknown",
+            {"event": body},
+            handler="paypal_subscription",
+        )
+        status = 200 if result.get("success") or result.get("duplicate") else 400
+        return jsonify(result if isinstance(result, dict) else {"success": True}), status
+    except ImportError:
+        from backend.services.monetization_subscription_service import process_paypal_webhook_event
+        payload, status = process_paypal_webhook_event(body)
+        return jsonify(payload), status
 
 
 def _subscription_shop_base_url() -> str:

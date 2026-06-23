@@ -3,9 +3,25 @@ Generator, documentary, and AI-clips routes.
 Moved here from missing_endpoints_routes for clarity. View logic remains in missing_endpoints_routes;
 this module registers those views on generator_bp so URLs are served from the generator blueprint.
 """
-from flask import Blueprint
+from flask import Blueprint, jsonify, request
 
 generator_bp = Blueprint("generator", __name__)
+
+
+@generator_bp.route("/api/generator/pricing", methods=["GET"])
+def generator_pricing():
+    """Public MN2 pricing tiers for generator express/premium encodes."""
+    try:
+        from backend.services.generator_mn2_service import get_public_pricing, quote_generation
+
+        duration = int(request.args.get("duration", 180))
+        short_clip = request.args.get("short_clip", "").lower() in ("1", "true", "yes")
+        tier = (request.args.get("tier") or "standard").strip().lower()
+        payload = get_public_pricing()
+        payload["quote"] = quote_generation(duration=duration, short_clip=short_clip, tier=tier)
+        return jsonify(payload), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 def _register(rule, view_func, methods, endpoint=None):
@@ -25,6 +41,7 @@ def register_generator_routes():
         ("/api/generator/history", me.generator_history, ["GET"]),
         ("/api/generator/statistics", me.generator_statistics, ["GET"]),
         ("/api/generator/generation-health", me.generator_generation_health, ["GET"]),
+        ("/api/generator/queue-status", me.generator_queue_status, ["GET"]),
         ("/api/generator/performance", me.generator_performance, ["GET"]),
         ("/api/generator/presets", me.generator_presets, ["GET"]),
         ("/api/generator/ai-ideas", me.generator_ai_ideas, ["GET", "POST"]),

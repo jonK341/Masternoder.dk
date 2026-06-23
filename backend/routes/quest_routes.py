@@ -30,6 +30,31 @@ def _make_quest_id(title: str, date: str) -> str:
     return hashlib.md5((title + date).encode()).hexdigest()[:10]
 
 
+def _mn2_reward_for_quest(quest: dict) -> float:
+    """Resolve MN2 payout for a quest (explicit field or difficulty/xp heuristic)."""
+    if quest.get("mn2_reward") is not None:
+        try:
+            return round(float(quest["mn2_reward"]), 8)
+        except (TypeError, ValueError):
+            pass
+    diff = (quest.get("difficulty") or "medium").strip().lower()
+    by_diff = {"easy": 0.01, "medium": 0.025, "hard": 0.05}
+    if diff in by_diff:
+        return by_diff[diff]
+    try:
+        xp = int(quest.get("xp_reward") or 100)
+    except (TypeError, ValueError):
+        xp = 100
+    return round(min(0.1, max(0.005, xp / 5000.0)), 8)
+
+
+def _ensure_quest_mn2(quest: dict) -> dict:
+    if quest.get("mn2_reward") is None:
+        quest = dict(quest)
+        quest["mn2_reward"] = _mn2_reward_for_quest(quest)
+    return quest
+
+
 # ---------------------------------------------------------------------------
 # Quest generation helpers
 # ---------------------------------------------------------------------------
@@ -42,12 +67,12 @@ def _generate_daily_quests() -> list:
         "Generate exactly 3 unique daily quests for all users. Quests should involve platform actions: "
         "creating videos, chatting with AI, battling agents, earning points, exploring features. "
         "Return ONLY valid JSON: {\"quests\": [{\"title\": str, \"description\": str, \"objective\": str, "
-        "\"xp_reward\": int, \"category\": str, \"difficulty\": \"easy|medium|hard\", "
+        "\"xp_reward\": int, \"mn2_reward\": float, \"category\": str, \"difficulty\": \"easy|medium|hard\", "
         "\"action_type\": str, \"target_count\": int}]}"
     )
     user_msg = (
-        f"Today is {today}. Generate 3 varied daily quests: one easy (50-100 XP), "
-        "one medium (150-250 XP), one hard (300-500 XP). "
+        f"Today is {today}. Generate 3 varied daily quests: one easy (50-100 XP, ~0.01 MN2), "
+        "one medium (150-250 XP, ~0.025 MN2), one hard (300-500 XP, ~0.05 MN2). "
         "Mix categories: video creation, AI chat, battle, exploration, social."
     )
     try:
@@ -65,10 +90,12 @@ def _generate_daily_quests() -> list:
             raw = resp.content.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
             data = json.loads(raw)
             quests = data.get("quests") or []
+            enriched = []
             for q in quests:
                 q["quest_id"] = _make_quest_id(q.get("title", ""), today)
                 q["date"]     = today
-            return quests[:3]
+                enriched.append(_ensure_quest_mn2(q))
+            return enriched[:3]
     except Exception:
         pass
 
@@ -76,15 +103,15 @@ def _generate_daily_quests() -> list:
     return [
         {"quest_id": _make_quest_id("Create a Video", today), "title": "Video Creator",
          "description": "Create your first AI video of the day.",
-         "objective": "Generate 1 video", "xp_reward": 75, "category": "creation",
+         "objective": "Generate 1 video", "xp_reward": 75, "mn2_reward": 0.01, "category": "creation",
          "difficulty": "easy", "action_type": "create_video", "target_count": 1, "date": today},
         {"quest_id": _make_quest_id("Chat Master", today), "title": "AI Conversationalist",
          "description": "Have a meaningful chat with the AI assistant.",
-         "objective": "Send 5 messages", "xp_reward": 150, "category": "social",
+         "objective": "Send 5 messages", "xp_reward": 150, "mn2_reward": 0.025, "category": "social",
          "difficulty": "medium", "action_type": "send_message", "target_count": 5, "date": today},
         {"quest_id": _make_quest_id("Battle Champion", today), "title": "Arena Champion",
          "description": "Win 3 battles in the agent arena.",
-         "objective": "Win 3 battles", "xp_reward": 350, "category": "battle",
+         "objective": "Win 3 battles", "xp_reward": 350, "mn2_reward": 0.05, "category": "battle",
          "difficulty": "hard", "action_type": "win_battle", "target_count": 3, "date": today},
     ]
 
@@ -98,7 +125,7 @@ def _generate_personal_quest(user_id: str, preferences: dict) -> dict:
     system = (
         "You are the Quest Master for MasterNoder.dk. Generate ONE personalised quest for this user. "
         "Return ONLY valid JSON: {\"title\": str, \"description\": str, \"objective\": str, "
-        "\"xp_reward\": int, \"category\": str, \"difficulty\": str, \"action_type\": str, \"target_count\": int, "
+        "\"xp_reward\": int, \"mn2_reward\": float, \"category\": str, \"difficulty\": str, \"action_type\": str, \"target_count\": int, "
         "\"personal_note\": str}"
     )
     user_msg = (
@@ -123,7 +150,7 @@ def _generate_personal_quest(user_id: str, preferences: dict) -> dict:
             quest["quest_id"]   = _make_quest_id(quest.get("title", "") + user_id, _today_str())
             quest["date"]       = _today_str()
             quest["personalised"] = True
-            return quest
+            return _ensure_quest_mn2(quest)
     except Exception:
         pass
 
@@ -133,6 +160,7 @@ def _generate_personal_quest(user_id: str, preferences: dict) -> dict:
         "description": "Explore a new feature of MasterNoder today.",
         "objective": "Discover 1 new feature",
         "xp_reward": 200,
+        "mn2_reward": 0.025,
         "category": favorite_category,
         "difficulty": "medium",
         "action_type": "explore",
@@ -159,7 +187,7 @@ def daily_quests():
             _daily_cache.clear()
             _daily_cache[today] = _generate_daily_quests()
 
-        quests = _daily_cache[today]
+        quests = [_ensure_quest_mn2(q) for q in _daily_cache[today]]
 
         # Annotate with user completion if user_id provided
         user_id = (request.args.get("user_id") or "").strip()
@@ -233,6 +261,10 @@ def complete_quest():
         if not user_id or not quest_id:
             return jsonify({"success": False, "error": "user_id and quest_id required"}), 200
 
+        user_list = _user_quests.get(user_id) or []
+        if any(uq.get("quest_id") == quest_id and uq.get("completed") for uq in user_list):
+            return jsonify({"success": False, "error": "Quest already completed"}), 200
+
         # Find the quest (daily or personal)
         today   = _today_str()
         all_q   = (_daily_cache.get(today) or []) + (_user_quests.get(user_id) or [])
@@ -241,7 +273,9 @@ def complete_quest():
         if not quest:
             return jsonify({"success": False, "error": "Quest not found"}), 200
 
+        quest = _ensure_quest_mn2(quest)
         xp_reward = quest.get("xp_reward", 100)
+        mn2_reward = _mn2_reward_for_quest(quest)
 
         # Award XP
         awarded = False
@@ -251,6 +285,41 @@ def complete_quest():
             awarded = True
         except Exception:
             pass
+
+        mn2_awarded = 0.0
+        mn2_credited = False
+        if mn2_reward > 0:
+            try:
+                from backend.services.unified_points_database import unified_points_db
+                from backend.services.mn2_ledger import append_entry
+
+                meta = {
+                    "quest_id": quest_id,
+                    "quest_title": quest.get("title"),
+                    "xp_reward": xp_reward,
+                    "difficulty": quest.get("difficulty"),
+                }
+                result = unified_points_db.add_points(
+                    user_id,
+                    "mn2_balance",
+                    mn2_reward,
+                    source="quest_complete",
+                    metadata=meta,
+                )
+                if result.get("success", True):
+                    mn2_credited = True
+                    mn2_awarded = mn2_reward
+                    try:
+                        append_entry(
+                            user_id=user_id,
+                            entry_type="quest_reward",
+                            amount=mn2_reward,
+                            metadata=meta,
+                        )
+                    except Exception:
+                        pass
+            except Exception:
+                pass
         try:
             from backend.services.unified_points_sync import unified_points_sync_device
             unified_points_sync_device.record_domain_sync('quests')
@@ -302,13 +371,20 @@ def complete_quest():
         except Exception:
             pass
 
+        celebration_msg = celebration or f"Quest complete! +{xp_reward} XP!"
+        if mn2_credited and mn2_awarded > 0:
+            celebration_msg += f" +{mn2_awarded:.4f} MN2"
+
         return jsonify({
             "success": True,
             "quest_id": quest_id,
             "quest_title": quest.get("title"),
             "xp_awarded": xp_reward if awarded else 0,
             "xp_reward": xp_reward,
-            "celebration": celebration or f"Quest complete! +{xp_reward} XP!",
+            "mn2_reward": mn2_reward,
+            "mn2_awarded": mn2_awarded if mn2_credited else 0,
+            "mn2_credited": mn2_credited,
+            "celebration": celebration_msg,
             "points_awarded": awarded,
         }), 200
 

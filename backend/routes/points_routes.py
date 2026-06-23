@@ -33,6 +33,7 @@ def _default_points_payload():
         "coins": 0,
         "credits": 0,
         "mn2_balance": 0,
+        "crypto_points": 0,
         "accuracy_grade": "A+",
         "systems": {},
     }

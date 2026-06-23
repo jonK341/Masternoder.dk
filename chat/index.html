@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -359,7 +359,62 @@
                 max-width: 85%;
             }
         }
+
+        .chat-mn2-tip-strip {
+            margin-top: 1rem;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: rgba(0, 20, 30, 0.55);
+        }
+
+        .chat-mn2-tip-strip h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            color: #00d4ff;
+        }
+
+        .chat-tip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .chat-tip-row input {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            background: rgba(0, 0, 0, 0.35);
+            color: #00ff88;
+        }
+
+        .chat-tip-preset, #chat-tip-send {
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.12);
+            color: #00ff88;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #chat-tip-send {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #041018;
+            border: none;
+        }
+
+        #chat-tip-status {
+            margin: 8px 0 0;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+        }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614b">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -398,6 +453,28 @@
                 <h1 class="chat-title">💬 Chat Room</h1>
                 <p class="chat-subtitle">Real-time communication with fancy graphics</p>
                 <div id="chat-points-display"></div>
+
+                <section class="mn2-page-strip chat-mn2-tip-strip" aria-labelledby="chat-mn2-title">
+                    <h2 id="chat-mn2-title">🪙 MN2 tips</h2>
+                    <p>Send MN2 to another player from your in-app wallet. Tips are recorded in chat and your MN2 ledger.</p>
+                    <div class="mn2-page-metrics">
+                        <div class="mn2-page-metric"><span>Your MN2</span><strong id="chat-mn2-balance">—</strong></div>
+                        <div class="mn2-page-metric"><span>USD / MN2</span><strong id="chat-mn2-rate">—</strong></div>
+                    </div>
+                    <div class="chat-tip-row">
+                        <input type="text" id="chat-tip-recipient" placeholder="Recipient user id" aria-label="Tip recipient" />
+                        <input type="number" id="chat-tip-amount" placeholder="Amount MN2" step="0.001" min="0.001" aria-label="Tip amount" />
+                        <input type="text" id="chat-tip-message" placeholder="Optional note" aria-label="Tip message" />
+                        <button type="button" id="chat-tip-send">Send tip</button>
+                    </div>
+                    <div id="chat-tip-presets" class="chat-tip-row" style="margin-top:8px;"></div>
+                    <p id="chat-tip-status"></p>
+                    <div class="mn2-page-actions">
+                        <a href="/profile#mn2-wallet">Wallet</a>
+                        <a href="/shop" class="secondary">Shop MN2</a>
+                        <a href="/social" class="secondary">Social rewards</a>
+                    </div>
+                </section>
             </div>
             
             <div class="chat-main">
@@ -444,6 +521,8 @@
     </div>
 
         <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614b"></script>
+    <script src="/static/js/chat-mn2-tips.js?v=20260614b"></script>
     <script src="/static/js/chat/main.js"></script>
     <script src="/static/js/chat/chat-points.js"></script>
     <script>

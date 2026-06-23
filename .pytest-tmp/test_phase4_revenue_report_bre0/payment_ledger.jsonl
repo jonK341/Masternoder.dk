@@ -1,0 +1,2 @@
+{"ts": "2026-04-29T00:00:00+00:00", "provider": "paypal", "user_id": "u1", "amount_usd": 12.99, "item_id": "bundle-creator-starter"}
+{"ts": "2026-04-29T00:00:00+00:00", "provider": "b2b_scr", "user_id": "studio", "amount_usd": 100.0, "item_id": "scr-studio-90d-500", "deal_kind": "b2b_block"}
