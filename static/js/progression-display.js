@@ -40,11 +40,10 @@ class ProgressionDisplay {
      * Create progression widgets on page
      */
     createProgressionWidgets() {
-        // Create main progression widget
-        this.createMainProgressionWidget();
-        
-        // Create category progression widgets
-        this.createCategoryWidgets();
+        // Disabled by request: the on-page "Overall Progression" points panel (main level/XP
+        // widget + category grid) is no longer rendered. Data loading still works for any code
+        // that reads window.progressionDisplay; nothing is injected into the DOM.
+        return;
     }
     
     /**

@@ -19,13 +19,22 @@
   }
 
   var sessionAwarded = 0;
+  var sessionMn2 = 0;
 
-  function bumpHud(delta, action) {
+  function bumpHud(delta, action, mn2Delta) {
     sessionAwarded += delta;
+    if (mn2Delta != null && !isNaN(mn2Delta)) sessionMn2 += Number(mn2Delta);
     var el = document.getElementById('agg-session-points');
     var last = document.getElementById('agg-last-action');
     if (el) el.textContent = sessionAwarded.toFixed(1);
-    if (last) last.textContent = action || '—';
+    if (last) {
+      var label = action || '—';
+      if (sessionMn2 > 0) label += ' · +' + sessionMn2.toFixed(4) + ' MN2';
+      last.textContent = label;
+    }
+    if (mn2Delta > 0 && window.AggregatorMn2Hud && window.AggregatorMn2Hud.refresh) {
+      window.AggregatorMn2Hud.refresh();
+    }
   }
 
   function award(action, extra) {
@@ -41,8 +50,11 @@
         return r.json();
       })
       .then(function (data) {
+        var mn2 = Number(data.mn2_awarded || (data.mn2 && data.mn2_awarded) || 0);
         if (data.success && data.awarded != null) {
-          bumpHud(Number(data.awarded), action);
+          bumpHud(Number(data.awarded), action, mn2);
+        } else if (mn2 > 0) {
+          bumpHud(0, action, mn2);
         }
         return data;
       })

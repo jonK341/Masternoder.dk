@@ -1006,7 +1006,72 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .gallery-mn2-paywall-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .gallery-mn2-paywall-card {
+            max-width: 440px;
+            width: 100%;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            background: linear-gradient(135deg, rgba(10, 20, 30, 0.98), rgba(0, 40, 30, 0.95));
+        }
+
+        .gallery-mn2-paywall-card h3 {
+            margin: 0 0 10px;
+            color: #00d4ff;
+        }
+
+        .gallery-mn2-paywall-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .gallery-mn2-paywall-actions button,
+        .gallery-mn2-paywall-actions a {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 136, 0.45);
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .gallery-mn2-paywall-actions button:first-child {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #041018;
+            border: none;
+        }
+
+        .gallery-mn2-paywall-actions .secondary {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .gallery-paywall-status {
+            margin: 10px 0 0;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            color: #ffb347;
+        }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614b">
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
@@ -1038,6 +1103,23 @@
             <p class="hub-links" style="text-align:center;margin-top:12px;font-size:0.9rem;opacity:0.9;"><a href="/profile" style="color:#00ff88;text-decoration:none;">Profile</a> · <a href="/generator" style="color:#00ff88;text-decoration:none;">Generator</a> · <a href="/agents" style="color:#00ff88;text-decoration:none;">Agents</a> · <strong>Gallery</strong> · <a href="/aggregator" style="color:#00d4ff;text-decoration:none;">Aggregator</a> · <a href="/theme_premium" style="color:#00d4ff;text-decoration:none;">Themes</a></p>
             <p id="gallery-service-status" class="gallery-service-status" aria-live="polite"></p>
         </header>
+
+        <section class="mn2-page-strip" aria-labelledby="gallery-mn2-title" style="margin:0 24px 20px;">
+            <h2 id="gallery-mn2-title">🪙 Premium gallery · pay with MN2</h2>
+            <p>Premium and ultra previews can be unlocked per video or with a 24h day pass. Free tiers play without charge.</p>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>Your MN2</span><strong id="gallery-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="gallery-mn2-rate">—</strong></div>
+                <div class="mn2-page-metric"><span>Unlock prices</span><strong id="gallery-mn2-prices">—</strong></div>
+                <div class="mn2-page-metric"><span>Day pass</span><strong id="gallery-mn2-pass">—</strong></div>
+            </div>
+            <div class="mn2-page-actions">
+                <button type="button" id="gallery-mn2-buy-pass" style="padding:8px 14px;border-radius:999px;border:none;background:linear-gradient(135deg,#00d4ff,#00ff88);color:#041018;font-weight:700;cursor:pointer;">Buy 24h pass</button>
+                <a href="/profile#mn2-wallet">Wallet</a>
+                <a href="/shop" class="secondary">Shop MN2</a>
+                <a href="/generator" class="secondary">Generate</a>
+            </div>
+        </section>
         
         <!-- Gallery Tabs Navigation -->
         <div class="gallery-tabs">
@@ -1694,6 +1776,16 @@
                 
                 if (data.status === 'success' && data.video) {
                     const video = data.video;
+
+                    if (window.GalleryMn2Paywall) {
+                        const allowed = await window.GalleryMn2Paywall.gateBeforePreview(video);
+                        if (!allowed) {
+                            modal.classList.remove('active');
+                            if (infoDiv) infoDiv.innerHTML = '';
+                            if (descDiv) descDiv.innerHTML = '';
+                            return;
+                        }
+                    }
                     
                     // Check if video is completed
                     if (video.status !== 'completed') {
@@ -2204,6 +2296,8 @@
             }
         });
     </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614b" defer></script>
+    <script src="/static/js/gallery-mn2-paywall.js?v=20260614b" defer></script>
     <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/video-player.js" defer></script>
     <script src="/static/js/theme-toggle.js" defer></script>

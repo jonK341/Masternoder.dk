@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <style>
         .social-page {
@@ -193,6 +194,7 @@
             color: var(--primary);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614a">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -221,13 +223,28 @@
     <div class="container social-page">
         <header class="social-header">
             <h1>👥 Social</h1>
-            <p class="subtitle">Friends • Guilds • Community</p>
+            <p class="subtitle">Friends • Guilds • Community • MN2 rewards</p>
         </header>
+
+        <section class="mn2-page-strip" aria-labelledby="social-mn2-title">
+            <h2 id="social-mn2-title">🪙 MN2 social economy</h2>
+            <p>Claim internal MN2 for signup, friends, crew activity, chat, and referrals. Balance is wallet-safe — deposit and withdraw on Profile.</p>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>Your MN2</span><strong id="social-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>Referral</span><strong id="social-mn2-ref-code">—</strong></div>
+            </div>
+            <div class="mn2-page-actions">
+                <a href="/profile#mn2-wallet">Wallet</a>
+                <a href="/shop" class="secondary">Shop</a>
+                <a href="/game#social" class="secondary">Game social hub</a>
+            </div>
+        </section>
         
         <div class="social-tabs">
             <button class="social-tab active" data-tab="friends">Friends</button>
             <button class="social-tab" data-tab="guilds">Guilds</button>
             <button class="social-tab" data-tab="requests">Requests</button>
+            <button class="social-tab" data-tab="mn2-rewards">MN2 Rewards</button>
             <button class="social-tab" data-tab="intelligence">🧠 Intelligence</button>
             <button class="social-tab" data-tab="resources">💎 Resources</button>
         </div>
@@ -255,6 +272,7 @@
                     <div class="skeleton-loader" style="height: 200px;"></div>
                 </div>
             </div>
+            <div data-ptc-placement="social_feed" data-ptc-limit="1"></div>
             
             <!-- Create Post -->
             <div class="card" style="margin-top: var(--spacing-lg);">
@@ -306,6 +324,23 @@
                 <div id="friend-requests">
                     <div class="skeleton-loader" style="height: 100px; margin-bottom: var(--spacing-sm);"></div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- MN2 Rewards Tab -->
+        <div class="social-tab-content" id="tab-mn2-rewards">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🪙 Claim MN2 rewards</h2>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px;">One-time and repeatable social rewards credit your in-app MN2 balance.</p>
+                <div id="social-mn2-rewards-grid" class="mn2-reward-grid">Loading rewards…</div>
+            </div>
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
+                    <h2 class="card-title">🔗 Referral link</h2>
+                </div>
+                <div id="social-mn2-referral-panel" style="font-size:0.9rem;color:var(--text-secondary);">Loading…</div>
             </div>
         </div>
         
@@ -407,10 +442,25 @@
                 if (tabName === 'friends') loadFriends();
                 else if (tabName === 'guilds') loadGuilds();
                 else if (tabName === 'requests') loadFriendRequests();
+                else if (tabName === 'mn2-rewards') loadSocialMn2Rewards();
                 else if (tabName === 'intelligence') loadIntelligence();
                 else if (tabName === 'resources') loadResources();
             });
         });
+
+        function loadSocialMn2Rewards() {
+            if (!window.SocialMn2Rewards) return;
+            SocialMn2Rewards.loadPanel({
+                rewardsEl: document.getElementById('social-mn2-rewards-grid'),
+                referralEl: document.getElementById('social-mn2-referral-panel'),
+                balanceEl: document.getElementById('social-mn2-balance'),
+            }).then(function (data) {
+                if (data && data.referral_code) {
+                    var refEl = document.getElementById('social-mn2-ref-code');
+                    if (refEl) refEl.textContent = data.referral_code;
+                }
+            });
+        }
         
         async function loadFriends() {
             try {
@@ -1264,11 +1314,13 @@
     </script>
     <script src="/static/js/progression-display.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script src="/static/js/backend-connector.js?v=20260114120000"></script>
     <script src="/static/js/page-data-loaders.js?v=20260114120000"></script>
     <script>
         // Social Page Data Loader
         document.addEventListener('DOMContentLoaded', async function() {
+            loadSocialMn2Rewards();
             const loader = new pageDataLoaders.social();
             const data = await loader.loadAll();
             
@@ -1282,7 +1334,9 @@
             }
         });
     </script>
-<script src="/static/js/universal-auto-save-status.js"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/social-mn2-rewards.js?v=20260614a"></script>
+    <script src="/static/js/universal-auto-save-status.js"></script>
 <script src="/static/js/connect-all-point-counters.js"></script>
     <script src="/static/js/image-support.js"></script>
     <script src="/static/js/template-effects.js"></script>
