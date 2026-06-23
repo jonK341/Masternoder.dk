@@ -364,6 +364,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Explorer masternodes tab** — `/explorer?tab=masternodes` hub JS + API live (2026-06-23)
 - [x] **Clear ~15 provisioning hosts** — **cleared 2026-06-23** (**30** hosted · **0** stale provisioning)
 - [x] **Explorer VPS nginx verify** — `fix_explorer_subdomains_remote.py --ask-pass` (2026-06-23; nginx test OK, pm2 explorer restarted)
+- [x] **Profile hub (PR #31)** — tab bar, wallet fix, security layers, avatar · `static_pages` deploy (2026-06-23)
 - [ ] **Fleet boot autostart (M5)** — systemd `mn2-fleet-autostart` not yet enabled
 - [x] **Multi-ping site integration (PR #30)** — helpers + probes + C++ patch doc; flag **multi_ping_enabled: false** until v1.3 on prod
 - [ ] **Daemon v1.3 deploy + enable multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
