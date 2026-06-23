@@ -2,6 +2,7 @@
 Health Check Routes
 Database health, system status, and monitoring endpoints
 """
+import json
 import os
 import re
 from flask import Blueprint, jsonify
@@ -243,9 +244,113 @@ def system_health():
         health_status['components']['mn2_rpc'] = {'status': 'unreachable', 'error': str(e)}
         health_status['overall'] = 'degraded'
 
+    try:
+        from backend.services.worker_pressure_service import worker_pressure
+        wp = worker_pressure()
+        health_status['components']['worker_pressure'] = wp
+        if wp.get('recommendation') == 'throttle':
+            health_status['overall'] = 'degraded'
+    except Exception as e:
+        health_status['components']['worker_pressure'] = {'status': 'unavailable', 'error': str(e)}
+
     status_code = 200 if health_status['overall'] == 'healthy' else 503
     
     return jsonify({
         'success': True,
         **health_status
     }), status_code
+
+
+@health_bp.route('/api/mn2/health', methods=['GET'])
+def mn2_health():
+    """Dedicated MN2 health: RPC, block monotonicity, deposit scanner, staking."""
+    from datetime import datetime, timezone
+    out = {
+        'success': True,
+        'status': 'healthy',
+        'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'components': {},
+    }
+    degraded = False
+
+    try:
+        from backend.services.mn2_rpc_client import health_check as mn2_health_check
+        mn2 = mn2_health_check()
+        block_height = mn2.get('block_height')
+        rpc_status = mn2.get('status', 'unknown')
+        if rpc_status == 'unreachable':
+            try:
+                from backend.services.mn2_chainz import chainz_getblockcount
+                chainz_height = chainz_getblockcount()
+                if chainz_height is not None:
+                    block_height = chainz_height
+                    rpc_status = 'degraded_fallback'
+            except Exception:
+                pass
+        out['components']['mn2_rpc'] = {
+            'status': rpc_status,
+            'block_height': block_height,
+            'latency_ms': mn2.get('latency_ms'),
+        }
+        if mn2.get('error'):
+            out['components']['mn2_rpc']['error'] = mn2['error']
+        if rpc_status in ('unreachable', 'degraded_fallback', 'auth_failed'):
+            degraded = True
+    except Exception as exc:
+        out['components']['mn2_rpc'] = {'status': 'unreachable', 'error': str(exc)}
+        degraded = True
+
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    hist_path = os.path.join(base, 'data', 'mn2_network_history.jsonl')
+    try:
+        last_height = None
+        prev_height = None
+        if os.path.isfile(hist_path):
+            with open(hist_path, 'r', encoding='utf-8') as f:
+                lines = [ln.strip() for ln in f.readlines() if ln.strip()][-2:]
+            for ln in lines:
+                row = json.loads(ln)
+                h = row.get('block_height') or row.get('height')
+                if h is not None:
+                    prev_height = last_height
+                    last_height = int(h)
+        mono_ok = last_height is None or prev_height is None or last_height >= prev_height
+        out['components']['block_monotonicity'] = {
+            'status': 'healthy' if mono_ok else 'degraded',
+            'last_height': last_height,
+            'prev_height': prev_height,
+        }
+        if not mono_ok:
+            degraded = True
+    except Exception as exc:
+        out['components']['block_monotonicity'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        scan_log = os.path.join(base, 'logs', 'mn2_deposit_scanner.jsonl')
+        last_run = None
+        if os.path.isfile(scan_log):
+            with open(scan_log, 'r', encoding='utf-8') as f:
+                lines = [ln.strip() for ln in f.readlines() if ln.strip()]
+            if lines:
+                last_run = json.loads(lines[-1])
+        out['components']['deposit_scanner'] = {
+            'status': 'healthy' if last_run else 'unknown',
+            'last_run': last_run,
+        }
+    except Exception as exc:
+        out['components']['deposit_scanner'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        from backend.services.mn2_staking_service import get_config
+        cfg = get_config()
+        out['components']['staking'] = {
+            'status': 'healthy' if cfg.get('enabled') else 'disabled',
+            'enabled': bool(cfg.get('enabled')),
+        }
+    except Exception as exc:
+        out['components']['staking'] = {'status': 'unknown', 'error': str(exc)}
+
+    if degraded:
+        out['status'] = 'degraded'
+    code = 200 if out['status'] == 'healthy' else 503
+    return jsonify(out), code

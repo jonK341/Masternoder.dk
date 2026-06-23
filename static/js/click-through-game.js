@@ -57,9 +57,11 @@ class ClickThroughGame {
 
     async init() {
         await this.loadGameData();
+        await this.loadSponsoredClickQuests();
         await this.loadUserProgress();
         this.initializeStory();
         this.initializeClickTriggers();
+        this.wireSponsoredClickQuestRewards();
         this.startEnergyRegeneration();
         this.startDebuggerLoops();
         this.startCounterTickers();
@@ -270,6 +272,60 @@ class ClickThroughGame {
             this.clipStories = this.getDefaultClipStories();
             this.achievements = this.getDefaultAchievements();
         }
+    }
+
+    async loadSponsoredClickQuests() {
+        try {
+            const res = await fetch(`${this.baseUrl}/api/ptc/click-quests?user_id=${encodeURIComponent(this.userId)}&limit=3`);
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.quests) || !data.quests.length) return;
+            const existing = new Set(this.missions.map((mission) => String(mission.id)));
+            data.quests.forEach((quest) => {
+                if (existing.has(String(quest.id))) return;
+                this.missions.push({
+                    id: quest.id,
+                    name: quest.name,
+                    description: quest.description,
+                    target: 1,
+                    reward: Number(quest.reward || 0),
+                    icon: '🎯',
+                    type: 'sponsored_click',
+                    campaignId: quest.campaign_id,
+                    placement: quest.placement || 'click_quest'
+                });
+            });
+        } catch (error) {
+            console.warn('Error loading sponsored click quests:', error);
+        }
+    }
+
+    wireSponsoredClickQuestRewards() {
+        if (this._sponsoredClickQuestHandler) return;
+        this._sponsoredClickQuestHandler = async (event) => {
+            const detail = event && event.detail ? event.detail : {};
+            await this.completeSponsoredClickQuest(detail);
+        };
+        window.addEventListener('ptc:reward-claimed', this._sponsoredClickQuestHandler);
+    }
+
+    async completeSponsoredClickQuest(detail = {}) {
+        const campaign = detail.campaign || {};
+        const campaignId = campaign.id || detail.campaign_id || '';
+        const reward = Number(detail.reward_points || campaign.reward_points || 0);
+        const completedKey = `ptc:${campaignId}:${detail.click_id || Date.now()}`;
+        if (!this.gameState.sponsoredClickRewards) {
+            this.gameState.sponsoredClickRewards = [];
+        }
+        if (this.gameState.sponsoredClickRewards.includes(completedKey)) return;
+        this.gameState.sponsoredClickRewards.push(completedKey);
+        this.gameState.sponsoredClicks = (this.gameState.sponsoredClicks || 0) + 1;
+        this.gameState.missionsCompleted++;
+        this.points += reward;
+        this.totalEarned += reward;
+        this.counters.pointsEarned += reward;
+        this.showNotification(`Sponsored Click Quest complete: ${campaign.title || campaignId}! +${reward} PTC points`, 'success');
+        await this.checkAchievements();
+        await this.saveProgress();
     }
 
     async loadUserProgress() {

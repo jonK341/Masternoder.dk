@@ -116,6 +116,45 @@
   white-space: nowrap;
 }
 
+.agg-crypto-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.28);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(0, 255, 136, 0.05));
+}
+
+.agg-crypto-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+}
+
+.agg-crypto-chip strong {
+  color: var(--primary, #00ff88);
+  margin-left: 4px;
+}
+
+.agg-crypto-link {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #041018;
+  background: linear-gradient(135deg, #00d4ff, #00ff88);
+}
+
+.agg-crypto-link:hover {
+  opacity: 0.9;
+}
+
 .agg-hero {
   text-align: center;
   padding: 1.5rem 1rem 0.5rem;

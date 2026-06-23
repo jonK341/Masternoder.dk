@@ -270,3 +270,176 @@ def user_skills_maintenance_inactive():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _load_crypto_wallet_agents() -> list:
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base, 'data', 'agent_crypto_wallet_agents.json')
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return list(data.get('agents') or [])
+    except Exception:
+        return []
+
+
+@agent_profile_bp.route('/api/agents/mn2-readiness', methods=['GET'])
+def agents_mn2_readiness():
+    """Aggregate profile agents, staking personas, and wallet agents for the MN2 treasury tab."""
+    user_id = _resolve()
+    try:
+        from backend.services.agent_db_service import agent_db_service
+        from backend.services import mn2_staking_agents_service as staking_agents
+        from backend.services import mn2_staking_service as staking
+        from backend.services.mn2_wallet_service import get_balance
+
+        profile_agents = agent_db_service.get_user_agents(user_id)
+        personas = {
+            p.get('agent_id'): p
+            for p in (staking_agents.list_agents().get('agents') or [])
+            if str(p.get('user_id') or '') == user_id
+        }
+        crypto = [
+            a for a in _load_crypto_wallet_agents()
+            if not a.get('bound_user_id') or str(a.get('bound_user_id')) == user_id
+        ]
+        stake_status = staking.get_stake(user_id)
+        bal = get_balance(user_id)
+        try:
+            monitor = staking.get_staking_monitor(limit=10)
+            aggregates = monitor.get('aggregates') or {}
+        except Exception:
+            aggregates = {}
+
+        rows = []
+        for agent in profile_agents:
+            aid = agent.get('agent_id') or agent.get('id')
+            persona = personas.get(aid) or {}
+            note_parts = []
+            if persona:
+                note_parts.append('Staking persona enabled' if persona.get('enabled') else 'Staking persona disabled')
+                if persona.get('target_staked') is not None:
+                    note_parts.append(f"target {persona.get('target_staked')} MN2")
+            else:
+                note_parts.append('Enable MN2 treasury to assign a staking persona')
+            crypto_match = next((c for c in crypto if c.get('id') == aid), None)
+            if crypto_match:
+                note_parts.append('Shop wallet agent available')
+            rows.append({
+                'agent_id': aid,
+                'name': agent.get('name') or agent.get('agent_name') or aid,
+                'icon': agent.get('icon') or agent.get('agent_icon'),
+                'level': agent.get('level', 1),
+                'skill_count': agent.get('skill_count', 0),
+                'staking_enabled': bool(persona.get('enabled')) if persona else False,
+                'target_staked': persona.get('target_staked'),
+                'max_staked': persona.get('max_staked'),
+                'note': ' · '.join(note_parts),
+                'has_persona': bool(persona),
+                'has_crypto_persona': bool(crypto_match),
+            })
+
+        return jsonify({
+            'success': True,
+            'user_id': user_id,
+            'wallet': {
+                'mn2_balance': bal.get('mn2_balance'),
+                'coins_per_mn2': bal.get('coins_per_mn2'),
+                'mn2_staked': stake_status.get('staked'),
+                'mn2_liquid': stake_status.get('mn2_balance'),
+            },
+            'aggregates': {
+                'total_staked': aggregates.get('total_staked'),
+                'agent_staked_mn2': aggregates.get('agent_staked_mn2'),
+                'agent_managed_stakers': aggregates.get('agent_managed_stakers'),
+            },
+            'agents': rows,
+            'crypto_wallet_agents': crypto,
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'agents': []}), 500
+
+
+@agent_profile_bp.route('/api/agents/mn2/enable', methods=['POST'])
+def agents_mn2_enable():
+    """Create or update a staking persona for an assigned agent."""
+    user_id = _resolve()
+    data = request.get_json(silent=True) or {}
+    agent_id = (data.get('agent_id') or '').strip()
+    if not agent_id:
+        return jsonify({'success': False, 'error': 'agent_id required'}), 400
+    try:
+        target = float(data.get('target_staked') or data.get('target') or 0)
+    except (TypeError, ValueError):
+        target = 0.0
+    try:
+        from backend.services import mn2_staking_agents_service as staking_agents
+        policy = {
+            'enabled': True,
+            'target_staked': max(0.0, target),
+            'max_staked': max(0.0, target * 2) if target > 0 else 0.0,
+            'allowed_actions': ['stake', 'accept_terms', 'heartbeat'],
+        }
+        result = staking_agents.upsert_agent(agent_id, user_id, policy=policy)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agent_profile_bp.route('/api/agents/mn2/stake-for-agent', methods=['POST'])
+def agents_mn2_stake_for_agent():
+    """Stake MN2 from the user's wallet toward an agent-managed treasury."""
+    user_id = _resolve()
+    data = request.get_json(silent=True) or {}
+    agent_id = (data.get('agent_id') or '').strip()
+    if not agent_id:
+        return jsonify({'success': False, 'error': 'agent_id required'}), 400
+    try:
+        amount = float(data.get('amount'))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'error': 'amount is required'}), 400
+    try:
+        from backend.services import mn2_staking_agents_service as staking_agents
+        result = staking_agents.stake_for_agent(agent_id, user_id, amount)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agent_profile_bp.route('/api/agents/mn2/disable', methods=['POST'])
+def agents_mn2_disable():
+    """Disable agent staking persona (stops autonomous rebalance)."""
+    user_id = _resolve()
+    data = request.get_json(silent=True) or {}
+    agent_id = (data.get('agent_id') or '').strip()
+    if not agent_id:
+        return jsonify({'success': False, 'error': 'agent_id required'}), 400
+    try:
+        from backend.services import mn2_staking_agents_service as staking_agents
+        result = staking_agents.disable_agent(agent_id, user_id)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agent_profile_bp.route('/api/agents/mn2/unstake-for-agent', methods=['POST'])
+def agents_mn2_unstake_for_agent():
+    """Unstake MN2 from agent-managed treasury back to liquid wallet."""
+    user_id = _resolve()
+    data = request.get_json(silent=True) or {}
+    agent_id = (data.get('agent_id') or '').strip()
+    if not agent_id:
+        return jsonify({'success': False, 'error': 'agent_id required'}), 400
+    amount = data.get('amount')
+    try:
+        amount_f = float(amount) if amount is not None else None
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'error': 'invalid amount'}), 400
+    try:
+        from backend.services import mn2_staking_agents_service as staking_agents
+        result = staking_agents.unstake_for_agent(agent_id, user_id, amount_f)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

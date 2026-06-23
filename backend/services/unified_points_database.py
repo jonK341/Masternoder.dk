@@ -13,6 +13,7 @@ Implementation notes:
 import logging
 import os
 import json
+import threading
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Dict, Optional, Any
@@ -20,6 +21,23 @@ from typing import Dict, Optional, Any
 from sqlalchemy import text
 
 _logger = logging.getLogger(__name__)
+
+# Gate S: per-user file lock + idempotency cache for money-critical point types
+_USER_LOCKS: Dict[str, threading.RLock] = {}
+_IDEMPOTENCY_LOCK = threading.RLock()
+_IDEMPOTENCY_CACHE: Dict[str, str] = {}
+_MONEY_POINT_TYPES = frozenset({
+    "mn2_balance", "coins", "casino_fiat_balance", "mn2_staked", "shop_balance",
+})
+
+
+def _user_lock(user_id: str) -> threading.RLock:
+    with _IDEMPOTENCY_LOCK:
+        lock = _USER_LOCKS.get(user_id)
+        if lock is None:
+            lock = threading.RLock()
+            _USER_LOCKS[user_id] = lock
+        return lock
 
 
 @contextmanager
@@ -65,9 +83,13 @@ class UnifiedPointsDatabase:
         return {}
 
     def _save_file_store(self, user_id: str, store: Dict[str, Any]) -> None:
+        """Gate S: atomic write via temp file + os.replace under per-user lock."""
         path = self._points_file(user_id)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(store, f, indent=2)
+        tmp = path + ".tmp"
+        with _user_lock(user_id):
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(store, f, indent=2)
+            os.replace(tmp, path)
 
     def _ensure_player_level_row(self, db, user_id: str):
         # Production schemas may differ; try the most complete schema first, then fall back.
@@ -145,8 +167,25 @@ class UnifiedPointsDatabase:
         if amt == 0:
             return {"success": True, "user_id": user_id, "point_type": pt, "amount": 0, "message": "No-op"}
 
+        meta = metadata if isinstance(metadata, dict) else {}
+        ref = (meta.get("reference") or meta.get("idempotency_key") or "").strip()
+        if ref and pt in _MONEY_POINT_TYPES:
+            cache_key = f"{user_id}:{pt}:{ref}"
+            with _IDEMPOTENCY_LOCK:
+                if cache_key in _IDEMPOTENCY_CACHE:
+                    return {
+                        "success": True,
+                        "duplicate": True,
+                        "user_id": user_id,
+                        "point_type": pt,
+                        "amount": amt,
+                        "message": "Idempotent duplicate skipped",
+                    }
+                _IDEMPOTENCY_CACHE[cache_key] = datetime.now().isoformat()
+
         # File store is the durable baseline (production schema varies)
-        file_result = self._award_points_file_fallback(user_id, pt, amt, source, metadata)
+        with _user_lock(user_id):
+            file_result = self._award_points_file_fallback(user_id, pt, amt, source, metadata)
         if file_result.get("success"):
             try:
                 from backend.services.unified_points_sync import unified_points_sync_device
@@ -356,10 +395,17 @@ class UnifiedPointsDatabase:
             "game_points": float(systems.get("game_points", 0) or 0),
             "accuracy_grade": "A+",
             "mn2_balance": float(systems.get("mn2_balance", 0) or 0),
+            "mn2_staked": float(systems.get("mn2_staked", 0) or 0),
         }
+        points["crypto_points"] = max(
+            float(systems.get("crypto_points", 0) or 0),
+            points["mn2_balance"],
+        )
         points["systems"] = {k: float(v or 0) for k, v in systems.items()}
         if "mn2_balance" not in points["systems"]:
             points["systems"]["mn2_balance"] = points.get("mn2_balance", 0)
+        if "crypto_points" not in points["systems"]:
+            points["systems"]["crypto_points"] = points.get("crypto_points", 0)
         if "game_points" not in points["systems"]:
             points["systems"]["game_points"] = points.get("game_points", 0)
         return points
@@ -450,10 +496,17 @@ class UnifiedPointsDatabase:
                     "game_points": float(snapshots.get("game_points", 0) or 0),
                     "accuracy_grade": "A+",
                     "mn2_balance": float(snapshots.get("mn2_balance", 0) or 0),
+                    "mn2_staked": float(snapshots.get("mn2_staked", 0) or 0),
                 }
+                points["crypto_points"] = max(
+                    float(snapshots.get("crypto_points", 0) or 0),
+                    points["mn2_balance"],
+                )
                 points["systems"] = {k: float(v or 0) for k, v in snapshots.items()}
                 if "mn2_balance" not in points["systems"]:
                     points["systems"]["mn2_balance"] = points.get("mn2_balance", 0)
+                if "crypto_points" not in points["systems"]:
+                    points["systems"]["crypto_points"] = points.get("crypto_points", 0)
                 if "game_points" not in points["systems"]:
                     points["systems"]["game_points"] = points.get("game_points", 0)
                 return points
@@ -467,7 +520,7 @@ class UnifiedPointsDatabase:
             "xp_total", "activity_points", "quest_points", "stats_points_total", "stats_points_available",
             "trophy_points", "coins", "credits", "battle_points", "social_points", "knowledge_points",
             "dna_manipulation_points", "dna_cloning_points", "communication_psychology_points",
-            "compendium_points", "generation_points", "game_points", "mn2_balance",
+            "compendium_points", "generation_points", "game_points", "mn2_balance", "mn2_staked", "crypto_points",
         )
         int_keys = ("achievements_earned", "milestones_reached", "trophies_collected")
         out = {}

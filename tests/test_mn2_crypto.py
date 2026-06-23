@@ -374,6 +374,48 @@ class TestMN2BalanceWithVerification(unittest.TestCase):
         self.assertTrue(data["withdrawal_verified"])
 
 
+class TestMN2DepositAddressSelfHeal(unittest.TestCase):
+    """get_or_create_deposit_address validates cached addresses and self-heals."""
+
+    @patch("backend.services.mn2_rpc_client.getnewaddress")
+    @patch("backend.services.mn2_rpc_client.validateaddress")
+    @patch("backend.services.mn2_wallet_service._save_addresses")
+    @patch("backend.services.mn2_wallet_service._load_addresses")
+    def test_invalid_cached_address_is_regenerated(
+        self, mock_load, mock_save, mock_validate, mock_getnew
+    ):
+        from backend.services import mn2_wallet_service as w
+        mock_load.return_value = {"u1": "BADADDR"}
+        saved = {}
+        mock_save.side_effect = lambda d: saved.update(d)
+        mock_validate.side_effect = lambda a: (
+            {"result": {"isvalid": False}} if a == "BADADDR" else {"result": {"isvalid": True}}
+        )
+        mock_getnew.return_value = {"result": "MxFreshValidAddress"}
+
+        res = w.get_or_create_deposit_address("u1")
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "MxFreshValidAddress")
+        self.assertEqual(saved.get("u1"), "MxFreshValidAddress")
+
+    @patch("backend.services.mn2_rpc_client.getnewaddress")
+    @patch("backend.services.mn2_rpc_client.validateaddress")
+    @patch("backend.services.mn2_wallet_service._save_addresses")
+    @patch("backend.services.mn2_wallet_service._load_addresses")
+    def test_rpc_outage_keeps_existing_address(
+        self, mock_load, mock_save, mock_validate, mock_getnew
+    ):
+        from backend.services import mn2_wallet_service as w
+        mock_load.return_value = {"u1": "MxExisting"}
+        # Daemon unreachable -> validateaddress returns an error; must NOT discard.
+        mock_validate.return_value = {"error": "daemon offline"}
+
+        res = w.get_or_create_deposit_address("u1")
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "MxExisting")
+        mock_getnew.assert_not_called()
+
+
 def run_tests():
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()

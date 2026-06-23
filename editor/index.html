@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <style>
         * {
             box-sizing: border-box;
@@ -266,6 +267,7 @@
             color: #44ff44;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614c">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -288,6 +290,22 @@
             <h1><i class="fas fa-edit"></i> Video Editor</h1>
             <p id="video-title">Loading video...</p>
         </div>
+
+        <section class="mn2-page-strip" data-mn2-auto data-balance-id="editor-mn2-balance" data-rate-id="editor-mn2-rate" aria-labelledby="editor-mn2-title">
+            <h2 id="editor-mn2-title">🪙 Editor exports · MN2 gallery rails</h2>
+            <p>Premium gallery previews and ultra exports can be unlocked with MN2 — same wallet as generator and shop.</p>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>Your MN2</span><strong id="editor-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="editor-mn2-rate">—</strong></div>
+                <div class="mn2-page-metric"><span>Premium unlock</span><strong id="editor-mn2-premium" data-mn2-extra="/api/gallery/premium/config" data-mn2-extra-key="prices.premium" data-mn2-extra-format="mn2">—</strong></div>
+                <div class="mn2-page-metric"><span>Ultra unlock</span><strong id="editor-mn2-ultra" data-mn2-extra="/api/gallery/premium/config" data-mn2-extra-key="prices.ultra" data-mn2-extra-format="mn2">—</strong></div>
+            </div>
+            <div class="mn2-page-actions">
+                <a href="/gallery">Gallery paywall</a>
+                <a href="/generator" class="secondary">Generator</a>
+                <a href="/shop" class="secondary">Shop MN2</a>
+            </div>
+        </section>
 
         <div id="error-message" class="error" style="display: none;"></div>
         <div id="success-message" class="success" style="display: none;"></div>
@@ -380,6 +398,8 @@
         </div>
     </div>
 
+        <script src="/static/js/mn2-site-bridge.js?v=20260614c"></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260614c"></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script>

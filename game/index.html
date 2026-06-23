@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="/static/css/theme-toggle.css">
     <link rel="stylesheet" href="/static/css/game-timeline.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/hunter-game-index.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
@@ -17,6 +19,7 @@
     <link rel="stylesheet" href="/static/css/cooldown-timer.css?v=2">
     <link rel="stylesheet" href="/static/css/game-page-redesign.css">
     <link rel="stylesheet" href="/static/css/game-page-components.css?v=20260412">
+    <link rel="stylesheet" href="/static/css/game-tabulator.css?v=20260618">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -252,7 +255,8 @@
                             <div class="stat-label">Unlocked Female Agents</div>
                         </div>
                     </div>
-                    <div style="margin-top: var(--spacing-sm); text-align: right;">
+                    <div style="margin-top: var(--spacing-sm); text-align: right; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+                        <button class="action-btn" onclick="window.location.href='/casino/'" style="padding: 10px 16px; font-size: 0.85rem;">🎰 Virtual Casino</button>
                         <button class="action-btn" onclick="window.location.href='/battle'" style="padding: 10px 16px; font-size: 0.85rem;">⚔️ Go Battle Now</button>
                     </div>
                 </div>
@@ -1056,6 +1060,18 @@
         
         <!-- Rewards Tab -->
         <div class="game-tab-content" id="tab-rewards">
+            <section class="game-level-crypto-panel" aria-labelledby="game-level-crypto-title">
+                <div class="game-level-crypto-head">
+                    <div>
+                        <h3 id="game-level-crypto-title">Level MN2 Rewards</h3>
+                        <p class="game-level-crypto-meta" id="game-level-crypto-summary">One-time MN2 bonus for each hunter level you reach. Claim here — adds to your in-game MN2 balance.</p>
+                    </div>
+                    <a href="/profile#mn2-wallet" style="color:#00d4ff;font-size:0.85rem;">Open wallet →</a>
+                </div>
+                <div class="game-level-crypto-grid" id="game-level-crypto-grid">
+                    <p class="game-level-crypto-meta">Loading…</p>
+                </div>
+            </section>
             <!-- Click Game Section -->
             <section class="stats-section">
                 <div class="card" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 170, 0, 0.2)); border: 2px solid #ffd700;">
@@ -1349,17 +1365,39 @@
                         <div id="social-appearance-panel" style="padding:12px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:10px;margin-bottom:20px;">Loading…</div>
                         <h4 style="color: #00d4ff; margin-top: 20px; margin-bottom: 10px;">MN2 social rewards</h4>
                         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Claim internal MN2 balance for signup, friend progress, crew membership, chat, and referrals.</p>
+                        <div id="social-earn-coach-panel" style="padding:12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;margin-bottom:12px;">Loading earn coach…</div>
+                        <button type="button" id="social-refresh-coach-btn" style="padding:6px 12px;border-radius:7px;border:1px solid rgba(0,212,255,0.35);background:rgba(0,212,255,0.1);color:#00d4ff;cursor:pointer;margin-bottom:12px;">Refresh coach</button>
                         <div id="social-rewards-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:20px;">Loading…</div>
                         <h4 style="color: #00d4ff; margin-bottom: 10px;">Referrals</h4>
-                        <div id="social-referral-panel" style="padding:12px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.25);border-radius:10px;margin-bottom:20px;">Loading…</div>
+                        <div id="social-referral-panel" style="padding:12px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.25);border-radius:10px;margin-bottom:12px;">Loading…</div>
+                        <button type="button" id="social-generate-promo-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #FFD700;background:rgba(255,215,0,0.12);color:#FFD700;cursor:pointer;margin-bottom:8px;">Generate promo text</button>
+                        <div id="social-promo-output" style="margin-bottom:20px;"></div>
                         <h4 style="color: #00d4ff; margin-bottom: 10px;">Login options</h4>
                         <div id="social-login-options" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">Loading…</div>
+                        <h4 style="color: #00d4ff; margin-top: 20px; margin-bottom: 10px;">Feed posts</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Recent posts from the social feed. <a href="/social" style="color:#00d4ff;">Open full feed</a></p>
+                        <div id="social-posts-mini-feed" style="min-height:60px;max-height:220px;overflow-y:auto;padding:12px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:16px;">Loading…</div>
+                        <h4 style="color: #00d4ff; margin-bottom: 10px;">Create post</h4>
+                        <textarea id="game-social-post-content" placeholder="Share an update with the community…" rows="3" style="width:100%;min-height:72px;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
+                            <button type="button" id="game-social-post-btn" style="padding:10px 18px;background:rgba(0,212,255,0.25);border:1px solid #00d4ff;border-radius:8px;color:#00d4ff;cursor:pointer;">Post</button>
+                            <select id="game-social-ai-draft-tone" aria-label="AI draft tone" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;">
+                                <option value="casual">Casual</option>
+                                <option value="promo">Promo</option>
+                                <option value="question">Question</option>
+                            </select>
+                            <button type="button" id="game-social-ai-draft-btn" style="padding:10px 18px;background:rgba(255,215,0,0.12);border:1px solid #FFD700;border-radius:8px;color:#FFD700;cursor:pointer;"><i class="fas fa-wand-magic-sparkles"></i> AI draft</button>
+                        </div>
                         <h4 style="color: #00d4ff; margin-bottom: 10px;">Social chat</h4>
                         <div id="social-chat-feed" style="min-height:100px;max-height:240px;overflow-y:auto;padding:12px;background:rgba(0,0,0,0.25);border-radius:10px;margin-bottom:10px;">Loading…</div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
                             <input type="text" id="social-chat-message" placeholder="Write to the social network chat" style="flex:1;min-width:200px;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;">
                             <button type="button" id="social-chat-send-btn" style="padding:10px 18px;background:rgba(0,255,136,0.18);border:1px solid #00ff88;border-radius:8px;color:#00ff88;cursor:pointer;">Send</button>
                         </div>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--text-secondary);margin-bottom:20px;cursor:pointer;">
+                            <input type="checkbox" id="social-chat-ai-reply" style="accent-color:#FFD700;">
+                            AI reply <span style="color:#FFD700;">(+MN2 routed_chat)</span>
+                        </label>
                         <p style="margin-top: 16px;"><a href="/leaderboard" style="color: #00d4ff;">View leaderboard</a> · <a href="/profile" style="color: #00ff88;">Profile</a> · <a href="/social-monitor" style="color: #FFD700;">Social monitor</a></p>
                         <h4 style="color: #00d4ff; margin-top: 20px; margin-bottom: 8px;">Share on social networks</h4>
                         <p style="font-size: 0.9rem; color: var(--text-secondary);">Invite others to play: share the game or your profile.</p>
@@ -1450,6 +1488,10 @@
         }
 
         function goToChampionTab(tabName) {
+            if (window.GameTabulator && window.GameTabulator.activate) {
+                window.GameTabulator.activate(tabName);
+                return;
+            }
             const btn = document.querySelector('.game-tab[data-tab="' + tabName + '"]');
             if (btn) btn.click();
         }
@@ -1687,6 +1729,9 @@
                 tab.addEventListener('click', () => {
                     const tabName = tab.dataset.tab;
                     if (!tabName) return;
+                    if (window.SocialMn2Rewards && SocialMn2Rewards.stopSocialChatPoll) {
+                        SocialMn2Rewards.stopSocialChatPoll();
+                    }
                     try { sessionStorage.setItem('hunter_tab_visit_' + tabName, '1'); } catch (e) {}
                     loadChampionPulse().catch(function() {});
                     // Remove active from all tabs, then add to all tabs with this data-tab
@@ -1731,6 +1776,9 @@
                         startLeaderboardUpdates();
                     } else if (tabName === 'rewards') {
                         loadRewards();
+                        if (window.GameLevelCrypto && window.GameLevelCrypto.load) {
+                            window.GameLevelCrypto.load();
+                        }
                         loadClickGame(); // Add click game to rewards
                         setupClickGameHandlers();
                     } else if (tabName === 'quests') {
@@ -2297,7 +2345,7 @@
             };
             if (!friendsListEl) return;
             try {
-                const [summaryRes, friendsRes, crewsRes, activityRes, networksRes, rewardsRes, referralsRes, loginRes, chatRes, notificationsRes, challengesRes, invitesRes, crewLeaderboardRes, appearanceRes] = await Promise.all([
+                const [summaryRes, friendsRes, crewsRes, activityRes, networksRes, rewardsRes, referralsRes, loginRes, notificationsRes, challengesRes, invitesRes, crewLeaderboardRes, appearanceRes, coachRes] = await Promise.all([
                     fetch(base + '/social/summary?user_id=' + uid),
                     fetch(base + '/social/friends?user_id=' + uid),
                     fetch(base + '/social/crews?user_id=' + uid),
@@ -2306,12 +2354,12 @@
                     fetch(base + '/social/rewards/status?user_id=' + uid),
                     fetch(base + '/social/referrals?user_id=' + uid),
                     fetch(base + '/social/login-options'),
-                    fetch(base + '/social/chat/messages?limit=30'),
                     fetch(base + '/social/notifications?user_id=' + uid),
                     fetch(base + '/social/challenges?user_id=' + uid),
                     fetch(base + '/social/crews/invites?user_id=' + uid),
                     fetch(base + '/social/crews/leaderboard'),
-                    fetch(base + '/social/appearance/scan?user_id=' + uid + '&sync_profile=1')
+                    fetch(base + '/social/appearance/scan?user_id=' + uid + '&sync_profile=1'),
+                    fetch(base + '/social/agent/recommendations?user_id=' + uid + '&coach=1')
                 ]);
                 if (summaryRes.ok) {
                     const s = await summaryRes.json();
@@ -2565,13 +2613,94 @@
                         return '<a href="' + escapeHtml(enabled ? href : '#') + '" style="padding:8px 12px;border-radius:8px;text-decoration:none;border:1px solid rgba(0,212,255,0.35);background:rgba(0,212,255,0.1);color:' + (enabled ? '#00d4ff' : 'rgba(255,255,255,0.4)') + ';">' + escapeHtml(opt.label) + (enabled ? '' : ' (setup needed)') + '</a>';
                     }).join('');
                 }
-                if (chatEl && chatRes.ok) {
-                    const chatData = await chatRes.json();
-                    const messages = chatData.messages || [];
-                    chatEl.innerHTML = messages.length ? messages.map(function(msg) {
-                        const ts = msg.created_at ? new Date(msg.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
-                        return '<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><strong style="color:#00d4ff;">' + escapeHtml(msg.display_name || msg.user_id) + '</strong> <span style="color:rgba(255,255,255,0.45);font-size:0.75rem;">' + escapeHtml(ts) + '</span><div style="margin-top:2px;">' + escapeHtml(msg.message) + '</div></div>';
-                    }).join('') : '<p style="color: var(--text-secondary);">No social chat messages yet.</p>';
+                if (chatEl && window.SocialMn2Rewards && SocialMn2Rewards.initSocialChatPanel) {
+                    SocialMn2Rewards.initSocialChatPanel({
+                        feedEl: chatEl,
+                        inputEl: document.getElementById('social-chat-message'),
+                        sendBtn: document.getElementById('social-chat-send-btn'),
+                        aiToggleEl: document.getElementById('social-chat-ai-reply'),
+                        userId: userId,
+                        intervalMs: 15000,
+                    });
+                }
+                var miniFeedEl = document.getElementById('social-posts-mini-feed');
+                async function loadGameSocialMiniFeed() {
+                    if (!miniFeedEl) return;
+                    try {
+                        var feedRes = await fetch(base + '/social/feed?user_id=' + uid + '&limit=5&ranked=1');
+                        if (!feedRes.ok) {
+                            miniFeedEl.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Could not load feed.</p>';
+                            return;
+                        }
+                        var feedData = await feedRes.json();
+                        var posts = feedData.success && feedData.feed ? feedData.feed : [];
+                        if (!posts.length) {
+                            miniFeedEl.innerHTML = '<p style="color:var(--text-secondary);margin:0;">No posts yet. Be the first!</p>';
+                            return;
+                        }
+                        miniFeedEl.innerHTML = posts.map(function(post) {
+                            var author = escapeHtml(post.user_id || '');
+                            var ts = post.created_at ? new Date(post.created_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '';
+                            var body = escapeHtml((post.content || '').slice(0, 200));
+                            if ((post.content || '').length > 200) body += '…';
+                            return '<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88rem;">' +
+                                '<strong style="color:#00d4ff;">' + author + '</strong> ' +
+                                '<span style="color:rgba(255,255,255,0.45);font-size:0.75rem;">' + escapeHtml(ts) + '</span>' +
+                                '<div style="margin-top:3px;white-space:pre-wrap;">' + body + '</div></div>';
+                        }).join('');
+                    } catch (err) {
+                        miniFeedEl.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Could not load feed.</p>';
+                    }
+                }
+                loadGameSocialMiniFeed();
+                var postBtn = document.getElementById('game-social-post-btn');
+                if (postBtn && !postBtn.dataset.bound) {
+                    postBtn.dataset.bound = '1';
+                    postBtn.addEventListener('click', function() {
+                        var contentEl = document.getElementById('game-social-post-content');
+                        var content = contentEl ? contentEl.value.trim() : '';
+                        if (!content) return;
+                        postBtn.disabled = true;
+                        fetch(base + '/social/posts', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, content: content, post_type: 'text' }),
+                        }).then(function(r) { return r.json(); }).then(function(d) {
+                            postBtn.disabled = false;
+                            if (d.success) {
+                                if (contentEl) contentEl.value = '';
+                                if (window.SocialMn2Rewards && d.rewards && d.rewards.length) {
+                                    d.rewards.forEach(function(rw) { SocialMn2Rewards.showRewardToast(rw); });
+                                }
+                                loadGameSocialMiniFeed();
+                            } else if (window.showToast) {
+                                window.showToast('Post', d.error || 'Failed', 'error');
+                            }
+                        }).catch(function() {
+                            postBtn.disabled = false;
+                        });
+                    });
+                }
+                if (window.SocialMn2Rewards && SocialMn2Rewards.bindSocialAiDraft) {
+                    SocialMn2Rewards.bindSocialAiDraft({
+                        btn: document.getElementById('game-social-ai-draft-btn'),
+                        textareaEl: document.getElementById('game-social-post-content'),
+                        toneEl: document.getElementById('game-social-ai-draft-tone'),
+                        userId: userId,
+                    });
+                }
+                var coachEl = document.getElementById('social-earn-coach-panel');
+                if (coachEl && coachRes && coachRes.ok) {
+                    var coachData = await coachRes.json();
+                    if (coachData.success && coachData.earn_coach && window.SocialMn2Rewards) {
+                        SocialMn2Rewards.renderEarnCoach(coachEl, coachData.earn_coach);
+                    } else if (coachData.success && coachData.earn_coach) {
+                        var ec = coachData.earn_coach;
+                        coachEl.innerHTML = (ec.summary ? '<p style="margin:0 0 8px;color:#00d4ff;font-size:0.88rem;">' + escapeHtml(ec.summary) + '</p>' : '') +
+                            (ec.tips || []).map(function(t) {
+                                return '<div style="margin-bottom:6px;"><strong style="color:#FFD700;">' + escapeHtml(t.label) + '</strong><div style="font-size:0.82rem;color:var(--text-secondary);">' + escapeHtml(t.reason || '') + '</div></div>';
+                            }).join('');
+                    }
                 }
                 var addFriendBtn = document.getElementById('social-add-friend-btn');
                 if (addFriendBtn && !addFriendBtn.dataset.bound) {
@@ -2609,16 +2738,22 @@
                             .then(function(d) { if (d.success) { if (input) input.value = ''; loadSocialTab(); } else alert(d.error || 'Failed'); });
                     });
                 }
-                var chatBtn = document.getElementById('social-chat-send-btn');
-                if (chatBtn && !chatBtn.dataset.bound) {
-                    chatBtn.dataset.bound = '1';
-                    chatBtn.addEventListener('click', function() {
-                        var input = document.getElementById('social-chat-message');
-                        var message = input ? input.value.trim() : '';
-                        if (!message) return;
-                        fetch(base + '/social/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, message: message }) })
-                            .then(function(r) { return r.json(); })
-                            .then(function(d) { if (d.success) { if (input) input.value = ''; loadSocialTab(); } else alert(d.error || 'Failed'); });
+                var refreshCoachBtn = document.getElementById('social-refresh-coach-btn');
+                if (refreshCoachBtn && !refreshCoachBtn.dataset.bound && window.SocialMn2Rewards && SocialMn2Rewards.bindEarnCoachRefresh) {
+                    refreshCoachBtn.dataset.bound = '1';
+                    SocialMn2Rewards.bindEarnCoachRefresh({
+                        btn: refreshCoachBtn,
+                        panelEl: document.getElementById('social-earn-coach-panel'),
+                        userId: userId,
+                    });
+                }
+                var promoBtn = document.getElementById('social-generate-promo-btn');
+                if (promoBtn && !promoBtn.dataset.bound && window.SocialMn2Rewards) {
+                    promoBtn.dataset.bound = '1';
+                    SocialMn2Rewards.bindPromoGenerator({
+                        btn: promoBtn,
+                        outputEl: document.getElementById('social-promo-output'),
+                        userId: userId,
                     });
                 }
                 var origin = window.location.origin || 'https://masternoder.dk';
@@ -4783,15 +4918,40 @@
             loadCryptoExperience().catch(function() {});
             // Hash navigation: #walkthrough, #guides, #social opens that tab
             var h = (window.location.hash || '').replace('#', '');
-            if (h === 'walkthrough' || h === 'guides' || h === 'social' || h === 'campaign') {
-                var tabBtn = document.querySelector('.game-tab[data-tab="' + h + '"]');
-                if (tabBtn) tabBtn.click();
+            var knownTabs = ['overview','campaign','quests','challenges','achievements','milestones','leaderboard','rewards','stats','history','timeline','epic','walkthrough','guides','starmap25','social'];
+            if (knownTabs.indexOf(h) !== -1) {
+                if (window.GameTabulator && window.GameTabulator.activate) {
+                    window.GameTabulator.activate(h, false);
+                } else {
+                    var tabBtn = document.querySelector('.game-tab[data-tab="' + h + '"]');
+                    if (tabBtn) tabBtn.click();
+                }
             }
             // Auto-save stats every 30 seconds
             setInterval(saveAllGameStats, 30000);
             
             // Save stats on page unload
             window.addEventListener('beforeunload', saveAllGameStats);
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    if (window.SocialMn2Rewards && SocialMn2Rewards.stopSocialChatPoll) {
+                        SocialMn2Rewards.stopSocialChatPoll();
+                    }
+                } else {
+                    var socialTab = document.getElementById('tab-social');
+                    if (socialTab && socialTab.classList.contains('active') && window.SocialMn2Rewards && SocialMn2Rewards.initSocialChatPanel) {
+                        SocialMn2Rewards.initSocialChatPanel({
+                            feedEl: document.getElementById('social-chat-feed'),
+                            inputEl: document.getElementById('social-chat-message'),
+                            sendBtn: document.getElementById('social-chat-send-btn'),
+                            aiToggleEl: document.getElementById('social-chat-ai-reply'),
+                            userId: userId,
+                            intervalMs: 15000,
+                        });
+                    }
+                }
+            });
             
            // Use unified point counters for A+ accuracy
            if (window.unifiedPointCounters) {
@@ -4888,6 +5048,7 @@
     </script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
+    <script src="/static/js/social-mn2-rewards.js?v=20260618f"></script>
     <script src="/static/js/theme-toggle.js"></script>
     <script src="/static/js/game-timeline.js"></script>
     <script src="/static/js/unified-point-counters.js"></script>
@@ -5514,6 +5675,8 @@
     </script>
 
     <script src="/static/js/game-battle-bridge.js?v=20260420" defer></script>
+    <script src="/static/js/game-tabulator.js?v=20260618" defer></script>
+    <script src="/static/js/game-level-crypto.js?v=20260618" defer></script>
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
@@ -5524,5 +5687,6 @@
         }
     });
     </script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="game" defer></script>
 </body>
 </html>

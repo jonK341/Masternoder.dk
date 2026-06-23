@@ -1,0 +1,128 @@
+"""
+Copy-trading mirror — followers scale leader agent staking actions.
+"""
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+_BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_FOLLOWS = os.path.join(_BASE, "data", "mn2_copy_trading.json")
+_LOG = os.path.join(_BASE, "logs", "mn2_copy_trading.jsonl")
+
+
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _load() -> Dict[str, Any]:
+    if not os.path.isfile(_FOLLOWS):
+        return {"followers": {}}
+    try:
+        with open(_FOLLOWS, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {"followers": {}}
+    except Exception:
+        return {"followers": {}}
+
+
+def _save(data: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_FOLLOWS), exist_ok=True)
+    tmp = _FOLLOWS + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, _FOLLOWS)
+
+
+def _append(row: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_LOG), exist_ok=True)
+    try:
+        with open(_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def list_followers(leader_agent_id: Optional[str] = None) -> Dict[str, Any]:
+    data = _load()
+    followers = data.get("followers") or {}
+    if leader_agent_id:
+        out = {k: v for k, v in followers.items() if (v or {}).get("leader_agent_id") == leader_agent_id}
+        return {"success": True, "followers": out, "count": len(out)}
+    return {"success": True, "followers": followers, "count": len(followers)}
+
+
+def upsert_follower(
+    follower_user_id: str,
+    leader_agent_id: str,
+    *,
+    scale: float = 0.25,
+    max_mn2_per_step: float = 1.0,
+    enabled: bool = True,
+) -> Dict[str, Any]:
+    uid = str(follower_user_id or "").strip()
+    lid = str(leader_agent_id or "").strip()
+    if not uid or not lid:
+        return {"success": False, "error": "follower_user_id and leader_agent_id required"}
+    data = _load()
+    followers = data.setdefault("followers", {})
+    followers[uid] = {
+        "follower_user_id": uid,
+        "leader_agent_id": lid,
+        "scale": max(0.01, min(float(scale or 0.25), 1.0)),
+        "max_mn2_per_step": max(0.0, float(max_mn2_per_step or 0)),
+        "enabled": bool(enabled),
+        "updated_at": _iso(),
+    }
+    _save(data)
+    return {"success": True, "follower": followers[uid]}
+
+
+def mirror_agent_run(leader_agent_id: str, leader_user_id: str, actions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Mirror stake/unstake steps from a leader agent run onto followers."""
+    data = _load()
+    followers = data.get("followers") or {}
+    mirrored: List[Dict[str, Any]] = []
+    stake_actions = [a for a in actions if a.get("action") in ("stake", "unstake") and not a.get("skipped")]
+    if not stake_actions:
+        return {"success": True, "mirrored": 0, "results": []}
+
+    import backend.services.mn2_staking_service as staking
+
+    for uid, cfg in followers.items():
+        if not isinstance(cfg, dict) or not cfg.get("enabled"):
+            continue
+        if cfg.get("leader_agent_id") != leader_agent_id:
+            continue
+        scale = float(cfg.get("scale") or 0.25)
+        cap = float(cfg.get("max_mn2_per_step") or 0)
+        for act in stake_actions:
+            amt = float(act.get("amount") or 0)
+            if amt <= 0:
+                res = act.get("result") or {}
+                amt = float(res.get("amount") or 0)
+            if amt <= 0:
+                continue
+            scaled = round(amt * scale, 8)
+            if cap > 0:
+                scaled = min(scaled, cap)
+            if scaled <= 0:
+                continue
+            try:
+                from backend.services.agent_kill_switch import check_action
+                halt = check_action("copy_trade", agent_id=leader_agent_id)
+                if not halt.get("allowed"):
+                    mirrored.append({"follower": uid, "skipped": halt.get("reason")})
+                    continue
+            except ImportError:
+                pass
+            if act.get("action") == "stake":
+                out = staking.stake(uid, scaled)
+            else:
+                out = staking.unstake(uid, scaled)
+            row = {"follower": uid, "action": act.get("action"), "amount": scaled, "result": out}
+            mirrored.append(row)
+            _append({"ts": _iso(), "leader_agent_id": leader_agent_id, **row})
+    return {"success": True, "mirrored": len(mirrored), "results": mirrored}
