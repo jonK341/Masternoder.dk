@@ -32,6 +32,8 @@ Uses **depends** by default (bundled OpenSSL — avoids `unsupported SSL version
 
 Fast path (may fail on Ubuntu 22.04+): add `--fast`
 
+Auto-retry when depends boost fails: add `--auto-fast` (retries once with system libs).
+
 **WSL or Linux build host** — needs **~2 GB RAM**, `git`, `build-essential`:
 
 ```bash
@@ -110,6 +112,7 @@ masternoder2d.tar.gz
 | Error | Fix |
 |--------|-----|
 | `unsupported SSL version` | Do not build on Windows; use remote script (depends build). Avoid `--fast`. |
+| `Failed to build Boost.Build engine` / `boost...stamp_configured` | depends boost bootstrap failed on host. Retry: `python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft` or use `--auto-fast`. |
 | `undefined reference to arc4random_addrandom` | `libbsd-dev` + `-lbsd` (in build script). |
 | `undefined reference to __gmpz_*` | `libgmp-dev` + `-lgmp`; do not pass `LIBS=` on `make` cmdline (overrides Makefile). |
 | `Cannot --apply until v1.2.3.0 release asset exists` | Complete build + publish steps first. |
