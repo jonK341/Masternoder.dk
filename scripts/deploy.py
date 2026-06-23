@@ -729,7 +729,7 @@ def run_server_prune(server_pass=None, with_disk=False):
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         os.chdir(base)
 
-        ssh, auth_method = connect_deploy_ssh(server_pass)
+        ssh, auth_method, _ = connect_deploy_ssh(server_pass)
         sftp = ssh.open_sftp()
         print(f"  [OK] Connected ({auth_method})")
         print()
@@ -818,7 +818,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
 
         step = "[1/2]" if upload_only else "[1/4]"
         print(f"{step} Connecting...")
-        ssh, auth_method = connect_deploy_ssh(server_pass)
+        ssh, auth_method, _ = connect_deploy_ssh(server_pass)
         sftp = ssh.open_sftp()
         print(f"  [OK] Connected ({auth_method})")
         print()

@@ -577,7 +577,7 @@ def deploy(upload_only=False, server_pass=None):
     try:
         # Connect
         print("[1/5] Connecting...")
-        ssh, auth_method = connect_deploy_ssh(server_pass)
+        ssh, auth_method, _ = connect_deploy_ssh(server_pass)
         print(f"  [OK] Connected ({auth_method})")
         print()
 
