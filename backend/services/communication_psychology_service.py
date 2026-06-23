@@ -287,6 +287,13 @@ def study_theory(user_id: str, theory_id: str) -> Dict[str, Any]:
     except Exception:
         pass
 
+    crypto_reward = {}
+    try:
+        from backend.services.compendium_crypto_rewards_service import award_theory_study_reward
+        crypto_reward = award_theory_study_reward(user_id, theory_id)
+    except Exception:
+        pass
+
     return {
         "success": True,
         "already_unlocked": False,
@@ -295,6 +302,7 @@ def study_theory(user_id: str, theory_id: str) -> Dict[str, Any]:
         "theory_name": theory.get("name"),
         "points_awarded": point_value,
         "unlocked_count": len(progress["unlocked_theory_ids"]),
+        "crypto_reward": crypto_reward,
     }
 
 
