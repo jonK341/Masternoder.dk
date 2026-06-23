@@ -159,7 +159,12 @@ def social_index():
 @social_page_bp.route('/social-monitor/', methods=['GET'])
 @social_page_bp.route('/social-monitor/index.html', methods=['GET'])
 def social_monitor_index():
-    """Social network monitor page."""
+    """Social network monitor — owner cockpit tool (not public portal)."""
+    from backend.services.ops_auth_service import require_ops_redirect
+
+    denied = require_ops_redirect("tools-social")
+    if denied is not None:
+        return denied
     try:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         monitor_path = os.path.join(base_path, 'social-monitor', 'index.html')

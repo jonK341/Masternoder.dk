@@ -1,6 +1,9 @@
 """
 All Page Routes
 Generic routes for serving HTML pages from project root (static/, index.html, generator/, etc.)
+
+Owner-only HTML (debugger, master_control, agents_control) is removed from PAGES and
+served only after ops auth; otherwise visitors redirect to /owner#tools-*.
 """
 from flask import Blueprint, send_from_directory, redirect, request, render_template, make_response
 import os
@@ -38,7 +41,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
+    'gallery', 'battle', 'shop', 'chat',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
@@ -48,6 +51,7 @@ PAGES = [
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
     'market', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'podcast',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
@@ -238,9 +242,13 @@ def casino_page():
 @all_page_bp.route('/debugger/flask/', methods=['GET'], endpoint='debugger_flask_template_slash')
 def debugger_from_flask_template():
     """
-    Same Production Debugger UI as /debugger, served via Flask's template loader
-    (backend/templates/debugger/index.html — kept in sync with root debugger/index.html).
+    Same Production Debugger UI as /debugger — owner-gated.
     """
+    from backend.services.ops_auth_service import require_ops_redirect
+
+    denied = require_ops_redirect("tools-debugger")
+    if denied is not None:
+        return denied
     try:
         body = render_template('debugger/index.html')
         resp = make_response(body)
@@ -379,50 +387,61 @@ def compendium_hunters_rulebook():
     return "Page not found", 404
 
 
-# Nested path: dashboard/master_control
-@all_page_bp.route('/dashboard/master_control', methods=['GET'])
-@all_page_bp.route('/dashboard/master_control/', methods=['GET'])
-@all_page_bp.route('/dashboard/master_control/index.html', methods=['GET'])
-def dashboard_master_control():
-    """Serve dashboard/master_control/index.html at project root."""
+# Nested path: dashboard/master_control — owner-gated (portal consolidation)
+def _serve_owner_gated_html(rel_path: str, anchor: str):
+    """Serve HTML when ops-authenticated; otherwise redirect to Owner Cockpit."""
+    from backend.services.ops_auth_service import require_ops_redirect
+
+    denied = require_ops_redirect(anchor)
+    if denied is not None:
+        return denied
     try:
         base_path = _base_path()
-        page_path = os.path.join(base_path, 'dashboard', 'master_control', 'index.html')
+        page_path = os.path.join(base_path, *rel_path.split("/"))
         if os.path.exists(page_path):
-            with open(page_path, 'r', encoding='utf-8') as f:
+            with open(page_path, "r", encoding="utf-8") as f:
                 content = f.read()
             headers = {
-                'Content-Type': 'text/html; charset=utf-8',
-                'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
-                'ETag': CONTENT_VERSION,
-                'X-Content-Version': CONTENT_VERSION,
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                "X-Owner-Gated": "1",
+                "X-Content-Version": CONTENT_VERSION,
             }
             return content, 200, headers
     except Exception:
         pass
-    return (
-        '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Master Control - Not Found</title></head>'
-        '<body><h1>Master Control</h1><p>Page file not found.</p></body></html>',
-        200,
-        {'Content-Type': 'text/html; charset=utf-8'},
-    )
+    return redirect(f"/owner#{anchor}", code=302)
+
+
+@all_page_bp.route("/debugger", methods=["GET"])
+@all_page_bp.route("/debugger/", methods=["GET"])
+@all_page_bp.route("/debugger/index.html", methods=["GET"])
+def debugger_page_gated():
+    """Production debugger — owner cockpit tool, not public portal nav."""
+    return _serve_owner_gated_html("debugger/index.html", "tools-debugger")
+
+
+@all_page_bp.route('/dashboard/master_control', methods=['GET'])
+@all_page_bp.route('/dashboard/master_control/', methods=['GET'])
+@all_page_bp.route('/dashboard/master_control/index.html', methods=['GET'])
+def dashboard_master_control():
+    """Master control board — owner cockpit tool."""
+    return _serve_owner_gated_html("dashboard/master_control/index.html", "tools-master")
 
 
 @all_page_bp.route('/dashboard/agents_control', methods=['GET'])
 @all_page_bp.route('/dashboard/agents_control/', methods=['GET'])
 @all_page_bp.route('/dashboard/agents_control/index.html', methods=['GET'])
 def dashboard_agents_control():
-    """Serve dashboard/agents_control/index.html."""
-    try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'dashboard', 'agents_control', 'index.html')
-        if os.path.exists(page_path):
-            with open(page_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return content, 200, {'Content-Type': 'text/html; charset=utf-8', 'X-Content-Version': CONTENT_VERSION}
-    except Exception:
-        pass
-    return '<html><body><h1>Agents Control</h1><p>Not found</p></body></html>', 404
+    """Agents control board — owner cockpit tool."""
+    return _serve_owner_gated_html("dashboard/agents_control/index.html", "agents")
+
+
+@all_page_bp.route("/dashboard/point_control_board.html", methods=["GET"])
+@all_page_bp.route("/dashboard/point_control_board", methods=["GET"])
+def dashboard_point_control_board():
+    """Point system control board — owner cockpit tool."""
+    return _serve_owner_gated_html("dashboard/point_control_board.html", "tools-points")
 
 
 # Agents page — dedicated route to avoid endpoint-naming conflicts with create_page_route loop

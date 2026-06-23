@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Cockpit — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        body {
+            background: var(--bg-primary, #1e1e2e);
+            color: var(--text-primary, #fff);
+            min-height: 100vh;
+            padding: 90px 20px 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 { margin-bottom: 0.25rem; }
+        .subtitle { color: var(--text-muted, rgba(255,255,255,0.7)); margin-bottom: 1.5rem; }
+        .health-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .health-pill {
+            background: var(--bg-card, rgba(40,40,55,0.95));
+            border: 1px solid var(--border-primary, rgba(255,255,255,0.3));
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .health-pill .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .health-pill .value { font-size: 1.1rem; font-weight: 600; margin-top: 4px; }
+        .health-pill.ok .value { color: var(--primary, #00ff88); }
+        .health-pill.warn .value { color: var(--warning, #ffaa00); }
+        .health-pill.bad .value { color: var(--error, #ff3366); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--bg-card, rgba(40,40,55,0.95));
+            border: 1px solid var(--border-secondary, rgba(0,255,136,0.5));
+            border-radius: 14px;
+            padding: 20px;
+        }
+        .card h2 { font-size: 1.25rem; margin-bottom: 12px; color: var(--primary, #00ff88); }
+        .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; }
+        .stat-row:last-child { border-bottom: none; }
+        .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        button, .btn-link {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-secondary, rgba(0,255,136,0.5));
+            background: rgba(0,255,136,0.12);
+            color: var(--primary, #00ff88);
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover, .btn-link:hover { background: rgba(0,255,136,0.22); }
+        button.danger { border-color: rgba(255,51,102,0.6); background: rgba(255,51,102,0.12); color: #ff6699; }
+        button.danger:hover { background: rgba(255,51,102,0.22); }
+        .provider-list { max-height: 200px; overflow-y: auto; font-size: 0.8rem; }
+        .provider-item { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .audit-list { font-size: 0.75rem; max-height: 160px; overflow-y: auto; color: var(--text-tertiary); }
+        .audit-item { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        #auth-gate {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        #auth-gate.hidden { display: none; }
+        .auth-box {
+            background: var(--bg-card); padding: 28px; border-radius: 14px;
+            border: 1px solid var(--border-secondary); max-width: 360px; width: 90%;
+        }
+        .auth-box input { width: 100%; padding: 10px; margin: 12px 0; border-radius: 8px; border: 1px solid #444; background: #1a1a28; color: #fff; }
+        .msg { font-size: 0.8rem; color: var(--error); min-height: 1.2em; }
+        .links { margin-top: 10px; font-size: 0.8rem; }
+        .links a { color: var(--secondary, #00d4ff); margin-right: 12px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media (max-width: 1000px) { .grid-3 { grid-template-columns: 1fr; } }
+        .mini-list { max-height: 140px; overflow-y: auto; font-size: 0.78rem; }
+        .mini-item { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .tool-group { margin-bottom: 14px; }
+        .tool-group h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px; }
+        .tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.82rem; }
+        .tool-row:last-child { border-bottom: none; }
+        .tool-name { flex: 1 1 160px; min-width: 0; }
+        .tool-desc { display: block; font-size: 0.72rem; color: var(--text-muted); }
+        .tool-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tool-badge.ok { background: rgba(0,255,136,0.15); color: var(--primary); }
+        .tool-badge.off { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+        .tool-output { font-size: 0.72rem; max-height: 180px; overflow: auto; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.25); border-radius: 8px; white-space: pre-wrap; }
+        button.tool-btn { padding: 4px 10px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div id="auth-gate">
+        <div class="auth-box">
+            <h2>Owner Cockpit</h2>
+            <p class="subtitle" style="margin-bottom: 8px;">Ops secret required</p>
+            <input type="password" id="auth-secret" placeholder="ADMIN_OPS_SECRET" autocomplete="off">
+            <div class="msg" id="auth-msg"></div>
+            <button type="button" id="auth-btn" style="width:100%">Unlock</button>
+        </div>
+    </div>
+
+    <h1>Owner Cockpit</h1>
+    <p class="subtitle">Crypto, model, user, agent &amp; tools — private ops surface</p>
+
+    <div class="health-strip" id="health-strip">
+        <div class="health-pill" id="hp-app"><div class="label">App</div><div class="value">—</div></div>
+        <div class="health-pill" id="hp-gen"><div class="label">Generation</div><div class="value">—</div></div>
+        <div class="health-pill" id="hp-agents"><div class="label">Agents</div><div class="value">—</div></div>
+        <div class="health-pill" id="hp-worker"><div class="label">Worker</div><div class="value">—</div></div>
+        <div class="health-pill" id="hp-cons"><div class="label">Conservation</div><div class="value">—</div></div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom: 20px;">
+        <section class="card" id="crypto-card">
+            <h2>Crypto Controllers</h2>
+            <div id="crypto-stats"></div>
+            <div class="btn-row">
+                <button type="button" id="btn-crypto-recheck">Recheck conservation</button>
+                <button type="button" class="danger" id="btn-treasury-scan">Scan treasury</button>
+                <button type="button" id="btn-crypto-refresh">Refresh</button>
+            </div>
+            <div class="links">
+                <a href="/api/mn2/staking/proof-of-reserves" target="_blank" rel="noopener">Proof of reserves</a>
+                <a href="/api/agents/treasury/address" target="_blank" rel="noopener">Treasury API</a>
+            </div>
+        </section>
+
+        <section class="card" id="models-card">
+            <h2>Model Controllers</h2>
+            <div id="models-stats"></div>
+            <div class="provider-list mini-list" id="models-provider-list"></div>
+            <div class="btn-row">
+                <button type="button" id="btn-models-refresh">Refresh</button>
+            </div>
+            <div class="links">
+                <a href="/api/ai/providers" target="_blank" rel="noopener">LLM API</a>
+                <a href="/api/ai/video-providers" target="_blank" rel="noopener">Video providers</a>
+            </div>
+        </section>
+
+        <section class="card" id="users-card">
+            <h2>User Controllers</h2>
+            <div id="users-stats"></div>
+            <div class="mini-list" id="users-sample"></div>
+            <div class="btn-row">
+                <button type="button" id="btn-users-refresh">Refresh</button>
+            </div>
+            <div class="links">
+                <a href="/api/customers/stats" target="_blank" rel="noopener">Customer stats</a>
+                <a href="/api/auth/providers" target="_blank" rel="noopener">OAuth providers</a>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid-2">
+        <section class="card" id="agent-card">
+            <h2>Agent Controllers</h2>
+            <div id="agent-stats"></div>
+            <div class="btn-row">
+                <button type="button" class="danger" id="btn-halt">Global halt</button>
+                <button type="button" id="btn-resume">Resume agents</button>
+                <button type="button" id="btn-agent-refresh">Refresh</button>
+            </div>
+            <div class="links">
+                <a href="/dashboard/agents_control" class="btn-link">Full agents control</a>
+                <a href="/api/agents/cron/presets" target="_blank" rel="noopener">Cron presets</a>
+            </div>
+        </section>
+
+        <section class="card" id="ai-card">
+            <h2>AI Controllers</h2>
+            <div id="ai-stats"></div>
+            <div class="provider-list" id="provider-list"></div>
+            <div class="btn-row">
+                <button type="button" id="btn-ai-refresh">Refresh</button>
+            </div>
+            <div class="links">
+                <a href="/api/ai/providers" target="_blank" rel="noopener">Provider API</a>
+                <a href="/api/agents/capability-map" target="_blank" rel="noopener">Capability map</a>
+            </div>
+        </section>
+    </div>
+
+    <section class="card" id="tools-card" style="margin-top: 20px;">
+        <h2>Tools Controllers</h2>
+        <p class="subtitle" style="margin-bottom: 12px; font-size: 0.85rem;">Owner ops tooling — diagnostics, registry, audit; legacy portal surfaces linked below</p>
+        <div class="btn-row" style="margin-bottom: 14px;">
+            <a href="/debugger" class="btn-link" id="tools-debugger">Production debugger</a>
+            <a href="/dashboard/master_control" class="btn-link" id="tools-master">Master control</a>
+            <a href="/dashboard/agents_control" class="btn-link" id="tools-agents-board">Agents control board</a>
+            <a href="/api/" class="btn-link" id="tools-api" target="_blank" rel="noopener">API monitor</a>
+            <a href="/dashboard/point_control_board.html" class="btn-link" id="tools-points">Point control board</a>
+            <a href="/social-monitor" class="btn-link" id="tools-social">Social monitor</a>
+        </div>
+        <div id="tools-groups"></div>
+        <div class="tool-output" id="tools-output" hidden></div>
+        <div class="btn-row">
+            <button type="button" id="btn-tools-refresh">Refresh</button>
+            <button type="button" id="btn-tools-audit">Audit tail</button>
+            <button type="button" id="btn-tools-404">404 tail</button>
+            <button type="button" id="btn-tools-ri">Register-intelligence audit</button>
+        </div>
+    </section>
+
+    <section class="card" style="margin-top: 20px;">
+        <h2>Recent audit</h2>
+        <div class="audit-list" id="audit-list">Loading…</div>
+        <div class="btn-row" style="margin-top: 12px;">
+            <button type="button" id="btn-logout">Logout</button>
+        </div>
+    </section>
+
+    <script>window.MN_SKIP_NAV_TOOLBAR = true;</script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+    const $ = (id) => document.getElementById(id);
+    let opsHdr = {};
+
+    function setPill(id, text, state) {
+        const el = $(id);
+        if (!el) return;
+        el.classList.remove('ok', 'warn', 'bad');
+        if (state) el.classList.add(state);
+        el.querySelector('.value').textContent = text;
+    }
+
+    function statRow(label, value) {
+        return `<div class="stat-row"><span>${label}</span><strong>${value ?? '—'}</strong></div>`;
+    }
+
+    async function api(path, opts = {}) {
+        const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', ...opsHdr, ...(opts.headers || {}) } });
+        if (r.status === 403) { showGate(); throw new Error('unauthorized'); }
+        return r.json();
+    }
+
+    function showGate() { $('auth-gate').classList.remove('hidden'); }
+    function hideGate() { $('auth-gate').classList.add('hidden'); }
+
+    async function checkSession() {
+        const d = await fetch('/owner/api/session').then(r => r.json());
+        if (d.authenticated) { hideGate(); return true; }
+        showGate();
+        return false;
+    }
+
+    async function login() {
+        const secret = $('auth-secret').value.trim();
+        $('auth-msg').textContent = '';
+        const r = await fetch('/owner/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ secret }),
+        });
+        const d = await r.json();
+        if (!d.success) { $('auth-msg').textContent = 'Invalid secret'; return; }
+        opsHdr = secret ? { 'X-Ops-Secret': secret } : {};
+        hideGate();
+        refreshAll();
+    }
+
+    async function loadHealth() {
+        const d = await api('/owner/api/health');
+        const h = d.health || {};
+        setPill('hp-app', h.app?.status || 'healthy', 'ok');
+        const gen = h.generation || {};
+        setPill('hp-gen', gen.ready ? 'Ready' : (gen.message || 'Down').slice(0, 24), gen.ready ? 'ok' : 'bad');
+        const halted = h.agents_halted;
+        setPill('hp-agents', halted ? 'HALTED' : 'Running', halted ? 'bad' : 'ok');
+        const wp = h.worker_pressure || {};
+        const score = wp.score != null ? Number(wp.score).toFixed(2) : '—';
+        setPill('hp-worker', score, Number(wp.score) > 0.7 ? 'warn' : 'ok');
+        const cg = h.conservation || {};
+        setPill('hp-cons', cg.verdict || (cg.ok ? 'ok' : '—'), cg.ok ? 'ok' : 'warn');
+        const audit = d.audit || [];
+        $('audit-list').innerHTML = audit.length
+            ? audit.map(a => `<div class="audit-item"><strong>${a.action}</strong> · ${a.ts || ''} · ${a.actor || ''}</div>`).join('')
+            : '<div class="audit-item">No audit entries yet</div>';
+    }
+
+    async function loadAgents() {
+        const d = await api('/owner/api/agents');
+        const a = d.agents || {};
+        const ks = a.kill_switch || {};
+        const tre = a.treasury || {};
+        const cron = a.last_cron || {};
+        const cust = a.customer_aggregator || {};
+        $('agent-stats').innerHTML = [
+            statRow('Global halt', ks.global_halt ? 'YES' : 'no'),
+            statRow('Treasury pool MN2', a.treasury_pool_mn2),
+            statRow('Trader wallets', (a.wallets || []).length),
+            statRow('Strategies', (a.strategies || []).length),
+            statRow('Last cron', cron.at || '—'),
+            statRow('Customers indexed', cust.total ?? cust.customer_count ?? '—'),
+        ].join('');
+    }
+
+    async function loadCrypto() {
+        const d = await api('/owner/api/crypto');
+        const c = d.crypto || {};
+        const cg = c.conservation || {};
+        const st = c.staking || {};
+        const por = c.proof_of_reserves || {};
+        const tre = c.treasury || {};
+        const mon = c.monetization || {};
+        const price = c.mn2_price || {};
+        $('crypto-stats').innerHTML = [
+            statRow('Conservation', cg.verdict || (cg.ok ? 'ok' : '—')),
+            statRow('MN2 price', price.mn2_usd_price != null ? `$${Number(price.mn2_usd_price).toFixed(6)}` : '—'),
+            statRow('Staking APR', st.apr_percent != null ? `${st.apr_percent}%` : '—'),
+            statRow('PoR coverage', por.coverage_ratio != null ? por.coverage_ratio : '—'),
+            statRow('Treasury pool', c.treasury?.treasury_pool_mn2 ?? tre.treasury_pool_mn2 ?? '—'),
+            statRow('PayPal', mon.paypal_configured ? (mon.paypal_api_reachable ? 'live' : 'configured') : 'off'),
+        ].join('');
+    }
+
+    async function loadModels() {
+        const d = await api('/owner/api/models');
+        const m = d.models || {};
+        const sum = m.summary || {};
+        const gen = m.generation || {};
+        const env = m.env_models || {};
+        $('models-stats').innerHTML = [
+            statRow('LLM available', `${sum.llm_available ?? 0} / ${sum.llm_configured ?? 0}`),
+            statRow('Video providers', `${sum.video_providers_available ?? 0} / ${sum.video_providers_total ?? 0}`),
+            statRow('Generation', gen.ready ? 'Ready' : (gen.message || 'Not ready')),
+            statRow('OpenAI model', env.OPENAI_MODEL || 'default'),
+            statRow('HF token', env.HF_TOKEN ? 'set' : 'not set'),
+        ].join('');
+        const llm = m.llm_providers || [];
+        const video = m.video_providers || [];
+        const rows = [
+            ...llm.map(p => {
+                const reset = p.circuit_open
+                    ? ` <button type="button" data-model-reset="${p.provider}" style="padding:2px 6px;font-size:0.65rem">Reset</button>`
+                    : '';
+                return `<div class="mini-item">${p.label || p.provider}: ${p.default_model || '—'}${reset}</div>`;
+            }),
+            ...video.map(p => `<div class="mini-item">${p.name}: ${p.available ? 'up' : 'down'}</div>`),
+        ];
+        $('models-provider-list').innerHTML = rows.join('') || '<div class="mini-item">No providers</div>';
+        $('models-provider-list').querySelectorAll('[data-model-reset]').forEach(btn => {
+            btn.onclick = async () => {
+                if (!confirm(`Reset circuit for ${btn.dataset.modelReset}?`)) return;
+                await api('/owner/api/models/providers/reset', {
+                    method: 'POST',
+                    body: JSON.stringify({ provider: btn.dataset.modelReset, confirm: true }),
+                });
+                loadModels();
+            };
+        });
+    }
+
+    async function loadUsers() {
+        const d = await api('/owner/api/users');
+        const u = d.users || {};
+        const cust = u.customer_aggregator || {};
+        const mod = u.moderation || {};
+        const oauth = (u.oauth || {}).providers || [];
+        const oauthOn = oauth.filter(p => p.configured || p.enabled).length;
+        $('users-stats').innerHTML = [
+            statRow('Total customers', cust.total ?? '—'),
+            statRow('Active today', cust.active_today ?? '—'),
+            statRow('Earn-eligible', u.earn_eligible_users ?? '—'),
+            statRow('With MN2', cust.with_mn2 ?? '—'),
+            statRow('OAuth configured', `${oauthOn} / ${oauth.length || 4}`),
+            statRow('Moderation reports', mod.reports ?? '—'),
+        ].join('');
+        const sample = u.recent_customers || [];
+        $('users-sample').innerHTML = sample.length
+            ? sample.map(c => `<div class="mini-item">${c.user_id}: L${c.level} · ${Number(c.mn2_balance || 0).toFixed(2)} MN2</div>`).join('')
+            : '<div class="mini-item">No customers indexed</div>';
+    }
+
+    async function loadAi() {
+        const d = await api('/owner/api/ai');
+        const ai = d.ai || {};
+        const sum = ai.summary || {};
+        const q = ai.video_queue || {};
+        const gen = ai.generation || {};
+        const wp = ai.worker_pressure || {};
+        $('ai-stats').innerHTML = [
+            statRow('LLM providers', `${sum.available ?? 0} / ${sum.configured ?? 0} configured`),
+            statRow('Generation', gen.ready ? 'Ready' : (gen.message || 'Not ready')),
+            statRow('Video queue', `${q.queued ?? 0} queued · ${q.active ?? 0} active`),
+            statRow('Worker pressure', wp.recommendation || wp.score || '—'),
+            statRow('Last LLM snapshot', (ai.last_llm_snapshot || {}).at || '—'),
+        ].join('');
+        const providers = ai.providers || [];
+        $('provider-list').innerHTML = providers.map(p => {
+            const st = p.available ? 'ok' : (p.configured ? 'warn' : '');
+            const reset = p.circuit_open
+                ? ` <button type="button" data-reset="${p.provider}" style="padding:2px 8px;font-size:0.7rem">Reset circuit</button>`
+                : '';
+            return `<div class="provider-item">${p.label || p.provider}: ${p.available ? 'up' : (p.configured ? 'circuit/ down' : 'not configured')}${reset}</div>`;
+        }).join('');
+        $('provider-list').querySelectorAll('[data-reset]').forEach(btn => {
+            btn.onclick = async () => {
+                await api('/owner/api/ai/providers/reset', { method: 'POST', body: JSON.stringify({ provider: btn.dataset.reset }) });
+                loadAi();
+            };
+        });
+    }
+
+    async function loadTools() {
+        const d = await api('/owner/api/tools');
+        const snap = d.tools || {};
+        const cats = snap.categories || {};
+        const tools = snap.tools || [];
+        const byCat = {};
+        tools.forEach(t => {
+            const c = t.category || 'other';
+            (byCat[c] = byCat[c] || []).push(t);
+        });
+        const order = ['diagnostics', 'registry', 'ops', 'content', 'deploy'];
+        $('tools-groups').innerHTML = order.filter(c => byCat[c]).map(cat => {
+            const rows = byCat[cat].map(t => {
+                const badge = t.status === 'available'
+                    ? '<span class="tool-badge ok">up</span>'
+                    : '<span class="tool-badge off">down</span>';
+                const link = t.href && !t.dangerous
+                    ? `<a href="${t.href}" class="btn-link tool-btn" target="_blank" rel="noopener">Open</a>`
+                    : (t.href && t.dangerous
+                        ? `<a href="${t.href}" class="btn-link tool-btn danger" target="_blank" rel="noopener" onclick="return confirm('Write/mutation tool — open anyway?')">Open</a>`
+                        : '');
+                const quick = t.quick_run
+                    ? `<button type="button" class="tool-btn" data-quick="${t.quick_run}">Run</button>`
+                    : '';
+                return `<div class="tool-row">
+                    <div class="tool-name"><strong>${t.name}</strong><span class="tool-desc">${t.description || ''}</span></div>
+                    ${badge} ${link} ${quick}
+                </div>`;
+            }).join('');
+            return `<div class="tool-group"><h3>${cats[cat] || cat}</h3>${rows}</div>`;
+        }).join('');
+        $('tools-groups').querySelectorAll('[data-quick]').forEach(btn => {
+            btn.onclick = () => runToolQuick(btn.dataset.quick);
+        });
+    }
+
+    function showToolOutput(data) {
+        const el = $('tools-output');
+        el.hidden = false;
+        el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    async function runToolQuick(action) {
+        $('tools-output').hidden = true;
+        const d = await api(`/owner/api/tools/run/${action}?limit=15`);
+        if (action === 'register_intelligence') {
+            showToolOutput(d.report || d);
+        } else {
+            const rows = d.rows || [];
+            showToolOutput(rows.length ? rows : 'No rows');
+        }
+    }
+
+    async function refreshAll() {
+        try {
+            await Promise.all([loadHealth(), loadCrypto(), loadModels(), loadUsers(), loadAgents(), loadAi(), loadTools()]);
+        } catch (e) { /* gate shown */ }
+    }
+
+    $('auth-btn').onclick = login;
+    $('auth-secret').onkeydown = (e) => { if (e.key === 'Enter') login(); };
+    $('btn-halt').onclick = () => api('/owner/api/agents/halt', { method: 'POST', body: '{}' }).then(refreshAll);
+    $('btn-resume').onclick = () => api('/owner/api/agents/resume', { method: 'POST', body: '{}' }).then(refreshAll);
+    $('btn-agent-refresh').onclick = loadAgents;
+    $('btn-ai-refresh').onclick = loadAi;
+    $('btn-crypto-refresh').onclick = loadCrypto;
+    $('btn-models-refresh').onclick = loadModels;
+    $('btn-users-refresh').onclick = loadUsers;
+    $('btn-crypto-recheck').onclick = () => api('/owner/api/crypto/conservation/recheck', { method: 'POST', body: '{}' }).then(refreshAll);
+    $('btn-treasury-scan').onclick = () => {
+        if (!confirm('Scan on-chain treasury deposits and sync ledger?')) return;
+        api('/owner/api/crypto/treasury/scan', { method: 'POST', body: JSON.stringify({ confirm: true }) }).then(refreshAll);
+    };
+    $('btn-tools-refresh').onclick = loadTools;
+    $('btn-tools-audit').onclick = () => runToolQuick('audit_tail');
+    $('btn-tools-404').onclick = () => runToolQuick('404_tail');
+    $('btn-tools-ri').onclick = () => {
+        if (!confirm('Run register-intelligence audit? (read-only, may take a few seconds)')) return;
+        runToolQuick('register_intelligence');
+    };
+    $('btn-logout').onclick = () => fetch('/owner/api/logout', { method: 'POST' }).then(() => { opsHdr = {}; showGate(); });
+
+    function scrollToolsAnchor() {
+        const hash = (location.hash || '').replace(/^#/, '');
+        if (!hash) return;
+        const el = document.getElementById(hash) || (hash.startsWith('tools') ? $('tools-card') : null);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    checkSession().then(ok => { if (ok) refreshAll(); scrollToolsAnchor(); });
+    window.addEventListener('hashchange', scrollToolsAnchor);
+    setInterval(() => { if (!$('auth-gate').classList.contains('hidden')) return; refreshAll(); }, 30000);
+    </script>
+</body>
+</html>

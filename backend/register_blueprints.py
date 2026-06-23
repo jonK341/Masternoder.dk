@@ -362,6 +362,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP point_control_board: {e}")
     try:
+        from backend.routes.owner_panel_routes import owner_panel_bp
+        if "owner_panel" not in app.blueprints:
+            app.register_blueprint(owner_panel_bp)
+            n += 1
+            print("  [OK] Registered owner_panel blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP owner_panel: {e}")
+    try:
         from backend.routes.agent_admin_routes import agent_admin_bp
         if "agent_admin" not in app.blueprints:
             app.register_blueprint(agent_admin_bp)
@@ -1644,6 +1652,17 @@ def register_all_blueprints(app):
     except Exception as e:
         print(f"  [ERROR] Error registering point_control_board: {e}")
 
+    # Owner Cockpit (/owner) — solo-owner ops panel + gated tool APIs
+    try:
+        from backend.routes.owner_panel_routes import owner_panel_bp
+        if "owner_panel" not in app.blueprints:
+            app.register_blueprint(owner_panel_bp)
+            registered_count += 1
+            print("  [OK] Registered owner_panel blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import owner_panel: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering owner_panel: {e}")
     try:
         from backend.routes.agent_admin_routes import agent_admin_bp
         if "agent_admin" not in app.blueprints:

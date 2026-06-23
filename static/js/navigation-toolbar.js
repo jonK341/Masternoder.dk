@@ -17,6 +17,7 @@
         game: APP_BASE + '/static/img/nav/game.svg',
         casino: APP_BASE + '/static/img/nav/casino.svg',
         generator: APP_BASE + '/static/img/agents/content_generator_agent.svg',
+        podcast: APP_BASE + '/static/img/nav/news.svg',
         quests: APP_BASE + '/static/img/agents/workflow_agent.svg',
         agents: APP_BASE + '/static/img/agents/ai_intelligence_agent.svg',
         agent_support: APP_BASE + '/static/img/agents/master_fix_agent.svg',
@@ -55,6 +56,7 @@
             { name: 'Command Center', icon: '🎯', url: APP_BASE + '/command-center', id: 'command-center', title: 'Battle, trophies, game, quests — unified hub' },
             { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
+            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
             { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
@@ -66,10 +68,8 @@
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
             { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
             { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
-            { name: 'Agents', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
             { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' },
             { name: 'Chat', icon: '💬', url: APP_BASE + '/lab#discussion', id: 'chat', title: 'Lab discussion room (was chat)' },
-            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab' },
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
@@ -221,6 +221,10 @@
      * Initialize navigation toolbar
      */
     function initToolbar() {
+        // Owner cockpit and other private surfaces skip the public portal nav
+        if (typeof window !== 'undefined' && window.MN_SKIP_NAV_TOOLBAR) {
+            return;
+        }
         // Check if toolbar already exists
         if (document.getElementById('navToolbar')) {
             return;
@@ -599,9 +603,6 @@
                 </div>
                 <div class="nav-toolbar-dropdown-item" onclick="toggleNotifications()">
                     <span>🔔</span> Notifications
-                </div>
-                <div class="nav-toolbar-dropdown-item" onclick="window.location.href='/debugger'">
-                    <span>🔧</span> Debugger
                 </div>
                 <div class="nav-toolbar-dropdown-item" onclick="clearCache()">
                     <span>🗑️</span> Clear Cache
