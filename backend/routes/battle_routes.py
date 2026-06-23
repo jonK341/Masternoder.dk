@@ -240,6 +240,27 @@ def _hunter_xp_for_quick_battle(result: str, difficulty: str, used_rps: bool) ->
     return max(0, min(int(b * mult), cap))
 
 
+def _emit_game_channel_event(event_type: str, user_id: str, *, text: str = "", payload: dict | None = None) -> None:
+    try:
+        from backend.services.activity_events_service import emit
+        emit(event_type, user_id=user_id, channel="game", text=text, payload=payload or {})
+    except Exception:
+        pass
+    if event_type in ("battle_win", "battle_streak", "battle_tournament_join"):
+        try:
+            from backend.services.platform_news_publish import publish
+            title = text or event_type.replace("_", " ").title()
+            publish(
+                item_id=f"game-{event_type}-{(payload or {}).get('battle_id') or (payload or {}).get('tournament_id') or user_id}",
+                title=title,
+                summary=(payload or {}).get("summary") or title,
+                channel="game",
+                href="/battle/",
+            )
+        except Exception:
+            pass
+
+
 def _current_battle_season_id() -> str:
     now = _utc_now()
     return f"season_{now.year}_{now.month:02d}"
@@ -675,6 +696,39 @@ def battle_quick():
                     unified_points_db.add_points(user_id, "battle_streak", -current_streak, "quick_battle", meta)
         except Exception:
             pass
+
+        streak_after = 0
+        try:
+            from backend.services.unified_points_database import unified_points_db as _upd
+            all_pts = _upd.get_all_points(user_id)
+            systems = (all_pts or {}).get("points", {}).get("systems", {}) or {}
+            streak_after = int(systems.get("battle_streak", 0) or 0)
+        except Exception:
+            pass
+
+        battle_mode = (
+            "rps_pvp" if use_rps and opponent_type == "player" else ("rps" if use_rps else "skirmish")
+        )
+        if result == "win":
+            _emit_game_channel_event(
+                "battle_win",
+                user_id,
+                text=f"Battle win ({points_delta:+d} pts)",
+                payload={
+                    "battle_id": battle_id,
+                    "points_delta": points_delta,
+                    "difficulty": difficulty,
+                    "battle_mode": battle_mode,
+                    "summary": f"{difficulty} {battle_mode} victory",
+                },
+            )
+            if streak_after >= 3:
+                _emit_game_channel_event(
+                    "battle_streak",
+                    user_id,
+                    text=f"Win streak {streak_after}",
+                    payload={"streak": streak_after, "battle_id": battle_id},
+                )
 
         try:
             _record_battle_v2_event(
@@ -1263,6 +1317,25 @@ def battle_fantasy_tournaments_join(tournament_id):
         ok, detail, code = bss.join_tournament(tournament_id, user_id)
         if not ok:
             return jsonify({'success': False, 'error': detail}), code
+        tour_name = tournament_id
+        try:
+            from backend.services import battle_social_store as bss2
+            for t in bss2.get_tournaments_filtered():
+                if t.get("id") == tournament_id:
+                    tour_name = t.get("name") or tournament_id
+                    break
+        except Exception:
+            pass
+        _emit_game_channel_event(
+            "battle_tournament_join",
+            user_id,
+            text=f"Joined {tour_name}",
+            payload={
+                "tournament_id": tournament_id,
+                "tournament_name": tour_name,
+                "participants": detail,
+            },
+        )
         return jsonify({
             'success': True,
             'tournament_id': tournament_id,
@@ -1287,6 +1360,20 @@ def battle_tournament_join_legacy():
         ok, detail, code = bss.join_tournament(tid.strip(), user_id)
         if not ok:
             return jsonify({'success': False, 'error': detail}), code
+        tour_name = tid.strip()
+        try:
+            for t in bss.get_tournaments_filtered():
+                if t.get("id") == tid.strip():
+                    tour_name = t.get("name") or tour_name
+                    break
+        except Exception:
+            pass
+        _emit_game_channel_event(
+            "battle_tournament_join",
+            user_id,
+            text=f"Joined {tour_name}",
+            payload={"tournament_id": tid.strip(), "tournament_name": tour_name, "participants": detail},
+        )
         return jsonify({
             'success': True,
             'tournament_id': tid.strip(),
@@ -1534,5 +1621,22 @@ def battle_pvp_trophies():
             'trophies': _battle_trophies_for_stats(st),
             'implementation_status': 'minimal'
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@battle_bp.route('/api/battle/ops/income-summary', methods=['GET'])
+def battle_ops_income_summary():
+    """Arena house income mirror of casino ops route."""
+    import os
+    secret = (os.environ.get('MN2_OPS_SECRET') or os.environ.get('MN2_SCAN_SECRET') or '').strip()
+    if secret:
+        token = (request.headers.get('X-Ops-Token') or request.args.get('token') or '').strip()
+        if token != secret:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    try:
+        from backend.services.house_income_aggregator import summarize
+        hours = int(request.args.get('since_hours', 24))
+        return jsonify(summarize(since_hours=hours, venue='arena')), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
