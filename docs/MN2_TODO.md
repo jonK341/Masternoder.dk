@@ -163,9 +163,43 @@ Begge porte skal give **200** hver gang.
 3. `[x]` **K7** — public verify **4/4** (**Done** post-deploy + post-reboot)
 4. `[x]` **K4** — reboot til kernel 6.17 (**Done** via `mn2_schedule_reboot_remote.py --now`)
 5. `[ ]` **K1** — efter reboot: bekræft auto-start uden manuel `systemctl start`
-6. `[ ]` **K8** — genoptag PayPal Pro-kø
+6. `[ ]` **K8** — genoptag PayPal Pro-kø — § [**K8 PayPal Pro (hurtig start)**](#k8-paypal-pro-hurtig-start) nedenfor
 
 **Windows deploy:** brug `python` (ikke `python3`) — `python3` peger på Microsoft Store-alias uden paramiko.
+
+#### K8 PayPal Pro (hurtig start)
+
+**Forudsætning:** K2+K7 grønne ✓ · Live `PAYPAL_CLIENT_ID` + `PAYPAL_CLIENT_SECRET` allerede på server.
+
+**Du behøver IKKE omdøbe JSON-nøglen** — kode mapper `P-PLACEHOLDER-PRO` → live plan via server `.env` (`PAYPAL_SUBSCRIPTION_PLAN_PRO`).
+
+**Trin A — PayPal Developer (Live):**
+
+1. [developer.paypal.com](https://developer.paypal.com) → **Live** → samme REST-app som serveren
+2. **Subscriptions → Create plan** — $19.99/mo, **Active** → kopiér **Plan ID** (`P-…`)
+3. **Webhooks → Add** → URL: `https://masternoder.dk/api/monetization/webhooks/paypal-subscription`
+   - Events: `BILLING.SUBSCRIPTION.ACTIVATED`, `BILLING.SUBSCRIPTION.CANCELLED`, `PAYMENT.SALE.COMPLETED`
+   - Kopiér **Webhook ID** (`WH-…`)
+
+**Trin B — Server (PowerShell på din PC):**
+
+```powershell
+# 1) Audit — hvad mangler?
+python scripts/mn2_p1_monetization_remote.py --ask-pass --audit
+
+# 2) Sæt plan + webhook + tier enforcement + reload + verify (erstat P-… og WH-…)
+python scripts/mn2_p1_monetization_remote.py --ask-pass --all `
+  --paypal-plan-pro P-DIN-LIVE-PLAN-ID `
+  --paypal-webhook-id WH-DIN-WEBHOOK-ID
+
+# 3) Bekræft public
+curl https://masternoder.dk/api/monetization/config
+# subscription_pro_live: true · paypal_webhook_configured: true · tier_enforcement_enabled: true
+```
+
+**Trin C — manuel smoke:** Shop → **PayPal & coins** → Pro subscribe (live $19.99) → return URL `/shop?paypal_subscription=success&…` → tjek `logs/monetization/subscription_bindings.json` på server.
+
+**Valgfrit JSON-rename:** kun hvis du vil have dit rigtige `P-…` som nøgle i `data/monetization_config.json` — ellers holder env-mappen.
 
 ---
 
@@ -265,8 +299,8 @@ Route: `POST` only · `backend/routes/cogs_routes.py` → `monetization_paypal_s
 
 | From PayPal | Paste into |
 | ----------- | ---------- |
-| Plan ID `P-…` | Repo `data/monetization_config.json` — **rename JSON key** `P-PLACEHOLDER-PRO` → your `P-…` (see queue #3) |
-| Webhook ID | Server `.env` → `PAYPAL_WEBHOOK_ID=` |
+| Plan ID `P-…` | Server `.env` → `PAYPAL_SUBSCRIPTION_PLAN_PRO=` **eller** `mn2_p1_monetization_remote.py --paypal-plan-pro P-…` (JSON rename **valgfri**) |
+| Webhook ID | Server `.env` → `PAYPAL_WEBHOOK_ID=` **eller** `--paypal-webhook-id WH-…` |
 
 **Pro plan entitlements (already in repo — do not change unless product decision):**
 
@@ -286,6 +320,18 @@ Route: `POST` only · `backend/routes/cogs_routes.py` → `monetization_paypal_s
 ---
 
 #### After PayPal dashboard (queue #3)
+
+**Foretrukket (ingen JSON-edit):**
+
+```powershell
+python scripts/mn2_p1_monetization_remote.py --ask-pass --all `
+  --paypal-plan-pro P-YOUR-LIVE-PLAN-ID `
+  --paypal-webhook-id WH-YOUR-WEBHOOK-ID
+```
+
+Sætter `PAYPAL_SUBSCRIPTION_PLAN_PRO`, `PAYPAL_WEBHOOK_ID`, `MONETIZATION_TIER_ENFORCEMENT=1`, restarter uwsgi, kører smoke.
+
+**Alternativ — manuel JSON + deploy:**
 
 1. **`data/monetization_config.json`** — under `subscriptions.plans`, **rename the key** (PayPal plan id is the JSON key):
 
