@@ -32,6 +32,16 @@ def paypal_create_order():
     item_id = data.get("item_id", "")
     item_name = data.get("item_name", "Shop Item")
     user_id = data.get("user_id") or _resolve_user_id()
+    promo_code = (data.get("promo_code") or data.get("code") or "").strip()
+
+    promo_meta: dict = {}
+    if promo_code:
+        try:
+            from backend.services.shop_checkout_promo_service import apply_discounted_amount
+
+            amount, promo_meta = apply_discounted_amount(amount, promo_code, user_id)
+        except Exception:
+            pass
 
     if amount <= 0:
         return jsonify({"success": False, "error": "Invalid amount"}), 400
@@ -59,7 +69,7 @@ def paypal_create_order():
             item_name=item_name,
             return_url=return_url,
             cancel_url=cancel_url,
-            metadata={"item_id": item_id, "user_id": user_id},
+            metadata={"item_id": item_id, "user_id": user_id, "promo_code": promo_code or None},
         )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -81,6 +91,8 @@ def paypal_capture():
     item_id = data.get("item_id", "")
     item_name = data.get("item_name", "")
     user_id = data.get("user_id") or _resolve_user_id()
+    promo_code = (data.get("promo_code") or data.get("code") or "").strip()
+    org_label = (data.get("org_label") or "").strip() or None
 
     if not order_id:
         return jsonify({"success": False, "error": "Missing order_id"}), 400
@@ -109,7 +121,34 @@ def paypal_capture():
         paypal_items = _get_paypal_shop_items()
         shop_item = paypal_items.get(item_id) if item_id else None
 
-        if pack and pack.get("coins_granted"):
+        if item_id and str(item_id).startswith("scr-"):
+            from backend.services.scr_checkout_service import fulfill_scr_capture
+
+            fulfill_scr_capture(
+                user_id=user_id,
+                order_id=order_id,
+                capture_id=result.get("capture_id"),
+                amount_usd=amount,
+                studio_sku_id=str(item_id)[4:],
+                org_label=org_label,
+            )
+            item_granted = item_id
+        elif item_id == "battle-pass-premium":
+            from backend.services.battle_pass_service import purchase_battle_pass_premium
+
+            purchase_battle_pass_premium(user_id, source="paypal")
+            item_granted = item_id
+        elif item_id == "premium-render-unlock":
+            if unified_points_db:
+                unified_points_db.add_points(
+                    user_id=user_id,
+                    point_type="generation_credits",
+                    amount=2.0,
+                    source="paypal_premium_render",
+                    metadata={"order_id": order_id, "item_id": item_id},
+                )
+            item_granted = item_id
+        elif pack and pack.get("coins_granted"):
             coins_granted = int(pack["coins_granted"])
             if unified_points_db and coins_granted > 0:
                 unified_points_db.add_points(
@@ -122,6 +161,26 @@ def paypal_capture():
                         "capture_id": result.get("capture_id"),
                         "item_id": item_id,
                         "item_name": item_name or pack.get("name"),
+                    },
+                )
+        gen_credits_granted = 0.0
+        if pack:
+            try:
+                gen_credits_granted = float(pack.get("generation_credits_granted") or 0)
+            except (TypeError, ValueError):
+                gen_credits_granted = 0.0
+            if unified_points_db and gen_credits_granted > 0:
+                src = "paypal_overage" if str(pack.get("tag") or "").lower() == "overage" else "paypal"
+                unified_points_db.add_points(
+                    user_id=user_id,
+                    point_type="generation_credits",
+                    amount=gen_credits_granted,
+                    source=src,
+                    metadata={
+                        "order_id": order_id,
+                        "capture_id": result.get("capture_id"),
+                        "item_id": item_id,
+                        "generation_credits": gen_credits_granted,
                     },
                 )
         elif shop_item:
@@ -161,6 +220,28 @@ def paypal_capture():
             unified_points_sync_device.record_domain_sync('paypal')
         except Exception:
             pass
+        if promo_code:
+            try:
+                from backend.services.shop_checkout_promo_service import (
+                    validate_checkout_promo,
+                    record_promo_redemption,
+                )
+
+                pv = validate_checkout_promo(promo_code, user_id, amount_usd=amount)
+                if pv.get("success"):
+                    bonus = int(pv.get("bonus_coins_on_capture") or 0)
+                    if unified_points_db and bonus > 0:
+                        unified_points_db.add_points(
+                            user_id=user_id,
+                            point_type="coins",
+                            amount=float(bonus),
+                            source="shop_promo",
+                            metadata={"promo_code": promo_code, "order_id": order_id},
+                        )
+                        coins_granted += bonus
+                    record_promo_redemption(promo_code, user_id)
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -187,6 +268,11 @@ def paypal_capture():
         "amount": result.get("amount"),
         "coins_granted": coins_granted,
     }
+    if pack:
+        try:
+            payload["generation_credits_granted"] = float(pack.get("generation_credits_granted") or 0)
+        except (TypeError, ValueError):
+            payload["generation_credits_granted"] = 0.0
     if item_granted:
         payload["item_granted"] = item_granted
     if fulfillment_error:
