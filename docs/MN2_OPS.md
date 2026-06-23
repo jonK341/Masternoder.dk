@@ -327,9 +327,9 @@ Set `DISCORD_WEBHOOK_URL` in `.env` and restart uWSGI (`touch /var/www/html/.uws
 
 ## 10. Masternode hosting (250 slots + PayPal)
 
-**Explorer UI:** `/explorer?tab=masternodes` — slot meter, fleet cards, PayPal checkout (**$4.99/slot**, max 5 per order). Purchase is **fully automated**: PayPal capture → slot reserved → collateral locked → masternode started (cron retries until live).
+**Explorer UI:** `/explorer?tab=masternodes` — slot meter, fleet cards, PayPal checkout (**$4.99/slot**, max 5 per order). Purchase is **fully automated**: PayPal capture → slot reserved → collateral locked → masternode started (cron retries until live). Use `?fresh=1` on `GET /api/mn2/masternode/service` or `/api/mn2/masternodes` for live RPC (bypasses 60s cache).
 
-**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 250`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
+**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 250`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`, `collateral_mn2: 5000`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
 
 **Status (2026-06-23):** P0 provisioning backlog **cleared** — public `GET /api/mn2/masternode/service?fresh=1` reported **30** hosted (**28** active, **2** in-flight provisioning with collateral), **0** stale provisioning, **220** slots free. Verify from Windows: `python scripts/mn2_check_activetime_public.py` · ops breakdown: `GET /api/mn2/masternode/hosts?internal=1` with `X-Ops-Secret`.
 
@@ -419,19 +419,23 @@ python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.
 
-## Waterfall merge order (split PRs #19–#27)
+## Waterfall merge order (split PRs #19–#29)
+
+**Status (2026-06-23):** All items below **merged or verified** — PR stack **#21–#27** on `main`; PR **#29** deploy `--ask-pass` + `apply_updates` **verified on prod** (branch `pr/deploy-ask-pass-fix` pending merge).
 
 Recommended sequence when landing the `cursor/monetized-content-crypto` split off `main` (merge each PR only after the prior one is green and merged):
 
-1. **#21** deploy-tooling — deploy manifests and SSH ask-pass
-2. **#19** mn2-fleet-provision-ops — fleet provisioning, RPC, hosting alias repair
-3. **#20** mn2-explorer-hub — explorer performance and masternodes tab
-4. **#22** mn2-hosting-shop — shop checkout config and smoke scripts
-5. **#23** docs-mn2-status — ops status, release build, env example
-6. **#25** platform-page-shell — shared page-shell CSS (before pages that depend on it)
-7. **#24** podcast-hub — podcast routes, services, UI
-8. **#26** monetization-crypto-core — monetization platform core
-9. **#27** split-leftovers — shop UI, rulebook assets, cogs/monetization route tweaks, P1 remote ops
+1. [x] **#21** deploy-tooling — deploy manifests and SSH ask-pass
+2. [x] **#19** mn2-fleet-provision-ops — fleet provisioning, RPC, hosting alias repair
+3. [x] **#20** mn2-explorer-hub — explorer performance and masternodes tab
+4. [x] **#22** mn2-hosting-shop — shop checkout config and smoke scripts
+5. [x] **#23** docs-mn2-status — ops status, release build, env example
+6. [x] **#25** platform-page-shell — shared page-shell CSS (before pages that depend on it)
+7. [x] **#24** podcast-hub — podcast routes, services, UI
+8. [x] **#26** monetization-crypto-core — monetization platform core
+9. [x] **#27** split-leftovers — shop UI, rulebook assets, cogs/monetization route tweaks, P1 remote ops
+10. [x] **#29** deploy-ask-pass-fix — `deploy.py` / `apply_updates.py` `--ask-pass`, selective `static_pages`, prod `apply_updates` verified
 
 Rebase later PRs onto updated `main` after each merge if GitHub reports conflicts.
+
 

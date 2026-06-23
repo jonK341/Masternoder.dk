@@ -289,7 +289,7 @@
   }
 
   function loadMasternodeHosting() {
-    fetch('/api/mn2/masternode/service', { credentials: 'same-origin' })
+    fetch('/api/mn2/masternode/service?fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || !d.success) return;

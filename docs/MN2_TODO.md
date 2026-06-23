@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-06-23** (deploy **DONE** 2026-06-22 · provisioning backlog **cleared** · **30** hosted slots · **28** active / **2** in-flight provisioning · shop **10/10** + coins purchase PASS · **250** slot cap · on-chain **6** total / **5** ENABLED)
+Last updated: **2026-06-23** (PR stack **#21–#27** merged · PR **#29** deploy `--ask-pass` + selective upload + `apply_updates` **DONE** on prod · fleet **~30** hosted · shop **10/10** + coins purchase PASS · explorer **masternodes tab** live)
 
 See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -43,6 +43,10 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **Shop smoke (2026-06-22)** — `shop_v4_production_smoke.py --full-line` **10/10**; coins hosting purchase **PASS** for `shop_mn_purchase_test` (`mn_hosting_coins_purchase_test_live.py`).
 - **Deploy 2026-06-22** — `deploy.py mn2_staking` + `static_pages` + `mn2_env` + `apply_updates.py --ask-pass`; fleet ops scripts live (RPC **9332**, config **775**, alias fix); `max_hosted_nodes=250`; `deploy.py` multi-manifest fix shipped.
 - **Provisioning backlog cleared (2026-06-23)** — `GET /api/mn2/masternode/service`: **30** hosted · **28** active · **2** in-flight provisioning (with collateral) · **0** stale provisioning · **220** slots free; on-chain **6** / **5** ENABLED (`mn2_check_activetime_public.py`).
+- **PR stack #21–#27 merged (2026-06-23)** — deploy tooling, fleet ops, explorer hub, hosting shop, docs, page-shell, podcast, monetization core, split leftovers (see [MN2_OPS.md § Waterfall](MN2_OPS.md#waterfall-merge-order-split-prs-1927)).
+- **PR #29 deploy fixes (2026-06-23)** — `deploy.py` / `apply_updates.py` `--ask-pass` (stale `DEPLOY_PASS` retry), unified SSH, selective `static_pages` upload, `apply_updates` backend quick-check timeout tolerance.
+- **`apply_updates.py --ask-pass` on prod (2026-06-23)** — user-confirmed; uwsgi + nginx reload without reboot.
+- **Explorer masternodes tab deployed** — `mn2-crypto-hub.js` + `GET /api/mn2/masternodes?fresh=1`; `/explorer?tab=masternodes` slot meter, fleet grid, PayPal checkout.
 - **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **optional verify** if homepage tx table or redirect still wrong.
 
 ---
@@ -119,8 +123,8 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | --- | ---- | ----- | ---------- | -------------- |
 | **P1** | **Daemon v1.3 multi-ping** — ENABLED + `activetime` on **customer** nodes, not only `platformmn2` | **MasterNoder2 C++ repo** | Spike ManageStatus | ~2–3 weeks · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md) · until then: one `masternodeprivkey` + Option B multi-daemon |
 | **P1** | **Explorer VPS nginx verify** *(optional)* — eiquidus homepage tx table + `cam.masternoder.dk` redirect | SSH | `static_pages` deployed | Confirm or run `python scripts/fix_explorer_subdomains_remote.py --ask-pass` · `camgirls.masternoder.dk` homepage loads last txs |
-| **P1** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
-| **P1** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
+| **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
+| **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
 | **P2** | **Fleet boot autostart** — `mn2-fleet-autostart.service` on reboot | SSH | local-first deployed | § **0. Masternode fleet** M5 — `cp scripts/mn2_fleet_autostart.sh …` · enable systemd unit |
 | **P2** | **SMTP + admin email** — weekly revenue pulse + margin report emails | **Server `.env`** | none | `NOTIFY_ADMIN_EMAIL` + `NOTIFY_SMTP_*` via optionals flags or edit server `.env` |
 | **P2** | **LiveKit voice (Camgirls Phase 3)** — server reports `mode=live` (optionals 2026-06-20); confirm camgirls token flow | SSH | LiveKit cloud creds | `mn2_ops_optionals_remote.py --ask-pass --livekit-url … --reload --verify` |
@@ -128,7 +132,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P2** | **Shop UI browser spot-check** (optional) — render + PayPal checkout in browser | **Browser** | deploy done | API **10/10** + coins purchase **PASS** — manual confirm slot meter / revenue strip / BEST VALUE badge if desired |
 | **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | [CAMGIRLS_PHASE4_NGINX.md](CAMGIRLS_PHASE4_NGINX.md) |
 
-**Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **19+** masternodes on chain · provision pipeline working · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE 2026-06-22** · **provisioning backlog cleared 2026-06-23** (**30** hosted · **0** stale provisioning).
+**Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **~30** hosted · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE** (PR **#29** `--ask-pass` + `apply_updates` on prod) · **provisioning backlog cleared** · **PR stack #21–#27 merged** · **explorer masternodes tab live**.
 
 **Watch (background — not blocking queue):** `/api/mn2/health` may still show **degraded** (`daemon_staking` inactive) after daemon restarts — re-run when convenient: `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking`. Only **`platformmn2`** gets ENABLED `activetime` until multi-ping ships (see P1). **2** hosts may still show **provisioning** while collateral/start completes — not stale (`stale_provisioning_count=0`).
 
@@ -352,7 +356,11 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Hosting capacity 250** — `max_hosted_nodes=250` deployed (2026-06-22)
 - [x] **Shop API smoke** — **10/10** + coins purchase **PASS** (`shop_mn_purchase_test`) (2026-06-22)
 - [x] **Post-deploy API smoke** — shop 10/10 + camgirls 4/4 + Tier D APIs (§2)
-- [x] **Deploy fleet + shop + explorer static** — `mn2_staking` + `static_pages` + `mn2_env` + `apply_updates.py --ask-pass` (2026-06-22)
+- [x] **Deploy fleet + shop + explorer static** — `mn2_staking` + `static_pages` + `mn2_env` + `apply_updates.py --ask-pass` (2026-06-22/23)
+- [x] **PR stack #21–#27 merged** — waterfall split landed on `main` (2026-06-23)
+- [x] **PR #29 deploy fixes** — `--ask-pass`, selective `static_pages`, `apply_updates` SSH + timeout tolerance (2026-06-23)
+- [x] **`apply_updates.py` on prod** — user-confirmed success (2026-06-23)
+- [x] **Explorer masternodes tab** — `/explorer?tab=masternodes` hub JS + API live (2026-06-23)
 - [x] **Clear ~15 provisioning hosts** — **cleared 2026-06-23** (**30** hosted · **0** stale provisioning)
 - [ ] **Explorer VPS nginx verify** — optional: `fix_explorer_subdomains_remote.py --ask-pass` if homepage tx table or `cam.masternoder.dk` redirect still wrong
 - [ ] **Fleet boot autostart (M5)** — systemd `mn2-fleet-autostart` not yet enabled
@@ -364,8 +372,8 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Daemon upgrade v1.2.3.0** — applied + `--verify-post` PASS 2026-06-20
 - [ ] **Restore staking (background)** — health **degraded** 2026-06-20; `--ask-pass --restore-staking` when convenient (not blocking queue)
 - [ ] **Sync `DEPLOY_PASS` in local `.env`** — `--ask-pass` works; non-interactive SSH still needs matching password
-- [ ] **Live Pro subscription** — repo still has `P-PLACEHOLDER-PRO` / `P-PLACEHOLDER-MN-HOST`; PayPal dashboard plan + webhook per [MONETIZATION_PAYPAL.md §3](MONETIZATION_PAYPAL.md#3-subscriptions-recurring); then `PAYPAL_WEBHOOK_ID` on server `.env` + redeploy
-- [ ] **Tier enforcement** — `MONETIZATION_TIER_ENFORCEMENT=1` on server ([MONETIZATION_PAYPAL.md §2](MONETIZATION_PAYPAL.md#2-premium-generation-tiers))
+- [ ] **Live Pro subscription (P2)** — repo still has `P-PLACEHOLDER-PRO` / `P-PLACEHOLDER-MN-HOST`; PayPal dashboard plan + webhook per [MONETIZATION_PAYPAL.md §3](MONETIZATION_PAYPAL.md#3-subscriptions-recurring); then `PAYPAL_WEBHOOK_ID` on server `.env` + redeploy
+- [ ] **Tier enforcement (P2)** — `MONETIZATION_TIER_ENFORCEMENT=1` on server ([MONETIZATION_PAYPAL.md §2](MONETIZATION_PAYPAL.md#2-premium-generation-tiers))
 - [ ] **SMTP + admin email** — `NOTIFY_ADMIN_EMAIL` + `NOTIFY_SMTP_*` (blocks weekly pulse/margin emails)
 - [ ] **LiveKit** — `LIVEKIT_*` on server (camgirls voice currently `mode=stub`)
 - [x] **Discord #market** — webhook URL set; fan-out cron installed
