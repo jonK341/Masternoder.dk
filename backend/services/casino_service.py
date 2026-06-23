@@ -131,6 +131,7 @@ def _payment_config() -> Dict[str, Any]:
     cfg = _load_config()
     rm = cfg.get("real_money") if isinstance(cfg.get("real_money"), dict) else {}
     packs = rm.get("paypal_deposit_packs") if isinstance(rm.get("paypal_deposit_packs"), list) else []
+    mn2_packs = rm.get("mn2_buyin_packs") if isinstance(rm.get("mn2_buyin_packs"), list) else []
     return {
         "enabled": bool(rm.get("enabled")),
         "rails": [str(r).lower() for r in (rm.get("rails") or ["mn2"])],
@@ -140,6 +141,7 @@ def _payment_config() -> Dict[str, Any]:
         "paypal_max_bet": float(rm.get("paypal_max_bet") or 25.0),
         "paypal_currency": str(rm.get("paypal_currency") or "USD"),
         "paypal_deposit_packs": packs,
+        "mn2_buyin_packs": mn2_packs,
         "disclaimer_coins": rm.get("disclaimer_coins") or cfg.get("disclaimer") or "",
         "disclaimer_mn2": rm.get("disclaimer_mn2") or (
             "MN2 bets use your on-chain wallet balance. Virtual coin bets remain separate."
@@ -539,11 +541,42 @@ def _finalize_bet(
         "double_step": double_step,
     }
     jackpot_award = _append_ledger(row)
+    if currency == "mn2":
+        try:
+            from backend.services.activity_events_service import emit
+            emit(
+                "casino_mn2_bet",
+                channel="casino",
+                user_id=user_id,
+                payload={"game": game, "bet": bet, "payout": payout, "net": net, "outcome": outcome, "bet_id": row["bet_id"]},
+            )
+        except Exception:
+            pass
+    if net > 0 and outcome in ("win", "jackpot", "payout"):
+        try:
+            from backend.services.casino_social_service import on_big_win
+            on_big_win(
+                user_id=user_id,
+                game=game,
+                currency=currency,
+                net=net,
+                payout=payout,
+                bet_id=row["bet_id"],
+            )
+        except Exception:
+            pass
     try:
         from backend.services.casino_responsible_gaming import record_after_bet
         record_after_bet(user_id, net, currency)
     except ImportError:
         pass
+    if not skip_stake and bet > 0:
+        try:
+            from backend.services.battle_pass_service import record_battle_pass_action
+
+            record_battle_pass_action(user_id, "casino_bet")
+        except Exception:
+            pass
     trophy_rebate = None
     try:
         from backend.services.casino_trophy_rake_rebate import apply_rebate
@@ -2502,6 +2535,65 @@ def get_paypal_deposit_packs() -> Dict[str, Any]:
         "enabled": _paypal_enabled(),
         "currency": pay["paypal_currency"],
         "packs": packs,
+    }
+
+
+def get_mn2_buyin_packs() -> Dict[str, Any]:
+    """B6 — MN2-priced packs that credit casino USD play balance."""
+    pay = _payment_config()
+    packs = []
+    for row in pay.get("mn2_buyin_packs") or []:
+        if not isinstance(row, dict) or not row.get("id"):
+            continue
+        packs.append({
+            "id": str(row["id"]),
+            "label": row.get("label") or row["id"],
+            "price_mn2": float(row.get("price_mn2") or 0),
+            "casino_usd_credit": float(row.get("casino_usd_credit") or 0),
+        })
+    return {"success": True, "packs": packs, "rail": "mn2"}
+
+
+def _mn2_buyin_pack(pack_id: str) -> Optional[Dict[str, Any]]:
+    for row in get_mn2_buyin_packs().get("packs") or []:
+        if row.get("id") == pack_id:
+            return row
+    return None
+
+
+def purchase_mn2_buyin_pack(user_id: str, pack_id: str) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
+    pack = _mn2_buyin_pack((pack_id or "").strip())
+    if not pack:
+        return {"success": False, "error": "unknown_pack"}
+    price = float(pack.get("price_mn2") or 0)
+    credit = float(pack.get("casino_usd_credit") or 0)
+    if price <= 0 or credit <= 0:
+        return {"success": False, "error": "invalid_pack"}
+    try:
+        from backend.services.unified_points_database import unified_points_db
+
+        snap = unified_points_db.get_all_points(uid) or {}
+        bal = float((snap.get("points") or {}).get("mn2_balance") or 0)
+        if bal < price:
+            return {"success": False, "error": f"Insufficient MN2. Need {price:.4f}"}
+        unified_points_db.add_points(
+            uid, "mn2_balance", -price, source="casino_mn2_buyin", metadata={"pack_id": pack_id}
+        )
+        unified_points_db.add_points(
+            uid,
+            "casino_fiat_balance",
+            credit,
+            source="casino_mn2_buyin",
+            metadata={"pack_id": pack_id, "price_mn2": price},
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    return {
+        "success": True,
+        "pack_id": pack_id,
+        "price_mn2": price,
+        "casino_usd_credited": credit,
     }
 
 

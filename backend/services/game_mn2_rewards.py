@@ -14,8 +14,12 @@ def credit_mn2(
     reference: str,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    if not user_id or user_id in ("default_user", "anon", "anonymous"):
-        return {"success": False, "error": "authenticated_user_required"}
+    from backend.services.mn2_earn_auth import require_earn_user
+
+    ok, uid_or_err = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid_or_err}
+    user_id = uid_or_err
     amt = float(amount or 0)
     if amt <= 0:
         return {"success": False, "error": "amount_must_be_positive"}

@@ -110,13 +110,41 @@ def _append_tledger(row: Dict[str, Any]) -> None:
         pass
 
 
-def _fairness_seed() -> Dict[str, str]:
-    server_seed = secrets.token_hex(32)
+def _last_revealed_seed(state: Dict[str, Any], template_id: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    """Previous ended cup server seed for chained fairness."""
+    if not template_id:
+        return None, None
+    ended = [
+        t for t in state.values()
+        if isinstance(t, dict) and t.get("template_id") == template_id and t.get("status") == "ended"
+    ]
+    ended.sort(key=lambda t: t.get("ended_at") or "", reverse=True)
+    for t in ended:
+        rev = t.get("fairness_revealed") or t.get("fairness") or {}
+        seed = rev.get("server_seed")
+        if seed:
+            return str(seed), str(t.get("id") or "")
+    return None, None
+
+
+def _fairness_seed(state: Dict[str, Any], template_id: Optional[str]) -> Dict[str, Any]:
+    prev_seed, prev_tid = _last_revealed_seed(state, template_id)
+    if prev_seed:
+        server_seed = hashlib.sha256(f"{prev_seed}|{template_id or 'cup'}|chain-v1".encode("utf-8")).hexdigest()
+        chain = {
+            "prev_tournament_id": prev_tid,
+            "prev_seed_hash": hashlib.sha256(prev_seed.encode("utf-8")).hexdigest(),
+            "genesis": False,
+        }
+    else:
+        server_seed = secrets.token_hex(32)
+        chain = {"genesis": True}
     return {
         "server_seed": server_seed,
         "server_seed_hash": hashlib.sha256(server_seed.encode("utf-8")).hexdigest(),
         "client_seed": "masternoder-tournament-v1",
         "nonce": 0,
+        "chain": chain,
     }
 
 
@@ -136,7 +164,7 @@ def _tie_break_score(t: Dict[str, Any], user_id: str, score: float, joined_at: s
         return score
 
 
-def _create_from_template(tpl: Dict[str, Any], conf: Dict[str, Any]) -> Dict[str, Any]:
+def _create_from_template(tpl: Dict[str, Any], conf: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, Any]:
     currency = (tpl.get("currency") or "coins").lower()
     house_seed = float(tpl.get("house_seed") or 0)
     duration = float(tpl.get("duration_hours") or 24)
@@ -160,7 +188,7 @@ def _create_from_template(tpl: Dict[str, Any], conf: Dict[str, Any]) -> Dict[str
         "paid_out": 0.0,
         "entries": {},
         "results": [],
-        "fairness": _fairness_seed(),
+        "fairness": _fairness_seed(state, tpl.get("id")),
     }
     _append_tledger({"type": "seed", "tournament_id": tid, "currency": currency,
                      "amount": house_seed, "pool_after": house_seed, "at": _iso()})
@@ -180,7 +208,7 @@ def _ensure_templates(state: Dict[str, Any], conf: Dict[str, Any]) -> bool:
             for t in state.values()
         )
         if not has_live:
-            t = _create_from_template(tpl, conf)
+            t = _create_from_template(tpl, conf, state)
             state[t["id"]] = t
             changed = True
     return changed
@@ -235,6 +263,26 @@ def _finalize(t: Dict[str, Any]) -> None:
     t["results"] = results
     t["status"] = "ended"
     t["ended_at"] = _iso()
+    try:
+        from backend.services.casino_social_service import on_tournament_end, on_tournament_prize
+        on_tournament_end(
+            tournament_id=t.get("id") or "",
+            title=t.get("title") or "Casino tournament",
+            currency=currency,
+            pool=pool,
+            winner_count=len([r for r in results if float(r.get("prize") or 0) > 0]),
+        )
+        for r in results:
+            if float(r.get("prize") or 0) > 0:
+                on_tournament_prize(
+                    user_id=r.get("user_id") or "",
+                    tournament_id=t.get("id") or "",
+                    rank=int(r.get("rank") or 0),
+                    prize=float(r.get("prize") or 0),
+                    currency=currency,
+                )
+    except Exception:
+        pass
     fair = t.get("fairness") or {}
     if fair.get("server_seed"):
         t["fairness_revealed"] = {
@@ -242,6 +290,7 @@ def _finalize(t: Dict[str, Any]) -> None:
             "server_seed_hash": fair.get("server_seed_hash"),
             "client_seed": fair.get("client_seed"),
             "nonce": fair.get("nonce"),
+            "chain": fair.get("chain"),
         }
 
 
@@ -282,7 +331,11 @@ def _public(t: Dict[str, Any], user_id: Optional[str], top: int = 10) -> Dict[st
     if t.get("fairness_revealed"):
         fair_pub = t.get("fairness_revealed")
     elif isinstance(t.get("fairness"), dict):
-        fair_pub = {"server_seed_hash": t["fairness"].get("server_seed_hash"), "client_seed": t["fairness"].get("client_seed")}
+        fair_pub = {
+            "server_seed_hash": t["fairness"].get("server_seed_hash"),
+            "client_seed": t["fairness"].get("client_seed"),
+            "chain": t["fairness"].get("chain"),
+        }
     return {
         "id": t.get("id"),
         "name": t.get("name"),
@@ -454,3 +507,63 @@ def reconcile() -> Dict[str, Any]:
         if not ok:
             report["ok"] = False
     return report
+
+
+def verify_fairness(tournament_id: str) -> Dict[str, Any]:
+    """Verify committed hash and optional seed chain for a tournament cup."""
+    with _LOCK:
+        state = _load_state()
+        t = state.get(tournament_id)
+        if not isinstance(t, dict):
+            return {"success": False, "error": "Tournament not found"}
+        fair = dict(t.get("fairness_revealed") or t.get("fairness") or {})
+    seed = fair.get("server_seed")
+    committed = fair.get("server_seed_hash")
+    if not committed:
+        return {"success": False, "error": "No fairness commitment on tournament"}
+    if not seed:
+        return {
+            "success": True,
+            "revealed": False,
+            "committed_hash": committed,
+            "client_seed": fair.get("client_seed"),
+            "chain": fair.get("chain"),
+            "status": t.get("status"),
+        }
+    hash_ok = hashlib.sha256(str(seed).encode("utf-8")).hexdigest() == committed
+    chain_ok = True
+    chain_detail: Dict[str, Any] = {}
+    chain = fair.get("chain") or {}
+    if chain.get("prev_tournament_id") and not chain.get("genesis"):
+        prev_tid = chain.get("prev_tournament_id")
+        prev = state.get(prev_tid) if isinstance(state, dict) else None
+        if isinstance(prev, dict):
+            prev_fair = prev.get("fairness_revealed") or prev.get("fairness") or {}
+            prev_seed = prev_fair.get("server_seed")
+            if prev_seed:
+                expected = hashlib.sha256(
+                    f"{prev_seed}|{t.get('template_id') or 'cup'}|chain-v1".encode("utf-8")
+                ).hexdigest()
+                chain_ok = str(seed) == expected
+                chain_detail = {
+                    "prev_tournament_id": prev_tid,
+                    "expected_seed": expected,
+                    "prev_seed_hash": chain.get("prev_seed_hash"),
+                }
+            else:
+                chain_ok = False
+                chain_detail = {"error": "Previous cup seed not yet revealed"}
+        else:
+            chain_ok = False
+            chain_detail = {"error": "Previous cup not found"}
+    return {
+        "success": hash_ok and chain_ok,
+        "revealed": True,
+        "hash_ok": hash_ok,
+        "chain_ok": chain_ok,
+        "server_seed_hash": committed,
+        "client_seed": fair.get("client_seed"),
+        "chain": chain,
+        "chain_detail": chain_detail,
+        "status": t.get("status"),
+    }

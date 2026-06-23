@@ -77,12 +77,27 @@ def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
 
 
 def is_txid_processed(txid: str) -> bool:
-    """True if a deposit with this txid is already in the ledger (idempotency)."""
+    """True if this txid was already credited via deposit or treasury_deposit."""
     if not (txid or "").strip():
         return False
     txid = str(txid).strip()
     entries = _load_entries()
-    return any((e.get("type") == "deposit" and (e.get("txid") or "").strip() == txid) for e in entries)
+    credited_types = ("deposit", "treasury_deposit")
+    return any(
+        (e.get("type") in credited_types and (e.get("txid") or "").strip() == txid)
+        for e in entries
+    )
+
+
+def is_treasury_deposit_recorded(txid: str) -> bool:
+    """True if treasury_deposit ledger row exists for txid."""
+    if not (txid or "").strip():
+        return False
+    txid = str(txid).strip()
+    return any(
+        e.get("type") == "treasury_deposit" and (e.get("txid") or "").strip() == txid
+        for e in _load_entries()
+    )
 
 
 def count_withdrawals_since(user_id: str, since_iso: str) -> int:

@@ -83,6 +83,9 @@ def create_order_payment(
     price_coins: int,
     price_mn2: float,
     address: str,
+    *,
+    product: str = "shop",
+    hosting_quote_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Register a new order payment (address already from RPC getnewaddress). Returns order record with payment_ref, expires_at."""
     payment_ref = str(uuid.uuid4())[:12]
@@ -97,6 +100,7 @@ def create_order_payment(
         "item_name": item_name,
         "quantity": quantity,
         "price_coins": price_coins,
+        "product": product or "shop",
         "created_at": now.isoformat() + "Z",
         "expires_at": expires_at,
         "status": "pending",
@@ -105,6 +109,8 @@ def create_order_payment(
         "confirmations": 0,
         "amount_received": None,
     }
+    if hosting_quote_id:
+        order["hosting_quote_id"] = str(hosting_quote_id)
     orders = _load()
     orders.append(order)
     _save(orders)
@@ -209,6 +215,43 @@ def confirm_and_fulfill(payment_ref: str, txid: str, amount_received: Optional[f
         return order
 
     txid_val = (txid or "").strip()
+
+    product = str(order.get("product") or "shop")
+    if product == "mn2_masternode_hosting":
+        hosting_qid = (order.get("hosting_quote_id") or order.get("item_id") or "").strip()
+        try:
+            from backend.services import mn2_masternode_hosting_service as hosting
+            result = hosting.fulfill_onchain_payment(
+                hosting_qid,
+                order.get("user_id") or "",
+                txid=txid_val,
+                amount_mn2=float(amount_received if amount_received is not None else order.get("amount_mn2") or 0),
+            )
+            if not result.get("success"):
+                order["status"] = "pending"
+                order["txid"] = txid_val
+                order["fulfillment_error"] = result.get("error") or "hosting fulfill failed"
+                orders[idx] = order
+                _save(orders)
+                return order
+            now_iso = datetime.utcnow().isoformat() + "Z"
+            order["status"] = "fulfilled"
+            order["txid"] = txid_val
+            order["fulfilled_at"] = now_iso
+            if amount_received is not None:
+                order["amount_received"] = round(float(amount_received), 8)
+            order.pop("fulfillment_error", None)
+            orders[idx] = order
+            _save(orders)
+            return order
+        except Exception as ex:
+            _log.exception("mn2_order_payment hosting fulfill failed ref=%s: %s", payment_ref, ex)
+            order["status"] = "pending"
+            order["txid"] = txid_val
+            order["fulfillment_error"] = str(ex)
+            orders[idx] = order
+            _save(orders)
+            return order
 
     # Fulfill: record_purchase + add_to_inventory are mandatory. Ledger and
     # item effects are best-effort after the user owns what they paid for.
