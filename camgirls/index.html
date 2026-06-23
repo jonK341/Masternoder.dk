@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live AI performers on MasterNoder — Nova, Luna, Sage, Ember, Iris. Studio chat, gifts, fan club, tips via MN2 or PayPal. 18+ age gate.">
+    <meta name="keywords" content="AI camgirls, live performers, MN2 tips, MasterNoder studio, fan club">
+    <link rel="canonical" href="https://masternoder.dk/camgirls/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://masternoder.dk/camgirls/">
+    <meta property="og:title" content="Camgirls Studio — MasterNoder">
+    <meta property="og:description" content="Five live AI performers — unlock rooms, tip with MN2 or PayPal, fan club and studio gifts.">
+    <meta property="og:site_name" content="MasterNoder">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Camgirls Studio — MasterNoder">
+    <meta name="twitter:description" content="AI performer catalog with studio chat, gifts, and MN2 tipping.">
+    <title>Camgirls — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
+    <style>
+        .cg-page { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+        .cg-header { text-align: center; margin-bottom: 28px; }
+        .cg-header h1 { font-size: 2rem; margin: 0 0 8px; background: linear-gradient(135deg,#00d4ff,#ff00aa); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .cg-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 16px; }
+        .cg-card { border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; background: rgba(0,0,0,0.25); }
+        .cg-card img { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; }
+        .cg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .cg-actions button { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .cg-unlock { background: linear-gradient(135deg,#00d4ff,#0088cc); color: #000; }
+        .cg-tip { background: rgba(255,0,170,0.2); color: #ff66cc; border: 1px solid rgba(255,0,170,0.4); }
+        .cg-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(0,255,136,0.15); color: #00ff88; }
+        #cg-msg { margin: 12px 0; min-height: 1.2em; color: #ffaa44; }
+        #cg-age-gate { border: 1px solid rgba(255,170,0,0.4); border-radius: 12px; padding: 16px; margin-bottom: 20px; background: rgba(255,170,0,0.08); }
+        .cg-chat-panel { margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+        .cg-chat-log { max-height: 160px; overflow-y: auto; margin-bottom: 8px; font-size: 0.9rem; }
+        .cg-chat-line { padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; max-width: 92%; }
+        .cg-chat-user { background: rgba(0,212,255,0.15); margin-left: auto; text-align: right; }
+        .cg-chat-bot { background: rgba(255,0,170,0.12); }
+        .cg-chat-compose { display: flex; gap: 8px; }
+        .cg-chat-input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #161b22; color: #fff; }
+        .cg-chat-toggle { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.35); }
+        .cg-ai-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(0,212,255,0.15); color: #00d4ff; margin-left: 6px; }
+        .cg-agents-strip { border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; background: rgba(0,212,255,0.06); }
+        .cg-agents-strip h2 { margin: 0 0 8px; font-size: 1rem; color: #00d4ff; }
+        .cg-agent-chip { display: inline-block; margin: 4px 8px 4px 0; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.08); font-size: 0.82rem; }
+        .cg-stage { border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 8px; background: rgba(0,0,0,0.35); position: relative; overflow: hidden; min-height: 120px; }
+        .cg-stage-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .cg-viewers { opacity: 0.7; }
+        .cg-studio-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 0.78rem; }
+        .cg-stage-avatar-wrap { text-align: center; position: relative; }
+        .cg-stage-avatar { width: 88px; height: 88px; border-radius: 14px; object-fit: cover; display: inline-block; transition: transform 0.2s; }
+        .cg-card-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+        .cg-buzz-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 8px auto 0; max-width: 120px; overflow: hidden; }
+        .cg-buzz-fill { height: 100%; width: 0; background: linear-gradient(90deg,#ff00aa,#00d4ff); transition: width 0.3s; }
+        .cg-buzz-pulse .cg-stage-avatar { transform: scale(1.08); filter: brightness(1.2); }
+        .cg-goal-wrap { margin: 10px 0 6px; font-size: 0.78rem; }
+        .cg-goal-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+        .cg-goal-fill { height: 100%; background: linear-gradient(90deg,#00ff88,#00d4ff); width: 0; transition: width 0.4s; }
+        .cg-studio-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .cg-studio-lock { font-size: 0.8rem; opacity: 0.65; margin: 8px 0 0; }
+        .cg-wheel-result { font-size: 0.82rem; min-height: 1.2em; margin: 6px 0; color: #00d4ff; }
+        .cg-emoji-float { position: absolute; top: 40%; font-size: 1.4rem; animation: cg-float 2s ease-out forwards; pointer-events: none; }
+        @keyframes cg-float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+        @keyframes cg-shimmy { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg) translateX(-4px); } 75% { transform: rotate(8deg) translateX(4px); } }
+        @keyframes cg-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        @keyframes cg-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes cg-wave { 0%,100% { transform: skewX(0); } 50% { transform: skewX(-6deg); } }
+        .cg-dance-shimmy { animation: cg-shimmy 0.5s ease-in-out 4; }
+        .cg-dance-spin { animation: cg-spin 1.2s linear 2; }
+        .cg-dance-bounce { animation: cg-bounce 0.45s ease 5; }
+        .cg-dance-wave { animation: cg-wave 1s ease-in-out 3; }
+        .cg-dance-vip { animation: cg-shimmy 0.7s ease 2, cg-spin 2s linear 1; }
+        .cg-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .cg-filter-bar button { padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #fff; cursor: pointer; }
+        .cg-filter-active { background: rgba(0,212,255,0.2) !important; border-color: rgba(0,212,255,0.5) !important; color: #00d4ff !important; }
+        .cg-leaderboard { font-size: 0.75rem; margin: 8px 0; opacity: 0.85; }
+        .cg-lb-title { display: block; margin-bottom: 4px; color: #ffd166; }
+        .cg-lb-row { display: block; }
+        .cg-fc-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(255,209,102,0.2); color: #ffd166; }
+        .cg-schedule { font-size: 0.72rem; opacity: 0.75; }
+        .cg-offline-compose { display: flex; gap: 6px; margin-top: 8px; }
+        .cg-offline-input { flex: 1; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #161b22; color: #fff; font-size: 0.85rem; }
+        .cg-private-timer { font-size: 0.8rem; color: #ff66cc; margin-top: 6px; min-height: 1.1em; }
+        .cg-private-active { box-shadow: 0 0 0 1px rgba(255,0,170,0.45); }
+        .cg-fav-btn { font-size: 1rem; padding: 4px 8px; }
+    </style>
+</head>
+<body>
+    <div class="cg-page">
+        <div class="cg-header">
+            <h1>Camgirls</h1>
+            <p style="opacity:0.75;">Browse performers · unlock with MN2 · tips & gifts · voice · music · dances · full studio stack</p>
+            <p style="font-size:0.85rem;opacity:0.6;">Explorer lives at <a href="https://camgirls.masternoder.dk/" target="_blank" rel="noopener">camgirls.masternoder.dk</a> · Agents: <code>/api/camgirls/agent-tools</code></p>
+        </div>
+        <div id="cg-agents" class="cg-agents-strip" style="display:none;">
+            <h2>🤖 AI companions</h2>
+            <p style="font-size:0.85rem;opacity:0.75;margin:0 0 8px;">Each performer has a linked agent persona. Platform agents can call <code>/api/camgirls/agent-action</code>.</p>
+            <div id="cg-agent-chips"></div>
+        </div>
+        <div id="cg-age-gate" style="display:none;">
+            <strong>18+ required</strong> before MN2 unlock or tip.
+            <label style="display:block;margin:8px 0;">Birth year <input type="number" id="cg-birth-year" min="1920" max="2010" style="width:100px;margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#161b22;color:#fff;"></label>
+            <button type="button" id="cg-age-btn" class="cg-unlock">I am 18 or older</button>
+        </div>
+        <div id="cg-filter-bar" class="cg-filter-bar">
+            <button type="button" class="cg-filter-active" data-filter="all">All performers</button>
+            <button type="button" data-filter="favorites">⭐ Favorites</button>
+        </div>
+        <div id="cg-msg"></div>
+        <div id="cg-grid" class="cg-grid">Loading performers…</div>
+    </div>
+    <script src="/static/js/camgirls-studio.js?v=20260618c"></script>
+    <script src="/static/js/camgirls.js?v=20260618c"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="camgirls" defer></script>
+</body>
+</html>

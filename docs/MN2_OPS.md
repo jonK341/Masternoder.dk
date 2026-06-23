@@ -418,3 +418,20 @@ python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.
+
+## Waterfall merge order (split PRs #19–#27)
+
+Recommended sequence when landing the `cursor/monetized-content-crypto` split off `main` (merge each PR only after the prior one is green and merged):
+
+1. **#21** deploy-tooling — deploy manifests and SSH ask-pass
+2. **#19** mn2-fleet-provision-ops — fleet provisioning, RPC, hosting alias repair
+3. **#20** mn2-explorer-hub — explorer performance and masternodes tab
+4. **#22** mn2-hosting-shop — shop checkout config and smoke scripts
+5. **#23** docs-mn2-status — ops status, release build, env example
+6. **#25** platform-page-shell — shared page-shell CSS (before pages that depend on it)
+7. **#24** podcast-hub — podcast routes, services, UI
+8. **#26** monetization-crypto-core — monetization platform core
+9. **#27** split-leftovers — shop UI, rulebook assets, cogs/monetization route tweaks, P1 remote ops
+
+Rebase later PRs onto updated `main` after each merge if GitHub reports conflicts.
+
