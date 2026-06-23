@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-06-23** (PR stack **#21–#27** merged · PR **#29** deploy `--ask-pass` + selective upload + `apply_updates` **DONE** on prod · fleet **~30** hosted · shop **10/10** + coins purchase PASS · explorer **masternodes tab** live)
+Last updated: **2026-06-23** (PR **#30** multi-ping site integration merged — ops.multi_ping_enabled **false** until v1.3 daemon deploy — PR **#29** --ask-pass on prod — fleet **~30** hosted — explorer **masternodes tab** live)
 
 See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -46,6 +46,7 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **PR stack #21–#27 merged (2026-06-23)** — deploy tooling, fleet ops, explorer hub, hosting shop, docs, page-shell, podcast, monetization core, split leftovers (see [MN2_OPS.md § Waterfall](MN2_OPS.md#waterfall-merge-order-split-prs-1927)).
 - **PR #29 deploy fixes (2026-06-23)** — `deploy.py` / `apply_updates.py` `--ask-pass` (stale `DEPLOY_PASS` retry), unified SSH, selective `static_pages` upload, `apply_updates` backend quick-check timeout tolerance.
 - **`apply_updates.py --ask-pass` on prod (2026-06-23)** — user-confirmed; uwsgi + nginx reload without reboot.
+- **PR #30 multi-ping site integration (2026-06-23)** — fleet helpers + probes + docs/patches/mn2-daemon-v1.3.0-multi-ping.patch; **ops.multi_ping_enabled: false** until v1.3 binary built/deployed ([MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)).
 - **Explorer masternodes tab deployed** — `mn2-crypto-hub.js` + `GET /api/mn2/masternodes?fresh=1`; `/explorer?tab=masternodes` slot meter, fleet grid, PayPal checkout.
 - **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **DONE 2026-06-23** (`--ask-pass`; nginx reload + pm2 explorer restart OK).
 
@@ -121,7 +122,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 
 | Pri | Task | Owner | Depends on | Command / note |
 | --- | ---- | ----- | ---------- | -------------- |
-| **P1** | **Daemon v1.3 multi-ping** — ENABLED + `activetime` on **customer** nodes, not only `platformmn2` | **MasterNoder2 C++ repo** | Spike ManageStatus | ~2–3 weeks · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md) · until then: one `masternodeprivkey` + Option B multi-daemon |
+| **P1** | **Daemon v1.3 build/deploy + enable multi-ping** — customer ENABLED + rising ctivetime | **MasterNoder2 C++** + SSH | **Site PR #30 merged** | Build v1.3.0.0 → mn2_daemon_upgrade_remote.py --ask-pass --apply → QA probes → set multi_ping_enabled: true + deploy.py mn2_staking --ask-pass|
 | **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
@@ -132,7 +133,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P2** | **Shop UI browser spot-check** (optional) — render + PayPal checkout in browser | **Browser** | deploy done | API **10/10** + coins purchase **PASS** — manual confirm slot meter / revenue strip / BEST VALUE badge if desired |
 | **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | [CAMGIRLS_PHASE4_NGINX.md](CAMGIRLS_PHASE4_NGINX.md) |
 
-**Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **~30** hosted · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE** (PR **#29** `--ask-pass` + `apply_updates` on prod) · **provisioning backlog cleared** · **PR stack #21–#27 merged** · **explorer masternodes tab live**.
+**Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **~30** hosted · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE** (PR **#29** `--ask-pass` + `apply_updates` on prod) · **provisioning backlog cleared** · **PR #30** site multi-ping merged — **PR stack #21–#27 merged** · **explorer masternodes tab live**.
 
 **Watch (background — not blocking queue):** `/api/mn2/health` may still show **degraded** (`daemon_staking` inactive) after daemon restarts — re-run when convenient: `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking`. Only **`platformmn2`** gets ENABLED `activetime` until multi-ping ships (see P1). **2** hosts may still show **provisioning** while collateral/start completes — not stale (`stale_provisioning_count=0`).
 
@@ -364,7 +365,8 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Clear ~15 provisioning hosts** — **cleared 2026-06-23** (**30** hosted · **0** stale provisioning)
 - [x] **Explorer VPS nginx verify** — `fix_explorer_subdomains_remote.py --ask-pass` (2026-06-23; nginx test OK, pm2 explorer restarted)
 - [ ] **Fleet boot autostart (M5)** — systemd `mn2-fleet-autostart` not yet enabled
-- [ ] **Daemon multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
+- [x] **Multi-ping site integration (PR #30)** — helpers + probes + C++ patch doc; flag **multi_ping_enabled: false** until v1.3 on prod
+- [ ] **Daemon v1.3 deploy + enable multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
 - [ ] **Shop UI browser spot-check** — optional P2 (API/automated done)
 - [x] **Deploy camgirls catalog perf fix** — live ~3.6s on `/api/camgirls/performers?lite=1` (2026-06-20)
 - [x] **Re-run Discord spotlight fan-out** — `#market` webhook fixed; spotlight re-posted 2026-06-20
