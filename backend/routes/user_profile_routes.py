@@ -3,7 +3,18 @@ User Profile Routes
 API endpoints for user profiles, onboarding, and agent skills
 """
 from flask import Blueprint, jsonify, request, session
-from backend.services.user_onboarding import user_onboarding
+
+
+# Lazy proxy: defer importing the user_onboarding singleton until first use so a
+# startup-time circular import (user_onboarding <-> user_profile) can't block this
+# blueprint from registering. All `user_onboarding.<method>()` call sites work unchanged.
+class _LazyUserOnboarding:
+    def __getattr__(self, name):
+        from backend.services.user_onboarding import user_onboarding as _uo
+        return getattr(_uo, name)
+
+
+user_onboarding = _LazyUserOnboarding()
 from backend.services.account_resolution_service import set_session_user
 from backend.services.user_agent_skills import user_agent_skills
 from backend.services.user_info_scraper import user_info_scraper
@@ -90,12 +101,26 @@ def create_user():
 def login_user():
     """Login with user_id in same window. Optional auto-create if missing."""
     try:
+        from backend.services.login_security_service import (
+            check_login_allowed,
+            login_requires_password,
+            record_login_failure,
+            record_login_success,
+        )
+        from backend.services.password_protection_service import verify_password
+
         data = request.get_json() or {}
         user_id = (data.get('user_id') or '').strip()
         auto_create = bool(data.get('auto_create', False))
+        password = (data.get('password') or '').strip()
+        ip = request.remote_addr or 'unknown'
 
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id is required'}), 400
+
+        allowed, lock_msg = check_login_allowed(ip, user_id)
+        if not allowed:
+            return jsonify({'success': False, 'error': lock_msg, 'locked': True}), 429
 
         profile = user_onboarding.get_user_profile(user_id)
         created = False
@@ -108,14 +133,33 @@ def login_user():
                 'preferences': data.get('preferences', {}),
             }, user_id)
             if not create_result.get('success'):
+                record_login_failure(ip, user_id)
                 return jsonify(create_result), 400
             profile = create_result.get('profile')
             created = True
 
         if not profile:
+            record_login_failure(ip, user_id)
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
+        if login_requires_password(user_id):
+            if not password:
+                return jsonify({
+                    'success': False,
+                    'error': 'Password required for this account',
+                    'requires_password': True,
+                }), 401
+            verified = verify_password(user_id, password)
+            if not verified.get('success'):
+                record_login_failure(ip, user_id)
+                return jsonify({
+                    'success': False,
+                    'error': verified.get('error') or 'Invalid password',
+                    'requires_password': True,
+                }), 401
+
         set_session_user(user_id)
+        record_login_success(ip, user_id)
 
         # Ensure user exists in DB (creates on first login, updates last_login on return)
         db_result = {}

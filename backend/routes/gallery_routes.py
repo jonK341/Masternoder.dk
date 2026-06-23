@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request, send_file
 import os
 import json
 import time
+from datetime import datetime, timezone, timedelta
 
 gallery_bp = Blueprint("gallery", __name__)
 
@@ -442,6 +443,182 @@ def gallery_download(video_id):
         return jsonify({"status": "error", "error": "File not found"}), 404
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+
+GALLERY_PREMIUM_PRICES = {"premium": 0.05, "ultra": 0.1}
+GALLERY_PASS_PRICE_MN2 = 0.25
+GALLERY_PASS_HOURS = 24
+
+
+def _gallery_unlocks_path() -> str:
+    return os.path.join(_BASE, "data", "gallery_premium_unlocks.json")
+
+
+def _load_gallery_unlocks() -> dict:
+    path = _gallery_unlocks_path()
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_gallery_unlocks(data: dict) -> None:
+    path = _gallery_unlocks_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, path)
+
+
+def _gallery_resolve_uid() -> str:
+    try:
+        from backend.services.account_resolution_service import resolve_user_id
+        return resolve_user_id(from_body=True, from_query=True)
+    except Exception:
+        return request.args.get("user_id") or "default_user"
+
+
+def _gallery_pass_active(user_row: dict) -> bool:
+    expires = user_row.get("pass_expires_at")
+    if not expires:
+        return False
+    try:
+        exp = datetime.fromisoformat(str(expires).replace("Z", "+00:00"))
+        return exp > datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+
+@gallery_bp.route("/api/gallery/premium/config", methods=["GET"])
+def gallery_premium_config():
+    """Public MN2 paywall prices for premium/ultra gallery content."""
+    return jsonify({
+        "success": True,
+        "currency": "MN2",
+        "prices": GALLERY_PREMIUM_PRICES,
+        "pass_price_mn2": GALLERY_PASS_PRICE_MN2,
+        "pass_hours": GALLERY_PASS_HOURS,
+        "gated_qualities": list(GALLERY_PREMIUM_PRICES.keys()),
+    }), 200
+
+
+@gallery_bp.route("/api/gallery/premium/status", methods=["GET"])
+def gallery_premium_status():
+    """GET ?user_id= — unlocked video ids and active day-pass for gallery MN2 paywall."""
+    try:
+        user_id = _gallery_resolve_uid()
+        store = _load_gallery_unlocks()
+        user_row = store.get(user_id, {}) if isinstance(store.get(user_id), dict) else {}
+        unlocked = sorted([
+            vid for vid, val in user_row.items()
+            if vid not in ("pass_expires_at",) and bool(val)
+        ])
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "unlocked_video_ids": unlocked,
+            "pass_active": _gallery_pass_active(user_row),
+            "pass_expires_at": user_row.get("pass_expires_at"),
+            "prices": GALLERY_PREMIUM_PRICES,
+            "pass_price_mn2": GALLERY_PASS_PRICE_MN2,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@gallery_bp.route("/api/gallery/premium/unlock", methods=["POST"])
+def gallery_premium_unlock():
+    """POST { user_id?, video_id?, pass?: bool } — debit MN2 to unlock one video or a 24h pass."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _gallery_resolve_uid()).strip()
+        video_id = (data.get("video_id") or "").strip()
+        buy_pass = bool(data.get("pass"))
+
+        if not buy_pass and not video_id:
+            return jsonify({"success": False, "error": "video_id or pass=true is required"}), 400
+
+        price = GALLERY_PASS_PRICE_MN2 if buy_pass else None
+        if not buy_pass:
+            videos = _list_videos_cached()
+            video = next((v for v in videos if str(v.get("id")) == video_id), None)
+            if not video:
+                return jsonify({"success": False, "error": "Video not found"}), 404
+            quality = (video.get("quality_level") or "medium").strip().lower()
+            price = GALLERY_PREMIUM_PRICES.get(quality)
+            if price is None:
+                return jsonify({
+                    "success": False,
+                    "error": "Video quality is not paywalled",
+                    "quality_level": quality,
+                }), 400
+
+        from backend.services.unified_points_database import unified_points_db
+        from backend.services.mn2_ledger import append_entry
+
+        points_result = unified_points_db.get_all_points(user_id)
+        if not points_result.get("success", True):
+            return jsonify({"success": False, "error": "Failed to load balance"}), 500
+        user_points = points_result.get("points", {}) or {}
+        balance = float(user_points.get("mn2_balance", 0) or 0)
+        if balance == 0 and isinstance(user_points.get("systems"), dict):
+            balance = float(user_points["systems"].get("mn2_balance", 0) or 0)
+        if balance < price:
+            return jsonify({
+                "success": False,
+                "error": f"Insufficient MN2. Need {price:.8f}, have {balance:.8f}",
+                "price_mn2": price,
+                "mn2_balance": balance,
+            }), 400
+
+        meta = {
+            "video_id": video_id or None,
+            "pass": buy_pass,
+            "source": "gallery_premium_unlock",
+        }
+        debit = unified_points_db.add_points(
+            user_id, "mn2_balance", -price, source="gallery_premium_unlock", metadata=meta,
+        )
+        if not debit.get("success", True):
+            return jsonify({"success": False, "error": "Failed to debit MN2 balance"}), 500
+
+        store = _load_gallery_unlocks()
+        user_row = store.setdefault(user_id, {})
+        if buy_pass:
+            user_row["pass_expires_at"] = (
+                datetime.now(timezone.utc) + timedelta(hours=GALLERY_PASS_HOURS)
+            ).isoformat().replace("+00:00", "Z")
+        else:
+            user_row[str(video_id)] = True
+        _save_gallery_unlocks(store)
+
+        try:
+            append_entry(
+                user_id=user_id,
+                entry_type="gallery_premium_unlock",
+                amount=price,
+                metadata=meta,
+            )
+        except Exception:
+            pass
+
+        new_balance = unified_points_db.get_all_points(user_id).get("points", {}) or {}
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "video_id": video_id or None,
+            "pass": buy_pass,
+            "price_mn2": price,
+            "mn2_balance": float(new_balance.get("mn2_balance", 0) or 0),
+            "pass_expires_at": user_row.get("pass_expires_at"),
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @gallery_bp.route("/api/gallery/quality-gate", methods=["POST"])

@@ -1,0 +1,59 @@
+{
+  "$schema": "masternoder.platform_news.v1",
+  "items": [
+    {
+      "id": "news-casino-real-money",
+      "title": "Casino now supports MN2 and PayPal USD",
+      "summary": "Stake with virtual coins, MN2 wallet balance, or PayPal-funded USD play balance. Deposit USD via PayPal, then switch currency in the casino.",
+      "date": "2026-05-19",
+      "category": "launch",
+      "href": "/casino/",
+      "featured": true
+    },
+    {
+      "id": "news-casino-slots",
+      "title": "New slot machines in the casino",
+      "summary": "Classic Reels and Diamond Rush slots are live — spin for multi-symbol payouts on coins, MN2, or USD.",
+      "date": "2026-05-19",
+      "category": "feature",
+      "href": "/casino/",
+      "featured": true
+    },
+    {
+      "id": "news-shop-boosters",
+      "title": "Shop booster packs and game time bundles",
+      "summary": "New booster packs, extended game time SKUs, and exclusive bonus items are available in the shop.",
+      "date": "2026-05-19",
+      "category": "shop",
+      "href": "/shop/",
+      "featured": true
+    },
+    {
+      "id": "news-account-security",
+      "title": "Account security for real-money balances",
+      "summary": "Enable password-on-login and real-money protection on your profile when you hold MN2 or casino USD balance.",
+      "date": "2026-05-19",
+      "category": "security",
+      "href": "/profile/",
+      "featured": false
+    },
+    {
+      "id": "news-profile-points",
+      "title": "Profile & Points sync",
+      "summary": "Profile and Points are fully connected: use Refresh points on Profile and View full profile on Points.",
+      "date": "2026-03-04",
+      "category": "update",
+      "href": "/profile/",
+      "featured": false
+    },
+    {
+      "id": "news-starmap25",
+      "title": "Star Map 25",
+      "summary": "Investigate 25 WH40K-themed systems, earn game points, and unlock trophies.",
+      "date": "2026-03-01",
+      "category": "game",
+      "href": "/hunters-game/",
+      "featured": false
+    }
+  ]
+}

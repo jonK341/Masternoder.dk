@@ -44,9 +44,10 @@ PAGES = [
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
     'time-achievement-guides', 'beta_testing',
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
-    'social', 'profile', 'trophies',
+    'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator',
+    'aggregator', 'staking-monitor', 'explorer', 'proof-of-reserves',
+    'market', 'casino',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
@@ -207,6 +208,30 @@ def create_page_route(page_name):
 # Create routes for all pages
 for page in PAGES:
     create_page_route(page)
+
+
+@all_page_bp.route('/casino', methods=['GET'])
+def casino_redirect():
+    """Nav and bookmarks often use /casino without a trailing slash."""
+    return redirect('/casino/', code=301)
+
+
+@all_page_bp.route('/casino/', methods=['GET'])
+@all_page_bp.route('/casino/index.html', methods=['GET'])
+def casino_page():
+    """Serve virtual-coins casino page."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino')
+        if os.path.isfile(os.path.join(page_dir, 'index.html')):
+            resp = send_from_directory(page_dir, 'index.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+            resp.headers['ETag'] = CONTENT_VERSION
+            resp.headers['X-Content-Version'] = CONTENT_VERSION
+            return resp
+    except Exception as exc:
+        return f'Error loading casino page: {exc}', 500
+    return 'Casino page not found', 404
 
 
 @all_page_bp.route('/debugger/flask', methods=['GET'], endpoint='debugger_flask_template')

@@ -153,6 +153,81 @@ Returns last scanner runs and RPC call summary (from logs). If `MN2_OPS_SECRET` 
 
 ---
 
+## 10. Staking (parity layer)
+
+All staking actions a user takes in the wallet UI are plain HTTP with `user_id`, so any agent has parity. Consent (terms) must be recorded **before** the first `stake`.
+
+| Action | Method | Path | Notes |
+|--------|--------|------|-------|
+| Status | GET | `/api/mn2/staking/status?user_id=...` | Balance, staked, APR, longevity tier, multipliers, rig/uptime, terms |
+| Accept terms | POST | `/api/mn2/staking/accept-terms` | `{user_id, version?}` — required before staking |
+| Stake | POST | `/api/mn2/staking/stake` | `{user_id, amount}` — moves balance → pool (min/max + consent) |
+| Unstake | POST | `/api/mn2/staking/unstake` | `{user_id, amount}` — instant, internal move |
+| Auto-compound | POST | `/api/mn2/staking/auto-compound` | `{user_id, enabled}` |
+| Rig heartbeat | POST | `/api/mn2/staking/work` | `{user_id, proof?, nonce?}` — participation/uptime signal |
+| Calculator | GET | `/api/mn2/staking/calculator?amount=&days=&uptime=&boost=` | Projection, no side effects |
+| Rewards table | GET | `/api/mn2/staking/rewards-table?user_id=...&format=csv?` | Per-interval history (+ CSV) |
+| Monitor | GET | `/api/mn2/staking/monitor?limit=...` | Anonymized pool processes + aggregates (incl. `agent_staked_mn2`, `agent_actions_24h`) |
+| Network overview | GET | `/api/mn2/network-overview` | Explorer + pool + on-ramp + P2P stats (public) |
+| On-ramp (Model A) | POST | `/api/mn2/onramp/{quote,order,capture}` | PayPal→MN2, KYC caps + hold window |
+| P2P (Model B) | GET/POST | `/api/mn2/p2p/{listings,buy,...}` | Seller escrow + buyer hold; KYC-gated |
+
+---
+
+## 11. Staking automation layer (secret-gated)
+
+For headless / cron / LLM personas acting **on behalf of** users, separate from the parity layer.
+
+- **Auth:** `AGENT_MN2_STAKING_SECRET` (falls back to `AGENT_MN2_SHOP_SECRET`), header `X-Agent-Staking-Key`. Read-only verbs (`status`, `calculator`, `rewards_table`, `monitor`, `onramp_status`, `p2p_listings`, `p2p_status`) work without it.
+- **Discover:** `GET /api/agent/staking/capabilities` → machine-readable verb manifest + config.
+- **Execute:** `POST /api/agent/staking/execute` → `{ action, user_id, params... }`. Verbs include `accept_terms`, `stake`, `unstake`, `set_auto_compound`, `heartbeat`, `onramp_*`, `p2p_*`.
+- **Personas + autonomous loop:** `data/agent_staking_agents.json` binds `agent_id → user_id` + policy (`target_staked`, `max_staked`, `keep_balance_min`, `auto_compound`, `heartbeat`, `rebalance_step_max`, `auto_accept_terms`, `allowed_actions`).
+  - `upsert_agent` `{agent_id, user_id, policy}` — create/update a persona.
+  - `run_agent` `{agent_id, dry_run?}` — one policy step (consent-gate → heartbeat → align auto-compound → rebalance toward target within caps).
+  - `run_all` `{dry_run?}` — step every enabled persona.
+- **Cron entry point:** `POST /api/agent/staking/ops/run-all` (ops-token gated via `MN2_OPS_SECRET`) — driven hourly by `cron/mn2_accrue_rewards.sh`.
+- **Governance:** consent required before agent `stake`/`onramp_order` (`consent_required`); kill switch `agent.automation_enabled: false` in `mn2_staking_config.json` disables the loop without affecting the user parity layer; every step is audited to `mn2_staking_agent_activity.jsonl` and counted in the monitor (`agent_managed`, `agent_staked_mn2`, `agent_actions_24h`).
+
+---
+
+## 12. Explorer / network overview (public)
+
+**GET** `/api/mn2/network-overview` — no auth, cached, best-effort. Backs the on-site **Explorer page** (`/explorer`) and any agent that wants MN2 network + pool stats in one call. Source priority is decided server-side: **self-hosted explorer → daemon RPC → Chainz fallback**; the `source` map tags where each field came from. Fields are `null` when a stat is unavailable (e.g. Chainz does not serve masternode count — that requires daemon RPC).
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "block_height": 896572,
+  "mn2_usd_price": 5.3537,
+  "difficulty": 74512.52,
+  "masternode_count": 1,
+  "staking_weight": 4912885010705,
+  "network_hashps": 4912885010705,
+  "expected_stake_time_sec": null,
+  "pool_total_staked": 0.0,
+  "pool_apr_percent": 5.0,
+  "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
+  "source": { "block_height": "rpc", "difficulty": "rpc", "masternode_count": "rpc", "staking_weight": "rpc", "mn2_usd_price": "chainz" },
+  "onramp": { "onramp_volume_usd_24h": 0.0, "mn2_sold_24h": 0.0, "open_orders": 0, "chargeback_rate": 0.0 },
+  "p2p": { "p2p_volume_usd_24h": 0.0, "mn2_traded_24h": 0.0, "open_listings": 0, "chargeback_rate": 0.0 }
+}
+```
+
+- `explorer_base_url` reflects `data/mn2_config.json` (`explorer_base_url`) — Chainz today, the self-hosted iquidus host after the cutover. UI uses it for the "Open full explorer" link; agents can use it to build address/tx links.
+- `staking_health` (best-effort) reports whether the pool daemon is minting: `{ status: active|inactive|unreachable|unsupported, staking_active, staking_status_detail: { mnsync, walletunlocked, ... } }`. On MasterNoder2 this comes from `getstakingstatus` (no `getstakinginfo`).
+- See [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) for the hybrid (iquidus-from-source + on-site tiles) plan and source-priority rationale.
+
+**Companion endpoints (public, cached):**
+- **GET** `/api/mn2/network-history?hours=24&limit=500` → `{ success, history: [{ ts, block_height, mn2_usd_price, difficulty, network_hashps, staking_weight, masternode_count, pool_total_staked, staking_active, alert }], count }`. Throttled snapshots (~10 min) recorded opportunistically on `network-overview` calls; backs the `/explorer` sparklines.
+- **GET** `/api/mn2/network-alerts?limit=20` → `{ success, alerts: [{ ts, type, message, ... }] }`. Edge-triggered `staking_stopped` / `height_stall` events (also written to `logs/mn2_network_alerts.jsonl`; admin-notified if `MN2_ALERT_USER_ID` is set).
+- **GET** `/api/mn2/recent-blocks?limit=10` → `{ success, blocks: [{ height, hash, time, tx_count, size }], count }`. Latest blocks walked from the tip via RPC (`getblockhash`/`getblock`), cached ~30s; `[]` if the daemon is unreachable.
+- **GET** `/api/mn2/masternodes?limit=50` → `{ success, total, enabled, list: [{ rank, addr, status, lastpaid, activetime, version }] }`. From `listmasternodes`, cached ~60s.
+
+`network-overview` also includes `circulating_supply` (from `gettxoutsetinfo.total_amount`, cached ~10 min) enabling a "% of supply staked by the pool" figure.
+
+---
+
 ## Agent parity summary
 
 | Action | Method | Path | Purpose |
@@ -166,6 +241,7 @@ Returns last scanner runs and RPC call summary (from logs). If `MN2_OPS_SECRET` 
 | Create on-chain payment | POST | `/api/mn2/order-payment` | Phase 8: get address + amount for shop item; user sends MN2 on-chain |
 | Order payment status | GET | `/api/mn2/order-payment/status?payment_ref=...` | Poll until fulfilled |
 | Get price | GET | `/api/mn2/price` | Phase 9: MN2/USD + last_updated (no auth) |
+| Network overview | GET | `/api/mn2/network-overview` | Explorer + pool + on-ramp + P2P stats (no auth); backs `/explorer` page |
 | List verified users | GET | `/api/mn2/ops/verified-users` | Phase 10: ops only (token) |
 | Add/remove verified | POST | `/api/mn2/ops/verify-user` | Phase 10: body user_id, action=add\|remove (token) |
 
