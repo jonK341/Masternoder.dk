@@ -22,7 +22,7 @@ def handle_404(e):
     
     # Skip static files and known non-API paths
     if any(skip in path for skip in ['/static/', '/uploads/', '/output/', '.css', '.js', '.png', '.jpg', '.ico']):
-        return None  # Let Flask handle it normally
+        return e  # Let Flask handle it normally
     
     # Always return JSON for API endpoints
     if '/api/' in path:
@@ -42,8 +42,8 @@ def handle_404(e):
             'message': 'Endpoint not found. Logged for Register Intelligence.'
         }), 404
     
-    # For non-API paths, return None to let Flask handle normally (HTML)
-    return None
+    # For non-API paths, keep Flask's normal 404 response.
+    return e
 
 def register_auto_fix_middleware(app):
     """Register auto-fix middleware with Flask app"""

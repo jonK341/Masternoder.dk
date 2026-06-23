@@ -3,12 +3,23 @@ Debugger Profile Routes
 Profile and unified points integration for debugger site
 """
 from flask import Blueprint, request, jsonify
-from backend.services.unified_points_database import unified_points_db
-from backend.services.user_profile import user_profile
 from typing import Dict, Optional
 import os
 
 debugger_profile_bp = Blueprint('debugger_profile', __name__)
+
+
+# Lazy service accessors. These are imported inside request handlers (not at
+# module load) so this blueprint always registers even when the user_profile /
+# user_onboarding services have a circular import during startup.
+def _points_db():
+    from backend.services.unified_points_database import unified_points_db
+    return unified_points_db
+
+
+def _user_profile():
+    from backend.services.user_profile import user_profile
+    return user_profile
 
 
 @debugger_profile_bp.route('/api/debugger/profile/points', methods=['GET'])
@@ -18,7 +29,7 @@ def get_profile_points():
         user_id = request.args.get('user_id', 'default_user')
         
         # Get all points
-        points_result = unified_points_db.get_all_points(user_id)
+        points_result = _points_db().get_all_points(user_id)
         
         if not points_result.get('success'):
             return jsonify({
@@ -30,7 +41,7 @@ def get_profile_points():
         
         # Get profile data
         try:
-            profile_data = user_profile.get_user_profile(user_id)
+            profile_data = _user_profile().get_user_profile(user_id)
         except:
             profile_data = {}
         
@@ -71,7 +82,7 @@ def add_profile_points():
                 'error': 'Amount must be greater than 0'
             }), 400
         
-        result = unified_points_db.add_points(
+        result = _points_db().add_points(
             user_id=user_id,
             point_type=point_type,
             amount=amount,
@@ -94,7 +105,7 @@ def get_profile_stats():
         user_id = request.args.get('user_id', 'default_user')
         
         # Get points
-        points_result = unified_points_db.get_all_points(user_id)
+        points_result = _points_db().get_all_points(user_id)
         points = points_result.get('points', {}) if points_result.get('success') else {}
         
         # Calculate stats

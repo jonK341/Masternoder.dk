@@ -138,6 +138,16 @@ def purchase_with_mn2_balance(
     )
 
     _apply_shop_item_effects(uid, iid, item, qty)
+
+    # Shop V9.2: loyalty/cashback on the coin-equivalent value of MN2 spend.
+    loyalty_earned = 0
+    try:
+        from backend.services.shop_monetization_service import accrue_purchase_loyalty
+
+        loyalty_earned = int((accrue_purchase_loyalty(uid, total_cost) or {}).get("earned") or 0)
+    except Exception:
+        loyalty_earned = 0
+
     try:
         from backend.services.unified_points_sync import unified_points_sync_device
 
@@ -171,6 +181,7 @@ def purchase_with_mn2_balance(
         "payment_method": "mn2",
         "price_paid_mn2": price_mn2,
         "price_coins_equivalent": total_cost,
+        "loyalty_earned": loyalty_earned,
         "purchase_id": purchase_id,
         "agent_id": agent_id,
     }, 200

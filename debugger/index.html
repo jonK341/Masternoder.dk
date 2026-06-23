@@ -489,6 +489,7 @@
             <div class="tab tab-more" onclick="window.showTab('report')">Report</div>
             <div class="tab tab-more" onclick="window.showTab('unit-tests')" style="background: rgba(0,200,83,0.2); border-color: #00c853;">🧪 Unit Tests</div>
             <div class="tab tab-more" onclick="window.showTab('agent-tech-skills')" style="background: rgba(0,255,136,0.2); border-color: #00ff88;">🧲 Agent Tech & Skills</div>
+            <div class="tab tab-more" onclick="window.showTab('quiz'); window.loadQuiz();" style="background: rgba(255,193,7,0.22); border-color: #FFC107; font-weight: bold;">🎓 Top 50 Q&amp;A</div>
             <div class="tab tab-more" onclick="window.testNavigationBar().then(r => alert('Navigation Test: ' + JSON.stringify(r, null, 2)))" style="background: rgba(33,150,243,0.3); margin-left: 10px;">🧪 Test Nav</div>
             <div class="tab tab-more" onclick="window.testAllUrls().then(r => { const g410 = (r.endpoints_410 && r.endpoints_410.length) ? `\n410 Gone (wrong API prefix — use /api/ not /vidgenerator/api/):\n${r.endpoints_410.join(', ')}` : ''; const msg = `URL Test Results:\n\nTotal: ${r.endpoints_tested}\nWorking: ${r.endpoints_working}\nFailed: ${r.endpoints_failed.length}\n404: ${r.endpoints_404.length}\n500: ${r.endpoints_500.length}${g410}\n\nFailed:\n${r.endpoints_failed.join(', ')}`; alert(msg); console.log('Full results:', r); })" style="background: rgba(255,152,0,0.3);">🔗 Test URLs</div>
             <div class="tab tab-more" onclick="window.refreshCurrentTab()" style="background: rgba(76,175,80,0.3);">🔄 Refresh</div>
@@ -879,7 +880,27 @@
             </div>
             <div id="agent-tech-result" class="result-box" style="display: none;"></div>
         </div>
-        
+
+        <!-- Top 50 Q&A Tab -->
+        <div id="quiz" class="tab-content">
+            <h2>🎓 Top 50 Questions &amp; Answers</h2>
+            <p style="margin-bottom: 16px; opacity: 0.9;">
+                The 50 most useful questions about masternoder.dk and software debugging.
+                Each question has <strong>exactly 3 correct answers</strong> (multi-select). Pick all three, then check your score.
+                Use the buttons below to download the full question bank or your results.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center;">
+                <button class="button" onclick="window.loadQuiz()">🔄 Load / Reset</button>
+                <button class="button" onclick="window.gradeQuiz()" style="background: rgba(0,200,83,0.25); border-color:#00c853;">✅ Check Answers</button>
+                <button class="button" onclick="window.quizRevealAnswers()" style="background: rgba(33,150,243,0.25); border-color:#2196F3;">👁️ Reveal Answers</button>
+                <button class="button" onclick="window.quizDownload('json')" style="background: rgba(255,193,7,0.2); border-color:#FFC107; color:#FFD700;">📥 Download JSON</button>
+                <button class="button" onclick="window.quizDownload('md')" style="background: rgba(255,193,7,0.2); border-color:#FFC107; color:#FFD700;">📥 Download Markdown</button>
+                <button class="button" onclick="window.quizDownload('results')" style="background: rgba(156,39,176,0.25); border-color:#9C27B0;">📥 Download My Results</button>
+            </div>
+            <div id="quiz-score" class="status" style="margin-bottom:16px; font-size:1.05em;">Click "Load / Reset" or open the tab to begin.</div>
+            <div id="quiz-container" style="max-height: 70vh; overflow-y:auto; padding-right:6px;"></div>
+        </div>
+
         <!-- Profile Tab -->
         <div id="profile" class="tab-content">
             <h2>👤 Profile & Unified Points</h2>
@@ -1633,7 +1654,7 @@
             }
         }
         
-        async function scannerGetBlueprints() {
+        window.scannerGetBlueprints = async function() {
             const resultDiv = document.getElementById('scanner-result');
             resultDiv.innerHTML = 'Loading blueprints...';
             
@@ -1702,7 +1723,7 @@
             }
         }
         
-        async function scannerGetSuggestions() {
+        window.scannerGetSuggestions = async function() {
             const resultDiv = document.getElementById('scanner-result');
             resultDiv.innerHTML = 'Generating suggestions...';
             
@@ -1781,7 +1802,7 @@
             }
         }
         
-        async function scannerGetRegistrationCode() {
+        window.scannerGetRegistrationCode = async function() {
             const resultDiv = document.getElementById('scanner-result');
             resultDiv.innerHTML = 'Generating registration code...';
             
@@ -5928,6 +5949,227 @@
                 window.showTab(initialTab);
             }
         }, 100);
+    </script>
+
+    <!-- Top 50 Q&A mechanism (each question has exactly 3 correct answers) -->
+    <script>
+    (function() {
+        // Each item: q = question, o = options, c = indices of the 3 correct options, e = explanation
+        const QUIZ = [
+            { q: "How are new Flask blueprints made available in this backend?", o: ["They are auto-discovered and registered from backend/routes/", "You must edit register_blueprints.py by hand for every route", "Place the route file in backend/routes/", "Blueprints are loaded by the auto-registration system", "Routes only work if compiled into a binary", "Routes must be declared in nginx"], c: [0, 2, 3], e: "Blueprints in backend/routes/ are auto-discovered and registered; no manual edit to register_blueprints.py is required." },
+            { q: "Which API path prefixes are valid for frontend calls?", o: ["/api/", "/vidgenerator/api/", "/api/points/all", "ftp://api", "//random/api", "mailto:/api"], c: [0, 1, 2], e: "Both /api/ and /vidgenerator/api/ are used; /api/points/all is a concrete valid example." },
+            { q: "An endpoint returns HTTP 410 Gone in the URL tester. What does it indicate?", o: ["The resource is intentionally gone / wrong prefix used", "You likely used /vidgenerator/api/ where /api/ is expected", "It is a permanent unavailability signal", "It means the server is on fire", "It is identical to a 200 OK", "It means authentication succeeded"], c: [0, 1, 2], e: "410 signals the resource is gone—often from using the wrong API prefix; it is a deliberate, semi-permanent signal." },
+            { q: "Where are API 404 occurrences logged for later analysis?", o: ["logs/register_intelligence/404_occurrences.jsonl", "In a JSONL (one JSON object per line) file", "In the register_intelligence logs directory", "Only in the browser console", "Nowhere—404s are discarded", "In the Windows registry"], c: [0, 1, 2], e: "404s are appended to logs/register_intelligence/404_occurrences.jsonl, a JSONL file under register_intelligence." },
+            { q: "What does the unified points system track?", o: ["XP / experience points", "Coins and credits", "Battle and social points", "The user's blood pressure", "CPU temperature", "DNS records"], c: [0, 1, 2], e: "Unified points cover XP, coins/credits, and battle/social points among other types." },
+            { q: "Completing an agent task in the debugger does what?", o: ["Awards points to the agent/user", "Records points in the unified points database", "Makes agent earnings visible in the Profile tab", "Deletes the database", "Disables the network card", "Formats the disk"], c: [0, 1, 2], e: "Task completion awards points stored in the unified DB and surfaced in the Profile tab." },
+            { q: "Which are sound first steps when debugging a reported bug?", o: ["Reproduce it reliably", "Read the actual error message / stack trace", "Check recent changes / logs", "Immediately rewrite the whole module", "Delete the logs", "Restart only after blaming the user"], c: [0, 1, 2], e: "Reproduce, read the error, and inspect recent changes/logs before making edits." },
+            { q: "What does an HTTP 500 status typically mean?", o: ["A server-side error occurred", "An unhandled exception likely happened", "The request reached the server but failed internally", "The page does not exist", "The user is unauthorized", "The request was redirected"], c: [0, 1, 2], e: "500 = internal server error: the server failed, usually via an unhandled exception (404 is not-found, 401/403 are auth)." },
+            { q: "What does an HTTP 404 status mean?", o: ["The resource/route was not found", "The URL may be misspelled or unregistered", "The server could not match the path", "The server crashed internally", "Access was forbidden", "The content was created"], c: [0, 1, 2], e: "404 = not found: no route matched (500 is server error, 403 forbidden, 201 created)." },
+            { q: "Good practices for writing log messages while debugging?", o: ["Include context (ids, inputs)", "Log at appropriate severity levels", "Make messages searchable/greppable", "Log full passwords and secrets", "Log nothing to save space", "Use only emojis with no text"], c: [0, 1, 2], e: "Useful logs carry context, correct levels, and searchable text—never secrets." },
+            { q: "The debugger's URL tester reports endpoints in which buckets?", o: ["Working (200)", "404 not found", "500 server errors", "Favorite color", "Astrological sign", "Shoe size"], c: [0, 1, 2], e: "Results are grouped into working, 404, and 500 (plus 410) buckets." },
+            { q: "Which are legitimate ways to narrow down where a bug originates?", o: ["Bisecting the code path / git history", "Adding targeted logging", "Using a debugger / breakpoints", "Guessing randomly and shipping", "Turning the monitor off and on", "Renaming variables until it works"], c: [0, 1, 2], e: "Bisection, targeted logging, and breakpoints are systematic localization techniques." },
+            { q: "Why is reproducing a bug reliably important?", o: ["It confirms the bug exists", "It lets you verify a fix actually works", "It enables a regression test", "It guarantees the bug is harmless", "It removes the need for logs", "It deletes the root cause automatically"], c: [0, 1, 2], e: "A reliable repro confirms the issue, validates the fix, and seeds a regression test." },
+            { q: "What belongs in a useful bug report / debug report?", o: ["Steps to reproduce", "Expected vs actual behavior", "Environment / version info", "The reporter's favorite movie", "A random lottery number", "Unrelated marketing copy"], c: [0, 1, 2], e: "Repro steps, expected/actual, and environment details make reports actionable." },
+            { q: "Which HTTP statuses indicate success?", o: ["200 OK", "201 Created", "204 No Content", "404 Not Found", "500 Internal Server Error", "403 Forbidden"], c: [0, 1, 2], e: "2xx codes (200, 201, 204) are success; 4xx/5xx are errors." },
+            { q: "In the debugger, the Profile & Points tab can show...", o: ["Points summary (level, XP, coins)", "Statistics with point breakdown", "Agent earnings", "Live stock prices", "Weather radar", "The user's email password"], c: [0, 1, 2], e: "Profile shows points summary, statistics, and agent earnings—not unrelated/secret data." },
+            { q: "What is a regression test good for?", o: ["Preventing a fixed bug from returning", "Documenting expected behavior", "Catching breakage in future changes", "Increasing screen brightness", "Encrypting the database", "Sending marketing emails"], c: [0, 1, 2], e: "Regression tests lock in behavior and catch reintroduced bugs." },
+            { q: "When an exception is thrown, where do you find the root location?", o: ["In the stack trace", "At the deepest/topmost relevant frame", "In the file/line referenced by the trace", "In the user's horoscope", "In the favicon", "In the CSS file only"], c: [0, 1, 2], e: "The stack trace points to files/lines and frames where the error arose." },
+            { q: "Which are valid debugger download options in this project's tooling?", o: ["A Python debugger script", "A PowerShell debugger script", "A full ZIP package of tools", "A holographic projection", "A physical USB shipped to you", "A vinyl record"], c: [0, 1, 2], e: "The debugger_download backend offers Python, PowerShell (and Bash/Batch) scripts plus a full ZIP package." },
+            { q: "What is MN2 in this project?", o: ["A staking-related subsystem", "Has staking routes/services in the backend", "Has dedicated unit tests (e.g. test_mn2_staking)", "A brand of breakfast cereal", "A type of GPU", "A keyboard layout"], c: [0, 1, 2], e: "MN2 is a staking subsystem with routes, services, and unit tests in the codebase." },
+            { q: "Why avoid editing config (e.g. git config) blindly while debugging?", o: ["It can change behavior in non-obvious ways", "It may be out of scope for the bug", "It can hide the real root cause", "It always fixes every bug", "It improves battery life", "It is required before every commit"], c: [0, 1, 2], e: "Unrelated config edits add risk, scope creep, and can mask the actual cause." },
+            { q: "Which tools in the debugger help find broken endpoints?", o: ["Find Broken URLs", "Test All Routes", "Test URL", "Change Desktop Wallpaper", "Mute Microphone", "Play Music"], c: [0, 1, 2], e: "Find Broken URLs, Test All Routes, and Test URL are the URL-testing tools." },
+            { q: "What makes an automated test reliable (non-flaky)?", o: ["Deterministic inputs/outputs", "No hidden dependence on timing/order", "Proper isolation/cleanup", "Random sleeps everywhere", "Dependence on external live websites", "Shared mutable global state"], c: [0, 1, 2], e: "Determinism, no order/timing reliance, and isolation reduce flakiness." },
+            { q: "When fixing a linter error you introduced, you should...", o: ["Fix it if the cause is clear", "Avoid mass-changing unrelated pre-existing lints", "Keep changes focused on your edit", "Disable the linter globally", "Delete the file instead", "Ignore all errors forever"], c: [0, 1, 2], e: "Fix your own new lints with focused changes; don't disable the linter or churn unrelated code." },
+            { q: "Which are healthy responses to an intermittent (heisenbug) failure?", o: ["Add logging to capture state when it fails", "Look for race conditions / timing issues", "Try to make it reproducible", "Declare it fixed without evidence", "Remove all error handling", "Hope it goes away"], c: [0, 1, 2], e: "Capture state, hunt races/timing, and work toward a reliable repro." },
+            { q: "What does the debugger's 'Test Nav' function verify?", o: ["That tabs switch correctly", "That expected functions are defined", "That navigation works without errors", "The user's typing speed", "Network ping to the moon", "Battery health"], c: [0, 1, 2], e: "Test Nav checks tab switching and that required functions exist/run." },
+            { q: "Why prefer small, focused commits while fixing bugs?", o: ["Easier to review", "Easier to revert if wrong", "Clearer history of the why", "They make files larger", "They hide what changed", "They require force-push"], c: [0, 1, 2], e: "Small commits are reviewable, revertible, and document intent." },
+            { q: "Which inputs commonly cause edge-case bugs?", o: ["Empty / null values", "Very large values", "Unicode / special characters", "Perfectly average values only", "The number 7 exclusively", "Only inputs you already tested"], c: [0, 1, 2], e: "Empty/null, extremes, and unusual characters are classic edge cases." },
+            { q: "What is the purpose of the Error Dashboard tab?", o: ["View error statistics", "Manage error migration tasks", "Assign tasks to agents", "Order pizza", "Tune the radio", "Edit photos"], c: [0, 1, 2], e: "The Error Dashboard shows stats and manages/assigns error tasks." },
+            { q: "Which statements about caching and debugging are true?", o: ["Stale caches can hide your fix", "A hard refresh / cache-busting can help", "no-cache headers force fresh content", "Caches always serve correct data", "Caching never affects debugging", "Clearing cache deletes your source code"], c: [0, 1, 2], e: "Stale caches mask fixes; cache-busting and no-cache headers force fresh loads." },
+            { q: "A function works in isolation but fails in the app. Likely culprits?", o: ["Different inputs/state in the real flow", "Side effects from other code", "Environment/config differences", "The function changed its own source", "Cosmic rays only", "The CSS theme color"], c: [0, 1, 2], e: "Integration failures usually stem from real-world inputs, side effects, or env/config." },
+            { q: "Which are good uses of the debugger's Report tab?", o: ["Generate a comprehensive debug report", "Summarize system state", "Share findings with the team", "Mine cryptocurrency", "Stream video games", "Send spam"], c: [0, 1, 2], e: "The Report tab generates a comprehensive, shareable debug report." },
+            { q: "What does 'parity' mean in this project's agent-native design?", o: ["Every UI action is also agent-achievable", "Agents can do what users can do", "Features should be reachable by agents and humans", "Only humans may trigger actions", "Agents are forbidden from APIs", "Parity means identical file sizes"], c: [0, 1, 2], e: "Parity = any action a user can take, an agent can also take." },
+            { q: "Which are valid ways to confirm a fix is correct?", o: ["Re-run the original repro", "Add/verify a test that fails before and passes after", "Check related flows for regressions", "Assume it works because it compiled", "Ask the bug nicely to be gone", "Delete the test suite"], c: [0, 1, 2], e: "Re-run the repro, add a before/after test, and check for regressions." },
+            { q: "Which signals suggest a memory or resource leak?", o: ["Memory grows over time without release", "Performance degrades the longer it runs", "Handles/connections never close", "It uses constant memory forever", "It speeds up over days", "It frees memory before allocating"], c: [0, 1, 2], e: "Leaks show as unbounded growth, degradation over time, and unreleased resources." },
+            { q: "What should you do before a destructive action (e.g. deleting data)?", o: ["Confirm scope / intent", "Prefer a backup or reversible approach", "Ask when uncertain", "Run it immediately without checks", "Skip all confirmations", "Delete extra things for good measure"], c: [0, 1, 2], e: "Destructive actions need confirmed scope, reversibility, and asking when unsure." },
+            { q: "Which are characteristics of a good error message for users?", o: ["Explains what went wrong", "Suggests a next step", "Avoids leaking sensitive internals", "Dumps the full database", "Is a single unhelpful 'Error'", "Shows raw secrets/tokens"], c: [0, 1, 2], e: "Good errors are clear, actionable, and don't leak internals or secrets." },
+            { q: "In the debugger, which tabs auto-load content when opened?", o: ["Error Dashboard loads its panels", "Profile loads profile data", "Agent-tech-skills loads skillsets", "The toaster tab makes toast", "The teleport tab moves you", "The time-travel tab rewinds"], c: [0, 1, 2], e: "showTab auto-loads errors panels, profile data, and skillsets for those tabs." },
+            { q: "Why add context (ids, request data) to logs?", o: ["To correlate events across a request", "To reproduce the scenario later", "To distinguish similar errors", "To make logs unreadable", "To leak user passwords", "To inflate disk usage pointlessly"], c: [0, 1, 2], e: "Context lets you correlate, reproduce, and disambiguate—without leaking secrets." },
+            { q: "What is the value of a minimal reproducible example?", o: ["Removes noise to isolate the cause", "Makes the bug easier to share", "Speeds up diagnosis", "Adds unrelated complexity", "Requires the full production DB", "Hides the failing behavior"], c: [0, 1, 2], e: "A minimal repro isolates the cause and is easy to share and diagnose." },
+            { q: "Which practices keep a debugging session organized?", o: ["Track hypotheses and what you've ruled out", "Change one thing at a time", "Keep notes of findings", "Change ten things then guess", "Never write anything down", "Restart from scratch every minute"], c: [0, 1, 2], e: "One change at a time, tracked hypotheses, and notes keep sessions coherent." },
+            { q: "What can cause a route to 404 even though you 'added' it?", o: ["The blueprint wasn't placed where it's auto-discovered", "A typo in the path", "The server wasn't reloaded/restarted", "The moon phase", "The user's mood", "The font size"], c: [0, 1, 2], e: "Misplaced blueprint, path typos, or no reload commonly cause unexpected 404s." },
+            { q: "Which are reasonable when a third-party API call fails?", o: ["Check status code and response body", "Add timeouts and error handling", "Log the request/response for diagnosis", "Retry infinitely with no limit", "Ignore the failure silently", "Crash the whole app on purpose"], c: [0, 1, 2], e: "Inspect status/body, handle errors with timeouts, and log for diagnosis." },
+            { q: "Why is reading the existing code before editing important?", o: ["Avoids breaking existing behavior", "Reveals conventions/patterns to follow", "Prevents duplicate or conflicting logic", "Wastes time always", "Guarantees zero bugs", "Is forbidden by best practice"], c: [0, 1, 2], e: "Reading first preserves behavior, follows conventions, and avoids conflicts." },
+            { q: "Which are signs your 'fix' may be masking the real problem?", o: ["A broad try/except that swallows errors", "Hardcoding a value to pass one case", "Suppressing a symptom without finding the cause", "Adding a thorough regression test", "Understanding the root cause", "Verifying across multiple cases"], c: [0, 1, 2], e: "Swallowing errors, hardcoding, and symptom-suppression mask root causes." },
+            { q: "What does the debugger's health checker run against?", o: ["/api/health", "/api/health/system", "/api/monitor/status", "/api/make/coffee", "/api/teleport", "/api/horoscope"], c: [0, 1, 2], e: "The health grid hits /api/health, /api/health/system, and /api/monitor/status." },
+            { q: "Which are valid reasons to add a timeout to a network call?", o: ["Prevent hanging forever", "Fail fast and surface errors", "Keep the UI responsive", "Make requests slower on purpose", "Guarantee the server answers", "Disable error handling"], c: [0, 1, 2], e: "Timeouts prevent hangs, fail fast, and keep the UI responsive." },
+            { q: "When should you ask the user for clarification instead of guessing?", o: ["When requirements are ambiguous", "Before scope-changing or destructive actions", "When multiple valid interpretations exist", "For trivial naming choices", "For obvious formatting defaults", "Never, always guess"], c: [0, 1, 2], e: "Ask on ambiguity, scope/destructive changes, and competing interpretations; decide trivial defaults yourself." },
+            { q: "Which are good ways to validate front-end API calls match the backend?", o: ["Scan frontend for API paths", "Compare against registered backend routes", "Check the 404 occurrence logs", "Read tea leaves", "Count the pixels", "Ask a magic 8-ball"], c: [0, 1, 2], e: "Scan frontend paths, compare to backend routes, and review 404 logs to find gaps." },
+            { q: "What is a sound philosophy for the code you write?", o: ["Clarity over cleverness", "Keep it as simple as needed (YAGNI)", "Prefer editing existing files over new ones", "Maximize abstraction for its own sake", "Add unused features speculatively", "Obfuscate to look smart"], c: [0, 1, 2], e: "Favor clarity, simplicity/YAGNI, and editing existing files over speculative complexity." }
+        ];
+
+        function ensure50(list) {
+            // Guarantee exactly 50 well-formed questions with 3 correct answers each.
+            const out = list.filter(item => item && Array.isArray(item.o) && Array.isArray(item.c) && item.c.length === 3);
+            let n = out.length + 1;
+            while (out.length < 50) {
+                out.push({
+                    q: "Debugging principle #" + n + ": which of these are generally good debugging habits?",
+                    o: ["Reproduce before fixing", "Read the error message", "Verify the fix with a test", "Change many things at once blindly", "Ignore the stack trace", "Delete logs to save space"],
+                    c: [0, 1, 2],
+                    e: "Reproduce, read the error, and verify with a test are reliable habits."
+                });
+                n++;
+            }
+            return out.slice(0, 50);
+        }
+
+        const QUESTIONS = ensure50(QUIZ);
+        window.DEBUGGER_QUIZ = QUESTIONS;
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        window.loadQuiz = function() {
+            const container = document.getElementById('quiz-container');
+            const score = document.getElementById('quiz-score');
+            if (!container) return;
+            let html = '';
+            QUESTIONS.forEach((item, qi) => {
+                html += '<div class="quiz-question" data-qi="' + qi + '" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.12);border-left:4px solid #FFC107;border-radius:8px;padding:14px 16px;margin-bottom:14px;">';
+                html += '<div style="font-weight:600;margin-bottom:10px;">' + (qi + 1) + '. ' + esc(item.q) + ' <span style="opacity:0.6;font-weight:400;">(select 3)</span></div>';
+                item.o.forEach((opt, oi) => {
+                    const id = 'q' + qi + '_o' + oi;
+                    html += '<label for="' + id + '" data-oi="' + oi + '" style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-radius:5px;cursor:pointer;margin-bottom:3px;">';
+                    html += '<input type="checkbox" id="' + id + '" data-qi="' + qi + '" data-oi="' + oi + '" style="margin-top:3px;">';
+                    html += '<span>' + esc(opt) + '</span></label>';
+                });
+                html += '<div class="quiz-explain" data-qi="' + qi + '" style="display:none;margin-top:8px;font-size:0.9em;opacity:0.9;"></div>';
+                html += '</div>';
+            });
+            container.innerHTML = html;
+            if (score) {
+                score.textContent = 'Loaded ' + QUESTIONS.length + ' questions. Select 3 answers per question, then click "Check Answers".';
+                score.style.color = '';
+            }
+        };
+
+        window.gradeQuiz = function() {
+            let correct = 0, answered = 0;
+            QUESTIONS.forEach((item, qi) => {
+                const block = document.querySelector('.quiz-question[data-qi="' + qi + '"]');
+                if (!block) return;
+                const boxes = block.querySelectorAll('input[type="checkbox"]');
+                const selected = [];
+                boxes.forEach(b => { if (b.checked) selected.push(Number(b.getAttribute('data-oi'))); });
+                if (selected.length > 0) answered++;
+                const want = item.c.slice().sort((a, b) => a - b).join(',');
+                const got = selected.slice().sort((a, b) => a - b).join(',');
+                const isRight = want === got;
+                if (isRight) correct++;
+                boxes.forEach(b => {
+                    const oi = Number(b.getAttribute('data-oi'));
+                    const label = b.closest('label');
+                    if (!label) return;
+                    label.style.background = '';
+                    if (item.c.includes(oi)) label.style.background = 'rgba(0,200,83,0.25)';
+                    else if (b.checked) label.style.background = 'rgba(244,67,54,0.25)';
+                });
+                const explain = block.querySelector('.quiz-explain');
+                if (explain) {
+                    explain.style.display = 'block';
+                    explain.innerHTML = (isRight ? '✅ Correct. ' : '❌ Not quite. ') + esc(item.e);
+                }
+            });
+            window._quizLastResult = { total: QUESTIONS.length, answered: answered, correct: correct, timestamp: new Date().toISOString() };
+            const score = document.getElementById('quiz-score');
+            if (score) {
+                const pct = Math.round((correct / QUESTIONS.length) * 100);
+                score.innerHTML = '🎯 Score: <strong>' + correct + ' / ' + QUESTIONS.length + '</strong> (' + pct + '%) — answered ' + answered + '.';
+                score.style.color = pct >= 80 ? '#00e676' : (pct >= 50 ? '#FFC107' : '#ff5252');
+            }
+            return window._quizLastResult;
+        };
+
+        window.quizRevealAnswers = function() {
+            QUESTIONS.forEach((item, qi) => {
+                const block = document.querySelector('.quiz-question[data-qi="' + qi + '"]');
+                if (!block) return;
+                block.querySelectorAll('input[type="checkbox"]').forEach(b => {
+                    const oi = Number(b.getAttribute('data-oi'));
+                    const label = b.closest('label');
+                    if (label) label.style.background = item.c.includes(oi) ? 'rgba(0,200,83,0.25)' : '';
+                });
+                const explain = block.querySelector('.quiz-explain');
+                if (explain) { explain.style.display = 'block'; explain.innerHTML = '💡 ' + esc(item.e); }
+            });
+            const score = document.getElementById('quiz-score');
+            if (score) score.textContent = 'Answers revealed (correct options highlighted in green).';
+        };
+
+        function triggerDownload(filename, content, mime) {
+            try {
+                const blob = new Blob([content], { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (e) {
+                alert('Download failed: ' + (e.message || e));
+            }
+        }
+
+        window.quizDownload = function(format) {
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            if (format === 'json') {
+                const data = QUESTIONS.map((item, i) => ({
+                    number: i + 1,
+                    question: item.q,
+                    options: item.o,
+                    correct_answers: item.c.map(ci => item.o[ci]),
+                    correct_indices: item.c,
+                    explanation: item.e
+                }));
+                triggerDownload('debugger_top50_qa_' + stamp + '.json', JSON.stringify({ title: 'masternoder.dk Debugger — Top 50 Q&A', generated: new Date().toISOString(), count: data.length, questions: data }, null, 2), 'application/json');
+            } else if (format === 'md') {
+                let md = '# masternoder.dk Debugger — Top 50 Questions & Answers\n\n';
+                md += '_Generated ' + new Date().toISOString() + '. Each question has exactly 3 correct answers._\n\n';
+                QUESTIONS.forEach((item, i) => {
+                    md += '## ' + (i + 1) + '. ' + item.q + '\n\n';
+                    item.o.forEach((opt, oi) => {
+                        md += '- [' + (item.c.includes(oi) ? 'x' : ' ') + '] ' + opt + '\n';
+                    });
+                    md += '\n**Correct:** ' + item.c.map(ci => item.o[ci]).join('; ') + '\n\n';
+                    md += '> ' + item.e + '\n\n';
+                });
+                triggerDownload('debugger_top50_qa_' + stamp + '.md', md, 'text/markdown');
+            } else if (format === 'results') {
+                const res = window._quizLastResult || window.gradeQuiz();
+                const lines = [];
+                lines.push('masternoder.dk Debugger — Quiz Results');
+                lines.push('Generated: ' + new Date().toISOString());
+                lines.push('Score: ' + res.correct + ' / ' + res.total + ' (' + Math.round((res.correct / res.total) * 100) + '%)');
+                lines.push('Questions answered: ' + res.answered);
+                lines.push('');
+                QUESTIONS.forEach((item, qi) => {
+                    const block = document.querySelector('.quiz-question[data-qi="' + qi + '"]');
+                    const selected = [];
+                    if (block) block.querySelectorAll('input[type="checkbox"]').forEach(b => { if (b.checked) selected.push(Number(b.getAttribute('data-oi'))); });
+                    const want = item.c.slice().sort((a, b) => a - b).join(',');
+                    const got = selected.slice().sort((a, b) => a - b).join(',');
+                    lines.push((qi + 1) + '. ' + item.q);
+                    lines.push('   Your answer: ' + (selected.length ? selected.map(i => item.o[i]).join('; ') : '(none)'));
+                    lines.push('   Correct:     ' + item.c.map(i => item.o[i]).join('; '));
+                    lines.push('   Result: ' + (want === got ? 'CORRECT' : 'INCORRECT'));
+                    lines.push('');
+                });
+                triggerDownload('debugger_quiz_results_' + stamp + '.txt', lines.join('\n'), 'text/plain');
+            }
+        };
+    })();
     </script>
 
     <!-- Hypnotic Point Counters -->

@@ -18,6 +18,12 @@ if sys.platform == 'win32':
 
 BASE_URL = "https://masternoder.dk"
 
+# Some debugger endpoints do heavy work (full route/blueprint scans, diagnostics)
+# and uWSGI workers pay a one-time import cost on first hit, so use a generous
+# timeout and retry once on timeout before declaring a problem.
+REQUEST_TIMEOUT = 20
+MAX_ATTEMPTS = 2
+
 # Test endpoints
 # Production serves API at https://masternoder.dk/api/ — /vidgenerator/api returns 410 (disabled).
 ENDPOINTS = [
@@ -68,7 +74,7 @@ ENDPOINTS = [
     # Error endpoints
     {'url': '/api/errors/stats?days=7', 'method': 'GET', 'name': 'Error Stats'},
     {'url': '/api/errors/list?limit=10', 'method': 'GET', 'name': 'Error List'},
-    {'url': '/api/errors/handler-status', 'method': 'GET', 'name': 'Error Handler Status'},
+    {'url': '/api/errors/handler-status/analyze', 'method': 'GET', 'name': 'Error Handler Status'},
 ]
 
 
@@ -89,16 +95,26 @@ def test_endpoint(endpoint: Dict) -> Dict:
         'error': None
     }
     
+    if method not in ('GET', 'POST'):
+        result['error'] = f'Unsupported method: {method}'
+        return result
+
     try:
         start_time = datetime.now()
-        
-        if method == 'GET':
-            response = requests.get(url, timeout=5, allow_redirects=True)
-        elif method == 'POST':
-            response = requests.post(url, json={}, timeout=5, allow_redirects=True)
-        else:
-            result['error'] = f'Unsupported method: {method}'
-            return result
+
+        response = None
+        last_timeout = None
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                if method == 'GET':
+                    response = requests.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+                else:
+                    response = requests.post(url, json={}, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+                break
+            except requests.exceptions.Timeout as te:
+                last_timeout = te
+                if attempt >= MAX_ATTEMPTS:
+                    raise
         
         end_time = datetime.now()
         result['response_time'] = (end_time - start_time).total_seconds()

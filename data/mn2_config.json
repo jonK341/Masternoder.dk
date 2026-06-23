@@ -8,7 +8,59 @@
   "max_withdrawal_per_day": 10,
   "max_withdrawal_amount_per_day": 1000,
   "withdrawal_requires_verification": false,
+  "withdrawal_requires_whitelist": true,
+  "withdrawal_new_address_cooldown_hours": 24,
+  "withdrawal_risk": {
+    "enabled": true,
+    "step_up_score": 2,
+    "block_score": 5,
+    "large_amount_mn2": 50000,
+    "large_balance_fraction": 0.5,
+    "velocity_window_minutes": 60,
+    "velocity_count_threshold": 2
+  },
+  "float_gate": {
+    "enabled": true,
+    "min_hours_coverage": 24,
+    "large_withdrawal_mn2": 50000
+  },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
   "coins_per_mn2": 100,
-  "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX"
+  "generator": {
+    "enabled": true,
+    "earn_on_finish_mn2": 0.005,
+    "express_pack_mn2": 0.5,
+    "premium_encode_mn2": 0.1,
+    "ultra_encode_mn2": 0.25,
+    "duration_surcharge_per_min_mn2": 0.002,
+    "max_earn_per_video_mn2": 0.05
+  },
+  "aggregator": {
+    "enabled": true,
+    "daily_cap_mn2": 0.25,
+    "default_reward_mn2": 0.00005,
+    "action_rewards_mn2": {
+      "monitor_move": 0.00005,
+      "monitor_battle_complete": 0.002,
+      "battle_overlay_enter": 0.0003,
+      "link_encode": 0.0005,
+      "link_decode": 0.0003,
+      "intel_loaded": 0.0002,
+      "progress_refresh": 0.0001,
+      "explorer_chat": 0.0004,
+      "interaction": 0.00005
+    }
+  },
+  "callbacks": {
+    "comment": "Set MN2_CALLBACK_SECRET in .env for POST /api/casino/callback/* and /api/aggregators/callback/*. Dev only: MN2_CALLBACK_BYPASS=1",
+    "require_secret": true
+  },
+  "order_payment_expiry_hours": 1,
+  "order_payment_grace_hours": 24,
+  "order_payment_match_tolerance": 0.00000001,
+  "order_payment_overpay_credit": true,
+  "order_payment_underpay_credit": true,
+  "order_payment_combined_fulfill": true,
+  "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
 }

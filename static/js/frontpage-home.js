@@ -392,15 +392,43 @@
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const res = await fetch(`${BASE}/api/aggregators/intelligence/news?limit=8`);
-            const data = await res.json();
-            const items = (data && data.news) || [];
-            if (!items.length) {
+            const [platformRes, feedRes] = await Promise.all([
+                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+            ]);
+            const platform = (platformRes && platformRes.news) || [];
+            const external = (feedRes && feedRes.news) || [];
+            if (!platform.length && !external.length) {
                 ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
                 return;
             }
             ul.textContent = '';
-            items.forEach((n) => {
+            platform.forEach((n) => {
+                const li = document.createElement('li');
+                li.className = 'fp-news-platform';
+                const a = document.createElement('a');
+                a.href = n.href || '/news/';
+                a.textContent = (n.title || 'Platform update');
+                const meta = document.createElement('span');
+                meta.className = 'fp-news-meta';
+                meta.textContent = 'MasterNoder · ' + (n.date || '').slice(0, 10);
+                li.appendChild(a);
+                li.appendChild(meta);
+                if (n.summary) {
+                    const sum = document.createElement('span');
+                    sum.className = 'fp-news-summary';
+                    sum.textContent = n.summary;
+                    li.appendChild(sum);
+                }
+                ul.appendChild(li);
+            });
+            if (platform.length && external.length) {
+                const sep = document.createElement('li');
+                sep.className = 'fp-news-divider';
+                sep.textContent = 'Tech feed';
+                ul.appendChild(sep);
+            }
+            external.forEach((n) => {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.href = n.url || '#';

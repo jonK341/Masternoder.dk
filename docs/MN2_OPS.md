@@ -124,9 +124,297 @@ Balance API returns `withdrawal_verified: true|false` when the gate is enabled s
 
 ---
 
-## 7. References
+## 8. Staking, on-ramp & P2P (daemon staking, rewards, reconcile, agents)
+
+The staking system (plan: [MN2_STAKING_PLAN.md](MN2_STAKING_PLAN.md)) pools opted-in user MN2, earns **realized PoS yield** from the daemon, and distributes it weighted by stake × longevity × uptime × boost.
+
+### 8.1 Make the daemon actually stake (sec.9)
+
+In `masternoder2.conf`: `staking=1` / `enablestaking=1` (confirm exact keys for the MN2 build), and unlock the wallet **for staking only**:
+
+```bash
+masternoder2-cli walletpassphrase "<passphrase>" 0 true   # 0 = until restart, true = staking-only
+```
+
+Consolidate per-user deposit balances into the staking address (keep a small hot balance for withdrawals); the rest mints. **Health:** `GET /api/mn2/ops/stats` now returns `staking_health` (`status`, `staking_active`, `staking_weight`, `net_stake_weight`, `expected_time_to_reward_sec`, `mature_balance`, `immature_balance`) and a `pool` snapshot (`total_staked_mn2`, `dynamic_apr_percent`). `status: unreachable` = daemon down; `inactive` = wallet locked / not minting.
+
+### 8.2 Hourly cron (rewards + holds + reconcile + agents)
+
+Deployed by the `mn2_env` manifest: `cron/mn2_accrue_rewards.sh` + `/etc/cron.d/masternoder-mn2-accrue` (hourly). It reads the token from `/var/www/html/.env` (`MN2_OPS_SECRET`, falls back to `MN2_SCAN_SECRET`) and calls, in order:
+
+1. `POST /api/mn2/staking/ops/accrue` — credit the interval's realized yield (idempotent per window).
+2. `POST /api/mn2/onramp/ops/clear-matured` — release matured PayPal→MN2 holds (makes MN2 withdrawable).
+3. `POST /api/mn2/p2p/ops/clear-matured` — release matured P2P buyer MN2 + seller payouts.
+4. `POST /api/mn2/staking/ops/reconcile` — conservation check; **HTTP 409** = drift (logged to stderr for alerting).
+5. `POST /api/agent/staking/ops/run-all` — drive autonomous staking personas one policy step.
+
+### 8.3 Reconciliation / conservation invariant (sec.8)
+
+`scripts/mn2_reconcile.py` now also prints the staking invariant (or hit `POST /api/mn2/staking/ops/reconcile` with an ops token). Hard checks (drift → 409 / non-zero exit):
+
+- `rewards_rows_match_ledger` — Σ reward rows == Σ `staking_reward` ledger.
+- `staked_matches_ledger` — live staked == Σ`stake` − Σ`unstake` (auto-compound emits `stake`).
+- `onramp_purchase_match_ledger` / `onramp_clawback_match_ledger`.
+- `p2p_escrow_conservation` — outstanding listing escrow == escrowed − returned − delivered.
+- `no_pay_over_realized_yield` — only enforced in `reward_pool_mode: realized_yield` with realized data.
+
+**On drift:** stop accrual (`agent.automation_enabled: false` won't stop accrual — set the cron off or `enabled: false` in `mn2_staking_config.json`), inspect `data/mn2_staking_rewards.jsonl`, `data/mn2_ledger.json`, `data/mn2_stakes.json`, and the on-ramp/P2P order stores, then correct before re-enabling.
+
+### 8.4 Secrets & kill switches
+
+| Variable | Purpose |
+|----------|---------|
+| `MN2_OPS_SECRET` (or `MN2_SCAN_SECRET`) | Gates all `/ops/*` endpoints (accrue, reconcile, clear-matured, run-all). |
+| `AGENT_MN2_STAKING_SECRET` (or `AGENT_MN2_SHOP_SECRET`) | Gates the agent automation layer (`/api/agent/staking/execute` write verbs). Rotate independently. |
+
+Config kill switches in `data/mn2_staking_config.json`: `enabled` (whole system), `p2p.enabled` (P2P market — **currently true**), `onramp.enabled` (on-ramp), `agent.automation_enabled` (autonomous personas only). Withdrawals of PayPal-purchased MN2 are blocked until their hold clears (`code: onramp_hold`).
+
+### 8.5 Files
+
+`data/mn2_staking_config.json`, `mn2_staking_terms.json`, `mn2_stakes.json`, `mn2_staking_reserve.json`, `mn2_staking_rewards.jsonl`, `mn2_onramp_orders.{json,jsonl}`, `mn2_p2p_{listings,orders,payouts}.json` + `mn2_p2p_events.jsonl`, `agent_staking_agents.json`, `mn2_staking_agent_activity.jsonl`. Back these up with the ledger.
+
+---
+
+## 8.6 Agent treasury — cold-wallet policy (required before 600k MN2 distribution)
+
+**Goal:** Custodial hot wallet on the server must never hold the full agent treasury at risk. Large distributions (e.g. 600k MN2 to trader agents) require a documented cold/hot split and sign-off.
+
+| Rule | Detail |
+|------|--------|
+| **Hot wallet cap** | Keep only operational float on-server (staking pool + pending withdrawals + ≤7 days of expected agent top-ups). Document the cap in ops runbook. |
+| **Cold storage** | Majority of treasury MN2 on addresses **not** on the web-server wallet (`ismine` check via `validateaddress`). Cold keys offline or on separate host. |
+| **Distribution gate** | `POST /api/agents/treasury/distribute` requires `X-Ops-Secret` **and** recorded sign-off in `data/treasury_signoff.json` before any batch ≥100k MN2. |
+| **Sign-off API** | `GET/POST /api/agents/treasury/sign-off` (ops-gated). `POST` body: `approver`, `cold_wallet_address`, optional `hot_cap_mn2`, `max_batch_mn2` (default 600000), `notes`, `require_reconcile_ok`. CLI: `python scripts/treasury_signoff.py --approver NAME --cold-wallet ADDR`. |
+| **Reconcile snapshot** | `GET /api/agents/treasury/reconcile` — pre-flight ledger + daemon + staking conservation checks. |
+| **Reconciliation** | Run `python scripts/mn2_reconcile.py` before and after each distribution; compare ledger + `unified_points` vs daemon `getbalance`. |
+| **Rollback** | If distribute tx fails mid-batch, stop automation (`agent.automation_enabled: false`), preserve `logs/admin_audit.jsonl`, do not retry blindly. |
+| **Sign-off checklist** | (1) Reconcile green · (2) Cold wallet address recorded · (3) Hot balance ≤ cap · (4) Backup of stakes/ledger · (5) Named approver + timestamp in audit log |
+
+Until sign-off is recorded, `distribute_agent_funding()` returns `treasury_signoff_required` for batches ≥100k MN2.
+
+---
+
+## 10. Discord cross-roads (M8 #51–60)
+
+Outbound webhooks only — **Gate S:** no custody on Discord; users link accounts and claim rewards on-site.
+
+**Canonical doc:** [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · Trader market events: [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md)
+
+### 10.1 Environment
+
+| Variable | Purpose |
+|----------|---------|
+| `DISCORD_WEBHOOK_URL` | Default webhook (all channels if no per-channel override) |
+| `DISCORD_CHANNEL_ID_MARKET` | Optional dedicated webhook for `#market` |
+| `DISCORD_CHANNEL_ID_CASINO` | Optional dedicated webhook for `#casino` |
+| `DISCORD_OPS_SECRET` | Auth for cron + ops POST endpoints |
+| `BASE_URL` | Links in embeds (default `https://masternoder.dk`) |
+| `MARKET_DISCORD_MIN_MN2` | Min fill size to post to Discord (default `5`) |
+
+### 10.2 Crons
+
+Deploy via `python scripts/deploy.py mn2_staking --ask-pass` (uploads scripts under `cron/`).
+
+Optional env + verify in one SSH session:
+
+```powershell
+# 1) Audit only — see what is missing
+python scripts/mn2_ops_optionals_remote.py --ask-pass --audit
+
+# 2) Bootstrap auto-secrets, crons, reload, smoke
+python scripts/mn2_ops_optionals_remote.py --ask-pass --all
+
+# 3) Or chain with next-ops (market crons + optionals)
+python scripts/mn2_next_ops_remote.py --ask-pass --optionals
+```
+
+**Auto-generated on server** (if missing): `AGENT_CRON_SECRET`, `COGS_ADMIN_REPORT_KEY`.
+
+**Still manual** (pass flags or edit server `.env`):
+
+| Key | Flag / action |
+|-----|----------------|
+| `NOTIFY_ADMIN_EMAIL` | `--notify-email you@domain` |
+| `NOTIFY_SMTP_*` | edit server `.env` |
+| `LIVEKIT_*` | `--livekit-url` / `--livekit-api-key` / `--livekit-api-secret` |
+| `DISCORD_CHANNEL_ID_MARKET` | `--discord-market-webhook https://discord.com/api/webhooks/...` |
+
+**P1 monetization (Pro plan + tier enforcement):**
+
+```powershell
+python scripts/mn2_p1_monetization_remote.py --ask-pass --audit
+python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify
+python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-5XXXX --paypal-webhook-id WH-XXXX --reload --verify
+```
+
+Sets `PAYPAL_SUBSCRIPTION_PLAN_PRO` (maps `P-PLACEHOLDER-PRO` template), `PAYPAL_WEBHOOK_ID`, and `MONETIZATION_TIER_ENFORCEMENT=1` on server `.env` without renaming JSON keys.
+
+**Deploy remember:** always ship `backend/services/monetization_config_service.py` with any `data/monetization_config.json` change (generator API tiers, `mobile_iap`, coin packs). It is in the `mn2_staking` manifest; minimal hotfix:
+
+```powershell
+python scripts/deploy.py --files backend/services/monetization_config_service.py --ask-pass
+python scripts/apply_updates.py --ask-pass
+```
+
+| Script | Endpoint | Purpose |
+|--------|----------|---------|
+| `cron/discord_digest.sh` | `POST /api/discord/digest/run` | Daily platform news → `#announcements` |
+| `cron/discord_activity_funnel.sh` | `POST /api/discord/m8/alert-funnel` | High-signal activity → `#activity` |
+| `cron/discord_casino_fanout.sh` | `POST /api/discord/casino/fanout` | Casino wins → `#casino` |
+| `cron/discord_market_fanout.sh` | `POST /api/discord/market/fanout` | Market fills + trader ticks → `#market` |
+
+Example install (read secret from deployed `.env`):
+
+```bash
+chmod +x /var/www/html/cron/discord_market_fanout.sh
+# Every 15 min — align with agents_trader.sh cadence
+*/15 * * * * /var/www/html/cron/discord_market_fanout.sh
+```
+
+### 10.3 Manual smoke tests
+
+```bash
+SECRET=$(grep '^DISCORD_OPS_SECRET=' /var/www/html/.env | cut -d= -f2- | tr -d '\r"')
+curl -s http://127.0.0.1:5000/api/discord/status | jq
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/market/fanout | jq
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/m8/alert-funnel | jq
+curl -s "http://127.0.0.1:5000/api/discord/support/faq?q=market" | jq
+```
+
+### 10.4 Health
+
+- `GET /api/mn2/health` → `components.discord_outbox` (success rate, recent posts)
+- Staking monitor → Health Ops Hub tile (`mn2-staking-monitor.js`)
+- Outbox log: `logs/discord_outbox.jsonl` (created on first post)
+
+### 10.5 Troubleshooting
+
+**`unauthorized` on fan-out endpoints**
+
+Discord ops routes accept `MN2_OPS_SECRET`, `DISCORD_OPS_SECRET`, or `ADMIN_OPS_SECRET` (same as trader market). Cron scripts read the first match from `/var/www/html/.env` via `cron/mn2_read_ops_secret.sh`.
+
+```bash
+# Use MN2_OPS_SECRET if DISCORD_OPS_SECRET is unset
+SECRET=$(grep -E '^(MN2_OPS_SECRET|DISCORD_OPS_SECRET|ADMIN_OPS_SECRET)=' /var/www/html/.env | head -1 | cut -d= -f2- | tr -d '\r"')
+curl -s -X POST -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/discord/market/fanout | jq
+```
+
+**`market discord fanout failed` from cron**
+
+Cron does not load `.env` automatically — use the updated scripts (they source `mn2_read_ops_secret.sh`). After deploy:
+
+```bash
+chmod +x /var/www/html/cron/mn2_read_ops_secret.sh
+/var/www/html/cron/discord_market_fanout.sh
+```
+
+**Duplicate crontab lines**
+
+```bash
+crontab -l | sort -u | crontab -
+crontab -l | grep discord_market
+```
+
+**`discord_outbox.jsonl` missing**
+
+Normal until the first successful (or attempted) webhook post. Run fan-out once; then `tail logs/discord_outbox.jsonl`.
+
+**`webhook_not_configured` in outbox**
+
+Set `DISCORD_WEBHOOK_URL` in `.env` and restart uWSGI (`touch /var/www/html/.uwsgi_touch_reload`).
+
+---
+
+## 10. Masternode hosting (250 slots + PayPal)
+
+**Explorer UI:** `/explorer?tab=masternodes` — slot meter, fleet cards, PayPal checkout (**$4.99/slot**, max 5 per order). Purchase is **fully automated**: PayPal capture → slot reserved → collateral locked → masternode started (cron retries until live).
+
+**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 250`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
+
+**Status (2026-06-23):** P0 provisioning backlog **cleared** — public `GET /api/mn2/masternode/service?fresh=1` reported **30** hosted (**28** active, **2** in-flight provisioning with collateral), **0** stale provisioning, **220** slots free. Verify from Windows: `python scripts/mn2_check_activetime_public.py` · ops breakdown: `GET /api/mn2/masternode/hosts?internal=1` with `X-Ops-Secret`.
+
+**Env (automation):**
+
+| Variable | Purpose |
+|----------|---------|
+| `MN2_WALLET_PASSPHRASE` | Unlock wallet for `masternode start` (staking-only unlock) |
+| `MN2_MASTERNODE_BROADCAST_IP` | Public IP in masternode.conf (falls back to `ops.external_ip`) |
+| `MN2_MASTERNODE_PORT` | P2P port for masternode line (default `9333` in config) |
+
+**Public API**
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/mn2/masternode/service` | Capacity, fleet, network, PayPal pricing |
+| `GET /api/mn2/masternode/checkout/config` | Checkout limits |
+| `POST /api/mn2/masternode/checkout/quote` | Reserve slot count |
+| `POST /api/mn2/masternode/checkout/order` | Create PayPal order → `approve_url` |
+| `POST /api/mn2/masternode/checkout/capture` | After PayPal return — auto-provisions slot(s) |
+| `POST /api/mn2/masternode/webhook` | PayPal webhook — capture + provision without browser |
+| `POST /api/mn2/masternode/provision-pending` | Cron/ops — retry hosts still provisioning |
+
+**Ops (X-Ops-Secret / MN2_OPS_SECRET)**
+
+```bash
+curl -s -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/mn2/masternode/hosts | jq
+curl -s -X POST -H "Content-Type: application/json" -H "X-Ops-Secret: $SECRET" \
+  -d '{"id":"platform-mn-2","label":"Fleet #2","status":"queued"}' \
+  http://127.0.0.1:5000/api/mn2/masternode/hosts
+```
+
+**Deploy + seed from workstation**
+
+```powershell
+python scripts/deploy.py mn2_staking --ask-pass
+python scripts/mn2_seed_platform_hosts_remote.py --ask-pass
+```
+
+**On-chain enable (per node):** each masternode needs a **10,000 MN2** collateral UTXO. Check availability:
+
+```bash
+curl -s -H "X-Ops-Secret: $SECRET" http://127.0.0.1:5000/api/mn2/masternode/collateral-outputs | jq
+```
+
+Then split/send collateral, add `masternode.conf` entries, and `masternode start` / broadcast. **Paid slots auto-run this** when `auto_provision: true` (default); cron `mn2_masternode_provision.sh` retries every 2 minutes.
+
+**PayPal webhook:** point PayPal Notifications to `https://masternoder.dk/api/mn2/masternode/webhook` (or reuse on-ramp webhook URL if you multiplex events). Requires `PAYPAL_WEBHOOK_ID` in `.env`.
+
+### 11.1 Ping loop / `masternoder2.conf` privkey (production SSH)
+
+The daemon ping loop (ENABLED **activetime**) uses **`masternodeprivkey` in `/var/www/html/config/masternoder2.conf`**, which must always match **`ops.primary_ping_alias`** (default **`platformmn2`**) in `masternode.conf` — **not** the alias last provisioned. Flask/uwsgi runs as **www-data** and cannot write that file; mismatches cause `Permission denied` on ops API and a frozen activetime counter.
+
+**Symptoms:** `Obfuscation Masternode List doesn't include our Masternode`, activetime stuck (e.g. 156002), wrong ENABLED txhash vs platformmn2 collateral.
+
+**Immediate fix (run as root on server):**
+
+```bash
+# 1) Read correct privkey from masternode.conf (platformmn2, field 3)
+PRIMARY=platformmn2
+WANT=$(grep -E "^${PRIMARY} " /var/www/html/config/masternode.conf | awk '{print $3}')
+echo "Want: ${WANT:0:8}…"
+
+# 2) Fix masternoder2.conf (or use deployed script after mn2_staking deploy)
+sudo bash /var/www/html/scripts/mn2_fix_daemon_privkey.sh
+
+# 3) Restart fleet (all aliases — restores EXPIRED platformmn3–5)
+cd /var/www/html && python3 scripts/mn2_start_masternode.py --all-from-conf
+```
+
+**From Windows (after deploy):**
+
+```powershell
+python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
+```
+
+**Config permissions (recommended):** run `scripts/mn2_fix_config_permissions.sh` as root so **www-data** can read `masternoder2.conf` (`root:www-data` **640**) and read/write `masternode.conf` (**664**). The config directory must be traversable (`750` or `755`). Only root/sudo scripts rewrite ping keys in `masternoder2.conf`; app code skips write when content is already correct.
+
+---
+
+## 9. References
 
 - [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) — Install and run the daemon.
+- [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) — Discord integration map and cross-road backlog.
+- [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) — Internal order book + trader agents.
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.

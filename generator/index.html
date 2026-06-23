@@ -4,14 +4,14 @@
     <script>window._pageLoadStart = performance.now();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="cache-version" content="20260325a">
+    <meta name="cache-version" content="20260614a">
     <title>AI Video Generator - MasterNoder</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
-    <link rel="stylesheet" href="/static/css/theme-timeline.css?v=20260304">
+    <link rel="stylesheet" href="/static/css/theme-timeline.css?v=20260614a">
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #fff; }
@@ -94,6 +94,28 @@
         .gen-collapse::after { content: ' ▾'; font-size: 0.8em; opacity: 0.7; }
         .gen-collapse.collapsed::after { content: ' ▸'; }
         .gen-collapse-content.collapsed { display: none; }
+        .gen-mn2-strip {
+            margin-bottom: 24px;
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.06));
+        }
+        .gen-mn2-strip h2 { margin: 0 0 8px; font-size: 1.05rem; color: #00d4ff; }
+        .gen-mn2-strip p { margin: 0 0 12px; font-size: 0.88rem; color: rgba(255,255,255,0.75); }
+        .gen-mn2-metrics { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+        .gen-mn2-metric { min-width: 120px; padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); }
+        .gen-mn2-metric span { display: block; font-size: 0.75rem; color: rgba(255,255,255,0.55); }
+        .gen-mn2-metric strong { font-size: 1.05rem; color: #00ff88; }
+        .gen-mn2-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .gen-mn2-actions a {
+            padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+            text-decoration: none; color: #041018; background: linear-gradient(135deg, #00d4ff, #00ff88);
+        }
+        .gen-mn2-actions a.secondary {
+            color: #00d4ff; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35);
+        }
+        #genMn2EarnNote { margin-top: 10px; font-size: 0.85rem; color: rgba(0,255,136,0.95); display: none; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -105,6 +127,36 @@
             <p>Opret videoer og klip med kunstig intelligens · Mission control · Video: <code style="font-size:0.8em;opacity:0.85;">POST /api/generator/create</code></p>
             <!-- Main nav is the shared navigation toolbar (navigation-toolbar.js) — same as profile/home -->
         </header>
+
+        <section class="gen-mn2-strip" id="genMn2Strip" aria-labelledby="gen-mn2-title">
+            <h2 id="gen-mn2-title"><i class="fas fa-coins"></i> MN2 pay &amp; earn</h2>
+            <p>Standard generations use credits. Pay with MN2 for express/premium/ultra tiers (<code>pay_with_mn2: true</code>). Each completed video earns a small MN2 finish bonus.</p>
+            <div class="gen-mn2-metrics">
+                <div class="gen-mn2-metric"><span>Your MN2 balance</span><strong id="genMn2Balance">—</strong></div>
+                <div class="gen-mn2-metric"><span>Shop rate</span><strong id="genMn2Rate">—</strong></div>
+                <div class="gen-mn2-metric"><span>Est. express pack</span><strong id="genMn2PackHint">50 MN2</strong></div>
+                <div class="gen-mn2-metric"><span>Live quote</span><strong id="genMn2Quote">—</strong></div>
+            </div>
+            <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer;">
+                    <input type="checkbox" id="genPayWithMn2"> Pay with MN2
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                    Tier
+                    <select id="genMn2Tier" style="padding:6px 10px;border-radius:6px;background:#161b22;color:#fff;border:1px solid rgba(255,255,255,0.2);">
+                        <option value="express">Express</option>
+                        <option value="premium">Premium</option>
+                        <option value="ultra">Ultra</option>
+                    </select>
+                </label>
+            </div>
+            <div class="gen-mn2-actions">
+                <a href="/shop">Pay with MN2 in Shop</a>
+                <a href="/profile#mn2-wallet" class="secondary">Wallet &amp; deposit</a>
+                <a href="/game" class="secondary">Earn MN2 in Game</a>
+            </div>
+            <p id="genMn2EarnNote"></p>
+        </section>
 
         <div class="gen-card" id="genMainCard">
             <div class="gen-card-header">
@@ -254,7 +306,7 @@
     <script src="/static/js/error-manager.js?v=20260304" defer></script>
     <script src="/static/js/unified-generator-battle.js?v=20260304" defer></script>
     <script src="/static/js/service-worker-gatherer.js?v=20260304" defer></script>
-    <script src="/static/js/theme-timeline.js?v=20260304" defer></script>
+    <script src="/static/js/theme-timeline.js?v=20260614a" defer></script>
     <script>
         const API_BASE = (window.location.origin || '');
         window.API_BASE = API_BASE;
@@ -468,6 +520,12 @@
                 if (styleVal) body.style_preset = styleVal;
                 if (toneVal) body.theme_tone = toneVal;
                 if (twistVal) body.creative_twist = twistVal;
+                var payMn2 = document.getElementById('genPayWithMn2') && document.getElementById('genPayWithMn2').checked;
+                var mn2TierEl = document.getElementById('genMn2Tier');
+                if (payMn2) {
+                    body.pay_with_mn2 = true;
+                    body.mn2_tier = (mn2TierEl && mn2TierEl.value) ? mn2TierEl.value : 'express';
+                }
                 const res = await enhancedFetch(API_BASE + '/api/generator/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -560,6 +618,9 @@
                                 } else if (aiLabel) { aiLabel.style.display = 'none'; aiLabel.textContent = ''; }
                                 finishBox.classList.add('show');
                                 finishBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                if (typeof refreshGeneratorMn2Strip === 'function') {
+                                    refreshGeneratorMn2Strip(true);
+                                }
                             }
                             isGenerating = false;
                             btn.disabled = false;
@@ -965,6 +1026,57 @@
                 var el = document.getElementById('agent-calendar');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
             }
+        });
+    </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script>
+        function refreshGeneratorMn2Strip(fromFinish) {
+            var bridge = window.Mn2SiteBridge;
+            if (!bridge) return;
+            var durEl = document.getElementById('configDuration');
+            var shortEl = document.getElementById('configShortClip');
+            var tierEl = document.getElementById('genMn2Tier');
+            var duration = durEl ? parseInt(durEl.value, 10) || 180 : 180;
+            var shortClip = shortEl ? shortEl.checked : false;
+            var tier = (tierEl && tierEl.value) ? tierEl.value : 'express';
+            var quoteUrl = '/api/generator/pricing?duration=' + encodeURIComponent(duration)
+                + '&short_clip=' + (shortClip ? '1' : '0')
+                + '&tier=' + encodeURIComponent(tier);
+            var tasks = [
+                bridge.loadBalance().then(function (bal) {
+                    if (!bal || !bal.success) return;
+                    var balEl = document.getElementById('genMn2Balance');
+                    var rateEl = document.getElementById('genMn2Rate');
+                    if (balEl) balEl.textContent = bridge.fmtMn2(bal.mn2_balance, 4) + ' MN2';
+                    var cpm = parseFloat(bal.coins_per_mn2) || 100;
+                    if (rateEl) rateEl.textContent = cpm.toLocaleString() + ' coins / MN2';
+                }),
+                fetch(quoteUrl).then(function (r) { return r.json(); }).then(function (p) {
+                    if (!p || !p.success) return;
+                    var packEl = document.getElementById('genMn2PackHint');
+                    var quoteEl = document.getElementById('genMn2Quote');
+                    var express = (p.tiers && p.tiers.express && p.tiers.express.price_mn2) || p.express_pack_mn2;
+                    if (packEl && express != null) packEl.textContent = bridge.fmtMn2(express, 4) + ' MN2 express';
+                    var q = p.quote || (p.tiers && p.tiers[tier]) || {};
+                    if (quoteEl && q.price_mn2 != null) {
+                        quoteEl.textContent = bridge.fmtMn2(q.price_mn2, 4) + ' MN2 · earn +' + bridge.fmtMn2(q.earn_on_finish_mn2 || p.earn_on_finish_mn2 || 0, 4);
+                    }
+                    var noteEl = document.getElementById('genMn2EarnNote');
+                    if (noteEl && fromFinish && p.earn_on_finish_mn2 != null) {
+                        noteEl.style.display = 'block';
+                        noteEl.textContent = 'Mission complete — +' + bridge.fmtMn2(p.earn_on_finish_mn2, 4) + ' MN2 finish bonus credited (plus generation points).';
+                    }
+                }).catch(function () {})
+            ];
+            Promise.all(tasks).catch(function () {});
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            refreshGeneratorMn2Strip(false);
+            setInterval(function () { refreshGeneratorMn2Strip(false); }, 120000);
+            ['configDuration', 'configShortClip', 'genMn2Tier', 'genPayWithMn2'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', function () { refreshGeneratorMn2Strip(false); });
+            });
         });
     </script>
     <script src="/static/js/navigation-toolbar.js?v=20260304" defer></script>

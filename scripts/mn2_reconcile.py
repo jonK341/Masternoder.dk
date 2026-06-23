@@ -57,6 +57,25 @@ def main():
             print("  Wallet balance (RPC): skip —", e)
     else:
         print("  (Set MN2_RPC_* in env to compare with daemon getbalance)")
+
+    # Staking / on-ramp / P2P conservation invariant (plan sec.8)
+    try:
+        sys.path.insert(0, root)
+        from backend.services.mn2_staking_reconcile_service import reconcile
+        rep = reconcile()
+        print()
+        print("MN2 Staking conservation invariant:", "OK" if rep.get("ok") else "DRIFT DETECTED")
+        for c in rep.get("checks", []):
+            status = "ok " if c.get("ok") else "!! "
+            if "drift" in c:
+                print(f"  [{status}] {c['name']}: expected={c['expected']} actual={c['actual']} drift={c['drift']}")
+            else:
+                print(f"  [{status}] {c['name']}: actual={c.get('actual')} max={c.get('expected_max')}")
+        if not rep.get("ok"):
+            print("  Failed checks:", ", ".join(rep.get("failed_checks", [])))
+            return 2
+    except Exception as e:
+        print("  Staking reconcile: skip —", e)
     return 0
 
 if __name__ == "__main__":

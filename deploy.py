@@ -30,11 +30,10 @@ import sys
 import time
 from datetime import datetime
 
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass, connect_deploy_ssh
 
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
-SERVER_PASS = require_deploy_pass()
 
 # Files to deploy - Critical files from FINAL_COMPREHENSIVE_SUMMARY.md
 # Env: .env (server runtime secrets) and .env.example (template). Keep local .env in sync with production when deploying.
@@ -287,6 +286,18 @@ FILES_TO_DEPLOY = [
     "backend/services/paypal_webhook_service.py",
     "backend/services/monetization_subscription_service.py",
     "backend/services/monetization_org_pool_service.py",
+    "backend/services/monetization_allowance_service.py",
+    "backend/services/monetization_overage_service.py",
+    "backend/services/monetization_email_service.py",
+    "backend/services/shop_checkout_promo_service.py",
+    "backend/services/monetization_priority_service.py",
+    "backend/services/camgirls_paypal_service.py",
+    "backend/services/scr_checkout_service.py",
+    "backend/services/generator_premium_checkout_service.py",
+    "backend/services/battle_pass_service.py",
+    "backend/services/tier_b_monetization_service.py",
+    "backend/services/generator_api_key_service.py",
+    "backend/routes/monetization_expansion_routes.py",
     "backend/routes/shop_routes.py",
     "backend/services/shop_api_line_checks.py",
     # MN2 + unified points (avoid partial deploy; balance/wallet-activity depend on these)
@@ -305,6 +316,84 @@ FILES_TO_DEPLOY = [
     "scripts/agent_mn2_shop_demo.py",
     "scripts/mn2_daemon_health.sh",
     "scripts/run_masternoder2d.sh",
+    # MN2 staking system (browser rig + custodial pool): services, routes, config, ops script,
+    # frontend. register_blueprints.py (above) registers these; without the route/service files
+    # the staking/on-ramp/P2P/agent endpoints 404. Cron (hourly accrual/reconcile/run-all) installs
+    # via `python scripts/deploy.py mn2_env`. Runtime state files (stakes/ledger/reserve/rewards/
+    # orders/personas) are intentionally NOT deployed so live server state is never clobbered.
+    "backend/services/mn2_staking_service.py",
+    "backend/services/mn2_staking_reconcile_service.py",
+    "backend/services/mn2_staking_agents_service.py",
+    "backend/services/mn2_onramp_service.py",
+    "backend/services/mn2_p2p_service.py",
+    "backend/routes/mn2_staking_routes.py",
+    "backend/routes/mn2_onramp_routes.py",
+    "backend/routes/mn2_p2p_routes.py",
+    "backend/routes/agent_staking_routes.py",
+    "data/mn2_staking_config.json",
+    "data/mn2_staking_terms.json",
+    "scripts/mn2_reconcile.py",
+    "staking-monitor/index.html",
+    "static/js/mn2-staking.js",
+    "static/js/mn2-staking-worker.js",
+    "static/js/mn2-staking-monitor.js",
+    "static/js/mn2-onramp.js",
+    "static/js/mn2-p2p.js",
+    # MN2 ecosystem buildout (site UI, market, security, callbacks, casino/aggregator)
+    "data/mn2_config.json",
+    "backend/routes/chat_routes.py",
+    "backend/routes/gallery_routes.py",
+    "backend/routes/quest_routes.py",
+    "backend/routes/activity_stream_routes.py",
+    "backend/routes/casino_routes.py",
+    "backend/services/aggregator_mn2_service.py",
+    "backend/services/generator_mn2_service.py",
+    "backend/services/activity_feed_service.py",
+    "backend/services/mn2_callback_auth.py",
+    "backend/services/mn2_withdrawal_security.py",
+    "backend/services/casino_service.py",
+    "backend/services/casino_ledger.py",
+    "backend/services/casino_rng.py",
+    "backend/services/casino_jackpot.py",
+    "backend/services/casino_tournaments.py",
+    "backend/services/casino_responsible_gaming.py",
+    "backend/services/casino_trophy_rake_rebate.py",
+    "backend/services/engines/__init__.py",
+    "backend/services/engines/crash.py",
+    "backend/services/engines/hilo.py",
+    "backend/services/engines/keno.py",
+    "backend/services/engines/mines.py",
+    "backend/services/engines/plinko.py",
+    "backend/services/engines/roulette.py",
+    "backend/services/engines/wheel.py",
+    "market/index.html",
+    "casino/index.html",
+    "static/css/mn2-page-strip.css",
+    "static/css/casino.css",
+    "static/js/mn2-site-bridge.js",
+    "static/js/mn2-page-strip-init.js",
+    "static/js/mn2-global-bar.js",
+    "static/js/mn2-activity-stream.js",
+    "static/js/mn2-withdrawal-security.js",
+    "static/js/chat-mn2-tips.js",
+    "static/js/gallery-mn2-paywall.js",
+    "static/js/battlegrounds-mn2.js",
+    "static/js/social-mn2-rewards.js",
+    "static/js/aggregator-mn2-crypto.js",
+    "static/js/casino.js",
+    "aggregator/index.html",
+    "battlegrounds/index.html",
+    "chat/index.html",
+    "gallery/index.html",
+    "generator/index.html",
+    "quests/index.html",
+    "social/index.html",
+    "monetization/index.html",
+    "metal/index.html",
+    "theme-points/index.html",
+    "champions-league/index.html",
+    "editor/index.html",
+    "milkyway/index.html",
     "backend/routes/paypal_routes.py",
     "backend/routes/missing_endpoints_routes.py",
     "data/monetization_config.json",
@@ -452,8 +541,10 @@ STALE_REMOTE_FILES = [
     "vidgenerator/src/__pycache__/app*.pyc",
 ]
 
-def deploy(upload_only=False):
+def deploy(upload_only=False, server_pass=None):
     """Deploy files over SFTP. When upload_only is True, skip cache clear and service restarts."""
+    if not server_pass:
+        server_pass = require_deploy_pass()
     print("="*70)
     if upload_only:
         print("AUTO DEPLOY - UPLOAD ONLY (no restart)")
@@ -486,10 +577,8 @@ def deploy(upload_only=False):
     try:
         # Connect
         print("[1/5] Connecting...")
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
-        print("  [OK] Connected")
+        ssh, auth_method = connect_deploy_ssh(server_pass)
+        print(f"  [OK] Connected ({auth_method})")
         print()
 
         # Remove stale server files that would shadow current package paths
@@ -711,6 +800,10 @@ def deploy(upload_only=False):
 
 if __name__ == "__main__":
     argv = [a for a in sys.argv[1:] if a.strip()]
+    ask_pass = "--ask-pass" in argv
+    if ask_pass:
+        argv = [a for a in argv if a != "--ask-pass"]
     upload_only = "--upload-only" in argv or "--no-restart" in argv
-    success = deploy(upload_only=upload_only)
+    server_pass = require_deploy_pass(force_prompt=ask_pass)
+    success = deploy(upload_only=upload_only, server_pass=server_pass)
     sys.exit(0 if success else 1)
