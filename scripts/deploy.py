@@ -443,6 +443,10 @@ MANIFESTS = {
         "cron/mn2_masternode_provision.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
         "scripts/mn2_patch_rpc_retries.sh",
+        "scripts/ubuntu_upgrade_prep.sh",
+        "scripts/ubuntu_upgrade_post_verify.sh",
+        "scripts/ubuntu_upgrade_prep_remote.py",
+        "docs/UBUNTU_UPGRADE.md",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
     # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;

@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-06-23** (deploy **DONE** 2026-06-22 · provisioning backlog **cleared** · **30** hosted slots · **28** active / **2** in-flight provisioning · shop **10/10** + coins purchase PASS · **250** slot cap · on-chain **6** total / **5** ENABLED)
+Last updated: **2026-06-23** (deploy **DONE** 2026-06-22 · provisioning backlog **cleared** · **30** hosted slots · daemon **v1.2.3.0** · **Ubuntu OS upgrade in progress** — see [UBUNTU_UPGRADE.md](UBUNTU_UPGRADE.md))
 
 See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -108,6 +108,46 @@ $CLI getmasternodecount
 **Config:** `data/mn2_masternode_config.json` → `ops.restart_daemon_on_provision: true`, `ops.masternode_ping_addr: "127.0.0.1:17646"`. Example daemon block: `config/masternoder2.conf.example`.
 
 **Limit:** One daemon process pings **one** privkey (`masternodeprivkey=`). Fleet aliases 2–5 may stay **ACTIVE** (broadcast) while only the synced privkey goes **ENABLED** with `activetime > 0`.
+
+---
+
+## Ubuntu OS upgrade — IN PROGRESS
+
+**Full guide:** [UBUNTU_UPGRADE.md](UBUNTU_UPGRADE.md)
+
+| Phase | Action | Status |
+| ----- | ------ | ------ |
+| **Before** | Backup wallet (`config/`), `.env`, `data/` | Run prep script |
+| **Before** | Stop uwsgi workers (site 502 until reboot) | `ubuntu_upgrade_prep.sh` |
+| **During** | `do-release-upgrade` + reboot | **You are here** |
+| **After** | `ubuntu_upgrade_post_verify.sh` on server | Pending |
+| **After** | `--restore-staking` + public smoke from PC | Pending |
+
+**From PC (before upgrade):**
+
+```powershell
+python scripts/deploy.py --files scripts/ubuntu_upgrade_prep.sh scripts/ubuntu_upgrade_post_verify.sh scripts/ubuntu_upgrade_prep_remote.py --ask-pass
+python scripts/ubuntu_upgrade_prep_remote.py --ask-pass
+```
+
+**On server (before `do-release-upgrade`):**
+
+```bash
+cd /var/www/html && sudo bash scripts/ubuntu_upgrade_prep.sh
+```
+
+**After reboot:**
+
+```bash
+cd /var/www/html && sudo bash scripts/ubuntu_upgrade_post_verify.sh
+```
+
+```powershell
+python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking
+python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk
+```
+
+**Pause monetization queue** (PayPal Pro, tier enforcement) until post-upgrade verify is green.
 
 ---
 
