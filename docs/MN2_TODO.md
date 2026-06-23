@@ -47,7 +47,7 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **PR #29 deploy fixes (2026-06-23)** — `deploy.py` / `apply_updates.py` `--ask-pass` (stale `DEPLOY_PASS` retry), unified SSH, selective `static_pages` upload, `apply_updates` backend quick-check timeout tolerance.
 - **`apply_updates.py --ask-pass` on prod (2026-06-23)** — user-confirmed; uwsgi + nginx reload without reboot.
 - **Explorer masternodes tab deployed** — `mn2-crypto-hub.js` + `GET /api/mn2/masternodes?fresh=1`; `/explorer?tab=masternodes` slot meter, fleet grid, PayPal checkout.
-- **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **optional verify** if homepage tx table or redirect still wrong.
+- **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **DONE 2026-06-23** (`--ask-pass`; nginx reload + pm2 explorer restart OK).
 
 ---
 
@@ -122,7 +122,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | Pri | Task | Owner | Depends on | Command / note |
 | --- | ---- | ----- | ---------- | -------------- |
 | **P1** | **Daemon v1.3 multi-ping** — ENABLED + `activetime` on **customer** nodes, not only `platformmn2` | **MasterNoder2 C++ repo** | Spike ManageStatus | ~2–3 weeks · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md) · until then: one `masternodeprivkey` + Option B multi-daemon |
-| **P1** | **Explorer VPS nginx verify** *(optional)* — eiquidus homepage tx table + `cam.masternoder.dk` redirect | SSH | `static_pages` deployed | Confirm or run `python scripts/fix_explorer_subdomains_remote.py --ask-pass` · `camgirls.masternoder.dk` homepage loads last txs |
+| **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
 | **P2** | **Fleet boot autostart** — `mn2-fleet-autostart.service` on reboot | SSH | local-first deployed | § **0. Masternode fleet** M5 — `cp scripts/mn2_fleet_autostart.sh …` · enable systemd unit |
@@ -362,7 +362,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **`apply_updates.py` on prod** — user-confirmed success (2026-06-23)
 - [x] **Explorer masternodes tab** — `/explorer?tab=masternodes` hub JS + API live (2026-06-23)
 - [x] **Clear ~15 provisioning hosts** — **cleared 2026-06-23** (**30** hosted · **0** stale provisioning)
-- [ ] **Explorer VPS nginx verify** — optional: `fix_explorer_subdomains_remote.py --ask-pass` if homepage tx table or `cam.masternoder.dk` redirect still wrong
+- [x] **Explorer VPS nginx verify** — `fix_explorer_subdomains_remote.py --ask-pass` (2026-06-23; nginx test OK, pm2 explorer restarted)
 - [ ] **Fleet boot autostart (M5)** — systemd `mn2-fleet-autostart` not yet enabled
 - [ ] **Daemon multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
 - [ ] **Shop UI browser spot-check** — optional P2 (API/automated done)
