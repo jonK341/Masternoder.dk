@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
@@ -64,6 +66,34 @@
             color: #000;
             border-color: var(--primary);
             box-shadow: var(--shadow-glow);
+        }
+
+        .social-tab-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .social-tab-copy {
+            padding: 2px 7px;
+            font-size: 0.72rem;
+            background: transparent;
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .social-tab-copy:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-action.is-loading,
+        .btn-action:disabled.is-loading {
+            opacity: 0.85;
+            cursor: wait;
         }
 
         .social-tab-content {
@@ -138,6 +168,81 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .earn-rate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .earn-rate-row {
+            background: rgba(0, 212, 255, 0.06);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.88rem;
+        }
+
+        .earn-rate-row strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .earn-rate-row span {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+
+        .earn-rate-amt {
+            color: #FFD700;
+            font-weight: 700;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .social-chat-feed {
+            min-height: 120px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .social-chat-compose {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .social-chat-compose input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-primary);
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .social-chat-ai-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .social-chat-ai-label input {
+            accent-color: #FFD700;
         }
 
         /* Navigation */
@@ -241,12 +346,13 @@
         </section>
         
         <div class="social-tabs">
-            <button class="social-tab active" data-tab="friends">Friends</button>
-            <button class="social-tab" data-tab="guilds">Guilds</button>
-            <button class="social-tab" data-tab="requests">Requests</button>
-            <button class="social-tab" data-tab="mn2-rewards">MN2 Rewards</button>
-            <button class="social-tab" data-tab="intelligence">🧠 Intelligence</button>
-            <button class="social-tab" data-tab="resources">💎 Resources</button>
+            <div class="social-tab-wrap"><button class="social-tab active" data-tab="friends">Friends</button><button type="button" class="social-tab-copy" data-tab="friends" title="Copy link to Friends tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="guilds">Guilds</button><button type="button" class="social-tab-copy" data-tab="guilds" title="Copy link to Guilds tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="requests">Requests</button><button type="button" class="social-tab-copy" data-tab="requests" title="Copy link to Requests tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="mn2-rewards">MN2 Rewards</button><button type="button" class="social-tab-copy" data-tab="mn2-rewards" title="Copy link to MN2 Rewards tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="chat">💬 Chat</button><button type="button" class="social-tab-copy" data-tab="chat" title="Copy link to Chat tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="intelligence">🧠 Intelligence</button><button type="button" class="social-tab-copy" data-tab="intelligence" title="Copy link to Intelligence tab">Copy link</button></div>
+            <div class="social-tab-wrap"><button class="social-tab" data-tab="resources">💎 Resources</button><button type="button" class="social-tab-copy" data-tab="resources" title="Copy link to Resources tab">Copy link</button></div>
         </div>
         
         <!-- Friends Tab -->
@@ -282,9 +388,17 @@
                 <div style="padding: var(--spacing-md);">
                     <textarea id="post-content" placeholder="What's on your mind?" 
                         style="width: 100%; min-height: 100px; padding: var(--spacing-sm); border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border-primary); color: var(--text-primary); resize: vertical; margin-bottom: var(--spacing-sm);"></textarea>
-                    <div style="display: flex; gap: var(--spacing-sm);">
+                    <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap; align-items: center;">
                         <button class="btn-action primary" onclick="createPost()">
                             <i class="fas fa-paper-plane"></i> Post
+                        </button>
+                        <select id="social-ai-draft-tone" class="btn-action" style="padding: var(--spacing-xs) var(--spacing-sm);" aria-label="AI draft tone">
+                            <option value="casual">Casual</option>
+                            <option value="promo">Promo</option>
+                            <option value="question">Question</option>
+                        </select>
+                        <button type="button" id="social-ai-draft-btn" class="btn-action">
+                            <i class="fas fa-wand-magic-sparkles"></i> AI draft
                         </button>
                         <button class="btn-action" onclick="document.getElementById('post-content').value = ''">
                             <i class="fas fa-times"></i> Clear
@@ -331,6 +445,21 @@
         <div class="social-tab-content" id="tab-mn2-rewards">
             <div class="card">
                 <div class="card-header">
+                    <h2 class="card-title">⚡ Earn Hub</h2>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:8px;">MN2 and coins from social posts, chat, and agent-assisted actions.</p>
+                <div id="social-earn-rates-panel">Loading earn rates…</div>
+            </div>
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <h2 class="card-title">🎯 Earn coach</h2>
+                    <button type="button" id="social-refresh-coach-btn" class="btn-action">Refresh coach</button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:8px;">Next MN2 and coin actions based on your social progress.</p>
+                <div id="social-earn-coach-panel">Loading coach tips…</div>
+            </div>
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-header">
                     <h2 class="card-title">🪙 Claim MN2 rewards</h2>
                 </div>
                 <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px;">One-time and repeatable social rewards credit your in-app MN2 balance.</p>
@@ -341,6 +470,30 @@
                     <h2 class="card-title">🔗 Referral link</h2>
                 </div>
                 <div id="social-mn2-referral-panel" style="font-size:0.9rem;color:var(--text-secondary);">Loading…</div>
+                <div style="margin-top:12px;">
+                    <button type="button" id="social-generate-promo-btn" class="btn-action primary">Generate promo text</button>
+                    <div id="social-promo-output" style="margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Chat Tab -->
+        <div class="social-tab-content" id="tab-chat">
+            <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <h2 class="card-title">💬 Social chat</h2>
+                    <button type="button" id="social-chat-refresh-btn" class="btn-action">Refresh</button>
+                </div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px;">Public social room — turn on AI reply to earn routed_chat MN2 and coins.</p>
+                <div id="social-chat-feed" class="social-chat-feed">Loading chat…</div>
+                <div class="social-chat-compose">
+                    <input type="text" id="social-chat-message" placeholder="Write to the social network chat" autocomplete="off">
+                    <button type="button" id="social-chat-send-btn" class="btn-action primary">Send</button>
+                </div>
+                <label class="social-chat-ai-label">
+                    <input type="checkbox" id="social-chat-ai-reply">
+                    AI reply <span style="color:#FFD700;">(+MN2 routed_chat)</span>
+                </label>
             </div>
         </div>
         
@@ -428,23 +581,42 @@
     <script>
         const BASE_URL = window.location.origin;
         const userId = localStorage.getItem('game_user_id') || 'default_user';
-        
+        const SOCIAL_TABS = ['friends', 'guilds', 'requests', 'mn2-rewards', 'chat', 'intelligence', 'resources'];
+
+        function activateSocialTab(tabName, updateUrl) {
+            if (!SOCIAL_TABS.includes(tabName)) tabName = 'friends';
+            document.querySelectorAll('.social-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.social-tab-content').forEach(c => c.classList.remove('active'));
+            const content = document.getElementById(`tab-${tabName}`);
+            if (content) content.classList.add('active');
+
+            if (window.SocialMn2Rewards && SocialMn2Rewards.stopSocialChatPoll) {
+                SocialMn2Rewards.stopSocialChatPoll();
+            }
+
+            if (tabName === 'friends') loadFriends();
+            else if (tabName === 'guilds') loadGuilds();
+            else if (tabName === 'requests') loadFriendRequests();
+            else if (tabName === 'mn2-rewards') loadSocialMn2Rewards();
+            else if (tabName === 'chat') loadSocialChatTab();
+            else if (tabName === 'intelligence') loadIntelligence();
+            else if (tabName === 'resources') loadResources();
+
+            if (updateUrl !== false) {
+                const url = new URL(window.location.href);
+                if (tabName === 'friends') url.searchParams.delete('tab');
+                else url.searchParams.set('tab', tabName);
+                const qs = url.searchParams.toString();
+                history.replaceState(null, '', url.pathname + (qs ? '?' + qs : ''));
+            }
+        }
+
         // Tab switching
         document.querySelectorAll('.social-tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                document.querySelectorAll('.social-tab-content').forEach(c => c.classList.remove('active'));
-                const content = document.getElementById(`tab-${tabName}`);
-                if (content) content.classList.add('active');
-                
-                if (tabName === 'friends') loadFriends();
-                else if (tabName === 'guilds') loadGuilds();
-                else if (tabName === 'requests') loadFriendRequests();
-                else if (tabName === 'mn2-rewards') loadSocialMn2Rewards();
-                else if (tabName === 'intelligence') loadIntelligence();
-                else if (tabName === 'resources') loadResources();
+                activateSocialTab(tab.dataset.tab);
             });
         });
 
@@ -454,11 +626,71 @@
                 rewardsEl: document.getElementById('social-mn2-rewards-grid'),
                 referralEl: document.getElementById('social-mn2-referral-panel'),
                 balanceEl: document.getElementById('social-mn2-balance'),
+                earnEl: document.getElementById('social-earn-rates-panel'),
             }).then(function (data) {
                 if (data && data.referral_code) {
                     var refEl = document.getElementById('social-mn2-ref-code');
                     if (refEl) refEl.textContent = data.referral_code;
                 }
+            });
+            var coachPanel = document.getElementById('social-earn-coach-panel');
+            SocialMn2Rewards.loadEarnCoach(coachPanel, userId);
+            var refreshCoachBtn = document.getElementById('social-refresh-coach-btn');
+            if (refreshCoachBtn && !refreshCoachBtn.dataset.bound && SocialMn2Rewards.bindEarnCoachRefresh) {
+                refreshCoachBtn.dataset.bound = '1';
+                SocialMn2Rewards.bindEarnCoachRefresh({
+                    btn: refreshCoachBtn,
+                    panelEl: coachPanel,
+                    userId: userId,
+                });
+            }
+            var promoBtn = document.getElementById('social-generate-promo-btn');
+            if (promoBtn && !promoBtn.dataset.bound) {
+                promoBtn.dataset.bound = '1';
+                SocialMn2Rewards.bindPromoGenerator({
+                    btn: promoBtn,
+                    outputEl: document.getElementById('social-promo-output'),
+                    userId: userId,
+                });
+            }
+        }
+
+        function loadSocialChatTab() {
+            if (!window.SocialMn2Rewards) return;
+            var feedEl = document.getElementById('social-chat-feed');
+            SocialMn2Rewards.initSocialChatPanel({
+                feedEl: feedEl,
+                inputEl: document.getElementById('social-chat-message'),
+                sendBtn: document.getElementById('social-chat-send-btn'),
+                aiToggleEl: document.getElementById('social-chat-ai-reply'),
+                userId: userId,
+                intervalMs: 15000,
+            });
+            var refreshBtn = document.getElementById('social-chat-refresh-btn');
+            if (refreshBtn && !refreshBtn.dataset.bound) {
+                refreshBtn.dataset.bound = '1';
+                refreshBtn.addEventListener('click', function () {
+                    SocialMn2Rewards.loadSocialChat(feedEl, userId, 30, true);
+                });
+            }
+        }
+
+        function bindSocialAiDraftButton() {
+            if (!window.SocialMn2Rewards || !SocialMn2Rewards.bindSocialAiDraft) return;
+            SocialMn2Rewards.bindSocialAiDraft({
+                btn: document.getElementById('social-ai-draft-btn'),
+                textareaEl: document.getElementById('post-content'),
+                toneEl: document.getElementById('social-ai-draft-tone'),
+                userId: userId,
+            });
+        }
+
+        function bindSocialTabShareLinks() {
+            if (!window.SocialMn2Rewards || !SocialMn2Rewards.bindSocialTabShareLinks) return;
+            SocialMn2Rewards.bindSocialTabShareLinks({
+                buttons: document.querySelectorAll('.social-tab-copy'),
+                path: '/social',
+                defaultTab: 'friends',
             });
         }
         
@@ -1165,7 +1397,7 @@
         // Social Feed Functions
         async function loadSocialFeed() {
             try {
-                const response = await fetch(`${BASE_URL}/api/social/feed?user_id=${userId}&limit=20`);
+                const response = await fetch(`${BASE_URL}/api/social/feed?user_id=${userId}&limit=20&ranked=1`);
                 const data = await response.json();
                 
                 const feedDiv = document.getElementById('social-feed');
@@ -1299,9 +1531,29 @@
                 unifiedPointCounters.updateAllCounters();
                 unifiedPointCounters.startAutoUpdate(30000);
             }
-            
-            loadFriends();
+
+            const tabParam = new URLSearchParams(window.location.search).get('tab');
+            if (tabParam && SOCIAL_TABS.includes(tabParam) && tabParam !== 'friends') {
+                activateSocialTab(tabParam, false);
+            } else {
+                loadFriends();
+            }
             loadSocialFeed();
+            bindSocialAiDraftButton();
+            bindSocialTabShareLinks();
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    if (window.SocialMn2Rewards && SocialMn2Rewards.stopSocialChatPoll) {
+                        SocialMn2Rewards.stopSocialChatPoll();
+                    }
+                } else {
+                    const chatTab = document.getElementById('tab-chat');
+                    if (chatTab && chatTab.classList.contains('active')) {
+                        loadSocialChatTab();
+                    }
+                }
+            });
             
             // Auto-refresh feed every 30 seconds when on friends tab
             setInterval(() => {
@@ -1314,9 +1566,12 @@
     </script>
     <script src="/static/js/progression-display.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="social"></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script src="/static/js/backend-connector.js?v=20260114120000"></script>
     <script src="/static/js/page-data-loaders.js?v=20260114120000"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/social-mn2-rewards.js?v=20260618e"></script>
     <script>
         // Social Page Data Loader
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1334,8 +1589,6 @@
             }
         });
     </script>
-    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
-    <script src="/static/js/social-mn2-rewards.js?v=20260614a"></script>
     <script src="/static/js/universal-auto-save-status.js"></script>
 <script src="/static/js/connect-all-point-counters.js"></script>
     <script src="/static/js/image-support.js"></script>

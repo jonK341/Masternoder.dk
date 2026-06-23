@@ -4,10 +4,24 @@
     <script>window._pageLoadStart = performance.now();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="cache-version" content="20260614a">
+    <meta name="cache-version" content="20260617b">
+    <meta name="description" content="AI video generator on MasterNoder.dk — create clips with coins, generation credits, and Pro tiers. Themes, Runway-style jobs, and MN2 wallet pay.">
+    <meta name="keywords" content="AI video generator, MasterNoder, text to video, generation credits, MN2">
+    <link rel="canonical" href="https://masternoder.dk/generator/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://masternoder.dk/generator/">
+    <meta property="og:title" content="AI Video Generator — MasterNoder">
+    <meta property="og:description" content="Generate AI video with coins and credits. Pro tiers, themes, and MN2-native pay on MasterNoder.dk.">
+    <meta property="og:site_name" content="MasterNoder">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AI Video Generator — MasterNoder">
+    <meta name="twitter:description" content="Create AI video jobs with generation credits and shop coin packs.">
     <title>AI Video Generator - MasterNoder</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
@@ -116,6 +130,42 @@
             color: #00d4ff; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35);
         }
         #genMn2EarnNote { margin-top: 10px; font-size: 0.85rem; color: rgba(0,255,136,0.95); display: none; }
+        .gen-stats-strip {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+            margin-bottom: 24px; padding: 12px 16px;
+            background: rgba(22,27,34,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+        }
+        .gen-stat-pill {
+            min-width: 100px; padding: 8px 12px; border-radius: 8px; text-align: center;
+            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06);
+        }
+        .gen-stat-pill span { display: block; font-size: 0.72rem; color: rgba(255,255,255,0.55); }
+        .gen-stat-pill strong { font-size: 0.95rem; color: #00ff88; }
+        .gen-credits-error {
+            margin-top: 12px; padding: 12px 14px; border-radius: 8px;
+            background: rgba(255,170,0,0.12); border: 1px solid rgba(255,170,0,0.35);
+            font-size: 0.88rem; color: #ffcc66;
+        }
+        .gen-credits-error a { color: #00d4ff; font-weight: 700; }
+        .gen-finish-rewards { margin: 0 0 12px; font-size: 0.92rem; color: rgba(255,255,255,0.88); }
+        .gen-btn-inline {
+            padding: 6px 12px; font-size: 0.85rem; width: auto; margin-top: 0;
+            background: rgba(147,51,234,0.25); color: #e9d5ff;
+        }
+        .gen-queue-bar {
+            display: none; margin-bottom: 16px; padding: 10px 14px; border-radius: 8px;
+            background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.35);
+            font-size: 0.88rem; color: #ffcc66;
+        }
+        .gen-queue-bar.show { display: block; }
+        .gen-health-pill {
+            font-size: 0.82rem; padding: 6px 10px; border-radius: 20px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.75);
+        }
+        .gen-health-pill.ok { border-color: rgba(0,255,136,0.4); color: #00ff88; }
+        .gen-health-pill.warn { border-color: rgba(255,170,0,0.4); color: #ffcc66; }
+        .gen-crypto-hint { font-size: 0.82rem; color: rgba(0,212,255,0.85); margin-top: 8px; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -128,6 +178,16 @@
             <!-- Main nav is the shared navigation toolbar (navigation-toolbar.js) — same as profile/home -->
         </header>
 
+        <section class="gen-stats-strip" id="genStatsStrip" aria-live="polite">
+            <div class="gen-stat-pill"><span>Videos</span><strong id="genStatVideos">—</strong></div>
+            <div class="gen-stat-pill"><span>Success rate</span><strong id="genStatSuccess">—</strong></div>
+            <div class="gen-stat-pill"><span>Themes used</span><strong id="genStatThemes">—</strong></div>
+            <div class="gen-stat-pill"><span>LLM providers</span><strong id="genStatProviders">—</strong></div>
+            <span class="gen-health-pill" id="genHealthPill" title="Generation pipeline">Health: …</span>
+        </section>
+
+        <div class="gen-queue-bar" id="genQueueBar" aria-live="polite"></div>
+
         <section class="gen-mn2-strip" id="genMn2Strip" aria-labelledby="gen-mn2-title">
             <h2 id="gen-mn2-title"><i class="fas fa-coins"></i> MN2 pay &amp; earn</h2>
             <p>Standard generations use credits. Pay with MN2 for express/premium/ultra tiers (<code>pay_with_mn2: true</code>). Each completed video earns a small MN2 finish bonus.</p>
@@ -136,6 +196,7 @@
                 <div class="gen-mn2-metric"><span>Shop rate</span><strong id="genMn2Rate">—</strong></div>
                 <div class="gen-mn2-metric"><span>Est. express pack</span><strong id="genMn2PackHint">50 MN2</strong></div>
                 <div class="gen-mn2-metric"><span>Live quote</span><strong id="genMn2Quote">—</strong></div>
+                <div class="gen-mn2-metric"><span>COGS ref job</span><strong id="genMn2CogsHint" title="Advisory cost from pricing service">—</strong></div>
             </div>
             <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                 <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer;">
@@ -156,6 +217,7 @@
                 <a href="/game" class="secondary">Earn MN2 in Game</a>
             </div>
             <p id="genMn2EarnNote"></p>
+            <p class="gen-crypto-hint" id="genCryptoHint">Earn MN2 on every finish: base bonus + multi-AI + daily first + staking boost.</p>
         </section>
 
         <div class="gen-card" id="genMainCard">
@@ -186,13 +248,21 @@
                     </div>
                 </td></tr>
                 <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
-                <tr><th scope="row" style="width:38%;">Titel</th><td><input type="text" id="videoTitle" class="gen-input" placeholder="Fx: Min dokumentar om natur" style="margin-bottom:0;"></td></tr>
+                <tr><th scope="row" style="width:38%;">Titel</th><td>
+                    <input type="text" id="videoTitle" class="gen-input" placeholder="Fx: Min dokumentar om natur" style="margin-bottom:8px;">
+                    <button type="button" class="gen-btn gen-btn-inline" id="btnAiIdeas" title="AI prompt forslag"><i class="fas fa-lightbulb"></i> AI idéer</button>
+                    <span id="aiIdeasStatus" style="font-size:0.82rem;color:rgba(255,255,255,0.55);display:block;margin-top:4px;"></span>
+                </td></tr>
                 <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:80px; margin-bottom:0;"></textarea></td></tr>
+                <tr><th scope="row">Kategori</th><td><select id="configCategory"><option value="general">General</option></select></td></tr>
                 <tr><th scope="row">Tema</th><td><div id="theme-timeline-container"></div><input type="hidden" id="videoTheme" value="default"></td></tr>
                 <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
                 <tr><th scope="row">Varighed (sek)</th><td><input type="number" id="configDuration" min="30" max="300" value="60" title="30–300 sek"></td></tr>
                 <tr><th scope="row">Kort klip</th><td><label><input type="checkbox" id="configShortClip" checked> Ja (hurtigere)</label></td></tr>
+                <tr><th scope="row">Profil &amp; agents</th><td><label><input type="checkbox" id="configUseContext" checked> Inkluder min profil, agents og point i klippet</label></td></tr>
                 <tr><th scope="row">Kvalitet</th><td><select id="configQuality"><option value="auto">Auto</option><option value="fast">Hurtig</option><option value="high">Høj</option><option value="best">Bedst (multi-AI)</option><option value="max">Max (alle AIs)</option></select></td></tr>
+                <tr><th scope="row">Lyd-baggrund</th><td><select id="configAudioStyle"><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="energetic">Energetic</option></select></td></tr>
+                <tr><th scope="row">TTS voiceover</th><td><label><input type="checkbox" id="configNarration"> Per-segment narration (premium/ultra default on)</label></td></tr>
                 <tr><th scope="row">AI Power</th><td>
                     <div class="gen-ai-power">
                         <div class="ai-toggle-row">
@@ -233,6 +303,7 @@
                 </div>
                 <div class="gen-finish-box" id="genFinishBox">
                     <h3><i class="fas fa-trophy"></i> Mission complete</h3>
+                    <p id="genFinishRewards" class="gen-finish-rewards" style="display:none;"></p>
                     <p style="margin:0;color:rgba(255,255,255,0.85);font-size:0.95rem;">Din video er klar. Download eller åbn i galleriet.</p>
                     <div class="finish-links" id="genFinishLinks"></div>
                 </div>
@@ -241,6 +312,13 @@
             <div id="panelClip" class="gen-panel">
                 <label class="gen-label">Beskriv klip</label>
                 <textarea id="clipPrompt" class="gen-textarea" placeholder="Fx: Solnedgang over havet, dramatisk lys..."></textarea>
+                <label class="gen-label" style="margin-top:12px;">Video AI mode</label>
+                <select id="clipVideoMode" class="gen-input" style="max-width:320px;margin-bottom:12px;">
+                    <option value="auto">Auto (best available)</option>
+                    <option value="avatar">Avatar (HeyGen)</option>
+                    <option value="runway">Runway Gen-4</option>
+                    <option value="replicate">Replicate SVD</option>
+                </select>
                 <button type="button" class="gen-btn" id="btnClip"><i class="fas fa-magic"></i> Generer Klip</button>
                 <div id="clipStatus" class="gen-status idle"><i class="fas fa-circle" style="font-size:0.5em;"></i> Klar</div>
                 <div id="clipsList" style="margin-top:16px;"></div>
@@ -296,7 +374,7 @@
             </ul>
         </div>
         <p class="gen-footer">
-            <strong>Connect:</strong> <a href="/profile">Profile</a> · <a href="/generator">Generator</a> · <a href="/agents">Agents</a> · <a href="/agent_support">Agent Support</a> · <a href="/gallery">Gallery</a> · <a href="/aggregator">Aggregator</a> · <a href="/theme_premium">Themes</a> · <a href="/profile#monetization-25-card">Monetization 25 (AI + agents)</a>
+            <strong>Connect:</strong> <a href="/profile">Profile</a> · <a href="/generator">Generator</a> · <a href="/podcast">Podcast</a> · <a href="/agents">Agents</a> · <a href="/agent_support">Agent Support</a> · <a href="/gallery">Gallery</a> · <a href="/aggregator">Aggregator</a> · <a href="/theme_premium">Themes</a> · <a href="/profile#monetization-25-card">Monetization 25 (AI + agents)</a>
             &nbsp;|&nbsp; <a href="/lab">Lab</a> · <a href="/debugger">Debugger</a>
             &nbsp;|&nbsp; <a href="https://theresanaiforthat.com/" target="_blank" rel="noopener">Discover more AIs (TAAFT)</a>
         </p>
@@ -344,10 +422,304 @@
                 throw new Error('Invalid response: ' + String(t).slice(0, 50));
             }
         }
+        function resolveEncodeProfile(qualityVal, mn2Tier) {
+            if (qualityVal === 'fast') return 'fast_ai';
+            if (qualityVal === 'high' || qualityVal === 'best') return 'premium';
+            if (qualityVal === 'max' || qualityVal === 'ultra') return 'ultra';
+            if (mn2Tier === 'ultra') return 'ultra';
+            if (mn2Tier === 'premium') return 'premium';
+            return 'fast_ai';
+        }
+
         function userFacingError(msg, res) {
             if (res && (res.status === 502 || res.status === 504)) return 'Serveren er optaget eller timeout. Prøv igen om et øjeblik.';
             if (msg && (msg.includes('timeout') || msg.includes('Timeout') || msg.includes('Failed to fetch'))) return 'Serveren svarer ikke. Prøv igen om et øjeblik.';
             return msg || 'Noget gik galt. Prøv igen.';
+        }
+
+        function formatSegmentProgress(message, encodeStage) {
+            if (!message && !encodeStage) return 'Behandler';
+            var stage = encodeStage || '';
+            if (stage.indexOf('segment_') === 0) {
+                var n = stage.replace('segment_', '');
+                var tail = message ? String(message).replace(/^Building segment \d+\/\d+:?\s*/i, '') : '';
+                return 'Segment ' + n + (tail ? ' · ' + tail : '');
+            }
+            var labels = { planning: 'Planning', enhancing: 'Enhancing', concat: 'Concat', mux: 'Encoding', complete: 'Complete' };
+            if (labels[stage]) {
+                return labels[stage] + (message ? ' · ' + message : '');
+            }
+            if (!message) return 'Behandler';
+            var m = String(message).match(/Building segment\s+(\d+)\/(\d+)/i);
+            if (m) return 'Segment ' + m[1] + '/' + m[2] + ' · ' + message.replace(/^Building segment \d+\/\d+:?\s*/i, '');
+            return message;
+        }
+
+        function showCreditsError(d) {
+            var req = d.required_credits != null ? d.required_credits : '?';
+            var avail = d.available_credits != null ? d.available_credits : '?';
+            var html = '<div class="gen-credits-error"><i class="fas fa-coins"></i> Ikke nok generation credits (' + avail + ' / ' + req + ' kræves). ';
+            var upsell = d.upsell || {};
+            if (upsell.reason === 'subscription_overage' && upsell.overage_packs && upsell.overage_packs.length) {
+                html += '<div style="margin:8px 0;">Pro overage — top up with PayPal:</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                upsell.overage_packs.forEach(function(p) {
+                    var rec = p.id === upsell.recommended_pack_id ? ' ★' : '';
+                    html += '<a href="/shop?category=buy_coins" class="btn" style="font-size:0.85rem;padding:6px 10px;">' +
+                        (p.name || p.id) + ' $' + Number(p.price_usd || 0).toFixed(2) + rec + '</a>';
+                });
+                html += '</div>';
+            } else {
+                html += '<a href="/shop?category=buy_coins">Køb credits i Shop</a> · ';
+            }
+            html += '<a href="/profile#mn2-wallet">MN2 wallet</a> · ' +
+                '<label style="margin-left:6px;cursor:pointer;"><input type="checkbox" id="genPayWithMn2Retry" checked> Pay with MN2</label></div>';
+            return html;
+        }
+
+        function renderFinishRewards(pd) {
+            var el = document.getElementById('genFinishRewards');
+            if (!el) return;
+            var parts = [];
+            if (pd.points_earned != null) parts.push('+' + pd.points_earned + ' generation points');
+            if (pd.mn2_earned != null && parseFloat(pd.mn2_earned) > 0) {
+                parts.push('+' + parseFloat(pd.mn2_earned).toFixed(4) + ' MN2');
+            }
+            var cb = pd.crypto_breakdown;
+            if (cb && typeof cb === 'object') {
+                var bonusParts = [];
+                if (cb.daily_first) bonusParts.push('daily first');
+                if (cb.multi_ai) bonusParts.push('multi-AI');
+                if (cb.staking) bonusParts.push('staking');
+                if (bonusParts.length) parts.push('(' + bonusParts.join(', ') + ')');
+            }
+            if (pd.providers_used && pd.providers_used.length) {
+                parts.push(pd.providers_used.length + ' AI provider' + (pd.providers_used.length !== 1 ? 's' : ''));
+            }
+            if (parts.length) {
+                el.textContent = parts.join(' · ');
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+                el.textContent = '';
+            }
+        }
+
+        function showQueueBar(queued, position, priority) {
+            var bar = document.getElementById('genQueueBar');
+            if (!bar) return;
+            if (queued && position > 0) {
+                bar.textContent = 'I kø: position #' + position + (priority != null ? ' (prioritet ' + priority + ')' : '') + ' — MN2/express jobs springer foran.';
+                bar.classList.add('show');
+            } else if (queued) {
+                bar.textContent = 'Job sat i kø — venter på ledig encoder.';
+                bar.classList.add('show');
+            } else {
+                bar.classList.remove('show');
+                bar.textContent = '';
+            }
+        }
+
+        async function pollQueueStatus() {
+            var userId = localStorage.getItem('game_user_id') || 'default_user';
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/generator/queue-status?user_id=' + encodeURIComponent(userId));
+                if (!r.ok) return;
+                var d = await r.json();
+                if (d.queued > 0 || d.your_position) {
+                    showQueueBar(true, d.your_position || d.queued, null);
+                }
+            } catch (e) {}
+        }
+
+        async function loadGenHealth() {
+            var pill = document.getElementById('genHealthPill');
+            if (!pill) return;
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/generator/generation-health');
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                var h = await r.json();
+                if (h.ready) {
+                    pill.textContent = 'Health: klar';
+                    pill.className = 'gen-health-pill ok';
+                } else {
+                    pill.textContent = 'Health: ' + (h.message || 'tjek config');
+                    pill.className = 'gen-health-pill warn';
+                }
+            } catch (e) {
+                pill.textContent = 'Health: ukendt';
+                pill.className = 'gen-health-pill warn';
+            }
+        }
+
+        async function loadCryptoHint() {
+            var el = document.getElementById('genCryptoHint');
+            if (!el) return;
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/generator/crypto-rewards');
+                if (!r.ok) return;
+                var d = await r.json();
+                if (!d.success) return;
+                el.textContent = 'Earn MN2: ' + (d.base_finish_mn2 || 0.005) + ' base'
+                    + ' · +' + (d.daily_first_video_mn2 || 0.01) + ' first/day'
+                    + ' · multi-AI bonus · ' + (d.staking_bonus_note || 'staking boost');
+            } catch (e) {}
+        }
+
+        function refreshUnifiedPoints() {
+            try {
+                if (window.unifiedPointCounters && typeof window.unifiedPointCounters.loadAllPoints === 'function') {
+                    window.unifiedPointCounters.loadAllPoints(true).then(function(pts) {
+                        if (pts && typeof window.unifiedPointCounters.updateAllCounters === 'function') {
+                            window.unifiedPointCounters.updateAllCounters(pts);
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function fireVideoGeneratedEvent(pd, docId) {
+            try {
+                document.dispatchEvent(new CustomEvent('videoGenerated', {
+                    detail: {
+                        documentary_id: docId,
+                        points_earned: pd.points_earned,
+                        mn2_earned: pd.mn2_earned,
+                        providers_used: pd.providers_used,
+                    }
+                }));
+            } catch (e) {}
+        }
+
+        async function loadGeneratorPresets() {
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/generator/presets');
+                if (!r.ok) return;
+                var d = await r.json();
+                if (!d.success) return;
+                function fillSelect(id, items, autoLabel) {
+                    var sel = document.getElementById(id);
+                    if (!sel || !Array.isArray(items)) return;
+                    var cur = sel.value;
+                    sel.innerHTML = '<option value="">' + autoLabel + '</option>';
+                    items.forEach(function(item) {
+                        var val = typeof item === 'string' ? item : (item.id || item.value || '');
+                        var label = typeof item === 'string' ? item : (item.label || item.name || val);
+                        if (!val) return;
+                        var opt = document.createElement('option');
+                        opt.value = val;
+                        opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+                        sel.appendChild(opt);
+                    });
+                    if (cur) sel.value = cur;
+                }
+                fillSelect('configStyle', d.style_presets, 'Auto');
+                fillSelect('configTone', d.theme_tones, 'Auto');
+                var twistEl = document.getElementById('configTwist');
+                if (twistEl && Array.isArray(d.creative_twists) && d.creative_twists.length && !twistEl.dataset.presetsLoaded) {
+                    twistEl.dataset.presetsLoaded = '1';
+                    twistEl.setAttribute('list', 'creativeTwistList');
+                    var dl = document.getElementById('creativeTwistList');
+                    if (!dl) {
+                        dl = document.createElement('datalist');
+                        dl.id = 'creativeTwistList';
+                        twistEl.parentNode.appendChild(dl);
+                    }
+                    dl.innerHTML = d.creative_twists.map(function(t) {
+                        return '<option value="' + String(t).replace(/"/g, '&quot;') + '">';
+                    }).join('');
+                }
+            } catch (e) {}
+        }
+
+        async function loadGeneratorStats() {
+            var userId = localStorage.getItem('game_user_id') || 'default_user';
+            try {
+                var statsR = await enhancedFetch(API_BASE + '/api/generator/statistics?user_id=' + encodeURIComponent(userId));
+                if (statsR.ok) {
+                    var sd = await statsR.json();
+                    var s = (sd.statistics || sd);
+                    var vEl = document.getElementById('genStatVideos');
+                    var tEl = document.getElementById('genStatThemes');
+                    var pEl = document.getElementById('genStatProviders');
+                    if (vEl) vEl.textContent = String(s.total_videos != null ? s.total_videos : (s.total_jobs || 0));
+                    if (tEl) tEl.textContent = String(s.themes_count != null ? s.themes_count : 0);
+                    if (pEl) pEl.textContent = String(s.ai_providers_configured != null ? s.ai_providers_configured : 0);
+                }
+                var perfR = await enhancedFetch(API_BASE + '/api/generator/performance?user_id=' + encodeURIComponent(userId));
+                if (perfR.ok) {
+                    var pd = await perfR.json();
+                    var p = pd.performance || pd;
+                    var srEl = document.getElementById('genStatSuccess');
+                    if (srEl) {
+                        var rate = p.success_rate_percent != null ? p.success_rate_percent : (p.success_rate != null ? Math.round(p.success_rate * 100) : null);
+                        srEl.textContent = rate != null ? (rate + '%') : '—';
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function loadContentCategories() {
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/content-categories/list');
+                if (!r.ok) return;
+                var d = await r.json();
+                var sel = document.getElementById('configCategory');
+                if (!sel || !d.categories) return;
+                sel.innerHTML = d.categories.map(function(c) {
+                    var id = c.id || c.name || 'general';
+                    var name = c.name || id;
+                    var bonus = c.bonus_unified_points ? (' (+' + c.bonus_unified_points + ' pts)') : '';
+                    return '<option value="' + id + '">' + name + bonus + '</option>';
+                }).join('');
+            } catch (e) {}
+        }
+
+        async function suggestAiIdeas() {
+            var titleEl = document.getElementById('videoTitle');
+            var descEl = document.getElementById('videoDesc');
+            var st = document.getElementById('aiIdeasStatus');
+            var btn = document.getElementById('btnAiIdeas');
+            var topic = ((titleEl && titleEl.value) || (descEl && descEl.value) || '').trim();
+            if (!topic) { alert('Indtast en titel eller beskrivelse først'); return; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...'; }
+            if (st) st.textContent = 'Henter AI-forslag...';
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/generator/ai-ideas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: topic, count: 5 })
+                });
+                var d = await r.json();
+                if (!d.success || !d.ideas || !d.ideas.length) throw new Error(d.error || 'Ingen idéer');
+                var idea = d.ideas[0];
+                if (titleEl && idea.title) titleEl.value = idea.title;
+                if (descEl && idea.prompt) descEl.value = idea.prompt;
+                if (st) st.textContent = 'Idé anvendt' + (idea.angle ? ' (' + idea.angle + ')' : '') + ' — ' + d.ideas.length + ' forslag.';
+            } catch (e) {
+                if (st) st.textContent = userFacingError(e.message);
+            }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lightbulb"></i> AI idéer'; }
+        }
+
+        async function restartDocumentaryJob(docId, onPollReady) {
+            var st = document.getElementById('videoStatus');
+            var progBox = document.getElementById('progressBox');
+            if (st) {
+                st.className = 'gen-status processing';
+                st.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Genstarter job...';
+            }
+            if (progBox) progBox.style.display = 'block';
+            try {
+                var r = await enhancedFetch(API_BASE + '/api/documentary/restart/' + docId, { method: 'POST' });
+                var d = await r.json();
+                if (!r.ok || !d.success) throw new Error(d.error || 'Genstart fejlede');
+                if (typeof onPollReady === 'function') onPollReady(docId);
+            } catch (e) {
+                if (st) {
+                    st.className = 'gen-status error';
+                    st.innerHTML = '<i class="fas fa-times"></i> ' + userFacingError(e.message);
+                }
+            }
         }
 
         async function runMagic() {
@@ -395,10 +767,17 @@
             st.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Behandler...';
             list.innerHTML = '';
             try {
+                var clipModeEl = document.getElementById('clipVideoMode');
+                var clipMode = clipModeEl ? clipModeEl.value : 'auto';
                 let res = await enhancedFetch(API_BASE + '/api/ai-clips/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, user_id: localStorage.getItem('game_user_id') || 'default_user', clip_count: 5 })
+                    body: JSON.stringify({
+                        prompt,
+                        user_id: localStorage.getItem('game_user_id') || 'default_user',
+                        clip_count: 5,
+                        clip_video_mode: clipMode
+                    })
                 });
                 if (!res.ok) {
                     res = await enhancedFetch(API_BASE + '/api/generator/ai-clips', {
@@ -429,6 +808,61 @@
             isGenerating = false;
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-magic"></i> Generer Klip';
+        }
+
+        async function ensurePremiumRenderUnlocked(config, userId) {
+            if (sessionStorage.getItem('premium_render_unlocked') === '1') return true;
+            try {
+                const qRes = await fetch(API_BASE + '/api/monetization/premium-render/quote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, config: config })
+                });
+                const q = await qRes.json().catch(function() { return {}; });
+                if (!q.success || !q.premium_required) return true;
+                const go = confirm('Premium render unlock: $' + Number(q.price_usd || 0).toFixed(2) + ' via PayPal. Continue?');
+                if (!go) return false;
+                const oRes = await fetch(API_BASE + '/api/monetization/premium-render/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, config: config })
+                });
+                const o = await oRes.json().catch(function() { return {}; });
+                if (o.success && o.approve_url) {
+                    window.location.href = o.approve_url;
+                    return false;
+                }
+                alert(o.error || 'Could not start premium PayPal checkout');
+                return false;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        async function handlePremiumPayPalReturn() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('paypal_premium') === 'cancel') {
+                window.history.replaceState({}, '', window.location.pathname);
+                return;
+            }
+            if (params.get('paypal_premium') !== 'success') return;
+            const token = params.get('token');
+            if (!token) return;
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            try {
+                const res = await fetch(API_BASE + '/api/paypal/capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: token, item_id: 'premium-render-unlock', user_id: userId })
+                });
+                const d = await res.json().catch(function() { return {}; });
+                if (d.success) {
+                    sessionStorage.setItem('premium_render_unlocked', '1');
+                    var st = document.getElementById('videoStatus');
+                    if (st) { st.className = 'gen-status done'; st.innerHTML = '<i class="fas fa-check"></i> Premium unlock paid — run generate again.'; }
+                }
+            } catch (e) {}
+            window.history.replaceState({}, '', window.location.pathname);
         }
 
         async function generateVideo() {
@@ -492,6 +926,17 @@
                 if (elStyle) styleVal = (elStyle.value || '').trim();
                 if (elTone) toneVal = (elTone.value || '').trim();
                 if (elTwist) twistVal = (elTwist.value || '').trim();
+                var useContextEl = document.getElementById('configUseContext');
+                var useContextVal = useContextEl ? useContextEl.checked : true;
+                var catEl = document.getElementById('configCategory');
+                var contentCategory = (catEl && catEl.value) ? catEl.value : 'general';
+                var audioStyleEl = document.getElementById('configAudioStyle');
+                var audioStyleVal = (audioStyleEl && audioStyleEl.value) ? audioStyleEl.value : 'cinematic';
+                var narrEl = document.getElementById('configNarration');
+                var narrationEnabled = narrEl ? narrEl.checked : false;
+                var mn2TierEl = document.getElementById('genMn2Tier');
+                var payMn2 = document.getElementById('genPayWithMn2') && document.getElementById('genPayWithMn2').checked;
+                var mn2TierForEnc = (mn2TierEl && mn2TierEl.value) ? mn2TierEl.value : 'express';
                 const body = {
                     title,
                     description: desc,
@@ -500,18 +945,19 @@
                     user_id: userId,
                     duration: durationVal,
                     short_clip: shortClipVal,
-                    use_context: true,
-                    include_points_in_clip: true,
+                    use_context: useContextVal,
+                    include_points_in_clip: useContextVal,
                     generation_method: 'adaptive_ai_v2',
                     quality_mode: qualityVal,
-                    audio_style: 'cinematic',
+                    audio_style: audioStyleVal,
+                    narration_enabled: narrationEnabled,
                     template: 'ai_content',
                     ai_content: true,
-                    encode_profile: qualityVal === 'fast' ? 'fast_ai' : (qualityVal === 'high' ? null : 'fast_ai'),
+                    encode_profile: resolveEncodeProfile(qualityVal, payMn2 ? mn2TierForEnc : ''),
                     profiling: true,
                     profile_mode: 'personalized',
                     profile_context: profileSnapshot,
-                    content_category: (theme && theme !== 'default') ? theme : 'general',
+                    content_category: contentCategory,
                     content_context: (desc || title)
                 };
                 var useAllAis = document.getElementById('configUseAllAis') && document.getElementById('configUseAllAis').checked;
@@ -520,20 +966,45 @@
                 if (styleVal) body.style_preset = styleVal;
                 if (toneVal) body.theme_tone = toneVal;
                 if (twistVal) body.creative_twist = twistVal;
-                var payMn2 = document.getElementById('genPayWithMn2') && document.getElementById('genPayWithMn2').checked;
-                var mn2TierEl = document.getElementById('genMn2Tier');
                 if (payMn2) {
                     body.pay_with_mn2 = true;
-                    body.mn2_tier = (mn2TierEl && mn2TierEl.value) ? mn2TierEl.value : 'express';
+                    body.mn2_tier = mn2TierForEnc;
+                }
+                var premiumOk = await ensurePremiumRenderUnlocked(body, userId);
+                if (!premiumOk) {
+                    st.className = 'gen-status error';
+                    st.textContent = 'Premium checkout required or cancelled.';
+                    progBox.style.display = 'none';
+                    if (mainCard) mainCard.classList.remove('gen-progress-active');
+                    isGenerating = false;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                    return;
                 }
                 const res = await enhancedFetch(API_BASE + '/api/generator/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                const d = await safeJson(res);
+                const d = await res.json().catch(function() { return {}; });
+                if (res.status === 402 || d.code === 'insufficient_generation_credits') {
+                    st.className = 'gen-status error';
+                    st.innerHTML = showCreditsError(d);
+                    progBox.style.display = 'none';
+                    if (mainCard) mainCard.classList.remove('gen-progress-active');
+                    isGenerating = false;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> Generer Video';
+                    var payRetry = document.getElementById('genPayWithMn2Retry');
+                    if (payRetry) payRetry.addEventListener('change', function() {
+                        var payEl = document.getElementById('genPayWithMn2');
+                        if (payEl) payEl.checked = payRetry.checked;
+                    });
+                    return;
+                }
                 if (!res.ok) throw new Error(userFacingError(d.error || d.message || 'HTTP ' + res.status, res));
                 if (!d.success) throw new Error(userFacingError(d.error || d.message));
+                showQueueBar(!!d.queued, d.position || 0, d.priority);
                 const docId = d.documentary_id || d.video_id || d.id;
                 if (!docId) {
                     st.className = 'gen-status done';
@@ -560,6 +1031,7 @@
                 const poll = async () => {
                     if (pollCancel) return;
                     attempts++;
+                    if (attempts % 6 === 0) pollQueueStatus();
                     if (attempts > 200) {
                         st.className = 'gen-status error';
                         st.innerHTML = '<i class="fas fa-clock"></i> Kodning kører stadig i baggrunden. Tjek igen om et par minutter eller se i <a href="/gallery" style="color:#00d4ff;">Galleriet</a>.';
@@ -578,9 +1050,9 @@
                         if (p > lastProgress) lastProgress = p;
                         progBar.style.width = p + '%';
                         progPct.textContent = p + '%';
-                        var stageLine = (pd.message || pd.stage || pd.status || 'Behandler');
+                        var stageLine = formatSegmentProgress(pd.message || pd.stage || pd.status || 'Behandler', pd.encode_stage || pd.stage);
                         if (pd.storyline_preview && String(pd.storyline_preview).trim()) {
-                            stageLine = stageLine + ' · ' + String(pd.storyline_preview).trim().slice(0, 140);
+                            stageLine = stageLine + ' · ' + String(pd.storyline_preview).trim().slice(0, 100);
                         }
                         progStage.textContent = stageLine;
                         if (pd.status === 'completed' || pd.status === 'done' || p >= 100) {
@@ -595,7 +1067,11 @@
                             var finishBox = document.getElementById('genFinishBox');
                             var finishLinks = document.getElementById('genFinishLinks');
                             if (finishBox && finishLinks) {
-                                var shareUrl = (window.location.origin || API_BASE || '') + '/generator';
+                                renderFinishRewards(pd);
+                                showQueueBar(false, 0, null);
+                                fireVideoGeneratedEvent(pd, docId);
+                                refreshUnifiedPoints();
+                                var shareUrl = (window.location.origin || API_BASE || '') + '/api/documentary/video/' + docId;
                                 var shareText = 'I just created a video on MasterNoder — AI video generation with RPG mechanics';
                                 var shareEnc = encodeURIComponent(shareText);
                                 var urlEnc = encodeURIComponent(shareUrl);
@@ -603,7 +1079,7 @@
                                 var liUrl = 'https://www.linkedin.com/sharing/share-offsite/?url=' + urlEnc;
                                 var fbUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + urlEnc;
                                 var shareRow = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,255,136,0.2);"><span style="font-size:0.85rem;color:rgba(255,255,255,0.7);">Share:</span> <a href="' + twUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#00d4ff;text-decoration:none;" title="Share on X">𝕏</a> <a href="' + liUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#0a66c2;text-decoration:none;" title="Share on LinkedIn">in</a> <a href="' + fbUrl + '" target="_blank" rel="noopener" style="margin:0 6px;color:#1877f2;text-decoration:none;" title="Share on Facebook">f</a></div>';
-                                finishLinks.innerHTML = '<a href="' + downloadUrl + '" download class="gen-btn" style="width:auto;padding:10px 20px;text-decoration:none;"><i class="fas fa-download"></i> Download MP4</a> <a href="' + (API_BASE || '') + '/gallery" class="gen-btn" style="width:auto;padding:10px 20px;background:rgba(0,212,255,0.25);text-decoration:none;"><i class="fas fa-images"></i> Galleri</a>' + shareRow;
+                                finishLinks.innerHTML = '<a href="' + downloadUrl + '" download class="gen-btn" style="width:auto;padding:10px 20px;text-decoration:none;"><i class="fas fa-download"></i> Download MP4</a> <a href="' + videoUrl + '" target="_blank" class="gen-btn" style="width:auto;padding:10px 20px;background:rgba(0,255,136,0.2);text-decoration:none;"><i class="fas fa-play"></i> Afspil</a> <a href="' + (API_BASE || '') + '/gallery" class="gen-btn" style="width:auto;padding:10px 20px;background:rgba(0,212,255,0.25);text-decoration:none;"><i class="fas fa-images"></i> Galleri</a> <button type="button" id="btnCopyVideoUrl" class="gen-btn" style="width:auto;padding:10px 20px;background:rgba(147,51,234,0.25);text-decoration:none;"><i class="fas fa-link"></i> Kopiér link</button>' + shareRow;
                                 var aiUsed = pd.providers_used;
                                 var aiLabel = document.getElementById('genFinishAiUsed');
                                 if (aiUsed && Array.isArray(aiUsed) && aiUsed.length > 0) {
@@ -618,9 +1094,21 @@
                                 } else if (aiLabel) { aiLabel.style.display = 'none'; aiLabel.textContent = ''; }
                                 finishBox.classList.add('show');
                                 finishBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                setTimeout(function() {
+                                    var copyBtn = document.getElementById('btnCopyVideoUrl');
+                                    if (copyBtn) copyBtn.onclick = function() {
+                                        try {
+                                            navigator.clipboard.writeText(shareUrl);
+                                            copyBtn.innerHTML = '<i class="fas fa-check"></i> Kopieret!';
+                                            setTimeout(function() { copyBtn.innerHTML = '<i class="fas fa-link"></i> Kopiér link'; }, 2000);
+                                        } catch (e) {}
+                                    };
+                                }, 50);
                                 if (typeof refreshGeneratorMn2Strip === 'function') {
                                     refreshGeneratorMn2Strip(true);
                                 }
+                                loadRecentClips();
+                                loadGeneratorStats();
                             }
                             isGenerating = false;
                             btn.disabled = false;
@@ -632,7 +1120,9 @@
                         if (attempts < 10 && !pollCancel) { setTimeout(poll, 2000); return; }
                         st.className = 'gen-status error';
                         var errMsg = userFacingError(e.message, typeof pr !== 'undefined' ? pr : null);
-                        st.innerHTML = '<i class="fas fa-times"></i> ' + errMsg + ' <button type="button" id="btnRetryVideo" class="gen-btn" style="padding:8px 16px;font-size:0.9rem;width:auto;margin-left:12px;margin-top:8px;"><i class="fas fa-redo"></i> Prøv igen</button>';
+                        st.innerHTML = '<i class="fas fa-times"></i> ' + errMsg +
+                            ' <button type="button" id="btnRestartJob" class="gen-btn" style="padding:8px 16px;font-size:0.9rem;width:auto;margin-left:8px;margin-top:8px;"><i class="fas fa-redo"></i> Genstart job</button>' +
+                            ' <button type="button" id="btnRetryVideo" class="gen-btn" style="padding:8px 16px;font-size:0.9rem;width:auto;margin-left:8px;margin-top:8px;"><i class="fas fa-plus"></i> Ny video</button>';
                         progBox.style.display = 'none';
                         if (mainCard) mainCard.classList.remove('gen-progress-active');
                         isGenerating = false;
@@ -641,6 +1131,15 @@
                         setTimeout(function() {
                             var retryBtn = document.getElementById('btnRetryVideo');
                             if (retryBtn) retryBtn.onclick = function() { generateVideo(); };
+                            var restartBtn = document.getElementById('btnRestartJob');
+                            if (restartBtn) restartBtn.onclick = function() {
+                                isGenerating = true;
+                                pollCancel = false;
+                                btn.disabled = true;
+                                attempts = 0;
+                                lastProgress = 5;
+                                restartDocumentaryJob(docId, function() { poll(); });
+                            };
                         }, 100);
                         return;
                     }
@@ -807,6 +1306,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            handlePremiumPayPalReturn();
             if (typeof ThemeTimeline !== 'undefined') {
                 themeTimeline = new ThemeTimeline('theme-timeline-container', function(id) {
                     document.getElementById('videoTheme').value = id || 'default';
@@ -822,6 +1322,17 @@
             }
             loadChecklist();
             loadRecentClips();
+            loadGeneratorPresets();
+            loadGeneratorStats();
+            loadContentCategories();
+            loadGenHealth();
+            loadCryptoHint();
+            pollQueueStatus();
+            var btnAiIdeas = document.getElementById('btnAiIdeas');
+            if (btnAiIdeas && !btnAiIdeas.dataset.bound) {
+                btnAiIdeas.dataset.bound = '1';
+                btnAiIdeas.addEventListener('click', suggestAiIdeas);
+            }
             var aiProviderToggle = document.getElementById('aiProviderToggle');
             if (aiProviderToggle) {
                 aiProviderToggle.addEventListener('click', function() {
@@ -1028,8 +1539,14 @@
             }
         });
     </script>
+    <script src="/static/js/unified-point-counters.js?v=20260617b" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof UnifiedPointCounters !== 'undefined' && !window.unifiedPointCounters) {
+                window.unifiedPointCounters = new UnifiedPointCounters();
+            }
+        });
         function refreshGeneratorMn2Strip(fromFinish) {
             var bridge = window.Mn2SiteBridge;
             if (!bridge) return;
@@ -1061,6 +1578,20 @@
                     if (quoteEl && q.price_mn2 != null) {
                         quoteEl.textContent = bridge.fmtMn2(q.price_mn2, 4) + ' MN2 · earn +' + bridge.fmtMn2(q.earn_on_finish_mn2 || p.earn_on_finish_mn2 || 0, 4);
                     }
+                    var cogsEl = document.getElementById('genMn2CogsHint');
+                    var cogs = p.cogs_advisory || {};
+                    if (cogsEl) {
+                        var refMn2 = cogs.approx_mn2_per_ref_job;
+                        var refUsd = cogs.suggested_retail_usd_per_reference_job;
+                        if (refMn2 != null && refMn2 > 0) {
+                            cogsEl.textContent = '≈ ' + bridge.fmtMn2(refMn2, 4) + ' MN2 ref job';
+                            cogsEl.title = 'COGS advisory: ~$' + (refUsd != null ? refUsd.toFixed(2) : '?') + ' retail per reference encode';
+                        } else if (refUsd != null && refUsd > 0) {
+                            cogsEl.textContent = '≈ $' + refUsd.toFixed(2) + ' ref job';
+                        } else {
+                            cogsEl.textContent = '—';
+                        }
+                    }
                     var noteEl = document.getElementById('genMn2EarnNote');
                     if (noteEl && fromFinish && p.earn_on_finish_mn2 != null) {
                         noteEl.style.display = 'block';
@@ -1080,6 +1611,7 @@
         });
     </script>
     <script src="/static/js/navigation-toolbar.js?v=20260304" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="generator" defer></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
 
     <!-- Intelligence Widget -->

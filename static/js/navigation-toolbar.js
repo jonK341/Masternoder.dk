@@ -8,11 +8,42 @@
 
     const APP_BASE = (typeof window !== 'undefined' && window.APP_BASE !== undefined) ? window.APP_BASE : '';
 
+    // Small image icons for upper nav (SVG / agent avatars). Emoji kept as fallback.
+    const NAV_ICON_IMAGES = {
+        home: APP_BASE + '/static/img/nav/home.svg',
+        battle: APP_BASE + '/static/img/agents/battle_strategy_agent.svg',
+        trophies: APP_BASE + '/static/img/nav/trophy.svg',
+        stories: APP_BASE + '/static/img/nav/stories.svg',
+        game: APP_BASE + '/static/img/nav/game.svg',
+        casino: APP_BASE + '/static/img/nav/casino.svg',
+        generator: APP_BASE + '/static/img/agents/content_generator_agent.svg',
+        podcast: APP_BASE + '/static/img/nav/news.svg',
+        quests: APP_BASE + '/static/img/agents/workflow_agent.svg',
+        agents: APP_BASE + '/static/img/agents/ai_intelligence_agent.svg',
+        agent_support: APP_BASE + '/static/img/agents/master_fix_agent.svg',
+        gallery: APP_BASE + '/static/img/agents/user_experience_agent.svg',
+        battlegrounds: APP_BASE + '/static/img/nav/battlegrounds.svg',
+        profile: APP_BASE + '/static/img/nav/profile.svg',
+        social: APP_BASE + '/static/img/agents/social_engagement_agent.svg',
+        shop: APP_BASE + '/static/img/nav/shop.svg',
+        market: APP_BASE + '/static/img/agents/analytics_agent.svg',
+        customers: APP_BASE + '/static/img/nav/customers.svg',
+        agents_control: APP_BASE + '/static/img/agents/master_dashboard_agent.svg',
+        chat: APP_BASE + '/static/img/nav/chat.svg',
+        debugger: APP_BASE + '/static/img/agents/tester_agent.svg',
+        lab: APP_BASE + '/static/img/nav/lab.svg',
+        starmap25: APP_BASE + '/static/img/nav/starmap.svg',
+        explorer: APP_BASE + '/static/img/nav/explorer.svg',
+        news: APP_BASE + '/static/img/nav/news.svg',
+        library: APP_BASE + '/static/img/nav/stories.svg'
+    };
+
     // Navigation configuration — Purple bg, light neon green. Favorites: Battle, Trophies, Game, Generator.
     const NAV_CONFIG = {
         brand: {
             name: 'MasterNoder',
             icon: '🏠',
+            iconImg: APP_BASE + '/static/img/nav/brand.svg',
             url: APP_BASE + '/'
         },
         favorites: ['battle', 'trophies', 'game', 'generator'],
@@ -22,9 +53,12 @@
             { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
             { name: 'Stories', icon: '📜', url: APP_BASE + '/trophies#stories', id: 'stories', title: 'Hunters Stories: Winter Wedding, time reversal, medieval' },
             { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
+            { name: 'Command Center', icon: '🎯', url: APP_BASE + '/command-center', id: 'command-center', title: 'Battle, trophies, game, quests — unified hub' },
             { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
+            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
+            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
             { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
             { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
@@ -33,15 +67,36 @@
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
             { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
-            { name: 'Chat', icon: '💬', url: APP_BASE + '/chat', id: 'chat' },
+            { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
+            { name: 'Agents', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
+            { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' },
+            { name: 'Chat', icon: '💬', url: APP_BASE + '/lab#discussion', id: 'chat', title: 'Lab discussion room (was chat)' },
             { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab' },
+            { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
-            { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 network stats: price, block height, masternodes, staking pool' },
+            { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
             { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
         ],
         apiBase: window.location.origin + APP_BASE
     };
+
+    function _resolveIconImg(link) {
+        return link.iconImg || NAV_ICON_IMAGES[link.id] || null;
+    }
+
+    function _renderIcon(link, options) {
+        const opts = options || {};
+        const imgSrc = _resolveIconImg(link);
+        const pulseClass = (link.favorite || opts.pulse) ? ' nav-toolbar-link-img--pulse' : '';
+        const sizeClass = opts.large ? ' nav-toolbar-link-img--lg' : '';
+        const avatarClass = imgSrc && imgSrc.indexOf('/agents/') !== -1 ? ' nav-toolbar-link-img--avatar' : '';
+
+        if (imgSrc) {
+            return `<span class="nav-toolbar-link-icon${opts.extraClass || ''}"><img class="nav-toolbar-link-img${pulseClass}${sizeClass}${avatarClass}" src="${imgSrc}" alt="" width="20" height="20" loading="lazy" decoding="async" onerror="this.style.display='none';var fb=this.nextElementSibling;if(fb){fb.hidden=false;}"><span class="nav-toolbar-link-emoji-fallback" hidden aria-hidden="true">${link.icon}</span></span>`;
+        }
+        return `<span class="nav-toolbar-link-icon${opts.extraClass || ''}">${link.icon}</span>`;
+    }
 
     function _renderLinkAnchor(link, extraClasses) {
         const badge = link.badge ? `<span class="nav-toolbar-badge">${link.badge}</span>` : '';
@@ -50,7 +105,7 @@
         const ec = extraClasses ? ` ${extraClasses}` : '';
         return `
                 <a href="${link.url}" class="nav-toolbar-link${ec}${favoriteClass}" data-page-id="${link.id}"${titleAttr}>
-                    <span class="nav-toolbar-link-icon">${link.icon}</span>
+                    ${_renderIcon(link)}
                     <span>${link.name}</span>
                     ${badge}
                 </a>
@@ -72,13 +127,13 @@
             <nav class="nav-toolbar nav-toolbar--portal-void" id="navToolbar">
                 <div class="nav-toolbar-content">
                     <a href="${NAV_CONFIG.brand.url}" class="nav-toolbar-brand">
-                        <span class="nav-toolbar-brand-icon">${NAV_CONFIG.brand.icon}</span>
+                        ${_renderIcon(NAV_CONFIG.brand, { extraClass: ' nav-toolbar-brand-icon-wrap', pulse: true, large: true })}
                         <span>${NAV_CONFIG.brand.name}</span>
                     </a>
 
                     <div class="nav-toolbar-portal-wrap">
                         <button type="button" class="nav-toolbar-portal-trigger" id="navPortalTrigger" aria-expanded="false" aria-haspopup="true" aria-controls="navPortalPanel">
-                            <span class="nav-toolbar-portal-trigger-icon">🌀</span>
+                            <span class="nav-toolbar-portal-trigger-icon nav-toolbar-portal-trigger-icon--spin">🌀</span>
                             <span>Portaler</span>
                         </button>
                     </div>
@@ -121,7 +176,7 @@
             <nav class="nav-toolbar" id="navToolbar">
                 <div class="nav-toolbar-content">
                     <a href="${NAV_CONFIG.brand.url}" class="nav-toolbar-brand">
-                        <span class="nav-toolbar-brand-icon">${NAV_CONFIG.brand.icon}</span>
+                        ${_renderIcon(NAV_CONFIG.brand, { extraClass: ' nav-toolbar-brand-icon-wrap', pulse: true, large: true })}
                         <span>${NAV_CONFIG.brand.name}</span>
                     </a>
                     
@@ -155,7 +210,7 @@
                 <div class="nav-toolbar-mobile" id="navToolbarMobile">
                     ${NAV_CONFIG.links.map(link => `
                         <a href="${link.url}" class="nav-toolbar-mobile-link${link.favorite ? ' nav-toolbar-mobile-link-favorite' : ''}" data-page-id="${link.id}">
-                            <span>${link.icon}</span>
+                            ${_renderIcon(link)}
                             <span>${link.name}</span>
                         </a>
                     `).join('')}
@@ -680,7 +735,9 @@
     
     window.logout = function() {
         if (confirm('Logout?')) {
+            fetch('/api/user/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() {});
             localStorage.removeItem('game_user_id');
+            localStorage.removeItem('user_id');
             localStorage.removeItem('user_token');
             window.location.href = '/';
         }
@@ -706,6 +763,18 @@
             s.defer = true;
             document.body.appendChild(s);
         });
+    })();
+
+    // Calm library launcher on non-compendium pages; full reader shell on /compendium/*
+    (function loadCalmReader() {
+        var path = window.location.pathname || '';
+        var onComp = /\/compendium(\/|$)/.test(path);
+        var src = onComp ? 'calm-reader.js?v=20260617' : 'reader-launcher.js?v=20260617';
+        if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
+        var s = document.createElement('script');
+        s.src = '/static/js/' + src;
+        s.defer = true;
+        document.body.appendChild(s);
     })();
 
 })();

@@ -1,15 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophies - MasterNoder</title>
-    <meta name="cache-version" content="20260606c">
+    <meta name="cache-version" content="20260607b">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20260618a">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -226,19 +228,12 @@
         }
         .tab-category-select:hover, .tab-category-select:focus { border-color: var(--trophy-primary); outline: none; }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         .loading {
             text-align: center;
             padding: 40px;
             color: rgba(255, 255, 255, 0.5);
         }
+        .loading .fa-spinner, .loading .fa-spin { display: none !important; }
 
         /* Table: checklist style — unchecked (☐) for locked, checked (☑) for unlocked */
         .trophies-container .table .col-check { width: 2em; text-align: center; font-size: 1.2em; color: rgba(255,255,255,0.5); }
@@ -618,6 +613,51 @@
         }
         .trophy-pin-btn:hover { background: rgba(255, 215, 0, 0.2); }
         .trophy-pin-btn.pinned { border-color: var(--trophy-primary); background: rgba(255, 215, 0, 0.2); }
+
+        /* Collector level + income */
+        .income-hero {
+            display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+            padding: 24px; margin-bottom: 24px; border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(0,255,136,0.08));
+            border: 2px solid var(--trophy-border);
+        }
+        .income-level-badge { font-size: 3.5em; line-height: 1; }
+        .income-level-name { font-size: 1.5em; font-weight: 800; color: var(--trophy-primary); margin: 0; }
+        .income-level-sub { opacity: 0.85; margin: 4px 0 0; font-size: 0.95em; }
+        .income-pending {
+            text-align: right; padding: 12px 18px; border-radius: 12px;
+            background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.35);
+        }
+        .income-pending-val { font-size: 2em; font-weight: 800; color: var(--trophy-success); }
+        .income-pending-lbl { font-size: 0.82em; opacity: 0.8; }
+        .income-collect-btn {
+            display: block; width: 100%; max-width: 320px; margin: 16px auto 0; padding: 14px 24px;
+            border: none; border-radius: 12px; cursor: pointer; font-size: 1.05em; font-weight: 700;
+            background: linear-gradient(135deg, var(--trophy-primary), var(--trophy-secondary));
+            color: #111; transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .income-collect-btn:hover:not(:disabled) { transform: scale(1.02); }
+        .income-collect-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .income-progress-wrap { margin: 16px 0; }
+        .income-progress-bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .income-progress-fill { height: 100%; background: linear-gradient(90deg, var(--trophy-primary), var(--trophy-success)); border-radius: 5px; transition: width 0.4s ease; }
+        .income-ladder { display: grid; gap: 10px; margin-top: 20px; }
+        .income-tier {
+            display: grid; grid-template-columns: 48px 1fr auto auto; gap: 12px; align-items: center;
+            padding: 12px 16px; border-radius: 12px; border: 1px solid var(--trophy-border);
+            background: rgba(21,21,32,0.5); opacity: 0.65;
+        }
+        .income-tier.active { opacity: 1; border-color: var(--trophy-primary); background: rgba(255,215,0,0.08); }
+        .income-tier.reached { opacity: 0.9; }
+        .income-tier-icon { font-size: 1.6em; text-align: center; }
+        .income-tier-income { font-weight: 700; color: var(--trophy-success); white-space: nowrap; }
+        .income-tier-lvl { font-family: monospace; font-size: 0.85em; opacity: 0.7; }
+        @media (max-width: 640px) {
+            .income-hero { grid-template-columns: 1fr; text-align: center; }
+            .income-pending { text-align: center; }
+            .income-tier { grid-template-columns: 40px 1fr; }
+            .income-tier-income, .income-tier-lvl { grid-column: 2; }
+        }
     </style>
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
@@ -630,6 +670,10 @@
     <div class="trophies-container">
         <div class="trophies-header">
             <h1>🏆 Trophy Collection</h1>
+            <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
+                <button type="button" id="trophy-theme-ww2" class="active">WW2 War Room</button>
+                <button type="button" id="trophy-theme-gold">Gold Classic</button>
+            </div>
             <p>Unlock trophies by completing achievements and milestones</p>
         </div>
 
@@ -654,6 +698,18 @@
             <div class="stat-card" title="Rarity-weighted: common 1 · rare 3 · epic 8 · legendary 20">
                 <div class="stat-label">Trophy Score</div>
                 <div class="stat-value" id="trophy-score">0</div>
+            </div>
+            <div class="stat-card" title="Collector level — unlocks passive trophy income">
+                <div class="stat-label">Collector Level</div>
+                <div class="stat-value" id="collector-level">1</div>
+            </div>
+            <div class="stat-card" title="Passive income from your collector level">
+                <div class="stat-label">Daily Income</div>
+                <div class="stat-value" id="daily-income" style="font-size:1.4em;">0</div>
+            </div>
+            <div class="stat-card" title="MN2 crypto passive income from collector level">
+                <div class="stat-label">Daily MN2</div>
+                <div class="stat-value" id="daily-income-mn2" style="font-size:1.2em;">0</div>
             </div>
         </div>
 
@@ -704,6 +760,7 @@
             <button type="button" class="tab" data-tab="leaderboard">🏅 Leaderboard</button>
             <button type="button" class="tab" data-tab="compare">🆚 Compare</button>
             <button type="button" class="tab" data-tab="activity">📰 Activity</button>
+            <button type="button" class="tab" data-tab="income">💰 Income</button>
             <select class="tab-category-select" id="tab-category" title="Filter by category">
                 <option value="">All categories</option>
                 <option value="generation">Generation</option>
@@ -815,8 +872,8 @@
         <div class="tab-content" id="content-compendium">
             <div class="compendium-section" style="max-width: 960px; margin: 0 auto;">
                 <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">Compendium — Rulebook V1–V15</h3>
-                <p style="margin-bottom: 16px; opacity: 0.9;">25 kommunikationspsykologier, Hunters rulebook, og alle V1–V15. Læsning giver <strong>compendium_points</strong>.</p>
-                <p style="margin-bottom: 16px;"><a href="/compendium/" target="_blank" rel="noopener" style="color: var(--trophy-primary); font-weight: 600;">Åbn Compendium (ny fane) →</a> · <a href="/game#walkthrough" style="color: var(--trophy-primary);">Walkthrough</a> · <a href="/game#guides" style="color: var(--trophy-primary);">Guides</a></p>
+                <p style="margin-bottom: 16px; opacity: 0.9;">25 kommunikationspsykologier, Hunters rulebook, og alle rulebooks V1–V16. Læsning giver <strong>compendium_points</strong>.</p>
+                <p style="margin-bottom: 16px;"><a href="/compendium/?calm=1" style="color: var(--trophy-primary); font-weight: 600;">Åbn rolig læseoplevelse (Library) →</a> · <a href="/game#walkthrough" style="color: var(--trophy-primary);">Walkthrough</a> · <a href="/game#guides" style="color: var(--trophy-primary);">Guides</a></p>
                 <div id="compendium-pages-list" class="loading">Loading pages…</div>
             </div>
         </div>
@@ -882,6 +939,19 @@
             <div class="activity-section" style="max-width: 760px; margin: 0 auto;">
                 <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">📰 Recent Unlocks</h3>
                 <div id="activity-list" class="loading">Loading activity…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-income">
+            <div class="income-section" style="max-width: 900px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 8px;">💰 Collector Income</h3>
+                <p style="margin-bottom: 20px; opacity: 0.9;">Your collector level rises with rarity-weighted trophy score. Higher levels generate passive <strong>trophy points</strong> and <strong>MN2</strong> crypto — collect up to 72 hours of income at a time. Unlocking trophies also pays MN2 by rarity.</p>
+                <div id="income-hero" class="income-hero loading">Loading collector level…</div>
+                <div id="income-progress" class="income-progress-wrap" style="display:none;"></div>
+                <button type="button" id="income-collect-btn" class="income-collect-btn" disabled>Collect income</button>
+                <p id="income-meta" style="text-align:center; margin-top:12px; font-size:0.88em; opacity:0.75;"></p>
+                <h4 style="color: var(--trophy-primary); margin: 28px 0 12px;">Level ladder</h4>
+                <div id="income-ladder" class="income-ladder loading">Loading levels…</div>
             </div>
         </div>
     </div>
@@ -1179,14 +1249,33 @@
                 if (!quests.length) { el.innerHTML = '<div class="info-message">No quests right now.</div>'; return; }
                 el.innerHTML = quests.map(function(q) {
                     const pct = q.target ? Math.round(Math.min(1, (q.progress || 0) / q.target) * 100) : 0;
+                    const canClaim = q.complete && !q.claimed;
+                    const mn2 = q.mn2_reward ? ' · +' + q.mn2_reward + ' MN2' : '';
                     return '<div class="quest-card ' + (q.complete ? 'complete' : '') + '">' +
-                        '<span class="quest-scope">' + (q.scope || '') + '</span>' +
+                        '<span class="quest-scope">' + (q.scope || q.source || '') + '</span>' +
                         '<div class="quest-body"><div class="quest-title">' + String(q.title || '').replace(/</g, '&lt;') +
                         (q.complete ? ' ✅' : '') + '</div>' +
                         '<div class="trophy-progress-bar" style="margin-top:8px;"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
-                        '<div class="quest-meta">' + (q.progress || 0) + ' / ' + q.target + (q.expires ? ' · resets ' + q.expires : '') + '</div></div>' +
-                        '<span class="quest-reward">+' + (q.reward || 0) + '</span></div>';
+                        '<div class="quest-meta">' + (q.progress || 0) + ' / ' + q.target + mn2 +
+                        (q.expires ? ' · resets ' + q.expires : '') + '</div></div>' +
+                        '<span class="quest-reward">+' + (q.reward || 0) + '</span>' +
+                        (canClaim ? '<button type="button" class="quest-claim-btn" data-qid="' + q.id + '">Claim</button>' : '') +
+                        '</div>';
                 }).join('');
+                el.querySelectorAll('.quest-claim-btn').forEach(function(btn) {
+                    btn.addEventListener('click', async function() {
+                        btn.disabled = true;
+                        const qid = btn.getAttribute('data-qid');
+                        const cr = await fetch(API_BASE + '/trophies/quests/claim', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, quest_id: qid }),
+                        });
+                        const cd = await cr.json();
+                        if (cd.success) loadQuests();
+                        else { btn.disabled = false; alert(cd.error || 'Claim failed'); }
+                    });
+                });
             } catch (e) {
                 el.innerHTML = '<div class="error">Failed to load quests.</div>';
             }
@@ -1244,7 +1333,9 @@
                 });
                 const d = await r.json();
                 if (d && d.success) {
-                    if (btn) btn.textContent = '✅ Reward credited (+' + (d.reward || 0) + ')';
+                    let msg = '✅ +' + (d.reward || 0) + ' pts';
+                    if (d.mn2_reward > 0) msg += ' · +' + formatMn2(d.mn2_reward) + ' MN2';
+                    if (btn) btn.textContent = msg;
                     if (typeof updatePointsDisplay === 'function') { try { updatePointsDisplay(); } catch (_) {} }
                 } else {
                     if (btn) { btn.disabled = false; btn.textContent = 'Claim reward'; }
@@ -1343,6 +1434,141 @@
                 }).join('');
             } catch (e) {
                 el.innerHTML = '<div class="error">Failed to load activity.</div>';
+            }
+        }
+
+        let cachedLevelStatus = null;
+
+        function refreshLevelStats(status) {
+            if (!status) return;
+            cachedLevelStatus = status;
+            const lvlEl = document.getElementById('collector-level');
+            const incEl = document.getElementById('daily-income');
+            const mn2El = document.getElementById('daily-income-mn2');
+            if (lvlEl) lvlEl.textContent = String(status.level || 1);
+            if (incEl) incEl.textContent = '+' + Math.round(status.daily_income || 0) + ' pts';
+            if (mn2El) {
+                const dm = parseFloat(status.daily_income_mn2 || 0);
+                mn2El.textContent = '+' + (dm >= 0.01 ? dm.toFixed(3) : dm.toFixed(6)) + ' MN2';
+            }
+        }
+
+        function formatMn2(v) {
+            const n = parseFloat(v || 0);
+            if (n >= 0.01) return n.toFixed(4);
+            if (n >= 0.0001) return n.toFixed(6);
+            return n.toFixed(8);
+        }
+
+        async function fetchLevelStatus() {
+            try {
+                const r = await fetch(`${API_BASE}/trophies/level?user_id=${encodeURIComponent(userId)}`);
+                if (!r.ok) return null;
+                const d = await r.json();
+                if (d && d.success !== false) {
+                    refreshLevelStats(d);
+                    return d;
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        async function loadIncome() {
+            const hero = document.getElementById('income-hero');
+            const ladder = document.getElementById('income-ladder');
+            const prog = document.getElementById('income-progress');
+            const meta = document.getElementById('income-meta');
+            const btn = document.getElementById('income-collect-btn');
+            if (!hero || !ladder) return;
+            hero.className = 'income-hero loading';
+            hero.textContent = 'Loading collector level…';
+            ladder.className = 'income-ladder loading';
+            ladder.textContent = 'Loading levels…';
+            const d = await fetchLevelStatus();
+            if (!d) {
+                hero.className = 'income-hero';
+                hero.innerHTML = '<div class="error">Failed to load collector level.</div>';
+                ladder.innerHTML = '';
+                return;
+            }
+            const esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            hero.className = 'income-hero';
+            hero.innerHTML =
+                '<div class="income-level-badge">' + esc(d.level_icon || '🏆') + '</div>' +
+                '<div><p class="income-level-name">Level ' + d.level + ' — ' + esc(d.level_name) + '</p>' +
+                '<p class="income-level-sub">Trophy score ' + (d.trophy_score || 0).toLocaleString() +
+                ' · +' + Math.round(d.daily_income || 0) + ' pts/day · +' + formatMn2(d.daily_income_mn2) + ' MN2/day · ' +
+                (d.unlock_bonus_pct ? '+' + d.unlock_bonus_pct + '% unlock bonus' : 'no unlock bonus yet') + '</p></div>' +
+                '<div class="income-pending"><div class="income-pending-val">+' + (d.pending_income || 0).toLocaleString() + ' pts</div>' +
+                '<div class="income-pending-val" style="font-size:1.3em;margin-top:4px;">+' + formatMn2(d.pending_income_mn2) + ' MN2</div>' +
+                '<div class="income-pending-lbl">pending' + (d.cap_reached ? ' (cap reached)' : '') + '</div></div>';
+
+            if (prog && d.next_level) {
+                prog.style.display = 'block';
+                prog.innerHTML =
+                    '<div style="display:flex;justify-content:space-between;font-size:0.9em;margin-bottom:6px;">' +
+                    '<span>Progress to Level ' + d.next_level.level + ' (' + esc(d.next_level.name) + ')</span>' +
+                    '<span>' + (d.next_level.score_needed || 0).toLocaleString() + ' score needed</span></div>' +
+                    '<div class="income-progress-bar"><div class="income-progress-fill" style="width:' + (d.next_level.progress_pct || 0) + '%"></div></div>';
+            } else if (prog) {
+                prog.style.display = 'none';
+            }
+
+            if (btn) {
+                const pending = parseFloat(d.pending_income || 0);
+                const pendingMn2 = parseFloat(d.pending_income_mn2 || 0);
+                btn.disabled = pending <= 0 && pendingMn2 <= 0;
+                btn.textContent = (pending > 0 || pendingMn2 > 0)
+                    ? 'Collect +' + pending.toLocaleString() + ' pts & +' + formatMn2(pendingMn2) + ' MN2'
+                    : 'Nothing to collect yet';
+            }
+            if (meta) {
+                meta.textContent = 'Lifetime: ' + (d.lifetime_collected || 0).toLocaleString() + ' pts · ' +
+                    formatMn2(d.lifetime_collected_mn2) + ' MN2 · cap: ' + (d.max_accrual_hours || 72) + 'h · last: ' +
+                    (d.last_collect_at ? new Date(d.last_collect_at).toLocaleString() : '—');
+            }
+
+            const unlockMn2 = d.unlock_mn2_by_rarity || {};
+            const rarityLine = Object.keys(unlockMn2).map(function(r) {
+                return r + ' +' + formatMn2(unlockMn2[r]);
+            }).join(' · ');
+            if (meta && rarityLine) {
+                meta.textContent += ' · Unlock MN2: ' + rarityLine;
+            }
+
+            const levels = d.levels || [];
+            const curLvl = d.level || 1;
+            ladder.className = 'income-ladder';
+            ladder.innerHTML = levels.map(function(l) {
+                const lvl = parseInt(l.level, 10);
+                const cls = lvl === curLvl ? 'income-tier active' : (lvl < curLvl ? 'income-tier reached' : 'income-tier');
+                return '<div class="' + cls + '">' +
+                    '<div class="income-tier-icon">' + esc(l.icon || '🏆') + '</div>' +
+                    '<div><strong>Lv ' + lvl + ' ' + esc(l.name) + '</strong><br><span style="opacity:0.75;font-size:0.85em;">Score ' + (l.min_score || 0).toLocaleString() + '+</span></div>' +
+                    '<div class="income-tier-income">+' + Math.round(l.daily_income || 0) + ' pts<br><span style="font-size:0.85em;color:var(--trophy-success);">+' + formatMn2(l.daily_income_mn2) + ' MN2</span></div>' +
+                    '<div class="income-tier-lvl">' + (l.unlock_bonus_pct ? '+' + l.unlock_bonus_pct + '% bonus' : '') + '</div></div>';
+            }).join('');
+        }
+
+        async function collectTrophyIncome(btn) {
+            if (btn) { btn.disabled = true; btn.textContent = 'Collecting…'; }
+            try {
+                const r = await fetch(`${API_BASE}/trophies/level/collect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const d = await r.json();
+                if (d && d.success && (d.collected > 0 || d.collected_mn2 > 0)) {
+                    confettiBurst();
+                    if (typeof updatePointsDisplay === 'function') updatePointsDisplay();
+                    await loadIncome();
+                    await loadTrophies();
+                } else {
+                    await loadIncome();
+                }
+            } catch (e) {
+                if (btn) { btn.disabled = false; btn.textContent = 'Collect failed — retry'; }
             }
         }
 
@@ -1455,6 +1681,7 @@
                 else if (tabName === 'leaderboard') loadLeaderboard();
                 else if (tabName === 'compare') {}
                 else if (tabName === 'activity') loadActivity();
+                else if (tabName === 'income') loadIncome();
             }
         }
 
@@ -1589,6 +1816,12 @@
             }
             // Load pinned showcase ids (Feature 14) so the modal pin button reflects state
             loadShowcase();
+            // Collector level stats (passive income)
+            fetchLevelStatus();
+            var incomeCollectBtn = document.getElementById('income-collect-btn');
+            if (incomeCollectBtn) {
+                incomeCollectBtn.addEventListener('click', function() { collectTrophyIncome(incomeCollectBtn); });
+            }
 
             var modalClose = document.getElementById('trophy-modal-close');
             if (modalClose) modalClose.addEventListener('click', closeTrophyModal);
@@ -1824,6 +2057,11 @@
             }).join('') || '<div class="info-message">No star data.</div>';
         }
 
+        function calmReadUrl(url) {
+            var u = url || '/compendium/page-1.html';
+            return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'calm=1';
+        }
+
         async function loadCompendium() {
             const el = document.getElementById('compendium-pages-list');
             if (!el) return;
@@ -1840,22 +2078,30 @@
                             html += '<h4 style="color: var(--trophy-primary); margin: 16px 0 8px;">' + (sec.name || '') + '</h4>';
                             html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
                             (sec.pages || []).forEach(function(p) {
-                                html += '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (p.number <= 10 ? 'Side ' + p.number : '') + (p.number === 11 ? 'Hunters Rulebook' : '') + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                                var href = calmReadUrl(p.url || '/compendium/page-' + p.number + '.html');
+                                html += '<a href="' + href + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (p.number <= 10 ? 'Side ' + p.number : '') + (p.number === 11 ? 'Hunters Rulebook' : '') + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
                             });
                             html += '</div>';
                         });
                     } else {
                         html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">' +
                             d.pages.map(function(p) {
-                                return '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>Side ' + p.number + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                                return '<a href="' + calmReadUrl(p.url || '/compendium/page-' + p.number + '.html') + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>Side ' + p.number + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
                             }).join('') + '</div>';
                     }
-                    el.innerHTML = html + '<p style="margin-top: 16px;"><a href="/compendium/" style="color: var(--trophy-primary);">Åbn fuld Compendium →</a></p>';
+                    if (d.extras && d.extras.length) {
+                        html += '<h4 style="color: var(--trophy-primary); margin: 16px 0 8px;">Extra volumes</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
+                        d.extras.forEach(function(ex) {
+                            html += '<a href="' + calmReadUrl(ex.url) + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (ex.title || '') + '</strong></a>';
+                        });
+                        html += '</div>';
+                    }
+                    el.innerHTML = html + '<p style="margin-top: 16px;"><a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Åbn fuld Library (calm mode) →</a></p>';
                 } else {
-                    el.innerHTML = '<p>Could not load pages. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+                    el.innerHTML = '<p>Could not load pages. <a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Open Library</a></p>';
                 }
             } catch (e) {
-                el.innerHTML = '<p>Error loading compendium. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+                el.innerHTML = '<p>Error loading compendium. <a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Open Library</a></p>';
             }
         }
 
@@ -1919,6 +2165,17 @@
             } catch (e) { el.innerHTML = '<div class="error">Failed to load effect clusters.</div>'; }
         }
 
+        async function markStoryRead(storyId) {
+            if (!storyId) return;
+            try {
+                await fetch('/api/game-hub/stories/read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, story_id: storyId }),
+                });
+            } catch (e) { /* non-blocking */ }
+        }
+
         async function loadStories() {
             const el = document.getElementById('stories-content');
             if (!el) return;
@@ -1949,7 +2206,7 @@
                         return '<div style="margin: 8px 0; padding: 8px; background: rgba(0,255,136,0.08); border-radius: 8px;"><strong>' + (c.combo || '') + '</strong><br><span style="opacity: 0.9;">' + (c.effect || '') + '</span></div>';
                     }).join('');
                     var tagsHtml = (s.tags && s.tags.length) ? '<div style="margin-bottom: 12px;">' + s.tags.map(function(t) { return '<span style="display: inline-block; padding: 4px 10px; margin-right: 6px; margin-bottom: 6px; background: rgba(255,215,0,0.2); border-radius: 20px; font-size: 0.8em;">' + t + '</span>'; }).join('') + '</div>' : '';
-                    return '<article class="card" style="margin-bottom: 24px; padding: 24px; border: 2px solid var(--trophy-border); border-radius: 16px;">' +
+                    return '<article class="card story-card" data-story-id="' + (s.id || '') + '" style="margin-bottom: 24px; padding: 24px; border: 2px solid var(--trophy-border); border-radius: 16px;">' +
                         '<h4 style="color: var(--trophy-primary); margin-bottom: 8px;">' + (s.icon || '') + ' ' + (s.title || '') + '</h4>' +
                         tagsHtml +
                         '<p style="opacity: 0.9; margin-bottom: 12px;">' + (s.subtitle || '') + '</p>' +
@@ -1971,6 +2228,18 @@
                         (s.rewards && (s.rewards.game_points || s.rewards.xp_bonus || s.rewards.trophy_id) ? '<section style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.1); border-radius: 10px;"><strong>Rewards</strong><p style="margin: 6px 0 0;">' + (s.rewards.trophy_id ? 'Trophy: ' + s.rewards.trophy_id + '. ' : '') + (s.rewards.game_points ? 'Game points: ' + s.rewards.game_points + '. ' : '') + (s.rewards.xp_bonus ? 'XP bonus: ' + s.rewards.xp_bonus + '. ' : '') + (s.rewards.completion_note || '') + '</p></section>' : '') +
                         '</article>';
                 }).join('');
+                el.querySelectorAll('.story-card[data-story-id]').forEach(function(card) {
+                    card.addEventListener('click', function() {
+                        markStoryRead(card.getAttribute('data-story-id'));
+                    });
+                });
+                var params = new URLSearchParams(window.location.search);
+                var deepStory = params.get('story');
+                if (deepStory) {
+                    markStoryRead(deepStory);
+                    var target = el.querySelector('[data-story-id="' + deepStory + '"]');
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             } catch (e) {
                 el.innerHTML = '<div class="error">Failed to load stories.</div>';
             }
@@ -2205,6 +2474,7 @@
                 if (syncRes && Array.isArray(syncRes.newly_unlocked)) {
                     syncRes.newly_unlocked.forEach(t => earnedIds.add(String(t.id)));
                 }
+                fetchLevelStatus();
 
                 const apiDefs = listRes.definitions && typeof listRes.definitions === 'object' ? listRes.definitions : null;
                 const apiDefCount = apiDefs ? Object.keys(apiDefs).length : 0;
@@ -2419,7 +2689,7 @@
                 <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
             </div>
             <div id="intelligence-panels"></div>
-            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            <div class="loading intel-loading"><p>Loading intelligence…</p></div>
         </div>
     </section>
 
@@ -2428,6 +2698,22 @@
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('trophy-theme-ww2');
+        var ww2 = document.getElementById('trophy-theme-ww2');
+        var gold = document.getElementById('trophy-theme-gold');
+        function setTheme(name) {
+            document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
+            document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
+            if (ww2) ww2.classList.toggle('active', name !== 'gold');
+            if (gold) gold.classList.toggle('active', name === 'gold');
+            try { localStorage.setItem('trophy_page_theme', name); } catch (e) {}
+        }
+        try {
+            var saved = localStorage.getItem('trophy_page_theme');
+            if (saved === 'gold') setTheme('gold');
+        } catch (e) {}
+        if (ww2) ww2.addEventListener('click', function() { setTheme('ww2'); });
+        if (gold) gold.addEventListener('click', function() { setTheme('gold'); });
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
         }

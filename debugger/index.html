@@ -63,15 +63,10 @@
         }
         
         .tab-content {
-            display: none;
             background: rgba(0,0,0,0.3);
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
-        }
-        
-        .tab-content.active {
-            display: block;
         }
         
         .button {
@@ -370,7 +365,10 @@
             line-height: 1.35;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260115">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics-debugger.css?v=20260219">
     <script src="/static/js/debugging_master_client.js?v=20260419"></script>
@@ -884,20 +882,26 @@
         <!-- Top 50 Q&A Tab -->
         <div id="quiz" class="tab-content">
             <h2>🎓 Top 50 Questions &amp; Answers</h2>
-            <p style="margin-bottom: 16px; opacity: 0.9;">
-                The 50 most useful questions about masternoder.dk and software debugging.
-                Each question has <strong>exactly 3 correct answers</strong> (multi-select). Pick all three, then check your score.
-                Use the buttons below to download the full question bank or your results.
+            <p style="margin-bottom: 12px; opacity: 0.9;">
+                Welcome to the <strong>Top 50 Q&amp;A</strong> — debugging, MN2 rewards, assignments, and reporting on masternoder.dk.
+                Each question has <strong>exactly 3 correct answers</strong> (multi-select).
             </p>
+            <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <label style="font-size:0.9em;">Topic: <input type="text" id="quiz-topic-prompt" placeholder="MN2 wallet, generator, lab…" style="padding:6px 10px;border-radius:6px;min-width:220px;"></label>
+                <button class="button" onclick="window.quizApplyTopicFilter()" style="font-size:0.85em;">Filter</button>
+            </div>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center;">
                 <button class="button" onclick="window.loadQuiz()">🔄 Load / Reset</button>
                 <button class="button" onclick="window.gradeQuiz()" style="background: rgba(0,200,83,0.25); border-color:#00c853;">✅ Check Answers</button>
+                <button class="button" onclick="window.quizAPlusConclusion()" style="background: rgba(255,215,0,0.2); border-color:#FFD700; color:#FFD700;">🎓 A+ Conclusion</button>
+                <button class="button" onclick="window.quizSubmitMn2Reward()" style="background: rgba(0,212,255,0.2); border-color:#00d4ff;">💎 Claim MN2</button>
                 <button class="button" onclick="window.quizRevealAnswers()" style="background: rgba(33,150,243,0.25); border-color:#2196F3;">👁️ Reveal Answers</button>
                 <button class="button" onclick="window.quizDownload('json')" style="background: rgba(255,193,7,0.2); border-color:#FFC107; color:#FFD700;">📥 Download JSON</button>
                 <button class="button" onclick="window.quizDownload('md')" style="background: rgba(255,193,7,0.2); border-color:#FFC107; color:#FFD700;">📥 Download Markdown</button>
                 <button class="button" onclick="window.quizDownload('results')" style="background: rgba(156,39,176,0.25); border-color:#9C27B0;">📥 Download My Results</button>
             </div>
             <div id="quiz-score" class="status" style="margin-bottom:16px; font-size:1.05em;">Click "Load / Reset" or open the tab to begin.</div>
+            <div id="quiz-conclusion" style="display:none;margin-bottom:16px;padding:14px;border-radius:8px;border:1px solid rgba(255,215,0,0.35);background:rgba(255,215,0,0.08);"></div>
             <div id="quiz-container" style="max-height: 70vh; overflow-y:auto; padding-right:6px;"></div>
         </div>
 
@@ -6090,6 +6094,43 @@
             return window._quizLastResult;
         };
 
+        window.quizAPlusConclusion = function() {
+            var res = window._quizLastResult || window.gradeQuiz();
+            var pct = Math.round((res.correct / res.total) * 100);
+            var topic = (document.getElementById('quiz-topic-prompt') || {}).value || 'general platform mastery';
+            var level = pct >= 90 ? 'A+' : (pct >= 70 ? 'B+' : (pct >= 50 ? 'C' : 'Needs review'));
+            var text = '<strong>Conclusion (' + level + ')</strong><p style="margin:8px 0 0;">You scored ' + res.correct + '/' + res.total +
+                ' (' + pct + '%) on the Top 50 Q&amp;A focused on <em>' + esc(topic) + '</em>. ' +
+                (pct >= 90 ? 'Excellent — you demonstrate production-ready understanding of MN2, generator, lab, and debugger workflows. Recommended: approve lab assignments and publish reports.' :
+                pct >= 70 ? 'Solid grasp — review missed explanations and rerun the generator test pipeline.' :
+                'Review highlighted explanations, then retry with topic filter for weaker areas.') +
+                '</p><p style="margin:8px 0 0;font-size:0.9em;opacity:0.85;">Short-form video idea: 60s recap of your top 3 missed topics with generator template rotation.</p>';
+            var box = document.getElementById('quiz-conclusion');
+            if (box) { box.innerHTML = text; box.style.display = 'block'; }
+        };
+
+        window.quizSubmitMn2Reward = function() {
+            var res = window._quizLastResult || window.gradeQuiz();
+            var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            fetch('/api/debugger/quiz/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: uid, correct: res.correct, total: res.total, answered: res.answered })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                var score = document.getElementById('quiz-score');
+                if (score) score.innerHTML += d.success ? ' · MN2 reward: <strong>' + (d.amount_mn2 || d.reward_mn2 || 'granted') + '</strong>' : ' · ' + (d.error || 'No reward');
+            }).catch(function() {});
+        };
+
+        window.quizApplyTopicFilter = function() {
+            var topic = ((document.getElementById('quiz-topic-prompt') || {}).value || '').trim().toLowerCase();
+            if (!topic) { window.loadQuiz(); return; }
+            document.querySelectorAll('.quiz-question').forEach(function(block) {
+                var text = (block.textContent || '').toLowerCase();
+                block.style.display = text.indexOf(topic) >= 0 ? '' : 'none';
+            });
+        };
+
         window.quizRevealAnswers = function() {
             QUESTIONS.forEach((item, qi) => {
                 const block = document.querySelector('.quiz-question[data-qi="' + qi + '"]');
@@ -6174,5 +6215,6 @@
 
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="debugger" defer></script>
 </body>
 </html>
