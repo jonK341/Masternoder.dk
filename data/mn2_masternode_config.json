@@ -43,6 +43,7 @@
     "maintain_ping_loop": true,
     "ping_stall_minutes": 8,
     "primary_ping_alias": "platformmn2",
+    "multi_ping_enabled": false,
     "masternode_ping_addr": "127.0.0.1:17646",
     "estimated_chain_gb": 4,
     "estimated_mongo_gb": 6,
