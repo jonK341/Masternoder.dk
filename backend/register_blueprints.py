@@ -285,6 +285,22 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP security_cron: {e}")
     try:
+        from backend.routes.debugger_quiz_routes import debugger_quiz_bp
+        if "debugger_quiz" not in app.blueprints:
+            app.register_blueprint(debugger_quiz_bp)
+            n += 1
+            print("  [OK] Registered debugger_quiz blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP debugger_quiz: {e}")
+    try:
+        from backend.routes.point_control_board_routes import point_control_board_bp
+        if "point_control_board" not in app.blueprints:
+            app.register_blueprint(point_control_board_bp)
+            n += 1
+            print("  [OK] Registered point_control_board blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP point_control_board: {e}")
+    try:
         from backend.routes.account_security_routes import account_security_bp
         app.register_blueprint(account_security_bp)
         n += 1
@@ -1472,6 +1488,28 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import security_cron: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering security_cron: {e}")
+
+    try:
+        from backend.routes.debugger_quiz_routes import debugger_quiz_bp
+        if "debugger_quiz" not in app.blueprints:
+            app.register_blueprint(debugger_quiz_bp)
+            registered_count += 1
+            print("  [OK] Registered debugger_quiz blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import debugger_quiz: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering debugger_quiz: {e}")
+
+    try:
+        from backend.routes.point_control_board_routes import point_control_board_bp
+        if "point_control_board" not in app.blueprints:
+            app.register_blueprint(point_control_board_bp)
+            registered_count += 1
+            print("  [OK] Registered point_control_board blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import point_control_board: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering point_control_board: {e}")
 
     try:
         from backend.routes.account_security_routes import account_security_bp
