@@ -590,6 +590,69 @@ def _read_masternoder2_privkey() -> Optional[str]:
     return keys[-1]
 
 
+def _parse_daemon_version_tuple(version: str) -> tuple:
+    """Parse ``1.3.0.0-abc`` → ``(1, 3, 0, 0)`` for comparisons."""
+    head = str(version or "").split("-", 1)[0].strip()
+    parts: List[int] = []
+    for piece in head.split("."):
+        try:
+            parts.append(int(piece))
+        except (TypeError, ValueError):
+            break
+    while len(parts) < 4:
+        parts.append(0)
+    return tuple(parts[:4])
+
+
+def daemon_supports_multi_ping() -> bool:
+    """True when connected daemon reports MasterNoder2 >= 1.3.0."""
+    try:
+        from backend.services import mn2_rpc_client as rpc
+
+        r = rpc.getinfo()
+        if r.get("error"):
+            return False
+        ver = (r.get("result") or {}).get("version")
+        if ver is None:
+            return False
+        return _parse_daemon_version_tuple(str(ver)) >= (1, 3, 0, 0)
+    except Exception:
+        return False
+
+
+def multi_ping_enabled() -> bool:
+    """
+    Fleet multi-ping: ping every masternode.conf alias from one daemon (v1.3+).
+    ``ops.multi_ping_enabled`` overrides auto-detect; default False until binary deployed.
+    """
+    ops = _ops_cfg()
+    flag = ops.get("multi_ping_enabled")
+    if flag is True:
+        return True
+    if flag is False:
+        return False
+    env = (os.environ.get("MN2_MULTI_PING_ENABLED") or "").strip().lower()
+    if env in ("1", "true", "yes"):
+        return True
+    if env in ("0", "false", "no"):
+        return False
+    return daemon_supports_multi_ping()
+
+
+def _register_fleet_ping_targets() -> Optional[str]:
+    """Broadcast + register all masternode.conf aliases in daemon ping set (v1.3+)."""
+    if not multi_ping_enabled():
+        return None
+    from backend.services import mn2_rpc_client as rpc
+
+    _unlock_wallet()
+    _unlock_collateral_utxos()
+    r = rpc.startmasternode("all", False)
+    if r.get("error"):
+        return str(r.get("error"))
+    return None
+
+
 def _collateral_for_alias(alias: str) -> Optional[tuple]:
     """Return (txid, vout) from masternode.conf for alias (valid lines only)."""
     row = _entry_for_alias(alias, valid_only=True)
@@ -599,6 +662,22 @@ def _collateral_for_alias(alias: str) -> Optional[tuple]:
         return (str(row["txid"]), int(row["vout"]))
     except (KeyError, TypeError, ValueError):
         return None
+
+
+def _count_enabled_with_activetime(chain_list: List[Dict[str, Any]]) -> int:
+    """Count ENABLED masternodes with activetime > 0 (multi-ping health)."""
+    n = 0
+    for mn in chain_list:
+        if not isinstance(mn, dict):
+            continue
+        if str(mn.get("status") or "").upper() != "ENABLED":
+            continue
+        try:
+            if int(mn.get("activetime") or 0) > 0:
+                n += 1
+        except (TypeError, ValueError):
+            continue
+    return n
 
 
 def _primary_ping_alias() -> Optional[str]:
@@ -1144,9 +1223,14 @@ def _start_masternode(
     rpc_ok = False
     attempts: List[tuple] = [
         ("alias", False, alias),
-        ("local", False),
-        ("missing", False),
     ]
+    if multi_ping_enabled():
+        attempts.append(("local", False))
+    else:
+        attempts.extend([
+            ("local", False),
+            ("missing", False),
+        ])
     for item in attempts:
         set_type, lock = item[0], item[1]
         alias_arg = item[2] if len(item) > 2 else None
@@ -1196,13 +1280,21 @@ def maintain_ping_loop() -> Dict[str, Any]:
     sync_err = None
     if err and "masternoder2.conf" in err and ("cannot write" in err or "cannot read" in err):
         sync_err = err
+    fleet_reg_err = None
+    if multi_ping_enabled() and err is None:
+        fleet_reg_err = _register_fleet_ping_targets()
     return {
-        "success": err is None,
+        "success": err is None and fleet_reg_err is None,
         "primary_alias": alias,
+        "multi_ping": multi_ping_enabled(),
         "unlocked_utxos": unlocked,
-        "error": err,
+        "error": err or fleet_reg_err,
         "sync_error": sync_err,
-        "action": "sync primary privkey, restart if changed, startmasternode alias then local",
+        "action": (
+            "multi-ping: alias + fleet register (startmasternode all)"
+            if multi_ping_enabled()
+            else "sync primary privkey, restart if changed, startmasternode alias then local"
+        ),
     }
 
 
@@ -1428,11 +1520,15 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
 
     mnsync = None
     staking_active = None
+    daemon_version = None
     try:
-        from backend.services.mn2_rpc_client import staking_health
+        from backend.services.mn2_rpc_client import staking_health, getinfo
         sh = staking_health() or {}
         mnsync = sh.get("mnsync")
         staking_active = sh.get("staking_active")
+        info = getinfo()
+        if not info.get("error"):
+            daemon_version = (info.get("result") or {}).get("version")
     except Exception:
         pass
 
@@ -1466,6 +1562,10 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         "daemon": {
             "mnsync": mnsync,
             "staking_active": staking_active,
+            "version": daemon_version,
+            "multi_ping_capable": daemon_supports_multi_ping(),
+            "multi_ping_enabled": multi_ping_enabled(),
+            "enabled_with_activetime": _count_enabled_with_activetime(chain_list),
         },
         "hosts": synced_hosts,
         "ops": cfg.get("ops") if isinstance(cfg.get("ops"), dict) else {},

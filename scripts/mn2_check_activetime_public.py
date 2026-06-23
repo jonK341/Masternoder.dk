@@ -53,6 +53,12 @@ def main() -> int:
         )
     print(f"--- ACTIVE with activetime=0: {active_zero}  ENABLED: {enabled_with_time} ---")
 
+    enabled_rising = sum(
+        1 for x in (net.get("list") or [])
+        if str(x.get("status") or "").upper() == "ENABLED" and int(x.get("activetime") or 0) > 0
+    )
+    print(f"--- ENABLED with activetime>0 (multi-ping health): {enabled_rising} ---")
+
     print("\n== Masternode service (/api/mn2/masternode/service) ==")
     svc = get("/api/mn2/masternode/service?fresh=1")
     network = svc.get("network") or {}
@@ -61,6 +67,13 @@ def main() -> int:
         f"network total={network.get('total')} enabled={network.get('enabled')}  "
         f"daemon mnsync={daemon.get('mnsync')} staking_active={daemon.get('staking_active')}"
     )
+    if daemon.get("version"):
+        print(
+            f"  daemon version={daemon.get('version')}  "
+            f"multi_ping_capable={daemon.get('multi_ping_capable')}  "
+            f"multi_ping_enabled={daemon.get('multi_ping_enabled')}  "
+            f"enabled_with_activetime={daemon.get('enabled_with_activetime')}"
+        )
     if int(network.get("total") or 0) == 0:
         _print_rpc_hint(svc)
 
@@ -68,6 +81,7 @@ def main() -> int:
     print("  cron: */2 * * * *  mn2_masternode_provision.sh  (retry paid slots, not ping)")
     print("  boot: mn2-fleet-autostart.service  (local + alias after masternoder2d)")
     print("  ping: daemon internal loop after startmasternode local + masternode=1")
+    print("  v1.3+: multi-ping — all masternode.conf aliases (see docs/MN2_DAEMON_MULTI_PING_UPGRADE.md)")
 
     return 0
 

@@ -1,8 +1,91 @@
 # MasterNoder2 daemon — multi-ping upgrade (design note)
 
-**Status:** Planned (not in current v1.2.3.x binary)  
-**Repo:** [github.com/jonK341/MasterNoder2](https://github.com/jonK341/MasterNoder2) (C++ fork, not this Flask site)  
-**Site repo:** hosting automation only — cannot multi-ping without a new daemon build.
+**Status:** **In progress** — C++ spike implemented in local `external/MasterNoder2` (v1.3.0.0); production still on **v1.2.3.x** until build + deploy  
+**Daemon repo:** [github.com/jonK341/MasterNoder2](https://github.com/jonK341/MasterNoder2) (C++ fork)  
+**Site repo:** hosting automation, probes, and `ops.multi_ping_enabled` gate (this PR)
+
+---
+
+## Progress checklist (2026-06-23)
+
+| Step | Status | Notes |
+| ---- | ------ | ----- |
+| Read `ManageStatus` / `SendMasternodePing` call graph | **Done** | `obfuscation.cpp` ~690s, `masternode-sync.cpp` |
+| `CMasternodePingTarget` + `mapExtraPingTargets` | **Done** | `external/MasterNoder2/src/activemasternode.{h,cpp}` |
+| `RegisterPingTarget` / `RegisterAllPingTargets` | **Done** | Skips vin already owned by primary |
+| `ManageExtraPingTargets` in ping cycle | **Done** | Called at end of `ManageStatus()` |
+| RPC `alias` / `all` → `pingRegister` in JSON | **Done** | `src/rpc/masternode.cpp` |
+| Startup `-mnmultiping=1` (default on) | **Done** | `src/init.cpp` |
+| Version bump **1.3.0.0** | **Done** | `configure.ac`, `release-notes-1.3.0.0.md` |
+| Site `multi_ping_enabled` + service helpers | **Done** | `mn2_masternode_service.py`, config JSON |
+| Probe scripts | **Done** | `mn2_probe_multi_ping.py`, `mn2_check_activetime_public.py` |
+| Unit tests (site) | **Done** | `tests/unit/test_mn2_multi_ping.py` |
+| Build + regtest on Linux | **Pending** | Windows workspace — build on fleet server |
+| GitHub release v1.3.0.0 assets | **Pending** | `mn2_build_release_remote.py --publish` |
+| Prod deploy | **Pending** | `mn2_daemon_upgrade_remote.py --apply` |
+| Enable `ops.multi_ping_enabled: true` | **Pending** | After QA: 4+ ENABLED with rising activetime |
+| Retire `primary_ping_alias` privkey hack | **Pending** | Optional once multi-ping stable |
+
+---
+
+## C++ implementation (v1.3.0.0)
+
+Local reference tree: `external/MasterNoder2/` (nested clone; push branch to MasterNoder2 repo).
+
+| File | Change |
+| ---- | ------ |
+| `src/activemasternode.h` | `CMasternodePingTarget`, `mapExtraPingTargets`, register/ping APIs |
+| `src/activemasternode.cpp` | `SendMasternodePingForTarget`, `ManageExtraPingTargets`, `RegisterPingTarget` |
+| `src/rpc/masternode.cpp` | `startmasternode alias\|all\|local` registers ping targets when `-mnmultiping=1` |
+| `src/init.cpp` | `RegisterAllPingTargets()` at startup when `fMasterNode` |
+| `configure.ac` | `1.3.0.0` |
+
+**Call graph (unchanged entry, new tail):**
+
+```
+obfuscation thread (every MASTERNODE_PING_SECONDS)
+  → CActiveMasternode::ManageStatus()     # primary (masternoder2.conf privkey)
+  → CActiveMasternode::ManageExtraPingTargets()  # each registered alias
+       → SendMasternodePingForTarget()
+```
+
+**RPC behaviour (v1.3+):**
+
+```bash
+masternoder2-cli startmasternode alias false customer-mn-42
+# detail[].pingRegister == "registered"
+
+masternoder2-cli startmasternode all false
+# each success → pingRegister; broadcasts missing + registers ping set
+
+masternoder2-cli startmasternode local false
+# starts primary + RegisterAllPingTargets()
+```
+
+**Disable multi-ping (rollback to v1.2 behaviour):** `mnmultiping=0` in `masternoder2.conf`.
+
+---
+
+## Site repo integration
+
+| Item | Location |
+| ---- | -------- |
+| Feature flag | `data/mn2_masternode_config.json` → `ops.multi_ping_enabled` (default `false`) |
+| Version detect | `daemon_supports_multi_ping()` — `getinfo.version >= 1.3.0` |
+| Provision path | `_start_masternode`: `alias` then `local` when multi-ping on |
+| Watchdog | `maintain_ping_loop()` → `_register_fleet_ping_targets()` (`startmasternode all`) |
+| Service API | `GET /api/mn2/masternode/service` → `daemon.multi_ping_*`, `enabled_with_activetime` |
+| Probes | `python scripts/mn2_probe_multi_ping.py` · `python scripts/mn2_check_activetime_public.py` |
+
+**After prod deploy:**
+
+```powershell
+python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post
+# QA:
+python scripts/mn2_probe_multi_ping.py --public
+python scripts/mn2_probe_multi_ping.py --register   # on server / with RPC .env
+# Then set multi_ping_enabled: true and redeploy mn2_staking
+```
 
 ---
 
