@@ -65,7 +65,8 @@ def mn2_service_detail(service_id: str):
 def masternode_service_public():
     """Public hosting service snapshot (capacity, network, platform nodes)."""
     try:
-        return jsonify(mn_service.get_service_status()), 200
+        fresh = request.args.get("fresh") in ("1", "true", "yes")
+        return jsonify(mn_service.get_service_status(fresh=fresh)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

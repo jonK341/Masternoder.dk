@@ -229,10 +229,10 @@ def list_collateral_outputs() -> Dict[str, Any]:
         return {"success": False, "error": str(exc), "outputs": []}
 
 
-def network_masternodes(limit: int = 50) -> Dict[str, Any]:
+def network_masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
     try:
         from backend.services import mn2_explorer_data
-        data = mn2_explorer_data.masternodes(limit=limit)
+        data = mn2_explorer_data.masternodes(limit=limit, fresh=fresh)
         return {"success": True, **data}
     except Exception as exc:
         return {"success": False, "error": str(exc), "total": 0, "enabled": 0, "list": []}
@@ -1395,7 +1395,7 @@ def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
     return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
 
 
-def get_service_status() -> Dict[str, Any]:
+def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     """Public + ops snapshot for hosting service."""
     cfg = get_config()
     enabled = bool(cfg.get("enabled", True))
@@ -1405,7 +1405,7 @@ def get_service_status() -> Dict[str, Any]:
     purge_stale_provisioning_hosts(max_age_hours=stale_hours, dry_run=False)
     registry_hosts = list(_load_hosts_doc().get("hosts") or [])
     hosts = list_hosts(include_internal=False)
-    net = network_masternodes(limit=100)
+    net = network_masternodes(limit=100, fresh=fresh)
     chain_list = net.get("list") if isinstance(net.get("list"), list) else []
 
     synced_hosts: List[Dict[str, Any]] = []

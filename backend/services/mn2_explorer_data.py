@@ -91,9 +91,13 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
             rows = r.get("result")
             if r.get("error"):
                 result["rpc_error"] = str(r.get("error"))
+                if fresh:
+                    _CACHE.pop(key, None)
                 return result
             if not isinstance(rows, list):
                 result["rpc_error"] = "listmasternodes returned non-list"
+                if fresh:
+                    _CACHE.pop(key, None)
                 return result
             enabled = 0
             parsed: List[Dict[str, Any]] = []

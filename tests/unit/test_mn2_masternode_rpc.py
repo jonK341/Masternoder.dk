@@ -272,8 +272,8 @@ def test_ping_loop_ignores_wrong_enabled_collateral(monkeypatch):
     assert mn._ping_loop_healthy() is False
 
 
-def test_masternode_conf_line_field_order(tmp_path, monkeypatch):
-    conf = tmp_path / "masternode.conf"
+def test_masternode_conf_line_field_order(monkeypatch):
+    conf = Path(tempfile.mkdtemp(prefix="mn2conf_line_")) / "masternode.conf"
     monkeypatch.setattr(mn, "_masternode_conf_path", lambda: str(conf))
     mn._append_masternode_conf_line(
         "platformmn2", "140.82.39.124:17646", "abc123deadbeef", 0, "6mD73mXp9wJQ8gftzD912WEQVkhtxPGamdUhkuazv2VVbKGLboF",
@@ -326,9 +326,8 @@ def test_alias_from_host_id_strips_spaces():
     assert " " not in mn._alias_from_host_id("user-Sander S-fb801e")
 
 
-def test_provision_uses_createmasternodekey(monkeypatch, tmp_path):
-    data_dir = tmp_path / "data"
-    data_dir.mkdir()
+def test_provision_uses_createmasternodekey(monkeypatch):
+    data_dir = Path(tempfile.mkdtemp(prefix="mn2prov_"))
     (data_dir / "mn2_masternode_config.json").write_text(
         '{"max_hosted_nodes": 100, "auto_provision": true, "collateral_mn2": 5000, '
         '"ops": {"min_collateral_confirmations": 10, "restart_daemon_on_provision": false}}',

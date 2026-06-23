@@ -9,21 +9,29 @@ reload nginx → ensure no-cache headers for HTML. No Ubuntu reboot, no hard res
 
 Usage:
   python scripts/apply_updates.py
+  python scripts/apply_updates.py --ask-pass
   python scripts/apply_updates.py --host masternoder.dk
   DEPLOY_PASS=xxx python scripts/apply_updates.py
+
+SSH password: set DEPLOY_PASS, use --ask-pass to prompt (ignores .env), or run
+interactively — missing DEPLOY_PASS prompts; stale .env password prompts once
+on auth failure before exit.
 
 After deploy, run this instead of rebooting the server. Users should refresh (Ctrl+F5)
 or wait for /api/version check to trigger reload.
 """
+import argparse
 import os
 import sys
 import time
 import re
 from datetime import datetime
 
-SERVER_HOST = os.getenv("DEPLOY_HOST", "masternoder.dk")
-SERVER_USER = os.getenv("DEPLOY_USER", "root")
-SERVER_PASS = (os.getenv("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS for SSH."))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
+
+SERVER_HOST = deploy_host()
+SERVER_USER = deploy_user()
 REMOTE_BASE = os.getenv("REMOTE_BASE", "/var/www/html")
 WAIT_AFTER_PROXY = 6
 WAIT_AFTER_UWSGI_STOP = 4
@@ -33,17 +41,17 @@ WAIT_AFTER_UWSGI_MAIN = 4
 
 def sh(ssh, cmd, timeout=30):
     stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
-    out = (stdout.read() or b"").decode("utf-8", errors="replace").strip()
-    err = (stderr.read() or b"").decode("utf-8", errors="replace").strip()
+    try:
+        out = (stdout.read() or b"").decode("utf-8", errors="replace").strip()
+        err = (stderr.read() or b"").decode("utf-8", errors="replace").strip()
+    except (TimeoutError, OSError) as exc:
+        out, err = "", f"timeout: {exc}"
     return out, err
 
 
-def run():
-    try:
-        import paramiko
-    except ImportError:
-        print("Install paramiko: pip install paramiko")
-        return 1
+def run(force_prompt: bool = False):
+    server_host = deploy_host()
+    server_pass = require_deploy_pass(force_prompt=force_prompt)
 
     ssh = None
     try:
@@ -51,12 +59,15 @@ def run():
         print("APPLY UPDATES (no reboot)")
         print("=" * 60)
         print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        print("Host:", SERVER_HOST)
+        print("Host:", server_host)
         print()
 
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        print("Connecting...")
+        ssh, auth_method, effective_pass = connect_deploy_ssh(server_pass)
+        if effective_pass:
+            server_pass = effective_pass
+        print(f"  [OK] Connected ({auth_method})")
+        print()
 
         # 1. Clear Python cache
         print("[1/6] Clearing Python cache...")
@@ -114,7 +125,7 @@ def run():
                 text=True,
                 timeout=60,
                 cwd=base,
-                env={**os.environ, "DEPLOY_HOST": SERVER_HOST, "DEPLOY_PASS": SERVER_PASS}
+                env={**os.environ, "DEPLOY_HOST": server_host, "DEPLOY_PASS": server_pass}
             )
             if r.returncode == 0:
                 print("  no-cache rules OK")
@@ -123,18 +134,28 @@ def run():
         else:
             print("  [SKIP] setup_generator_no_cache.py not found")
 
-        # Quick sanity check
+        # Quick sanity check (non-fatal — backend may still be warming up)
         print()
         print("Quick check (backend :5000):")
+        time.sleep(3)
         for path in ["/api/version", "/vidgenerator/api/version"]:
-            out, _ = sh(ssh, f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:5000{path} 2>/dev/null || echo '---'", timeout=5)
-            print(f"  {path}: {out}")
+            try:
+                out, err = sh(
+                    ssh,
+                    f"curl -s --max-time 8 -o /dev/null -w '%{{http_code}}' "
+                    f"http://127.0.0.1:5000{path} 2>/dev/null || echo '---'",
+                    timeout=12,
+                )
+                label = out or ("timeout" if err else "---")
+                print(f"  {path}: {label}")
+            except Exception as exc:
+                print(f"  {path}: [WARN] {exc}")
 
         print()
         print("=" * 60)
         print("APPLY UPDATES COMPLETE")
         print("=" * 60)
-        print("Browser: open https://" + SERVER_HOST.split(":")[0] + "/vidgenerator/ and press Ctrl+F5")
+        print("Browser: open https://" + server_host.split(":")[0] + "/vidgenerator/ and press Ctrl+F5")
         print("No server reboot was performed.")
         return 0
 
@@ -148,5 +169,25 @@ def run():
             ssh.close()
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        description="Apply updates after deploy (no server reboot).",
+    )
+    parser.add_argument(
+        "--host",
+        metavar="HOST",
+        help="Override DEPLOY_HOST (default: masternoder.dk or DEPLOY_HOST env)",
+    )
+    parser.add_argument(
+        "--ask-pass",
+        action="store_true",
+        help="Prompt for SSH password (ignores DEPLOY_PASS in .env)",
+    )
+    args = parser.parse_args()
+    if args.host:
+        os.environ["DEPLOY_HOST"] = args.host.strip()
+    sys.exit(run(force_prompt=args.ask_pass))
+
+
 if __name__ == "__main__":
-    sys.exit(run())
+    main()
