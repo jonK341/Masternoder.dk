@@ -1,0 +1,46 @@
+.podcast-portal-strip {
+    max-width: 1100px;
+    margin: 12px auto 16px;
+    padding: 14px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(79, 195, 247, 0.4);
+    background: linear-gradient(135deg, rgba(13, 33, 55, 0.92), rgba(30, 136, 229, 0.12));
+    font-size: 0.88rem;
+    line-height: 1.5;
+    box-shadow: 0 0 28px rgba(79, 195, 247, 0.12);
+}
+.podcast-portal-max {
+    border-color: rgba(255, 213, 79, 0.35);
+}
+.podcast-portal-flavor {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffd54f;
+    margin-bottom: 6px;
+}
+.podcast-portal-line { margin: 0 0 6px; opacity: 0.95; color: #e3f2fd; }
+.podcast-portal-link { color: #4fc3f7; text-decoration: none; }
+.podcast-portal-link:hover { text-decoration: underline; color: #ffd54f; }
+.podcast-portal-latest, .podcast-portal-news { margin: 0 0 4px; font-size: 0.82rem; opacity: 0.88; }
+.podcast-portal-latest a, .podcast-portal-news a { color: #81d4fa; text-decoration: none; }
+.podcast-portal-hint { margin: 8px 0 0; font-size: 0.78rem; opacity: 0.72; font-style: italic; }
+.podcast-portal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.podcast-portal-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: linear-gradient(135deg, #1e88e5, #4fc3f7);
+    color: #061018;
+    border: 1px solid rgba(255, 213, 79, 0.4);
+}
+.podcast-portal-btn--news { background: linear-gradient(135deg, #4fc3f7, #ffd54f); }
+.podcast-portal-btn--ghost {
+    background: transparent;
+    color: #81d4fa;
+    border: 1px solid rgba(129, 212, 250, 0.45);
+}
