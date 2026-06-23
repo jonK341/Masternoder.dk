@@ -91,12 +91,14 @@ class TestMN2DepositAddress(unittest.TestCase):
         self.assertIn("explorer_address_url", data)
 
     @patch("backend.routes.mn2_routes.get_or_create_deposit_address")
-    def test_deposit_address_fail_returns_500(self, mock_get_addr):
+    def test_deposit_address_fail_returns_200_with_error(self, mock_get_addr):
         mock_get_addr.return_value = {"success": False, "error": "RPC unavailable"}
         r = self.client.get("/api/mn2/deposit-address?user_id=test_user")
-        self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertFalse(data.get("success"))
+        self.assertIn("error", data)
+        self.assertIsNone(data.get("deposit_address"))
 
 
 class TestMN2Transactions(unittest.TestCase):
@@ -372,6 +374,52 @@ class TestMN2BalanceWithVerification(unittest.TestCase):
         self.assertTrue(data.get("success"))
         self.assertIn("withdrawal_verified", data)
         self.assertTrue(data["withdrawal_verified"])
+
+
+class TestMN2DepositAddressSelfHeal(unittest.TestCase):
+    """get_or_create_deposit_address validates cached addresses and self-heals."""
+
+    @patch("backend.services.mn2_rpc_client.getnewaddress")
+    @patch("backend.services.mn2_rpc_client.validateaddress")
+    @patch("backend.services.mn2_wallet_service._save_addresses")
+    @patch("backend.services.mn2_wallet_service._load_addresses")
+    def test_invalid_cached_address_is_regenerated(
+        self, mock_load, mock_save, mock_validate, mock_getnew
+    ):
+        from backend.services import mn2_wallet_service as w
+        mock_load.return_value = {"u1": "BADADDR"}
+        saved = {}
+        mock_save.side_effect = lambda d: saved.update(d)
+        mock_validate.side_effect = lambda a: (
+            {"result": {"isvalid": False}} if a == "BADADDR" else {"result": {"isvalid": True}}
+        )
+        mock_getnew.return_value = {"result": "MxFreshValidAddress"}
+
+        res = w.get_or_create_deposit_address("u1")
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "MxFreshValidAddress")
+        saved_addr = saved.get("u1")
+        if isinstance(saved_addr, dict):
+            self.assertEqual(saved_addr.get("primary"), "MxFreshValidAddress")
+        else:
+            self.assertEqual(saved_addr, "MxFreshValidAddress")
+
+    @patch("backend.services.mn2_rpc_client.getnewaddress")
+    @patch("backend.services.mn2_rpc_client.validateaddress")
+    @patch("backend.services.mn2_wallet_service._save_addresses")
+    @patch("backend.services.mn2_wallet_service._load_addresses")
+    def test_rpc_outage_keeps_existing_address(
+        self, mock_load, mock_save, mock_validate, mock_getnew
+    ):
+        from backend.services import mn2_wallet_service as w
+        mock_load.return_value = {"u1": "MxExisting"}
+        # Daemon unreachable -> validateaddress returns an error; must NOT discard.
+        mock_validate.return_value = {"error": "daemon offline"}
+
+        res = w.get_or_create_deposit_address("u1")
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "MxExisting")
+        mock_getnew.assert_not_called()
 
 
 def run_tests():

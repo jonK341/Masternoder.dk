@@ -54,7 +54,7 @@ def append_entry(
     address: str = None,
     metadata: Dict[str, Any] = None,
 ) -> None:
-    """Append a ledger entry. entry_type: deposit | withdrawal | shop_payment."""
+    """Append a ledger entry. entry_type: deposit | withdrawal | shop_payment | stake | unstake | staking_reward | onramp_purchase | onramp_clawback."""
     entries = _load_entries()
     entries.append({
         "user_id": str(user_id),
@@ -77,12 +77,27 @@ def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
 
 
 def is_txid_processed(txid: str) -> bool:
-    """True if a deposit with this txid is already in the ledger (idempotency)."""
+    """True if this txid was already credited via deposit or treasury_deposit."""
     if not (txid or "").strip():
         return False
     txid = str(txid).strip()
     entries = _load_entries()
-    return any((e.get("type") == "deposit" and (e.get("txid") or "").strip() == txid) for e in entries)
+    credited_types = ("deposit", "treasury_deposit")
+    return any(
+        (e.get("type") in credited_types and (e.get("txid") or "").strip() == txid)
+        for e in entries
+    )
+
+
+def is_treasury_deposit_recorded(txid: str) -> bool:
+    """True if treasury_deposit ledger row exists for txid."""
+    if not (txid or "").strip():
+        return False
+    txid = str(txid).strip()
+    return any(
+        e.get("type") == "treasury_deposit" and (e.get("txid") or "").strip() == txid
+        for e in _load_entries()
+    )
 
 
 def count_withdrawals_since(user_id: str, since_iso: str) -> int:
@@ -131,10 +146,11 @@ def get_wallet_activity_days(user_id: str, days: int = 5) -> List[Dict[str, Any]
         except (TypeError, ValueError):
             continue
         buckets[day]["events"] += 1
-        if t == "deposit":
+        if t in ("deposit", "staking_reward", "onramp_purchase"):
             buckets[day]["deposits_mn2"] += amt
-        elif t in ("withdrawal", "shop_payment"):
+        elif t in ("withdrawal", "shop_payment", "onramp_clawback"):
             buckets[day]["out_mn2"] += abs(amt)
+        # stake / unstake are internal balance<->staked moves: neutral (counted as events only)
     for k in day_keys:
         b = buckets[k]
         b["net_mn2"] = round(b["deposits_mn2"] - b["out_mn2"], 8)
