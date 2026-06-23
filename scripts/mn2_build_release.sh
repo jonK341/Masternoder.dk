@@ -26,25 +26,69 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PATCHED=0
 
+APT_BUILD_PACKAGES=(
+  git build-essential g++ autoconf automake libtool pkg-config patch bzip2 ca-certificates
+  libboost-all-dev libssl-dev libevent-dev libzmq3-dev
+  libdb-dev libminiupnpc-dev libgmp-dev libbsd-dev
+)
+
+require_build_tools() {
+  local missing=()
+  for cmd in autoconf automake libtoolize g++ make; do
+    command -v "${cmd}" >/dev/null || missing+=("${cmd}")
+  done
+  if [[ "${#missing[@]}" -gt 0 ]]; then
+    echo "Missing build tools: ${missing[*]}" >&2
+    echo "Set INSTALL_BUILD_DEPS=1 (remote default) or install: ${APT_BUILD_PACKAGES[*]}" >&2
+    exit 1
+  fi
+}
+
 ensure_build_deps() {
-  if command -v autoconf >/dev/null && command -v automake >/dev/null && command -v libtoolize >/dev/null; then
+  if [[ "${INSTALL_BUILD_DEPS}" == "1" ]] && [[ "$(id -u)" -eq 0 ]] && command -v apt-get >/dev/null; then
+    echo "=== Installing MN2 build dependencies (apt) ==="
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq "${APT_BUILD_PACKAGES[@]}"
     return 0
   fi
-  if [[ "${INSTALL_BUILD_DEPS}" != "1" ]]; then
-    echo "Missing autoconf/automake/libtool. Set INSTALL_BUILD_DEPS=1 or install build packages." >&2
-    exit 1
+  require_build_tools
+  if [[ "${USE_DEPENDS}" != "1" ]]; then
+    for cmd in pkg-config; do
+      command -v "${cmd}" >/dev/null || {
+        echo "System-lib build needs ${cmd}. Set INSTALL_BUILD_DEPS=1 or install libboost-all-dev libssl-dev libgmp-dev libbsd-dev." >&2
+        exit 1
+      }
+    done
   fi
-  if [[ "$(id -u)" -ne 0 ]] || ! command -v apt-get >/dev/null; then
-    echo "Run as root on Debian/Ubuntu, or install: autoconf automake libtool build-essential libboost-all-dev libssl-dev libevent-dev" >&2
-    exit 1
+}
+
+is_boost_depends_failure() {
+  local log="${1:-}"
+  [[ -n "${log}" ]] || return 1
+  grep -qiE 'Failed to build Boost\.Build engine|boost.*stamp_configured|funcs\.mk:.*boost' <<< "${log}"
+}
+
+run_depends_build() {
+  local log="${BUILD_ROOT}/depends-build.log"
+  echo "=== depends (static, NO_QT) — first run can take 30–60 min ==="
+  cd depends
+  set +e
+  make -j"${JOBS}" HOST=x86_64-linux-gnu NO_QT=1 2>&1 | tee "${log}"
+  local dep_status=${PIPESTATUS[0]}
+  set -e
+  cd ..
+  if [[ "${dep_status}" -ne 0 ]]; then
+    if is_boost_depends_failure "$(cat "${log}")"; then
+      echo "" >&2
+      echo "=== depends boost build failed (Boost.Build engine / gcc toolset) ===" >&2
+      echo "Common on minimal VPS hosts even when autoconf is present." >&2
+      echo "Retry with system libraries (faster, less portable):" >&2
+      echo "  USE_DEPENDS=0 bash scripts/mn2_build_release.sh" >&2
+      echo "  python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft" >&2
+    fi
+    return "${dep_status}"
   fi
-  echo "=== Installing MN2 build dependencies (apt) ==="
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update -qq
-  apt-get install -y -qq \
-    git build-essential autoconf automake libtool pkg-config patch \
-    libboost-all-dev libssl-dev libevent-dev libzmq3-dev \
-    libdb-dev libminiupnpc-dev
 }
 
 sha256_file() {
@@ -124,10 +168,7 @@ if [[ "${PATCHED}" == "1" ]]; then
 fi
 
 if [[ "${USE_DEPENDS}" == "1" ]]; then
-  echo "=== depends (static, NO_QT) — first run can take 30–60 min ==="
-  cd depends
-  make -j"${JOBS}" HOST=x86_64-linux-gnu NO_QT=1
-  cd ..
+  run_depends_build
   HOST_DIR="${SRC_DIR}/depends/x86_64-linux-gnu"
   ./autogen.sh
   CONFIGURE_FLAGS=(
