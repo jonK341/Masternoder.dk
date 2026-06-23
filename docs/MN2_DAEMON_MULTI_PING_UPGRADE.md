@@ -20,8 +20,8 @@
 | Site `multi_ping_enabled` + service helpers | **Done** | `mn2_masternode_service.py`, config JSON |
 | Probe scripts | **Done** | `mn2_probe_multi_ping.py`, `mn2_check_activetime_public.py` |
 | Unit tests (site) | **Done** | `tests/unit/test_mn2_multi_ping.py` |
-| Build + regtest on Linux | **Pending** | Windows workspace — build on fleet server |
-| GitHub release v1.3.0.0 assets | **Pending** | `mn2_build_release_remote.py --publish` |
+| Build + regtest on Linux | **In progress** | See [build checklist](#build--deploy-checklist-v1300) below |
+| GitHub release v1.3.0.0 assets | **Pending** | `mn2_build_release_remote.py --ask-pass --publish --draft` |
 | Prod deploy | **Pending** | `mn2_daemon_upgrade_remote.py --apply` |
 | Enable `ops.multi_ping_enabled: true` | **Pending** | After QA: 4+ ENABLED with rising activetime |
 | Retire `primary_ping_alias` privkey hack | **Pending** | Optional once multi-ping stable |
@@ -86,6 +86,35 @@ python scripts/mn2_probe_multi_ping.py --public
 python scripts/mn2_probe_multi_ping.py --register   # on server / with RPC .env
 # Then set multi_ping_enabled: true and redeploy mn2_staking
 ```
+
+---
+
+## Build & deploy checklist (v1.3.0.0)
+
+**Prerequisites:** `DEPLOY_PASS` in `.env` or use `--ask-pass` · `gh auth login` for publish · patch at `docs/patches/mn2-daemon-v1.3.0-multi-ping.patch`
+
+| # | Step | Command | Status |
+| - | ---- | ------- | ------ |
+| 0 | Site integration merged | PR #30, `multi_ping_enabled: false` | **Done** |
+| 1 | Restore release scripts on site repo | branch `pr/mn2-daemon-v1.3-build` | **Done** |
+| 2 | Verify release gate (no asset yet) | `python scripts/mn2_release_status.py` | Run before build |
+| 3 | **Build on fleet server** (30–90 min, depends) | `python scripts/mn2_build_release_remote.py --ask-pass` | **Next** |
+| 4 | Publish draft GitHub release | `python scripts/mn2_publish_release.py --tarball dist/masternoder2d.tar.gz --manifest dist/RELEASE_MANIFEST.json --draft --skip-tag` | After step 3 |
+| 5 | Promote release | `python scripts/mn2_publish_release.py --tarball dist/masternoder2d.tar.gz --promote` | After QA tarball |
+| 6 | **Prod upgrade** (maintenance window) | `python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` | After step 5 |
+| 7 | Multi-ping QA | `python scripts/mn2_probe_multi_ping.py --public` then `--register` | Expect `multi_ping_capable: true` |
+| 8 | Enable site flag | `ops.multi_ping_enabled: true` + `deploy.py mn2_staking --ask-pass` | After 4+ ENABLED activetime rising |
+| 9 | Push C++ to MasterNoder2 (optional) | Push `release/v1.3.0.0-multi-ping`, tag `v1.3.0.0` | Skips patch apply on future builds |
+
+**Blockers today:** No `v1.3.0.0` tag on [jonK341/MasterNoder2](https://github.com/jonK341/MasterNoder2) — build applies site patch on `v1.2.3.0`. Release scripts were missing from `main` and are restored on `pr/mn2-daemon-v1.3-build`.
+
+**One-liner build + publish (interactive password):**
+
+```powershell
+python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
+```
+
+**Fast build (may fail on OpenSSL 3):** add `--fast` to step 3.
 
 ---
 
