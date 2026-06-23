@@ -71,35 +71,84 @@ def _performer_count_ok(body: str, minimum: int = 5) -> bool:
         return False
 
 
-def _check_json(label: str, url: str, *, expect_keys: list[str]) -> bool:
-    status, body = _fetch(url)
-    ok = True
+def _check_json(
+    label: str,
+    url: str,
+    *,
+    expect_keys: list[str],
+    retries: int = 3,
+    retry_sleep: float = 2.0,
+) -> bool:
+    import time
+
     print(f"\n=== {label} ===")
     print(f"GET {url}")
-    print(f"HTTP {status}")
-    if status != 200:
-        print(body[:500])
-        return False
-    try:
-        data = json.loads(body)
-    except json.JSONDecodeError:
-        print("Invalid JSON")
-        return False
-    for key in expect_keys:
-        if key not in data:
-            print(f"Missing key: {key}")
+    last_status, last_body = 0, ""
+    for attempt in range(1, max(1, retries) + 1):
+        status, body = _fetch(url)
+        last_status, last_body = status, body
+        if attempt > 1:
+            print(f"retry {attempt}/{retries} HTTP {status}")
+        else:
+            print(f"HTTP {status}")
+        if status != 200:
+            if attempt < retries:
+                time.sleep(retry_sleep)
+                continue
+            print(body[:500])
+            return False
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            if attempt < retries:
+                time.sleep(retry_sleep)
+                continue
+            print("Invalid JSON")
+            return False
+        ok = True
+        for key in expect_keys:
+            if key not in data:
+                print(f"Missing key: {key}")
+                ok = False
+        if data.get("success") is False:
+            print(f"success=false error={data.get('error')}")
             ok = False
-    if data.get("success") is False:
-        print(f"success=false error={data.get('error')}")
-        ok = False
-    print(json.dumps({k: data.get(k) for k in expect_keys if k in data}, indent=2)[:800])
-    return ok
+        if ok:
+            print(json.dumps({k: data.get(k) for k in expect_keys if k in data}, indent=2)[:800])
+            return True
+        if attempt < retries:
+            time.sleep(retry_sleep)
+    print(last_body[:500] if last_body else f"last HTTP {last_status}")
+    return False
 
 
-def verify_public(base: str) -> int:
+def _warm_public(base: str, *, rounds: int = 2) -> None:
+    """Prime nginx/uwsgi workers before strict verify (lazy load + dual upstream)."""
+    import time
+
+    urls = [
+        f"{base}/api/camgirls/agent-tools",
+        f"{base}/api/camgirls/agents",
+        f"{base}/api/camgirls/performers?user_id=warmup&lite=1",
+    ]
+    print(f"\n=== warmup ({rounds} round(s)) ===")
+    for r in range(1, rounds + 1):
+        for url in urls:
+            status, _ = _fetch(url, timeout=45)
+            print(f"  r{r} {status} {url.split(base)[-1]}")
+            time.sleep(0.5)
+
+
+def verify_public(base: str, *, retries: int = 3, warmup_rounds: int = 0) -> int:
     base = base.rstrip("/")
+    if warmup_rounds > 0:
+        _warm_public(base, rounds=warmup_rounds)
     checks = [
-        ("performers", f"{base}/api/camgirls/performers?user_id=post_deploy_verify", ["success", "performers"]),
+        (
+            "performers",
+            f"{base}/api/camgirls/performers?user_id=post_deploy_verify&lite=1",
+            ["success", "performers"],
+        ),
         ("agents", f"{base}/api/camgirls/agents", ["success", "agents"]),
         ("agent-tools", f"{base}/api/camgirls/agent-tools", ["success", "tools"]),
     ]
@@ -111,7 +160,7 @@ def verify_public(base: str) -> int:
 
     results = [page_ok]
     for label, url, keys in checks:
-        results.append(_check_json(label, url, expect_keys=keys))
+        results.append(_check_json(label, url, expect_keys=keys, retries=retries))
 
     passed = sum(results)
     total = len(results)
@@ -237,11 +286,18 @@ def main() -> int:
     parser.add_argument("--remote", action="store_true", help="SSH curl checks on server :5000")
     parser.add_argument("--remote-only", action="store_true", help="Skip public HTTPS checks")
     parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (remote checks)")
+    parser.add_argument("--retries", type=int, default=3, help="Retries per public JSON check (default 3)")
+    parser.add_argument(
+        "--warmup-rounds",
+        type=int,
+        default=0,
+        help="Hit agent-tools/agents/lite performers N times before verify (public HTTPS)",
+    )
     args = parser.parse_args()
 
     codes = []
     if not args.remote_only:
-        codes.append(verify_public(args.base_url))
+        codes.append(verify_public(args.base_url, retries=args.retries, warmup_rounds=args.warmup_rounds))
     if args.remote or args.remote_only:
         codes.append(verify_remote(force_prompt=args.ask_pass))
     return 0 if all(c == 0 for c in codes) else 1

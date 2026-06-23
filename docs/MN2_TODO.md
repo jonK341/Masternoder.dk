@@ -133,12 +133,12 @@ Kort opsummering af hvad der gik galt / stadig skævner efter OS-upgrade. Afkryd
 | # | Konflikt | Symptom | Sandsynlig årsag | Fix (owner) | Status |
 | - | -------- | ------- | ---------------- | ----------- | ------ |
 | **K1** | **502 efter reboot** | Hele sitet “Starting up” / nginx 502 | `uwsgi-vidgenerator` + `:5001` startede **ikke** automatisk efter kernel-pakke/reboot (needrestart genstartede kun bl.a. `masternoder2d`, ikke begge uwsgi) | Bekræft `systemctl is-enabled uwsgi-vidgenerator uwsgi-vidgenerator-5001`; evt. **P2 fleet boot** / dokumentér boot-rækkefølge | **Løst manuelt** — verificér ved næste reboot |
-| **K2** | **Dual uwsgi — camgirls API 404/200** | Public `GET /api/camgirls/performers` veksler **404** vs **200**; localhost `:5000` OK | Nginx upstream `:5000` + `:5001` — **én worker mangler** camgirls blueprint / gammel kode efter upgrade | `python scripts/deploy.py camgirls --ask-pass` · derefter burst-test begge porte (nedenfor) | **Åben** |
-| **K3** | **Camgirls agents/tools tomme svar** | HTTPS `agents` → `{"success":true}` uden `agents[]` på nogle hits | Samme som K2 — rammer “tom” worker uden fuld route/data | Løses med K2 deploy + dual restart | **Åben** |
+| **K2** | **Dual uwsgi — camgirls API 404/200** | Public `GET /api/camgirls/performers` veksler **404** vs **200**; localhost `:5000` OK | Nginx upstream `:5000` + `:5001` — **én worker mangler** camgirls blueprint / gammel kode efter upgrade | `python scripts/deploy.py camgirls --ask-pass` · derefter burst-test begge porte (nedenfor) | **Delvist** — performers ofte 200; agents/tools **timeout** når workers optaget |
+| **K3** | **Camgirls agents/tools tomme svar** | HTTPS `agents` → `{"success":true}` uden `agents[]` på nogle hits | Samme som K2 — rammer “tom” worker uden fuld route/data | Løses med K2 deploy + dual restart | **Delvist** — fuld payload når worker varm; ellers timeout/tom |
 | **K4** | **Kernel ikke aktiv** | Kører `6.8.0-124`, GRUB har `6.17.0-35` | `needrestart`: “Pending kernel upgrade” — **anden reboot** ikke kørt | Planlæg `sudo reboot` (kort vindue) · kør post-verify igen bagefter | **Åben** |
 | **K5** | **Ops-scripts ikke på server** | `ubuntu_upgrade_*.sh` **SKIP missing** ved deploy; diagnose **WARN missing** | Scripts kun i git — ikke uploadet før upgrade | `python scripts/deploy.py mn2_env --ask-pass --upload-only` | **Åben** |
 | **K6** | **`DEPLOY_PASS` stale (PC)** | `deploy.py` / agenter får SSH **Authentication failed**; `--ask-pass` virker | Lokal `.env` matcher ikke server root-password | Opdatér `.env` · `python scripts/deploy_test_ssh.py` | **Åben** |
-| **K7** | **Public verify vs lokal** | Server: camgirls lite **200** · PC: `camgirls_post_deploy_verify` **1/4** | K2 upstream + langsom første health (~40s) | Efter K2: `python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk` → mål **4/4** | **Åben** |
+| **K7** | **Public verify vs lokal** | Server: camgirls lite **200** · verify **4/4** med `--warmup-rounds 2 --retries 4` (flaky uden) | K2 upstream + **worker starvation** (agents 20–90s timeout) | Efter K2 deploy: `python3 scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk --warmup-rounds 2` → stabil **4/4** | **Delvist** — grøn med warmup; deploy+restart for stabil drift |
 | **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Venter** |
 
 **Verifikation K2 (kør på server efter camgirls deploy):**
@@ -159,7 +159,7 @@ Begge porte skal give **200** hver gang.
 
 1. `[ ]` **K5** — upload ops-scripts (`mn2_env --upload-only`)
 2. `[ ]` **K2+K3** — `deploy.py camgirls --ask-pass`
-3. `[ ]` **K7** — public verify 4/4 fra PC
+3. `[~]` **K7** — public verify 4/4 fra PC (**OK 2026-06-23** med `--warmup-rounds 2 --retries 4`; deploy K2 for stabil drift)
 4. `[ ]` **K4** — planlagt reboot til kernel 6.17 (valgfri vindue)
 5. `[ ]` **K1** — efter K4 reboot: bekræft auto-start uden manuel `systemctl start`
 6. `[ ]` **K8** — genoptag PayPal Pro-kø
