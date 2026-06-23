@@ -4,6 +4,7 @@ This list tracks follow-ups after the gallery, shop, starmap25, leaderboard, age
 
 ## Done in this round
 
+- **Podcast vertical (web)** — `/podcast` hub with BBCG theme, verified sound (`sound-check`, stream repair, Sound Lab), AI generate/encode, MN2 rewards, episode + news comments, 24-site portal strip, RSS (`/api/podcast/rss.xml`), transcripts, chapters, queue, leaderboard, bubble visualizer. **33 tests** (`test_podcast.py` + `test_podcast_routes.py`). Docs: `docs/PODCAST.md`.
 - **Generator UI:** Pre-flight checklist (LLM + Video AI + Agents), AI Power section with "Use all AIs" toggle and provider grid (LLM + video chips), quality options (Bedst/Max for multi-AI), Updates changelog, Agent Support link.
 - Leaderboard UI routes: `GET /api/leaderboard/all`, `/api/leaderboard/categories`, `/api/leaderboard/<system>` with `points` + `username` on rows; catch-all registered after static routes so `/top10` and `/player/...` still work.
 - Star Map 25: investigation rewards use `STAR_MAP_INVESTIGATION_MULTIPLIER` (1.2); status JSON includes `investigation_reward_multiplier`.
@@ -26,6 +27,10 @@ This list tracks follow-ups after the gallery, shop, starmap25, leaderboard, age
 2. **Shop** (done): Feature flag `USE_SHOP_V3` (env); `GET /api/shop/config` returns `use_shop_v3`; shop UI fetches config and uses shop-v3 or game/shop accordingly; fallback on 5xx.
 3. **Agents** (done): `user_agent_skills.get_user_skills()` seeds balanced path (content_generator, analytics, learning, **reporter_agent** with `broadcast` + `news_report_ingredients`, 10 skills) when no file exists; **`POST /api/agents/user-skills/maintenance-inactive`** trims stale files (batch 10); **`/api/agents/reporter/knowledge-ingredients`** + `cron/knowledge_sharing_report.sh` for knowledge-sharing report ingredients. See `docs/AGENTS_SKILLS_SYNC.md`.
 4. **Star Map 25** (done): `starmap25/index.html` and `game/index.html` expose `investigation_reward_multiplier`; show multiplier stat box, reward formula (base × mult = awarded) on each point card.
+
+## Google Play Store app — **deferred**
+
+Saved for later. Full spec when resumed: **[docs/PODCAST.md](PODCAST.md)** § Google Play Store app. Todo id: `a1b2c3d4-e5f6-7890-abcd-ef1234567890` in `data/todos/todos.json`. Do not start until explicitly scheduled.
 
 ## Ops / security
 
