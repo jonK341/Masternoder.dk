@@ -58,8 +58,97 @@ def get_coin_packs() -> List[Dict[str, Any]]:
     return []
 
 
+def get_payment_rails_catalog() -> Dict[str, Any]:
+    """Rails defaults + sku_overrides from monetization_config (Phase 1 content/crypto plan)."""
+    raw = _load_raw()
+    block = raw.get("payment_rails_catalog")
+    if isinstance(block, dict):
+        return dict(block)
+    return {"rails": ["paypal", "mn2", "credits"], "defaults": {}, "sku_overrides": {}}
+
+
+def get_digital_goods() -> List[Dict[str, Any]]:
+    """Lawful digital SKUs (themes, prompts, docs placeholders); delivery wired in Phase 2."""
+    raw = _load_raw()
+    dg = raw.get("digital_goods")
+    if not isinstance(dg, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for x in dg:
+        if isinstance(x, dict) and x.get("id"):
+            out.append(dict(x))
+    return out
+
+
+def get_public_digital_goods() -> List[Dict[str, Any]]:
+    """Digital goods catalog safe for API responses (no server-relative artifact paths)."""
+    public: List[Dict[str, Any]] = []
+    for good in get_digital_goods():
+        row = dict(good)
+        row.pop("artifact_path", None)
+        public.append(row)
+    return public
+
+
+def get_content_bundles() -> List[Dict[str, Any]]:
+    """Configured bundles that combine credits/coins and digital goods into one SKU."""
+    raw = _load_raw()
+    bundles = raw.get("content_bundles")
+    if not isinstance(bundles, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for x in bundles:
+        if isinstance(x, dict) and x.get("id"):
+            out.append(dict(x))
+    return out
+
+
+def get_public_content_bundles() -> List[Dict[str, Any]]:
+    """Bundle catalog safe for API responses."""
+    goods_by_id = {g.get("id"): g for g in get_public_digital_goods()}
+    public: List[Dict[str, Any]] = []
+    for bundle in get_content_bundles():
+        row = dict(bundle)
+        items = []
+        for entry in row.get("items") or []:
+            if not isinstance(entry, dict):
+                continue
+            iid = entry.get("item_id")
+            item = {"item_id": iid, "quantity": int(entry.get("quantity") or 1)}
+            if iid in goods_by_id:
+                item["name"] = goods_by_id[iid].get("name")
+                item["delivery"] = goods_by_id[iid].get("delivery")
+            items.append(item)
+        row["items"] = items
+        public.append(row)
+    return public
+
+
+def get_coin_packs_with_payment_rails() -> List[Dict[str, Any]]:
+    """Coin packs plus merged payment_rails per payment_rails_catalog."""
+    packs = get_coin_packs()
+    cat = get_payment_rails_catalog()
+    defaults = cat.get("defaults") if isinstance(cat, dict) else None
+    overrides = cat.get("sku_overrides") if isinstance(cat, dict) else None
+    default_rails = None
+    if isinstance(defaults, dict):
+        default_rails = defaults.get("coin_pack")
+    if not isinstance(default_rails, list):
+        default_rails = ["paypal", "credits"]
+    out: List[Dict[str, Any]] = []
+    for p in packs:
+        if not isinstance(p, dict):
+            continue
+        pid = p.get("id")
+        row = dict(p)
+        orails = overrides.get(pid) if isinstance(overrides, dict) else None
+        row["payment_rails"] = list(orails) if isinstance(orails, list) else list(default_rails)
+        out.append(row)
+    return out
+
+
 def get_coin_pack_map() -> Dict[str, Dict[str, Any]]:
-    return {p["id"]: p for p in get_coin_packs() if p.get("id")}
+    return {p["id"]: p for p in get_coin_packs_with_payment_rails() if p.get("id")}
 
 
 def get_tier_caps(tier_id: str) -> Dict[str, Any]:
@@ -106,6 +195,13 @@ def get_b2b_studio_sku(sku_id: str) -> Dict[str, Any]:
     return dict(get_b2b_studio_sku_map().get((sku_id or "").strip()) or {})
 
 
+def get_shop_monetization() -> Dict[str, Any]:
+    """Shop V9.2 monetization block: VIP pass, mystery boxes, spin wheel, flash sales, loyalty, gifting, auction feature."""
+    raw = _load_raw()
+    block = raw.get("shop_monetization")
+    return dict(block) if isinstance(block, dict) else {}
+
+
 def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
     """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
     raw = _load_raw()
@@ -147,10 +243,20 @@ def get_public_config() -> Dict[str, Any]:
             "list_price_usd": s.get("list_price_usd"),
             "currency": s.get("currency") or "USD",
         })
+    prc = get_payment_rails_catalog()
+    public_prc = {
+        "rails": prc.get("rails"),
+        "defaults": prc.get("defaults"),
+        "sku_overrides": prc.get("sku_overrides"),
+        "comment": prc.get("comment"),
+    }
     return {
         "reference_job_id": raw.get("reference_job_id"),
         "credit_definition": raw.get("credit_definition"),
-        "coin_packs": get_coin_packs(),
+        "coin_packs": get_coin_packs_with_payment_rails(),
+        "payment_rails_catalog": public_prc,
+        "digital_goods": get_public_digital_goods(),
+        "content_bundles": get_public_content_bundles(),
         "tiers": list((raw.get("tiers") or {}).keys()),
         "default_tier": get_default_tier_id(),
         "subscriptions": {"plans": plans_out},

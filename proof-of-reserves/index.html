@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN2 Proof of Reserves — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        body { background: #0a0e1a; color: #e8eefc; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .pr-wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px; }
+        .pr-header h1 { color: #00ff88; margin: 0 0 4px; }
+        .pr-header p { opacity: 0.8; margin: 0 0 20px; }
+        .banner { padding: 14px 18px; border-radius: 12px; margin-bottom: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .banner.ok { background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.4); color: #00ff88; }
+        .banner.warn { background: rgba(255,170,68,0.12); border: 1px solid rgba(255,170,68,0.45); color: #ffaa44; }
+        .banner.bad { background: rgba(255,80,80,0.12); border: 1px solid rgba(255,80,80,0.45); color: #ff6b6b; }
+        .banner .big { font-size: 1.3rem; }
+        h2 { color: #00d4ff; font-size: 1.05rem; margin: 28px 0 12px; }
+        .pr-tiles { display: flex; flex-wrap: wrap; gap: 14px; }
+        .pr-tile { flex: 1 1 180px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,212,255,0.05)); border: 1px solid rgba(0,255,136,0.22); }
+        .pr-tile .label { font-size: 0.72rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.04em; }
+        .pr-tile .value { font-size: 1.45rem; font-weight: 700; margin-top: 4px; }
+        .pr-tile .sub { font-size: 0.72rem; opacity: 0.6; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 8px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        th { color: #00d4ff; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .pr-note { margin-top: 22px; font-size: 0.75rem; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; line-height: 1.5; }
+        .ts { font-size: 0.72rem; opacity: 0.55; margin-top: 6px; }
+        a { color: #00d4ff; }
+    </style>
+</head>
+<body>
+    <div class="pr-wrap">
+        <div class="pr-header">
+            <h1>🛡️ MN2 Proof of Reserves</h1>
+            <p>Independent, on-demand check that every user's in-app MN2 is backed by custodial coins the daemon controls.</p>
+        </div>
+
+        <div class="banner warn" id="pr-banner"><span class="big">⏳</span><span id="pr-banner-text">Loading reserve data…</span></div>
+
+        <h2>Reserves vs liabilities</h2>
+        <div class="pr-tiles">
+            <div class="pr-tile"><div class="label">Coverage ratio</div><div class="value" id="t-coverage">--</div><div class="sub">assets ÷ liabilities</div></div>
+            <div class="pr-tile"><div class="label">Custodial assets</div><div class="value" id="t-assets">--</div><div class="sub" id="t-assets-sub">on-chain + reserve</div></div>
+            <div class="pr-tile"><div class="label">User liabilities</div><div class="value" id="t-liab">--</div><div class="sub" id="t-liab-sub">liquid + staked</div></div>
+            <div class="pr-tile"><div class="label">Surplus</div><div class="value" id="t-surplus">--</div><div class="sub">assets − liabilities</div></div>
+        </div>
+
+        <h2>Breakdown</h2>
+        <table>
+            <tbody id="pr-breakdown"><tr><td colspan="2">Loading…</td></tr></tbody>
+        </table>
+
+        <h2>Realized yield vs rewards paid</h2>
+        <div class="pr-tiles">
+            <div class="pr-tile"><div class="label">Realized yield (lifetime)</div><div class="value" id="y-yield">--</div><div class="sub">daemon staking income</div></div>
+            <div class="pr-tile"><div class="label">Rewards paid (lifetime)</div><div class="value" id="y-paid">--</div><div class="sub">credited to users</div></div>
+            <div class="pr-tile"><div class="label">Site margin</div><div class="value" id="y-margin">--</div><div class="sub" id="y-margin-sub">stated cut</div></div>
+            <div class="pr-tile"><div class="label">Payout ratio</div><div class="value" id="y-ratio">--</div><div class="sub">paid ÷ realized</div></div>
+        </div>
+        <table>
+            <thead><tr><th>Date (UTC)</th><th class="num">Pool budget (MN2)</th><th class="num">Rewards paid (MN2)</th></tr></thead>
+            <tbody id="y-body"><tr><td colspan="3">Loading…</td></tr></tbody>
+        </table>
+
+        <p class="ts" id="pr-ts"></p>
+
+        <p class="pr-note">
+            "Assets" are the MN2 held in the site's custodial daemon wallet (including coins currently PoS-staked) plus the stabilization reserve. "Liabilities" are the sum of every user's in-app MN2 (liquid balance + staked). Coverage ≥ 1.0 together with a passing internal reconciliation means all user MN2 is fully backed.
+            Rewards are paid only from realized daemon staking yield minus a stated site margin and are <strong>variable and not guaranteed</strong>. The browser staking rig is an engagement signal that uses participants' processors — it does not mine or validate MN2. Staked MN2 is custodial and not insured. Not financial advice.
+        </p>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script>
+    (function () {
+        var fmt = function (v, dp) {
+            if (v === null || v === undefined) return '--';
+            var n = Number(v);
+            if (!isFinite(n)) return '--';
+            return n.toLocaleString(undefined, { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 });
+        };
+        var mn2 = function (v) { return v === null || v === undefined ? '--' : fmt(v, 4) + ' MN2'; };
+
+        function renderPoR(d) {
+            if (!d || !d.success) return;
+            var cov = d.coverage_ratio;
+            var banner = document.getElementById('pr-banner');
+            var text = document.getElementById('pr-banner-text');
+            var icon = banner.querySelector('.big');
+            var reconOk = d.reconcile && d.reconcile.ok === true;
+            var onchainOk = d.assets && d.assets.onchain && d.assets.onchain.status === 'ok';
+            if (!onchainOk) {
+                banner.className = 'banner warn';
+                icon.textContent = '⏳';
+                text.textContent = 'Daemon balance temporarily unavailable — showing user liabilities only. Coverage will display once the node responds.';
+            } else if (d.fully_backed) {
+                banner.className = 'banner ok';
+                icon.textContent = '✅';
+                text.textContent = 'Fully backed — all user MN2 is covered by custodial reserves and the internal reconciliation passes.';
+            } else if (cov !== null && cov >= 1.0) {
+                banner.className = 'banner warn';
+                icon.textContent = '⚠️';
+                text.textContent = 'Reserves cover liabilities, but the internal reconciliation reported a check to review.';
+            } else {
+                banner.className = 'banner bad';
+                icon.textContent = '⚠️';
+                text.textContent = 'Coverage is below 1.0 — reserves do not currently cover all user MN2. Under review.';
+            }
+
+            document.getElementById('t-coverage').textContent = cov === null ? '—' : (cov * 100).toFixed(2) + '%';
+            document.getElementById('t-assets').textContent = mn2(d.assets ? d.assets.total_mn2 : null);
+            document.getElementById('t-liab').textContent = mn2(d.liabilities ? d.liabilities.total_mn2 : null);
+            document.getElementById('t-surplus').textContent = mn2(d.surplus_mn2);
+            if (d.liabilities) document.getElementById('t-liab-sub').textContent = d.liabilities.holders + ' holders';
+
+            var oc = (d.assets && d.assets.onchain) || {};
+            var rows = [
+                ['On-chain wallet balance', mn2(oc.balance)],
+                ['Immature (staking)', mn2(oc.immature_balance)],
+                ['Unconfirmed', mn2(oc.unconfirmed_balance)],
+                ['Stabilization reserve', mn2(d.assets ? d.assets.stabilization_reserve_mn2 : null)],
+                ['User liquid balances', mn2(d.liabilities ? d.liabilities.user_liquid_mn2 : null)],
+                ['User staked balances', mn2(d.liabilities ? d.liabilities.user_staked_mn2 : null)],
+                ['Reconcile status', reconOk ? 'PASS ✅' : (d.reconcile && d.reconcile.error ? 'unavailable' : 'review ⚠️')],
+            ];
+            var tb = document.getElementById('pr-breakdown');
+            tb.innerHTML = rows.map(function (r) {
+                return '<tr><td>' + r[0] + '</td><td class="num">' + r[1] + '</td></tr>';
+            }).join('');
+        }
+
+        function renderYield(d) {
+            if (!d || !d.success) return;
+            var lt = d.lifetime || {};
+            document.getElementById('y-yield').textContent = mn2(lt.realized_yield_mn2);
+            document.getElementById('y-paid').textContent = mn2(lt.rewards_paid_mn2);
+            document.getElementById('y-margin').textContent = mn2(lt.site_margin_mn2);
+            document.getElementById('y-margin-sub').textContent = (d.site_margin_percent || 0) + '% stated';
+            document.getElementById('y-ratio').textContent = lt.payout_ratio === null || lt.payout_ratio === undefined ? '—' : (lt.payout_ratio * 100).toFixed(1) + '%';
+            var body = document.getElementById('y-body');
+            var days = d.by_day || [];
+            if (!days.length) { body.innerHTML = '<tr><td colspan="3">No reward intervals recorded yet.</td></tr>'; return; }
+            body.innerHTML = days.map(function (r) {
+                return '<tr><td>' + r.date + '</td><td class="num">' + fmt(r.pool_budget_mn2, 4) + '</td><td class="num">' + fmt(r.reward_mn2, 4) + '</td></tr>';
+            }).join('');
+        }
+
+        function load() {
+            fetch('/api/mn2/staking/proof-of-reserves').then(function (r) { return r.json(); })
+                .then(function (d) {
+                    renderPoR(d);
+                    if (d && d.generated_at) document.getElementById('pr-ts').textContent = 'As of ' + d.generated_at;
+                }).catch(function () {
+                    document.getElementById('pr-banner-text').textContent = 'Could not load reserve data. Please retry shortly.';
+                });
+            fetch('/api/mn2/staking/yield-report').then(function (r) { return r.json(); })
+                .then(renderYield).catch(function () {});
+        }
+
+        load();
+        setInterval(load, 60000);
+    })();
+    </script>
+</body>
+</html>

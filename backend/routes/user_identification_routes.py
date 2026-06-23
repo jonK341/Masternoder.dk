@@ -4,7 +4,17 @@ API endpoints for user identification and creation
 """
 from flask import Blueprint, jsonify, request
 from backend.services.user_identification import user_identification
-from backend.services.user_onboarding import user_onboarding
+
+
+# Lazy proxy: defer importing the user_onboarding singleton until first use so a
+# startup-time circular import can't block this blueprint from registering.
+class _LazyUserOnboarding:
+    def __getattr__(self, name):
+        from backend.services.user_onboarding import user_onboarding as _uo
+        return getattr(_uo, name)
+
+
+user_onboarding = _LazyUserOnboarding()
 
 user_identification_bp = Blueprint('user_identification', __name__)
 

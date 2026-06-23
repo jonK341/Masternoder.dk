@@ -4,7 +4,7 @@
 
 **Contents:** [§0 Single metric](#0-single-metric-north-star) · [§1–5 Revenue models](#1-coin--credit-packs-one-time) · [§6 Cross-cutting](#6-cross-cutting-all-models) · [§7 Checklist](#7-checklist-product--engineering) · [§8 Playbook](#8-execution-playbook-step-by-step) · [§9 Deploy](#9-deploy-checklist) · [§10 Status](#10-implementation-status--next-steps)
 
-**Related:** [REFERENCE_JOB_COGS.md](./REFERENCE_JOB_COGS.md) (unit economics), [PAYPAL_INTEGRATION_GUIDE.md](./PAYPAL_INTEGRATION_GUIDE.md) (credentials and routes), [VIDEO_STORAGE_STRATEGY.md](./VIDEO_STORAGE_STRATEGY.md) (storage path and margin), [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./MONETIZATION_INVESTIGATION_CLOSEOUT.md) (closeout + deploy).
+**Related:** [REFERENCE_JOB_COGS.md](./REFERENCE_JOB_COGS.md) (unit economics), [PAYPAL_INTEGRATION_GUIDE.md](./PAYPAL_INTEGRATION_GUIDE.md) (credentials and routes), [VIDEO_STORAGE_STRATEGY.md](./VIDEO_STORAGE_STRATEGY.md) (storage path and margin), [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./MONETIZATION_INVESTIGATION_CLOSEOUT.md) (closeout + deploy). See also [MONETIZATION_CONTENT_CRYPTO_PLAN.md](./MONETIZATION_CONTENT_CRYPTO_PLAN.md) (lawful digital goods + MN2 vs PayPal rails).
 
 ---
 

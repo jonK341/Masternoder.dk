@@ -671,6 +671,27 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
     letter-spacing: 0.04em;
 }
 
+.fp-news-list li.fp-news-platform a {
+    color: #00ff88;
+}
+
+.fp-news-summary {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.62);
+    line-height: 1.4;
+}
+
+.fp-news-divider {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.35);
+    padding-top: 14px !important;
+    border-bottom: none !important;
+}
+
 .fp-agent-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -779,9 +800,101 @@ body.mn-sound-active .theme-sound-toggle {
     }
 }
 
+/* MN2 crypto band — landing + wallet CTA */
+.fp-mn2-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 18px 22px;
+    border: 1px solid rgba(0, 212, 255, 0.28);
+    border-radius: 20px;
+    background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.06)),
+        rgba(8, 12, 24, 0.72);
+}
+
+.fp-mn2-band-copy h2 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+    color: #9dffd4;
+}
+
+.fp-mn2-band-copy p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.72);
+    max-width: 520px;
+}
+
+.fp-mn2-band-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.fp-mn2-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.88rem;
+    text-decoration: none;
+    background: linear-gradient(135deg, #00d4ff, #00ff88);
+    color: #041018;
+    box-shadow: 0 8px 28px rgba(0, 255, 136, 0.22);
+}
+
+.fp-mn2-badge:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+.fp-mn2-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.fp-mn2-link:hover {
+    background: rgba(0, 212, 255, 0.14);
+}
+
+.fp-mn2-balance-pill {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.fp-mn2-balance-pill strong {
+    color: #00ff88;
+    font-size: 1rem;
+}
+
+.fp-stat.fp-stat-mn2 {
+    border-color: rgba(0, 212, 255, 0.35);
+    background: rgba(0, 212, 255, 0.06);
+}
+
 @media (max-width: 620px) {
     .fp-main {
         padding-inline: 12px;
+    }
+
+    .fp-mn2-band {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     .fp-hero-actions,

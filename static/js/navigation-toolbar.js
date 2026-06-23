@@ -22,6 +22,7 @@
             { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
             { name: 'Stories', icon: '📜', url: APP_BASE + '/trophies#stories', id: 'stories', title: 'Hunters Stories: Winter Wedding, time reversal, medieval' },
             { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
+            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
@@ -31,10 +32,12 @@
             { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
             { name: 'Chat', icon: '💬', url: APP_BASE + '/chat', id: 'chat' },
             { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
+            { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 network stats: price, block height, masternodes, staking pool' },
             { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
         ],
         apiBase: window.location.origin + APP_BASE
@@ -693,6 +696,17 @@
     
     // Refresh notifications count periodically
     setInterval(loadNotificationsCount, 60000); // Every minute
+
+    // Global MN2 bar + live activity stream on all toolbar pages
+    (function loadMn2Global() {
+        ['mn2-site-bridge.js?v=20260614d', 'mn2-global-bar.js?v=20260614d', 'mn2-activity-stream.js?v=20260614d'].forEach(function (src) {
+            if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
+            var s = document.createElement('script');
+            s.src = '/static/js/' + src;
+            s.defer = true;
+            document.body.appendChild(s);
+        });
+    })();
 
 })();
 

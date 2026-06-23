@@ -1,0 +1,128 @@
+/* Shared MN2 crypto strip for site pages */
+.mn2-page-strip {
+    margin: 0 0 24px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 212, 255, 0.32);
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.06));
+}
+
+.mn2-page-strip h2 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    color: #00d4ff;
+}
+
+.mn2-page-strip p {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.mn2-page-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mn2-page-metric {
+    min-width: 110px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mn2-page-metric span {
+    display: block;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.mn2-page-metric strong {
+    font-size: 1rem;
+    color: #00ff88;
+}
+
+.mn2-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mn2-page-actions a {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #041018;
+    background: linear-gradient(135deg, #00d4ff, #00ff88);
+}
+
+.mn2-page-actions a.secondary {
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.12);
+    border: 1px solid rgba(0, 212, 255, 0.35);
+}
+
+.mn2-reward-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.mn2-reward-card {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(0, 212, 255, 0.18);
+    border-radius: 10px;
+}
+
+.mn2-reward-card strong {
+    color: #fff;
+}
+
+.mn2-reward-card p {
+    margin: 6px 0;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.mn2-reward-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.mn2-reward-card small {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.mn2-rails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.mn2-rail-chip {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    background: rgba(0, 255, 136, 0.06);
+    text-align: center;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+}
+
+.mn2-rail-chip.mn2 { border-color: rgba(0, 212, 255, 0.4); color: #00d4ff; }
+.mn2-rail-chip.paypal { border-color: rgba(255, 196, 57, 0.4); color: #ffc439; }
+.mn2-rail-chip.credits { border-color: rgba(0, 255, 136, 0.4); color: #00ff88; }

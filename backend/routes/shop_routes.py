@@ -3,7 +3,7 @@ Shop Routes
 API endpoints for shop functionality including currency and items.
 Uses account resolution: session > request > user_identification.
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 import os
 
 shop_bp = Blueprint('shop', __name__)
@@ -13,13 +13,35 @@ USE_SHOP_V3 = os.environ.get("USE_SHOP_V3", "true").strip().lower() in ("1", "tr
 
 # Shop front-end generation (bump when navigation/layout changes; exposed in /api/shop/config)
 # Product line: Shop V.9 tabbed UI + unified purchase/inventory APIs — keep in sync with shop/index.html.
-SHOP_UI_VERSION = "9.0.0"
+SHOP_UI_VERSION = "9.2.0"
 
 
 def _resolve_user_id():
     """Resolve user_id from session, request, or identification."""
     from backend.services.account_resolution_service import resolve_user_id
     return resolve_user_id()
+
+
+def _booster_sku_map():
+    try:
+        from backend.services.monetization_config_service import _load_raw
+
+        cfg = _load_raw() or {}
+        skus = cfg.get("shop_booster_skus") or []
+        return {s.get("id"): s for s in skus if s.get("id")}
+    except Exception:
+        return {}
+
+
+def _apply_booster_sku(unified_points_db, user_id: str, sku_id: str, sku: dict, quantity: int) -> None:
+    effect = (sku.get("effect") or "booster").lower()
+    minutes = int(sku.get("duration_minutes") or 60)
+    name = sku.get("name") or sku_id
+    for _ in range(max(1, quantity)):
+        if effect == "game_time":
+            unified_points_db.add_game_time_minutes(user_id, minutes)
+        else:
+            unified_points_db.add_booster(user_id, sku_id, minutes, name=name)
 
 
 def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int) -> None:
@@ -32,6 +54,94 @@ def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: i
     try:
         name = (item.get("name") or item_id or "").lower()
         category = (item.get("category") or "").lower()
+        bundle = _content_bundle_by_id(item_id)
+        if bundle:
+            qty = max(1, int(quantity or 1))
+            coins_granted = int(bundle.get("coins_granted") or 0) * qty
+            generation_credits = float(bundle.get("generation_credits_granted") or 0) * qty
+            if coins_granted > 0:
+                unified_points_db.add_points(
+                    user_id=user_id,
+                    point_type="coins",
+                    amount=coins_granted,
+                    source="content_bundle",
+                    metadata={"bundle_id": item_id, "quantity": qty},
+                )
+            if generation_credits > 0:
+                unified_points_db.add_points(
+                    user_id=user_id,
+                    point_type="generation_points",
+                    amount=generation_credits * 100,
+                    source="content_bundle",
+                    metadata={"bundle_id": item_id, "quantity": qty, "generation_credits": generation_credits},
+                )
+            try:
+                from backend.services.shop_db_service import add_to_inventory
+
+                goods_by_id = {g.get("id"): g for g in _digital_goods_config()}
+                booster_skus = _booster_sku_map()
+                # Cheap name map for catalog collectibles (e.g. Top 25 Legends) so
+                # bundle-granted items land in inventory with a real name, not their id.
+                try:
+                    seed_names = {s.get("id"): s.get("name") for s in _seed_shop_items()}
+                except Exception:
+                    seed_names = {}
+                for entry in bundle.get("items") or []:
+                    if not isinstance(entry, dict):
+                        continue
+                    child_id = (entry.get("item_id") or "").strip()
+                    if not child_id:
+                        continue
+                    child_qty = max(1, int(entry.get("quantity") or 1)) * qty
+                    sku = booster_skus.get(child_id)
+                    if sku:
+                        _apply_booster_sku(unified_points_db, user_id, child_id, sku, child_qty)
+                        continue
+                    child = goods_by_id.get(child_id) or {}
+                    child_name = child.get("name") or seed_names.get(child_id) or child_id
+                    add_to_inventory(user_id, child_id, child_name, child_qty, purchase_id=None)
+            except Exception:
+                pass
+        dg = _digital_good_by_id(item_id)
+        if dg and dg.get("delivery") == "coins_grant":
+            grant = int(dg.get("coins_granted") or 0) * max(1, int(quantity or 1))
+            if grant > 0:
+                unified_points_db.add_points(
+                    user_id=user_id,
+                    point_type="coins",
+                    amount=grant,
+                    source="exclusive_digital_good",
+                    metadata={"item_id": item_id, "quantity": quantity},
+                )
+        if dg and dg.get("delivery") == "vip_pass":
+            try:
+                from backend.services.shop_monetization_service import activate_vip, get_config
+
+                days = int((get_config().get("vip_pass") or {}).get("duration_days") or 30)
+                for _ in range(max(1, int(quantity or 1))):
+                    activate_vip(user_id, days=days, source="shop_purchase")
+            except Exception:
+                pass
+        if category == "marketing" and "ptc" in (item.get("tags") or []):
+            try:
+                from backend.services.ptc_ads_service import record_budget_event
+
+                qty = max(1, int(quantity or 1))
+                for _ in range(qty):
+                    record_budget_event(
+                        package_id=item_id,
+                        campaign_id="",
+                        provider="shop_purchase",
+                        amount=float(item.get("price_usd") or 0),
+                        actor=user_id,
+                        metadata={
+                            "user_id": user_id,
+                            "item_name": item.get("name") or item_id,
+                            "requires_admin_campaign_binding": True,
+                        },
+                    )
+            except Exception:
+                pass
         total_minutes = 0
         # Game time: +30m, +1h, +2h, +4h, Weekend Pass (48h), Theme Session +Xm/+Xh
         if (
@@ -97,9 +207,9 @@ _PAYPAL_COIN_PACKS_LEGACY = [
 def get_paypal_coin_packs():
     """Coin pack SKUs from data/monetization_config.json (single config source)."""
     try:
-        from backend.services.monetization_config_service import get_coin_packs
+        from backend.services.monetization_config_service import get_coin_packs_with_payment_rails
 
-        packs = get_coin_packs()
+        packs = get_coin_packs_with_payment_rails()
         if packs:
             return packs
     except Exception:
@@ -163,6 +273,149 @@ def _get_paypal_shop_items():
     except Exception:
         pass
     return result
+
+
+def _project_root():
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _digital_goods_config():
+    try:
+        from backend.services.monetization_config_service import get_digital_goods
+
+        return get_digital_goods()
+    except Exception:
+        return []
+
+
+def _content_bundles_config():
+    try:
+        from backend.services.monetization_config_service import get_content_bundles
+
+        return get_content_bundles()
+    except Exception:
+        return []
+
+
+def _content_bundle_by_id(item_id: str):
+    iid = (item_id or "").strip()
+    return next((b for b in _content_bundles_config() if (b.get("id") or "") == iid), None)
+
+
+def _digital_good_by_id(item_id: str):
+    iid = (item_id or "").strip()
+    return next((g for g in _digital_goods_config() if (g.get("id") or "") == iid), None)
+
+
+def _digital_goods_shop_items():
+    """Expose configured digital goods in the normal shop catalog."""
+    items = []
+    for good in _digital_goods_config():
+        price_coins = int(good.get("price_coins") or 0)
+        row = {
+            "id": good.get("id"),
+            "name": good.get("name") or good.get("id"),
+            "description": good.get("description") or "",
+            "category": "exclusive" if str(good.get("line") or "").lower() == "exclusive" else "digital_goods",
+            "price": price_coins,
+            "price_usd": float(good.get("price_usd") or 0),
+            "icon": "💎" if str(good.get("line") or "").lower() == "exclusive" else "📦",
+            "rarity": "legendary" if str(good.get("line") or "").lower() == "exclusive" else ("rare" if price_coins else "common"),
+            "tags": ["digital_good", good.get("delivery") or "download", f"line_{str(good.get('line') or 'x').lower()}"],
+            "payment_rails": good.get("payment_rails") or ["credits"],
+            "delivery": good.get("delivery") or "download",
+            "license": good.get("license") or "",
+            "coins_granted": int(good.get("coins_granted") or 0),
+        }
+        if row["id"]:
+            items.append(row)
+    return items
+
+
+def _content_bundle_shop_items():
+    """Expose configured content bundles in the normal shop catalog."""
+    items = []
+    for bundle in _content_bundles_config():
+        price_coins = int(bundle.get("price_coins") or 0)
+        row = {
+            "id": bundle.get("id"),
+            "name": bundle.get("name") or bundle.get("id"),
+            "description": bundle.get("description") or "",
+            "category": "bundles",
+            "price": price_coins,
+            "price_usd": float(bundle.get("price_usd") or 0),
+            "icon": "🧰",
+            "rarity": "legendary" if price_coins >= 1000 else "rare",
+            "tags": ["bundle", "digital_good", "credits"],
+            "payment_rails": bundle.get("payment_rails") or ["credits"],
+            "bundle_items": bundle.get("items") or [],
+            "coins_granted": int(bundle.get("coins_granted") or 0),
+            "generation_credits_granted": float(bundle.get("generation_credits_granted") or 0),
+            "attribution": bundle.get("attribution") or {},
+        }
+        if row["id"]:
+            items.append(row)
+    return items
+
+
+def _ptc_advertiser_package_shop_items():
+    """Expose managed traffic packages as PayPal/MN2-ready shop catalog items."""
+    try:
+        from backend.services.ptc_ads_service import get_advertiser_packages
+
+        packages = get_advertiser_packages()
+    except Exception:
+        packages = []
+    items = []
+    for package in packages:
+        package_id = package.get("id")
+        if not package_id:
+            continue
+        budget_clicks = int(package.get("budget_clicks") or 0)
+        price_usd = float(package.get("price_usd") or 0)
+        price_coins = max(1, int(round(price_usd * 100))) if price_usd > 0 else 0
+        items.append({
+            "id": package_id,
+            "name": package.get("name") or package_id,
+            "description": package.get("description") or "",
+            "category": "marketing",
+            "price": price_coins,
+            "price_usd": price_usd,
+            "icon": "📣",
+            "rarity": "rare",
+            "tags": ["ptc", "advertising", "traffic", "managed"],
+            "payment_rails": ["paypal", "mn2", "managed_admin"],
+            "marketing_clicks": budget_clicks,
+            "budget_clicks": budget_clicks,
+            "placements": package.get("placements") or [],
+        })
+    return items
+
+
+def _user_owns_shop_item(user_id: str, item_id: str) -> bool:
+    if not (user_id or "").strip() or not (item_id or "").strip():
+        return False
+    try:
+        from backend.services.shop_db_service import get_inventory
+
+        for inv in get_inventory(user_id) or []:
+            if inv.get("item_id") == item_id and int(inv.get("quantity") or 0) > 0:
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _artifact_abs_path(good: dict) -> str:
+    rel = (good.get("artifact_path") or "").strip().replace("\\", "/")
+    if not rel:
+        return ""
+    root = os.path.realpath(_project_root())
+    path = os.path.realpath(os.path.join(root, rel))
+    allowed_root = os.path.realpath(os.path.join(root, "content", "digital_goods"))
+    if not (path == allowed_root or path.startswith(allowed_root + os.sep)):
+        return ""
+    return path
 
 
 def _seed_shop_items():
@@ -355,6 +608,42 @@ def _seed_shop_items():
     ]
     for n, d, i in new_boosters:
         add(n, d, "boosts", 35 + idx * 2, i, "rare")
+
+    # May 2026 wave — booster packs, game time, exclusive bonuses
+    wave_boosters = [
+        ("Casino Luck Booster 6h", "+15% casino quest rewards for 6 hours", "🎰", "booster-casino-luck-6h"),
+        ("Generation Speed Booster 3h", "Faster video generation for 3 hours", "🎬", "booster-gen-speed-3h"),
+        ("XP Surge Booster 3h", "+30% XP for 3 hours", "⚡", "booster-xp-surge-3h"),
+        ("Quest Rush Booster 12h", "+35% quest rewards for 12 hours", "📜", "booster-quest-rush-12h"),
+        ("Battle Fury Booster 2h", "2x battle points for 2 hours", "⚔️", "booster-battle-fury-2h"),
+    ]
+    for n, d, i, iid in wave_boosters:
+        add(n, d, "boosts", 55 + idx * 4, i, "rare", tags=["shop_wave_may2026"], item_id=iid)
+
+    wave_gametime = [
+        ("Hunter Game Time +4h", "Extra 4h Hunter + Star Map session", "⏱️", "gametime-hunter-4h"),
+        ("Creator Session +3h", "Extended generator and lab session time", "🎬", "gametime-creator-3h"),
+        ("Weekend Marathon Pass", "72h extended game time (weekend marathon)", "🎫", "gametime-weekend-marathon"),
+    ]
+    for n, d, i, iid in wave_gametime:
+        add(n, d, "boosts", 65 + idx * 5, i, "epic", tags=["game_time", "shop_wave_may2026"], item_id=iid)
+
+    exclusive_items = [
+        ("VIP Gold Badge", "Exclusive VIP badge for your profile — limited shop drop", "👑", "exclusive-vip-badge-shop"),
+        ("Neon Crown Frame", "Exclusive neon avatar frame — not in regular rotation", "💎", "exclusive-neon-crown"),
+        ("Casino High Roller Title", "Exclusive casino title shown on leaderboard", "🎰", "exclusive-casino-title"),
+        ("Founder's Bonus Pack", "200 bonus coins + 1h XP booster — one-time exclusive", "🎁", "exclusive-founders-pack"),
+    ]
+    for n, d, i, iid in exclusive_items:
+        add(n, d, "exclusive", 149 + idx * 25, i, "legendary", tags=["exclusive", "shop_wave_may2026"], item_id=iid)
+
+    booster_packs = [
+        ("Booster Trio Pack", "XP 2h + Quest 24h + Battle 1h bundled", "📦", "pack-booster-trio"),
+        ("Pro Booster Pack", "XP 24h + Casino Luck 6h + Gen Speed 3h", "🧰", "pack-booster-pro"),
+        ("Weekend Power Pack", "Weekend pass + Hunter 4h + Quest Rush 12h", "🎫", "pack-weekend-power"),
+    ]
+    for n, d, i, iid in booster_packs:
+        add(n, d, "bundles", 199 + idx * 30, i, "legendary", tags=["booster_pack", "shop_wave_may2026"], item_id=iid)
 
     # Security & account
     security_items = [
@@ -752,6 +1041,60 @@ def _seed_shop_items():
         item_id="mn2-5d-withdrawal-beacon",
     )
 
+    # ---- Top 25 Legends: flagship numbered collectible series (June 2026 wave) ----
+    # 25 ranked, escalating items spanning every MasterNoder surface. Coin-priced so
+    # they work with coins / in-wallet MN2 / on-chain MN2 / PayPal and earn loyalty.
+    top25_series = [
+        ("Genesis Node Sigil", "Founding-block sigil — proof you were here from the start.", "🌱"),
+        ("Hunter's First Mark", "Engraved mark for completing your first Hunter contract.", "🎯"),
+        ("Star Map Cartographer", "Charter badge for mapping the Star Map 25 frontier.", "🗺️"),
+        ("Arena Gladiator Crest", "Crest forged in the weekly Arena.", "🛡️"),
+        ("Casino High-Roller Chip", "Solid chip minted for the bold at the tables.", "🎰"),
+        ("Lab Pioneer Seal", "Seal of the first experiments in the Lab.", "🔬"),
+        ("Agent Commander Insignia", "Insignia for fielding a full agent squad.", "🎖️"),
+        ("Quest Vanguard Banner", "Banner carried by the relentless quest-runner.", "🚩"),
+        ("Skill Sage Emblem", "Emblem of mastery across the skill trees.", "🧠"),
+        ("MN2 Holder's Token", "Token honoring committed MN2 holders.", "🪙"),
+        ("Staking Architect Medal", "Medal for engineering a staking strategy.", "🏗️"),
+        ("Generation Maestro Reel", "Reel celebrating prolific creators.", "🎬"),
+        ("Trophy Hall Keystone", "Keystone for a stacked trophy hall.", "🏆"),
+        ("Marketplace Magnate Ledger", "Ledger of a thriving auction trader.", "📒"),
+        ("Loyalty Luminary Star", "Star awarded to top loyalty members.", "✨"),
+        ("Battle Warlord Pennant", "Pennant of a feared arena warlord.", "⚔️"),
+        ("Explorer Voyager Compass", "Compass for charting the deepest sectors.", "🧭"),
+        ("Casino Fortune Crown", "Crown for legendary fortune at the tables.", "👑"),
+        ("Hunter Apex Trophy", "Apex trophy for the elite Hunter.", "🦅"),
+        ("Star Map Sovereign Orb", "Orb radiating control over the Star Map.", "🔮"),
+        ("MN2 Whale Monolith", "Monolith reserved for true MN2 whales.", "🐋"),
+        ("Eternal Founder Halo", "Halo for the eternal founders' circle.", "😇"),
+        ("Mythic Agent Ascendant", "Mark of an ascended, mythic agent operator.", "🛰️"),
+        ("Grandmaster Legend Plate", "Plate engraved for grandmasters of the platform.", "🥇"),
+        ("Masternoder Sovereign Crown", "The pinnacle: #25 of the Top 25 Legends series.", "💠"),
+    ]
+    for n, (nm, desc, icon) in enumerate(top25_series, start=1):
+        if n <= 10:
+            price = 150 + n * 60
+        elif n <= 20:
+            price = 800 + (n - 10) * 150
+        else:
+            price = 2500 + (n - 20) * 600
+        if n <= 8:
+            rarity = "rare"
+        elif n <= 16:
+            rarity = "epic"
+        else:
+            rarity = "legendary"
+        add(
+            f"#{n:02d} {nm}",
+            f"{desc} — Top 25 Legends, rank {n} of 25.",
+            "top25",
+            price,
+            icon,
+            rarity,
+            tags=["top25", "collectible", "series_top25", "limited", f"rank_{n}", "shop_wave_jun2026"],
+            item_id=f"top25-{n:02d}",
+        )
+
     return items
 
 
@@ -771,6 +1114,36 @@ def get_shop_config():
         api_line_checks = load_shop_v4_api_line_checks()
     except Exception:
         api_line_checks = {"version": 0, "checks": []}
+    try:
+        from backend.services.monetization_config_service import (
+            get_payment_rails_catalog,
+            get_public_content_bundles,
+            get_public_digital_goods,
+        )
+
+        monetization_shop = {
+            "payment_rails_catalog": get_payment_rails_catalog(),
+            "digital_goods": get_public_digital_goods(),
+            "content_bundles": get_public_content_bundles(),
+        }
+    except Exception:
+        monetization_shop = {"payment_rails_catalog": {}, "digital_goods": [], "content_bundles": []}
+    try:
+        from backend.services.monetization_config_service import get_shop_monetization
+
+        _mon = get_shop_monetization()
+        monetization_shop["v92"] = {
+            "version": _mon.get("version") or "9.2.0",
+            "vip_pass": bool(_mon.get("vip_pass")),
+            "mystery_boxes": len(_mon.get("mystery_boxes") or []),
+            "spin_wheel": bool(_mon.get("spin_wheel")),
+            "flash_sales": bool(_mon.get("flash_sales")),
+            "loyalty": bool(_mon.get("loyalty")),
+            "gifting": bool(_mon.get("gifting")),
+            "auction_feature": bool(_mon.get("auction_feature")),
+        }
+    except Exception:
+        pass
     return jsonify({
         "success": True,
         "use_shop_v3": USE_SHOP_V3,
@@ -779,6 +1152,7 @@ def get_shop_config():
         "shop_url": "/shop",
         "api_line_checks": api_line_checks,
         "serial_classes": serial_classes,
+        "monetization_shop": monetization_shop,
         "shop_media": {
             "manifest": "data/shop_item_media.json",
             "items_static_base": "/static/shop/items/",
@@ -967,6 +1341,76 @@ def get_paypal_shop_items():
     return jsonify({'success': True, 'paypal_items': items}), 200
 
 
+@shop_bp.route('/api/shop/digital-goods', methods=['GET'])
+def get_digital_goods_catalog():
+    """Digital goods catalog with ownership/download metadata for Phase 2 delivery."""
+    try:
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        goods = []
+        for good in _digital_goods_config():
+            iid = good.get("id")
+            is_free = (good.get("delivery") == "free_info") or float(good.get("price_usd") or 0) <= 0 and int(good.get("price_coins") or 0) <= 0
+            owned = bool(is_free or _user_owns_shop_item(user_id, iid))
+            artifact_path = _artifact_abs_path(good)
+            row = dict(good)
+            row.pop("artifact_path", None)
+            row["owned"] = owned
+            row["artifact_available"] = bool(artifact_path and os.path.isfile(artifact_path))
+            row["download_url"] = f"/api/shop/digital-goods/{iid}/download" if owned and row["artifact_available"] else None
+            goods.append(row)
+        return jsonify({'success': True, 'user_id': user_id, 'digital_goods': goods}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'digital_goods': []}), 500
+
+
+@shop_bp.route('/api/shop/content-bundles', methods=['GET'])
+def get_content_bundles_catalog():
+    """Content bundles with one checkout SKU and expanded child item summary."""
+    try:
+        try:
+            from backend.services.monetization_config_service import get_public_content_bundles
+
+            bundles = get_public_content_bundles()
+        except Exception:
+            bundles = []
+        return jsonify({'success': True, 'content_bundles': bundles}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'content_bundles': []}), 500
+
+
+@shop_bp.route('/api/shop/digital-goods/<item_id>/download', methods=['GET'])
+def download_digital_good(item_id):
+    """Download a digital good if free or present in the user's inventory."""
+    try:
+        good = _digital_good_by_id(item_id)
+        if not good:
+            return jsonify({'success': False, 'error': 'Digital good not found'}), 404
+
+        is_free = (good.get("delivery") == "free_info") or float(good.get("price_usd") or 0) <= 0 and int(good.get("price_coins") or 0) <= 0
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        if not is_free and not _user_owns_shop_item(user_id, item_id):
+            return jsonify({
+                'success': False,
+                'error': 'Digital good not owned',
+                'item_id': item_id,
+                'user_id': user_id,
+            }), 403
+
+        path = _artifact_abs_path(good)
+        if not path or not os.path.isfile(path):
+            return jsonify({'success': False, 'error': 'Artifact file missing', 'item_id': item_id}), 404
+
+        return send_file(
+            path,
+            as_attachment=True,
+            download_name=good.get("download_filename") or os.path.basename(path),
+            mimetype="text/markdown",
+            max_age=0,
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'item_id': item_id}), 500
+
+
 @shop_bp.route('/api/game/shop/items', methods=['GET'])
 def game_shop_items():
     """Get shop items (optionally filtered by category)."""
@@ -988,6 +1432,19 @@ def _get_shop_items():
     except Exception:
         items = None
     items = items if items else _seed_shop_items()
+    existing_ids = {i.get("id") for i in items or [] if isinstance(i, dict)}
+    for digital_item in _digital_goods_shop_items():
+        if digital_item.get("id") not in existing_ids:
+            items.append(digital_item)
+            existing_ids.add(digital_item.get("id"))
+    for bundle_item in _content_bundle_shop_items():
+        if bundle_item.get("id") not in existing_ids:
+            items.append(bundle_item)
+            existing_ids.add(bundle_item.get("id"))
+    for package_item in _ptc_advertiser_package_shop_items():
+        if package_item.get("id") not in existing_ids:
+            items.append(package_item)
+            existing_ids.add(package_item.get("id"))
     # Add price_usd for items with coin price (enables direct PayPal purchase)
     for item in items or []:
         if item.get("id") in get_coin_pack_map():
@@ -1034,6 +1491,8 @@ def shop_v3_items():
     """Shop-v3: items, artifacts, boosters, category_counts (for overview), etc. (unified format)."""
     try:
         all_items = _get_shop_items()
+        digital_goods_items = [i for i in (all_items or []) if i.get('category') == 'digital_goods']
+        bundle_items = [i for i in (all_items or []) if i.get('category') == 'bundles']
         categories = {}
         for i in all_items or []:
             cat = (i.get('category') or 'other').strip().lower()
@@ -1042,9 +1501,10 @@ def shop_v3_items():
             'success': True,
             'items': all_items,
             'category_counts': categories,
-            'artifacts': [],
-            'knowledge_items': [],
+            'artifacts': digital_goods_items,
+            'knowledge_items': digital_goods_items,
             'intelligence_items': [],
+            'bundles': bundle_items,
             'boosters': [i for i in (all_items or []) if i.get('category') == 'boosts'],
             'unified_points_items': [i for i in (all_items or []) if i.get('category') == 'unified_points'],
         }), 200
@@ -1055,6 +1515,9 @@ def shop_v3_items():
             'items': [],
             'category_counts': {},
             'artifacts': [],
+            'knowledge_items': [],
+            'intelligence_items': [],
+            'bundles': [],
             'boosters': [],
             'unified_points_items': [],
         }), 500
@@ -1341,7 +1804,16 @@ def shop_purchase():
                         'details': str(ex),
                     }), 500
                 _apply_shop_item_effects(user_id, item_id, item, quantity)
-                
+
+                # Shop V9.2: award loyalty/cashback for coin spend on the whole catalog.
+                loyalty_earned = 0
+                try:
+                    from backend.services.shop_monetization_service import accrue_purchase_loyalty
+
+                    loyalty_earned = int((accrue_purchase_loyalty(user_id, total_cost) or {}).get('earned') or 0)
+                except Exception:
+                    loyalty_earned = 0
+
                 try:
                     from backend.services.unified_points_sync import unified_points_sync_device
                     unified_points_sync_device.record_domain_sync('shop')
@@ -1357,6 +1829,7 @@ def shop_purchase():
                     'quantity': quantity,
                     'price_paid': total_cost,
                     'remaining_currency': user_currency - total_cost,
+                    'loyalty_earned': loyalty_earned,
                     'purchase_id': purchase_id
                 }), 200
                 
@@ -1421,6 +1894,23 @@ def shop_auction_listings():
         limit = min(int(request.args.get('limit', 100)), 200)
         from backend.services.shop_auction_service import list_active_listings
         listings = list_active_listings(seller_id=seller_id, limit=limit)
+        # Shop V9.2: paid "featured" listings float to the top of the market.
+        try:
+            from backend.services.shop_monetization_service import get_featured_listing_ids
+
+            featured = set(get_featured_listing_ids())
+            if featured:
+                for row in listings:
+                    row['featured'] = row.get('listing_id') in featured
+                listings.sort(key=lambda r: (not r.get('featured'), r.get('created_at') or ''), reverse=False)
+                # keep newest-first within each group: re-sort featured then others by created_at desc
+                feat = [r for r in listings if r.get('featured')]
+                rest = [r for r in listings if not r.get('featured')]
+                feat.sort(key=lambda r: r.get('created_at') or '', reverse=True)
+                rest.sort(key=lambda r: r.get('created_at') or '', reverse=True)
+                listings = feat + rest
+        except Exception:
+            pass
         return jsonify({'success': True, 'listings': listings, 'count': len(listings)}), 200
     except Exception as e:
         return jsonify({

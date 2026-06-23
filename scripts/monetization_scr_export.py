@@ -30,6 +30,8 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Monetization ledger + metering COGS export (rough blend)")
     p.add_argument("--ledger-path", help="Override payment_ledger.jsonl path")
     p.add_argument("--metering-path", help="Override metering.jsonl path")
+    p.add_argument("--mn2-ledger-path", help="Override data/mn2_ledger.json path")
+    p.add_argument("--mn2-usd-price", type=float, default=None, help="Optional MN2 USD price for estimated crypto revenue margin")
     p.add_argument("--since-days", type=float, default=None, help="Only rows with ts on or after now - N days (default: all time)")
     p.add_argument(
         "--scr-only",
@@ -43,6 +45,8 @@ def main() -> int:
         out = run_ledger_metering_blend(
             ledger_path=args.ledger_path,
             metering_path=args.metering_path,
+            mn2_ledger_path=args.mn2_ledger_path,
+            mn2_usd_price=args.mn2_usd_price,
             since_days=args.since_days,
             scr_only=args.scr_only,
         )
@@ -57,6 +61,7 @@ def main() -> int:
     print("Monetization export (ledger + metering)")
     print("  ledger:", out["ledger_path"])
     print("  metering:", out["metering_path"])
+    print("  mn2 ledger:", out.get("mn2_ledger_path"))
     if out.get("since_cutoff_iso"):
         print("  since:", out["since_cutoff_iso"])
     if args.scr_only:
@@ -64,6 +69,10 @@ def main() -> int:
     print("  ledger rows:", out["ledger_rows_read"], "  metering rows:", out["metering_rows_read"])
     print("  revenue_usd (ledger):", out["revenue_usd_total"])
     print("  cogs_usd (metering): ", out["cogs_usd_total"])
+    print("  revenue by provider:", out.get("revenue_by_provider", {}))
+    print("  revenue by line:", out.get("revenue_by_line", {}))
+    mn2 = out.get("mn2_shop_payments") or {}
+    print("  mn2 shop payments:", mn2.get("mn2_total"), "MN2", "(usd_estimated:", mn2.get("usd_estimated"), ")")
     mg = out.get("blended_gross_margin_vs_metering")
     print("  blended gross margin (rough):", mg if mg is not None else "n/a")
     print("  ", out.get("note", ""))

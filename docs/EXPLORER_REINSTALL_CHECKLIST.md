@@ -4,6 +4,32 @@
 
 **Prerequisites:** `masternoder2.conf` with **`server=1`**, **`rpcuser` / `rpcpassword`**, **`rpcport=9332`**, **`rpcbind=127.0.0.1`** — same values you will put under **wallet** in `settings.json`. See [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md).
 
+> **Hybrid stats plan:** see [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) for using this explorer as Masternoder.dk's primary stats/link source (iquidus → RPC → Chainz fallback).
+
+> **As-built (2026-06-04) — what actually worked on Ubuntu 24.04, read this first:** Engine is **eiquidus** (`git clone https://github.com/team-exor/eiquidus /var/www/explorer`), **not** classic `iquidus/explorer` (archived; won't build on Node 20). Stack: **Node 20** (NodeSource) + build-essential, **MongoDB 8.0** (official repo; needs AVX — this host has it), **PM2** single worker (`pm2 start ./bin/cluster --name explorer --node-args="--stack-size=10000" -- 1`). Daemon active datadir is **`/var/www/html/config`** and the binary supports **`-txindex` only** — set `txindex=1` + one reindex; `addressindex`/`spentindex`/`timestampindex` are **not supported and not needed** (eiquidus self-indexes addresses into Mongo). `settings.json` essentials: `coin`=MasterNoder2/MN2, `wallet`→`localhost:9332` (creds from `masternoder2.conf`), `dbsettings`→`iquidus@explorerdb`, `webserver.port`=3000, `sync.supply`="GETINFO", `genesis_block`/`genesis_tx` from `getblockhash 0`. On 1.9 GB RAM add a swapfile first. Sync via `node scripts/sync.js index update` + cron in `/etc/cron.d/eiquidus`. The detailed sections below are still useful for Mongo/nginx/TLS specifics; treat iquidus-specific bits as eiquidus equivalents.
+
+---
+
+## Daemon index prerequisites (required for address / tx / rich-list pages)
+
+A bare daemon does **not** index arbitrary addresses, so iquidus address pages and the rich list stay empty without these. Set in `masternoder2.conf` **before** syncing the explorer:
+
+```ini
+txindex=1
+addressindex=1
+spentindex=1
+timestampindex=1
+```
+
+- `txindex=1` is the minimum for tx lookups; `addressindex`/`spentindex`/`timestampindex` enable address history + rich list on PIVX-style chains. **Confirm the exact supported keys in the [MasterNoder2 repo](https://github.com/jonK341/MasterNoder2)** — drop any the daemon rejects.
+- **One-time `-reindex`** after enabling these so the daemon rebuilds indexes over existing history:
+
+```bash
+masternoder2d -reindex
+```
+
+This is **CPU/disk heavy** and adds disk footprint — run it in a quiet window and let it finish before starting the explorer sync.
+
 ---
 
 ## Credential consistency — two separate systems (do not mix them)

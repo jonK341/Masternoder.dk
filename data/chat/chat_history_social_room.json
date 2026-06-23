@@ -48,6 +48,48 @@
       "message": "cooldown proof",
       "timestamp": "2026-04-29T00:38:20.907670",
       "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T01:25:21.623436",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Gold Seeker",
+      "message": "Scanning my network",
+      "timestamp": "2026-04-29T01:25:22.037400",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Elite Wizard",
+      "message": "cooldown proof",
+      "timestamp": "2026-04-29T01:25:22.153499",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-04-29T01:29:56.385761",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Gold Seeker",
+      "message": "Scanning my network",
+      "timestamp": "2026-04-29T01:29:56.757895",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Elite Wizard",
+      "message": "cooldown proof",
+      "timestamp": "2026-04-29T01:29:56.841160",
+      "is_ai": false
     }
   ]
 }
