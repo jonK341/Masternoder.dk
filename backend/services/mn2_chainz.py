@@ -5,7 +5,7 @@ See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md §1 and §7.
 """
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     import requests
@@ -75,6 +75,85 @@ def chainz_masternode_count() -> Optional[int]:
 
 _SUPPLY_CACHE: Dict[str, Any] = {}
 _SUPPLY_TTL = 600  # gettxoutsetinfo is a full UTXO scan; cache 10 min
+
+_LOCAL_CACHE: Dict[str, Dict[str, Any]] = {}
+_LOCAL_TTL = 45  # local eiquidus on localhost — cheap but don't hammer during sync
+
+
+def _local_explorer_api() -> Optional[str]:
+    """Return local explorer API base URL when configured for iquidus/eiquidus, else None."""
+    try:
+        from backend.services.mn2_explorer_urls import explorer_kind, explorer_local_api_url, load_explorer_config
+        cfg = load_explorer_config()
+        if explorer_kind(cfg) != "iquidus":
+            return None
+        url = explorer_local_api_url(cfg)
+        return url or None
+    except Exception:
+        return None
+
+
+def _local_explorer_get(path: str) -> Optional[Any]:
+    """GET a path on the local eiquidus API. Cached briefly; never raises."""
+    base = _local_explorer_api()
+    if not base or not requests:
+        return None
+    key = f"{base}{path}"
+    now = time.time()
+    if key in _LOCAL_CACHE and (now - _LOCAL_CACHE[key].get("ts", 0)) < _LOCAL_TTL:
+        return _LOCAL_CACHE[key].get("value")
+    try:
+        r = requests.get(f"{base}{path}", timeout=3)
+        if r.status_code != 200:
+            return _LOCAL_CACHE.get(key, {}).get("value")
+        text = (r.text or "").strip()
+        value: Any = text
+        if text.startswith("{") or text.startswith("["):
+            try:
+                value = r.json()
+            except Exception:
+                value = text
+        elif text.replace(".", "", 1).isdigit() or (text.startswith("-") and text[1:].replace(".", "", 1).isdigit()):
+            try:
+                value = float(text) if "." in text else int(text)
+            except ValueError:
+                value = text
+        _LOCAL_CACHE[key] = {"value": value, "ts": now}
+        return value
+    except Exception:
+        return _LOCAL_CACHE.get(key, {}).get("value")
+
+
+def _local_block_height() -> Optional[int]:
+    v = _local_explorer_get("/api/getblockcount")
+    if isinstance(v, dict):
+        v = v.get("result") or v.get("blockcount") or v.get("count")
+    try:
+        return int(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _local_circulating_supply() -> Optional[float]:
+    v = _local_explorer_get("/ext/getmoneysupply")
+    if isinstance(v, dict):
+        v = v.get("result") or v.get("supply") or v.get("moneysupply")
+    try:
+        return round(float(v), 8) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _local_difficulty() -> Optional[float]:
+    v = _local_explorer_get("/api/getdifficulty")
+    if isinstance(v, dict):
+        v = v.get("result") or v.get("difficulty")
+        if isinstance(v, dict):
+            v = v.get("proof-of-stake") or v.get("pos") or v.get("proof-of-work")
+    try:
+        return float(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _cached_circulating_supply() -> Optional[float]:
@@ -191,47 +270,65 @@ def network_overview() -> Dict[str, Any]:
         "circulating_supply": None,
         "source": {},
     }
-    # RPC first
+    # Local eiquidus stats (optional, same-server only — never used for on-site explorer links)
+    try:
+        from backend.services.mn2_explorer_urls import explorer_kind, load_explorer_config
+        use_local_stats = (load_explorer_config().get("explorer_use_local_stats") is True
+                           and explorer_kind() == "iquidus")
+    except Exception:
+        use_local_stats = False
+    if use_local_stats:
+        try:
+            bh = _local_block_height()
+            if bh is not None:
+                out["block_height"] = bh
+                out["source"]["block_height"] = "iquidus"
+            sup = _local_circulating_supply()
+            if sup is not None:
+                out["circulating_supply"] = sup
+                out["source"]["circulating_supply"] = "iquidus"
+            diff = _local_difficulty()
+            if diff is not None:
+                out["difficulty"] = diff
+                out["source"]["difficulty"] = "iquidus"
+        except Exception:
+            pass
+    # RPC (primary for on-site stats when explorer_use_local_stats is off)
     try:
         from backend.services import mn2_rpc_client as rpc
         r = rpc.getblockcount(timeout_sec=4)
-        if not r.get("error") and r.get("result") is not None:
+        if not r.get("error") and r.get("result") is not None and out["block_height"] is None:
             out["block_height"] = int(r["result"]); out["source"]["block_height"] = "rpc"
-        si = rpc.getstakinginfo()
-        if not si.get("error") and isinstance(si.get("result"), dict):
-            res = si["result"]
-            out["staking_weight"] = res.get("netstakeweight") or res.get("weight")
-            out["expected_stake_time_sec"] = res.get("expectedtime")
-            out["source"]["staking_weight"] = "rpc"
-        mc = rpc.getmasternodecount()
-        if not mc.get("error") and mc.get("result") is not None:
-            res = mc["result"]
-            out["masternode_count"] = res.get("total") if isinstance(res, dict) else res
-            out["source"]["masternode_count"] = "rpc"
-        df = rpc.getdifficulty()
-        if not df.get("error") and df.get("result") is not None:
-            res = df["result"]
-            out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
-            out["source"]["difficulty"] = "rpc"
-        # getmininginfo: networkhashps is the network-weight proxy on PoS forks
-        # that don't implement getstakinginfo (MasterNoder2). Also a difficulty fallback.
-        mi = rpc.getmininginfo()
+        # MasterNoder2: getmininginfo is fast and exposes networkhashps + difficulty.
+        mi = rpc.getmininginfo(timeout_sec=4)
         if not mi.get("error") and isinstance(mi.get("result"), dict):
             res = mi["result"]
             nh = res.get("networkhashps")
             if nh is not None:
                 out["network_hashps"] = nh
-                if out["staking_weight"] is None:
-                    out["staking_weight"] = nh
-                    out["source"]["staking_weight"] = "rpc"
-            if out["difficulty"] is None and res.get("difficulty") is not None:
+                out["staking_weight"] = nh
+                out["source"]["staking_weight"] = "rpc"
+            if res.get("difficulty") is not None:
                 out["difficulty"] = res.get("difficulty")
                 out["source"]["difficulty"] = "rpc"
-        # circulating supply via gettxoutsetinfo (heavy UTXO scan) -> cached ~10 min
-        supply = _cached_circulating_supply()
-        if supply is not None:
-            out["circulating_supply"] = supply
-            out["source"]["circulating_supply"] = "rpc"
+        if out["staking_weight"] is None:
+            si = rpc.getstakinginfo(timeout_sec=3)
+            if not si.get("error") and isinstance(si.get("result"), dict):
+                res = si["result"]
+                out["staking_weight"] = res.get("netstakeweight") or res.get("weight")
+                out["expected_stake_time_sec"] = res.get("expectedtime")
+                out["source"]["staking_weight"] = "rpc"
+        mc = rpc.getmasternodecount(timeout_sec=4)
+        if not mc.get("error") and mc.get("result") is not None:
+            res = mc["result"]
+            out["masternode_count"] = res.get("total") if isinstance(res, dict) else res
+            out["source"]["masternode_count"] = "rpc"
+        if out["difficulty"] is None:
+            df = rpc.getdifficulty(timeout_sec=4)
+            if not df.get("error") and df.get("result") is not None:
+                res = df["result"]
+                out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
+                out["source"]["difficulty"] = "rpc"
     except Exception:
         pass
     # Chainz fallback for anything still missing
@@ -241,9 +338,14 @@ def network_overview() -> Dict[str, Any]:
             if bh is not None:
                 out["block_height"] = bh; out["source"]["block_height"] = "chainz"
         if out["mn2_usd_price"] is None:
-            px = chainz_ticker_usd()
-            if px is not None:
-                out["mn2_usd_price"] = round(px, 8); out["source"]["mn2_usd_price"] = "chainz"
+            px_bundle = mn2_usd_price_median()
+            if isinstance(px_bundle, dict) and px_bundle.get("price") is not None:
+                out["mn2_usd_price"] = round(float(px_bundle["price"]), 8)
+                out["source"]["mn2_usd_price"] = px_bundle.get("source_label") or "median"
+            else:
+                px = chainz_ticker_usd()
+                if px is not None:
+                    out["mn2_usd_price"] = round(px, 8); out["source"]["mn2_usd_price"] = "chainz"
         if out["masternode_count"] is None:
             mc = chainz_masternode_count()
             if mc is not None:
@@ -267,6 +369,75 @@ def network_overview() -> Dict[str, Any]:
             out["source"]["circulating_supply"] = "rpc"
     except Exception:
         out.setdefault("daemon", {})
+
+    # gettxoutsetinfo is a full UTXO scan — only when getinfo.moneysupply was unavailable.
+    if out.get("circulating_supply") is None:
+        try:
+            supply = _cached_circulating_supply()
+            if supply is not None:
+                out["circulating_supply"] = supply
+                out["source"]["circulating_supply"] = "rpc"
+        except Exception:
+            pass
+    return out
+
+
+def mn2_usd_price_median() -> Optional[Dict[str, Any]]:
+    """
+    Median of available MN2/USD sources: Chainz ticker, config override, env MN2_USD_PRICE.
+    Returns { price, sources, source_label, last_updated_iso? } or None.
+    """
+    from datetime import datetime, timezone
+
+    samples: List[float] = []
+    sources: Dict[str, float] = {}
+    last_iso = None
+
+    chainz = chainz_ticker_usd_with_updated()
+    if isinstance(chainz, dict) and chainz.get("price") is not None:
+        try:
+            px = float(chainz["price"])
+            if px > 0:
+                samples.append(px)
+                sources["chainz"] = px
+                last_iso = chainz.get("last_updated_iso")
+        except (TypeError, ValueError):
+            pass
+
+    try:
+        from backend.routes.mn2_routes import _load_mn2_config
+        cfg = _load_mn2_config() or {}
+        cfg_px = cfg.get("mn2_usd_price")
+        if cfg_px is not None:
+            px = float(cfg_px)
+            if px > 0:
+                samples.append(px)
+                sources["config"] = px
+    except Exception:
+        pass
+
+    env_raw = (os.environ.get("MN2_USD_PRICE") or os.environ.get("MN2_USD_PRICE_USD") or "").strip()
+    if env_raw:
+        try:
+            px = float(env_raw)
+            if px > 0:
+                samples.append(px)
+                sources["env"] = px
+        except ValueError:
+            pass
+
+    if not samples:
+        return None
+    samples.sort()
+    mid = len(samples) // 2
+    median = samples[mid] if len(samples) % 2 else (samples[mid - 1] + samples[mid]) / 2.0
+    label = "median" if len(samples) > 1 else next(iter(sources.keys()), "unknown")
+    out: Dict[str, Any] = {
+        "price": median,
+        "sources": sources,
+        "source_label": label,
+        "last_updated_iso": last_iso or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
     return out
 
 

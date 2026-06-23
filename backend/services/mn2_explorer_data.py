@@ -74,22 +74,27 @@ def recent_blocks(limit: int = 10) -> List[Dict[str, Any]]:
         return _store(key, out)
 
 
-def masternodes(limit: int = 50) -> Dict[str, Any]:
+def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
     """Masternode summary + list via listmasternodes. Cached ~60s.
     Returns {total, enabled, list:[{rank, addr, status, lastpaid, activetime, version}]}."""
     limit = max(1, min(int(limit or 50), 500))
     key = "mn_%d" % limit
     with _LOCK:
-        cached = _cached(key, _MN_TTL)
-        if cached is not None:
-            return cached
+        if not fresh:
+            cached = _cached(key, _MN_TTL)
+            if cached is not None:
+                return cached
         result: Dict[str, Any] = {"total": 0, "enabled": 0, "list": []}
         try:
             from backend.services import mn2_rpc_client as rpc
-            r = rpc.listmasternodes()
+            r = rpc.listmasternodes(timeout_sec=12)
             rows = r.get("result")
-            if r.get("error") or not isinstance(rows, list):
-                return _store(key, result)
+            if r.get("error"):
+                result["rpc_error"] = str(r.get("error"))
+                return result
+            if not isinstance(rows, list):
+                result["rpc_error"] = "listmasternodes returned non-list"
+                return result
             enabled = 0
             parsed: List[Dict[str, Any]] = []
             for mn in rows:
@@ -105,6 +110,7 @@ def masternodes(limit: int = 50) -> Dict[str, Any]:
                     "lastpaid": mn.get("lastpaid"),
                     "activetime": mn.get("activetime"),
                     "version": mn.get("version"),
+                    "txhash": mn.get("txhash") or mn.get("proTxHash"),
                 })
             parsed.sort(key=lambda m: (m.get("rank") is None, m.get("rank") or 0))
             result = {"total": len(parsed), "enabled": enabled, "list": parsed[:limit]}
