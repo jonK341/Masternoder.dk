@@ -138,16 +138,23 @@ def run(force_prompt: bool = False):
         print()
         print("Quick check (backend :5000):")
         time.sleep(3)
-        for path in ["/api/version", "/vidgenerator/api/version"]:
+        checks = [
+            ("/api/version", "200", "primary API version"),
+            ("/api/health", "200", "health"),
+            ("/vidgenerator/api/version", "410", "legacy prefix (disabled by design)"),
+        ]
+        for path, expect, note in checks:
             try:
                 out, err = sh(
                     ssh,
                     f"curl -s --max-time 8 -o /dev/null -w '%{{http_code}}' "
-                    f"http://127.0.0.1:5000{path} 2>/dev/null || echo '---'",
+                    f"http://127.0.0.1:5000{path} 2>/dev/null || echo '000'",
                     timeout=12,
                 )
-                label = out or ("timeout" if err else "---")
-                print(f"  {path}: {label}")
+                code = (out or "000").strip()
+                ok = code == expect or (expect == "200" and code.startswith("2"))
+                tag = "OK" if ok else "WARN"
+                print(f"  {path}: {code} [{tag}] ({note})")
             except Exception as exc:
                 print(f"  {path}: [WARN] {exc}")
 

@@ -164,7 +164,7 @@ One SSH session: install **masternode provision**, **Discord market fan-out**, *
 
 | # | Task | Owner | Action |
 | - | ---- | ----- | ------ |
-| 1 | **Explorer VPS nginx verify** *(optional)* | **SSH** | Confirm or run `python scripts/fix_explorer_subdomains_remote.py --ask-pass` — eiquidus homepage + `cam.masternoder.dk` redirect |
+| 1 | **Fleet boot autostart (M5)** | **SSH** | Install `systemd/mn2-fleet-autostart.service` · `scripts/mn2_fleet_autostart.sh` · verify after reboot |
 | 2 | **PayPal Pro live plan + webhook** | **PayPal dashboard** | § [**PayPal Pro setup (queue #2)**](#paypal-pro-setup-queue-2) below |
 | 3 | **Deploy live Pro ids** | **Server `.env`** + repo | § [**After PayPal dashboard (queue #3)**](#after-paypal-dashboard-queue-3) |
 | 4 | **Tier enforcement** | **Server `.env`** | `MONETIZATION_TIER_ENFORCEMENT=1` via `deploy.py mn2_env --ask-pass` |
