@@ -196,14 +196,47 @@ def login_user():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@user_profile_bp.route('/api/user/logout', methods=['POST'])
+def logout_user():
+    """Clear server session (pair with client localStorage clear)."""
+    try:
+        from backend.services.account_resolution_service import clear_session_user
+        clear_session_user()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @user_profile_bp.route('/api/user/bind-session', methods=['POST'])
 def bind_session():
     """Bind user_id to server session (e.g. when user sets ID via 'Use ID')."""
     try:
+        from backend.services.account_security_service import bind_session_requires_password
+        from backend.services.login_security_service import login_requires_password
+        from backend.services.password_protection_service import verify_password
+
         data = request.get_json() or {}
         user_id = (data.get('user_id') or '').strip()
+        password = (data.get('password') or '').strip()
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
+
+        needs_password = login_requires_password(user_id) or bind_session_requires_password(user_id)
+        if needs_password:
+            if not password:
+                return jsonify({
+                    'success': False,
+                    'error': 'Password required to bind this account',
+                    'requires_password': True,
+                }), 401
+            verified = verify_password(user_id, password)
+            if not verified.get('success'):
+                return jsonify({
+                    'success': False,
+                    'error': verified.get('error') or 'Invalid password',
+                    'requires_password': True,
+                }), 401
+
         set_session_user(user_id)
         # Ensure user exists in DB on session bind
         db_result = {}
@@ -527,6 +560,12 @@ def update_profile():
             return jsonify({'success': False, 'error': 'update_data must be a non-empty object'}), 400
 
         result = user_onboarding.update_user_profile(user_id, update_data)
+        if result.get('success'):
+            try:
+                from backend.services.generator_context_cache import invalidate_user
+                result['context_cache_invalidated'] = invalidate_user(str(user_id))
+            except Exception:
+                pass
         return jsonify(result), 200 if result.get('success') else 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
