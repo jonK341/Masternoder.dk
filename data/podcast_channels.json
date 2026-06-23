@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-06-21",
+  "channels": [
+    {
+      "id": "masternoder-main",
+      "name": "MasterNoder Podcast",
+      "tagline": "AI video, crypto rewards, and Hunters Game lore",
+      "description": "Official MasterNoder channel — generator intelligence, MN2 crypto, agent workflows, and community highlights.",
+      "host": "reporter_agent",
+      "icon": "🎙️",
+      "cover_url": "/static/img/podcast/masternoder-main.svg",
+      "platforms": {
+        "youtube": {
+          "url": "https://youtube.com/@MasterNoder",
+          "channel_id": "UC-MasterNoder",
+          "subscribers": 128400,
+          "verified": true
+        },
+        "facebook": {
+          "url": "https://facebook.com/MasterNoder",
+          "page_id": "MasterNoder",
+          "followers": 89200,
+          "verified": true
+        },
+        "discord": {
+          "url": "https://discord.gg/masternoder",
+          "server_id": "masternoder",
+          "members": 45600,
+          "verified": true
+        },
+        "github": {
+          "url": "https://github.com/MasterNoder",
+          "org": "MasterNoder",
+          "stars": 12400,
+          "verified": true
+        }
+      },
+      "crypto_enabled": true,
+      "mn2_tip_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
+      "assigned_agents": ["podcast_producer_agent", "content_generator_agent", "reporter_agent"],
+      "featured": true
+    },
+    {
+      "id": "generator-intelligence",
+      "name": "Generator Intelligence",
+      "tagline": "AI-made episodes from the video generator stack",
+      "description": "Episodes produced with generator intelligence — TTS narration, AI script, and AI audio encoder profiles.",
+      "host": "content_generator_agent",
+      "icon": "🤖",
+      "cover_url": "/static/img/podcast/generator-intelligence.svg",
+      "platforms": {
+        "youtube": {
+          "url": "https://youtube.com/@MasterNoderAI",
+          "subscribers": 67200,
+          "verified": true
+        },
+        "facebook": {
+          "url": "https://facebook.com/MasterNoderAI",
+          "followers": 34100,
+          "verified": false
+        },
+        "discord": {
+          "url": "https://discord.gg/masternoder",
+          "members": 45600,
+          "verified": true
+        },
+        "github": {
+          "url": "https://github.com/MasterNoder/generator-intelligence",
+          "stars": 3200,
+          "verified": true
+        }
+      },
+      "crypto_enabled": true,
+      "assigned_agents": ["content_generator_agent", "podcast_producer_agent", "ai_intelligence_agent"],
+      "featured": true
+    },
+    {
+      "id": "crypto-hunters",
+      "name": "Crypto Hunters",
+      "tagline": "MN2 rewards, shop rails, and view-to-earn",
+      "description": "Deep dives on MN2 wallet, shop crypto checkout, view counting rewards, and staking bonuses for listeners.",
+      "host": "analytics_agent",
+      "icon": "💎",
+      "cover_url": "/static/img/podcast/crypto-hunters.svg",
+      "platforms": {
+        "youtube": {
+          "url": "https://youtube.com/@CryptoHuntersMN2",
+          "subscribers": 41500,
+          "verified": true
+        },
+        "facebook": {
+          "url": "https://facebook.com/CryptoHuntersMN2",
+          "followers": 22800,
+          "verified": true
+        },
+        "discord": {
+          "url": "https://discord.gg/masternoder",
+          "members": 45600,
+          "verified": true
+        },
+        "github": {
+          "url": "https://github.com/MasterNoder/mn2",
+          "stars": 8900,
+          "verified": true
+        }
+      },
+      "crypto_enabled": true,
+      "assigned_agents": ["analytics_agent", "podcast_producer_agent"],
+      "featured": false
+    }
+  ]
+}

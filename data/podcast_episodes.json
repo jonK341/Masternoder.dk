@@ -1,0 +1,149 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-06-22",
+  "episodes": [
+    {
+      "id": "ep-001-welcome",
+      "channel_id": "masternoder-main",
+      "title": "Welcome to MasterNoder Podcast",
+      "description": "Intro to AI video generation, MN2 crypto rewards, and the Hunters Game universe.",
+      "duration_sec": 720,
+      "audio_url": "/static/audio/podcast/ep-001-welcome.mp3",
+      "published_at": "2026-06-01T10:00:00Z",
+      "view_count": 18420,
+      "play_count": 12340,
+      "share_count": 890,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": false,
+      "encode_profile": "standard",
+      "assigned_agent": "reporter_agent",
+      "tags": [
+        "intro",
+        "crypto",
+        "community"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=mn2-welcome",
+        "facebook": "https://facebook.com/MasterNoder/posts/welcome",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/releases/tag/podcast-v1"
+      }
+    },
+    {
+      "id": "ep-002-generator-ai",
+      "channel_id": "generator-intelligence",
+      "title": "Generator Intelligence \u2014 AI Podcast Pipeline",
+      "description": "How TTS, AI script, and the AI audio encoder produce episodes from generator intelligence.",
+      "duration_sec": 1080,
+      "audio_url": "/static/audio/podcast/ep-002-generator-ai.mp3",
+      "published_at": "2026-06-05T14:00:00Z",
+      "view_count": 9870,
+      "play_count": 6540,
+      "share_count": 420,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "content_generator_agent",
+      "tags": [
+        "generator",
+        "ai",
+        "tts",
+        "encoder"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=gen-intel-002",
+        "facebook": "https://facebook.com/MasterNoderAI/posts/gen-intel",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/generator-intelligence"
+      }
+    },
+    {
+      "id": "ep-003-crypto-shop",
+      "channel_id": "crypto-hunters",
+      "title": "Buy Shop Items with MN2 Crypto",
+      "description": "Episode unlocks, premium passes, and in-wallet MN2 checkout for podcast listeners.",
+      "duration_sec": 900,
+      "audio_url": "/static/audio/podcast/ep-003-crypto-shop.mp3",
+      "published_at": "2026-06-10T09:00:00Z",
+      "view_count": 7620,
+      "play_count": 5100,
+      "share_count": 310,
+      "premium": true,
+      "shop_item_id": "podcast-premium-ep-unlock",
+      "generator_intelligence": false,
+      "encode_profile": "standard",
+      "assigned_agent": "analytics_agent",
+      "tags": [
+        "mn2",
+        "shop",
+        "crypto",
+        "rewards"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=crypto-shop-003",
+        "facebook": "https://facebook.com/CryptoHuntersMN2/posts/shop",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/mn2"
+      }
+    },
+    {
+      "id": "ep-004-view-rewards",
+      "channel_id": "crypto-hunters",
+      "title": "View Counting & Crypto Rewards",
+      "description": "Listen, share, and earn MN2 \u2014 view counting with daily caps and staking bonuses.",
+      "duration_sec": 840,
+      "audio_url": "/static/audio/podcast/ep-004-view-rewards.mp3",
+      "published_at": "2026-06-15T16:00:00Z",
+      "view_count": 5432,
+      "play_count": 3892,
+      "share_count": 275,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "views",
+        "rewards",
+        "mn2",
+        "staking"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=view-rewards-004",
+        "facebook": "https://facebook.com/CryptoHuntersMN2/posts/views",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/mn2/blob/main/docs/VIEW_REWARDS.md"
+      }
+    },
+    {
+      "id": "ep-005-agents-encoder",
+      "channel_id": "generator-intelligence",
+      "title": "Agent Assignment & AI Encoder",
+      "description": "Assign podcast_producer_agent, encode episodes with AI profiles, and publish to YouTube, Facebook, Discord, GitHub.",
+      "duration_sec": 1200,
+      "audio_url": "/static/audio/podcast/ep-005-agents-encoder.mp3",
+      "published_at": "2026-06-18T11:00:00Z",
+      "view_count": 4219,
+      "play_count": 2980,
+      "share_count": 198,
+      "premium": true,
+      "shop_item_id": "podcast-pro-pass",
+      "generator_intelligence": true,
+      "encode_profile": "ultra",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "agents",
+        "encoder",
+        "distribution"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=agents-encoder-005",
+        "facebook": "https://facebook.com/MasterNoderAI/posts/agents",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/generator-intelligence/releases"
+      }
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "advertiser_packages": [
+    {
+      "budget_clicks": 100,
+      "description": "Managed PTC package for up to 100 verified sponsored visits after admin approval.",
+      "id": "ptc-verified-visits-100",
+      "name": "100 verified visits",
+      "placements": [
+        "home_smartlinks",
+        "news_inline",
+        "social_feed"
+      ],
+      "price_usd": 19.99
+    },
+    {
+      "budget_clicks": 150,
+      "description": "Managed feature slot in the MN2/shop crypto section with verified-click reporting.",
+      "id": "ptc-crypto-section-feature",
+      "name": "Crypto section feature",
+      "placements": [
+        "shop_mn2",
+        "home_smartlinks"
+      ],
+      "price_usd": 29.99
+    },
+    {
+      "budget_clicks": 300,
+      "description": "Rotates one approved URL across homepage, aggregator, news, and social placements.",
+      "id": "ptc-rotator-growth-pack",
+      "name": "Traffic rotator growth pack",
+      "placements": [
+        "home_smartlinks",
+        "news_inline",
+        "aggregator_ideas",
+        "social_feed"
+      ],
+      "price_usd": 49.99
+    }
+  ],
+  "campaigns": [
+    {
+      "advertiser": "MasterNoder",
+      "category": "internal",
+      "cta": "Open generator",
+      "daily_cap_clicks": 80,
+      "description": "Open the generator, explore the workflow, and earn a small sponsored-click reward.",
+      "destination_url": "/generator",
+      "id": "internal-generator-growth",
+      "name": "Try the AI Video Generator",
+      "placements": [
+        "home_smartlinks",
+        "news_inline",
+        "aggregator_ideas",
+        "social_feed",
+        "click_quest"
+      ],
+      "reward_points": 12,
+      "status": "active",
+      "tags": [
+        "internal",
+        "generator",
+        "growth"
+      ],
+      "title": "Generate a video with MasterNoder",
+      "total_budget_clicks": 500,
+      "weight": 10
+    },
+    {
+      "advertiser": "MasterNoder",
+      "category": "crypto",
+      "cta": "View MN2 wallet",
+      "daily_cap_clicks": 50,
+      "description": "Visit the MN2 wallet section and see deposits, in-app balance, and shop checkout options.",
+      "destination_url": "/shop?tab=mn2",
+      "id": "internal-mn2-wallet",
+      "name": "MN2 Wallet Explainer",
+      "placements": [
+        "shop_mn2",
+        "home_smartlinks",
+        "news_inline",
+        "click_quest"
+      ],
+      "reward_points": 15,
+      "status": "active",
+      "tags": [
+        "mn2",
+        "crypto",
+        "shop"
+      ],
+      "title": "Learn how MN2 works in the shop",
+      "total_budget_clicks": 300,
+      "weight": 8
+    },
+    {
+      "advertiser": "MasterNoder",
+      "category": "traffic",
+      "cta": "Open aggregator",
+      "daily_cap_clicks": 60,
+      "description": "Use the aggregator monitor and intelligence feed as a traffic-discovery surface.",
+      "destination_url": "/aggregator",
+      "id": "internal-aggregator-traffic",
+      "name": "Aggregator Traffic Loop",
+      "placements": [
+        "aggregator_ideas",
+        "home_smartlinks",
+        "social_feed",
+        "click_quest"
+      ],
+      "reward_points": 10,
+      "status": "active",
+      "tags": [
+        "traffic",
+        "rotator",
+        "intel"
+      ],
+      "title": "Explore the intelligence aggregator",
+      "total_budget_clicks": 400,
+      "weight": 7
+    }
+  ],
+  "placements": {
+    "aggregator_ideas": {
+      "label": "Aggregator ideas sponsor",
+      "max_items": 2
+    },
+    "click_quest": {
+      "label": "Sponsored click quests",
+      "max_items": 3
+    },
+    "home_smartlinks": {
+      "label": "Homepage smart links",
+      "max_items": 2
+    },
+    "news_inline": {
+      "label": "News sponsored card",
+      "max_items": 1
+    },
+    "shop_mn2": {
+      "label": "Shop MN2 crypto section",
+      "max_items": 1
+    },
+    "social_feed": {
+      "label": "Social feed sponsor",
+      "max_items": 1
+    }
+  },
+  "version": 1
+}

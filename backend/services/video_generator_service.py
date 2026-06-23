@@ -76,6 +76,13 @@ def _get_style_and_tone_for_plan(extra_context: Optional[Dict] = None) -> Tuple[
 def _ai_generate_prompt_ideas(topic: str, count: int = 5) -> Optional[List[Dict[str, str]]]:
     """Use LLM to generate unique video prompt ideas for a topic. Returns list of {title, prompt, angle} or None."""
     try:
+        from backend.services.video_stage_cache import get as cache_get, put as cache_put
+        cached = cache_get("prompt_ideas", topic, extra=str(count))
+        if isinstance(cached, list) and cached:
+            return cached
+    except ImportError:
+        cache_get = cache_put = None
+    try:
         from backend.services.video_ai_bridge import complete_for_stage
         r = complete_for_stage(
             "prompt_ideas",
@@ -95,7 +102,7 @@ def _ai_generate_prompt_ideas(topic: str, count: int = 5) -> Optional[List[Dict[
         obj = _extract_json_object(getattr(r, "content", "") or "")
         ideas = (obj or {}).get("ideas")
         if isinstance(ideas, list) and len(ideas) > 0:
-            return [
+            out = [
                 {
                     "title": str(i.get("title") or "")[:100],
                     "prompt": str(i.get("prompt") or "")[:400],
@@ -103,6 +110,12 @@ def _ai_generate_prompt_ideas(topic: str, count: int = 5) -> Optional[List[Dict[
                 }
                 for i in ideas[:count]
             ]
+            try:
+                if cache_put:
+                    cache_put("prompt_ideas", topic, out, extra=str(count))
+            except Exception:
+                pass
+            return out
     except Exception:
         pass
     return None
@@ -192,6 +205,14 @@ def _ai_generate_episode_storyline(
     twist: str,
 ) -> Optional[str]:
     """One fresh narrative setup paragraph so each video is not a generic repeat."""
+    cache_key = f"{title[:80]}|{prompt[:120]}|{style}|{tone}|{twist}"
+    try:
+        from backend.services.video_stage_cache import get as cache_get, put as cache_put
+        cached = cache_get("episode_storyline", cache_key, extra=run_id[:8])
+        if isinstance(cached, str) and len(cached) > 40:
+            return cached
+    except ImportError:
+        cache_get = cache_put = None
     try:
         from backend.services.video_ai_bridge import complete_for_stage
         r = complete_for_stage(
@@ -213,6 +234,11 @@ def _ai_generate_episode_storyline(
         if r and getattr(r, "success", False) and getattr(r, "content", None):
             text = (getattr(r, "content", "") or "").strip()
             if len(text) > 40:
+                try:
+                    if cache_put:
+                        cache_put("episode_storyline", cache_key, text[:900], extra=run_id[:8])
+                except Exception:
+                    pass
                 return text[:900]
     except Exception:
         pass
@@ -1488,6 +1514,29 @@ def _plan_ai_segments(
         context_payload["ai_fusion"] = ai_fusion
 
     try:
+        from backend.services.generator_context_cache import get as ctx_cache_get, put as ctx_cache_put
+        cached = ctx_cache_get(user_id, context_payload)
+        if isinstance(cached, dict) and cached.get("segments"):
+            return (
+                cached.get("segments") or [],
+                str(cached.get("ai_script") or ""),
+                str(cached.get("profile_context_text") or profile_context_text),
+            )
+
+        def _cache_plan(segs, ai_script):
+            try:
+                ctx_cache_put(user_id, context_payload, {
+                    "segments": segs,
+                    "ai_script": ai_script,
+                    "profile_context_text": profile_context_text,
+                })
+            except Exception:
+                pass
+    except Exception:
+        def _cache_plan(segs, ai_script):
+            pass
+
+    try:
         from backend.services.video_ai_bridge import complete_for_stage
         from backend.services.llm_service import llm_service
         if llm_service and llm_service.is_available():
@@ -1573,6 +1622,7 @@ def _plan_ai_segments(
                         if hook and len(segs) > 0:
                             segs[0]["opening_hook"] = hook
                     ai_script = "\n".join([f"- {s['title']}: {s['description']}" for s in segs])
+                    _cache_plan(segs, ai_script)
                     return segs, ai_script, profile_context_text
 
             for attempt in attempts:
@@ -1604,6 +1654,7 @@ def _plan_ai_segments(
                         if p and p not in providers_used:
                             providers_used.append(p)
                     ai_script = "\n".join([f"- {s['title']}: {s['description']}" for s in segs])
+                    _cache_plan(segs, ai_script)
                     return segs, ai_script, profile_context_text
     except Exception:
         pass
@@ -2753,6 +2804,11 @@ def generate_rich_video_sync(
 
 def _set_job_failed(doc_id: str, message: str, error_detail: Optional[str], job_store_get, job_store_set):
     """Set job to failed and persist message + error_message."""
+    try:
+        from backend.services.generator_mn2_service import refund_on_failure
+        refund_on_failure(doc_id, reason=error_detail or message or "generation_failed")
+    except Exception:
+        pass
     _write_status_sidecar(
         doc_id=doc_id,
         status="failed",
@@ -3044,6 +3100,13 @@ def _award_generation_points(
                 metadata={'documentary_id': doc_id, 'category': category_id},
             )
             user_agent_skills.level_up_skill(user_id, 'generate_video', experience=30)
+    except Exception:
+        pass
+
+    # --- MN2 finish bonus ---
+    try:
+        from backend.services.generator_mn2_service import award_finish_bonus
+        award_finish_bonus(user_id, doc_id, cfg)
     except Exception:
         pass
 

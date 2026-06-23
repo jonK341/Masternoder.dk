@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="da">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
         <script src="/static/js/error-manager.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -63,6 +64,7 @@
         .theme-points { font-size: 3em; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
         .theme-label { font-size: 0.9em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614c">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -73,11 +75,28 @@
         <div class="page-header">
             <h1>🎨 Theme Points</h1>
             <p class="subtitle">Track Your Theme Progress</p>
+
+            <section class="mn2-page-strip" data-mn2-auto data-balance-id="theme-mn2-balance" data-rate-id="theme-mn2-rate" aria-labelledby="theme-mn2-title" style="max-width:960px;margin:0 auto 32px;text-align:left;">
+                <h2 id="theme-mn2-title">🪙 Theme points · MN2 shop</h2>
+                <p>Earn theme progress from videos; spend MN2 in the shop or on premium themes when you want instant unlocks.</p>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Your MN2</span><strong id="theme-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>USD / MN2</span><strong id="theme-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>Themes tracked</span><strong id="theme-mn2-count">—</strong></div>
+                </div>
+                <div class="mn2-page-actions">
+                    <a href="/theme_premium">Premium themes</a>
+                    <a href="/shop" class="secondary">Shop MN2</a>
+                    <a href="/profile#mn2-wallet" class="secondary">Wallet</a>
+                </div>
+            </section>
         </div>
         <div class="theme-grid" id="themeGrid">
             <div class="loading">Loading theme points...</div>
         </div>
     </div>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614c"></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260614c"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script>
@@ -92,6 +111,8 @@
                     if (Object.keys(themes).length === 0) {
                         grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary);">No theme points yet. Start creating videos to earn theme points!</div>';
                     } else {
+                        const countEl = document.getElementById('theme-mn2-count');
+                        if (countEl) countEl.textContent = String(Object.keys(themes).length);
                         grid.innerHTML = Object.entries(themes).map(([theme, points]) => `
                             <div class="theme-card">
                                 <div class="theme-name">${theme}</div>

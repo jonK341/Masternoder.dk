@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
         <script src="/static/js/error-manager.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -447,6 +448,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614c">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -466,6 +468,22 @@
                 <a href="/shop">Shop</a>
                 <a href="/agents">Agents</a>
             </nav>
+
+            <section class="mn2-page-strip" data-mn2-auto data-balance-id="metal-mn2-balance" data-rate-id="metal-mn2-rate" aria-labelledby="metal-mn2-title" style="max-width:960px;margin:24px auto 0;text-align:left;">
+                <h2 id="metal-mn2-title">🪙 Metal systems · MN2 treasury</h2>
+                <p>Metal stats and leaderboards tie into the same MN2 wallet, staking pool, and shop rails as the rest of the platform.</p>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Your MN2</span><strong id="metal-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>USD / MN2</span><strong id="metal-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>Network staked</span><strong id="metal-mn2-staked" data-mn2-extra="/api/mn2/staking/monitor" data-mn2-extra-key="aggregates.total_staked" data-mn2-extra-format="mn2">—</strong></div>
+                </div>
+                <div class="mn2-page-actions">
+                    <a href="/profile#mn2-wallet">Wallet</a>
+                    <a href="/shop" class="secondary">Shop</a>
+                    <a href="/staking-monitor" class="secondary">Staking</a>
+                    <a href="/proof-of-reserves" class="secondary">Proof of reserves</a>
+                </div>
+            </section>
         </div>
 
         <!-- Metal Systems Grid -->
@@ -530,6 +548,8 @@
         </div>
     </div>
 
+    <script src="/static/js/mn2-site-bridge.js?v=20260614c"></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260614c"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script src="/static/js/enhanced-metal-systems.js"></script>

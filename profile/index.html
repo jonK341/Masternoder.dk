@@ -12,6 +12,8 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
@@ -482,6 +484,11 @@
         .social-btn-github:hover { background: #363d45; }
         .social-btn-google { background: #4285f4; }
         .social-btn-google:hover { background: #5a95f5; }
+        .social-btn-facebook { background: #1877f2; }
+        .social-btn-facebook:hover { background: #3b8af5; }
+        .social-btn-discord { background: #5865f2; }
+        .social-btn-discord:hover { background: #6f7af5; }
+        .social-btn-hidden { display: none !important; }
         .loading-inline { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
 
         /* Profile header actions */
@@ -560,13 +567,24 @@
         }
         .profile-hub-nav {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             gap: 8px;
             margin: 16px 0 20px;
             padding: 12px 14px;
             background: rgba(0, 0, 0, 0.35);
             border-radius: 14px;
             border: 1px solid rgba(0, 255, 136, 0.28);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .profile-hub-nav::-webkit-scrollbar { height: 6px; }
+        .profile-hub-nav::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.35);
+            border-radius: 999px;
+        }
+        .profile-hub-tab {
+            flex-shrink: 0;
         }
         .profile-hub-tab {
             padding: 8px 14px;
@@ -757,7 +775,7 @@
     <div class="profile-page">
         <div class="profile-container">
             <!-- Account & Login first so it works even when profile is loading -->
-            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account" style="margin-bottom: 20px;">
+            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="overview account" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account &amp; Login</h2>
                 <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 12px;">Create an account or sign in. Your user ID is stored in this browser until you clear it.</p>
                 <div class="account-row">
@@ -767,15 +785,22 @@
                     <button type="button" class="btn-primary" id="account-create-btn">Create Account</button>
                     <button type="button" class="btn-primary" id="account-login-btn">Login</button>
                     <button type="button" class="btn-primary" id="account-save-btn">Use ID</button>
+                    <button type="button" class="btn-refresh" id="account-logout-btn" style="border-color:#ff6666;color:#ff8888;">Logout</button>
                     <span id="account-save-status" class="account-status"></span>
                 </div>
                 <div class="social-login-row">
                     <span class="social-login-label">Sign in with:</span>
-                    <button type="button" id="social-login-github" class="social-btn social-btn-github" aria-label="Continue with GitHub">
-                        <i class="fab fa-github" aria-hidden="true"></i> GitHub
-                    </button>
-                    <button type="button" id="social-login-google" class="social-btn social-btn-google" aria-label="Continue with Google">
+                    <button type="button" id="social-login-google" class="social-btn social-btn-google social-btn-hidden" aria-label="Continue with Google">
                         <i class="fab fa-google" aria-hidden="true"></i> Google
+                    </button>
+                    <button type="button" id="social-login-facebook" class="social-btn social-btn-facebook social-btn-hidden" aria-label="Continue with Facebook">
+                        <i class="fab fa-facebook-f" aria-hidden="true"></i> Facebook
+                    </button>
+                    <button type="button" id="social-login-discord" class="social-btn social-btn-discord social-btn-hidden" aria-label="Continue with Discord">
+                        <i class="fab fa-discord" aria-hidden="true"></i> Discord
+                    </button>
+                    <button type="button" id="social-login-github" class="social-btn social-btn-github social-btn-hidden" aria-label="Continue with GitHub">
+                        <i class="fab fa-github" aria-hidden="true"></i> GitHub
                     </button>
                     <span id="social-login-status" class="account-status social-status"></span>
                 </div>
@@ -790,6 +815,23 @@
                     <button type="button" class="btn-primary" id="sync-session-btn">Sync session</button>
                     <span id="sync-session-status" class="account-status"></span>
                 </div>
+            </div>
+
+            <div class="section-card" id="discord-link-card" data-profile-route="account" style="margin-bottom: 20px;">
+                <h2 class="section-title">Discord link</h2>
+                <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">
+                    Use <strong>Sign in with Discord</strong> above for verified OAuth login, or paste your Discord user ID manually below for casino VIP checks and quest rewards.
+                </p>
+                <div id="discord-link-content"><span class="loading-inline">Loading Discord status…</span></div>
+                <div id="discord-link-form" style="margin-top: 12px; display: none; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
+                    <label style="display:flex; flex-direction:column; gap:4px; font-size:0.9rem;">
+                        Discord user ID
+                        <input type="text" id="discord-id-input" placeholder="e.g. 123456789012345678" style="padding:8px; border-radius:6px; border:1px solid #333; background:#111; color:#eee; min-width:220px;" />
+                    </label>
+                    <button type="button" class="btn-primary" id="discord-link-btn">Link Discord</button>
+                    <button type="button" class="btn-refresh" id="discord-unlink-btn" style="display:none;">Unlink</button>
+                </div>
+                <span id="discord-link-status" class="account-status"></span>
             </div>
 
             <div class="section-card" id="account-privacy-card" data-profile-route="account" style="margin-bottom: 20px;">
@@ -850,7 +892,7 @@
             </div>
 
             <!-- Sync status (points, users, profiles, rulebooks, agents) -->
-            <div id="sync-status-widget" data-profile-route="overview account progress" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
+            <div id="sync-status-widget" data-profile-route="overview account" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
 
             <!-- Connect: Profile · Generator · Agents · Gallery · Aggregator · Themes -->
             <p style="text-align:center;margin:16px 0;font-size:0.9rem;opacity:0.9;">
@@ -868,58 +910,70 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
-            <nav class="profile-hub-nav" id="profile-hub-nav" aria-label="Profile hub sections">
-                <button type="button" class="profile-hub-tab active" data-hub-scroll="overview">Overview</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="account">Account</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="points">Points</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="leaderboard">Leaderboard</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="shop">Shop &amp; inventory</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="wallet">Wallet</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="agents">Agents</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="activity">Activity</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="lab">Lab logbook</button>
+            <nav class="profile-hub-nav" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
+                <button type="button" class="profile-hub-tab active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="account" role="tab" aria-selected="false">Account</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="skills" role="tab" aria-selected="false">Skills</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="trophies" role="tab" aria-selected="false">Trophies</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="points" role="tab" aria-selected="false">Points</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="battle" role="tab" aria-selected="false">Battle</button>
+                <button type="button" class="profile-hub-tab" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
             </nav>
-            <div id="profile-route-note" class="profile-route-note">Focused profile view. Use Overview to show the full dashboard again.</div>
-            <div class="section-card" id="profile-hub-overview" data-profile-route="overview leaderboard">
+            <div id="profile-route-note" class="profile-route-note">One section per tab — use the bar above to switch.</div>
+            <div class="section-card" id="profile-hub-overview" data-profile-route="overview">
                 <h2 class="section-title">Unified overview</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Points, shop, and rankings for this profile ID (same data as Shop and Game).</p>
                 <div id="profile-hub-summary">Loading…</div>
                 <div id="profile-completeness-card" class="profile-completeness-card">Loading profile setup checklist…</div>
-                <h3 style="color:#00d4ff;margin:18px 0 8px;font-size:1.1rem;">Top players (XP)</h3>
-                <div id="profile-hub-leaderboard-snippet" style="font-size:0.95rem;"></div>
+            </div>
+            <div class="section-card" id="profile-section-leaderboard" data-profile-route="leaderboard">
+                <h2 class="section-title">🏅 Top players (XP)</h2>
+                <div id="profile-hub-leaderboard-snippet" style="font-size:0.95rem;">Loading…</div>
             </div>
 
             <!-- Quick Stats -->
-            <div class="quick-stats" id="quick-stats" data-profile-route="overview progress points"></div>
+            <div class="quick-stats" id="quick-stats" data-profile-route="overview"></div>
 
             <!-- Main Content -->
             <div class="profile-content">
                 <div class="main-section">
                     <!-- Skills Section -->
-                    <div class="section-card" data-profile-route="overview agents progress">
+                    <div class="section-card" id="profile-section-skills" data-profile-route="skills">
                         <h2 class="section-title">Agent Skills</h2>
                         <div class="skills-grid" id="skills-grid"></div>
                     </div>
 
                     <!-- Activity Section -->
-                    <div class="section-card" id="profile-section-activity" data-profile-route="overview activity">
+                    <div class="section-card" id="profile-section-activity" data-profile-route="activity">
                         <h2 class="section-title">Recent Activity</h2>
                         <div id="activity-feed"></div>
                     </div>
 
-                    <div class="section-card" id="profile-section-lab-logbook" data-profile-route="overview lab">
+                    <div class="section-card" id="profile-section-lab-logbook" data-profile-route="lab">
                         <h2 class="section-title">🔬 Lab research logbook</h2>
                         <p style="font-size:0.9rem;opacity:0.85;margin-bottom:10px;">Research progress, project cooldowns, lab point results, and latest lab events for this profile.</p>
                         <div id="profile-lab-logbook">Loading…</div>
                     </div>
 
                     <!-- Trophies progress -->
-                    <div class="section-card" id="profile-trophies-card" data-profile-route="overview progress">
+                    <div class="section-card" id="profile-trophies-card" data-profile-route="trophies">
                         <h2 class="section-title">🏆 Trophies</h2>
+                        <div id="profile-showcase" style="display:none; margin-bottom:14px;">
+                            <h3 style="font-size:1rem; color:#FFD700; margin:0 0 10px;">📌 Showcase</h3>
+                            <div id="profile-showcase-grid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                        </div>
                         <div id="profile-trophies-content"></div>
                     </div>
                     <!-- Points system: connected Game, Shop, Star Map 25, Points -->
-                    <div class="section-card" id="profile-section-points" data-profile-route="overview points progress">
+                    <div class="section-card" id="profile-section-points" data-profile-route="points">
                         <h2 class="section-title">💎 Points system</h2>
                         <p style="color: rgba(255,255,255,0.8); margin-bottom: 14px;">All progress uses the same profile and unified points. Earn game_points in Hunter Game and Star Map 25; spend in Shop.</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
@@ -953,7 +1007,7 @@
                     </div>
 
                     <!-- Shop v4 inventory (same API as /shop; merges local shadow backup from Shop) -->
-                    <div class="section-card" id="profile-section-shop" data-profile-route="overview shop inventory">
+                    <div class="section-card" id="profile-section-shop" data-profile-route="shop">
                         <h2 class="section-title">🛒 Shop inventory (v4)</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
                         <div id="profile-shop-v9-inventory">Loading…</div>
@@ -961,18 +1015,36 @@
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="overview wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet settings security" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address.</p>
-                        <div style="margin-bottom: 14px;">
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
+                        <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
+                            <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
+                            <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+                        </div>
+                        <nav id="profile-wallet-subnav" class="profile-wallet-subnav" role="tablist" aria-label="Wallet sections" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+                            <button type="button" class="profile-hub-tab active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="security" role="tab" aria-selected="false">Security</button>
+                            <button type="button" class="profile-hub-tab" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
+                        </nav>
+                        <div data-wallet-panel="overview" style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Balance:</strong>
                             <span id="profile-mn2-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
+                            <span id="profile-mn2-balance-fiat" style="font-size: 0.85rem; opacity: 0.75; margin-left: 6px;"></span>
+                            <label style="display:inline-flex; align-items:center; gap:6px; margin-left:12px; font-size:0.78rem; opacity:0.85; cursor:pointer;">
+                                <input type="checkbox" id="mn2-fiat-toggle"> Show USD
+                            </label>
+                            <div style="margin-top: 14px;">
+                                <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
+                                <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
+                                <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
+                            </div>
                         </div>
-                        <div style="margin-bottom: 14px;">
-                            <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
-                            <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals. Net shown under each day.</p>
-                            <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
-                        </div>
+                        <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Deposit address:</strong>
                             <p id="profile-mn2-deposit-error" style="display: none; font-size: 0.85rem; color: #ffaa00; margin: 6px 0;"></p>
@@ -991,6 +1063,8 @@
                             </div>
                             <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
                         </div>
+                        </div>
+                        <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Withdraw:</strong>
                             <p id="profile-mn2-withdraw-verification-msg" style="display: none; margin: 6px 0; color: #ffaa00; font-size: 0.9rem;">Account verification required to withdraw. Contact support to verify.</p>
@@ -1001,6 +1075,32 @@
                             </div>
                             <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 4px;">Fee 0.001 MN2 deducted.</p>
                         </div>
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: #00d4ff;">Send MN2 (internal):</strong>
+                            <p style="font-size:0.76rem; opacity:0.75; margin:4px 0;">Gift to another user by user_id or deposit address. Caps apply; not withdrawable-held MN2.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <input type="text" id="mn2-gift-to" placeholder="user_id or address" style="min-width:200px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <input type="number" id="mn2-gift-amount" placeholder="Amount" step="0.00000001" min="0" style="width:100px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <button type="button" id="mn2-gift-send" style="padding:6px 12px; border-radius:6px; border:none; background:linear-gradient(135deg,#00ff88,#00cc66); color:#000; font-weight:600; cursor:pointer;">Send</button>
+                            </div>
+                            <p id="mn2-gift-msg" style="font-size:0.78rem; margin:6px 0 0; color:#ffaa44;"></p>
+                        </div>
+                        </div>
+                        <div data-wallet-panel="trusted" style="margin-bottom: 14px; display:none;">
+                        <div style="margin-bottom: 14px;">
+                            <strong style="color: #00d4ff;">Trusted addresses:</strong>
+                            <p style="font-size:0.76rem; opacity:0.75; margin:4px 0;">Save payout addresses — pick from list when withdrawing. Verify with your profile password once.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <input type="text" id="mn2-addrbook-address" placeholder="MN2 address" style="min-width:200px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <input type="text" id="mn2-addrbook-label" placeholder="Label" style="width:100px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <input type="password" id="mn2-addrbook-password" placeholder="Profile password" style="width:140px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <button type="button" id="mn2-addrbook-add" style="padding:6px 12px; border-radius:6px; border:1px solid #00d4ff; background:rgba(0,212,255,0.12); color:#00d4ff; cursor:pointer;">Add trusted</button>
+                            </div>
+                            <div id="mn2-addrbook-list" style="margin-top:8px; font-size:0.8rem; opacity:0.9;">Loading…</div>
+                            <p style="font-size:0.72rem;opacity:0.65;margin-top:8px;"><a href="#password-protection-card" style="color:#00d4ff;">Set profile password</a> for faster trusted-address adds.</p>
+                        </div>
+                        </div>
+                        <div data-wallet-panel="transactions" style="display:none;">
                         <div id="profile-mn2-revenue-block" style="margin-bottom: 14px; display: none;">
                             <strong style="color: #00d4ff;">Shop revenue address:</strong>
                             <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
@@ -1013,14 +1113,319 @@
                             <strong style="color: #00d4ff;">Recent transactions:</strong>
                             <div id="profile-mn2-transactions" style="margin-top: 6px; max-height: 240px; overflow-y: auto; font-size: 0.85rem; opacity: 0.9;">Loading…</div>
                         </div>
-                        <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
-                        <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a></p>
+
+                        <!-- Full statement & tax export (Top-10 #4) -->
+                        <div style="margin-top: 14px;">
+                            <strong style="color: #00d4ff;">Statement &amp; tax export:</strong>
+                            <select id="mn2-statement-year" style="margin-left: 8px; background: rgba(0,0,0,0.3); color: #e8eefc; border: 1px solid rgba(0,212,255,0.3); border-radius: 6px; padding: 2px 6px; font-size: 0.8rem;">
+                                <option value="">All time</option>
+                            </select>
+                            <a id="mn2-statement-csv" href="/api/mn2/statement?format=csv" style="font-size: 0.78rem; color: #00d4ff; margin-left: 8px;">export CSV</a>
+                            <div id="mn2-statement-summary" style="font-size: 0.75rem; opacity: 0.75; margin-top: 4px;"></div>
+                            <div id="mn2-statement-rows" style="margin-top: 6px; max-height: 260px; overflow-y: auto; font-size: 0.8rem; opacity: 0.92;">Loading…</div>
+                        </div>
+                        </div>
+                        <div data-wallet-panel="security" style="display:none; margin-bottom:14px;">
+                            <div id="mn2-withdraw-security">
+                                <strong style="color:#00d4ff;">Withdrawal security</strong>
+                                <p id="mn2-whitelist-required" style="font-size:0.8rem;opacity:0.75;"></p>
+                                <p style="font-size:0.85rem;">2FA: <span id="mn2-2fa-status">—</span></p>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;">
+                                    <button type="button" id="mn2-2fa-setup" style="padding:6px 12px;border-radius:6px;border:1px solid #00d4ff;background:rgba(0,212,255,0.12);color:#00d4ff;cursor:pointer;">Setup 2FA</button>
+                                    <input type="text" id="mn2-whitelist-address" placeholder="Whitelist MN2 address" style="min-width:200px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                                    <button type="button" id="mn2-whitelist-add" style="padding:6px 12px;border-radius:6px;border:1px solid #00ff88;background:rgba(0,255,136,0.12);color:#00ff88;cursor:pointer;">Add whitelist</button>
+                                </div>
+                                <code id="mn2-2fa-secret" style="font-size:0.75rem;opacity:0.7;"></code>
+                                <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
+                            </div>
+                        </div>
+                        <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
+                            <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
+                            <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7);">MN2 value can be volatile. Not financial advice.</p>
+                            <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a> · <a href="/explorer/" style="color:#00d4ff;">MN2 Explorer</a></p>
+                        </div>
+
+                        <p class="mn2-disclaimer" data-wallet-panel="overview" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
+                    </div>
+                    <script>
+                    (function () {
+                      var rowsEl = document.getElementById('mn2-statement-rows');
+                      if (!rowsEl) return;
+                      var yearEl = document.getElementById('mn2-statement-year');
+                      var csvEl = document.getElementById('mn2-statement-csv');
+                      var sumEl = document.getElementById('mn2-statement-summary');
+                      var label = {
+                        deposit: 'Deposit', withdrawal: 'Withdrawal', staking_reward: 'Staking reward',
+                        stake: 'Stake', unstake: 'Unstake', shop_payment: 'Shop payment',
+                        onramp_purchase: 'PayPal buy', onramp_clawback: 'Chargeback', p2p_buy: 'P2P buy',
+                        p2p_sell_escrow: 'P2P escrow', p2p_escrow_return: 'P2P escrow return',
+                        gift_sent: 'Gift sent', gift_received: 'Gift received',
+                        gift_sent: 'Gift sent', gift_received: 'Gift received'
+                      };
+                      function fmt(n) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 8 }); }
+                      function yearsPopulated() { return yearEl && yearEl.options.length > 1; }
+                      function load() {
+                        var y = yearEl ? yearEl.value : '';
+                        if (csvEl) csvEl.href = '/api/mn2/statement?format=csv' + (y ? '&year=' + y : '');
+                        rowsEl.innerHTML = 'Loading…';
+                        fetch('/api/mn2/statement' + (y ? '?year=' + y : ''), { credentials: 'same-origin' })
+                          .then(function (r) { return r.json(); })
+                          .then(function (d) {
+                            if (!d || !d.success) { rowsEl.innerHTML = (d && d.code === 'auth_required') ? 'Sign in to view your statement.' : 'Could not load statement.'; return; }
+                            if (yearEl && !yearsPopulated()) {
+                              var ys = Object.keys((d.summary && d.summary.by_year) || {}).sort().reverse();
+                              ys.forEach(function (yr) { var o = document.createElement('option'); o.value = yr; o.textContent = yr; yearEl.appendChild(o); });
+                            }
+                            if (sumEl) sumEl.textContent = 'Current balance ' + fmt(d.current_balance_mn2) + ' MN2 · ' + ((d.summary && d.summary.events) || 0) + ' events';
+                            var rows = d.rows || [];
+                            if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
+                            rowsEl.innerHTML = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="opacity:0.7;">' +
+                              '<th style="text-align:left; padding:2px 8px;">Date</th><th style="text-align:left; padding:2px 8px;">Type</th>' +
+                              '<th style="text-align:right; padding:2px 8px;">Change</th><th style="text-align:right; padding:2px 8px;">Balance</th></tr></thead><tbody>' +
+                              rows.map(function (r) {
+                                var pos = (r.delta_mn2 || 0) >= 0;
+                                var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
+                                var dc = (r.delta_mn2 === 0) ? 'opacity:0.6;' : (pos ? 'color:#00ff88;' : 'color:#ffaa44;');
+                                var sign = (r.delta_mn2 > 0 ? '+' : '');
+                                return '<tr><td style="padding:2px 8px;">' + d2 + '</td><td style="padding:2px 8px;">' + (label[r.type] || r.type) +
+                                  '</td><td style="padding:2px 8px; text-align:right; ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
+                                  '</td><td style="padding:2px 8px; text-align:right;">' + fmt(r.running_balance_mn2) + '</td></tr>';
+                              }).join('') + '</tbody></table>';
+                          })
+                          .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
+                      }
+                      if (yearEl) yearEl.addEventListener('change', load);
+                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+                    })();
+                    </script>
+                    <script>
+                    (function () {
+                      function loadAddrBook() {
+                        var el = document.getElementById('mn2-addrbook-list');
+                        if (!el) return;
+                        fetch('/api/mn2/address-book', { credentials: 'same-origin' }).then(function(r) { return r.json(); }).then(function(d) {
+                          var rows = (d && d.addresses) || [];
+                          if (!rows.length) { el.innerHTML = '<p style="margin:0;opacity:0.7;">No saved addresses.</p>'; return; }
+                          el.innerHTML = rows.map(function(a) {
+                            return '<div style="margin:4px 0;">' + (a.label || a.address).slice(0,40) +
+                              ' <span style="opacity:0.6;">' + (a.cleared ? '✓ cleared' : 'pending clearance') + '</span></div>';
+                          }).join('');
+                        }).catch(function() { el.textContent = 'Could not load.'; });
+                      }
+                      var addBtn = document.getElementById('mn2-addrbook-add');
+                      if (addBtn) addBtn.addEventListener('click', function() {
+                        var addr = (document.getElementById('mn2-addrbook-address') || {}).value || '';
+                        var label = (document.getElementById('mn2-addrbook-label') || {}).value || '';
+                        var pwdEl = document.getElementById('mn2-addrbook-password');
+                        var token = pwdEl ? pwdEl.value : '';
+                        fetch('/api/mn2/address-book', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ address: addr, label: label, verification_token: token || undefined, password: token || undefined }) })
+                          .then(function(r) { return r.json(); }).then(function(d) {
+                            alert(d.success ? 'Trusted address saved.' : (d.error || 'Failed — set profile password in Security tab.'));
+                            if (d.success && pwdEl) pwdEl.value = '';
+                            loadAddrBook();
+                          });
+                      });
+                      var giftBtn = document.getElementById('mn2-gift-send');
+                      if (giftBtn) giftBtn.addEventListener('click', function() {
+                        var to = (document.getElementById('mn2-gift-to') || {}).value || '';
+                        var amt = (document.getElementById('mn2-gift-amount') || {}).value || 0;
+                        var msg = document.getElementById('mn2-gift-msg');
+                        fetch('/api/mn2/transfer', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ to: to, amount: amt }) })
+                          .then(function(r) { return r.json(); }).then(function(d) {
+                            if (msg) { msg.textContent = d.success ? ('Sent ' + d.amount_mn2 + ' MN2 to ' + d.to_user) : (d.error || 'Failed'); msg.style.color = d.success ? '#00ff88' : '#ffaa44'; }
+                            if (d.success && window.profileManager) window.profileManager.loadProfileMn2Wallet();
+                          });
+                      });
+                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAddrBook); else loadAddrBook();
+                    })();
+                    </script>
+
+                    <!-- MN2 Staking: stake/unstake, browser rig, longevity, calculator -->
+                    <div class="section-card" id="profile-mn2-staking-card" data-profile-route="wallet" style="border: 2px solid rgba(0,255,136,0.4); background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04));">
+                        <h2 class="section-title" style="color: #00ff88;">⚡ MN2 Staking</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Stake your MN2 to earn rewards from realized pool yield. Run the optional browser <strong>staking rig</strong> on your own processor to boost your share. Unstake any time.</p>
+
+                        <!-- Buy MN2 with PayPal (on-ramp Model A) -->
+                        <div id="mn2-onramp-panel" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(0,112,186,0.10); border:1px solid rgba(0,112,186,0.4);">
+                            <strong style="color:#4fa8ff;">Buy MN2 with PayPal</strong>
+                            <p style="font-size:0.76rem; opacity:0.8; margin:4px 0 8px;">Pay USD and receive MN2 in-app at a locked quote. Purchased MN2 can be staked/spent immediately but is <strong>not withdrawable</strong> until its clearance window passes.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                                <label style="font-size:0.8rem;">USD <input type="number" id="mn2-onramp-usd" value="10" min="1" step="1" style="width:90px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <button type="button" id="mn2-onramp-quote-btn" style="padding:7px 12px; border-radius:8px; border:1px solid #4fa8ff; background:rgba(0,112,186,0.18); color:#4fa8ff; cursor:pointer;">Get quote</button>
+                                <button type="button" id="mn2-onramp-pay-btn" disabled style="padding:7px 12px; border-radius:8px; border:none; background:#0070ba; color:#fff; font-weight:600; cursor:pointer;">Pay with PayPal</button>
+                            </div>
+                            <p id="mn2-onramp-quote-result" style="font-size:0.82rem; margin:8px 0 0; color:#4fa8ff;"></p>
+                            <p id="mn2-onramp-held" style="font-size:0.76rem; margin:4px 0 0; opacity:0.8;"></p>
+                        </div>
+
+                        <!-- P2P MN2 marketplace (Model B; shows only when enabled) -->
+                        <div id="mn2-p2p-panel" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(170,0,255,0.08); border:1px solid rgba(170,0,255,0.35);">
+                            <strong style="color:#c08cff;">MN2 marketplace (P2P)</strong>
+                            <p style="font-size:0.76rem; opacity:0.8; margin:4px 0 8px;">Buy MN2 from other users with PayPal, or sell your own. Purchased MN2 is held until its clearance window passes. Seller payouts release after the buyer's chargeback window clears.</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:8px;">
+                                <label style="font-size:0.78rem;">Sell MN2 <input type="number" id="mn2-p2p-sell-amount" placeholder="amount" min="0" style="width:90px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">$/MN2 <input type="number" id="mn2-p2p-sell-price" placeholder="price" min="0" step="0.01" style="width:80px; padding:6px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <button type="button" id="mn2-p2p-list-btn" style="padding:7px 12px; border-radius:8px; border:1px solid #c08cff; background:rgba(170,0,255,0.18); color:#c08cff; cursor:pointer;">List for sale</button>
+                            </div>
+                            <div id="mn2-p2p-listings" style="margin-top:6px; max-height:200px; overflow-y:auto; font-size:0.8rem;">Loading listings…</div>
+                            <p id="mn2-p2p-msg" style="font-size:0.8rem; margin:6px 0 0; color:#c08cff;"></p>
+                        </div>
+
+                        <div id="mn2-staking-stats" style="display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px;">
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Staked</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-staked">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Available</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-balance">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Effective APR</div><div style="font-size:1.15rem; font-weight:700; color:#00ff88;"><span id="mn2-staking-apr">--</span>%</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:120px;"><div style="opacity:0.7; font-size:0.72rem;">Total earned</div><div style="font-size:1.15rem; font-weight:700;"><span id="mn2-staking-earned">--</span> MN2</div></div>
+                            <div class="stat-card" style="padding:12px 16px; min-width:140px;"><div style="opacity:0.7; font-size:0.72rem;">Longevity</div><div style="font-size:1.05rem; font-weight:700;"><span id="mn2-staking-tier">--</span></div><div id="mn2-staking-tier-progress" style="font-size:0.7rem; opacity:0.7;"></div></div>
+                        </div>
+
+                        <!-- Consent gate -->
+                        <div id="mn2-staking-consent" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(255,170,0,0.08); border:1px solid rgba(255,170,0,0.35);">
+                            <strong style="color:#ffaa00;">Accept staking terms to begin</strong>
+                            <p id="mn2-staking-consent-text" style="font-size:0.78rem; opacity:0.85; margin:6px 0;">Loading terms…</p>
+                            <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.8rem;">
+                                <input type="checkbox" id="mn2-staking-consent-check" style="margin-top:3px;">
+                                <span id="mn2-staking-consent-statement"></span>
+                            </label>
+                            <button type="button" id="mn2-staking-consent-accept" disabled style="margin-top:8px; padding:6px 12px; border-radius:8px; border:1px solid #00ff88; background:rgba(0,255,136,0.15); color:#00ff88; cursor:pointer;">Accept &amp; enable staking</button>
+                        </div>
+
+                        <!-- Stake / unstake -->
+                        <div id="mn2-staking-controls" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px;">
+                            <input type="number" id="mn2-staking-amount" placeholder="Amount" step="0.00000001" min="0" style="width:130px; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                            <button type="button" id="mn2-staking-stake-btn" style="padding:8px 14px; border-radius:8px; border:none; background:linear-gradient(135deg,#00ff88,#00cc66); color:#000; font-weight:600; cursor:pointer;">Stake</button>
+                            <button type="button" id="mn2-staking-unstake-btn" style="padding:8px 14px; border-radius:8px; border:1px solid #00d4ff; background:rgba(0,212,255,0.15); color:#00d4ff; font-weight:600; cursor:pointer;">Unstake</button>
+                            <label style="display:flex; gap:6px; align-items:center; font-size:0.8rem; opacity:0.9; margin-left:6px;"><input type="checkbox" id="mn2-staking-autocompound"> Auto-compound</label>
+                            <span id="mn2-staking-msg" style="font-size:0.82rem; margin-left:6px;"></span>
+                        </div>
+
+                        <!-- Browser staking rig -->
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.2);">
+                            <button type="button" id="mn2-staking-rig-toggle" style="padding:8px 14px; border-radius:8px; border:1px solid #00ff88; background:rgba(0,255,136,0.12); color:#00ff88; cursor:pointer; font-weight:600;">▶ Start staking rig</button>
+                            <span style="font-size:0.82rem;">Rig: <strong id="mn2-staking-rig-status" style="color:#ffaa44;">off</strong> · uptime <span id="mn2-staking-uptime">0</span>%</span>
+                            <span style="font-size:0.72rem; opacity:0.7;">Uses your CPU as a participation signal only — it does not mine or validate MN2.</span>
+                        </div>
+
+                        <!-- Calculator -->
+                        <div style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,0,0,0.2);">
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Reward calculator (estimate)</strong>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <label style="font-size:0.78rem;">Amount <input type="number" id="mn2-calc-amount" value="100" min="0" style="width:90px; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">Days <input type="number" id="mn2-calc-days" value="30" min="1" style="width:70px; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">Rig uptime <input type="range" id="mn2-calc-uptime" min="0" max="100" value="100" style="vertical-align:middle;"> <span id="mn2-calc-uptime-val">100</span>%</label>
+                            </div>
+                            <p id="mn2-calc-result" style="font-size:0.85rem; margin:8px 0 0; color:#00ff88;">—</p>
+                        </div>
+
+                        <!-- Goal planner + fiat (Top-10 #10) -->
+                        <div style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2);">
+                            <strong style="color:#00ff88; font-size:0.85rem;">Goal planner (estimate)</strong>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                                <label style="font-size:0.78rem;">Target MN2 <input type="number" id="mn2-goal-target" value="500" min="0" style="width:90px; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                                <label style="font-size:0.78rem;">By date <input type="date" id="mn2-goal-date" style="padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;"></label>
+                            </div>
+                            <p id="mn2-goal-result" style="font-size:0.82rem; margin:8px 0 0; color:#00d4ff;">—</p>
+                        </div>
+
+                        <!-- Notifications + leaderboard opt-in (Top-10 #5, #7) -->
+                        <div style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,0,0,0.2); font-size:0.78rem;">
+                            <strong style="color:#00d4ff;">Alerts &amp; sharing</strong>
+                            <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:14px;">
+                                <label style="cursor:pointer;"><input type="checkbox" id="mn2-notify-rewards"> Reward alerts</label>
+                                <label style="cursor:pointer;"><input type="checkbox" id="mn2-notify-digest"> Weekly digest</label>
+                                <label style="cursor:pointer;"><input type="checkbox" id="mn2-leaderboard-optin"> Public leaderboard</label>
+                                <label style="cursor:pointer;"><input type="checkbox" id="mn2-leaderboard-amounts"> Show my amounts</label>
+                            </div>
+                            <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                                <input type="text" id="mn2-leaderboard-name" placeholder="Display name (opt-in)" maxlength="32" style="padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                                <a href="/api/mn2/staking/share-card" target="_blank" rel="noopener" style="color:#00d4ff;">Share card ↗</a>
+                                <a href="/staking-leaderboard" style="color:#00d4ff;">Leaderboard →</a>
+                            </div>
+                        </div>
+
+                        <!-- Staking teams (§20 #7) -->
+                        <div id="mn2-team-panel" style="margin-bottom:12px; padding:10px; border-radius:10px; background:rgba(0,112,186,0.08); border:1px solid rgba(0,112,186,0.35);">
+                            <strong style="color:#4fa8ff; font-size:0.85rem;">Staking team</strong>
+                            <p style="font-size:0.72rem; opacity:0.75; margin:4px 0 8px;">Pool longevity with friends for a capped team multiplier (max +15%). Need ≥2 stakers with min stake.</p>
+                            <div id="mn2-team-none">
+                                <input type="text" id="mn2-team-name" placeholder="Team name" maxlength="32" style="padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; margin-right:6px;">
+                                <button type="button" id="mn2-team-create" style="padding:5px 10px; border-radius:6px; border:1px solid #4fa8ff; background:rgba(0,112,186,0.2); color:#4fa8ff; cursor:pointer;">Create</button>
+                                <span style="margin:0 8px; opacity:0.5;">or</span>
+                                <input type="text" id="mn2-team-join-code" placeholder="Invite code" style="width:100px; padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff; text-transform:uppercase;">
+                                <button type="button" id="mn2-team-join" style="padding:5px 10px; border-radius:6px; border:none; background:#0070ba; color:#fff; cursor:pointer;">Join</button>
+                            </div>
+                            <div id="mn2-team-active" style="display:none; font-size:0.8rem;">
+                                <div><strong id="mn2-team-name-display"></strong> · mult <span id="mn2-team-mult" style="color:#00ff88;">—</span></div>
+                                <div style="margin:4px 0;">Invite: <code id="mn2-team-code" style="background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:4px;"></code>
+                                    <button type="button" id="mn2-team-copy-code" style="margin-left:6px; font-size:0.72rem; padding:2px 8px; cursor:pointer;">Copy</button></div>
+                                <div id="mn2-team-members" style="margin-top:6px; opacity:0.9;"></div>
+                                <button type="button" id="mn2-team-leave" style="margin-top:8px; padding:4px 10px; border-radius:6px; border:1px solid #ffaa44; background:transparent; color:#ffaa44; cursor:pointer; font-size:0.75rem;">Leave team</button>
+                            </div>
+                            <p id="mn2-team-msg" style="font-size:0.75rem; margin:6px 0 0; color:#ffaa44;"></p>
+                            <p style="margin:8px 0 0; font-size:0.72rem;"><a href="/staking-teams" style="color:#4fa8ff;">Team leaderboard →</a></p>
+                        </div>
+
+                        <!-- Reward dashboard charts (Top-10 #2) -->
+                        <div style="margin-top:14px;">
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Earnings dashboard</strong>
+                            <div id="mn2-staking-charts-empty" style="font-size:0.78rem; opacity:0.7; margin-top:6px;">No reward intervals yet — charts appear once you start earning.</div>
+                            <div id="mn2-staking-charts" style="display:none; margin-top:8px;">
+                                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                                    <div style="flex:1 1 300px;">
+                                        <div style="font-size:0.72rem; opacity:0.7; margin-bottom:4px;">Cumulative earnings (MN2) — actual vs projected trend</div>
+                                        <canvas id="mn2-chart-cumulative" height="150" style="width:100%; background:rgba(0,0,0,0.25); border-radius:8px;"></canvas>
+                                    </div>
+                                    <div style="flex:1 1 300px;">
+                                        <div style="font-size:0.72rem; opacity:0.7; margin-bottom:4px;">Per-interval reward (MN2)</div>
+                                        <canvas id="mn2-chart-intervals" height="150" style="width:100%; background:rgba(0,0,0,0.25); border-radius:8px;"></canvas>
+                                    </div>
+                                </div>
+                                <div id="mn2-chart-legend" style="font-size:0.7rem; opacity:0.75; margin-top:6px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Reward history table -->
+                        <div style="margin-top:14px;">
+                            <strong style="color:#00d4ff; font-size:0.85rem;">Reward history</strong>
+                            <a href="/api/mn2/staking/rewards-table?format=csv" id="mn2-staking-rewards-csv" style="font-size:0.75rem; color:#00d4ff; margin-left:8px;">export</a>
+                            <div id="mn2-staking-rewards-table" style="margin-top:6px; max-height:220px; overflow-y:auto; font-size:0.8rem; opacity:0.92;">No rewards yet.</div>
+                        </div>
+
+                        <p style="margin-top:12px; font-size:0.75rem; opacity:0.75; border-top:1px solid rgba(0,255,136,0.2); padding-top:10px;">Rewards are variable, estimated, and not guaranteed. Staked MN2 is custodial and not insured. Not financial advice. <a href="/staking-monitor" style="color:#00d4ff;">Live staking monitor →</a></p>
+                    </div>
+
+                    <!-- Trader staking agents: follow for mirrored stake + reward share -->
+                    <div class="section-card" id="profile-trader-staking-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.35); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                        <h2 class="section-title">🤖 Trader staking agents</h2>
+                        <p style="font-size:0.85rem; opacity:0.88; margin-bottom:12px;">Six treasury-funded trader agents stake ~25k MN2 each (±10k). Follow one to mirror stake changes and earn a proportional reward share when they earn.</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
+                            <div class="stat-card" style="padding:12px 16px; min-width:160px;"><div style="opacity:0.7; font-size:0.72rem;">Pool staked by traders</div><div style="font-size:1.15rem; font-weight:700;"><span id="trader-staking-pool-total">--</span> MN2</div></div>
+                        </div>
+                        <div id="trader-staking-agents-list" style="margin-bottom:14px;">Loading trader agents…</div>
+                        <div id="trader-staking-follower" style="margin-bottom:12px;"></div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;">
+                            <label style="font-size:0.82rem; display:flex; gap:6px; align-items:center;">Agent
+                                <select id="trader-staking-leader" style="padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:#161b22; color:#fff;"></select>
+                            </label>
+                            <label style="font-size:0.82rem; display:flex; gap:6px; align-items:center;">Scale
+                                <input type="number" id="trader-staking-scale" min="0.01" max="1" step="0.01" value="0.25" style="width:70px; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                            </label>
+                            <label style="font-size:0.82rem; display:flex; gap:6px; align-items:center;">Max/step
+                                <input type="number" id="trader-staking-cap" min="0" step="0.01" value="25" style="width:80px; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">
+                            </label>
+                            <button type="button" id="trader-staking-follow-btn" style="padding:8px 14px; border-radius:8px; border:none; background:linear-gradient(135deg,#00d4ff,#0088cc); color:#000; font-weight:600; cursor:pointer;">Follow agent</button>
+                            <button type="button" id="trader-staking-unfollow-btn" style="display:none; padding:8px 14px; border-radius:8px; border:1px solid #ffaa44; background:rgba(255,170,0,0.12); color:#ffaa44; font-weight:600; cursor:pointer;">Unfollow</button>
+                            <span id="trader-staking-msg" style="font-size:0.82rem; margin-left:6px;"></span>
+                        </div>
+                        <p style="font-size:0.75rem; opacity:0.75; margin:0;">You need MN2 balance and accepted staking terms. Mirrored stakes use your wallet; rewards credit on accrual intervals.</p>
                     </div>
                 </div>
 
                 <div class="sidebar">
                     <!-- Recent clip: 5 min download (loads in background, no spinner) -->
-                    <div class="section-card" id="recent-clip-download-card" data-profile-route="overview activity">
+                    <div class="section-card" id="recent-clip-download-card" data-profile-route="activity">
                         <h2 class="section-title">⬇️ Download din clip (5 min)</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Nye videoer slettes efter 5 min. Download her hvis linket på generator-siden ikke virker.</p>
                         <div id="recent-clip-download-list"></div>
@@ -1028,7 +1433,7 @@
                     </div>
 
                     <!-- My Agents Section -->
-                    <div class="section-card" id="my-agents-card" data-profile-route="overview agents">
+                    <div class="section-card" id="my-agents-card" data-profile-route="agents">
                         <h2 class="section-title">🤖 My Agents</h2>
                         <div id="profile-crypto-wallet-agents" style="font-size:0.82rem;opacity:0.88;margin-bottom:10px;padding:10px;border-radius:10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);">
                             <strong style="color:#00d4ff;">Crypto wallet shoppers</strong>
@@ -1045,7 +1450,7 @@
                     </div>
 
                     <!-- Agent control: assign tasks from profile -->
-                    <div class="section-card" id="agent-control-card" data-profile-route="overview agents">
+                    <div class="section-card" id="agent-control-card" data-profile-route="agents">
                         <h2 class="section-title">🎛️ Agent control</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Assign an agent to a task. Tasks award XP and activity points.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;">
@@ -1075,7 +1480,7 @@
                     </div>
 
                     <!-- Quick Battle (competition) -->
-                    <div class="section-card" id="quick-battle-profile-card" data-profile-route="overview progress">
+                    <div class="section-card" id="quick-battle-profile-card" data-profile-route="battle">
                         <h2 class="section-title">⚔️ Quick Battle</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Fight vs AI: pick rock/paper/scissors for a skill duel, or Fight for a quick skirmish. Hunter XP on every outcome when the game DB is available.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
@@ -1103,7 +1508,7 @@
                     </div>
 
                     <!-- Monetization 25: AI + agents hooked to make money -->
-                    <div class="section-card" id="monetization-25-card" data-profile-route="overview agents">
+                    <div class="section-card" id="monetization-25-card" data-profile-route="agents">
                         <h2 class="section-title">💰 Monetization 25</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">25 levers hooked to AI and agents to drive revenue. AI recommends levers; assign agents to work them.</p>
                         <div id="monetization-25-ai-recommendations" style="font-size:0.85rem;margin-bottom:10px;min-height:24px;">Loading…</div>
@@ -1123,7 +1528,7 @@
                     </div>
 
                     <!-- Password protection (reward for completing / earning points) -->
-                    <div class="section-card" id="password-protection-card" data-profile-route="overview account">
+                    <div class="section-card" id="password-protection-card" data-profile-route="account">
                         <h2 class="section-title">🔐 Password protection</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Unlock by earning points or completing Star Map investigations; set a password and get a small reward.</p>
                         <div id="password-protection-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
@@ -1139,26 +1544,55 @@
                         <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
                     </div>
 
+                    <div class="section-card" id="account-security-card" data-profile-route="account">
+                        <h2 class="section-title">🛡️ Real-money security</h2>
+                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Protect accounts with MN2 or casino USD balance. Enable password-on-login and require verification before real-money casino bets.</p>
+                        <div id="account-security-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
+                        <div id="account-security-recommendations" style="font-size:0.82rem;color:#fbbf24;margin-bottom:10px;"></div>
+                        <label style="display:block;margin-bottom:10px;font-size:0.88rem;">Security preset
+                            <select id="sec-preset" style="display:block;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #333;background:#111;color:#eee;min-width:220px;">
+                                <option value="balanced">Balanced — convenience first</option>
+                                <option value="secure">Secure — password on login + bind session</option>
+                                <option value="maximum">Maximum — all protections on</option>
+                            </select>
+                        </label>
+                        <div id="account-security-toggles" style="display:flex;flex-direction:column;gap:8px;">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-login"> Require password on login
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-bind"> Require password to bind session (Use ID / Sync)
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-real-money"> Require password before MN2/USD casino bets
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                                <input type="checkbox" id="sec-require-purchases"> Require password for paid shop purchases
+                            </label>
+                            <button type="button" id="account-security-save-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;max-width:220px;">Save security settings</button>
+                        </div>
+                    </div>
+
                     <!-- Achievements Section -->
-                    <div class="section-card" data-profile-route="overview progress">
+                    <div class="section-card" id="profile-section-achievements" data-profile-route="progress">
                         <h2 class="section-title">Achievements</h2>
                         <div id="achievements-gallery"></div>
                     </div>
 
                     <!-- Stats Section -->
-                    <div class="section-card" data-profile-route="overview progress">
+                    <div class="section-card" id="profile-section-statistics" data-profile-route="progress">
                         <h2 class="section-title">Statistics</h2>
                         <div id="detailed-stats"></div>
                     </div>
 
                     <!-- Communication Psychology (25 theories) -->
-                    <div class="section-card comm-psych-profile-card" id="comm-psych-profile-card" data-profile-route="overview progress">
+                    <div class="section-card comm-psych-profile-card" id="comm-psych-profile-card" data-profile-route="progress">
                         <h2 class="section-title comm-psych-profile-title">🧠 Communication Psychology</h2>
                         <div id="comm-psych-profile-content"></div>
                     </div>
 
                     <!-- Trophy Hunters Game + Star Map -->
-                    <div class="section-card" data-profile-route="overview progress">
+                    <div class="section-card" id="profile-section-trophy-game" data-profile-route="progress">
                         <h2 class="section-title">Trophy Hunters Game</h2>
                         <p style="margin-bottom: 12px; opacity: 0.9;">Star map, specials, rulebook V.2.</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -1170,14 +1604,14 @@
                     </div>
 
                     <!-- Geo reference (GPS) -->
-                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="overview account">
+                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="account">
                         <h2 class="section-title">📍 Geo Reference</h2>
                         <div id="profile-geo-ref" style="font-size: 0.9rem; opacity: 0.9;">—</div>
                         <button type="button" class="btn-primary" id="profile-geo-ref-btn" style="margin-top: 10px; padding: 6px 12px; font-size: 0.85rem;">Update location</button>
                     </div>
 
                     <!-- PayPal Conversion Control Panel (loads in background) -->
-                    <div class="section-card" id="paypal-control-panel-card" data-profile-route="overview wallet">
+                    <div class="section-card" id="paypal-control-panel-card" data-profile-route="wallet">
                         <h2 class="section-title">💰 PayPal Conversion Control</h2>
                         <div id="paypal-control-panel-content"></div>
                     </div>
@@ -1219,6 +1653,8 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260618a"></script>
+        <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
@@ -1306,6 +1742,7 @@
                         this.loadPaypalControlPanel();
                         this.loadRecentClipDownload();
                         this.loadPasswordProtection();
+                        this.loadAccountSecurity();
                         this.loadQuickBattleAndLeaderboard();
                         this.loadAgentControl();
                         this.loadMonetization25();
@@ -1902,6 +2339,77 @@
                 }
             }
 
+            loadAccountSecurity() {
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var statusEl = document.getElementById('account-security-status');
+                var recEl = document.getElementById('account-security-recommendations');
+                var loginCb = document.getElementById('sec-require-login');
+                var bindCb = document.getElementById('sec-require-bind');
+                var moneyCb = document.getElementById('sec-require-real-money');
+                var purchaseCb = document.getElementById('sec-require-purchases');
+                var presetSel = document.getElementById('sec-preset');
+                var saveBtn = document.getElementById('account-security-save-btn');
+                if (!statusEl) return;
+                fetch('/api/user/security/status?user_id=' + encodeURIComponent(uid))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data.success) { statusEl.textContent = data.error || 'Failed to load security status.'; return; }
+                        var bal = 'MN2: ' + (data.mn2_balance || 0) + ' · Casino USD: ' + (data.casino_fiat_balance || 0);
+                        statusEl.textContent = (data.has_password ? 'Password set.' : 'No password yet.') + ' · ' + bal;
+                        if (recEl) {
+                            recEl.innerHTML = (data.recommendations || []).map(function(r) { return '<div>• ' + profileEscapeHtml(r) + '</div>'; }).join('');
+                        }
+                        var s = data.settings || {};
+                        if (presetSel) presetSel.value = s.security_preset || 'balanced';
+                        if (loginCb) loginCb.checked = s.require_password_login !== false;
+                        if (bindCb) bindCb.checked = !!s.require_password_bind_session;
+                        if (moneyCb) moneyCb.checked = s.require_password_real_money !== false;
+                        if (purchaseCb) purchaseCb.checked = !!s.require_password_purchases;
+                    })
+                    .catch(function() { statusEl.textContent = 'Failed to load security status.'; });
+                if (presetSel && !presetSel._wired) {
+                    presetSel._wired = true;
+                    presetSel.addEventListener('change', function() {
+                        var p = presetSel.value;
+                        if (p === 'secure') {
+                            if (loginCb) loginCb.checked = true;
+                            if (bindCb) bindCb.checked = true;
+                            if (moneyCb) moneyCb.checked = true;
+                            if (purchaseCb) purchaseCb.checked = false;
+                        } else if (p === 'maximum') {
+                            if (loginCb) loginCb.checked = true;
+                            if (bindCb) bindCb.checked = true;
+                            if (moneyCb) moneyCb.checked = true;
+                            if (purchaseCb) purchaseCb.checked = true;
+                        }
+                    });
+                }
+                if (saveBtn && !saveBtn._wired) {
+                    saveBtn._wired = true;
+                    saveBtn.addEventListener('click', function() {
+                        saveBtn.disabled = true;
+                        fetch('/api/user/security/settings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: uid,
+                                security_preset: presetSel ? presetSel.value : 'balanced',
+                                require_password_login: loginCb ? loginCb.checked : true,
+                                require_password_bind_session: bindCb ? bindCb.checked : false,
+                                require_password_real_money: moneyCb ? moneyCb.checked : true,
+                                require_password_purchases: purchaseCb ? purchaseCb.checked : false
+                            })
+                        }).then(function(r) { return r.json(); }).then(function(res) {
+                            saveBtn.disabled = false;
+                            if (res.success) {
+                                statusEl.textContent = 'Security settings saved.';
+                                window.profileManager.loadAccountSecurity();
+                            } else statusEl.textContent = res.error || 'Save failed.';
+                        }).catch(function() { saveBtn.disabled = false; statusEl.textContent = 'Save failed.'; });
+                    });
+                }
+            }
+
             loadQuickBattleAndLeaderboard() {
                 var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
                 var statsEl = document.getElementById('profile-battle-stats');
@@ -2038,173 +2546,8 @@
             }
 
             loadProfileMn2Wallet() {
-                var self = this;
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-                var base = window.location.origin;
-                var balanceEl = document.getElementById('profile-mn2-balance');
-                var addrEl = document.getElementById('profile-mn2-deposit-address');
-                var qrEl = document.getElementById('profile-mn2-qr');
-                var explorerLink = document.getElementById('profile-mn2-explorer-link');
-                var txList = document.getElementById('profile-mn2-transactions');
-                Promise.all([
-                    fetch(base + '/api/mn2/balance?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/transactions?user_id=' + encodeURIComponent(uid) + '&limit=20').then(function(r) { return r.json(); }),
-                    fetch(base + '/api/mn2/wallet-activity?user_id=' + encodeURIComponent(uid) + '&days=5').then(function(r) { return r.json(); })
-                ]).then(function(results) {
-                    var balData = results[0];
-                    var addrData = results[1];
-                    var txData = results[2];
-                    var actData = results[3];
-                    if (balData.success && balanceEl) balanceEl.textContent = (Number(balData.mn2_balance) || 0).toFixed(8);
-                    var revAddr = (balData.shop_revenue_address || '').trim();
-                    var revBlock = document.getElementById('profile-mn2-revenue-block');
-                    var revAddrEl = document.getElementById('profile-mn2-revenue-address');
-                    var revExplorer = document.getElementById('profile-mn2-revenue-explorer');
-                    if (revAddr && revBlock) {
-                        revBlock.style.display = 'block';
-                        if (revAddrEl) revAddrEl.textContent = revAddr;
-                        if (revExplorer && balData.shop_revenue_explorer_url) { revExplorer.href = balData.shop_revenue_explorer_url; revExplorer.style.display = ''; }
-                    } else if (revBlock) revBlock.style.display = 'none';
-                    var verificationMsg = document.getElementById('profile-mn2-withdraw-verification-msg');
-                    var profileWithdrawBtn = document.getElementById('profile-mn2-withdraw-btn');
-                    if (balData.withdrawal_verified === false) {
-                        if (verificationMsg) verificationMsg.style.display = 'block';
-                        if (profileWithdrawBtn) { profileWithdrawBtn.disabled = true; profileWithdrawBtn.title = 'Verification required'; }
-                    } else {
-                        if (verificationMsg) verificationMsg.style.display = 'none';
-                        if (profileWithdrawBtn) { profileWithdrawBtn.disabled = false; profileWithdrawBtn.title = ''; }
-                    }
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
-                    var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                    var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                    if (addrData && addrData.success && addrData.deposit_address) {
-                        if (addrEl) addrEl.textContent = addrData.deposit_address;
-                        if (depositErrEl) { depositErrEl.style.display = 'none'; depositErrEl.textContent = ''; }
-                        if (depositHintEl) depositHintEl.style.display = 'none';
-                        if (depositRetryBtn) depositRetryBtn.style.display = 'none';
-                        if (requestAddrBtn) requestAddrBtn.style.display = 'none';
-                        if (explorerLink && addrData.explorer_address_url) { explorerLink.href = addrData.explorer_address_url; explorerLink.style.display = ''; }
-                        if (qrEl && typeof QRCode !== 'undefined') {
-                            qrEl.innerHTML = '';
-                            try { new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 }); } catch (e) { qrEl.innerHTML = ''; }
-                        }
-                    } else {
-                        if (addrEl) addrEl.textContent = '—';
-                        var errMsg = (addrData && addrData.error) ? addrData.error : 'Deposit address unavailable. Wallet RPC may be offline. Use Request address or Retry when the wallet is back.';
-                        if (depositErrEl) { depositErrEl.textContent = errMsg; depositErrEl.style.display = 'block'; }
-                        if (depositHintEl) depositHintEl.style.display = 'block';
-                        if (depositRetryBtn) { depositRetryBtn.style.display = 'inline-block'; }
-                        if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
-                    }
-                    var txs = (txData.success && txData.transactions) ? txData.transactions : [];
-                    if (txList) {
-                        if (txs.length === 0) txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
-                        else txList.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + txs.map(function(t) {
-                            var type = t.type || '—';
-                            var amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
-                            var txLink = t.explorer_tx_url ? '<a href="' + t.explorer_tx_url + '" target="_blank" rel="noopener" style="color:#00d4ff;">Explorer tx</a>' : '';
-                            var addrLink = t.explorer_address_url ? ' <a href="' + t.explorer_address_url + '" target="_blank" rel="noopener" style="color:#88ccff;">Explorer address</a>' : '';
-                            var date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-                            return '<li>' + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
-                        }).join('') + '</ul>';
-                    }
-                    var chartEl = document.getElementById('profile-mn2-5d-chart');
-                    if (chartEl) {
-                        if (actData && actData.success && actData.buckets && actData.buckets.length) {
-                            var buckets = actData.buckets;
-                            var maxV = 1e-10;
-                            buckets.forEach(function(b) { maxV = Math.max(maxV, b.deposits_mn2 || 0, b.out_mn2 || 0); });
-                            chartEl.innerHTML = buckets.map(function(b) {
-                                var hIn = Math.max(2, Math.round(((b.deposits_mn2 || 0) / maxV) * 34));
-                                var hOut = Math.max(2, Math.round(((b.out_mn2 || 0) / maxV) * 34));
-                                var day = (b.date && b.date.length >= 10) ? b.date.slice(5) : (b.date || '');
-                                var netStr = ((b.net_mn2 || 0) >= 0 ? '+' : '') + (Number(b.net_mn2) || 0).toFixed(3);
-                                return '<div class="mn2-5d-col"><div class="mn2-5d-barstack"><div class="mn2-5d-bar-in" style="height:' + hIn + 'px"></div><div class="mn2-5d-bar-out" style="height:' + hOut + 'px"></div></div><div class="mn2-5d-label">' + day + '</div><div class="mn2-5d-net">' + netStr + '</div></div>';
-                            }).join('');
-                        } else {
-                            chartEl.innerHTML = '<span style="opacity:0.75;font-size:0.85rem;">No ledger activity in the last 5 UTC days.</span>';
-                        }
-                    }
-                }).catch(function() {
-                    if (balanceEl) balanceEl.textContent = '—';
-                    if (addrEl) addrEl.textContent = '—';
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
-                    var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                    var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                    if (depositErrEl) { depositErrEl.textContent = 'Could not load. Check connection and retry.'; depositErrEl.style.display = 'block'; }
-                    if (depositHintEl) depositHintEl.style.display = 'block';
-                    if (depositRetryBtn) depositRetryBtn.style.display = 'inline-block';
-                    if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
-                    if (txList) txList.innerHTML = '<p style="margin:0;">Could not load.</p>';
-                    var ch5 = document.getElementById('profile-mn2-5d-chart');
-                    if (ch5) ch5.innerHTML = '<span style="opacity:0.75;">Could not load activity.</span>';
-                });
-                var copyBtn = document.getElementById('profile-mn2-copy');
-                var withdrawBtn = document.getElementById('profile-mn2-withdraw-btn');
-                var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
-                function doRequestDepositAddress() {
-                    if (addrEl) addrEl.textContent = '…';
-                    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-                    if (depositErrEl) { depositErrEl.style.display = 'none'; depositErrEl.textContent = ''; }
-                    self.loadProfileMn2Wallet();
-                }
-                if (depositRetryBtn && !depositRetryBtn._wired) {
-                    depositRetryBtn._wired = true;
-                    depositRetryBtn.addEventListener('click', doRequestDepositAddress);
-                }
-                var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
-                if (requestAddrBtn && !requestAddrBtn._wired) {
-                    requestAddrBtn._wired = true;
-                    requestAddrBtn.addEventListener('click', doRequestDepositAddress);
-                }
-                if (copyBtn && !copyBtn._wired) {
-                    copyBtn._wired = true;
-                    copyBtn.addEventListener('click', function() {
-                        var addr = (addrEl && addrEl.textContent) ? addrEl.textContent.trim() : '';
-                        if (!addr || addr === '--' || addr === '—') return;
-                        navigator.clipboard.writeText(addr).then(function() {
-                            if (typeof toast !== 'undefined') toast.success('Address copied');
-                        }).catch(function() {});
-                    });
-                }
-                var copyRevBtn = document.getElementById('profile-mn2-copy-revenue');
-                if (copyRevBtn && !copyRevBtn._wired) {
-                    copyRevBtn._wired = true;
-                    copyRevBtn.addEventListener('click', function() {
-                        var addr = (document.getElementById('profile-mn2-revenue-address') || {}).textContent.trim();
-                        if (!addr) return;
-                        navigator.clipboard.writeText(addr).then(function() {
-                            if (typeof toast !== 'undefined') toast.success('Address copied');
-                        }).catch(function() {});
-                    });
-                }
-                if (withdrawBtn && !withdrawBtn._wired) {
-                    withdrawBtn._wired = true;
-                    withdrawBtn.addEventListener('click', function() {
-                        var address = (document.getElementById('profile-mn2-withdraw-address') || {}).value.trim();
-                        var amount = parseFloat((document.getElementById('profile-mn2-withdraw-amount') || {}).value);
-                        if (!address) { if (typeof toast !== 'undefined') toast.error('Enter MN2 address'); return; }
-                        if (!(amount > 0)) { if (typeof toast !== 'undefined') toast.error('Enter amount'); return; }
-                        withdrawBtn.disabled = true;
-                        var origHtml = withdrawBtn.innerHTML;
-                        withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
-                        fetch(base + '/api/mn2/withdraw', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid, address: address, amount: amount })
-                        }).then(function(r) { return r.json(); }).then(function(data) {
-                            if (data.success) {
-                                if (typeof toast !== 'undefined') toast.success('Withdrawal sent');
-                                document.getElementById('profile-mn2-withdraw-address').value = '';
-                                document.getElementById('profile-mn2-withdraw-amount').value = '';
-                                self.loadProfileMn2Wallet();
-                            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
-                        }).catch(function() { if (typeof toast !== 'undefined') toast.error('Withdrawal failed'); })
-                        .finally(function() { withdrawBtn.disabled = false; withdrawBtn.innerHTML = origHtml; });
-                    });
+                if (window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
+                    window.ProfileMn2Wallet.load();
                 }
             }
 
@@ -2257,6 +2600,84 @@
                 }
             }
 
+            async loadDiscordLink() {
+                const content = document.getElementById('discord-link-content');
+                const form = document.getElementById('discord-link-form');
+                const linkBtn = document.getElementById('discord-link-btn');
+                const unlinkBtn = document.getElementById('discord-unlink-btn');
+                const statusEl = document.getElementById('discord-link-status');
+                const input = document.getElementById('discord-id-input');
+                const uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                if (!content) return;
+                try {
+                    const r = await fetch(`/api/discord/link/status?user_id=${encodeURIComponent(uid)}`);
+                    const data = r.ok ? await r.json() : {};
+                    if (!data.success) {
+                        content.innerHTML = '<p class="info-message">Could not load Discord link status.</p>';
+                        return;
+                    }
+                    if (data.linked) {
+                        content.innerHTML = '<p><strong>Linked</strong> as <code>' + profileEscapeHtml(data.discord_id || '') + '</code>' +
+                            (data.casino_vip_eligible ? ' <span style="color:#00ff88;">· Casino VIP eligible</span>' : '') +
+                            '</p><p style="font-size:0.85rem;opacity:0.85;">MN2 balance: ' + profileEscapeHtml(String(data.mn2_balance ?? 0)) + '</p>';
+                        if (form) form.style.display = 'none';
+                        if (unlinkBtn) unlinkBtn.style.display = 'inline-block';
+                    } else {
+                        content.innerHTML = '<p>Not linked. Enter your Discord user ID (Developer Mode → Copy User ID).</p>';
+                        if (form) form.style.display = 'flex';
+                        if (unlinkBtn) unlinkBtn.style.display = 'none';
+                    }
+                    if (linkBtn && !linkBtn._bound) {
+                        linkBtn._bound = true;
+                        linkBtn.addEventListener('click', async () => {
+                            const discordId = (input && input.value || '').trim();
+                            if (!discordId) {
+                                if (statusEl) statusEl.textContent = 'Enter your Discord user ID.';
+                                return;
+                            }
+                            if (statusEl) statusEl.textContent = 'Linking…';
+                            try {
+                                const res = await fetch('/api/discord/link', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ user_id: uid, discord_id: discordId })
+                                });
+                                const body = res.ok ? await res.json() : {};
+                                if (body.success) {
+                                    if (statusEl) statusEl.textContent = 'Discord linked.';
+                                    await this.loadDiscordLink();
+                                } else if (statusEl) statusEl.textContent = body.error || 'Link failed';
+                            } catch (e) {
+                                if (statusEl) statusEl.textContent = 'Link error.';
+                            }
+                        });
+                    }
+                    if (unlinkBtn && !unlinkBtn._bound) {
+                        unlinkBtn._bound = true;
+                        unlinkBtn.addEventListener('click', async () => {
+                            if (statusEl) statusEl.textContent = 'Unlinking…';
+                            try {
+                                const res = await fetch('/api/discord/link/unlink', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ user_id: uid })
+                                });
+                                const body = res.ok ? await res.json() : {};
+                                if (body.success) {
+                                    if (statusEl) statusEl.textContent = 'Discord unlinked.';
+                                    if (input) input.value = '';
+                                    await this.loadDiscordLink();
+                                } else if (statusEl) statusEl.textContent = body.error || 'Unlink failed';
+                            } catch (e) {
+                                if (statusEl) statusEl.textContent = 'Unlink error.';
+                            }
+                        });
+                    }
+                } catch (e) {
+                    content.innerHTML = '<p class="info-message">Discord link unavailable.</p>';
+                }
+            }
+
             async syncSession() {
                 const syncStatus = document.getElementById('sync-session-status');
                 const input = document.getElementById('account-user-id');
@@ -2290,8 +2711,13 @@
                 const btn = document.getElementById('account-save-btn');
                 const createBtn = document.getElementById('account-create-btn');
                 const loginBtn = document.getElementById('account-login-btn');
-                const githubBtn = document.getElementById('social-login-github');
-                const googleBtn = document.getElementById('social-login-google');
+                const logoutBtn = document.getElementById('account-logout-btn');
+                const socialButtons = {
+                    google: document.getElementById('social-login-google'),
+                    facebook: document.getElementById('social-login-facebook'),
+                    discord: document.getElementById('social-login-discord'),
+                    github: document.getElementById('social-login-github'),
+                };
                 const displayNameInput = document.getElementById('account-display-name');
                 const status = document.getElementById('account-save-status');
                 const socialStatus = document.getElementById('social-login-status');
@@ -2300,25 +2726,53 @@
 
                 this.handleSocialLoginReturn(input, status, socialStatus);
                 this.loadUserIdentity();
-                this.loadAuthProviders(githubBtn, googleBtn);
+                this.loadDiscordLink();
+                this.loadAuthProviders(socialButtons);
+                const bindSession = async (uid, password) => {
+                    const body = { user_id: uid };
+                    if (password) body.password = password;
+                    const res = await fetch('/api/user/bind-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.status === 401 && data.requires_password) {
+                        const pwd = window.prompt('Password required to bind this account:');
+                        if (!pwd) return { ok: false, error: 'Password required' };
+                        return bindSession(uid, pwd);
+                    }
+                    return { ok: res.ok && data.success, data };
+                };
+
                 if (!btn._bound) {
                     btn._bound = true;
                     btn.addEventListener('click', async () => {
                         const uid = (input.value || '').trim() || 'default_user';
                         try {
-                            const res = await fetch('/api/user/bind-session', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: uid })
-                            });
-                            const ok = res.ok && (await res.json().catch(() => ({}))).success;
+                            const out = await bindSession(uid);
                             localStorage.setItem('game_user_id', uid);
                             localStorage.setItem('user_id', uid);
-                            if (status) status.textContent = ok ? 'Session saved. Reloading profile for this account...' : 'Saved locally. Reloading profile...';
+                            if (status) status.textContent = out.ok ? 'Session saved. Reloading profile for this account...' : (out.data && out.data.error) || 'Saved locally. Reloading profile...';
                             await this.loadUserIdentity();
                             this.userId = uid;
                             await this.loadProfile();
                         } catch (e) { /* ignore */ }
+                    });
+                }
+
+                if (logoutBtn && !logoutBtn._bound) {
+                    logoutBtn._bound = true;
+                    logoutBtn.addEventListener('click', async () => {
+                        try {
+                            await fetch('/api/user/logout', { method: 'POST', credentials: 'same-origin' });
+                        } catch (e) { /* ignore */ }
+                        localStorage.removeItem('game_user_id');
+                        localStorage.removeItem('user_id');
+                        if (status) status.textContent = 'Logged out on this device.';
+                        input.value = 'default_user';
+                        this.userId = 'default_user';
+                        await this.loadUserIdentity();
                     });
                 }
 
@@ -2372,23 +2826,34 @@
                         }
                         try {
                             if (status) status.textContent = 'Logging in...';
-                            const res = await fetch('/api/user/login', {
+                            var loginBody = { user_id: uid, auto_create: false };
+                            var res = await fetch('/api/user/login', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: uid, auto_create: false })
+                                body: JSON.stringify(loginBody)
                             });
-                            const data = await res.json();
+                            var data = await res.json();
+                            if (!data.success && data.requires_password) {
+                                var pwd = window.prompt('This account requires a password to log in:');
+                                if (!pwd) {
+                                    if (status) status.textContent = 'Password required to log in.';
+                                    return;
+                                }
+                                loginBody.password = pwd;
+                                res = await fetch('/api/user/login', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(loginBody)
+                                });
+                                data = await res.json();
+                            }
                             if (!data.success) {
                                 if (status) status.textContent = data.error || 'Login failed';
                                 return;
                             }
                             localStorage.setItem('game_user_id', uid);
                             localStorage.setItem('user_id', uid);
-                            await fetch('/api/user/bind-session', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: uid })
-                            }).catch(() => {});
+                            await bindSession(uid, loginBody.password || undefined);
                             if (status) status.textContent = 'Logged in. Session synced. Reloading…';
                             setTimeout(() => location.reload(), 400);
                         } catch (e) {
@@ -2397,24 +2862,25 @@
                     });
                 }
 
-                if (githubBtn && !githubBtn._bound) {
-                    githubBtn._bound = true;
-                    githubBtn.addEventListener('click', () => this.startSocialLogin('github', input, socialStatus));
-                }
-                if (googleBtn && !googleBtn._bound) {
-                    googleBtn._bound = true;
-                    googleBtn.addEventListener('click', () => this.startSocialLogin('google', input, socialStatus));
-                }
+                Object.keys(socialButtons).forEach((provider) => {
+                    const el = socialButtons[provider];
+                    if (el && !el._bound) {
+                        el._bound = true;
+                        el.addEventListener('click', () => this.startSocialLogin(provider, input, socialStatus));
+                    }
+                });
             }
 
-            loadAuthProviders(githubBtn, googleBtn) {
+            loadAuthProviders(socialButtons) {
                 fetch('/api/auth/providers').then(function(r) { return r.json(); }).then(function(data) {
                     if (!data || !data.success || !Array.isArray(data.providers)) return;
-                    var list = data.providers;
-                    list.forEach(function(p) {
-                        var el = p.id === 'github' ? githubBtn : (p.id === 'google' ? googleBtn : null);
-                        if (el) {
-                            el.style.display = (p.configured || p.enabled) ? '' : 'none';
+                    data.providers.forEach(function(p) {
+                        var el = socialButtons && socialButtons[p.id];
+                        if (!el) return;
+                        if (p.configured || p.enabled) {
+                            el.classList.remove('social-btn-hidden');
+                        } else {
+                            el.classList.add('social-btn-hidden');
                         }
                     });
                 }).catch(function() {});
@@ -2443,6 +2909,12 @@
                     localStorage.setItem('game_user_id', userId);
                     localStorage.setItem('user_id', userId);
                     if (input) input.value = userId;
+                    fetch('/api/user/bind-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ user_id: userId })
+                    }).catch(function() {});
                     if (status) status.textContent = `Logged in with ${provider || 'social'} as ${userId}`;
                     if (socialStatus) socialStatus.textContent = `Social login successful (${provider || 'provider'})`;
 
@@ -3039,9 +3511,15 @@
                         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000))
                     ]);
                     if (res && res.success && res.agents && res.agents.length > 0) {
-                        container.innerHTML = res.agents.map(a => `
+                        container.innerHTML = res.agents.map(a => {
+                            const emoji = a.icon || '🤖';
+                            const avatarUrl = a.avatar_url || (a.agent_id ? `/static/img/agents/${a.agent_id}.svg` : '');
+                            const visual = avatarUrl
+                                ? `<img src="${avatarUrl}" alt="" loading="lazy" style="width:2em;height:2em;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.06);border:2px solid ${a.color || '#00ff88'};" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${emoji}',style:'font-size:1.4em;'}))">`
+                                : `<span style="font-size:1.4em;">${emoji}</span>`;
+                            return `
                             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
-                                <span style="font-size:1.4em;">${a.icon || '🤖'}</span>
+                                ${visual}
                                 <div style="flex:1;min-width:0;">
                                     <div style="font-weight:600;color:${a.color || '#00ff88'};font-size:0.95em;">${a.name}</div>
                                     <div style="font-size:0.8em;opacity:0.7;">Lvl ${a.level} · ${a.xp} XP · ${a.total_actions} actions</div>
@@ -3051,7 +3529,8 @@
                                 </div>
                                 <div style="font-size:0.75em;opacity:0.6;text-align:right;">${a.skill_count} skills</div>
                             </div>
-                        `).join('');
+                        `;
+                        }).join('');
                     } else {
                         container.innerHTML = '<div class="info-message">No agents assigned yet. Generate content to activate your agents!</div>';
                     }
@@ -3367,20 +3846,24 @@
 
         function applyFocusedProfileRoute(route) {
             var activeRoute = route || 'overview';
-            var focused = activeRoute !== 'overview';
-            document.body.classList.toggle('profile-route-focused', focused);
+            document.body.classList.add('profile-route-focused');
             document.querySelectorAll('[data-profile-route]').forEach(function(el) {
-                var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/);
-                el.hidden = focused && routes.indexOf(activeRoute) === -1;
+                var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
+                el.hidden = routes.indexOf(activeRoute) === -1;
             });
             var note = document.getElementById('profile-route-note');
             if (note) {
-                note.textContent = focused
-                    ? 'Focused ' + activeRoute + ' view. Use Overview to show the full dashboard again.'
-                    : 'Focused profile view. Use Overview to show the full dashboard again.';
+                var labels = {
+                    overview: 'Overview', account: 'Account', skills: 'Skills', trophies: 'Trophies',
+                    points: 'Points', leaderboard: 'Leaderboard', shop: 'Shop', wallet: 'Wallet',
+                    agents: 'Agents', activity: 'Activity', lab: 'Lab', battle: 'Battle', progress: 'Progress'
+                };
+                note.textContent = 'Viewing: ' + (labels[activeRoute] || activeRoute) + '. Switch tabs above to browse other sections.';
             }
             document.querySelectorAll('.profile-hub-tab').forEach(function(x) {
-                x.classList.toggle('active', x.getAttribute('data-hub-scroll') === activeRoute);
+                var on = x.getAttribute('data-hub-scroll') === activeRoute;
+                x.classList.toggle('active', on);
+                x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
         }
 
@@ -3389,15 +3872,19 @@
             var scrollMap = {
                 overview: 'profile-hub-overview',
                 account: 'profile-section-account',
-                progress: 'quick-stats',
+                skills: 'profile-section-skills',
+                trophies: 'profile-trophies-card',
                 points: 'profile-section-points',
-                leaderboard: 'profile-hub-leaderboard-snippet',
+                leaderboard: 'profile-section-leaderboard',
                 shop: 'profile-section-shop',
-                inventory: 'profile-section-shop',
                 wallet: 'profile-mn2-wallet-card',
+                settings: 'profile-mn2-wallet-card',
+                security: 'password-protection-card',
                 agents: 'my-agents-card',
                 activity: 'profile-section-activity',
-                lab: 'profile-section-lab-logbook'
+                lab: 'profile-section-lab-logbook',
+                battle: 'quick-battle-profile-card',
+                progress: 'profile-section-achievements'
             };
             var nav = document.getElementById('profile-hub-nav');
             if (nav) {
@@ -3405,7 +3892,6 @@
                     var b = ev.target.closest('[data-hub-scroll]');
                     if (!b) return;
                     var key = b.getAttribute('data-hub-scroll');
-                    var id = scrollMap[key] || 'profile-hub-overview';
                     applyFocusedProfileRoute(key);
                     try {
                         var url = new URL(window.location.href);
@@ -3413,6 +3899,7 @@
                         else url.searchParams.set('tab', key);
                         window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
                     } catch (e) {}
+                    var id = scrollMap[key] || 'profile-hub-overview';
                     var el = document.getElementById(id);
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
@@ -3448,8 +3935,13 @@
                 });
             var tab = new URLSearchParams(window.location.search).get('tab');
             if (tab) {
-                var btnKey = { account: 'account', user: 'account', progress: 'progress', points: 'points', leaderboard: 'leaderboard', activity: 'activity', shop: 'shop', inventory: 'inventory', wallet: 'wallet', agents: 'agents', lab: 'lab' };
-                var ds = btnKey[tab] || 'overview';
+                var btnKey = {
+                    account: 'account', user: 'account', skills: 'skills', trophies: 'trophies',
+                    progress: 'progress', points: 'points', leaderboard: 'leaderboard',
+                    activity: 'activity', shop: 'shop', inventory: 'shop', wallet: 'wallet',
+                    agents: 'agents', lab: 'lab', battle: 'battle'
+                };
+                var ds = btnKey[tab] || (scrollMap[tab] ? tab : 'overview');
                 setTimeout(function() {
                     var btn = document.querySelector('.profile-hub-tab[data-hub-scroll=\"' + ds + '\"]');
                     if (btn) btn.click();
@@ -3578,6 +4070,10 @@
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script src="/static/js/mn2-staking.js?v=20260603a" defer></script>
+    <script src="/static/js/mn2-staking-agents.js?v=20260616a" defer></script>
+    <script src="/static/js/mn2-onramp.js?v=20260603a" defer></script>
+    <script src="/static/js/mn2-p2p.js?v=20260603a" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var panels = document.getElementById('intelligence-panels');
@@ -3596,5 +4092,41 @@
         }
     });
     </script>
+
+    <!-- Trophy showcase (Feature 14): render pinned trophies from /api/trophies/showcase -->
+    <script>
+    (function() {
+        function loadProfileShowcase() {
+            var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('user_id')) uid = params.get('user_id');
+            } catch (_) {}
+            fetch('/api/trophies/showcase?user_id=' + encodeURIComponent(uid))
+                .then(function(r) { return r.ok ? r.json() : {}; })
+                .then(function(d) {
+                    var items = (d && d.trophies) || [];
+                    var wrap = document.getElementById('profile-showcase');
+                    var grid = document.getElementById('profile-showcase-grid');
+                    if (!wrap || !grid || !items.length) return;
+                    grid.innerHTML = items.map(function(t) {
+                        var locked = !t.unlocked;
+                        return '<a href="/trophies#trophy=' + encodeURIComponent(t.id) + '" ' +
+                            'style="display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; ' +
+                            'color:inherit; padding:12px 14px; border-radius:12px; min-width:84px; ' +
+                            'background:rgba(21,21,32,0.8); border:2px solid ' + (locked ? 'rgba(255,255,255,0.15)' : 'rgba(255,215,0,0.5)') + ';' +
+                            (locked ? 'opacity:0.55;' : '') + '" title="' + (t.requirement || '').replace(/"/g, '') + '">' +
+                            '<span style="font-size:1.8em;">' + (t.icon || '\uD83C\uDFC6') + '</span>' +
+                            '<span style="font-size:0.78em; text-align:center; color:#FFD700;">' + String(t.name || t.id).replace(/</g, '&lt;') + '</span></a>';
+                    }).join('');
+                    wrap.style.display = 'block';
+                })
+                .catch(function() {});
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProfileShowcase);
+        else loadProfileShowcase();
+    })();
+    </script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="profile" defer></script>
 </body>
 </html>

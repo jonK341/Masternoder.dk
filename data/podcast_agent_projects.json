@@ -1,0 +1,17 @@
+{
+  "name": "Podcaster Agent Projects",
+  "description": "Agent assignment tasks for podcast_producer_agent, content_generator_agent, reporter_agent.",
+  "agents": ["podcast_producer_agent", "content_generator_agent", "reporter_agent", "analytics_agent"],
+  "projects": [
+    {"num": 1, "task_id": "podcast_01", "description": "Validate podcast_channels.json schema — platforms youtube/facebook/discord/github", "suggested_agent": "podcast_producer_agent", "scope": "data/podcast_channels.json"},
+    {"num": 2, "task_id": "podcast_02", "description": "Generate episode script via generator intelligence for topic", "suggested_agent": "content_generator_agent", "scope": "podcast_encode_service.py"},
+    {"num": 3, "task_id": "podcast_03", "description": "TTS narration + AI audio encoder (standard/premium/ultra)", "suggested_agent": "podcast_producer_agent", "scope": "podcast_encode_service.py"},
+    {"num": 4, "task_id": "podcast_04", "description": "Record play/view count and award MN2 crypto rewards", "suggested_agent": "analytics_agent", "scope": "podcast_crypto_rewards_service.py"},
+    {"num": 5, "task_id": "podcast_05", "description": "MN2 shop unlock for premium episodes", "suggested_agent": "analytics_agent", "scope": "shop_mn2_purchase_core.py"},
+    {"num": 6, "task_id": "podcast_06", "description": "Discord fanout on new episode publish", "suggested_agent": "reporter_agent", "scope": "discord_service.py"},
+    {"num": 7, "task_id": "podcast_07", "description": "YouTube/Facebook/GitHub share link generation", "suggested_agent": "reporter_agent", "scope": "social_networks.json"},
+    {"num": 8, "task_id": "podcast_08", "description": "Assign podcast_producer_agent to user skill path", "suggested_agent": "podcast_producer_agent", "scope": "user_agent_skills.py"},
+    {"num": 9, "task_id": "podcast_09", "description": "Agent tools capability map GET /api/podcast/agent-tools", "suggested_agent": "podcast_producer_agent", "scope": "podcast_agent_service.py"},
+    {"num": 10, "task_id": "podcast_10", "description": "Enterprise customer showcase — big brands using podcast", "suggested_agent": "reporter_agent", "scope": "data/podcast_customers.json"}
+  ]
+}

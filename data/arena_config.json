@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "rake": {
+    "tournaments": 10.0,
+    "pvp": 5.0,
+    "ranked": 10.0
+  },
+  "currencies": ["coins", "mn2", "usd"],
+  "buy_in_tiers": {
+    "coins": [50, 100, 250, 500, 1000],
+    "mn2": [0.05, 0.1, 0.25, 0.5, 1.0],
+    "usd": [1.0, 2.0, 5.0, 10.0, 25.0]
+  },
+  "ranked": {
+    "casual": { "entry_fee": { "coins": 50, "mn2": 0.05, "usd": 1.0 }, "prize_split": [0.6, 0.3, 0.1] },
+    "pro": { "entry_fee": { "coins": 250, "mn2": 0.25, "usd": 5.0 }, "prize_split": [0.7, 0.2, 0.1] }
+  },
+  "shop": {
+    "booster_xp_2x": { "label": "2x XP Booster (24h)", "icon": "\u26a1", "type": "booster", "prices": { "coins": 500, "mn2": 0.1, "usd": 1.99 } },
+    "booster_reward_2x": { "label": "2x Battle Reward (24h)", "icon": "\ud83d\udcb0", "type": "booster", "prices": { "coins": 800, "mn2": 0.15, "usd": 2.99 } },
+    "cosmetic_arena_skin": { "label": "Champion Arena Skin", "icon": "\ud83c\udfdf\ufe0f", "type": "cosmetic", "prices": { "coins": 1500, "mn2": 0.3, "usd": 4.99 } },
+    "season_pass": { "label": "Season Pass", "icon": "\ud83c\udfab", "type": "season_pass", "prices": { "mn2": 1.0, "usd": 9.99 } }
+  }
+}

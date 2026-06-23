@@ -6,10 +6,14 @@
     <title>Aggregator — Monitor play &amp; intelligence hub</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=3">
+    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=7">
+    <link rel="stylesheet" href="/static/css/aggregator-hub-v2.css?v=20260618a">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
+    <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 </head>
 <body class="layout-standard layout-aggregator-tech">
     <div class="bg-animated"></div>
@@ -21,6 +25,8 @@
                 <a href="/battle" class="nav-link">Battle</a>
                 <a href="/shop" class="nav-link">Shop</a>
                 <a href="/profile" class="nav-link">Profile</a>
+                <a href="/compendium/?calm=1" class="nav-link">Library</a>
+                <a href="/podcast" class="nav-link">Podcast</a>
                 <span class="nav-link nav-link--current" aria-current="page">Aggregator</span>
             </div>
         </div>
@@ -44,14 +50,42 @@
             <span class="agg-hud-bit">Knowledge <strong id="agg-total-knowledge">—</strong></span>
             <span class="agg-hud-bit">Last <span id="agg-last-action">—</span></span>
         </div>
+        <div class="agg-crypto-hud" id="agg-crypto-hud" role="region" aria-label="MN2 platform crypto">
+            <span class="agg-crypto-chip">MN2 <strong id="agg-crypto-balance">—</strong></span>
+            <span class="agg-crypto-chip">Price <strong id="agg-crypto-price">—</strong></span>
+            <span class="agg-crypto-chip">Staking pool <strong id="agg-crypto-pool">—</strong></span>
+            <span class="agg-crypto-chip">Users <strong id="agg-crypto-users">—</strong></span>
+            <span class="agg-crypto-chip">Market vol <strong id="agg-crypto-market">—</strong></span>
+            <span class="agg-crypto-chip">Earned today <strong id="agg-crypto-earned">—</strong></span>
+            <a class="agg-crypto-link" href="/profile#mn2-wallet">Wallet</a>
+            <a class="agg-crypto-link" href="/shop">Shop MN2</a>
+        </div>
     </div>
 
     <main class="agg-page agg-main-wrap" data-page-layout="standard">
         <header class="agg-hero">
-            <h1>Intelligence aggregator — 5D monitor hub</h1>
-            <p>Move through the holodeck grid (WASD / arrows / adjacent clicks). Below, the <strong>5D story monitor</strong> runs the narrative field (σ) with optional Web Audio. The <strong>final battle</strong> still plays inside the holodeck when you reach the golden core.</p>
+            <h1>Intelligence aggregator — v2 hub (75 AI agents)</h1>
+            <p>Holodeck monitor · <strong>75 aggregators</strong> · Top 25 · Control panel · Customer fulfillment · Progress monitor. Assign agents, earn MN2 session rewards, and wire intelligence across the platform.</p>
         </header>
 
+        <nav class="agg-hub-nav" id="agg-hub-nav" aria-label="Aggregator sections" role="tablist">
+            <button type="button" class="agg-hub-tab active" data-agg-tab="monitor" role="tab" aria-selected="true">🖥️ Monitor</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="catalog" role="tab" aria-selected="false">📦 Catalog (75)</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="top25" role="tab" aria-selected="false">🏆 Top 25</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="control" role="tab" aria-selected="false">🎛️ Control</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="fulfillment" role="tab" aria-selected="false">🤝 Fulfillment</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="progress" role="tab" aria-selected="false">📊 Progress</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="ideas" role="tab" aria-selected="false">💡 Ideas</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="encoder" role="tab" aria-selected="false">🔗 Encoder</button>
+            <button type="button" class="agg-hub-tab" data-agg-tab="intelligence" role="tab" aria-selected="false">🧠 Intelligence</button>
+        </nav>
+        <div class="agg-v2-progress-strip" aria-label="Aggregator hub progress">
+            <div id="agg-global-progress-label" style="font-size:0.82rem;opacity:0.85;">Hub progress — loading…</div>
+            <div class="agg-v2-progress-track"><div class="agg-v2-progress-fill" id="agg-global-progress-fill" style="width:0"></div></div>
+        </div>
+        <div id="agg-route-note" class="agg-route-note">Viewing: Holodeck monitor. Switch tabs to browse ideas, encoder, and intelligence.</div>
+
+        <section class="agg-tab-panel" data-agg-tab="monitor" aria-label="Holodeck and 5D monitor">
         <div
             class="agg-story-monitor-block"
             data-story-monitor-5d
@@ -59,11 +93,6 @@
             data-tech-label="Panoptic σ field engine · Web Audio storyscape + chroniton τ"
             aria-label="Five dimensional story monitor"
         ></div>
-
-        <section class="agg-ideas-section" aria-labelledby="agg-ideas-heading">
-            <h2 id="agg-ideas-heading" style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;text-align:center;">Top 15 new aggregator ideas</h2>
-            <div data-aggregator-ideas="list"></div>
-        </section>
 
         <div class="agg-layout">
             <div id="agg-monitor-anchor">
@@ -103,6 +132,7 @@
                         <p>Loading…</p>
                     </div>
                     <button type="button" id="agg-refresh-progress" style="margin-top:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--primary);cursor:pointer;">Refresh</button>
+                    <p style="margin-top:10px;font-size:.85rem;"><a href="/compendium/?calm=1" style="color:var(--primary);">Open calm library →</a></p>
                 </div>
                 <div class="agg-panel">
                     <h3>Explorer chat</h3>
@@ -114,8 +144,46 @@
                 </div>
             </aside>
         </div>
+        </section>
 
-        <section class="agg-encoder" id="agg-encoder-block">
+        <section class="agg-tab-panel" data-agg-tab="catalog" hidden aria-label="Aggregator catalog">
+            <h2 style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;">75 AI &amp; agent aggregators</h2>
+            <p style="font-size:0.88rem;opacity:0.8;margin:0 0 14px;">Full catalog with technologies, agent IDs, and one-click assign.</p>
+            <div class="agg-v2-toolbar">
+                <select id="agg-catalog-category" aria-label="Category filter"><option value="all">All categories</option></select>
+                <input type="search" id="agg-catalog-search" placeholder="Search name, tech, agent…">
+                <button type="button" id="agg-catalog-search-btn" class="agg-v2-btn">Search</button>
+            </div>
+            <div id="agg-catalog-grid" class="agg-v2-grid"><p class="agg-v2-muted">Open this tab to load catalog…</p></div>
+        </section>
+
+        <section class="agg-tab-panel" data-agg-tab="top25" hidden aria-label="Top 25 aggregators">
+            <h2 style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;">Top 25 — use &amp; function</h2>
+            <div id="agg-top25-grid" class="agg-v2-grid"><p class="agg-v2-muted">Open this tab to load top 25…</p></div>
+        </section>
+
+        <section class="agg-tab-panel" data-agg-tab="control" hidden aria-label="Agent control panel">
+            <h2 style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;">Control panel — AI &amp; agents</h2>
+            <div id="agg-control-body"><p class="agg-v2-muted">Loading control panel…</p></div>
+        </section>
+
+        <section class="agg-tab-panel" data-agg-tab="fulfillment" hidden aria-label="Customer fulfillment">
+            <h2 style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;">Customer fulfillment</h2>
+            <div id="agg-fulfillment-body"><p class="agg-v2-muted">Loading fulfillment playbook…</p></div>
+        </section>
+
+        <section class="agg-tab-panel" data-agg-tab="progress" hidden aria-label="Progress monitor">
+            <h2 style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;">Progress monitor</h2>
+            <div id="agg-progress-monitor"><p class="agg-v2-muted">Loading milestones…</p></div>
+        </section>
+
+        <section class="agg-ideas-section agg-tab-panel" data-agg-tab="ideas" hidden aria-labelledby="agg-ideas-heading">
+            <h2 id="agg-ideas-heading" style="color:var(--primary);font-size:1.15rem;margin:0 0 12px;text-align:center;">Top 15 new aggregator ideas</h2>
+            <div data-aggregator-ideas="list"></div>
+            <div data-ptc-placement="aggregator_ideas" data-ptc-limit="2"></div>
+        </section>
+
+        <section class="agg-encoder agg-tab-panel" data-agg-tab="encoder" id="agg-encoder-block" hidden>
             <div class="agg-encoder-inner">
                 <h2 style="margin:0 0 8px;color:var(--primary);font-size:1.1rem;">List encoder → aggregator links</h2>
                 <p style="color:var(--text-secondary);font-size:.88rem;margin:0 0 10px;">Edit JSON <code>[{&quot;label&quot;,&quot;href&quot;,&quot;external&quot;:true}]</code>. Encode to Base64 and share the URL hash, or paste back to decode. Links can target anchors on this page or the intelligence API.</p>
@@ -131,7 +199,7 @@
             </div>
         </section>
 
-        <section class="agg-intel-section" id="agg-intelligence-embed">
+        <section class="agg-intel-section agg-tab-panel" data-agg-tab="intelligence" id="agg-intelligence-embed" hidden>
             <h2 style="color:var(--primary);margin-bottom:12px;">Intelligence feed</h2>
             <p style="color:var(--text-secondary);font-size:.9rem;">Pulled from <code>/api/aggregators/intelligence/*</code> — same sources as the rest of the site.</p>
             <div id="intelligence-content">
@@ -146,10 +214,16 @@
         </section>
     </main>
 
+    <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="aggregator"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/aggregator-mn2-crypto.js?v=20260614d"></script>
     <script src="/static/js/story-monitor-5d.js?v=1"></script>
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>
-    <script src="/static/js/aggregator-monitor-game.js?v=2"></script>
+    <script src="/static/js/aggregator-hub-v2.js?v=20260618a"></script>
+    <script src="/static/js/aggregator-monitor-game.js?v=3"></script>
+    <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('agg-refresh-progress')?.addEventListener('click', function () {
@@ -181,6 +255,56 @@
           obs.observe(intelHost, { childList: true, subtree: true });
         }
       });
+    </script>
+    <script>
+      (function initAggregatorTabs() {
+        var TAB_LABELS = {
+          monitor: 'Holodeck monitor',
+          catalog: 'Catalog (75 aggregators)',
+          top25: 'Top 25 list',
+          control: 'Control panel',
+          fulfillment: 'Customer fulfillment',
+          progress: 'Progress monitor',
+          ideas: 'Ideas',
+          encoder: 'Encoder',
+          intelligence: 'Intelligence'
+        };
+        var nav = document.getElementById('agg-hub-nav');
+        var note = document.getElementById('agg-route-note');
+        var panels = Array.prototype.slice.call(document.querySelectorAll('.agg-tab-panel[data-agg-tab]'));
+        if (!nav || !panels.length) return;
+
+        function applyAggTab(tabId) {
+          panels.forEach(function (el) {
+            el.hidden = el.getAttribute('data-agg-tab') !== tabId;
+          });
+          nav.querySelectorAll('.agg-hub-tab').forEach(function (btn) {
+            var on = btn.getAttribute('data-agg-tab') === tabId;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+          });
+          if (note) {
+            note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other sections.';
+          }
+          if (window.__aggHubV2OnTab) window.__aggHubV2OnTab(tabId);
+          try {
+            var url = new URL(window.location.href);
+            if (tabId === 'monitor') url.searchParams.delete('tab');
+            else url.searchParams.set('tab', tabId);
+            window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+          } catch (e) { /* ignore */ }
+        }
+
+        nav.addEventListener('click', function (ev) {
+          var btn = ev.target.closest('[data-agg-tab]');
+          if (!btn || !nav.contains(btn)) return;
+          applyAggTab(btn.getAttribute('data-agg-tab'));
+        });
+
+        var requested = new URLSearchParams(window.location.search).get('tab');
+        var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, requested);
+        applyAggTab(valid ? requested : 'monitor');
+      })();
     </script>
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>

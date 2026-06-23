@@ -8,3 +8,22 @@ rpcpassword=Kp9mN2xL7vQw4jRc8sFb3hYt6nWz1aDg5
 rpcport=9332
 rpcallowip=127.0.0.1
 rpcbind=127.0.0.1
+
+# Fleet hosting (multiple lines in masternode.conf):
+#   1) After purchase or conf change, start with local first (ping / activetime):
+#        python3 scripts/mn2_start_masternode.py --alias <alias>
+#      Or: python3 scripts/mn2_start_masternode.py --all-from-conf
+#      Or install scripts/mn2_fleet_autostart.sh + mn2-fleet-autostart.service
+#      (local false, then alias false per alias as broadcast fallback)
+#   2) activetime stays 0 without ongoing pings — requires masternode=1 below.
+#      One daemon process pings ONE privkey (match platformmn2 in masternode.conf).
+#   3) Hairpin NAT: if debug.log shows "Could not connect to PUBLIC_IP:17646", use
+#      masternodeaddr=127.0.0.1:17646 here (broadcast IP stays in masternode.conf).
+#
+listen=1
+port=17646
+externalip=140.82.39.124
+#
+masternode=1
+masternodeprivkey=<same privkey as one masternode.conf line, e.g. platformmn2>
+masternodeaddr=127.0.0.1:17646
