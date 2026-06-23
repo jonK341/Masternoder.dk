@@ -6,7 +6,8 @@ plus ops accrual. See docs/MN2_STAKING_PLAN.md and docs/AGENTS_MN2.md.
 """
 import os
 import json
-from flask import Blueprint, jsonify, request
+import time
+from flask import Blueprint, jsonify, request, Response, stream_with_context
 
 from backend.services.account_resolution_service import resolve_user_id
 import backend.services.mn2_staking_service as staking
@@ -190,6 +191,139 @@ def staking_calculator():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_staking_bp.route("/api/mn2/staking/goal-planner", methods=["GET"])
+def staking_goal_planner():
+    """Reach X MN2 by date → required stake estimate (Top-10 #10)."""
+    try:
+        return jsonify(staking.goal_planner(
+            target_mn2=request.args.get("target_mn2", 0),
+            target_date=request.args.get("target_date", ""),
+            current_mn2=request.args.get("current_mn2", 0),
+            uptime=request.args.get("uptime", 1.0),
+            boost=request.args.get("boost", 1.0),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/notification-prefs", methods=["GET", "POST"])
+def staking_notification_prefs():
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.mn2_staking_notifications import get_prefs, set_prefs
+    if request.method == "GET":
+        return jsonify({"success": True, "user_id": user_id, "prefs": get_prefs(user_id)}), 200
+    data = _body()
+    allowed = {"reward_alerts", "weekly_digest", "large_reward_mn2"}
+    updates = {k: data[k] for k in allowed if k in data}
+    return jsonify(set_prefs(user_id, updates)), 200
+
+
+@mn2_staking_bp.route("/api/mn2/staking/leaderboard-settings", methods=["GET", "POST"])
+def staking_leaderboard_settings():
+    """Opt-in public leaderboard + display name (Top-10 #7)."""
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.user_engagement import get_settings, update_settings
+    if request.method == "GET":
+        s = get_settings(user_id).get("settings") or {}
+        return jsonify({
+            "success": True,
+            "staking_leaderboard_opt_in": bool(s.get("staking_leaderboard_opt_in")),
+            "staking_display_name": s.get("staking_display_name") or "",
+            "staking_show_amounts": bool(s.get("staking_show_amounts")),
+        }), 200
+    data = _body()
+    updates = {}
+    if "staking_leaderboard_opt_in" in data:
+        updates["staking_leaderboard_opt_in"] = bool(data["staking_leaderboard_opt_in"])
+    if "staking_display_name" in data:
+        updates["staking_display_name"] = str(data["staking_display_name"] or "")[:32]
+    if "staking_show_amounts" in data:
+        updates["staking_show_amounts"] = bool(data["staking_show_amounts"])
+    return jsonify(update_settings(user_id, updates)), 200
+
+
+@mn2_staking_bp.route("/api/mn2/staking/share-card", methods=["GET"])
+def staking_share_card():
+    """Simple SVG share card — no yield promises (Top-10 #7)."""
+    from flask import Response
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    status = staking.get_stake(user_id)
+    staked = round(float(status.get("staked") or 0), 4)
+    tier = status.get("longevity_label") or status.get("longevity_tier") or "Bronze"
+    days = round(float(status.get("longevity_days") or 0), 1)
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="315" viewBox="0 0 600 315">'
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+        '<stop offset="0%" stop-color="#0a1628"/><stop offset="100%" stop-color="#0d3320"/>'
+        '</linearGradient></defs>'
+        '<rect width="600" height="315" fill="url(#g)"/>'
+        '<text x="40" y="70" fill="#00d4ff" font-family="system-ui,sans-serif" font-size="28" font-weight="700">MN2 Staker</text>'
+        f'<text x="40" y="130" fill="#ffffff" font-family="system-ui,sans-serif" font-size="22">Staking {staked} MN2</text>'
+        f'<text x="40" y="175" fill="#00ff88" font-family="system-ui,sans-serif" font-size="18">{tier} · {days} days</text>'
+        '<text x="40" y="260" fill="#8899aa" font-family="system-ui,sans-serif" font-size="14">'
+        'masternoder.dk · Rewards variable, not guaranteed</text>'
+        '</svg>'
+    )
+    return Response(svg, mimetype="image/svg+xml", headers={"Cache-Control": "private, max-age=60"})
+
+
+@mn2_staking_bp.route("/api/mn2/staking/team", methods=["GET"])
+def staking_team_get():
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.mn2_staking_teams import get_team_for_user
+    return jsonify(get_team_for_user(user_id)), 200
+
+
+@mn2_staking_bp.route("/api/mn2/staking/team/create", methods=["POST"])
+def staking_team_create():
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.mn2_staking_teams import create_team
+    data = _body()
+    return jsonify(create_team(user_id, data.get("name") or "")), 200
+
+
+@mn2_staking_bp.route("/api/mn2/staking/team/join", methods=["POST"])
+def staking_team_join():
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.mn2_staking_teams import join_team
+    data = _body()
+    code = (data.get("code") or data.get("invite_code") or "").strip()
+    result = join_team(user_id, code)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@mn2_staking_bp.route("/api/mn2/staking/team/leave", methods=["POST"])
+def staking_team_leave():
+    user_id, err = _resolve_owner()
+    if err:
+        return err
+    from backend.services.mn2_staking_teams import leave_team
+    return jsonify(leave_team(user_id)), 200
+
+
+@mn2_staking_bp.route("/api/mn2/staking/teams/leaderboard", methods=["GET"])
+def staking_teams_leaderboard():
+    try:
+        from backend.services.mn2_staking_teams import team_leaderboard
+        limit = int(request.args.get("limit", 20))
+        return jsonify(team_leaderboard(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_staking_bp.route("/api/mn2/staking/rewards-table", methods=["GET"])
 def staking_rewards_table():
     try:
@@ -247,9 +381,12 @@ def network_overview():
         overview["pool_apr_percent"] = staking.dynamic_apr()
         try:
             from backend.routes.mn2_routes import _explorer_base_url
+            from backend.services.mn2_explorer_urls import explorer_kind
             overview["explorer_base_url"] = _explorer_base_url()
+            overview["explorer_kind"] = explorer_kind()
         except Exception:
             overview["explorer_base_url"] = None
+            overview["explorer_kind"] = None
         try:
             from backend.services import mn2_onramp_service
             overview["onramp"] = mn2_onramp_service.onramp_stats()
@@ -265,6 +402,14 @@ def network_overview():
             overview["staking_health"] = mn2_rpc_client.staking_health()
         except Exception:
             overview["staking_health"] = None
+        try:
+            from backend.services.mn2_rpc_failover import status_summary
+            fo = status_summary()
+            overview["rpc_failover"] = fo
+            if fo.get("enabled") and fo.get("active") == "standby":
+                overview["rpc_degraded"] = True
+        except Exception:
+            overview["rpc_failover"] = None
         # Record a throttled snapshot for sparklines + run stop-staking/stall alerts (best-effort).
         try:
             from backend.services import mn2_network_stats
@@ -288,6 +433,38 @@ def network_overview():
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/stream", methods=["GET"])
+def explorer_overview_stream():
+    """SSE push of network-overview tiles (poll fallback remains in mn2-explorer-overview.js)."""
+    interval = max(10, min(int(request.args.get("interval", 30)), 120))
+
+    def generate():
+        yield "data: " + json.dumps({"type": "connected", "interval_sec": interval}) + "\n\n"
+        last_sig = None
+        while True:
+            try:
+                from backend.services import mn2_chainz
+                overview = mn2_chainz.network_overview()
+                overview["pool_total_staked"] = staking.total_staked()
+                overview["pool_apr_percent"] = staking.dynamic_apr()
+                payload = {"success": True, **overview}
+                sig = json.dumps(payload, sort_keys=True, default=str)
+                if sig != last_sig:
+                    last_sig = sig
+                    yield "data: " + json.dumps({"type": "overview", "data": payload, "ts": time.time()}) + "\n\n"
+                else:
+                    yield "data: " + json.dumps({"type": "heartbeat", "ts": time.time()}) + "\n\n"
+            except Exception as exc:
+                yield "data: " + json.dumps({"type": "error", "error": str(exc)}) + "\n\n"
+            time.sleep(interval)
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @mn2_staking_bp.route("/api/mn2/network-history", methods=["GET"])
@@ -332,7 +509,8 @@ def masternodes():
     try:
         from backend.services import mn2_explorer_data
         limit = int(request.args.get("limit", 50) or 50)
-        data = mn2_explorer_data.masternodes(limit=limit)
+        fresh = request.args.get("fresh") in ("1", "true", "yes")
+        data = mn2_explorer_data.masternodes(limit=limit, fresh=fresh)
         resp = jsonify({"success": True, **data})
         resp.headers["Cache-Control"] = "public, max-age=60"
         return resp, 200
@@ -348,6 +526,18 @@ def staking_ops_accrue():
         force = request.args.get("force", "").lower() in ("1", "true", "yes")
         result = staking.accrue_rewards(force=force)
         return jsonify(result), 200 if result.get("success") else 500
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/ops/weekly-digest", methods=["POST", "GET"])
+def staking_ops_weekly_digest():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.mn2_staking_notifications import run_weekly_digest
+        force = request.args.get("force", "").lower() in ("1", "true", "yes")
+        return jsonify(run_weekly_digest(force=force)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
