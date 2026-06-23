@@ -50,11 +50,26 @@
     return t && t !== '--' && t !== '—' && t !== '…' && t !== 'Loading…';
   }
 
+  function wireFiatToggle() {
+    var tg = document.getElementById('mn2-fiat-toggle');
+    if (!tg || tg._mn2Wired) return;
+    tg._mn2Wired = true;
+    tg.checked = localStorage.getItem('mn2_fiat_display') === '1';
+    tg.addEventListener('change', function () {
+      localStorage.setItem('mn2_fiat_display', tg.checked ? '1' : '0');
+      fetchJson(base() + '/api/mn2/balance?user_id=' + encodeURIComponent(uid())).then(function (res) {
+        renderBalance(res.data);
+      });
+    });
+  }
+
   function renderBalance(balData) {
     var balanceEl = document.getElementById('profile-mn2-balance');
     var fiatEl = document.getElementById('profile-mn2-balance-fiat');
     if (!balData || !balData.success) {
       if (balanceEl) balanceEl.textContent = '—';
+      var showcaseErr = document.getElementById('profile-mn2-showcase-balance');
+      if (showcaseErr) showcaseErr.textContent = (balData && balData.error) ? balData.error : '—';
       return;
     }
     var balNum = Number(balData.mn2_balance) || 0;
@@ -62,12 +77,17 @@
     var showcase = document.getElementById('profile-mn2-showcase-balance');
     if (showcase) showcase.textContent = balNum.toFixed(4) + ' MN2';
     if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
-      fetchJson(base() + '/api/mn2/price', { timeout: 8000 }).then(function (res) {
-        var p = res.data || {};
-        if (p.mn2_usd_price != null) {
-          fiatEl.textContent = '(≈ $' + (balNum * Number(p.mn2_usd_price)).toFixed(4) + ')';
-        }
-      });
+      var usd = balData.mn2_usd_price;
+      if (usd != null) {
+        fiatEl.textContent = '(≈ $' + (balNum * Number(usd)).toFixed(4) + ')';
+      } else {
+        fetchJson(base() + '/api/mn2/price', { timeout: 8000 }).then(function (res) {
+          var p = res.data || {};
+          if (p.mn2_usd_price != null) {
+            fiatEl.textContent = '(≈ $' + (balNum * Number(p.mn2_usd_price)).toFixed(4) + ')';
+          }
+        });
+      }
     } else if (fiatEl) {
       fiatEl.textContent = '';
     }
@@ -351,6 +371,7 @@
     }
 
     wireControls();
+    wireFiatToggle();
     initWalletSubTabs();
 
     fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {

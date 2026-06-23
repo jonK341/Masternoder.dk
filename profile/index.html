@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -565,41 +566,8 @@
             color: rgba(255, 255, 255, 0.85);
             font-size: 1.1rem;
         }
-        .profile-hub-nav {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 8px;
-            margin: 16px 0 20px;
-            padding: 12px 14px;
-            background: rgba(0, 0, 0, 0.35);
-            border-radius: 14px;
-            border: 1px solid rgba(0, 255, 136, 0.28);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-        }
-        .profile-hub-nav::-webkit-scrollbar { height: 6px; }
-        .profile-hub-nav::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 136, 0.35);
-            border-radius: 999px;
-        }
-        .profile-hub-tab {
-            flex-shrink: 0;
-        }
-        .profile-hub-tab {
-            padding: 8px 14px;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            background: rgba(0, 255, 136, 0.08);
-            color: #b8ffd9;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .profile-hub-tab:hover, .profile-hub-tab.active {
-            background: rgba(0, 255, 136, 0.2);
-            color: #fff;
-        }
         .profile-hub-tab:focus-visible,
+        .profile-hub-nav .tab-btn:focus-visible,
         .btn-primary:focus-visible,
         .btn-refresh:focus-visible,
         .btn-edit:focus-visible,
@@ -834,7 +802,7 @@
                 <span id="discord-link-status" class="account-status"></span>
             </div>
 
-            <div class="section-card" id="account-privacy-card" data-profile-route="account" style="margin-bottom: 20px;">
+            <div class="section-card" id="account-privacy-card" data-profile-route="account settings" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account privacy &amp; profile settings</h2>
                 <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Control what your profile shows, how the account behaves, and review linked providers and active devices.</p>
                 <div class="account-settings-grid">
@@ -910,24 +878,45 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
-            <nav class="profile-hub-nav" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
-                <button type="button" class="profile-hub-tab active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="account" role="tab" aria-selected="false">Account</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="skills" role="tab" aria-selected="false">Skills</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="trophies" role="tab" aria-selected="false">Trophies</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="points" role="tab" aria-selected="false">Points</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="battle" role="tab" aria-selected="false">Battle</button>
-                <button type="button" class="profile-hub-tab" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
+            <nav class="profile-hub-nav page-tabs" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
+                <button type="button" class="tab-btn active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
+                <button type="button" class="tab-btn" data-hub-scroll="avatar" role="tab" aria-selected="false">Avatar</button>
+                <button type="button" class="tab-btn" data-hub-scroll="account" role="tab" aria-selected="false">Account</button>
+                <button type="button" class="tab-btn" data-hub-scroll="skills" role="tab" aria-selected="false">Skills</button>
+                <button type="button" class="tab-btn" data-hub-scroll="trophies" role="tab" aria-selected="false">Trophies</button>
+                <button type="button" class="tab-btn" data-hub-scroll="points" role="tab" aria-selected="false">Points</button>
+                <button type="button" class="tab-btn" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
+                <button type="button" class="tab-btn" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
+                <button type="button" class="tab-btn" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
+                <button type="button" class="tab-btn" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
+                <button type="button" class="tab-btn" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
+                <button type="button" class="tab-btn" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
+                <button type="button" class="tab-btn" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
+                <button type="button" class="tab-btn" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
+                <button type="button" class="tab-btn" data-hub-scroll="battle" role="tab" aria-selected="false">Battle</button>
+                <button type="button" class="tab-btn" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
             </nav>
             <div id="profile-route-note" class="profile-route-note">One section per tab — use the bar above to switch.</div>
+            <div class="section-card" id="profile-section-avatar" data-profile-route="avatar overview">
+                <h2 class="section-title">Avatar</h2>
+                <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Choose a preset or paste an image URL. Same pattern as agent avatars on the platform.</p>
+                <div class="profile-avatar-panel">
+                    <div class="profile-avatar-preview-wrap">
+                        <img id="profile-avatar-tab-preview" src="/static/img/agents/content_generator_agent.svg" alt="Your avatar" class="profile-avatar-preview">
+                        <p style="font-size:0.8rem;opacity:0.75;margin-top:8px;">Header preview</p>
+                    </div>
+                    <div class="profile-avatar-picker">
+                        <strong style="color:#00ff88;font-size:0.9rem;">Preset avatars</strong>
+                        <div id="profile-avatar-grid" class="profile-avatar-grid" aria-label="Avatar presets"></div>
+                        <div class="profile-avatar-url-row">
+                            <input type="url" id="profile-avatar-url-input" placeholder="https://… or /static/img/…" aria-label="Avatar URL">
+                            <button type="button" class="btn-primary" id="profile-avatar-save-btn" style="padding:8px 14px;">Save avatar</button>
+                        </div>
+                        <p id="profile-avatar-status" style="font-size:0.85rem;margin-top:8px;opacity:0.85;"></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="section-card" id="profile-hub-overview" data-profile-route="overview">
                 <h2 class="section-title">Unified overview</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Points, shop, and rankings for this profile ID (same data as Shop and Game).</p>
@@ -1015,21 +1004,21 @@
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet settings security" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
                         <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
                             <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
                             <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
                         </div>
-                        <nav id="profile-wallet-subnav" class="profile-wallet-subnav" role="tablist" aria-label="Wallet sections" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
-                            <button type="button" class="profile-hub-tab active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="security" role="tab" aria-selected="false">Security</button>
-                            <button type="button" class="profile-hub-tab" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
+                        <nav id="profile-wallet-subnav" class="profile-wallet-subnav page-tabs" role="tablist" aria-label="Wallet sections">
+                            <button type="button" class="tab-btn active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Wallet settings</button>
                         </nav>
                         <div data-wallet-panel="overview" style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Balance:</strong>
@@ -1528,7 +1517,27 @@
                     </div>
 
                     <!-- Password protection (reward for completing / earning points) -->
-                    <div class="section-card" id="password-protection-card" data-profile-route="account">
+                    <!-- Layered security overview + account protections -->
+                    <div class="section-card" id="profile-section-security-layer" data-profile-route="security">
+                        <h2 class="section-title">🛡️ Layered security</h2>
+                        <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Three layers protect your account and MN2: profile password, real-money account rules, and withdrawal 2FA / whitelist (Wallet tab → Withdraw 2FA).</p>
+                        <div class="profile-layer-security-grid">
+                            <div class="profile-layer-card">
+                                <h3>Layer 1 — Profile password</h3>
+                                <p>Set a password to unlock login, session bind, and trusted addresses. Earn points to unlock.</p>
+                            </div>
+                            <div class="profile-layer-card">
+                                <h3>Layer 2 — Account security</h3>
+                                <p>Presets for password-on-login, real-money casino bets, and paid shop purchases.</p>
+                            </div>
+                            <div class="profile-layer-card">
+                                <h3>Layer 3 — MN2 withdrawal</h3>
+                                <p>TOTP 2FA and address whitelist before on-chain withdrawals. Configure in Wallet → Withdraw 2FA.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card" id="password-protection-card" data-profile-route="security account">
                         <h2 class="section-title">🔐 Password protection</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Unlock by earning points or completing Star Map investigations; set a password and get a small reward.</p>
                         <div id="password-protection-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
@@ -1544,7 +1553,7 @@
                         <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
                     </div>
 
-                    <div class="section-card" id="account-security-card" data-profile-route="account">
+                    <div class="section-card" id="account-security-card" data-profile-route="security account">
                         <h2 class="section-title">🛡️ Real-money security</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Protect accounts with MN2 or casino USD balance. Enable password-on-login and require verification before real-money casino bets.</p>
                         <div id="account-security-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
@@ -1604,7 +1613,7 @@
                     </div>
 
                     <!-- Geo reference (GPS) -->
-                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="account">
+                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="account settings">
                         <h2 class="section-title">📍 Geo Reference</h2>
                         <div id="profile-geo-ref" style="font-size: 0.9rem; opacity: 0.9;">—</div>
                         <button type="button" class="btn-primary" id="profile-geo-ref-btn" style="margin-top: 10px; padding: 6px 12px; font-size: 0.85rem;">Update location</button>
@@ -1653,7 +1662,7 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260618a"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -1791,6 +1800,7 @@
 
                 this.renderHeader(profile, stats);
                 this.renderProfileCompleteness(profile, data);
+                this.initAvatarTab();
                 this.renderQuickStats(stats);
                 this.renderSkills(skills);
                 this.renderLabLogbook(data.lab_logbook || {});
@@ -2548,6 +2558,75 @@
             loadProfileMn2Wallet() {
                 if (window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
                     window.ProfileMn2Wallet.load();
+                }
+            }
+
+            static get avatarPresets() {
+                return [
+                    'content_generator_agent', 'analytics_agent', 'battle_strategy_agent',
+                    'social_engagement_agent', 'security_agent', 'monitoring_agent',
+                    'learning_agent', 'research_agent', 'communication_agent', 'ai_intelligence_agent',
+                    'master_dashboard_agent', 'workflow_agent', 'quality_assurance_agent', 'innovation_agent'
+                ].map(function(id) { return '/static/img/agents/' + id + '.svg'; });
+            }
+
+            initAvatarTab() {
+                var grid = document.getElementById('profile-avatar-grid');
+                var preview = document.getElementById('profile-avatar-tab-preview');
+                var urlInput = document.getElementById('profile-avatar-url-input');
+                var saveBtn = document.getElementById('profile-avatar-save-btn');
+                var statusEl = document.getElementById('profile-avatar-status');
+                if (!grid) return;
+                var prefs = this.currentPreferences || {};
+                var current = profileSafeUrl(prefs.avatar_url || (this.currentProfile && this.currentProfile.avatar_url), '');
+                var self = this;
+                function selectUrl(url) {
+                    if (preview && url) preview.src = url;
+                    if (urlInput) urlInput.value = url || '';
+                    grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
+                        btn.classList.toggle('selected', btn.getAttribute('data-avatar-url') === url);
+                    });
+                }
+                if (grid._wired) {
+                    if (current) selectUrl(current);
+                    return;
+                }
+                grid._wired = true;
+                if (urlInput) urlInput.value = current;
+                if (preview && current) preview.src = current;
+                grid.innerHTML = ProfileManager.avatarPresets.map(function(url) {
+                    return '<button type="button" class="profile-avatar-option" data-avatar-url="' + profileEscapeHtml(url) + '" title="Use this avatar">' +
+                        '<img src="' + profileEscapeHtml(url) + '" alt="" loading="lazy"></button>';
+                }).join('');
+                grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        selectUrl(btn.getAttribute('data-avatar-url'));
+                    });
+                });
+                if (current) selectUrl(current);
+                if (urlInput) {
+                    urlInput.addEventListener('input', function() {
+                        var u = profileSafeUrl(urlInput.value.trim(), '');
+                        if (u && preview) preview.src = u;
+                    });
+                }
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', async function() {
+                        var avatar_url = profileSafeUrl((urlInput && urlInput.value.trim()) || '', '');
+                        if (!avatar_url) {
+                            if (statusEl) statusEl.textContent = 'Pick a preset or enter a valid URL.';
+                            return;
+                        }
+                        if (statusEl) statusEl.textContent = 'Saving…';
+                        var newPrefs = Object.assign({}, self.currentPreferences || {}, { avatar_url: avatar_url });
+                        var result = await backendConnector.updateUserProfile({ preferences: newPrefs });
+                        if (result && result.success) {
+                            if (statusEl) statusEl.textContent = 'Avatar saved.';
+                            await self.loadProfile();
+                        } else if (statusEl) {
+                            statusEl.textContent = 'Save failed: ' + (result && result.error ? result.error : 'Unknown error');
+                        }
+                    });
                 }
             }
 
@@ -3854,23 +3933,37 @@
             var note = document.getElementById('profile-route-note');
             if (note) {
                 var labels = {
-                    overview: 'Overview', account: 'Account', skills: 'Skills', trophies: 'Trophies',
-                    points: 'Points', leaderboard: 'Leaderboard', shop: 'Shop', wallet: 'Wallet',
+                    overview: 'Overview', avatar: 'Avatar', account: 'Account', skills: 'Skills',
+                    trophies: 'Trophies', points: 'Points', leaderboard: 'Leaderboard', shop: 'Shop',
+                    wallet: 'Wallet', security: 'Security', settings: 'Settings',
                     agents: 'Agents', activity: 'Activity', lab: 'Lab', battle: 'Battle', progress: 'Progress'
                 };
                 note.textContent = 'Viewing: ' + (labels[activeRoute] || activeRoute) + '. Switch tabs above to browse other sections.';
             }
-            document.querySelectorAll('.profile-hub-tab').forEach(function(x) {
+            document.querySelectorAll('#profile-hub-nav [data-hub-scroll]').forEach(function(x) {
                 var on = x.getAttribute('data-hub-scroll') === activeRoute;
                 x.classList.toggle('active', on);
                 x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
+            if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
+                window.ProfileMn2Wallet.load();
+            }
+            if (activeRoute === 'security') {
+                if (window.profileManager) {
+                    if (typeof window.profileManager.loadPasswordProtection === 'function') window.profileManager.loadPasswordProtection();
+                    if (typeof window.profileManager.loadAccountSecurity === 'function') window.profileManager.loadAccountSecurity();
+                }
+                if (window.Mn2WithdrawalSecurity && typeof window.Mn2WithdrawalSecurity.refresh === 'function') {
+                    window.Mn2WithdrawalSecurity.refresh();
+                }
+            }
         }
 
         function initProfileHub() {
             var uid = localStorage.getItem('game_user_id') || 'default_user';
             var scrollMap = {
                 overview: 'profile-hub-overview',
+                avatar: 'profile-section-avatar',
                 account: 'profile-section-account',
                 skills: 'profile-section-skills',
                 trophies: 'profile-trophies-card',
@@ -3878,8 +3971,8 @@
                 leaderboard: 'profile-section-leaderboard',
                 shop: 'profile-section-shop',
                 wallet: 'profile-mn2-wallet-card',
-                settings: 'profile-mn2-wallet-card',
-                security: 'password-protection-card',
+                settings: 'account-privacy-card',
+                security: 'profile-section-security-layer',
                 agents: 'my-agents-card',
                 activity: 'profile-section-activity',
                 lab: 'profile-section-lab-logbook',
@@ -3936,14 +4029,15 @@
             var tab = new URLSearchParams(window.location.search).get('tab');
             if (tab) {
                 var btnKey = {
-                    account: 'account', user: 'account', skills: 'skills', trophies: 'trophies',
-                    progress: 'progress', points: 'points', leaderboard: 'leaderboard',
-                    activity: 'activity', shop: 'shop', inventory: 'shop', wallet: 'wallet',
+                    account: 'account', user: 'account', avatar: 'avatar', skills: 'skills',
+                    trophies: 'trophies', progress: 'progress', points: 'points',
+                    leaderboard: 'leaderboard', activity: 'activity', shop: 'shop',
+                    inventory: 'shop', wallet: 'wallet', security: 'security', settings: 'settings',
                     agents: 'agents', lab: 'lab', battle: 'battle'
                 };
                 var ds = btnKey[tab] || (scrollMap[tab] ? tab : 'overview');
                 setTimeout(function() {
-                    var btn = document.querySelector('.profile-hub-tab[data-hub-scroll=\"' + ds + '\"]');
+                    var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + ds + '"]');
                     if (btn) btn.click();
                     else applyFocusedProfileRoute(ds);
                 }, 400);
