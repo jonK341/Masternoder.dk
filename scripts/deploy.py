@@ -6,8 +6,9 @@ Usage:
   python scripts/deploy.py profile     # profile + auth
   python scripts/deploy.py sync        # sync + agent DB
   python scripts/deploy.py loading     # loading optimizations
-  python scripts/deploy.py static_pages  # root index.html pages + entire static/ folder
+  python scripts/deploy.py static_pages  # root index.html pages + static/js + static/css (not bulk media)
   python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass  # multiple manifests (merged upload)
+  python scripts/deploy.py mn2_staking static_pages mn2_env --list-files  # print merged upload set only
   python scripts/deploy.py trophies      # trophy levels, MN2 income, routes + data + UI
   python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
@@ -80,8 +81,12 @@ def _mn2_apply_config_permissions(ssh) -> None:
     print()
 
 
+# Code assets under static/ included by static_pages; bulk media only via named manifests.
+_STATIC_CODE_SUBDIRS = ("js", "css", "html", "data")
+
+
 def _static_pages_manifest():
-    """Root site HTML (index.html + */index.html) and all files under static/ (excludes backup trees)."""
+    """Root site HTML (index.html + */index.html) and static JS/CSS (not img/audio/shop trees)."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     out = []
     skip_dirs = {
@@ -108,14 +113,24 @@ def _static_pages_manifest():
         out.append("dashboard/master_control/index.html")
     static_dir = os.path.join(root, "static")
     if os.path.isdir(static_dir):
-        for dirpath, dirnames, filenames in os.walk(static_dir):
-            dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__")]
-            for fn in filenames:
-                if fn.startswith(".") or fn.endswith(".backup"):
-                    continue
-                full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, root).replace(os.sep, "/")
-                out.append(rel)
+        for fn in os.listdir(static_dir):
+            if fn.startswith(".") or fn.endswith(".backup"):
+                continue
+            full = os.path.join(static_dir, fn)
+            if os.path.isfile(full):
+                out.append(os.path.relpath(full, root).replace(os.sep, "/"))
+        for sub in _STATIC_CODE_SUBDIRS:
+            subdir = os.path.join(static_dir, sub)
+            if not os.path.isdir(subdir):
+                continue
+            for dirpath, dirnames, filenames in os.walk(subdir):
+                dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__")]
+                for fn in filenames:
+                    if fn.startswith(".") or fn.endswith(".backup"):
+                        continue
+                    full = os.path.join(dirpath, fn)
+                    rel = os.path.relpath(full, root).replace(os.sep, "/")
+                    out.append(rel)
     return sorted(set(out))
 
 
@@ -673,7 +688,7 @@ MANIFESTS = {
     ],
 }
 
-# Built at import: every root */index.html + static/** (see _static_pages_manifest docstring)
+# Built at import: every root */index.html + static/js|css|html|data (see _static_pages_manifest)
 MANIFESTS["static_pages"] = _static_pages_manifest()
 
 
@@ -1129,6 +1144,22 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
         return False
 
 
+def _print_file_list(files, manifest_names=None):
+    """Print merged upload set (missing local paths marked SKIP)."""
+    if manifest_names:
+        print(f"Manifests: {', '.join(manifest_names)}")
+    print(f"Files ({len(files)}):")
+    missing = 0
+    for path in files:
+        if os.path.exists(path):
+            print(f"  {path}")
+        else:
+            print(f"  {path}  [missing locally]")
+            missing += 1
+    present = len(files) - missing
+    print(f"Summary: {present} present, {missing} missing, {len(files)} total")
+
+
 def main():
     args = sys.argv[1:]
     ask_pass = "--ask-pass" in args
@@ -1137,20 +1168,20 @@ def main():
     upload_only = "--upload-only" in args
     if upload_only:
         args = [a for a in args if a != "--upload-only"]
+    list_files = "--list-files" in args
+    if list_files:
+        args = [a for a in args if a != "--list-files"]
     with_disk = "--with-disk" in args
     if with_disk:
         args = [a for a in args if a != "--with-disk"]
     if not args:
-        print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only]")
-        print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only]")
+        print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only] [--list-files]")
+        print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only] [--list-files]")
         print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
+        print("  --list-files   Print the merged file list and exit (no SSH).")
         print("Manifests:", ", ".join(MANIFESTS))
         sys.exit(1)
-    server_pass = require_deploy_pass(force_prompt=ask_pass)
-    if args and args[0].lower() == "server_prune":
-        ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
-        sys.exit(0 if ok else 1)
     manifest_names = None
     if args[0] == "--files":
         files = args[1:]
@@ -1170,6 +1201,13 @@ def main():
             print(f"(Manifests: {', '.join(manifest_names)})")
         files = _merge_manifest_files(manifest_names)
         restart_services = _resolve_restart_services(manifest_names, upload_only)
+    if list_files:
+        _print_file_list(files, manifest_names)
+        sys.exit(0)
+    server_pass = require_deploy_pass(force_prompt=ask_pass)
+    if args and args[0].lower() == "server_prune":
+        ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
+        sys.exit(0 if ok else 1)
     ok = run(
         files,
         upload_only=upload_only,
