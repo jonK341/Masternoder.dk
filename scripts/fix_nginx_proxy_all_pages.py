@@ -8,11 +8,12 @@ Usage:
   python scripts/fix_nginx_proxy_all_pages.py
   python scripts/fix_nginx_proxy_all_pages.py --dry-run
 """
+import os
 import re
 import sys
 
-SERVER_HOST = __import__("os").environ.get("DEPLOY_HOST", "masternoder.dk")
-SERVER_USER = __import__("os").environ.get("DEPLOY_USER", "root")
+SERVER_HOST = os.environ.get("DEPLOY_HOST", "masternoder.dk")
+SERVER_USER = os.environ.get("DEPLOY_USER", "root")
 SERVER_PASS = (os.getenv("DEPLOY_PASS") or os.environ.get("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS"))
 NGINX_CONFIG = "/etc/nginx/sites-enabled/masternoder.dk"
 

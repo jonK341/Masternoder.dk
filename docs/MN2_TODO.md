@@ -45,6 +45,7 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **Provisioning backlog cleared (2026-06-23)** — `GET /api/mn2/masternode/service`: **30** hosted · **28** active · **2** in-flight provisioning (with collateral) · **0** stale provisioning · **220** slots free; on-chain **6** / **5** ENABLED (`mn2_check_activetime_public.py`).
 - **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **optional verify** if homepage tx table or redirect still wrong.
 - **Ubuntu 25.10 OS upgrade (2026-06-23)** — `do-release-upgrade` + reboot; post-verify **9/9** local (`ubuntu_upgrade_post_verify.sh`): nginx + masternoder2d + both uwsgi **active**; health **200 healthy**; daemon **v1.2.3.0**; cron **15** files; wallet `.env` + `config/` OK.
+- **Post-Ubuntu konflikter løst (2026-06-23)** — K5 ubuntu scripts uploadet · K2 camgirls deploy (44 filer) · K4 kernel-reboot · K7 verify **4/4** · restore-staking + trader market OK post-reboot
 
 ---
 
@@ -122,7 +123,7 @@ $CLI getmasternodecount
 | Manuel start efter 502 | `systemctl start masternoder2d uwsgi-vidgenerator uwsgi-vidgenerator-5001` — **Done** |
 | `ubuntu_upgrade_post_verify.sh` (server) | **9 passed**, 0 failed, 1 warn (diagnose script mangler på server) |
 | Public `/api/mn2/health` | **200** · `status: healthy` · staking **healthy** (restore-staking **ikke** nødvendig lige nu) |
-| Public camgirls API | **Konflikt** — se § **Konflikter efter Ubuntu** |
+| Public camgirls API | **4/4 verify** (2026-06-23 post-reboot) |
 
 ---
 
@@ -133,13 +134,13 @@ Kort opsummering af hvad der gik galt / stadig skævner efter OS-upgrade. Afkryd
 | # | Konflikt | Symptom | Sandsynlig årsag | Fix (owner) | Status |
 | - | -------- | ------- | ---------------- | ----------- | ------ |
 | **K1** | **502 efter reboot** | Hele sitet “Starting up” / nginx 502 | `uwsgi-vidgenerator` + `:5001` startede **ikke** automatisk efter kernel-pakke/reboot (needrestart genstartede kun bl.a. `masternoder2d`, ikke begge uwsgi) | Bekræft `systemctl is-enabled uwsgi-vidgenerator uwsgi-vidgenerator-5001`; evt. **P2 fleet boot** / dokumentér boot-rækkefølge | **Løst manuelt** — verificér ved næste reboot |
-| **K2** | **Dual uwsgi — camgirls API 404/200** | Public `GET /api/camgirls/performers` veksler **404** vs **200**; localhost `:5000` OK | Nginx upstream `:5000` + `:5001` — **én worker mangler** camgirls blueprint / gammel kode efter upgrade | `python scripts/deploy.py camgirls --ask-pass` · derefter burst-test begge porte (nedenfor) | **Delvist** — performers ofte 200; agents/tools **timeout** når workers optaget |
-| **K3** | **Camgirls agents/tools tomme svar** | HTTPS `agents` → `{"success":true}` uden `agents[]` på nogle hits | Samme som K2 — rammer “tom” worker uden fuld route/data | Løses med K2 deploy + dual restart | **Delvist** — fuld payload når worker varm; ellers timeout/tom |
-| **K4** | **Kernel ikke aktiv** | Kører `6.8.0-124`, GRUB har `6.17.0-35` | `needrestart`: “Pending kernel upgrade” — **anden reboot** ikke kørt | Planlæg `sudo reboot` (kort vindue) · kør post-verify igen bagefter | **Åben** |
-| **K5** | **Ops-scripts ikke på server** | `ubuntu_upgrade_*.sh` **SKIP missing** ved deploy; diagnose **WARN missing** | Scripts kun i git — ikke uploadet før upgrade | `python scripts/deploy.py mn2_env --ask-pass --upload-only` | **Åben** |
-| **K6** | **`DEPLOY_PASS` stale (PC)** | `deploy.py` / agenter får SSH **Authentication failed**; `--ask-pass` virker | Lokal `.env` matcher ikke server root-password | Opdatér `.env` · `python scripts/deploy_test_ssh.py` | **Åben** |
-| **K7** | **Public verify vs lokal** | Server: camgirls lite **200** · verify **4/4** med `--warmup-rounds 2 --retries 4` (flaky uden) | K2 upstream + **worker starvation** (agents 20–90s timeout) | Efter K2 deploy: `python3 scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk --warmup-rounds 2` → stabil **4/4** | **Delvist** — grøn med warmup; deploy+restart for stabil drift |
-| **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Venter** |
+| **K2** | **Dual uwsgi — camgirls API 404/200** | Public `GET /api/camgirls/performers` veksler **404** vs **200**; localhost `:5000` OK | Nginx upstream `:5000` + `:5001` — **én worker mangler** camgirls blueprint / gammel kode efter upgrade | `python scripts/deploy.py camgirls --ask-pass` · derefter burst-test begge porte (nedenfor) | **Done (2026-06-23)** — 44 filer deployet; begge upstream **200** |
+| **K3** | **Camgirls agents/tools tomme svar** | HTTPS `agents` → `{"success":true}` uden `agents[]` på nogle hits | Samme som K2 — rammer “tom” worker uden fuld route/data | Løses med K2 deploy + dual restart | **Done** — efter camgirls deploy |
+| **K4** | **Kernel ikke aktiv** | Kører `6.8.0-124`, GRUB har `6.17.0-35` | `needrestart`: “Pending kernel upgrade” — **anden reboot** ikke kørt | Planlæg `sudo reboot` (kort vindue) · kør post-verify igen bagefter | **Done (2026-06-23)** — `mn2_schedule_reboot_remote.py --now` |
+| **K5** | **Ops-scripts ikke på server** | `ubuntu_upgrade_*.sh` **SKIP missing** ved deploy; diagnose **WARN missing** | Scripts kun i git — ikke uploadet før upgrade | `python scripts/deploy.py mn2_env --ask-pass --upload-only` | **Done** — 4 filer uploadet (prep + post-verify + remote + doc) |
+| **K6** | **`DEPLOY_PASS` stale (PC)** | `deploy.py` / agenter får SSH **Authentication failed**; `--ask-pass` virker | Lokal `.env` matcher ikke server root-password | Opdatér `.env` · `python scripts/deploy_test_ssh.py` | **Delvist** — `--ask-pass` OK; `ensure_site_up`/`fix_502` fejler uden `.env` |
+| **K7** | **Public verify vs lokal** | `camgirls_post_deploy_verify` | K2 upstream + worker starvation | `python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk` | **Done (2026-06-23)** — **4/4** efter camgirls deploy + post-reboot |
+| **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Klar** — K2+K7 grønne |
 
 **Verifikation K2 (kør på server efter camgirls deploy):**
 
@@ -157,12 +158,14 @@ Begge porte skal give **200** hver gang.
 
 **Næste skridt (rækkefølge):**
 
-1. `[ ]` **K5** — upload ops-scripts (`mn2_env --upload-only`)
-2. `[ ]` **K2+K3** — `deploy.py camgirls --ask-pass`
-3. `[~]` **K7** — public verify 4/4 fra PC (**OK 2026-06-23** med `--warmup-rounds 2 --retries 4`; deploy K2 for stabil drift)
-4. `[ ]` **K4** — planlagt reboot til kernel 6.17 (valgfri vindue)
-5. `[ ]` **K1** — efter K4 reboot: bekræft auto-start uden manuel `systemctl start`
+1. `[x]` **K5** — upload ops-scripts (**Done** 2026-06-23)
+2. `[x]` **K2+K3** — `deploy.py camgirls --ask-pass` (**Done** — 44 filer)
+3. `[x]` **K7** — public verify **4/4** (**Done** post-deploy + post-reboot)
+4. `[x]` **K4** — reboot til kernel 6.17 (**Done** via `mn2_schedule_reboot_remote.py --now`)
+5. `[ ]` **K1** — efter reboot: bekræft auto-start uden manuel `systemctl start`
 6. `[ ]` **K8** — genoptag PayPal Pro-kø
+
+**Windows deploy:** brug `python` (ikke `python3`) — `python3` peger på Microsoft Store-alias uden paramiko.
 
 ---
 
