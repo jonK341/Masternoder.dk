@@ -13,8 +13,10 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
 
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 
-    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260617f">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260621b">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
 
@@ -156,7 +158,7 @@
 
             <table>
 
-                <thead><tr><th>Rank</th><th>Address</th><th>Status</th><th>Active</th></tr></thead>
+                <thead><tr><th>Rank</th><th>Address</th><th>Status</th><th>Active time</th></tr></thead>
 
                 <tbody id="ex-mn"><tr><td colspan="4">Loading…</td></tr></tbody>
 
@@ -359,6 +361,8 @@
                 </div>
             </div>
 
+            <p class="mn-rpc-banner" id="mn-rpc-banner" hidden aria-live="polite"></p>
+
             <div class="ex-tiles mn-stat-tiles" id="mn-host-tiles">
                 <div class="ex-tile"><div class="label">Live on network</div><div class="value" id="mn-net-enabled">--</div><div class="sub" id="mn-net-total">enabled masternodes</div></div>
                 <div class="ex-tile"><div class="label">Platform fleet</div><div class="value" id="mn-slots">--</div><div class="sub" id="mn-collateral">registered hosts</div></div>
@@ -389,8 +393,12 @@
             <div class="ex-section-title">Platform fleet <span id="mn-host-summary" class="mn-section-meta"></span></div>
             <div class="mn-node-grid" id="mn-node-grid"><div class="mn-node-card mn-node-card--empty">Loading fleet…</div></div>
 
-            <div class="ex-section-title">Network masternodes</div>
-            <div class="mn-node-grid mn-node-grid--network" id="mn-net-grid"><div class="mn-node-card mn-node-card--empty">Loading network…</div></div>
+            <div class="ex-section-title">Network masternodes <span class="mn-section-meta">active time = ping uptime toward ENABLED</span></div>
+            <table class="mn-net-table">
+                <thead><tr><th>Rank</th><th>Collateral</th><th>Status</th><th>Active time</th></tr></thead>
+                <tbody id="mn-net-table"><tr><td colspan="4">Loading network…</td></tr></tbody>
+            </table>
+            <div class="mn-node-grid mn-node-grid--network mn-node-grid--compact" id="mn-net-grid" hidden></div>
 
             <p class="sub-note" id="mn-public-notes"></p>
 
@@ -528,11 +536,12 @@
 
 
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="explorer" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="/static/js/mn2-crypto-hub.js?v=20260614g" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260617f" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 

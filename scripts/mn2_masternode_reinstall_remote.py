@@ -130,7 +130,9 @@ def wallet_10k_utxos():
 
 
 def alias_for(host_id: str) -> str:
-    return host_id.replace("-", "")[:16]
+    import re
+    alias = re.sub(r"[^a-zA-Z0-9]", "", (host_id or "").strip())[:16]
+    return alias or host_id.replace("-", "")[:16]
 
 
 def load_hosts_doc():
@@ -392,12 +394,20 @@ else:
 print("== listmasternodeconf (after restart) ==")
 print(json.dumps(cli("listmasternodeconf"), indent=2))
 
-print("== startmasternode alias ==")
+print("== startmasternode local first (alias fallback) ==")
+sys.path.insert(0, WEB)
+from backend.services import mn2_masternode_service as mn
+
 for a in assignments:
     alias = a["alias"]
+    privkey = a["privkey"]
     print(f"--- {alias} ---")
     try:
-        print(json.dumps(cli("startmasternode", "alias", "false", alias), indent=2))
+        err = mn._start_masternode(alias, privkey)
+        if err:
+            print("ERROR", err)
+        else:
+            print("OK")
     except Exception as exc:
         print("ERROR", exc)
 

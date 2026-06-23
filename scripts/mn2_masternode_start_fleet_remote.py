@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Fix masternoder2.conf masternode=1 crash loop and broadcast fleet from masternode.conf.
+Start fleet masternodes from masternode.conf — local first (ping / activetime), alias broadcast fallback.
 
-MasterNoder2 requires masternodeprivkey= in masternoder2.conf when masternode=1 is set.
-Multi-slot hosting uses masternode.conf + startmasternode alias (no masternode=1 needed).
+Syncs masternodeprivkey into masternoder2.conf per node via backend mn2_masternode_service.
 
 Usage (from repo root):
   python scripts/mn2_masternode_start_fleet_remote.py --ask-pass
@@ -28,21 +27,12 @@ def sh(ssh, cmd, timeout=180):
 
 REMOTE = r'''bash -s <<'ENDSCRIPT'
 set -e
-CONF=/var/www/html/config/masternoder2.conf
+WEB=/var/www/html
 D="-datadir=/var/www/html/config"
 CLI="/opt/masternoder2d/masternoder2-cli $D"
 
-echo "== masternode settings in masternoder2.conf =="
-grep -nE '^(masternode|masternodeprivkey|masternodeaddr)=' "$CONF" 2>/dev/null || echo "(none)"
-
-if grep -q '^masternode=1' "$CONF" 2>/dev/null && ! grep -q '^masternodeprivkey=' "$CONF" 2>/dev/null; then
-  echo "== removing masternode=1 (requires masternodeprivkey; fleet uses alias start) =="
-  sed -i '/^masternode=1$/d' "$CONF"
-  systemctl restart masternoder2d
-else
-  echo "== conf OK or local MN fully configured; ensuring daemon up =="
-  systemctl start masternoder2d 2>/dev/null || true
-fi
+echo "== ensuring daemon up =="
+systemctl start masternoder2d 2>/dev/null || true
 
 echo "== wait for RPC (up to 120s) =="
 for i in $(seq 1 24); do
@@ -56,8 +46,12 @@ done
 systemctl is-active masternoder2d || { systemctl status masternoder2d --no-pager -l | tail -15; exit 1; }
 HEIGHT=$($CLI getblockcount 2>/dev/null || echo -1)
 echo "getblockcount=$HEIGHT"
-if [ "$HEIGHT" = "-1" ]; then
-  echo "WARN: chain still loading — wait and re-run alias starts"
+
+echo ""
+echo "== unlock collateral UTXOs (if locked) =="
+LOCKED=$($CLI listlockunspent 2>/dev/null || echo "[]")
+if [ "$LOCKED" != "[]" ] && [ -n "$LOCKED" ]; then
+  $CLI lockunspent true "$LOCKED" 2>/dev/null || true
 fi
 
 echo ""
@@ -65,20 +59,9 @@ echo "== listmasternodeconf =="
 $CLI listmasternodeconf
 
 echo ""
-echo "== startmasternode alias for each configured alias =="
-for a in $($CLI listmasternodeconf 2>/dev/null | python3 -c "
-import json,sys
-try:
-    rows=json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-for r in rows:
-    if isinstance(r,dict) and r.get('alias'):
-        print(r['alias'])
-" 2>/dev/null); do
-  echo "--- $a ---"
-  $CLI startmasternode alias false "$a"
-done
+echo "== startmasternode local first (via mn2_start_masternode.py) =="
+cd "$WEB"
+python3 scripts/mn2_start_masternode.py --all-from-conf
 
 echo ""
 echo "== results =="

@@ -244,6 +244,43 @@
     return '<span class="mn-badge ' + cls + '">' + (status || 'unknown') + '</span>';
   }
 
+  function formatActivetime(seconds, status) {
+    var s = Number(seconds);
+    if (isNaN(s) || seconds == null || seconds === '') return '';
+    if (s <= 0) {
+      if (String(status || '').toUpperCase() === 'ACTIVE') return '0 · no ping';
+      return '0s';
+    }
+    if (s < 3600) return Math.floor(s / 60) + 'm active';
+    if (s < 86400) {
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      return h + 'h ' + m + 'm active';
+    }
+    var d = Math.floor(s / 86400);
+    var hr = Math.floor((s % 86400) / 3600);
+    return d + 'd ' + hr + 'h active';
+  }
+
+  function activetimeBadge(seconds, status) {
+    var label = formatActivetime(seconds, status);
+    if (!label) return '';
+    var cls = Number(seconds) > 0 ? 'mn-badge--active' : 'mn-badge--noping';
+    return '<span class="mn-badge ' + cls + '" title="Network activetime (ping uptime)">' + label + '</span>';
+  }
+
+  function renderMnRpcBanner(msg) {
+    var el = q('mn-rpc-banner');
+    if (!el) return;
+    if (msg) {
+      el.hidden = false;
+      el.textContent = 'Daemon RPC unavailable — network list may be empty or stale. (' + msg + ')';
+    } else {
+      el.hidden = true;
+      el.textContent = '';
+    }
+  }
+
   function renderNodeCard(title, addr, badges, extraClass) {
     return '<div class="mn-node-card ' + (extraClass || '') + '">' +
       '<div class="mn-node-title">' + title + '</div>' +
@@ -291,6 +328,7 @@
           q('mn-host-summary').textContent = '(' + hosts.length + ' in fleet · ' +
             (d.platform_enabled_on_chain || 0) + ' live on-chain)';
         }
+        renderMnRpcBanner((d.network || {}).rpc_error || null);
         var grid = q('mn-node-grid');
         if (grid) {
           if (!hosts.length) {
@@ -300,10 +338,12 @@
               var st = h.on_chain_status || h.status || 'unknown';
               var cls = String(st).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' :
                 (h.status === 'queued' ? 'mn-node-card--queued' : 'mn-node-card--active');
+              var act = h.on_chain_activetime != null ? h.on_chain_activetime : null;
               return renderNodeCard(
                 h.label || h.id,
                 h.broadcast_address || h.collateral_address || '—',
-                mnBadge(st) + mnBadge(h.synced ? 'synced' : 'pending'),
+                mnBadge(st) + mnBadge(h.synced ? 'synced' : 'pending') +
+                  activetimeBadge(act, st),
                 cls
               );
             }).join('');
@@ -311,26 +351,51 @@
         }
       }).catch(function () {});
 
-    fetch('/api/mn2/masternodes?limit=50', { credentials: 'same-origin' })
+    fetch('/api/mn2/masternodes?limit=50&fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        var tbody = q('mn-net-table');
         var grid = q('mn-net-grid');
-        if (!grid) return;
         var list = (d && d.list) || [];
-        if (!list.length) {
-          grid.innerHTML = renderNodeCard('No network masternodes', null, mnBadge('empty'), 'mn-node-card--empty');
-          return;
+        var rpcErr = (d && d.rpc_error) ? String(d.rpc_error) : '';
+        if (d && d.success) {
+          if (q('mn-net-enabled')) q('mn-net-enabled').textContent = fmtNum(d.enabled, 0);
+          if (q('mn-net-total')) q('mn-net-total').textContent = fmtNum(d.total, 0) + ' on chain';
         }
-        grid.innerHTML = list.map(function (m) {
-          var hrs = m.activetime != null ? Math.round(m.activetime / 3600) + 'h active' : '';
-          return renderNodeCard(
-            'Rank #' + (m.rank != null ? m.rank : '?'),
-            m.addr || '—',
-            mnBadge(m.status) + (hrs ? '<span class="mn-badge mn-badge--active">' + hrs + '</span>' : ''),
-            String(m.status).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' : ''
-          );
-        }).join('');
-      }).catch(function () {});
+        renderMnRpcBanner(rpcErr || null);
+        if (tbody) {
+          if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="4">' +
+              (rpcErr ? ('RPC unavailable — ' + rpcErr) : 'No network masternodes.') +
+              '</td></tr>';
+          } else {
+            tbody.innerHTML = list.map(function (m) {
+              var st = m.status || '—';
+              var addr = m.addr ? '<span class="mn-node-addr">' + m.addr + '</span>' : '—';
+              return '<tr class="' + (String(st).toUpperCase() === 'ENABLED' ? 'mn-row-enabled' : '') + '">' +
+                '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
+                '<td>' + addr + '</td>' +
+                '<td>' + mnBadge(st) + '</td>' +
+                '<td>' + (formatActivetime(m.activetime, st) || '—') + '</td>' +
+                '</tr>';
+            }).join('');
+          }
+        }
+        if (grid && list.length) {
+          grid.innerHTML = list.map(function (m) {
+            return renderNodeCard(
+              'Rank #' + (m.rank != null ? m.rank : '?'),
+              m.addr || '—',
+              mnBadge(m.status) + activetimeBadge(m.activetime, m.status),
+              String(m.status).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' : ''
+            );
+          }).join('');
+        }
+      }).catch(function () {
+        var tbody = q('mn-net-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4">Could not load network masternodes.</td></tr>';
+        renderMnRpcBanner('request failed');
+      });
 
     fetch('/api/mn2/masternode/checkout/config', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })

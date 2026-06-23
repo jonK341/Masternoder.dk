@@ -34,6 +34,11 @@ def main() -> int:
     p.add_argument("--camgirls", action="store_true", help="Provision payout addresses + post-deploy verify + Discord spotlight")
     p.add_argument("--optionals", action="store_true", help="After main ops, run mn2_ops_optionals_remote.py --all")
     p.add_argument("--purge-stale-hosts", action="store_true", help="Purge stuck masternode provisioning ghosts")
+    p.add_argument(
+        "--fleet-local",
+        action="store_true",
+        help="Install fleet autostart + run local-first start + masternode status (mn2_masternode_fleet_ops_remote.py)",
+    )
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -187,6 +192,16 @@ ENDCG'''
         import subprocess
         cleanup = os.path.join(os.path.dirname(__file__), "mn2_hosting_cleanup_remote.py")
         cmd = [sys.executable, cleanup, "--max-age-hours", "0"]
+        if args.ask_pass:
+            cmd.append("--ask-pass")
+        rc = subprocess.call(cmd)
+        if rc != 0:
+            return rc
+
+    if args.fleet_local:
+        import subprocess
+        fleet = os.path.join(os.path.dirname(__file__), "mn2_masternode_fleet_ops_remote.py")
+        cmd = [sys.executable, fleet, "--watch", "--interval", "30"]
         if args.ask_pass:
             cmd.append("--ask-pass")
         rc = subprocess.call(cmd)

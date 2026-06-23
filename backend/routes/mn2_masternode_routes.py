@@ -253,6 +253,16 @@ def masternode_paypal_webhook():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/maintain-ping", methods=["POST"])
+def masternode_maintain_ping():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        return jsonify(mn_service.maintain_ping_loop()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/provision-pending", methods=["POST"])
 def masternode_provision_pending():
     if not _ops_authorized():

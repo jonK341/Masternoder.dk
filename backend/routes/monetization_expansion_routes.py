@@ -27,17 +27,39 @@ def _ops_key_ok() -> bool:
 # --- #10 Promo validate ---
 @monetization_expansion_bp.route("/api/shop/promo/validate", methods=["GET", "POST"])
 def shop_promo_validate():
-    data = request.get_json(silent=True) or {}
-    code = (data.get("code") or request.args.get("code") or "").strip()
-    user_id = data.get("user_id") or request.args.get("user_id") or _resolve_user_id()
     try:
-        amount = float(data.get("amount_usd") or request.args.get("amount_usd") or 0)
-    except (TypeError, ValueError):
-        amount = 0.0
-    from backend.services.shop_checkout_promo_service import validate_checkout_promo
+        data = request.get_json(silent=True) or {}
+        code = (data.get("code") or request.args.get("code") or "").strip()
+        user_id = data.get("user_id") or request.args.get("user_id") or _resolve_user_id()
+        try:
+            amount = float(data.get("amount_usd") or request.args.get("amount_usd") or 0)
+        except (TypeError, ValueError):
+            amount = 0.0
+        from backend.services.shop_checkout_promo_service import validate_checkout_promo
 
-    out = validate_checkout_promo(code, user_id, amount_usd=amount)
-    return jsonify(out), 200 if out.get("success") else 400
+        out = validate_checkout_promo(code, user_id, amount_usd=amount)
+        return jsonify(out), 200 if out.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": "server_error", "detail": str(exc)[:200]}), 400
+
+
+@monetization_expansion_bp.route("/api/shop/promo/apply", methods=["POST"])
+def shop_promo_apply():
+    """Apply promo from shop UI — redeem M8 codes or validate checkout discounts."""
+    try:
+        data = request.get_json(silent=True) or {}
+        code = (data.get("code") or request.args.get("code") or "").strip()
+        user_id = data.get("user_id") or request.args.get("user_id") or _resolve_user_id()
+        try:
+            amount = float(data.get("amount_usd") or request.args.get("amount_usd") or 9.99)
+        except (TypeError, ValueError):
+            amount = 9.99
+        from backend.services.shop_checkout_promo_service import apply_shop_promo
+
+        out = apply_shop_promo(code, user_id, amount_usd=amount)
+        return jsonify(out), 200 if out.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": "server_error", "detail": str(exc)[:200]}), 400
 
 
 # --- #2 SCR self-serve ---

@@ -7,6 +7,7 @@ Usage:
   python scripts/deploy.py sync        # sync + agent DB
   python scripts/deploy.py loading     # loading optimizations
   python scripts/deploy.py static_pages  # root index.html pages + entire static/ folder
+  python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass  # multiple manifests (merged upload)
   python scripts/deploy.py trophies      # trophy levels, MN2 income, routes + data + UI
   python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
@@ -31,6 +32,52 @@ from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass, connec
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
 REMOTE_BASE = "/var/www/html"
+
+_MN2_SHELL_SCRIPTS = (
+    "mn2_fix_config_permissions.sh",
+    "mn2_fix_daemon_privkey.sh",
+    "mn2_hotfix_alias_provision_server.sh",
+    "mn2_fleet_autostart.sh",
+    "mn2_unlock_collateral.sh",
+    "camgirls_py.sh",
+)
+
+
+def _mn2_apply_config_permissions(ssh) -> None:
+    """Ensure www-data can read masternoder2.conf (root:www-data 640). Requires root SSH."""
+    print("[2h] MN2 config permissions (www-data read masternoder2.conf)...")
+    config_dir = f"{REMOTE_BASE}/config"
+    inline = (
+        f"CONFIG={config_dir} && "
+        f"chown root:www-data \"$CONFIG\" && chmod 775 \"$CONFIG\"; "
+        f"if [ -f \"$CONFIG/masternoder2.conf\" ]; then "
+        f"chown root:www-data \"$CONFIG/masternoder2.conf\" && chmod 640 \"$CONFIG/masternoder2.conf\"; "
+        f"fi; "
+        f"if [ -f \"$CONFIG/masternode.conf\" ]; then "
+        f"chown www-data:www-data \"$CONFIG/masternode.conf\" && chmod 664 \"$CONFIG/masternode.conf\"; "
+        f"fi"
+    )
+    ssh.exec_command(inline, timeout=15)
+    time.sleep(0.3)
+    fix_sh = f"{REMOTE_BASE}/scripts/mn2_fix_config_permissions.sh"
+    stdin, stdout, stderr = ssh.exec_command(
+        f"test -f {fix_sh} && bash {fix_sh} --verify 2>&1 || echo SKIP",
+        timeout=30,
+    )
+    text = ((stdout.read() or b"") + (stderr.read() or b"")).decode(errors="replace").strip()
+    if "FAIL" in text:
+        print("  [WARN] www-data MN2 config permissions failed — fix on server as root:")
+        print(f"         sudo bash {fix_sh}")
+        for line in text.splitlines():
+            if "FAIL" in line:
+                print(f"         {line}")
+    elif "OK www-data can read" in text:
+        print("  [OK] masternoder2.conf + masternode.conf permissions verified")
+    else:
+        print("  [OK] inline config permissions applied")
+    for sh in _MN2_SHELL_SCRIPTS:
+        ssh.exec_command(f"chmod +x {REMOTE_BASE}/scripts/{sh} 2>/dev/null || true", timeout=5)
+    print()
 
 
 def _static_pages_manifest():
@@ -253,6 +300,7 @@ MANIFESTS = {
         "static/js/navigation-toolbar.js",
         "backend/routes/rulebook_routes.py",
         "backend/routes/compendium_routes.py",
+        "backend/services/compendium_crypto_rewards_service.py",
         "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
         "data/rulebook_index_v15.json",
@@ -272,6 +320,25 @@ MANIFESTS = {
         "data/rulebook_v16_sync.json",
         "data/hunters_rulebook_v2.json",
         "data/communication_psychology_theories.json",
+        "data/mn2_config.json",
+        "static/img/rulebook-compendium-v15.png",
+        "static/img/rulebook-v1-core.png",
+        "static/img/rulebook-v2-hunters.png",
+        "static/img/rulebook-v3-comm-psych.png",
+        "static/img/rulebook-v3-2-systemic.png",
+        "static/img/rulebook-v4-star-map.png",
+        "static/img/rulebook-v5-effect-clusters.png",
+        "static/img/rulebook-v6-electric-magnet.png",
+        "static/img/rulebook-v7-unified-points.png",
+        "static/img/rulebook-v8-agents.png",
+        "static/img/rulebook-v9-shop.png",
+        "static/img/rulebook-v10-battle.png",
+        "static/img/rulebook-v11-dna.png",
+        "static/img/rulebook-v12-generator.png",
+        "static/img/rulebook-v13-geo-session.png",
+        "static/img/rulebook-v14-analytics.png",
+        "static/img/rulebook-v16-sync.png",
+        "scripts/generate_rulebook_images.py",
         "docs/RULEBOOK_READERS.md",
     ],
     # Unified Game Hub: frontpage tabs + quest unification (Option C)
@@ -375,6 +442,7 @@ MANIFESTS = {
         "cron/masternoder-mn2-accrue.cron.d",
         "cron/mn2_masternode_provision.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
+        "scripts/mn2_patch_rpc_retries.sh",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
     # Frontend (profile/staking-monitor pages + static/js/mn2-*.js) ships via the "static_pages" manifest;
@@ -432,6 +500,7 @@ MANIFESTS = {
         "backend/routes/paypal_routes.py",
         "backend/services/discord_link_service.py",
         "backend/services/shop_discord_promo_service.py",
+        "backend/services/shop_checkout_promo_service.py",
         "backend/routes/battle_routes.py",
         "backend/routes/hunters_game.py",
         "backend/routes/shop_routes.py",
@@ -473,6 +542,20 @@ MANIFESTS = {
         "scripts/mn2_reconcile.py",
         "scripts/mn2_next_ops_remote.py",
         "scripts/mn2_ops_optionals_remote.py",
+        "scripts/mn2_p1_monetization_remote.py",
+        "scripts/mn2_start_masternode.py",
+        "scripts/mn2_fix_daemon_privkey.sh",
+        "scripts/mn2_ensure_rpc_conf.sh",
+        "scripts/mn2_fix_config_permissions.sh",
+        "scripts/mn2_unlock_collateral.sh",
+        "scripts/mn2_repair_masternode_conf.sh",
+        "scripts/mn2_fleet_autostart.sh",
+        "scripts/mn2_masternode_fleet_ops_remote.py",
+        "scripts/mn2_check_activetime_public.py",
+        "scripts/mn2_test_ping_live.py",
+        "scripts/mn2_hotfix_alias_provision_server.sh",
+        "scripts/fix_explorer_subdomains_remote.py",
+        "systemd/mn2-fleet-autostart.service.example",
         "scripts/treasury_signoff.py",
         "scripts/trader_staking_join_server.sh",
         "explorer/index.html",
@@ -677,9 +760,33 @@ def run_server_prune(server_pass=None, with_disk=False):
                 pass
 
 
-def run(files, upload_only=False, restart_services=None, manifest_name=None, server_pass=None):
+def _merge_manifest_files(manifest_names):
+    """Merge file lists from multiple manifests, preserving order and deduplicating."""
+    files = []
+    seen = set()
+    for name in manifest_names:
+        for path in MANIFESTS[name]:
+            if path not in seen:
+                seen.add(path)
+                files.append(path)
+    return files
+
+
+def _resolve_restart_services(manifest_names, upload_only):
+    names = set(manifest_names)
+    if names & RESTART_VIDGENERATOR_ONLY_FOR:
+        print("(Restart: uwsgi-vidgenerator + uwsgi-vidgenerator-5001)")
+        return ["uwsgi-vidgenerator", "uwsgi-vidgenerator-5001"]
+    if names & RESTART_NGINX_ONLY_FOR and not upload_only:
+        print("(Restart: nginx reload only — static HTML/CSS/JS)")
+        return ["__nginx_static__"]
+    return None
+
+
+def run(files, upload_only=False, restart_services=None, manifest_name=None, manifest_names=None, server_pass=None):
     if not server_pass:
         server_pass = require_deploy_pass()
+    _manifests = set(manifest_names or ([] if manifest_name is None else [manifest_name]))
     ssh = None
     sftp = None
     try:
@@ -740,7 +847,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
             print()
 
         # MN2 deposit scanner: executable + /etc/cron.d/ (manifest mn2_env)
-        if manifest_name == "mn2_env" and not upload_only:
+        if "mn2_env" in _manifests and not upload_only:
             print("[2c] MN2 scanner cron...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_scan_deposits.sh 2>/dev/null || true", timeout=5)
             ssh.exec_command(
@@ -768,7 +875,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
                   else "  [WARN] staking accrual cron.d install may have failed")
             print()
 
-        if manifest_name == "mn2_staking" and not upload_only:
+        if "mn2_staking" in _manifests and not upload_only:
             print("[2f] MN2 masternode hosting post-deploy...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_masternode_provision.sh 2>/dev/null || true", timeout=5)
             ssh.exec_command(
@@ -857,9 +964,12 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
             out_mr = (stdout.read() or b"").decode().strip()
             print("  [OK] /etc/cron.d/masternoder-margin-report (Tue 10:00 UTC)" if out_mr == "OK"
                   else "  [WARN] margin report cron.d install may have failed")
-            print()
+            _mn2_apply_config_permissions(ssh)
 
-        if manifest_name == "knowledge_cron_env" and not upload_only:
+        if "config" in _manifests and not upload_only:
+            _mn2_apply_config_permissions(ssh)
+
+        if "knowledge_cron_env" in _manifests and not upload_only:
             print("[2d] Knowledge-sharing report cron (reporter_agent)...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/knowledge_sharing_report.sh 2>/dev/null || true", timeout=5)
             ssh.exec_command(
@@ -877,7 +987,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
                 print("  [WARN] knowledge cron.d install may have failed")
             print()
 
-        if manifest_name == "agents_cron_env" and not upload_only:
+        if "agents_cron_env" in _manifests and not upload_only:
             print("[2e] Agent platform crons (daily / weekly / monthly + blueprint/API)...")
             for sh in (
                 "agents_cron_daily.sh",
@@ -904,7 +1014,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, ser
             print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader)")
             print()
 
-        if manifest_name == "camgirls" and not upload_only:
+        if "camgirls" in _manifests and not upload_only:
             print("[2g] Camgirls post-deploy (venv deps + script perms)...")
             ssh.exec_command(
                 f"chmod +x {REMOTE_BASE}/scripts/camgirls_py.sh 2>/dev/null || true",
@@ -1031,7 +1141,8 @@ def main():
     if with_disk:
         args = [a for a in args if a != "--with-disk"]
     if not args:
-        print("Usage: python scripts/deploy.py <manifest> [--ask-pass] [--upload-only] | --files path1 path2 [--ask-pass] [--upload-only]")
+        print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only]")
+        print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only]")
         print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("Manifests:", ", ".join(MANIFESTS))
@@ -1040,27 +1151,32 @@ def main():
     if args and args[0].lower() == "server_prune":
         ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
         sys.exit(0 if ok else 1)
-    manifest_name = None
+    manifest_names = None
     if args[0] == "--files":
         files = args[1:]
         if not files:
             print("--files requires at least one path")
             sys.exit(1)
+        restart_services = None
     else:
-        name = args[0].lower()
-        if name not in MANIFESTS:
-            print("Unknown manifest:", name, "| known:", ", ".join(MANIFESTS))
-            sys.exit(1)
-        manifest_name = name
-        files = MANIFESTS[name]
-    restart_services = None
-    if manifest_name and manifest_name in RESTART_VIDGENERATOR_ONLY_FOR:
-        restart_services = ["uwsgi-vidgenerator", "uwsgi-vidgenerator-5001"]
-        print("(Restart: uwsgi-vidgenerator + uwsgi-vidgenerator-5001)")
-    elif manifest_name and manifest_name in RESTART_NGINX_ONLY_FOR and not upload_only:
-        restart_services = ["__nginx_static__"]
-        print("(Restart: nginx reload only — static HTML/CSS/JS)")
-    ok = run(files, upload_only=upload_only, restart_services=restart_services, manifest_name=manifest_name, server_pass=server_pass)
+        manifest_names = []
+        for a in args:
+            name = a.lower()
+            if name not in MANIFESTS:
+                print("Unknown manifest:", name, "| known:", ", ".join(MANIFESTS))
+                sys.exit(1)
+            manifest_names.append(name)
+        if len(manifest_names) > 1:
+            print(f"(Manifests: {', '.join(manifest_names)})")
+        files = _merge_manifest_files(manifest_names)
+        restart_services = _resolve_restart_services(manifest_names, upload_only)
+    ok = run(
+        files,
+        upload_only=upload_only,
+        restart_services=restart_services,
+        manifest_names=manifest_names,
+        server_pass=server_pass,
+    )
     sys.exit(0 if ok else 1)
 
 

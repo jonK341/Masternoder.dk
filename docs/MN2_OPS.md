@@ -239,6 +239,16 @@ python scripts/mn2_next_ops_remote.py --ask-pass --optionals
 | `LIVEKIT_*` | `--livekit-url` / `--livekit-api-key` / `--livekit-api-secret` |
 | `DISCORD_CHANNEL_ID_MARKET` | `--discord-market-webhook https://discord.com/api/webhooks/...` |
 
+**P1 monetization (Pro plan + tier enforcement):**
+
+```powershell
+python scripts/mn2_p1_monetization_remote.py --ask-pass --audit
+python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify
+python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-5XXXX --paypal-webhook-id WH-XXXX --reload --verify
+```
+
+Sets `PAYPAL_SUBSCRIPTION_PLAN_PRO` (maps `P-PLACEHOLDER-PRO` template), `PAYPAL_WEBHOOK_ID`, and `MONETIZATION_TIER_ENFORCEMENT=1` on server `.env` without renaming JSON keys.
+
 **Deploy remember:** always ship `backend/services/monetization_config_service.py` with any `data/monetization_config.json` change (generator API tiers, `mobile_iap`, coin packs). It is in the `mn2_staking` manifest; minimal hotfix:
 
 ```powershell
@@ -315,11 +325,13 @@ Set `DISCORD_WEBHOOK_URL` in `.env` and restart uWSGI (`touch /var/www/html/.uws
 
 ---
 
-## 10. Masternode hosting (50 slots + PayPal)
+## 10. Masternode hosting (250 slots + PayPal)
 
 **Explorer UI:** `/explorer?tab=masternodes` — slot meter, fleet cards, PayPal checkout (**$4.99/slot**, max 5 per order). Purchase is **fully automated**: PayPal capture → slot reserved → collateral locked → masternode started (cron retries until live).
 
-**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 50`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
+**Config:** `data/mn2_masternode_config.json` (`max_hosted_nodes: 250`, `auto_provision: true`, `paypal.price_usd_per_slot: 4.99`). Registry: `data/mn2_masternode_hosts.json` (not in deploy manifest — server file is preserved).
+
+**Status (2026-06-23):** P0 provisioning backlog **cleared** — public `GET /api/mn2/masternode/service?fresh=1` reported **30** hosted (**28** active, **2** in-flight provisioning with collateral), **0** stale provisioning, **220** slots free. Verify from Windows: `python scripts/mn2_check_activetime_public.py` · ops breakdown: `GET /api/mn2/masternode/hosts?internal=1` with `X-Ops-Secret`.
 
 **Env (automation):**
 
@@ -367,6 +379,35 @@ Then split/send collateral, add `masternode.conf` entries, and `masternode start
 
 **PayPal webhook:** point PayPal Notifications to `https://masternoder.dk/api/mn2/masternode/webhook` (or reuse on-ramp webhook URL if you multiplex events). Requires `PAYPAL_WEBHOOK_ID` in `.env`.
 
+### 11.1 Ping loop / `masternoder2.conf` privkey (production SSH)
+
+The daemon ping loop (ENABLED **activetime**) uses **`masternodeprivkey` in `/var/www/html/config/masternoder2.conf`**, which must always match **`ops.primary_ping_alias`** (default **`platformmn2`**) in `masternode.conf` — **not** the alias last provisioned. Flask/uwsgi runs as **www-data** and cannot write that file; mismatches cause `Permission denied` on ops API and a frozen activetime counter.
+
+**Symptoms:** `Obfuscation Masternode List doesn't include our Masternode`, activetime stuck (e.g. 156002), wrong ENABLED txhash vs platformmn2 collateral.
+
+**Immediate fix (run as root on server):**
+
+```bash
+# 1) Read correct privkey from masternode.conf (platformmn2, field 3)
+PRIMARY=platformmn2
+WANT=$(grep -E "^${PRIMARY} " /var/www/html/config/masternode.conf | awk '{print $3}')
+echo "Want: ${WANT:0:8}…"
+
+# 2) Fix masternoder2.conf (or use deployed script after mn2_staking deploy)
+sudo bash /var/www/html/scripts/mn2_fix_daemon_privkey.sh
+
+# 3) Restart fleet (all aliases — restores EXPIRED platformmn3–5)
+cd /var/www/html && python3 scripts/mn2_start_masternode.py --all-from-conf
+```
+
+**From Windows (after deploy):**
+
+```powershell
+python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
+```
+
+**Config permissions (recommended):** run `scripts/mn2_fix_config_permissions.sh` as root so **www-data** can read `masternoder2.conf` (`root:www-data` **640**) and read/write `masternode.conf` (**664**). The config directory must be traversable (`750` or `755`). Only root/sudo scripts rewrite ping keys in `masternoder2.conf`; app code skips write when content is already correct.
+
 ---
 
 ## 9. References
@@ -377,3 +418,20 @@ Then split/send collateral, add `masternode.conf` entries, and `masternode start
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.
+
+## Waterfall merge order (split PRs #19–#27)
+
+Recommended sequence when landing the `cursor/monetized-content-crypto` split off `main` (merge each PR only after the prior one is green and merged):
+
+1. **#21** deploy-tooling — deploy manifests and SSH ask-pass
+2. **#19** mn2-fleet-provision-ops — fleet provisioning, RPC, hosting alias repair
+3. **#20** mn2-explorer-hub — explorer performance and masternodes tab
+4. **#22** mn2-hosting-shop — shop checkout config and smoke scripts
+5. **#23** docs-mn2-status — ops status, release build, env example
+6. **#25** platform-page-shell — shared page-shell CSS (before pages that depend on it)
+7. **#24** podcast-hub — podcast routes, services, UI
+8. **#26** monetization-crypto-core — monetization platform core
+9. **#27** split-leftovers — shop UI, rulebook assets, cogs/monetization route tweaks, P1 remote ops
+
+Rebase later PRs onto updated `main` after each merge if GitHub reports conflicts.
+

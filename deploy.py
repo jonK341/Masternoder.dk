@@ -30,11 +30,10 @@ import sys
 import time
 from datetime import datetime
 
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass, connect_deploy_ssh
 
 SERVER_HOST = deploy_host()
 SERVER_USER = deploy_user()
-SERVER_PASS = require_deploy_pass()
 
 # Files to deploy - Critical files from FINAL_COMPREHENSIVE_SUMMARY.md
 # Env: .env (server runtime secrets) and .env.example (template). Keep local .env in sync with production when deploying.
@@ -542,8 +541,10 @@ STALE_REMOTE_FILES = [
     "vidgenerator/src/__pycache__/app*.pyc",
 ]
 
-def deploy(upload_only=False):
+def deploy(upload_only=False, server_pass=None):
     """Deploy files over SFTP. When upload_only is True, skip cache clear and service restarts."""
+    if not server_pass:
+        server_pass = require_deploy_pass()
     print("="*70)
     if upload_only:
         print("AUTO DEPLOY - UPLOAD ONLY (no restart)")
@@ -576,10 +577,8 @@ def deploy(upload_only=False):
     try:
         # Connect
         print("[1/5] Connecting...")
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
-        print("  [OK] Connected")
+        ssh, auth_method = connect_deploy_ssh(server_pass)
+        print(f"  [OK] Connected ({auth_method})")
         print()
 
         # Remove stale server files that would shadow current package paths
@@ -801,6 +800,10 @@ def deploy(upload_only=False):
 
 if __name__ == "__main__":
     argv = [a for a in sys.argv[1:] if a.strip()]
+    ask_pass = "--ask-pass" in argv
+    if ask_pass:
+        argv = [a for a in argv if a != "--ask-pass"]
     upload_only = "--upload-only" in argv or "--no-restart" in argv
-    success = deploy(upload_only=upload_only)
+    server_pass = require_deploy_pass(force_prompt=ask_pass)
+    success = deploy(upload_only=upload_only, server_pass=server_pass)
     sys.exit(0 if success else 1)

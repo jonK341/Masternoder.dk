@@ -6,19 +6,28 @@ Bitcoin-style HTTP JSON-RPC. Credentials from env:
   MN2_RPC_PASSWORD - must match the wallet node's rpcpassword
 If you get HTTP 401: set MN2_RPC_USER and MN2_RPC_PASSWORD in the app environment (e.g. systemd/uwsgi) to the same values as in the MN2 wallet config.
 Optional: MN2_PROFILE_LOG=1 to log each call to logs/mn2_rpc.jsonl.
+Optional: MN2_RPC_MAX_RETRIES (default 2) — connection attempts before giving up.
+Optional: MN2_RPC_TIMEOUT (default 15, max 15) — per-attempt socket timeout in seconds.
 """
 import os
 import json
 import time
 import base64
+import re
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
 except ImportError:
     requests = None
+    HTTPAdapter = None  # type: ignore[misc, assignment]
+    Retry = None  # type: ignore[misc, assignment]
+
+_SESSION: Optional["requests.Session"] = None
 
 # Default ports: mainnet 9332, testnet 19332 (common convention; confirm in MasterNoder2 repo)
 _DEFAULT_URL_MAINNET = "http://127.0.0.1:9332"
@@ -54,12 +63,72 @@ def _rpc_auth() -> tuple:
     )
 
 
-def _rpc_timeout(default: float = 30.0, *, cap: float = 120.0) -> float:
+def _rpc_max_retries(default: int = 2) -> int:
+    try:
+        retries = int((os.environ.get("MN2_RPC_MAX_RETRIES") or str(default)).strip() or default)
+    except (TypeError, ValueError):
+        retries = default
+    return max(0, min(retries, 10))
+
+
+def _rpc_timeout(default: float = 15.0, *, cap: float = 15.0) -> float:
     try:
         timeout_sec = float((os.environ.get("MN2_RPC_TIMEOUT") or str(default)).strip() or default)
     except (TypeError, ValueError):
         timeout_sec = default
     return max(1.0, min(timeout_sec, cap))
+
+
+def _resolve_timeout(timeout_sec: Optional[float]) -> float:
+    cap = _rpc_timeout()
+    if timeout_sec is None:
+        return cap
+    return max(1.0, min(float(timeout_sec), cap))
+
+
+_CAUSED_BY_RE = re.compile(r"Caused by \((.+)\)\s*$", re.DOTALL)
+_NEW_CONN_RE = re.compile(r"NewConnectionError\(['\"](.+?)['\"]\)", re.DOTALL)
+
+
+def _normalize_connection_error(err: Any) -> str:
+    """Surface the underlying connection error instead of urllib3 retry wrapper text."""
+    msg = str(err).strip()
+    if "max retries exceeded" in msg.lower():
+        match = _CAUSED_BY_RE.search(msg)
+        if match:
+            msg = match.group(1).strip()
+    inner = _NEW_CONN_RE.search(msg)
+    if inner:
+        msg = inner.group(1).strip()
+    elif "failed to establish" in msg.lower():
+        idx = msg.lower().index("failed to establish")
+        msg = msg[idx:].rstrip(")'\" ")
+    return msg.rstrip(")'\" ")
+
+
+def _get_requests_session() -> "requests.Session":
+    global _SESSION
+    if _SESSION is not None:
+        return _SESSION
+    if requests is None or HTTPAdapter is None or Retry is None:
+        raise RuntimeError("requests is required for MN2 RPC")
+    max_retries = _rpc_max_retries()
+    retry = Retry(
+        total=max_retries,
+        connect=max_retries,
+        read=0,
+        redirect=0,
+        status=0,
+        backoff_factor=0.1,
+        allowed_methods=frozenset(["POST"]),
+        raise_on_status=False,
+    )
+    sess = requests.Session()
+    adapter = HTTPAdapter(max_retries=retry)
+    sess.mount("http://", adapter)
+    sess.mount("https://", adapter)
+    _SESSION = sess
+    return _SESSION
 
 
 def _parse_rpc_response(status_code: int, body: str) -> Tuple[Optional[Any], Optional[str]]:
@@ -91,14 +160,17 @@ def _post_json_rpc(
 ) -> Tuple[int, str]:
     """POST JSON-RPC; returns (status_code, response_body_text)."""
     if requests is not None:
-        r = requests.post(
-            url,
-            json=payload,
-            auth=(user, password) if user or password else None,
-            headers={"Content-Type": "application/json"},
-            timeout=timeout_sec,
-        )
-        return r.status_code, r.text or ""
+        try:
+            r = _get_requests_session().post(
+                url,
+                json=payload,
+                auth=(user, password) if user or password else None,
+                headers={"Content-Type": "application/json"},
+                timeout=timeout_sec,
+            )
+            return r.status_code, r.text or ""
+        except requests.exceptions.RequestException as exc:
+            return 0, _normalize_connection_error(exc)
 
     body = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json", "Connection": "close"}
@@ -112,7 +184,7 @@ def _post_json_rpc(
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read().decode("utf-8", errors="replace")
     except Exception as exc:
-        return 0, str(exc)
+        return 0, _normalize_connection_error(exc)
 
 
 def probe_endpoint(
@@ -191,7 +263,7 @@ def _call(
     url = _rpc_url()
     user, password = _rpc_auth()
     params = params if params is not None else []
-    timeout = _rpc_timeout() if timeout_sec is None else max(1.0, min(float(timeout_sec), 120.0))
+    timeout = _resolve_timeout(timeout_sec)
     payload = {"jsonrpc": "1.0", "id": "mn2", "method": method, "params": params}
     t0 = time.perf_counter()
     try:
@@ -201,15 +273,21 @@ def _call(
         duration_ms = (time.perf_counter() - t0) * 1000
         if _profile_log_enabled():
             _write_profile_log(method, duration_ms, status == 200)
+        if status == 0:
+            err = _normalize_connection_error(body)
+            if _profile_log_enabled():
+                _write_profile_log(method, duration_ms, False, err)
+            return {"error": err, "result": None}
         result, err = _parse_rpc_response(status, body)
         if err:
             return {"error": err, "result": None}
         return {"result": result, "error": None}
     except Exception as e:
         duration_ms = (time.perf_counter() - t0) * 1000
+        err = _normalize_connection_error(e)
         if _profile_log_enabled():
-            _write_profile_log(method, duration_ms, False, str(e))
-        return {"error": str(e), "result": None}
+            _write_profile_log(method, duration_ms, False, err)
+        return {"error": err, "result": None}
 
 
 def getblockcount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
@@ -269,30 +347,37 @@ def validateaddress(address: str) -> Dict[str, Any]:
     return _call("validateaddress", [address])
 
 
-def getstakinginfo() -> Dict[str, Any]:
+def getstakinginfo(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """PoS staking info (weight, expected time, enabled). May be unimplemented on some chains."""
+    if timeout_sec is not None:
+        return _call("getstakinginfo", timeout_sec=timeout_sec)
     return _call("getstakinginfo")
 
 
-def getmininginfo() -> Dict[str, Any]:
+def getmininginfo(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Mining/network info incl. difficulty and networkhashps. Used as a network-weight proxy on PoS forks that lack getstakinginfo."""
+    if timeout_sec is not None:
+        return _call("getmininginfo", timeout_sec=timeout_sec)
     return _call("getmininginfo")
 
 
-def getstakingstatus() -> Dict[str, Any]:
-    """PIVX-style staking status booleans (staking status, mnsync, walletunlocked, mintablecoins, ...). Preferred on forks where getstakinginfo is unimplemented."""
-    return _call("getstakingstatus")
-
-
-def getstakingstatus() -> Dict[str, Any]:
+def getstakingstatus(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """PIVX-style staking status (staking_status, mintablecoins, walletunlocked, ...).
     This MN2 build implements getstakingstatus rather than getstakinginfo."""
+    if timeout_sec is not None:
+        return _call("getstakingstatus", timeout_sec=timeout_sec)
     return _call("getstakingstatus")
 
 
-def getwalletinfo() -> Dict[str, Any]:
+def getwalletinfo(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Wallet info incl. balance, unconfirmed_balance, immature_balance. May be unimplemented on some chains."""
+    if timeout_sec is not None:
+        return _call("getwalletinfo", timeout_sec=timeout_sec)
     return _call("getwalletinfo")
+
+
+_STAKING_HEALTH_CACHE: Dict[str, Any] = {}
+_STAKING_HEALTH_TTL = 30
 
 
 def staking_health() -> Dict[str, Any]:
@@ -303,6 +388,11 @@ def staking_health() -> Dict[str, Any]:
 
     status: active | inactive | unsupported | unreachable
     """
+    now = time.time()
+    cached = _STAKING_HEALTH_CACHE.get("value")
+    if cached is not None and (now - _STAKING_HEALTH_CACHE.get("ts", 0)) < _STAKING_HEALTH_TTL:
+        return cached
+
     out: Dict[str, Any] = {
         "status": "unsupported",
         "staking_active": None,
@@ -315,7 +405,7 @@ def staking_health() -> Dict[str, Any]:
         "errors": None,
     }
     _CONN = ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")
-    si = getstakinginfo()
+    si = getstakinginfo(timeout_sec=4)
     if si.get("error"):
         el = str(si["error"]).lower()
         if any(x in el for x in _CONN):
@@ -323,7 +413,7 @@ def staking_health() -> Dict[str, Any]:
             out["errors"] = si["error"]
             return out
         # getstakinginfo not implemented on this build -> fall back to PIVX getstakingstatus
-        ss = getstakingstatus()
+        ss = getstakingstatus(timeout_sec=4)
         if ss.get("error"):
             sl = str(ss["error"]).lower()
             if any(x in sl for x in _CONN):
@@ -359,7 +449,7 @@ def staking_health() -> Dict[str, Any]:
 
     # PIVX-style fork fallback: getstakinginfo missing -> use getstakingstatus booleans.
     if out["status"] == "unsupported":
-        ss = getstakingstatus()
+        ss = getstakingstatus(timeout_sec=4)
         if not ss.get("error") and isinstance(ss.get("result"), dict):
             r = ss["result"]
             active = bool(r.get("staking status", r.get("staking_status")))
@@ -377,23 +467,29 @@ def staking_health() -> Dict[str, Any]:
                 "mnsync": r.get("mnsync"),
             }
 
-    wi = getwalletinfo()
+    wi = getwalletinfo(timeout_sec=4)
     if not wi.get("error"):
         w = wi.get("result") or {}
         if isinstance(w, dict):
             out["mature_balance"] = w.get("balance")
             out["immature_balance"] = w.get("immature_balance")
             out["unconfirmed_balance"] = w.get("unconfirmed_balance")
+    _STAKING_HEALTH_CACHE["value"] = out
+    _STAKING_HEALTH_CACHE["ts"] = time.time()
     return out
 
 
-def getmasternodecount() -> Dict[str, Any]:
+def getmasternodecount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Masternode count. May be unimplemented on some chains."""
+    if timeout_sec is not None:
+        return _call("getmasternodecount", timeout_sec=timeout_sec)
     return _call("getmasternodecount")
 
 
-def listmasternodes() -> Dict[str, Any]:
+def listmasternodes(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Full masternode list (PIVX-style): rank, addr, status, lastpaid, activetime, version."""
+    if timeout_sec is not None:
+        return _call("listmasternodes", timeout_sec=timeout_sec)
     return _call("listmasternodes")
 
 
@@ -412,7 +508,14 @@ def startmasternode(
     lock_wallet: bool = False,
     alias: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Start masternode(s). set_type: local|all|many|missing|disabled|alias."""
+    """
+    Start masternode(s). set_type: local|all|many|missing|disabled|alias.
+
+    Examples (MasterNoder2 RPC):
+      startmasternode alias false platformmn2   # named entry in masternode.conf
+      startmasternode local false               # ping via masternodeprivkey in masternoder2.conf
+    Invalid: startmasternode local false platformmn2  (local does not take an alias)
+    """
     # MasterNoder2 RPC parses lockwallet via params[1].get_str() — must be "true"/"false", not JSON bool.
     lock_str = "true" if lock_wallet else "false"
     params: List[Any] = [set_type, lock_str]
@@ -445,8 +548,10 @@ def gettxoutsetinfo() -> Dict[str, Any]:
     return _call("gettxoutsetinfo")
 
 
-def getdifficulty() -> Dict[str, Any]:
+def getdifficulty(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Network difficulty (may return a dict with PoW/PoS on hybrid chains)."""
+    if timeout_sec is not None:
+        return _call("getdifficulty", timeout_sec=timeout_sec)
     return _call("getdifficulty")
 
 

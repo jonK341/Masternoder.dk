@@ -509,7 +509,8 @@ def masternodes():
     try:
         from backend.services import mn2_explorer_data
         limit = int(request.args.get("limit", 50) or 50)
-        data = mn2_explorer_data.masternodes(limit=limit)
+        fresh = request.args.get("fresh") in ("1", "true", "yes")
+        data = mn2_explorer_data.masternodes(limit=limit, fresh=fresh)
         resp = jsonify({"success": True, **data})
         resp.headers["Cache-Control"] = "public, max-age=60"
         return resp, 200

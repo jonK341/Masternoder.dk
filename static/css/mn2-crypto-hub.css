@@ -414,4 +414,30 @@ body.mn2-crypto-hub code {
 .mn-badge--enabled { background: rgba(93, 255, 176, 0.2); color: #5dffb0; }
 .mn-badge--queued { background: rgba(255, 196, 77, 0.2); color: #ffd166; }
 .mn-badge--active { background: rgba(0, 212, 255, 0.2); color: #7ec8ff; }
+.mn-badge--noping { background: rgba(255, 120, 100, 0.18); color: #ffb4a8; text-transform: none; }
 .mn-badge--planned { background: rgba(255, 255, 255, 0.1); color: #c8d4ec; }
+.mn-net-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 0.88rem;
+}
+.mn-net-table th,
+.mn-net-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(120, 160, 220, 0.2);
+  text-align: left;
+  vertical-align: top;
+}
+.mn-net-table th { color: #9ec5ff; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.mn-net-table tr.mn-row-enabled { background: rgba(93, 255, 176, 0.06); }
+.mn-node-grid--compact { display: none; }
+.mn-rpc-banner {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 170, 68, 0.45);
+  background: rgba(255, 170, 68, 0.12);
+  color: #ffcc88;
+  font-size: 0.86rem;
+}

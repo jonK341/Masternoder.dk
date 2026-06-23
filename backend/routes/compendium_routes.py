@@ -78,15 +78,30 @@ def record_view():
             on_user_activity(user_id, "compendium_read", {"page_number": page_number})
         except Exception:
             pass
+        crypto_reward = {}
+        try:
+            from backend.services.compendium_crypto_rewards_service import award_page_read_reward
+            crypto_reward = award_page_read_reward(user_id, page_number)
+        except Exception:
+            pass
         return jsonify({
             "success": True,
             "user_id": user_id,
             "page_number": page_number,
             "points_awarded": amount,
             "point_type": POINT_TYPE,
+            "crypto_reward": crypto_reward,
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@compendium_bp.route("/api/compendium/crypto-rewards", methods=["GET"])
+def compendium_crypto_rewards():
+    """Public MN2 earn rates for compendium page reads and theory study."""
+    from backend.services.compendium_crypto_rewards_service import get_crypto_rewards_info
+
+    return jsonify(get_crypto_rewards_info(_resolve_uid())), 200
 
 
 @compendium_bp.route("/api/compendium/access", methods=["GET"])

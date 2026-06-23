@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -755,7 +757,7 @@
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: var(--secondary); margin-bottom: var(--spacing-sm);">⭐ Pro subscription (PayPal)</h2>
                 <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">
-                    Monthly coins and tier benefits. Uses PayPal Subscriptions — after you approve, we link the subscription to your account. Replace placeholder plan ids in <code style="font-size:0.85em;">data/monetization_config.json</code> with your live PayPal billing plan id.
+                    Monthly coins and tier benefits via PayPal Subscriptions. Goes live when ops sets <code style="font-size:0.85em;">PAYPAL_SUBSCRIPTION_PLAN_PRO</code> on the server — no JSON rename required.
                 </p>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:var(--spacing-md);padding:12px;border-radius:var(--radius-md);border:1px solid rgba(0,255,136,0.25);background:rgba(0,255,136,0.05);">
                     <label style="flex:1;min-width:200px;">
@@ -2557,7 +2559,10 @@
                 const plans = (d.success && d.subscriptions && d.subscriptions.plans) ? d.subscriptions.plans : {};
                 const ids = Object.keys(plans);
                 if (!ids.length) {
-                    container.innerHTML = '<p style="color: var(--text-secondary); margin: 0;">No subscription plans configured.</p>';
+                    const pending = !d.subscription_pro_live;
+                    container.innerHTML = pending
+                        ? '<p style="color: var(--text-secondary); margin: 0;">Pro subscription is being configured — check back soon.</p>'
+                        : '<p style="color: var(--text-secondary); margin: 0;">No subscription plans configured.</p>';
                     return;
                 }
                 container.innerHTML = ids.map(pid => {
@@ -2567,17 +2572,20 @@
                     const credits = p.monthly_generation_credits != null ? p.monthly_generation_credits : '—';
                     const refEq = p.reference_eq_label_monthly ? String(p.reference_eq_label_monthly).replace(/</g, '') : '';
                     const price = p.price_usd_monthly != null ? `$${Number(p.price_usd_monthly).toFixed(2)}/mo` : 'See PayPal';
+                    const subscribable = p.subscribable !== false;
+                    const btn = subscribable
+                        ? `<button type="button" class="btn-purchase btn-subscribe-paypal" data-plan-id="${String(pid).replace(/"/g, '&quot;')}" style="margin-top: 10px; background: linear-gradient(135deg, #0070ba, #1546a0); width: 100%;">
+                                <i class="fab fa-paypal"></i> Subscribe with PayPal
+                           </button>`
+                        : `<p style="margin:10px 0 0;font-size:0.85rem;color:var(--text-secondary);">Not live yet — ops must set PAYPAL_SUBSCRIPTION_PLAN_PRO.</p>`;
                     return `
                         <div class="shop-item" style="border: 2px solid var(--secondary); text-align: left;">
                             <div class="item-name">${label}</div>
-                            <div style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">Plan id: <code style="font-size:0.75rem;word-break:break-all;">${String(pid).replace(/</g, '')}</code></div>
                             <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
                                 ~${credits} generation credits / month${refEq ? ` · <strong style="color:var(--secondary);">${refEq}</strong>` : ''} · tier: <strong>${tier || '—'}</strong>
                             </div>
                             <div class="item-price" style="font-size: 1.15rem;">${price}</div>
-                            <button type="button" class="btn-purchase btn-subscribe-paypal" data-plan-id="${String(pid).replace(/"/g, '&quot;')}" style="margin-top: 10px; background: linear-gradient(135deg, #0070ba, #1546a0); width: 100%;">
-                                <i class="fab fa-paypal"></i> Subscribe with PayPal
-                            </button>
+                            ${btn}
                         </div>
                     `;
                 }).join('');
@@ -3589,19 +3597,31 @@
                 const status = document.getElementById('shop-promo-status');
                 if (!code) { if (status) status.textContent = 'Enter a code first.'; return; }
                 try {
-                    const res = await fetch(`${BASE_URL}/api/shop/promo/validate`, {
+                    const res = await fetch(`${BASE_URL}/api/shop/promo/apply`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ code, user_id: userId, amount_usd: 9.99 })
                     }).then(r => r.json());
                     if (status) {
-                        status.textContent = res.success
-                            ? (res.discount_percent ? res.discount_percent + '% off applied at checkout' : 'Code valid')
-                            : (res.error || 'Invalid code');
-                        status.style.color = res.success ? 'var(--secondary)' : 'var(--danger)';
+                        if (res.success && res.mode === 'redeem') {
+                            const parts = [];
+                            if (res.reward_coins) parts.push('+' + res.reward_coins + ' coins');
+                            if (res.reward_mn2) parts.push('+' + res.reward_mn2 + ' MN2');
+                            status.textContent = parts.length ? parts.join(' · ') + ' credited' : 'Code redeemed';
+                            status.style.color = 'var(--secondary)';
+                            loadUnifiedPoints();
+                        } else if (res.success) {
+                            status.textContent = res.discount_percent
+                                ? res.discount_percent + '% off applied at checkout'
+                                : 'Code valid at checkout';
+                            status.style.color = 'var(--secondary)';
+                        } else {
+                            status.textContent = res.error || 'Invalid code';
+                            status.style.color = 'var(--danger)';
+                        }
                     }
                 } catch (e) {
-                    if (status) status.textContent = 'Could not validate code.';
+                    if (status) status.textContent = 'Could not apply code.';
                 }
             });
             await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads()]);
@@ -3628,6 +3648,7 @@
         </div>
     </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>

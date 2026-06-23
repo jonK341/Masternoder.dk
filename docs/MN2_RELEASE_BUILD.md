@@ -1,7 +1,9 @@
 # MasterNoder2 v1.2.3.0 — release & daemon upgrade
 
-**Status (2026-06-17):** Source merged ([PR #1](https://github.com/jonK341/MasterNoder2/pull/1)).  
-**Git tag `v1.2.3.0`:** exists · **GitHub release + tarball:** not published yet (latest release: v1.2.2.0).
+**Status (2026-06-23):** Source merged ([PR #1](https://github.com/jonK341/MasterNoder2/pull/1)).  
+**Git tag `v1.2.3.0`:** published · **GitHub release + tarball:** live ([v1.2.3.0](https://github.com/jonK341/MasterNoder2/releases/tag/v1.2.3.0)).  
+**Production daemon:** v1.2.3.0-61caddb applied 2026-06-20 (`mn2_daemon_upgrade_remote.py --apply` + `--verify-post` PASS).  
+**Latest site deploy (2026-06-22):** `deploy.py mn2_staking` + `static_pages` + `mn2_env` + `apply_updates.py --ask-pass` — see [MN2_TODO.md](MN2_TODO.md).
 
 Production daemon path: `/opt/masternoder2d/masternoder2d` · datadir `/var/www/html/config` · systemd `masternoder2d`.
 

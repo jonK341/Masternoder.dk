@@ -114,6 +114,32 @@ def validate_checkout_promo(
     }
 
 
+def apply_shop_promo(
+    code: str,
+    user_id: str,
+    *,
+    amount_usd: float = 9.99,
+) -> Dict[str, Any]:
+    """
+    Shop promo box: M8 discord codes redeem coins/MN2 immediately;
+    config checkout codes return discount metadata for PayPal capture.
+    """
+    row = _find_code(code)
+    if not row:
+        return {"success": False, "error": "invalid_code"}
+    if row.get("_source") == "discord":
+        from backend.services.shop_discord_promo_service import redeem
+
+        out = redeem(user_id, code)
+        if out.get("success"):
+            out["mode"] = "redeem"
+        return out
+    out = validate_checkout_promo(code, user_id, amount_usd=float(amount_usd))
+    if out.get("success"):
+        out["mode"] = "checkout_discount"
+    return out
+
+
 def apply_discounted_amount(amount_usd: float, promo_code: Optional[str], user_id: str) -> Tuple[float, Dict[str, Any]]:
     if not promo_code:
         return float(amount_usd), {"promo_applied": False}

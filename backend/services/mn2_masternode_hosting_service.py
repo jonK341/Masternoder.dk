@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -344,7 +345,8 @@ def _register_and_provision(order: Dict[str, Any]) -> Dict[str, Any]:
     host_ids: List[str] = []
     provisions: List[Dict[str, Any]] = []
     for i in range(slots):
-        hid = f"user-{uid[:8]}-{uuid.uuid4().hex[:6]}"
+        uid_slug = re.sub(r"[^a-zA-Z0-9]", "", str(uid))[:8] or uuid.uuid4().hex[:8]
+        hid = f"user-{uid_slug}-{uuid.uuid4().hex[:6]}"
         label = f"Hosted MN · {oid[:12]}"
         res = mn.register_host({
             "id": hid,

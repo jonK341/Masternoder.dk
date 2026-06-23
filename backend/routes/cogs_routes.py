@@ -277,7 +277,12 @@ def monetization_subscription_create():
     Body: { "plan_id": "P-..." } (optional if config has exactly one plan).
     """
     from backend.services.account_resolution_service import resolve_user_id
-    from backend.services.monetization_config_service import get_subscription_plan, list_subscription_plan_ids
+    from backend.services.monetization_config_service import (
+        get_subscription_plan,
+        list_subscription_plan_ids,
+        resolve_subscription_plan_id,
+        subscription_plan_is_subscribable,
+    )
     from backend.services.paypal_service import create_billing_subscription
 
     data = request.get_json() or {}
@@ -291,12 +296,21 @@ def monetization_subscription_create():
 
     plan_id = (data.get("plan_id") or "").strip()
     if not plan_id:
-        ids = list_subscription_plan_ids()
+        ids = list_subscription_plan_ids(public=True)
         if len(ids) == 1:
             plan_id = ids[0]
     if not plan_id:
         return jsonify({"success": False, "error": "plan_id_required"}), 400
 
+    if not subscription_plan_is_subscribable(plan_id):
+        return jsonify({
+            "success": False,
+            "error": "plan_not_live",
+            "message": "Pro subscription is not live yet. Set PAYPAL_SUBSCRIPTION_PLAN_PRO on the server.",
+            "plan_id": plan_id,
+        }), 400
+
+    plan_id = resolve_subscription_plan_id(plan_id)
     pinfo = get_subscription_plan(plan_id)
     if not pinfo:
         return jsonify({"success": False, "error": "unknown_plan_id", "plan_id": plan_id}), 400
@@ -338,11 +352,12 @@ def monetization_subscription_bind():
     """
     from backend.services.account_resolution_service import resolve_user_id
     from backend.services.monetization_subscription_service import save_subscription_binding
+    from backend.services.monetization_config_service import resolve_subscription_plan_id
 
     data = request.get_json() or {}
     user_id = (data.get("user_id") or "").strip() or resolve_user_id()
     subscription_id = (data.get("subscription_id") or "").strip()
-    plan_id = (data.get("plan_id") or "").strip()
+    plan_id = resolve_subscription_plan_id((data.get("plan_id") or "").strip())
 
     if not user_id or str(user_id).strip().lower() in ("", "default_user"):
         return jsonify({

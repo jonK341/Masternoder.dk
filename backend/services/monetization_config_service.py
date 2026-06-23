@@ -248,13 +248,105 @@ def get_default_tier_id() -> str:
     return str(raw.get("default_tier") or "creator").strip().lower() or "creator"
 
 
-def list_subscription_plan_ids() -> List[str]:
-    """PayPal billing plan ids (P-…) defined under subscriptions.plans."""
+SUBSCRIPTION_PLAN_PLACEHOLDER_PRO = "P-PLACEHOLDER-PRO"
+SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST = "P-PLACEHOLDER-MN-HOST"
+
+
+def _is_placeholder_plan_id(plan_id: str) -> bool:
+    return str(plan_id or "").strip().upper().startswith("P-PLACEHOLDER")
+
+
+def live_pro_subscription_plan_id() -> Optional[str]:
+    """Live PayPal billing plan id from server .env (ops — no JSON rename)."""
+    pid = (os.environ.get("PAYPAL_SUBSCRIPTION_PLAN_PRO") or "").strip()
+    if pid and not _is_placeholder_plan_id(pid):
+        return pid
+    return None
+
+
+def live_mn_host_subscription_plan_id() -> Optional[str]:
+    pid = (os.environ.get("PAYPAL_SUBSCRIPTION_PLAN_MN_HOST") or "").strip()
+    if pid and not _is_placeholder_plan_id(pid):
+        return pid
+    return None
+
+
+def resolve_subscription_plan_id(plan_id: str) -> str:
+    """Map placeholder keys to live PayPal plan ids when env is set."""
+    pid = (plan_id or "").strip()
+    if pid == SUBSCRIPTION_PLAN_PLACEHOLDER_PRO:
+        live = live_pro_subscription_plan_id()
+        if live:
+            return live
+    if pid == SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST:
+        live = live_mn_host_subscription_plan_id()
+        if live:
+            return live
+    return pid
+
+
+def subscription_plan_is_subscribable(plan_id: str) -> bool:
+    """False for placeholders until ops sets PAYPAL_SUBSCRIPTION_PLAN_* on server."""
+    pid = resolve_subscription_plan_id(plan_id)
+    if _is_placeholder_plan_id(pid):
+        return False
+    return bool(get_subscription_plan(plan_id))
+
+
+def _subscription_plan_template(plan_id: str) -> Dict[str, Any]:
+    raw = _load_raw()
+    plans = ((raw.get("subscriptions") or {}).get("plans")) or {}
+    if not isinstance(plans, dict):
+        return {}
+    pid = (plan_id or "").strip()
+    row = plans.get(pid)
+    if isinstance(row, dict):
+        return dict(row)
+    live = live_pro_subscription_plan_id()
+    if live and pid == live:
+        row = plans.get(SUBSCRIPTION_PLAN_PLACEHOLDER_PRO)
+        return dict(row) if isinstance(row, dict) else {}
+    live_host = live_mn_host_subscription_plan_id()
+    if live_host and pid == live_host:
+        row = plans.get(SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST)
+        return dict(row) if isinstance(row, dict) else {}
+    return {}
+
+
+def list_subscription_plan_ids(*, public: bool = False) -> List[str]:
+    """PayPal billing plan ids (P-…). public=True hides placeholders until live env is set."""
     raw = _load_raw()
     plans = ((raw.get("subscriptions") or {}).get("plans")) or {}
     if not isinstance(plans, dict):
         return []
-    return [str(k) for k in plans.keys() if k]
+    out: List[str] = []
+    for key in plans.keys():
+        key = str(key)
+        if key == SUBSCRIPTION_PLAN_PLACEHOLDER_PRO:
+            live = live_pro_subscription_plan_id()
+            if public:
+                if live:
+                    out.append(live)
+            else:
+                out.append(live or key)
+        elif key == SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST:
+            live = live_mn_host_subscription_plan_id()
+            if public:
+                if live:
+                    out.append(live)
+            else:
+                out.append(live or key)
+        elif public and _is_placeholder_plan_id(key):
+            continue
+        else:
+            out.append(key)
+    return [k for k in out if k]
+
+
+def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
+    """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
+    pid = resolve_subscription_plan_id(plan_id)
+    return _subscription_plan_template(pid if pid else plan_id)
 
 
 def get_b2b_studio_skus() -> List[Dict[str, Any]]:
@@ -295,40 +387,26 @@ def get_generator_api_tiers() -> Dict[str, Dict[str, Any]]:
     return {}
 
 
-def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
-    """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
-    raw = _load_raw()
-    subs = raw.get("subscriptions") or {}
-    plans = subs.get("plans") or {}
-    if not isinstance(plans, dict):
-        return {}
-    pid = (plan_id or "").strip()
-    p = plans.get(pid)
-    return dict(p) if isinstance(p, dict) else {}
-
-
 def get_public_config() -> Dict[str, Any]:
     """Safe for API: no secrets."""
     raw = _load_raw()
-    subs = raw.get("subscriptions") or {}
     plans_out: Dict[str, Any] = {}
-    if isinstance(subs, dict):
-        plans = subs.get("plans") or {}
-        if isinstance(plans, dict):
-            for pid, p in plans.items():
-                if not isinstance(p, dict):
-                    continue
-                mgen = p.get("monthly_generation_credits")
-                mgen_f = float(mgen) if mgen is not None else 0.0
-                plans_out[pid] = {
-                    "label": p.get("label"),
-                    "price_usd_monthly": p.get("price_usd_monthly"),
-                    "monthly_generation_credits": p.get("monthly_generation_credits"),
-                    "monthly_coins_granted": p.get("monthly_coins_granted"),
-                    "tier": p.get("tier"),
-                    "reference_equivalent_generations_monthly": credits_to_ref_eq_generations(mgen_f),
-                    "reference_eq_label_monthly": ref_eq_label(mgen_f) or None,
-                }
+    for pid in list_subscription_plan_ids(public=True):
+        p = get_subscription_plan(pid)
+        if not p:
+            continue
+        mgen = p.get("monthly_generation_credits")
+        mgen_f = float(mgen) if mgen is not None else 0.0
+        plans_out[pid] = {
+            "label": p.get("label"),
+            "price_usd_monthly": p.get("price_usd_monthly"),
+            "monthly_generation_credits": p.get("monthly_generation_credits"),
+            "monthly_coins_granted": p.get("monthly_coins_granted"),
+            "tier": p.get("tier"),
+            "reference_equivalent_generations_monthly": credits_to_ref_eq_generations(mgen_f),
+            "reference_eq_label_monthly": ref_eq_label(mgen_f) or None,
+            "subscribable": subscription_plan_is_subscribable(pid),
+        }
     scr_out: List[Dict[str, Any]] = []
     for s in get_b2b_studio_skus():
         scr_out.append({
@@ -347,6 +425,12 @@ def get_public_config() -> Dict[str, Any]:
         "sku_overrides": prc.get("sku_overrides"),
         "comment": prc.get("comment"),
     }
+    tier_enforcement = (os.environ.get("MONETIZATION_TIER_ENFORCEMENT") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
     return {
         "reference_job_id": raw.get("reference_job_id"),
         "credit_definition": raw.get("credit_definition"),
@@ -356,6 +440,9 @@ def get_public_config() -> Dict[str, Any]:
         "content_bundles": get_public_content_bundles(),
         "tiers": list((raw.get("tiers") or {}).keys()),
         "default_tier": get_default_tier_id(),
+        "tier_enforcement_enabled": tier_enforcement,
+        "subscription_pro_live": bool(live_pro_subscription_plan_id()),
+        "paypal_webhook_configured": bool((os.environ.get("PAYPAL_WEBHOOK_ID") or "").strip()),
         "subscriptions": {"plans": plans_out},
         "b2b_studio_skus": scr_out,
         "overage_packs": get_overage_packs(),

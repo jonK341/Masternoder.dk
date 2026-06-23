@@ -299,41 +299,36 @@ def network_overview() -> Dict[str, Any]:
         r = rpc.getblockcount(timeout_sec=4)
         if not r.get("error") and r.get("result") is not None and out["block_height"] is None:
             out["block_height"] = int(r["result"]); out["source"]["block_height"] = "rpc"
-        si = rpc.getstakinginfo()
-        if not si.get("error") and isinstance(si.get("result"), dict):
-            res = si["result"]
-            out["staking_weight"] = res.get("netstakeweight") or res.get("weight")
-            out["expected_stake_time_sec"] = res.get("expectedtime")
-            out["source"]["staking_weight"] = "rpc"
-        mc = rpc.getmasternodecount()
-        if not mc.get("error") and mc.get("result") is not None:
-            res = mc["result"]
-            out["masternode_count"] = res.get("total") if isinstance(res, dict) else res
-            out["source"]["masternode_count"] = "rpc"
-        df = rpc.getdifficulty()
-        if not df.get("error") and df.get("result") is not None and out["difficulty"] is None:
-            res = df["result"]
-            out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
-            out["source"]["difficulty"] = "rpc"
-        # getmininginfo: networkhashps is the network-weight proxy on PoS forks
-        # that don't implement getstakinginfo (MasterNoder2). Also a difficulty fallback.
-        mi = rpc.getmininginfo()
+        # MasterNoder2: getmininginfo is fast and exposes networkhashps + difficulty.
+        mi = rpc.getmininginfo(timeout_sec=4)
         if not mi.get("error") and isinstance(mi.get("result"), dict):
             res = mi["result"]
             nh = res.get("networkhashps")
             if nh is not None:
                 out["network_hashps"] = nh
-                if out["staking_weight"] is None:
-                    out["staking_weight"] = nh
-                    out["source"]["staking_weight"] = "rpc"
-            if out["difficulty"] is None and res.get("difficulty") is not None:
+                out["staking_weight"] = nh
+                out["source"]["staking_weight"] = "rpc"
+            if res.get("difficulty") is not None:
                 out["difficulty"] = res.get("difficulty")
                 out["source"]["difficulty"] = "rpc"
-        # circulating supply via gettxoutsetinfo (heavy UTXO scan) -> cached ~10 min
-        supply = _cached_circulating_supply()
-        if supply is not None and out["circulating_supply"] is None:
-            out["circulating_supply"] = supply
-            out["source"]["circulating_supply"] = "rpc"
+        if out["staking_weight"] is None:
+            si = rpc.getstakinginfo(timeout_sec=3)
+            if not si.get("error") and isinstance(si.get("result"), dict):
+                res = si["result"]
+                out["staking_weight"] = res.get("netstakeweight") or res.get("weight")
+                out["expected_stake_time_sec"] = res.get("expectedtime")
+                out["source"]["staking_weight"] = "rpc"
+        mc = rpc.getmasternodecount(timeout_sec=4)
+        if not mc.get("error") and mc.get("result") is not None:
+            res = mc["result"]
+            out["masternode_count"] = res.get("total") if isinstance(res, dict) else res
+            out["source"]["masternode_count"] = "rpc"
+        if out["difficulty"] is None:
+            df = rpc.getdifficulty(timeout_sec=4)
+            if not df.get("error") and df.get("result") is not None:
+                res = df["result"]
+                out["difficulty"] = res.get("proof-of-stake") if isinstance(res, dict) else res
+                out["source"]["difficulty"] = "rpc"
     except Exception:
         pass
     # Chainz fallback for anything still missing
@@ -374,6 +369,75 @@ def network_overview() -> Dict[str, Any]:
             out["source"]["circulating_supply"] = "rpc"
     except Exception:
         out.setdefault("daemon", {})
+
+    # gettxoutsetinfo is a full UTXO scan — only when getinfo.moneysupply was unavailable.
+    if out.get("circulating_supply") is None:
+        try:
+            supply = _cached_circulating_supply()
+            if supply is not None:
+                out["circulating_supply"] = supply
+                out["source"]["circulating_supply"] = "rpc"
+        except Exception:
+            pass
+    return out
+
+
+def mn2_usd_price_median() -> Optional[Dict[str, Any]]:
+    """
+    Median of available MN2/USD sources: Chainz ticker, config override, env MN2_USD_PRICE.
+    Returns { price, sources, source_label, last_updated_iso? } or None.
+    """
+    from datetime import datetime, timezone
+
+    samples: List[float] = []
+    sources: Dict[str, float] = {}
+    last_iso = None
+
+    chainz = chainz_ticker_usd_with_updated()
+    if isinstance(chainz, dict) and chainz.get("price") is not None:
+        try:
+            px = float(chainz["price"])
+            if px > 0:
+                samples.append(px)
+                sources["chainz"] = px
+                last_iso = chainz.get("last_updated_iso")
+        except (TypeError, ValueError):
+            pass
+
+    try:
+        from backend.routes.mn2_routes import _load_mn2_config
+        cfg = _load_mn2_config() or {}
+        cfg_px = cfg.get("mn2_usd_price")
+        if cfg_px is not None:
+            px = float(cfg_px)
+            if px > 0:
+                samples.append(px)
+                sources["config"] = px
+    except Exception:
+        pass
+
+    env_raw = (os.environ.get("MN2_USD_PRICE") or os.environ.get("MN2_USD_PRICE_USD") or "").strip()
+    if env_raw:
+        try:
+            px = float(env_raw)
+            if px > 0:
+                samples.append(px)
+                sources["env"] = px
+        except ValueError:
+            pass
+
+    if not samples:
+        return None
+    samples.sort()
+    mid = len(samples) // 2
+    median = samples[mid] if len(samples) % 2 else (samples[mid - 1] + samples[mid]) / 2.0
+    label = "median" if len(samples) > 1 else next(iter(sources.keys()), "unknown")
+    out: Dict[str, Any] = {
+        "price": median,
+        "sources": sources,
+        "source_label": label,
+        "last_updated_iso": last_iso or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
     return out
 
 

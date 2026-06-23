@@ -6,6 +6,7 @@
     <title>Command Center — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <style>
         .cc-page { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
         .cc-header { text-align: center; margin-bottom: 24px; }
@@ -24,12 +25,13 @@
         .cc-monitor-fill { height:100%; width:0; background:linear-gradient(90deg,#00ff88,#00d4ff); transition:width 0.4s; }
         #cc-agent-status { font-size:0.85rem; opacity:0.85; min-height:1.2em; }
     </style>
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 </head>
 <body>
     <div class="cc-page">
         <div class="cc-header">
             <h1>Command Center</h1>
-            <p style="opacity:0.75;">Battle · Trophies · Game · Quests · Battlegrounds · Social — one hub with MN2 rewards</p>
+            <p style="opacity:0.75;">Battle · Trophies · Game · Quests · Podcast · Social — one hub with MN2 rewards</p>
         </div>
         <nav class="cc-hub-nav" id="cc-hub-nav" role="tablist">
             <button type="button" class="cc-tab active" data-cc-tab="overview">Overview</button>
@@ -39,6 +41,7 @@
             <button type="button" class="cc-tab" data-cc-tab="quests">Quests</button>
             <button type="button" class="cc-tab" data-cc-tab="battlegrounds">Battlegrounds</button>
             <button type="button" class="cc-tab" data-cc-tab="social">Social</button>
+            <button type="button" class="cc-tab" data-cc-tab="podcast">Podcast</button>
             <button type="button" class="cc-tab" data-cc-tab="generator">Generator</button>
             <button type="button" class="cc-tab" data-cc-tab="agents">Agents</button>
         </nav>
@@ -56,6 +59,7 @@
         <div id="cc-panel-quests" class="cc-panel"><div class="cc-grid" id="cc-quests-grid"></div></div>
         <div id="cc-panel-battlegrounds" class="cc-panel"><div class="cc-grid" id="cc-bg-grid"></div></div>
         <div id="cc-panel-social" class="cc-panel"><div class="cc-grid" id="cc-social-grid"></div></div>
+        <div id="cc-panel-podcast" class="cc-panel"><div class="cc-grid" id="cc-podcast-grid"></div></div>
         <div id="cc-panel-generator" class="cc-panel"><div class="cc-grid" id="cc-gen-grid"></div></div>
         <div id="cc-panel-agents" class="cc-panel">
             <p id="cc-agent-status">Agent support loading…</p>
@@ -63,6 +67,7 @@
         </div>
     </div>
     <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
-    <script src="/static/js/command-center-hub.js?v=20260618a"></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="command-center"></script>
+    <script src="/static/js/command-center-hub.js?v=20260621"></script>
 </body>
 </html>

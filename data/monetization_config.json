@@ -377,6 +377,122 @@
       "price_coins": 1500,
       "delivery": "vip_pass",
       "license": "Membership on MasterNoder surfaces for 30 days."
+    },
+    {
+      "id": "podcast-premium-ep-unlock",
+      "line": "B",
+      "name": "Podcast — Premium Episode Unlock",
+      "description": "Unlock one premium podcast episode (MN2 shop checkout).",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 3.99,
+      "price_coins": 399,
+      "delivery": "podcast_unlock",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "podcast-pro-pass",
+      "line": "B",
+      "name": "Podcast Pro Pass",
+      "description": "Unlock all premium podcast episodes + ultra AI encode profile.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 7.99,
+      "price_coins": 799,
+      "delivery": "podcast_unlock",
+      "license": "Personal use on MasterNoder only."
+    },
+    {
+      "id": "podcast-generate-credits",
+      "line": "B",
+      "name": "Podcast AI Generate Credits (5)",
+      "description": "Five generator-intelligence podcast episodes with AI encoder.",
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "inventory",
+      "license": "Personal use on MasterNoder only."
+    }
+  ],
+  "mn2_services": [
+    {
+      "id": "svc-mn2-masternode-hosting",
+      "line": "H",
+      "name": "Masternode Hosting — 30 days",
+      "description": "Platform-hosted MN2 masternode (5,000 MN2 collateral per slot). Pay with PayPal, shop coins, in-wallet MN2, or on-chain MN2 — slot auto-provisions on shared infrastructure (fleet cap from live service status).",
+      "payment_rails": ["paypal", "mn2", "credits", "mn2_onchain"],
+      "price_usd": 4.99,
+      "price_coins": 499,
+      "delivery": "external_checkout",
+      "checkout_url": "/explorer?tab=masternodes",
+      "icon": "🛡️",
+      "service_id": "masternode_hosting",
+      "billing_label": "MN2 Masternode Hosting (30 days)",
+      "checkout_mode": "inline_paypal",
+      "max_slots_per_order": 5
+    },
+    {
+      "id": "svc-mn2-proof-of-reserves",
+      "line": "H",
+      "name": "Proof of Reserves Report",
+      "description": "Live custodial coverage report — platform assets vs user liabilities on the Explorer reserves tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=reserves",
+      "icon": "🔒",
+      "service_id": "proof_of_reserves"
+    },
+    {
+      "id": "svc-mn2-onramp",
+      "line": "H",
+      "name": "PayPal → MN2 On-Ramp",
+      "description": "Buy MN2 with PayPal. USD clears to your in-wallet balance after the hold window — spend in catalog or withdraw on-chain.",
+      "payment_rails": ["paypal"],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/profile#mn2-wallet",
+      "icon": "💳",
+      "service_id": "onramp"
+    },
+    {
+      "id": "svc-mn2-staking-pool",
+      "line": "H",
+      "name": "Staking Pool — Earn MN2",
+      "description": "Custodial PoS pool: stake in-app, daemon mints rewards with browser rig weighting. Open the Explorer staking tab to join.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=staking",
+      "icon": "⚡",
+      "service_id": "staking"
+    },
+    {
+      "id": "svc-mn2-p2p-market",
+      "line": "H",
+      "name": "P2P MN2 Marketplace",
+      "description": "Escrow MN2 listings with PayPal settlement — peer-to-peer trades on the Explorer market tab.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "🤝",
+      "service_id": "p2p"
+    },
+    {
+      "id": "svc-mn2-trader-market",
+      "line": "H",
+      "name": "Agent Trader Market",
+      "description": "Internal MN2 order book driven by agent traders — live ticker and trades on Explorer.",
+      "payment_rails": [],
+      "price_usd": 0,
+      "price_coins": 0,
+      "delivery": "external_link",
+      "checkout_url": "/explorer?tab=market",
+      "icon": "📈",
+      "service_id": "trader_market"
     }
   ],
   "mn2_services": [
