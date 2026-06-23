@@ -124,6 +124,21 @@ def connect_deploy_ssh(
         )
         return ssh, "password"
     except paramiko.AuthenticationException as exc:
+        if (
+            not os.environ.get("_DEPLOY_ASK_PASS")
+            and sys.stdin.isatty()
+        ):
+            os.environ.pop("DEPLOY_PASS", None)
+            os.environ["_DEPLOY_ASK_PASS"] = "1"
+            try:
+                password = require_deploy_pass(force_prompt=True)
+                ssh.connect(
+                    host, username=user, password=password, timeout=timeout,
+                    look_for_keys=False, allow_agent=False,
+                )
+                return ssh, "password"
+            except (paramiko.AuthenticationException, SystemExit):
+                pass
         print_auth_help(host, user, used_ask_pass=bool(os.environ.get("_DEPLOY_ASK_PASS")))
         raise SystemExit(1) from exc
 

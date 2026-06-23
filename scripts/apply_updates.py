@@ -9,6 +9,7 @@ reload nginx → ensure no-cache headers for HTML. No Ubuntu reboot, no hard res
 
 Usage:
   python scripts/apply_updates.py
+  python scripts/apply_updates.py --ask-pass
   python scripts/apply_updates.py --host masternoder.dk
   DEPLOY_PASS=xxx python scripts/apply_updates.py
 
@@ -148,4 +149,15 @@ def run(force_prompt: bool = False):
 
 
 if __name__ == "__main__":
-    sys.exit(run())
+    ask_pass = "--ask-pass" in sys.argv
+    if ask_pass:
+        sys.argv = [a for a in sys.argv if a != "--ask-pass"]
+    host_arg = None
+    if "--host" in sys.argv:
+        i = sys.argv.index("--host")
+        if i + 1 < len(sys.argv):
+            host_arg = sys.argv[i + 1]
+            del sys.argv[i : i + 2]
+    if host_arg:
+        os.environ["DEPLOY_HOST"] = host_arg
+    sys.exit(run(force_prompt=ask_pass))
