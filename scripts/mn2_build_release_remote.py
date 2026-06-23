@@ -42,16 +42,39 @@ BOOST_DEPENDS_RE = re.compile(
     r"Failed to build Boost\.Build engine|boost.*stamp_configured|funcs\.mk:.*boost",
     re.IGNORECASE,
 )
+UNSUPPORTED_SSL_RE = re.compile(
+    r"unsupported SSL version|Detected unsupported SSL",
+    re.IGNORECASE,
+)
 
 
 def is_boost_depends_failure(output: str) -> bool:
     return bool(BOOST_DEPENDS_RE.search(output))
 
 
+def is_unsupported_ssl_failure(output: str) -> bool:
+    return bool(UNSUPPORTED_SSL_RE.search(output))
+
+
 def fast_retry_hint() -> str:
     return (
         "Tip: depends boost failed — retry with system libs:\n"
         "  python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft"
+    )
+
+
+def depends_retry_hint() -> str:
+    return (
+        "Tip: OpenSSL 3 system libs need depends build (portable, bundled OpenSSL):\n"
+        "  python scripts/mn2_build_release_remote.py --ask-pass --publish --draft"
+    )
+
+
+def fast_ssl_hint() -> str:
+    return (
+        "Tip: --fast uses --with-unsupported-ssl for OpenSSL 3 hosts. "
+        "Pull latest build script and retry, or use depends (preferred):\n"
+        "  python scripts/mn2_build_release_remote.py --ask-pass --publish --draft"
     )
 
 
@@ -88,7 +111,7 @@ def main() -> int:
     parser.add_argument(
         "--fast",
         action="store_true",
-        help="System libs build (USE_DEPENDS=0; may fail on OpenSSL 3 hosts)",
+        help="System libs build (USE_DEPENDS=0; uses --with-unsupported-ssl on OpenSSL 3)",
     )
     parser.add_argument(
         "--auto-fast",
@@ -146,15 +169,25 @@ def main() -> int:
 
     exit_code, out, err = run_remote_build(args.fast)
     combined = f"{out}\n{err}"
-    if exit_code != 0 and args.auto_fast and not args.fast and is_boost_depends_failure(combined):
+    if (
+        exit_code != 0
+        and args.auto_fast
+        and not args.fast
+        and is_boost_depends_failure(combined)
+        and not is_unsupported_ssl_failure(combined)
+    ):
         print("\n=== depends boost failed — auto-retry with system libs (--fast) ===\n", file=sys.stderr)
         exit_code, out, err = run_remote_build(True)
         combined = f"{out}\n{err}"
 
     if exit_code != 0:
         print(f"\nBuild failed (exit {exit_code})", file=sys.stderr)
-        if args.fast:
+        if args.fast and is_unsupported_ssl_failure(combined):
+            print(fast_ssl_hint(), file=sys.stderr)
+        elif args.fast:
             print("Tip: re-run without --fast for depends build (portable static binary).", file=sys.stderr)
+        elif is_unsupported_ssl_failure(combined):
+            print(depends_retry_hint(), file=sys.stderr)
         elif is_boost_depends_failure(combined):
             print(fast_retry_hint(), file=sys.stderr)
         ssh.close()

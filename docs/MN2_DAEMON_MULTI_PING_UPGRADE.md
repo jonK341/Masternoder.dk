@@ -114,9 +114,11 @@ python scripts/mn2_probe_multi_ping.py --register   # on server / with RPC .env
 python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
 ```
 
-**Fast build (may fail on OpenSSL 3):** add `--fast` to step 3.
+**Fast build (OpenSSL 3 OK):** add `--fast` to step 3 — uses `--with-unsupported-ssl` (~5–15 min, less portable).
 
-**Auto-retry on depends boost failure:** add `--auto-fast` (retries once with system libs).
+**Preferred:** depends build (no `--fast`) after [PR #34](https://github.com/jonK341/Masternoder.dk/pull/34) apt fix (~30–90 min, portable static binary).
+
+**Auto-retry on depends boost failure:** add `--auto-fast` (retries once with system libs; not when failure is OpenSSL-related).
 
 ---
 
@@ -127,21 +129,27 @@ python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
 | `Failed to build Boost.Build engine with toolset gcc` | depends tries to compile Boost 1.64 from source; fleet host may lack full g++/build-essential even when autoconf exists | **Retry with system libs:** `python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft` |
 | `funcs.mk:254: ...boost...stamp_configured` Error 1 | Same as above — depends boost bootstrap failed | Same `--fast` retry, or `--auto-fast` on first run |
 | Build exits 2 after patch applied OK | Patch is fine; failure is in `depends/` not daemon C++ | Do not re-patch; use `--fast` or ensure apt installs `build-essential g++ bzip2` (remote script sets `INSTALL_BUILD_DEPS=1` by default) |
-| `unsupported SSL version` after `--fast` build | System OpenSSL 3 vs older MN2 expectations | Re-run without `--fast` after fixing depends toolchain, or test binary on target host before `--apply` |
+| `unsupported SSL version` after `--fast` build | System OpenSSL 3 vs MN2 configure check | Script now passes `--with-unsupported-ssl` on `--fast`. Pull latest and retry, or use depends (preferred). |
 
-**Recommended retry after today's failure:**
+**Recommended retry after depends boost failure:**
 
 ```powershell
 python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft
 ```
 
-Or one-shot with automatic fallback:
+**Preferred production build (depends, bundled OpenSSL):**
+
+```powershell
+python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
+```
+
+Or one-shot with automatic fallback (boost failures only, not OpenSSL):
 
 ```powershell
 python scripts/mn2_build_release_remote.py --ask-pass --auto-fast --publish --draft
 ```
 
-`--fast` sets `USE_DEPENDS=0`: skips `depends/`, runs `./configure --without-gui` against apt packages (`libboost-all-dev`, `libssl-dev`, `libgmp-dev`, `libbsd-dev`, etc.). Build takes ~5–15 min instead of 30–90 min. Binary is linked to system libs (less portable but fine for the fleet server OS).
+`--fast` sets `USE_DEPENDS=0`: skips `depends/`, runs `./configure --without-gui --with-unsupported-ssl` against apt packages (`libboost-all-dev`, `libssl-dev`, `libgmp-dev`, `libbsd-dev`, etc.). Build takes ~5–15 min instead of 30–90 min. Binary is linked to system libs (less portable but fine for the fleet server OS).
 
 ---
 

@@ -30,9 +30,11 @@ python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
 
 Uses **depends** by default (bundled OpenSSL — avoids `unsupported SSL version` on OpenSSL 3 hosts). First run ~30–60 min. Do **not** build on Windows native (`bash` / `configure` will fail).
 
-Fast path (may fail on Ubuntu 22.04+): add `--fast`
+Fast path (OpenSSL 3 OK): add `--fast` — passes `--with-unsupported-ssl` to configure (~5–15 min, less portable).
 
-Auto-retry when depends boost fails: add `--auto-fast` (retries once with system libs).
+Preferred for production releases: depends build (no `--fast`) after [PR #34](https://github.com/jonK341/Masternoder.dk/pull/34) apt dependency fix.
+
+Auto-retry when depends boost fails: add `--auto-fast` (retries once with system libs; skipped when failure is OpenSSL-related).
 
 **WSL or Linux build host** — needs **~2 GB RAM**, `git`, `build-essential`:
 
@@ -46,7 +48,7 @@ Output: `/tmp/mn2-build/dist/masternoder2d.tar.gz` (+ `.sha256`, `RELEASE_MANIFE
 
 Build is **tag-pinned** (`git checkout v1.2.3.0`), runs **offline smoke tests** (`mn2_build_smoke.sh`), and bundles `masternoder2-tx`.
 
-Faster dev build (not portable): `USE_DEPENDS=0 bash scripts/mn2_build_release.sh`
+Faster dev build (not portable): `USE_DEPENDS=0 bash scripts/mn2_build_release.sh` (adds `--with-unsupported-ssl` on OpenSSL 3 hosts)
 
 ### 2 — Publish GitHub release
 
@@ -111,8 +113,8 @@ masternoder2d.tar.gz
 
 | Error | Fix |
 |--------|-----|
-| `unsupported SSL version` | Do not build on Windows; use remote script (depends build). Avoid `--fast`. |
-| `Failed to build Boost.Build engine` / `boost...stamp_configured` | depends boost bootstrap failed on host. Retry: `python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft` or use `--auto-fast`. |
+| `unsupported SSL version` | On `--fast`: script passes `--with-unsupported-ssl` — pull latest and retry. **Preferred:** depends build (no `--fast`). Do not build on Windows native. |
+| `Failed to build Boost.Build engine` / `boost...stamp_configured` | depends boost bootstrap failed on host. Retry: `python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft` or use `--auto-fast` (not when OpenSSL error). |
 | `undefined reference to arc4random_addrandom` | `libbsd-dev` + `-lbsd` (in build script). |
 | `undefined reference to __gmpz_*` | `libgmp-dev` + `-lgmp`; do not pass `LIBS=` on `make` cmdline (overrides Makefile). |
 | `Cannot --apply until v1.2.3.0 release asset exists` | Complete build + publish steps first. |
