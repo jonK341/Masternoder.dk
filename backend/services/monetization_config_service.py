@@ -49,6 +49,48 @@ def get_credit_reference_fraction() -> float:
     return float(cd.get("reference_fraction_per_credit") or 0.25)
 
 
+def credits_to_ref_eq_generations(credits: float) -> float:
+    """Reference-equivalent generations for N generation credits (see REFERENCE_JOB_COGS.md)."""
+    frac = get_credit_reference_fraction()
+    if frac <= 0:
+        return 0.0
+    return round(float(credits or 0) * frac, 2)
+
+
+def ratio_to_credits_used(ratio: float) -> float:
+    """Generation credits consumed for a job with ratio_vs_reference_job."""
+    frac = get_credit_reference_fraction()
+    if frac <= 0:
+        return round(float(ratio or 0), 4)
+    return round(float(ratio or 0) / frac, 4)
+
+
+def ref_eq_label(credits: float) -> str:
+    """Human label for shop copy, e.g. '≈ 1.5 ref-eq generations'."""
+    n = credits_to_ref_eq_generations(credits)
+    if n <= 0:
+        return ""
+    g = f"{n:g}"
+    word = "generation" if n == 1 else "generations"
+    return f"≈ {g} ref-eq {word}"
+
+
+def enrich_coin_pack(pack: Dict[str, Any]) -> Dict[str, Any]:
+    """Add reference-equivalent fields for PayPal pack display."""
+    row = dict(pack)
+    gc = pack.get("generation_credits_granted")
+    if gc is not None:
+        try:
+            credits = float(gc)
+        except (TypeError, ValueError):
+            credits = 0.0
+        row["reference_equivalent_generations"] = credits_to_ref_eq_generations(credits)
+        label = ref_eq_label(credits)
+        if label:
+            row["reference_eq_label"] = label
+    return row
+
+
 def get_coin_packs() -> List[Dict[str, Any]]:
     """PayPal coin packs (same shape as legacy PAYPAL_COIN_PACKS + optional generation_credits_granted)."""
     raw = _load_raw()
@@ -56,6 +98,28 @@ def get_coin_packs() -> List[Dict[str, Any]]:
     if isinstance(packs, list) and len(packs) > 0:
         return list(packs)
     return []
+
+
+def is_overage_pack(pack: Dict[str, Any]) -> bool:
+    tag = str(pack.get("tag") or "").strip().lower()
+    kind = str(pack.get("kind") or "").strip().lower()
+    return tag == "overage" or kind == "overage"
+
+
+def get_overage_packs() -> List[Dict[str, Any]]:
+    """PayPal SKUs for subscription overage top-ups (tag=overage)."""
+    return [enrich_coin_pack(dict(p)) for p in get_coin_packs() if is_overage_pack(p)]
+
+
+def get_retail_coin_packs() -> List[Dict[str, Any]]:
+    """Standard shop coin packs (excludes overage top-ups)."""
+    return [enrich_coin_pack(dict(p)) for p in get_coin_packs() if not is_overage_pack(p)]
+
+
+def get_overage_policy() -> Dict[str, Any]:
+    raw = _load_raw()
+    block = raw.get("overage_policy")
+    return dict(block) if isinstance(block, dict) else {"show_offers_from_percent": 80}
 
 
 def get_payment_rails_catalog() -> Dict[str, Any]:
@@ -88,6 +152,24 @@ def get_public_digital_goods() -> List[Dict[str, Any]]:
         row.pop("artifact_path", None)
         public.append(row)
     return public
+
+
+def get_mn2_services() -> List[Dict[str, Any]]:
+    """MN2 platform services surfaced in shop (hosting, on-ramp, staking links)."""
+    raw = _load_raw()
+    services = raw.get("mn2_services")
+    if not isinstance(services, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for x in services:
+        if isinstance(x, dict) and x.get("id"):
+            out.append(dict(x))
+    return out
+
+
+def get_public_mn2_services() -> List[Dict[str, Any]]:
+    """MN2 services safe for API responses."""
+    return [dict(s) for s in get_mn2_services()]
 
 
 def get_content_bundles() -> List[Dict[str, Any]]:
@@ -124,9 +206,11 @@ def get_public_content_bundles() -> List[Dict[str, Any]]:
     return public
 
 
-def get_coin_packs_with_payment_rails() -> List[Dict[str, Any]]:
+def get_coin_packs_with_payment_rails(*, include_overage: bool = True) -> List[Dict[str, Any]]:
     """Coin packs plus merged payment_rails per payment_rails_catalog."""
     packs = get_coin_packs()
+    if not include_overage:
+        packs = [p for p in packs if not is_overage_pack(p)]
     cat = get_payment_rails_catalog()
     defaults = cat.get("defaults") if isinstance(cat, dict) else None
     overrides = cat.get("sku_overrides") if isinstance(cat, dict) else None
@@ -143,7 +227,7 @@ def get_coin_packs_with_payment_rails() -> List[Dict[str, Any]]:
         row = dict(p)
         orails = overrides.get(pid) if isinstance(overrides, dict) else None
         row["payment_rails"] = list(orails) if isinstance(orails, list) else list(default_rails)
-        out.append(row)
+        out.append(enrich_coin_pack(row))
     return out
 
 
@@ -164,13 +248,105 @@ def get_default_tier_id() -> str:
     return str(raw.get("default_tier") or "creator").strip().lower() or "creator"
 
 
-def list_subscription_plan_ids() -> List[str]:
-    """PayPal billing plan ids (P-…) defined under subscriptions.plans."""
+SUBSCRIPTION_PLAN_PLACEHOLDER_PRO = "P-PLACEHOLDER-PRO"
+SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST = "P-PLACEHOLDER-MN-HOST"
+
+
+def _is_placeholder_plan_id(plan_id: str) -> bool:
+    return str(plan_id or "").strip().upper().startswith("P-PLACEHOLDER")
+
+
+def live_pro_subscription_plan_id() -> Optional[str]:
+    """Live PayPal billing plan id from server .env (ops — no JSON rename)."""
+    pid = (os.environ.get("PAYPAL_SUBSCRIPTION_PLAN_PRO") or "").strip()
+    if pid and not _is_placeholder_plan_id(pid):
+        return pid
+    return None
+
+
+def live_mn_host_subscription_plan_id() -> Optional[str]:
+    pid = (os.environ.get("PAYPAL_SUBSCRIPTION_PLAN_MN_HOST") or "").strip()
+    if pid and not _is_placeholder_plan_id(pid):
+        return pid
+    return None
+
+
+def resolve_subscription_plan_id(plan_id: str) -> str:
+    """Map placeholder keys to live PayPal plan ids when env is set."""
+    pid = (plan_id or "").strip()
+    if pid == SUBSCRIPTION_PLAN_PLACEHOLDER_PRO:
+        live = live_pro_subscription_plan_id()
+        if live:
+            return live
+    if pid == SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST:
+        live = live_mn_host_subscription_plan_id()
+        if live:
+            return live
+    return pid
+
+
+def subscription_plan_is_subscribable(plan_id: str) -> bool:
+    """False for placeholders until ops sets PAYPAL_SUBSCRIPTION_PLAN_* on server."""
+    pid = resolve_subscription_plan_id(plan_id)
+    if _is_placeholder_plan_id(pid):
+        return False
+    return bool(get_subscription_plan(plan_id))
+
+
+def _subscription_plan_template(plan_id: str) -> Dict[str, Any]:
+    raw = _load_raw()
+    plans = ((raw.get("subscriptions") or {}).get("plans")) or {}
+    if not isinstance(plans, dict):
+        return {}
+    pid = (plan_id or "").strip()
+    row = plans.get(pid)
+    if isinstance(row, dict):
+        return dict(row)
+    live = live_pro_subscription_plan_id()
+    if live and pid == live:
+        row = plans.get(SUBSCRIPTION_PLAN_PLACEHOLDER_PRO)
+        return dict(row) if isinstance(row, dict) else {}
+    live_host = live_mn_host_subscription_plan_id()
+    if live_host and pid == live_host:
+        row = plans.get(SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST)
+        return dict(row) if isinstance(row, dict) else {}
+    return {}
+
+
+def list_subscription_plan_ids(*, public: bool = False) -> List[str]:
+    """PayPal billing plan ids (P-…). public=True hides placeholders until live env is set."""
     raw = _load_raw()
     plans = ((raw.get("subscriptions") or {}).get("plans")) or {}
     if not isinstance(plans, dict):
         return []
-    return [str(k) for k in plans.keys() if k]
+    out: List[str] = []
+    for key in plans.keys():
+        key = str(key)
+        if key == SUBSCRIPTION_PLAN_PLACEHOLDER_PRO:
+            live = live_pro_subscription_plan_id()
+            if public:
+                if live:
+                    out.append(live)
+            else:
+                out.append(live or key)
+        elif key == SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST:
+            live = live_mn_host_subscription_plan_id()
+            if public:
+                if live:
+                    out.append(live)
+            else:
+                out.append(live or key)
+        elif public and _is_placeholder_plan_id(key):
+            continue
+        else:
+            out.append(key)
+    return [k for k in out if k]
+
+
+def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
+    """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
+    pid = resolve_subscription_plan_id(plan_id)
+    return _subscription_plan_template(pid if pid else plan_id)
 
 
 def get_b2b_studio_skus() -> List[Dict[str, Any]]:
@@ -202,36 +378,35 @@ def get_shop_monetization() -> Dict[str, Any]:
     return dict(block) if isinstance(block, dict) else {}
 
 
-def get_subscription_plan(plan_id: str) -> Dict[str, Any]:
-    """PayPal plan id (P-…) → monthly credits / tier label from monetization_config.subscriptions.plans."""
+def get_generator_api_tiers() -> Dict[str, Dict[str, Any]]:
+    """C7: metered generator API tier definitions (id → tier config)."""
     raw = _load_raw()
-    subs = raw.get("subscriptions") or {}
-    plans = subs.get("plans") or {}
-    if not isinstance(plans, dict):
-        return {}
-    pid = (plan_id or "").strip()
-    p = plans.get(pid)
-    return dict(p) if isinstance(p, dict) else {}
+    block = raw.get("generator_api_tiers")
+    if isinstance(block, dict):
+        return {k: dict(v) for k, v in block.items() if isinstance(v, dict)}
+    return {}
 
 
 def get_public_config() -> Dict[str, Any]:
     """Safe for API: no secrets."""
     raw = _load_raw()
-    subs = raw.get("subscriptions") or {}
     plans_out: Dict[str, Any] = {}
-    if isinstance(subs, dict):
-        plans = subs.get("plans") or {}
-        if isinstance(plans, dict):
-            for pid, p in plans.items():
-                if not isinstance(p, dict):
-                    continue
-                plans_out[pid] = {
-                    "label": p.get("label"),
-                    "price_usd_monthly": p.get("price_usd_monthly"),
-                    "monthly_generation_credits": p.get("monthly_generation_credits"),
-                    "monthly_coins_granted": p.get("monthly_coins_granted"),
-                    "tier": p.get("tier"),
-                }
+    for pid in list_subscription_plan_ids(public=True):
+        p = get_subscription_plan(pid)
+        if not p:
+            continue
+        mgen = p.get("monthly_generation_credits")
+        mgen_f = float(mgen) if mgen is not None else 0.0
+        plans_out[pid] = {
+            "label": p.get("label"),
+            "price_usd_monthly": p.get("price_usd_monthly"),
+            "monthly_generation_credits": p.get("monthly_generation_credits"),
+            "monthly_coins_granted": p.get("monthly_coins_granted"),
+            "tier": p.get("tier"),
+            "reference_equivalent_generations_monthly": credits_to_ref_eq_generations(mgen_f),
+            "reference_eq_label_monthly": ref_eq_label(mgen_f) or None,
+            "subscribable": subscription_plan_is_subscribable(pid),
+        }
     scr_out: List[Dict[str, Any]] = []
     for s in get_b2b_studio_skus():
         scr_out.append({
@@ -250,6 +425,12 @@ def get_public_config() -> Dict[str, Any]:
         "sku_overrides": prc.get("sku_overrides"),
         "comment": prc.get("comment"),
     }
+    tier_enforcement = (os.environ.get("MONETIZATION_TIER_ENFORCEMENT") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
     return {
         "reference_job_id": raw.get("reference_job_id"),
         "credit_definition": raw.get("credit_definition"),
@@ -259,6 +440,11 @@ def get_public_config() -> Dict[str, Any]:
         "content_bundles": get_public_content_bundles(),
         "tiers": list((raw.get("tiers") or {}).keys()),
         "default_tier": get_default_tier_id(),
+        "tier_enforcement_enabled": tier_enforcement,
+        "subscription_pro_live": bool(live_pro_subscription_plan_id()),
+        "paypal_webhook_configured": bool((os.environ.get("PAYPAL_WEBHOOK_ID") or "").strip()),
         "subscriptions": {"plans": plans_out},
         "b2b_studio_skus": scr_out,
+        "overage_packs": get_overage_packs(),
+        "overage_policy": get_overage_policy(),
     }
