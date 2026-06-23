@@ -140,7 +140,7 @@ Kort opsummering af hvad der gik galt / stadig skævner efter OS-upgrade. Afkryd
 | **K5** | **Ops-scripts ikke på server** | `ubuntu_upgrade_*.sh` **SKIP missing** ved deploy; diagnose **WARN missing** | Scripts kun i git — ikke uploadet før upgrade | `python scripts/deploy.py mn2_env --ask-pass --upload-only` | **Done** — 4 filer uploadet (prep + post-verify + remote + doc) |
 | **K6** | **`DEPLOY_PASS` stale (PC)** | `deploy.py` / agenter får SSH **Authentication failed**; `--ask-pass` virker | Lokal `.env` matcher ikke server root-password | Opdatér `.env` · `python scripts/deploy_test_ssh.py` | **Delvist** — `--ask-pass` OK; `ensure_site_up`/`fix_502` fejler uden `.env` |
 | **K7** | **Public verify vs lokal** | `camgirls_post_deploy_verify` | K2 upstream + worker starvation | `python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk` | **Done (2026-06-23)** — **4/4** efter camgirls deploy + post-reboot |
-| **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Klar** — K2+K7 grønne |
+| **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Done (2026-06-23)** — `mn2_p1_monetization_remote.py --all`: pro live + webhook + tier enforcement |
 
 **Verifikation K2 (kør på server efter camgirls deploy):**
 
