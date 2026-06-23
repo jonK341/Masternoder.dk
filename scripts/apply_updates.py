@@ -21,9 +21,11 @@ import time
 import re
 from datetime import datetime
 
-SERVER_HOST = os.getenv("DEPLOY_HOST", "masternoder.dk")
-SERVER_USER = os.getenv("DEPLOY_USER", "root")
-SERVER_PASS = (os.getenv("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS for SSH."))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
+
+SERVER_HOST = deploy_host()
+SERVER_USER = deploy_user()
 REMOTE_BASE = os.getenv("REMOTE_BASE", "/var/www/html")
 WAIT_AFTER_PROXY = 6
 WAIT_AFTER_UWSGI_STOP = 4
@@ -38,12 +40,8 @@ def sh(ssh, cmd, timeout=30):
     return out, err
 
 
-def run():
-    try:
-        import paramiko
-    except ImportError:
-        print("Install paramiko: pip install paramiko")
-        return 1
+def run(force_prompt: bool = False):
+    server_pass = require_deploy_pass(force_prompt=force_prompt)
 
     ssh = None
     try:
@@ -54,9 +52,10 @@ def run():
         print("Host:", SERVER_HOST)
         print()
 
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        print("Connecting...")
+        ssh, auth_method = connect_deploy_ssh(server_pass)
+        print(f"  [OK] Connected ({auth_method})")
+        print()
 
         # 1. Clear Python cache
         print("[1/6] Clearing Python cache...")
@@ -114,7 +113,7 @@ def run():
                 text=True,
                 timeout=60,
                 cwd=base,
-                env={**os.environ, "DEPLOY_HOST": SERVER_HOST, "DEPLOY_PASS": SERVER_PASS}
+                env={**os.environ, "DEPLOY_HOST": SERVER_HOST, "DEPLOY_PASS": server_pass}
             )
             if r.returncode == 0:
                 print("  no-cache rules OK")
