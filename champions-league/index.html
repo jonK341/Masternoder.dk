@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <style>
         .champions-page {
@@ -85,6 +86,7 @@
             border-color: var(--primary);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614c">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -94,6 +96,22 @@
         <div class="container">
             <h1>🏆 Champions League Top 10</h1>
             <p class="subtitle">Elite Rankings • History • Champions</p>
+
+            <section class="mn2-page-strip" data-mn2-auto data-balance-id="cl-mn2-balance" data-rate-id="cl-mn2-rate" aria-labelledby="cl-mn2-title">
+                <h2 id="cl-mn2-title">🪙 Champions League · MN2 arena</h2>
+                <p>Top 10 rankings connect to battlegrounds and tournament buy-ins — MN2 tiers escrow into prize pools with house rake.</p>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Your MN2</span><strong id="cl-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cl-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>Tournament rake</span><strong id="cl-mn2-rake" data-mn2-extra="/api/battle/arena/config" data-mn2-extra-key="config.rake.tournaments" data-mn2-extra-format="percent">—</strong></div>
+                    <div class="mn2-page-metric"><span>Min MN2 buy-in</span><strong id="cl-mn2-min" data-mn2-extra="/api/battle/arena/config" data-mn2-extra-key="config.buy_in_tiers.mn2.0" data-mn2-extra-format="mn2">—</strong></div>
+                </div>
+                <div class="mn2-page-actions">
+                    <a href="/battlegrounds">Battlegrounds buy-in</a>
+                    <a href="/battle" class="secondary">Battle arena</a>
+                    <a href="/shop" class="secondary">Shop MN2</a>
+                </div>
+            </section>
             
             <div class="season-selector" id="seasonSelector"></div>
             
@@ -109,6 +127,8 @@
     </div>
     
         <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614c"></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260614c"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script>
         const API_BASE = window.location.origin;

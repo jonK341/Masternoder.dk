@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=2">
     <link rel="stylesheet" href="/static/css/cooldown-timer.css?v=2">
@@ -262,13 +264,8 @@
         }
 
         /* Tab Content */
-        .tab-content {
-            display: none;
-            animation: fadeInUp 0.4s ease-out;
-        }
-
         .tab-content.active {
-            display: block;
+            animation: fadeInUp 0.4s ease-out;
         }
 
         @keyframes fadeInUp {
@@ -2593,5 +2590,6 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="/static/js/story-monitor-5d.js?v=1"></script>
 <script src="/static/js/aggregator-ideas.js"></script>
 <script src="/static/js/game-battle-bridge.js?v=20260420" defer></script>
+<script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="battle" defer></script>
 </body>
 </html>

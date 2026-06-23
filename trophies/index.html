@@ -1,15 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophies - MasterNoder</title>
-    <meta name="cache-version" content="20260221c">
+    <meta name="cache-version" content="20260607b">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20260618a">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -226,19 +228,12 @@
         }
         .tab-category-select:hover, .tab-category-select:focus { border-color: var(--trophy-primary); outline: none; }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         .loading {
             text-align: center;
             padding: 40px;
             color: rgba(255, 255, 255, 0.5);
         }
+        .loading .fa-spinner, .loading .fa-spin { display: none !important; }
 
         /* Table: checklist style — unchecked (☐) for locked, checked (☑) for unlocked */
         .trophies-container .table .col-check { width: 2em; text-align: center; font-size: 1.2em; color: rgba(255,255,255,0.5); }
@@ -380,6 +375,289 @@
         }
         .comm-psych-activity h4 { margin-top: 0; }
         #comm-psych-activity-list { font-size: 0.9em; opacity: 0.9; max-height: 120px; overflow-y: auto; }
+
+        /* --- Phase 1 upgrades: search/sort controls, progress bars, rarity summary, modal, toasts --- */
+        .trophy-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .trophy-search {
+            flex: 1 1 260px;
+            max-width: 360px;
+            padding: 10px 16px;
+            background: rgba(21, 21, 32, 0.6);
+            border: 2px solid var(--trophy-border);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1em;
+        }
+        .trophy-search::placeholder { color: rgba(255, 255, 255, 0.45); }
+        .trophy-search:focus { border-color: var(--trophy-primary); outline: none; }
+        .trophy-sort {
+            padding: 10px 16px;
+            background: rgba(21, 21, 32, 0.6);
+            border: 2px solid var(--trophy-border);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .trophy-sort:hover, .trophy-sort:focus { border-color: var(--trophy-primary); outline: none; }
+
+        /* Completion ring + rarity summary in the header */
+        .trophy-summary {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        .trophy-ring { position: relative; width: 110px; height: 110px; }
+        .trophy-ring svg { width: 100%; height: 100%; filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.4)); }
+        .trophy-ring .ring-fill { transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .trophy-ring-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 1.3rem; font-weight: 800; color: var(--trophy-primary);
+        }
+        .rarity-summary { display: flex; gap: 14px; flex-wrap: wrap; }
+        .rarity-pill {
+            padding: 8px 14px; border-radius: 12px; font-size: 0.9em; font-weight: 600;
+            border: 1px solid var(--trophy-border); background: rgba(21, 21, 32, 0.6);
+        }
+        .rarity-pill .rp-count { font-weight: 800; }
+        .rarity-pill.common { color: rgba(255, 255, 255, 0.7); }
+        .rarity-pill.rare { color: rgba(0, 150, 255, 0.95); border-color: rgba(0, 150, 255, 0.4); }
+        .rarity-pill.epic { color: rgba(170, 90, 255, 0.95); border-color: rgba(150, 0, 255, 0.4); }
+        .rarity-pill.legendary { color: rgba(255, 215, 0, 0.95); border-color: rgba(255, 215, 0, 0.5); }
+
+        /* Per-trophy progress bar (table requirement cell) */
+        .trophy-progress { margin-top: 6px; }
+        .trophy-progress-bar {
+            height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden;
+        }
+        .trophy-progress-fill {
+            height: 100%; border-radius: 4px;
+            background: linear-gradient(90deg, var(--trophy-secondary), var(--trophy-success));
+            transition: width 0.6s ease;
+        }
+        .trophy-progress-text { font-size: 0.78em; color: rgba(255, 255, 255, 0.6); margin-top: 3px; }
+        .trophies-container .table tbody tr { cursor: pointer; }
+        .trophies-container .table tbody tr:hover { background: rgba(255, 215, 0, 0.06); }
+
+        /* Detail modal */
+        .trophy-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
+            display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+        }
+        .trophy-modal-overlay.open { display: flex; }
+        .trophy-modal {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.98), rgba(15, 15, 25, 0.98));
+            border: 2px solid var(--trophy-primary); border-radius: 20px;
+            max-width: 460px; width: 100%; padding: 32px; position: relative;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+        }
+        .trophy-modal-close {
+            position: absolute; top: 14px; right: 18px; background: none; border: none;
+            color: rgba(255, 255, 255, 0.6); font-size: 1.6em; cursor: pointer; line-height: 1;
+        }
+        .trophy-modal-close:hover { color: var(--trophy-primary); }
+        .trophy-modal-icon { font-size: 4em; text-align: center; }
+        .trophy-modal-name { font-size: 1.6em; font-weight: 800; color: var(--trophy-primary); text-align: center; margin: 8px 0; }
+        .trophy-modal-desc { text-align: center; opacity: 0.85; margin-bottom: 16px; }
+        .trophy-modal-meta { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 0.95em; }
+        .trophy-modal-meta dt { color: rgba(255, 255, 255, 0.55); }
+        .trophy-modal-meta dd { margin: 0; font-weight: 600; }
+
+        /* Toasts */
+        #trophy-toast-stack {
+            position: fixed; bottom: 24px; right: 24px; z-index: 2100;
+            display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+        }
+        .trophy-toast {
+            display: flex; align-items: center; gap: 14px; min-width: 260px; max-width: 360px;
+            padding: 16px 20px; border-radius: 14px;
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.98), rgba(15, 15, 25, 0.98));
+            border: 2px solid var(--trophy-success); box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25);
+            transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .trophy-toast.show { transform: translateX(0); }
+        .trophy-toast.legendary { border-color: var(--trophy-primary); box-shadow: 0 8px 30px rgba(255, 215, 0, 0.35); }
+        .trophy-toast-icon { font-size: 2em; }
+        .trophy-toast-title { font-weight: 800; color: var(--trophy-success); }
+        .trophy-toast.legendary .trophy-toast-title { color: var(--trophy-primary); }
+        .trophy-toast-name { font-size: 0.9em; opacity: 0.9; }
+        @media (prefers-reduced-motion: reduce) {
+            .trophy-toast, .trophy-progress-fill, .ring-fill { transition: none; }
+            .trophy-card::before, .comm-psych-theory-card::before { animation: none; }
+            .trophy-card.unlocked .trophy-icon { animation: none; }
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+        }
+        /* Visible keyboard focus for interactive trophy elements (Feature 23) */
+        .trophies-container .table tbody tr:focus-visible,
+        .next-up-card:focus-visible, .set-member:focus-visible, .seasonal-card:focus-visible {
+            outline: 3px solid var(--trophy-primary); outline-offset: 2px;
+        }
+        .tab:focus-visible, .trophy-sort:focus-visible, .trophy-search:focus-visible,
+        .trophy-claim-btn:focus-visible, .trophy-pin-btn:focus-visible, .trophy-modal-close:focus-visible {
+            outline: 3px solid var(--trophy-primary); outline-offset: 2px;
+        }
+
+        /* --- Phase 2: next-up, sets, quests, seasonal, claim --- */
+        .next-up-section { margin-bottom: 28px; }
+        .next-up-title { color: var(--trophy-primary); margin: 0 0 14px; }
+        .next-up-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+        .next-up-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.9), rgba(15, 15, 25, 0.9));
+            border: 2px solid var(--trophy-border); border-radius: 14px; padding: 16px; cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .next-up-card:hover { transform: translateY(-3px); border-color: var(--trophy-primary); }
+        .next-up-card .nu-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .next-up-card .nu-icon { font-size: 1.8em; }
+        .next-up-card .nu-name { font-weight: 700; color: var(--trophy-primary); }
+
+        .set-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--trophy-border); border-radius: 16px; padding: 20px; margin-bottom: 16px;
+        }
+        .set-card.complete { border-color: var(--trophy-success); box-shadow: 0 0 24px rgba(0, 255, 136, 0.18); }
+        .set-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .set-icon { font-size: 2em; }
+        .set-name { font-size: 1.3em; font-weight: 800; color: var(--trophy-primary); }
+        .set-bonus { margin-left: auto; color: var(--trophy-success); font-weight: 700; }
+        .set-members { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .set-member {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px;
+            font-size: 0.85em; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--trophy-border);
+        }
+        .set-member.done { background: rgba(0, 255, 136, 0.14); border-color: rgba(0, 255, 136, 0.4); color: var(--trophy-success); }
+
+        .quest-card {
+            display: flex; align-items: center; gap: 16px;
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--trophy-border); border-radius: 14px; padding: 18px 20px; margin-bottom: 14px;
+        }
+        .quest-card.complete { border-color: var(--trophy-success); }
+        .quest-scope {
+            text-transform: uppercase; font-size: 0.7em; font-weight: 800; letter-spacing: 1px;
+            padding: 4px 10px; border-radius: 8px; background: rgba(255, 215, 0, 0.15); color: var(--trophy-primary);
+        }
+        .quest-body { flex: 1; }
+        .quest-title { font-weight: 700; }
+        .quest-meta { font-size: 0.85em; opacity: 0.7; margin-top: 4px; }
+        .quest-reward { color: var(--trophy-success); font-weight: 700; }
+
+        .seasonal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+        .seasonal-card {
+            background: linear-gradient(135deg, rgba(21, 21, 32, 0.95), rgba(15, 15, 25, 0.95));
+            border: 2px solid var(--trophy-border); border-radius: 16px; padding: 20px; position: relative;
+        }
+        .seasonal-card.active { border-color: var(--trophy-primary); box-shadow: 0 0 24px rgba(255, 215, 0, 0.15); }
+        .seasonal-card.expired { opacity: 0.5; }
+        .seasonal-card.upcoming { opacity: 0.75; border-style: dashed; }
+        .seasonal-badge {
+            position: absolute; top: 14px; right: 14px; font-size: 0.7em; font-weight: 800; text-transform: uppercase;
+            padding: 4px 10px; border-radius: 8px;
+        }
+        .seasonal-badge.active { background: rgba(0, 255, 136, 0.2); color: var(--trophy-success); }
+        .seasonal-badge.expired { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
+        .seasonal-badge.upcoming { background: rgba(255, 170, 0, 0.18); color: var(--trophy-warning); }
+        .seasonal-countdown { font-size: 0.85em; color: var(--trophy-warning); margin-top: 10px; }
+
+        .trophy-claim-btn {
+            display: block; width: 100%; margin-top: 18px; padding: 12px; border-radius: 12px; cursor: pointer;
+            border: 2px solid var(--trophy-success); background: rgba(0, 255, 136, 0.15); color: var(--trophy-success);
+            font-weight: 700; font-size: 1em; transition: all 0.2s ease;
+        }
+        .trophy-claim-btn:hover { background: rgba(0, 255, 136, 0.3); }
+        .trophy-claim-btn:disabled { opacity: 0.6; cursor: default; }
+
+        /* Leaderboard */
+        .lb-row {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px; margin-bottom: 8px;
+            background: rgba(21, 21, 32, 0.7); border: 1px solid var(--trophy-border); border-radius: 12px;
+        }
+        .lb-row.me { border-color: var(--trophy-primary); box-shadow: 0 0 16px rgba(255, 215, 0, 0.2); }
+        .lb-rank { font-weight: 800; width: 2.4em; text-align: center; color: var(--trophy-primary); }
+        .lb-rank.top { font-size: 1.3em; }
+        .lb-user { flex: 1; font-family: monospace; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; }
+        .lb-points { color: var(--trophy-success); font-weight: 700; }
+        .lb-myrank { margin-top: 14px; padding: 10px; text-align: center; opacity: 0.8; }
+
+        /* Activity feed */
+        .activity-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 8px;
+            background: rgba(21, 21, 32, 0.7); border-left: 4px solid var(--trophy-success); border-radius: 10px;
+        }
+        .activity-item .ai-icon { font-size: 1.6em; }
+        .activity-item .ai-when { margin-left: auto; font-size: 0.82em; opacity: 0.6; }
+
+        /* Compare */
+        .compare-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .compare-col { background: rgba(21, 21, 32, 0.7); border: 1px solid var(--trophy-border); border-radius: 12px; padding: 16px; }
+        .compare-col h4 { margin: 0 0 10px; color: var(--trophy-primary); font-family: monospace; font-size: 0.95em; word-break: break-all; }
+        .compare-stat { font-size: 2em; font-weight: 800; color: var(--trophy-success); }
+        .compare-chip { display: inline-block; padding: 3px 8px; margin: 3px; border-radius: 14px; font-size: 0.82em; background: rgba(255,255,255,0.06); }
+        @media (max-width: 640px) { .compare-cols { grid-template-columns: 1fr; } }
+
+        /* Showcase pin button in modal */
+        .trophy-pin-btn {
+            display: block; width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px; cursor: pointer;
+            border: 2px solid var(--trophy-border); background: rgba(255, 215, 0, 0.08); color: var(--trophy-primary);
+            font-weight: 600; transition: all 0.2s ease;
+        }
+        .trophy-pin-btn:hover { background: rgba(255, 215, 0, 0.2); }
+        .trophy-pin-btn.pinned { border-color: var(--trophy-primary); background: rgba(255, 215, 0, 0.2); }
+
+        /* Collector level + income */
+        .income-hero {
+            display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+            padding: 24px; margin-bottom: 24px; border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(0,255,136,0.08));
+            border: 2px solid var(--trophy-border);
+        }
+        .income-level-badge { font-size: 3.5em; line-height: 1; }
+        .income-level-name { font-size: 1.5em; font-weight: 800; color: var(--trophy-primary); margin: 0; }
+        .income-level-sub { opacity: 0.85; margin: 4px 0 0; font-size: 0.95em; }
+        .income-pending {
+            text-align: right; padding: 12px 18px; border-radius: 12px;
+            background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.35);
+        }
+        .income-pending-val { font-size: 2em; font-weight: 800; color: var(--trophy-success); }
+        .income-pending-lbl { font-size: 0.82em; opacity: 0.8; }
+        .income-collect-btn {
+            display: block; width: 100%; max-width: 320px; margin: 16px auto 0; padding: 14px 24px;
+            border: none; border-radius: 12px; cursor: pointer; font-size: 1.05em; font-weight: 700;
+            background: linear-gradient(135deg, var(--trophy-primary), var(--trophy-secondary));
+            color: #111; transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .income-collect-btn:hover:not(:disabled) { transform: scale(1.02); }
+        .income-collect-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .income-progress-wrap { margin: 16px 0; }
+        .income-progress-bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .income-progress-fill { height: 100%; background: linear-gradient(90deg, var(--trophy-primary), var(--trophy-success)); border-radius: 5px; transition: width 0.4s ease; }
+        .income-ladder { display: grid; gap: 10px; margin-top: 20px; }
+        .income-tier {
+            display: grid; grid-template-columns: 48px 1fr auto auto; gap: 12px; align-items: center;
+            padding: 12px 16px; border-radius: 12px; border: 1px solid var(--trophy-border);
+            background: rgba(21,21,32,0.5); opacity: 0.65;
+        }
+        .income-tier.active { opacity: 1; border-color: var(--trophy-primary); background: rgba(255,215,0,0.08); }
+        .income-tier.reached { opacity: 0.9; }
+        .income-tier-icon { font-size: 1.6em; text-align: center; }
+        .income-tier-income { font-weight: 700; color: var(--trophy-success); white-space: nowrap; }
+        .income-tier-lvl { font-family: monospace; font-size: 0.85em; opacity: 0.7; }
+        @media (max-width: 640px) {
+            .income-hero { grid-template-columns: 1fr; text-align: center; }
+            .income-pending { text-align: center; }
+            .income-tier { grid-template-columns: 40px 1fr; }
+            .income-tier-income, .income-tier-lvl { grid-column: 2; }
+        }
     </style>
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
@@ -392,6 +670,10 @@
     <div class="trophies-container">
         <div class="trophies-header">
             <h1>🏆 Trophy Collection</h1>
+            <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
+                <button type="button" id="trophy-theme-ww2" class="active">WW2 War Room</button>
+                <button type="button" id="trophy-theme-gold">Gold Classic</button>
+            </div>
             <p>Unlock trophies by completing achievements and milestones</p>
         </div>
 
@@ -413,6 +695,58 @@
                 <div class="stat-label">Trophy Points</div>
                 <div class="stat-value" id="trophy-points">0</div>
             </div>
+            <div class="stat-card" title="Rarity-weighted: common 1 · rare 3 · epic 8 · legendary 20">
+                <div class="stat-label">Trophy Score</div>
+                <div class="stat-value" id="trophy-score">0</div>
+            </div>
+            <div class="stat-card" title="Collector level — unlocks passive trophy income">
+                <div class="stat-label">Collector Level</div>
+                <div class="stat-value" id="collector-level">1</div>
+            </div>
+            <div class="stat-card" title="Passive income from your collector level">
+                <div class="stat-label">Daily Income</div>
+                <div class="stat-value" id="daily-income" style="font-size:1.4em;">0</div>
+            </div>
+            <div class="stat-card" title="MN2 crypto passive income from collector level">
+                <div class="stat-label">Daily MN2</div>
+                <div class="stat-value" id="daily-income-mn2" style="font-size:1.2em;">0</div>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-bottom:24px;">
+            <button type="button" id="trophy-share-btn" class="trophy-sort" style="cursor:pointer;">📸 Share my trophy card</button>
+        </div>
+
+        <!-- Completion ring + rarity breakdown -->
+        <div class="trophy-summary">
+            <div class="trophy-ring" id="trophy-ring" title="Overall completion">
+                <svg viewBox="0 0 100 100">
+                    <circle class="ring-bg" cx="50" cy="50" r="45" fill="none" stroke="rgba(255,215,0,0.2)" stroke-width="8"/>
+                    <circle class="ring-fill" id="trophy-ring-fill" cx="50" cy="50" r="45" fill="none" stroke="url(#trophy-ring-gradient)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                    <defs><linearGradient id="trophy-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#00ff88"/></linearGradient></defs>
+                </svg>
+                <div class="trophy-ring-text"><span id="trophy-ring-pct">0</span>%</div>
+            </div>
+            <div class="rarity-summary" id="rarity-summary">
+                <span class="rarity-pill common">Common <span class="rp-count" data-rarity="common">0/0</span></span>
+                <span class="rarity-pill rare">Rare <span class="rp-count" data-rarity="rare">0/0</span></span>
+                <span class="rarity-pill epic">Epic <span class="rp-count" data-rarity="epic">0/0</span></span>
+                <span class="rarity-pill legendary">Legendary <span class="rp-count" data-rarity="legendary">0/0</span></span>
+            </div>
+        </div>
+
+        <!-- Search + sort controls -->
+        <div class="trophy-controls">
+            <input type="search" id="trophy-search" class="trophy-search" placeholder="Search trophies by name, description, requirement…" autocomplete="off">
+            <select id="trophy-sort" class="trophy-sort" title="Sort trophies">
+                <option value="default">Sort: Default</option>
+                <option value="name">Name (A–Z)</option>
+                <option value="category">Category</option>
+                <option value="rarity">Rarity</option>
+                <option value="reward">Reward (high→low)</option>
+                <option value="status">Status (unlocked first)</option>
+                <option value="progress">Closest to unlock</option>
+            </select>
         </div>
 
         <!-- Tabs: Table view first, then categories, then extras -->
@@ -420,6 +754,13 @@
             <button type="button" class="tab active" data-tab="table">Table</button>
             <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
             <button type="button" class="tab" data-tab="locked">Locked</button>
+            <button type="button" class="tab" data-tab="sets">🎯 Sets</button>
+            <button type="button" class="tab" data-tab="quests">📋 Quests</button>
+            <button type="button" class="tab" data-tab="seasonal">🗓️ Seasonal</button>
+            <button type="button" class="tab" data-tab="leaderboard">🏅 Leaderboard</button>
+            <button type="button" class="tab" data-tab="compare">🆚 Compare</button>
+            <button type="button" class="tab" data-tab="activity">📰 Activity</button>
+            <button type="button" class="tab" data-tab="income">💰 Income</button>
             <select class="tab-category-select" id="tab-category" title="Filter by category">
                 <option value="">All categories</option>
                 <option value="generation">Generation</option>
@@ -441,6 +782,10 @@
 
         <!-- Main content: table view (same layout as Game / Points tables) -->
         <div class="tab-content active" id="content-table">
+            <section class="next-up-section" id="next-up-section" style="display:none;">
+                <h3 class="next-up-title">⏳ Closest to unlocking</h3>
+                <div class="next-up-grid" id="next-up-grid"></div>
+            </section>
             <section class="stats-section">
                 <div class="card">
                     <div class="card-header">
@@ -527,8 +872,8 @@
         <div class="tab-content" id="content-compendium">
             <div class="compendium-section" style="max-width: 960px; margin: 0 auto;">
                 <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">Compendium — Rulebook V1–V15</h3>
-                <p style="margin-bottom: 16px; opacity: 0.9;">25 kommunikationspsykologier, Hunters rulebook, og alle V1–V15. Læsning giver <strong>compendium_points</strong>.</p>
-                <p style="margin-bottom: 16px;"><a href="/compendium/" target="_blank" rel="noopener" style="color: var(--trophy-primary); font-weight: 600;">Åbn Compendium (ny fane) →</a> · <a href="/game#walkthrough" style="color: var(--trophy-primary);">Walkthrough</a> · <a href="/game#guides" style="color: var(--trophy-primary);">Guides</a></p>
+                <p style="margin-bottom: 16px; opacity: 0.9;">25 kommunikationspsykologier, Hunters rulebook, og alle rulebooks V1–V16. Læsning giver <strong>compendium_points</strong>.</p>
+                <p style="margin-bottom: 16px;"><a href="/compendium/?calm=1" style="color: var(--trophy-primary); font-weight: 600;">Åbn rolig læseoplevelse (Library) →</a> · <a href="/game#walkthrough" style="color: var(--trophy-primary);">Walkthrough</a> · <a href="/game#guides" style="color: var(--trophy-primary);">Guides</a></p>
                 <div id="compendium-pages-list" class="loading">Loading pages…</div>
             </div>
         </div>
@@ -547,7 +892,83 @@
                 <div id="stories-content" class="loading">Loading stories…</div>
             </div>
         </div>
+
+        <div class="tab-content" id="content-sets">
+            <div class="sets-section" style="max-width: 1100px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">🎯 Trophy Sets &amp; Collections</h3>
+                <p style="margin-bottom: 16px; opacity: 0.9;">Complete every trophy in a set to earn a bonus.</p>
+                <div id="sets-grid" class="loading">Loading sets…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-quests">
+            <div class="quests-section" style="max-width: 960px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">📋 Daily &amp; Weekly Quests</h3>
+                <p style="margin-bottom: 16px; opacity: 0.9;">Rotating objectives — same for everyone, refreshed by the calendar.</p>
+                <div id="quests-list" class="loading">Loading quests…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-seasonal">
+            <div class="seasonal-section" style="max-width: 1100px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">🗓️ Seasonal &amp; Limited-Time Trophies</h3>
+                <p style="margin-bottom: 16px; opacity: 0.9;">Available only within their season window. Don't miss them.</p>
+                <div id="seasonal-grid" class="loading">Loading seasonal trophies…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-leaderboard">
+            <div class="leaderboard-section" style="max-width: 800px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">🏅 Top Collectors</h3>
+                <div id="leaderboard-list" class="loading">Loading leaderboard…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-compare">
+            <div class="compare-section" style="max-width: 900px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">🆚 Compare Trophy Walls</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+                    <input type="text" id="compare-user-input" class="trophy-search" placeholder="Enter another user_id to compare…" style="max-width:320px;">
+                    <button type="button" id="compare-btn" class="trophy-sort" style="cursor:pointer;">Compare</button>
+                </div>
+                <div id="compare-result"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-activity">
+            <div class="activity-section" style="max-width: 760px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 16px;">📰 Recent Unlocks</h3>
+                <div id="activity-list" class="loading">Loading activity…</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="content-income">
+            <div class="income-section" style="max-width: 900px; margin: 0 auto;">
+                <h3 style="color: var(--trophy-primary); margin-bottom: 8px;">💰 Collector Income</h3>
+                <p style="margin-bottom: 20px; opacity: 0.9;">Your collector level rises with rarity-weighted trophy score. Higher levels generate passive <strong>trophy points</strong> and <strong>MN2</strong> crypto — collect up to 72 hours of income at a time. Unlocking trophies also pays MN2 by rarity.</p>
+                <div id="income-hero" class="income-hero loading">Loading collector level…</div>
+                <div id="income-progress" class="income-progress-wrap" style="display:none;"></div>
+                <button type="button" id="income-collect-btn" class="income-collect-btn" disabled>Collect income</button>
+                <p id="income-meta" style="text-align:center; margin-top:12px; font-size:0.88em; opacity:0.75;"></p>
+                <h4 style="color: var(--trophy-primary); margin: 28px 0 12px;">Level ladder</h4>
+                <div id="income-ladder" class="income-ladder loading">Loading levels…</div>
+            </div>
+        </div>
     </div>
+
+    <!-- Trophy detail modal -->
+    <div class="trophy-modal-overlay" id="trophy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trophy-modal-name">
+        <div class="trophy-modal">
+            <button type="button" class="trophy-modal-close" id="trophy-modal-close" aria-label="Close">&times;</button>
+            <div class="trophy-modal-icon" id="trophy-modal-icon">🏆</div>
+            <div class="trophy-modal-name" id="trophy-modal-name">Trophy</div>
+            <div class="trophy-modal-desc" id="trophy-modal-desc"></div>
+            <dl class="trophy-modal-meta" id="trophy-modal-meta"></dl>
+        </div>
+    </div>
+
+    <!-- Toast stack for unlock notifications -->
+    <div id="trophy-toast-stack" aria-live="polite"></div>
 
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
@@ -565,12 +986,674 @@
         // Cached trophy data (single load), current filter for table view ('all' | 'unlocked' | 'locked' | category)
         let cachedAllTrophies = [];
         let currentFilter = 'all';
+        // Phase 1 upgrade state
+        let currentSearch = '';
+        let currentSort = 'default';
+        let userMetrics = {};                 // metric name -> current value (drives progress bars)
+        let knownUnlockedIds = null;          // Set of unlocked ids seen so far (for new-unlock toasts)
+        let toastsArmed = false;              // suppress the initial unlock cascade; arm after load settles
+        const PREFS_KEY = 'trophyPagePrefs';
+        const RARITY_ORDER = { legendary: 0, epic: 1, rare: 2, common: 3 };
+
+        function loadPrefs() {
+            try {
+                const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+                if (p.filter) currentFilter = p.filter;
+                if (p.search) currentSearch = p.search;
+                if (p.sort) currentSort = p.sort;
+            } catch (_) {}
+        }
+        function savePrefs() {
+            try {
+                localStorage.setItem(PREFS_KEY, JSON.stringify({ filter: currentFilter, search: currentSearch, sort: currentSort }));
+            } catch (_) {}
+        }
+
+        // Compute progress (0..1) and current value for a trophy from userMetrics
+        function trophyProgress(t) {
+            if (t.unlocked) return { ratio: 1, current: null, target: null };
+            const metric = t.progress_metric;
+            const target = Number(t.progress_target);
+            if (!metric || !target || !(metric in userMetrics)) return { ratio: null, current: null, target: null };
+            const current = Number(userMetrics[metric]) || 0;
+            return { ratio: Math.max(0, Math.min(1, current / target)), current: current, target: target };
+        }
+
+        // Derive progress metrics from /api/points/all + achievements. Best-effort: only
+        // metrics we can reliably know are set; the rest stay unknown (no progress bar).
+        function computeUserMetrics(points, achievementsRes, trophyCount) {
+            const num = (v) => Number(v) || 0;
+            const genPoints = num(points.generation_points);
+            const buckets = ['generation_points', 'activity_points', 'battle_points', 'quest_points',
+                'game_points', 'social_points', 'knowledge_points', 'crypto_points'];
+            const totalPoints = buckets.reduce((s, k) => s + num(points[k]), 0);
+            const achievements = num(points.achievements_earned) ||
+                ((achievementsRes && Array.isArray(achievementsRes.achievements))
+                    ? achievementsRes.achievements.filter(a => a.unlocked || a.earned).length : 0);
+            userMetrics = {
+                generation_points: genPoints,
+                total_points: totalPoints,
+                videos: Math.floor(genPoints / 25),
+                level: num(points.level),
+                trophies: num(trophyCount) || num(points.trophies_collected),
+                achievements: achievements
+            };
+        }
+
+        // Toast notification on new unlock (reuses confettiBurst for legendary)
+        function showTrophyToast(t) {
+            const stack = document.getElementById('trophy-toast-stack');
+            if (!stack) return;
+            const legendary = (t.rarity === 'legendary' || t.rarity === 'epic');
+            const el = document.createElement('div');
+            el.className = 'trophy-toast' + (legendary ? ' legendary' : '');
+            el.innerHTML = '<div class="trophy-toast-icon">' + (t.icon || '🏆') + '</div>' +
+                '<div><div class="trophy-toast-title">Trophy unlocked!</div>' +
+                '<div class="trophy-toast-name">' + String(t.name || '').replace(/</g, '&lt;') +
+                (t.reward ? ' · +' + t.reward + ' pts' : '') + '</div></div>';
+            stack.appendChild(el);
+            requestAnimationFrame(() => el.classList.add('show'));
+            if (legendary && typeof confettiBurst === 'function') { try { confettiBurst(); } catch (_) {} }
+            setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 450); }, 5000);
+        }
+
+        // Trophy detail modal (deep-linkable via #trophy=<id>)
+        function openTrophyModal(id) {
+            const t = (cachedAllTrophies || []).find(x => String(x.id) === String(id));
+            if (!t) return;
+            const overlay = document.getElementById('trophy-modal-overlay');
+            const esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const disp = displayTrophy(t);
+            document.getElementById('trophy-modal-icon').textContent = disp.icon;
+            document.getElementById('trophy-modal-name').textContent = disp.name;
+            document.getElementById('trophy-modal-desc').textContent = disp.description;
+            const prog = trophyProgress(t);
+            let progRow = '';
+            if (!t.unlocked && !t.hidden && prog.ratio != null) {
+                progRow = '<dt>Progress</dt><dd>' + prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() +
+                    ' (' + Math.round(prog.ratio * 100) + '%)</dd>';
+            }
+            const metaEl = document.getElementById('trophy-modal-meta');
+            metaEl.innerHTML =
+                '<dt>Status</dt><dd>' + (t.unlocked ? '✅ Unlocked' : '🔒 Locked') + '</dd>' +
+                '<dt>Category</dt><dd>' + esc(t.category || '—') + '</dd>' +
+                '<dt>Rarity</dt><dd class="rarity-' + (t.rarity || 'common') + '">' + esc(t.rarity || 'common') + '</dd>' +
+                '<dt>Reward</dt><dd>+' + (t.reward || 0) + ' trophy points</dd>' +
+                '<dt>Requirement</dt><dd>' + esc(disp.requirement) + '</dd>' +
+                progRow +
+                (t.unlocked_at ? '<dt>Unlocked</dt><dd>' + esc(new Date(t.unlocked_at).toLocaleString()) + '</dd>' : '');
+            // Claim + pin buttons for unlocked trophies
+            ['trophy-claim-btn', 'trophy-pin-btn'].forEach(function(bid) {
+                const ex = document.getElementById(bid);
+                if (ex) ex.remove();
+            });
+            if (t.unlocked) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = 'trophy-claim-btn';
+                btn.className = 'trophy-claim-btn';
+                btn.textContent = 'Claim reward (+' + (t.reward || 0) + ')';
+                btn.addEventListener('click', function() { claimTrophyReward(t.id, btn); });
+                metaEl.parentNode.appendChild(btn);
+
+                // Pin to profile showcase (Feature 14)
+                const pinned = showcaseIds.indexOf(String(t.id)) >= 0;
+                const pin = document.createElement('button');
+                pin.type = 'button';
+                pin.id = 'trophy-pin-btn';
+                pin.className = 'trophy-pin-btn' + (pinned ? ' pinned' : '');
+                pin.textContent = pinned ? '📌 Pinned to profile (click to unpin)' : '📌 Pin to profile showcase';
+                pin.addEventListener('click', function() { toggleShowcase(t.id, pin); });
+                metaEl.parentNode.appendChild(pin);
+            }
+            if (overlay) {
+                overlay.classList.add('open');
+                // Focus management (Feature 23): remember opener, focus close button, trap Tab
+                _trophyModalOpener = document.activeElement;
+                var closeBtn = overlay.querySelector('.trophy-modal-close');
+                if (closeBtn) { try { closeBtn.focus(); } catch (_) {} }
+                overlay.addEventListener('keydown', _trophyModalKeydown);
+            }
+            try { history.replaceState(null, '', '#trophy=' + encodeURIComponent(t.id)); } catch (_) {}
+        }
+        let _trophyModalOpener = null;
+        function _trophyModalKeydown(e) {
+            if (e.key === 'Escape') { closeTrophyModal(); return; }
+            if (e.key !== 'Tab') return;
+            var overlay = document.getElementById('trophy-modal-overlay');
+            if (!overlay) return;
+            var focusable = overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (!focusable.length) return;
+            var first = focusable[0], last = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+        function closeTrophyModal() {
+            const overlay = document.getElementById('trophy-modal-overlay');
+            if (overlay) {
+                overlay.classList.remove('open');
+                overlay.removeEventListener('keydown', _trophyModalKeydown);
+            }
+            if (_trophyModalOpener && _trophyModalOpener.focus) { try { _trophyModalOpener.focus(); } catch (_) {} }
+            _trophyModalOpener = null;
+            if (window.location.hash.indexOf('#trophy=') === 0) {
+                try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (_) {}
+            }
+        }
+
+        // ---- Phase 2: hidden trophies, sync, next-up, sets, quests, seasonal, claim ----
+        let cachedSets = [];
+
+        // Display fields respecting hidden trophies (??? until unlocked)
+        function displayTrophy(t) {
+            if (t.hidden && !t.unlocked) {
+                return { name: '??? (Hidden)', icon: '❓', description: 'A secret trophy — keep playing to discover it.', requirement: 'Hidden' };
+            }
+            return { name: t.name || t.id, icon: t.icon || '🏆', description: t.description || '', requirement: t.requirement || '—' };
+        }
+
+        // Server-side unlock wiring (Feature 16): let the backend award everything the user
+        // has actually earned, then reflect it on the page. Genuine new unlocks toast immediately.
+        async function syncTrophies() {
+            try {
+                const r = await fetch(`${API_BASE}/trophies/sync`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                if (!r.ok) return null;
+                const d = await r.json();
+                if (d && d.metrics) userMetrics = Object.assign({}, userMetrics, d.metrics);
+                if (d && Array.isArray(d.newly_unlocked) && d.newly_unlocked.length) {
+                    d.newly_unlocked.forEach(function(t) { showTrophyToast(t); });
+                }
+                return d;
+            } catch (_) { return null; }
+        }
+
+        // Next-up recommendations (Feature 12): top locked trophies by progress
+        function renderNextUp() {
+            const section = document.getElementById('next-up-section');
+            const grid = document.getElementById('next-up-grid');
+            if (!section || !grid) return;
+            const candidates = (cachedAllTrophies || [])
+                .filter(t => !t.unlocked && !(t.hidden))
+                .map(t => ({ t: t, p: trophyProgress(t) }))
+                .filter(x => x.p.ratio != null && x.p.ratio > 0 && x.p.ratio < 1)
+                .sort((a, b) => b.p.ratio - a.p.ratio)
+                .slice(0, 4);
+            if (candidates.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            grid.innerHTML = candidates.map(function(x) {
+                const t = x.t, pct = Math.round(x.p.ratio * 100);
+                const d = displayTrophy(t);
+                return '<div class="next-up-card" data-trophy-id="' + String(t.id) + '">' +
+                    '<div class="nu-head"><span class="nu-icon">' + d.icon + '</span><span class="nu-name">' +
+                    String(d.name).replace(/</g, '&lt;') + '</span></div>' +
+                    '<div class="trophy-progress-bar"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
+                    '<div class="trophy-progress-text">' + x.p.current.toLocaleString() + ' / ' + x.p.target.toLocaleString() + ' (' + pct + '%)</div></div>';
+            }).join('');
+            grid.querySelectorAll('.next-up-card').forEach(function(card) {
+                card.addEventListener('click', function() { openTrophyModal(card.getAttribute('data-trophy-id')); });
+            });
+        }
+
+        async function loadSets() {
+            const grid = document.getElementById('sets-grid');
+            if (!grid) return;
+            try {
+                if (!cachedSets.length) {
+                    const r = await fetch(`${API_BASE}/trophies/definitions`);
+                    const d = r.ok ? await r.json() : {};
+                    cachedSets = d.sets || [];
+                }
+                const byId = {};
+                (cachedAllTrophies || []).forEach(t => { byId[String(t.id)] = t; });
+                if (!cachedSets.length) { grid.innerHTML = '<div class="info-message">No sets defined.</div>'; return; }
+                grid.innerHTML = cachedSets.map(function(s) {
+                    const members = (s.members || []);
+                    const done = members.filter(m => byId[m] && byId[m].unlocked).length;
+                    const complete = done === members.length && members.length > 0;
+                    const memberHtml = members.map(function(m) {
+                        const t = byId[m];
+                        const d = t ? displayTrophy(t) : { name: m, icon: '🏆' };
+                        const ok = t && t.unlocked;
+                        return '<span class="set-member ' + (ok ? 'done' : '') + '" data-trophy-id="' + m + '">' +
+                            (ok ? '✓ ' : '') + d.icon + ' ' + String(d.name).replace(/</g, '&lt;') + '</span>';
+                    }).join('');
+                    return '<div class="set-card ' + (complete ? 'complete' : '') + '">' +
+                        '<div class="set-head"><span class="set-icon">' + (s.icon || '🎯') + '</span>' +
+                        '<span class="set-name">' + String(s.name || s.id).replace(/</g, '&lt;') + '</span>' +
+                        '<span class="set-bonus">' + (complete ? '✅ +' : 'Bonus +') + (s.bonus || 0) + '</span></div>' +
+                        '<div style="opacity:0.85;">' + String(s.description || '').replace(/</g, '&lt;') + '</div>' +
+                        '<div class="trophy-progress-bar" style="margin-top:12px;"><div class="trophy-progress-fill" style="width:' +
+                        (members.length ? Math.round(done / members.length * 100) : 0) + '%"></div></div>' +
+                        '<div class="trophy-progress-text">' + done + ' / ' + members.length + ' unlocked</div>' +
+                        '<div class="set-members">' + memberHtml + '</div></div>';
+                }).join('');
+                grid.querySelectorAll('.set-member[data-trophy-id]').forEach(function(el) {
+                    el.addEventListener('click', function() { openTrophyModal(el.getAttribute('data-trophy-id')); });
+                });
+            } catch (e) {
+                grid.innerHTML = '<div class="error">Failed to load sets.</div>';
+            }
+        }
+
+        async function loadQuests() {
+            const el = document.getElementById('quests-list');
+            if (!el) return;
+            el.innerHTML = '<div class="loading">Loading quests…</div>';
+            try {
+                const r = await fetch(`${API_BASE}/trophies/quests?user_id=${encodeURIComponent(userId)}`);
+                const d = r.ok ? await r.json() : {};
+                const quests = (d && d.quests) || [];
+                if (!quests.length) { el.innerHTML = '<div class="info-message">No quests right now.</div>'; return; }
+                el.innerHTML = quests.map(function(q) {
+                    const pct = q.target ? Math.round(Math.min(1, (q.progress || 0) / q.target) * 100) : 0;
+                    const canClaim = q.complete && !q.claimed;
+                    const mn2 = q.mn2_reward ? ' · +' + q.mn2_reward + ' MN2' : '';
+                    return '<div class="quest-card ' + (q.complete ? 'complete' : '') + '">' +
+                        '<span class="quest-scope">' + (q.scope || q.source || '') + '</span>' +
+                        '<div class="quest-body"><div class="quest-title">' + String(q.title || '').replace(/</g, '&lt;') +
+                        (q.complete ? ' ✅' : '') + '</div>' +
+                        '<div class="trophy-progress-bar" style="margin-top:8px;"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
+                        '<div class="quest-meta">' + (q.progress || 0) + ' / ' + q.target + mn2 +
+                        (q.expires ? ' · resets ' + q.expires : '') + '</div></div>' +
+                        '<span class="quest-reward">+' + (q.reward || 0) + '</span>' +
+                        (canClaim ? '<button type="button" class="quest-claim-btn" data-qid="' + q.id + '">Claim</button>' : '') +
+                        '</div>';
+                }).join('');
+                el.querySelectorAll('.quest-claim-btn').forEach(function(btn) {
+                    btn.addEventListener('click', async function() {
+                        btn.disabled = true;
+                        const qid = btn.getAttribute('data-qid');
+                        const cr = await fetch(API_BASE + '/trophies/quests/claim', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, quest_id: qid }),
+                        });
+                        const cd = await cr.json();
+                        if (cd.success) loadQuests();
+                        else { btn.disabled = false; alert(cd.error || 'Claim failed'); }
+                    });
+                });
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to load quests.</div>';
+            }
+        }
+
+        function loadSeasonal() {
+            const grid = document.getElementById('seasonal-grid');
+            if (!grid) return;
+            const seasonal = (cachedAllTrophies || []).filter(t => t.category === 'seasonal');
+            if (!seasonal.length) { grid.innerHTML = '<div class="info-message">No seasonal trophies.</div>'; return; }
+            const now = new Date();
+            const dayMs = 86400000;
+            grid.className = 'seasonal-grid';
+            grid.innerHTML = seasonal.map(function(t) {
+                const from = t.available_from ? new Date(t.available_from + 'T00:00:00') : null;
+                const until = t.available_until ? new Date(t.available_until + 'T23:59:59') : null;
+                let state = 'active', badge = 'Active', countdown = '';
+                if (from && now < from) {
+                    state = 'upcoming'; badge = 'Upcoming';
+                    countdown = 'Opens in ' + Math.ceil((from - now) / dayMs) + ' days';
+                } else if (until && now > until) {
+                    state = 'expired'; badge = 'Ended';
+                    countdown = 'Ended ' + (t.available_until || '');
+                } else if (until) {
+                    countdown = '⏳ ' + Math.ceil((until - now) / dayMs) + ' days left';
+                }
+                const prog = trophyProgress(t);
+                let progHtml = '';
+                if (!t.unlocked && prog.ratio != null) {
+                    progHtml = '<div class="trophy-progress-bar" style="margin-top:10px;"><div class="trophy-progress-fill" style="width:' +
+                        Math.round(prog.ratio * 100) + '%"></div></div><div class="trophy-progress-text">' +
+                        prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() + '</div>';
+                }
+                return '<div class="seasonal-card ' + state + (t.unlocked ? ' active' : '') + '" data-trophy-id="' + String(t.id) + '">' +
+                    '<span class="seasonal-badge ' + state + '">' + (t.unlocked ? 'Unlocked' : badge) + '</span>' +
+                    '<div style="font-size:2.4em;">' + (t.icon || '🏆') + '</div>' +
+                    '<div class="trophy-name" style="margin:6px 0;">' + String(t.name || t.id).replace(/</g, '&lt;') + '</div>' +
+                    '<div style="opacity:0.85;">' + String(t.description || '').replace(/</g, '&lt;') + '</div>' +
+                    '<div class="trophy-reward" style="margin-top:8px;">+' + (t.reward || 0) + ' pts</div>' +
+                    progHtml +
+                    (countdown ? '<div class="seasonal-countdown">' + countdown + '</div>' : '') + '</div>';
+            }).join('');
+            grid.querySelectorAll('.seasonal-card[data-trophy-id]').forEach(function(card) {
+                card.addEventListener('click', function() { openTrophyModal(card.getAttribute('data-trophy-id')); });
+            });
+        }
+
+        // Claim reward for an unlocked trophy (Feature 13) — idempotent
+        async function claimTrophyReward(id, btn) {
+            if (btn) { btn.disabled = true; btn.textContent = 'Claiming…'; }
+            try {
+                const r = await fetch(`${API_BASE}/trophies/claim`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, trophy_id: id })
+                });
+                const d = await r.json();
+                if (d && d.success) {
+                    let msg = '✅ +' + (d.reward || 0) + ' pts';
+                    if (d.mn2_reward > 0) msg += ' · +' + formatMn2(d.mn2_reward) + ' MN2';
+                    if (btn) btn.textContent = msg;
+                    if (typeof updatePointsDisplay === 'function') { try { updatePointsDisplay(); } catch (_) {} }
+                } else {
+                    if (btn) { btn.disabled = false; btn.textContent = 'Claim reward'; }
+                }
+            } catch (_) {
+                if (btn) { btn.disabled = false; btn.textContent = 'Claim reward'; }
+            }
+        }
+
+        // ---- Phase 3: trophy score, leaderboard, activity, compare, share, showcase ----
+        const RARITY_WEIGHTS = { common: 1, rare: 3, epic: 8, legendary: 20 };
+        let showcaseIds = [];
+
+        function computeTrophyScore(allTrophies) {
+            return (allTrophies || []).filter(t => t.unlocked)
+                .reduce((s, t) => s + (RARITY_WEIGHTS[t.rarity || 'common'] || 1), 0);
+        }
+
+        async function loadShowcase() {
+            try {
+                const r = await fetch(`${API_BASE}/trophies/showcase?user_id=${encodeURIComponent(userId)}`);
+                const d = r.ok ? await r.json() : {};
+                showcaseIds = (d && d.trophy_ids) || [];
+            } catch (_) { showcaseIds = []; }
+        }
+
+        async function toggleShowcase(id, btn) {
+            const sid = String(id);
+            const idx = showcaseIds.indexOf(sid);
+            if (idx >= 0) showcaseIds.splice(idx, 1);
+            else {
+                if (showcaseIds.length >= 6) { if (btn) btn.textContent = 'Showcase full (max 6)'; return; }
+                showcaseIds.push(sid);
+            }
+            try {
+                await fetch(`${API_BASE}/trophies/showcase`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, trophy_ids: showcaseIds })
+                });
+            } catch (_) {}
+            if (btn) {
+                const pinned = showcaseIds.indexOf(sid) >= 0;
+                btn.classList.toggle('pinned', pinned);
+                btn.textContent = pinned ? '📌 Pinned to profile (click to unpin)' : '📌 Pin to profile showcase';
+            }
+        }
+
+        async function loadLeaderboard() {
+            const el = document.getElementById('leaderboard-list');
+            if (!el) return;
+            el.innerHTML = '<div class="loading">Loading leaderboard…</div>';
+            try {
+                const r = await fetch(`${API_BASE}/trophies/leaderboard?user_id=${encodeURIComponent(userId)}&limit=25`);
+                const d = r.ok ? await r.json() : {};
+                const entries = (d && d.entries) || [];
+                if (!entries.length) { el.innerHTML = '<div class="info-message">No ranked players yet.</div>'; return; }
+                const medal = (rank) => rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank;
+                let html = entries.map(function(e) {
+                    const uid = String(e.user_id || '');
+                    const shortUid = uid.length > 22 ? uid.slice(0, 22) + '…' : uid;
+                    return '<div class="lb-row ' + (e.is_current_user ? 'me' : '') + '">' +
+                        '<span class="lb-rank ' + (e.rank <= 3 ? 'top' : '') + '">' + medal(e.rank) + '</span>' +
+                        '<span class="lb-user">' + shortUid.replace(/</g, '&lt;') + (e.is_current_user ? ' (you)' : '') + '</span>' +
+                        '<span class="lb-points">' + Number(e.trophy_points).toLocaleString() + ' pts</span></div>';
+                }).join('');
+                if (d.current_user_rank && d.current_user_rank > 25) {
+                    html += '<div class="lb-myrank">Your rank: #' + d.current_user_rank + ' of ' + d.total_players + '</div>';
+                } else {
+                    html += '<div class="lb-myrank">' + d.total_players + ' ranked players</div>';
+                }
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to load leaderboard.</div>';
+            }
+        }
+
+        async function loadActivity() {
+            const el = document.getElementById('activity-list');
+            if (!el) return;
+            el.innerHTML = '<div class="loading">Loading activity…</div>';
+            try {
+                const r = await fetch(`${API_BASE}/trophies/activity?user_id=${encodeURIComponent(userId)}&limit=20`);
+                const d = r.ok ? await r.json() : {};
+                const acts = (d && d.activities) || [];
+                if (!acts.length) {
+                    el.innerHTML = '<div class="info-message">No unlocks yet — earn a trophy to see it here.</div>';
+                    return;
+                }
+                el.innerHTML = acts.map(function(a) {
+                    const when = a.unlocked_at ? new Date(a.unlocked_at).toLocaleString() : '';
+                    return '<div class="activity-item">' +
+                        '<span class="ai-icon">' + (a.icon || '🏆') + '</span>' +
+                        '<span><strong>' + String(a.name || a.trophy_id || '').replace(/</g, '&lt;') + '</strong>' +
+                        ' <span class="rarity-' + (a.rarity || 'common') + '">' + (a.rarity || '') + '</span></span>' +
+                        '<span class="ai-when">' + when + '</span></div>';
+                }).join('');
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to load activity.</div>';
+            }
+        }
+
+        let cachedLevelStatus = null;
+
+        function refreshLevelStats(status) {
+            if (!status) return;
+            cachedLevelStatus = status;
+            const lvlEl = document.getElementById('collector-level');
+            const incEl = document.getElementById('daily-income');
+            const mn2El = document.getElementById('daily-income-mn2');
+            if (lvlEl) lvlEl.textContent = String(status.level || 1);
+            if (incEl) incEl.textContent = '+' + Math.round(status.daily_income || 0) + ' pts';
+            if (mn2El) {
+                const dm = parseFloat(status.daily_income_mn2 || 0);
+                mn2El.textContent = '+' + (dm >= 0.01 ? dm.toFixed(3) : dm.toFixed(6)) + ' MN2';
+            }
+        }
+
+        function formatMn2(v) {
+            const n = parseFloat(v || 0);
+            if (n >= 0.01) return n.toFixed(4);
+            if (n >= 0.0001) return n.toFixed(6);
+            return n.toFixed(8);
+        }
+
+        async function fetchLevelStatus() {
+            try {
+                const r = await fetch(`${API_BASE}/trophies/level?user_id=${encodeURIComponent(userId)}`);
+                if (!r.ok) return null;
+                const d = await r.json();
+                if (d && d.success !== false) {
+                    refreshLevelStats(d);
+                    return d;
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        async function loadIncome() {
+            const hero = document.getElementById('income-hero');
+            const ladder = document.getElementById('income-ladder');
+            const prog = document.getElementById('income-progress');
+            const meta = document.getElementById('income-meta');
+            const btn = document.getElementById('income-collect-btn');
+            if (!hero || !ladder) return;
+            hero.className = 'income-hero loading';
+            hero.textContent = 'Loading collector level…';
+            ladder.className = 'income-ladder loading';
+            ladder.textContent = 'Loading levels…';
+            const d = await fetchLevelStatus();
+            if (!d) {
+                hero.className = 'income-hero';
+                hero.innerHTML = '<div class="error">Failed to load collector level.</div>';
+                ladder.innerHTML = '';
+                return;
+            }
+            const esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            hero.className = 'income-hero';
+            hero.innerHTML =
+                '<div class="income-level-badge">' + esc(d.level_icon || '🏆') + '</div>' +
+                '<div><p class="income-level-name">Level ' + d.level + ' — ' + esc(d.level_name) + '</p>' +
+                '<p class="income-level-sub">Trophy score ' + (d.trophy_score || 0).toLocaleString() +
+                ' · +' + Math.round(d.daily_income || 0) + ' pts/day · +' + formatMn2(d.daily_income_mn2) + ' MN2/day · ' +
+                (d.unlock_bonus_pct ? '+' + d.unlock_bonus_pct + '% unlock bonus' : 'no unlock bonus yet') + '</p></div>' +
+                '<div class="income-pending"><div class="income-pending-val">+' + (d.pending_income || 0).toLocaleString() + ' pts</div>' +
+                '<div class="income-pending-val" style="font-size:1.3em;margin-top:4px;">+' + formatMn2(d.pending_income_mn2) + ' MN2</div>' +
+                '<div class="income-pending-lbl">pending' + (d.cap_reached ? ' (cap reached)' : '') + '</div></div>';
+
+            if (prog && d.next_level) {
+                prog.style.display = 'block';
+                prog.innerHTML =
+                    '<div style="display:flex;justify-content:space-between;font-size:0.9em;margin-bottom:6px;">' +
+                    '<span>Progress to Level ' + d.next_level.level + ' (' + esc(d.next_level.name) + ')</span>' +
+                    '<span>' + (d.next_level.score_needed || 0).toLocaleString() + ' score needed</span></div>' +
+                    '<div class="income-progress-bar"><div class="income-progress-fill" style="width:' + (d.next_level.progress_pct || 0) + '%"></div></div>';
+            } else if (prog) {
+                prog.style.display = 'none';
+            }
+
+            if (btn) {
+                const pending = parseFloat(d.pending_income || 0);
+                const pendingMn2 = parseFloat(d.pending_income_mn2 || 0);
+                btn.disabled = pending <= 0 && pendingMn2 <= 0;
+                btn.textContent = (pending > 0 || pendingMn2 > 0)
+                    ? 'Collect +' + pending.toLocaleString() + ' pts & +' + formatMn2(pendingMn2) + ' MN2'
+                    : 'Nothing to collect yet';
+            }
+            if (meta) {
+                meta.textContent = 'Lifetime: ' + (d.lifetime_collected || 0).toLocaleString() + ' pts · ' +
+                    formatMn2(d.lifetime_collected_mn2) + ' MN2 · cap: ' + (d.max_accrual_hours || 72) + 'h · last: ' +
+                    (d.last_collect_at ? new Date(d.last_collect_at).toLocaleString() : '—');
+            }
+
+            const unlockMn2 = d.unlock_mn2_by_rarity || {};
+            const rarityLine = Object.keys(unlockMn2).map(function(r) {
+                return r + ' +' + formatMn2(unlockMn2[r]);
+            }).join(' · ');
+            if (meta && rarityLine) {
+                meta.textContent += ' · Unlock MN2: ' + rarityLine;
+            }
+
+            const levels = d.levels || [];
+            const curLvl = d.level || 1;
+            ladder.className = 'income-ladder';
+            ladder.innerHTML = levels.map(function(l) {
+                const lvl = parseInt(l.level, 10);
+                const cls = lvl === curLvl ? 'income-tier active' : (lvl < curLvl ? 'income-tier reached' : 'income-tier');
+                return '<div class="' + cls + '">' +
+                    '<div class="income-tier-icon">' + esc(l.icon || '🏆') + '</div>' +
+                    '<div><strong>Lv ' + lvl + ' ' + esc(l.name) + '</strong><br><span style="opacity:0.75;font-size:0.85em;">Score ' + (l.min_score || 0).toLocaleString() + '+</span></div>' +
+                    '<div class="income-tier-income">+' + Math.round(l.daily_income || 0) + ' pts<br><span style="font-size:0.85em;color:var(--trophy-success);">+' + formatMn2(l.daily_income_mn2) + ' MN2</span></div>' +
+                    '<div class="income-tier-lvl">' + (l.unlock_bonus_pct ? '+' + l.unlock_bonus_pct + '% bonus' : '') + '</div></div>';
+            }).join('');
+        }
+
+        async function collectTrophyIncome(btn) {
+            if (btn) { btn.disabled = true; btn.textContent = 'Collecting…'; }
+            try {
+                const r = await fetch(`${API_BASE}/trophies/level/collect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const d = await r.json();
+                if (d && d.success && (d.collected > 0 || d.collected_mn2 > 0)) {
+                    confettiBurst();
+                    if (typeof updatePointsDisplay === 'function') updatePointsDisplay();
+                    await loadIncome();
+                    await loadTrophies();
+                } else {
+                    await loadIncome();
+                }
+            } catch (e) {
+                if (btn) { btn.disabled = false; btn.textContent = 'Collect failed — retry'; }
+            }
+        }
+
+        async function loadCompare(otherId) {
+            const el = document.getElementById('compare-result');
+            if (!el) return;
+            if (!otherId) { el.innerHTML = '<div class="info-message">Enter a user_id above to compare.</div>'; return; }
+            el.innerHTML = '<div class="loading">Comparing…</div>';
+            try {
+                const r = await fetch(`${API_BASE}/trophies/compare?user_id=${encodeURIComponent(userId)}&with=${encodeURIComponent(otherId)}`);
+                const d = r.ok ? await r.json() : {};
+                if (!d.success) { el.innerHTML = '<div class="error">' + (d.error || 'Compare failed') + '</div>'; return; }
+                const defs = {};
+                (cachedAllTrophies || []).forEach(t => { defs[String(t.id)] = t; });
+                const chip = (id) => { const t = defs[id]; return '<span class="compare-chip">' + (t ? (t.icon || '🏆') + ' ' + String(t.name).replace(/</g, '&lt;') : id) + '</span>'; };
+                el.innerHTML =
+                    '<div class="compare-cols">' +
+                    '<div class="compare-col"><h4>You (' + String(d.user_a.user_id).replace(/</g, '&lt;') + ')</h4>' +
+                    '<div class="compare-stat">' + d.user_a.count + '</div><div style="opacity:0.7;">trophies</div>' +
+                    '<div style="margin-top:10px;"><strong>Only you (' + d.a_only.length + '):</strong><br>' + (d.a_only.map(chip).join('') || '—') + '</div></div>' +
+                    '<div class="compare-col"><h4>' + String(d.user_b.user_id).replace(/</g, '&lt;') + '</h4>' +
+                    '<div class="compare-stat">' + d.user_b.count + '</div><div style="opacity:0.7;">trophies</div>' +
+                    '<div style="margin-top:10px;"><strong>Only them (' + d.b_only.length + '):</strong><br>' + (d.b_only.map(chip).join('') || '—') + '</div></div>' +
+                    '</div>' +
+                    '<div style="margin-top:16px;"><strong>Shared (' + d.shared.length + '):</strong><br>' + (d.shared.map(chip).join('') || '—') + '</div>';
+            } catch (e) {
+                el.innerHTML = '<div class="error">Failed to compare.</div>';
+            }
+        }
+
+        // Shareable trophy card image (Feature 19) — rendered on a canvas, offered as download
+        function shareTrophyCard() {
+            const total = (cachedAllTrophies || []).length;
+            const unlocked = (cachedAllTrophies || []).filter(t => t.unlocked).length;
+            const score = computeTrophyScore(cachedAllTrophies);
+            const pts = (cachedAllTrophies || []).filter(t => t.unlocked).reduce((s, t) => s + (t.reward || 0), 0);
+            const W = 1200, H = 630;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            const g = ctx.createLinearGradient(0, 0, W, H);
+            g.addColorStop(0, '#0a0a0f'); g.addColorStop(0.5, '#1a1a2e'); g.addColorStop(1, '#0a0a0f');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,215,0,0.6)'; ctx.lineWidth = 6; ctx.strokeRect(20, 20, W - 40, H - 40);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#FFD700'; ctx.font = 'bold 64px sans-serif';
+            ctx.fillText('🏆 Trophy Collection', W / 2, 130);
+            ctx.fillStyle = '#ffffff'; ctx.font = '28px monospace';
+            ctx.fillText(String(userId), W / 2, 185);
+            const stat = (x, label, value, color) => {
+                ctx.fillStyle = color; ctx.font = 'bold 88px sans-serif';
+                ctx.fillText(String(value), x, 360);
+                ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '26px sans-serif';
+                ctx.fillText(label, x, 410);
+            };
+            stat(W * 0.22, 'Unlocked', unlocked + '/' + total, '#00ff88');
+            stat(W * 0.5, 'Trophy Score', score, '#FFD700');
+            stat(W * 0.78, 'Points', pts.toLocaleString(), '#FFA500');
+            ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '24px sans-serif';
+            ctx.fillText('masternoder.dk/trophies', W / 2, H - 60);
+            try {
+                canvas.toBlob(function(blob) {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'trophy-card-' + userId + '.png';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 2000);
+                }, 'image/png');
+            } catch (_) {}
+        }
 
         // Tab switching: table view shows all/unlocked/locked; extras load their own content
         function showView(tabName) {
-            document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab[data-tab]').forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+                t.setAttribute('tabindex', '-1');
+            });
             const tabBtn = document.querySelector('.tab[data-tab="' + tabName + '"]');
-            if (tabBtn) tabBtn.classList.add('active');
+            if (tabBtn) {
+                tabBtn.classList.add('active');
+                tabBtn.setAttribute('aria-selected', 'true');
+                tabBtn.setAttribute('tabindex', '0');
+            }
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
             const tableViews = ['table', 'unlocked', 'locked'];
@@ -581,6 +1664,7 @@
                 const contentTable = document.getElementById('content-table');
                 if (contentTable) contentTable.classList.add('active');
                 renderTable(cachedAllTrophies, currentFilter);
+                savePrefs();
             } else {
                 const contentId = 'content-' + tabName;
                 const el = document.getElementById(contentId);
@@ -591,10 +1675,53 @@
                 else if (tabName === 'compendium') loadCompendium();
                 else if (tabName === 'effect-clusters') loadEffectClusters();
                 else if (tabName === 'stories') loadStories();
+                else if (tabName === 'sets') loadSets();
+                else if (tabName === 'quests') loadQuests();
+                else if (tabName === 'seasonal') loadSeasonal();
+                else if (tabName === 'leaderboard') loadLeaderboard();
+                else if (tabName === 'compare') {}
+                else if (tabName === 'activity') loadActivity();
+                else if (tabName === 'income') loadIncome();
             }
         }
 
+        // Accessibility: tab roles + arrow-key navigation, panel roles (Feature 23)
+        function initTrophyA11y() {
+            var tablist = document.getElementById('trophies-tabs');
+            if (tablist) {
+                tablist.setAttribute('role', 'tablist');
+                tablist.setAttribute('aria-label', 'Trophy views');
+            }
+            var tabs = Array.prototype.slice.call(document.querySelectorAll('button.tab[data-tab]'));
+            tabs.forEach(function(t) {
+                t.setAttribute('role', 'tab');
+                var active = t.classList.contains('active');
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+                t.setAttribute('tabindex', active ? '0' : '-1');
+            });
+            if (tablist) {
+                tablist.addEventListener('keydown', function(e) {
+                    if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].indexOf(e.key) === -1) return;
+                    var current = document.activeElement;
+                    var idx = tabs.indexOf(current);
+                    if (idx === -1) return;
+                    e.preventDefault();
+                    var next = idx;
+                    if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+                    else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+                    else if (e.key === 'Home') next = 0;
+                    else if (e.key === 'End') next = tabs.length - 1;
+                    tabs[next].focus();
+                    showView(tabs[next].getAttribute('data-tab'));
+                });
+            }
+            document.querySelectorAll('.tab-content').forEach(function(c) {
+                c.setAttribute('role', 'tabpanel');
+            });
+        }
+
         function setupTabsAndLoad() {
+            loadPrefs();
             try { fillTableSync(); } catch (err) { console.warn('fillTableSync:', err); }
             function onTabClick(e) {
                 var tab = e.target && e.target.closest ? e.target.closest('button.tab[data-tab]') : null;
@@ -628,10 +1755,97 @@
                     var ct = document.getElementById('content-table');
                     if (ct) ct.classList.add('active');
                     renderTable(cachedAllTrophies, currentFilter);
+                    savePrefs();
                 });
             }
+            // --- Phase 1: search, sort, row-click modal, persistence ---
+            var searchInput = document.getElementById('trophy-search');
+            if (searchInput) {
+                searchInput.value = currentSearch || '';
+                var searchDebounce;
+                searchInput.addEventListener('input', function() {
+                    currentSearch = this.value || '';
+                    clearTimeout(searchDebounce);
+                    searchDebounce = setTimeout(function() {
+                        renderTable(cachedAllTrophies, currentFilter);
+                        savePrefs();
+                    }, 150);
+                });
+            }
+            var sortSelect = document.getElementById('trophy-sort');
+            if (sortSelect) {
+                sortSelect.value = currentSort || 'default';
+                sortSelect.addEventListener('change', function() {
+                    currentSort = this.value || 'default';
+                    renderTable(cachedAllTrophies, currentFilter);
+                    savePrefs();
+                });
+            }
+            // Restore persisted category filter into the dropdown
+            var catSel = document.getElementById('tab-category');
+            if (catSel && currentFilter && !['all', 'unlocked', 'locked'].includes(currentFilter)) {
+                catSel.value = currentFilter;
+            }
+            // Open detail modal when a trophy row is clicked
+            var tbodyEl = document.getElementById('trophy-tbody');
+            if (tbodyEl) {
+                tbodyEl.addEventListener('click', function(e) {
+                    var row = e.target && e.target.closest ? e.target.closest('tr[data-trophy-id]') : null;
+                    if (row && row.getAttribute('data-trophy-id')) openTrophyModal(row.getAttribute('data-trophy-id'));
+                });
+                // Keyboard activation of rows (Feature 23)
+                tbodyEl.addEventListener('keydown', function(e) {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    var row = e.target && e.target.closest ? e.target.closest('tr[data-trophy-id]') : null;
+                    if (row && row.getAttribute('data-trophy-id')) {
+                        e.preventDefault();
+                        openTrophyModal(row.getAttribute('data-trophy-id'));
+                    }
+                });
+            }
+            initTrophyA11y();
+            // Share trophy card (Feature 19)
+            var shareBtn = document.getElementById('trophy-share-btn');
+            if (shareBtn) shareBtn.addEventListener('click', shareTrophyCard);
+            // Compare (Feature 18)
+            var compareBtn = document.getElementById('compare-btn');
+            var compareInput = document.getElementById('compare-user-input');
+            if (compareBtn && compareInput) {
+                compareBtn.addEventListener('click', function() { loadCompare(compareInput.value.trim()); });
+                compareInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') loadCompare(compareInput.value.trim()); });
+            }
+            // Load pinned showcase ids (Feature 14) so the modal pin button reflects state
+            loadShowcase();
+            // Collector level stats (passive income)
+            fetchLevelStatus();
+            var incomeCollectBtn = document.getElementById('income-collect-btn');
+            if (incomeCollectBtn) {
+                incomeCollectBtn.addEventListener('click', function() { collectTrophyIncome(incomeCollectBtn); });
+            }
+
+            var modalClose = document.getElementById('trophy-modal-close');
+            if (modalClose) modalClose.addEventListener('click', closeTrophyModal);
+            var modalOverlay = document.getElementById('trophy-modal-overlay');
+            if (modalOverlay) modalOverlay.addEventListener('click', function(e) { if (e.target === modalOverlay) closeTrophyModal(); });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTrophyModal(); });
+
             if (window.location.hash === '#stories') showView('stories');
             initTrophiesPage();
+
+            // Arm unlock toasts after the initial load settles so genuine new unlocks notify
+            // (e.g. a later refresh) without spamming already-earned trophies on first paint.
+            setTimeout(function() { toastsArmed = true; }, 4000);
+
+            // Deep-link to a specific trophy (#trophy=<id>) once data has loaded
+            if (window.location.hash.indexOf('#trophy=') === 0) {
+                var deepId = decodeURIComponent(window.location.hash.slice('#trophy='.length));
+                var tries = 0;
+                var iv = setInterval(function() {
+                    if (cachedAllTrophies && cachedAllTrophies.some(function(t) { return String(t.id) === deepId; })) {
+                        openTrophyModal(deepId); clearInterval(iv);
+                    } else if (++tries > 20) { clearInterval(iv); }
+                }, 250);
+            }
         }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', setupTabsAndLoad);
@@ -843,6 +2057,11 @@
             }).join('') || '<div class="info-message">No star data.</div>';
         }
 
+        function calmReadUrl(url) {
+            var u = url || '/compendium/page-1.html';
+            return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'calm=1';
+        }
+
         async function loadCompendium() {
             const el = document.getElementById('compendium-pages-list');
             if (!el) return;
@@ -859,22 +2078,30 @@
                             html += '<h4 style="color: var(--trophy-primary); margin: 16px 0 8px;">' + (sec.name || '') + '</h4>';
                             html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
                             (sec.pages || []).forEach(function(p) {
-                                html += '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (p.number <= 10 ? 'Side ' + p.number : '') + (p.number === 11 ? 'Hunters Rulebook' : '') + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                                var href = calmReadUrl(p.url || '/compendium/page-' + p.number + '.html');
+                                html += '<a href="' + href + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (p.number <= 10 ? 'Side ' + p.number : '') + (p.number === 11 ? 'Hunters Rulebook' : '') + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
                             });
                             html += '</div>';
                         });
                     } else {
                         html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">' +
                             d.pages.map(function(p) {
-                                return '<a href="' + (p.url || '/compendium/page-' + p.number + '.html') + '" target="_blank" rel="noopener" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>Side ' + p.number + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
+                                return '<a href="' + calmReadUrl(p.url || '/compendium/page-' + p.number + '.html') + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>Side ' + p.number + '</strong><br><span style="font-size: 0.9em; opacity: 0.9;">' + (p.title || '') + '</span></a>';
                             }).join('') + '</div>';
                     }
-                    el.innerHTML = html + '<p style="margin-top: 16px;"><a href="/compendium/" style="color: var(--trophy-primary);">Åbn fuld Compendium →</a></p>';
+                    if (d.extras && d.extras.length) {
+                        html += '<h4 style="color: var(--trophy-primary); margin: 16px 0 8px;">Extra volumes</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
+                        d.extras.forEach(function(ex) {
+                            html += '<a href="' + calmReadUrl(ex.url) + '" style="display: block; padding: 14px; background: rgba(21,21,32,0.9); border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; color: #FFD700; text-decoration: none;"><strong>' + (ex.title || '') + '</strong></a>';
+                        });
+                        html += '</div>';
+                    }
+                    el.innerHTML = html + '<p style="margin-top: 16px;"><a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Åbn fuld Library (calm mode) →</a></p>';
                 } else {
-                    el.innerHTML = '<p>Could not load pages. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+                    el.innerHTML = '<p>Could not load pages. <a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Open Library</a></p>';
                 }
             } catch (e) {
-                el.innerHTML = '<p>Error loading compendium. <a href="/compendium/" style="color: var(--trophy-primary);">Open Compendium</a></p>';
+                el.innerHTML = '<p>Error loading compendium. <a href="/compendium/?calm=1" style="color: var(--trophy-primary);">Open Library</a></p>';
             }
         }
 
@@ -938,6 +2165,17 @@
             } catch (e) { el.innerHTML = '<div class="error">Failed to load effect clusters.</div>'; }
         }
 
+        async function markStoryRead(storyId) {
+            if (!storyId) return;
+            try {
+                await fetch('/api/game-hub/stories/read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, story_id: storyId }),
+                });
+            } catch (e) { /* non-blocking */ }
+        }
+
         async function loadStories() {
             const el = document.getElementById('stories-content');
             if (!el) return;
@@ -968,7 +2206,7 @@
                         return '<div style="margin: 8px 0; padding: 8px; background: rgba(0,255,136,0.08); border-radius: 8px;"><strong>' + (c.combo || '') + '</strong><br><span style="opacity: 0.9;">' + (c.effect || '') + '</span></div>';
                     }).join('');
                     var tagsHtml = (s.tags && s.tags.length) ? '<div style="margin-bottom: 12px;">' + s.tags.map(function(t) { return '<span style="display: inline-block; padding: 4px 10px; margin-right: 6px; margin-bottom: 6px; background: rgba(255,215,0,0.2); border-radius: 20px; font-size: 0.8em;">' + t + '</span>'; }).join('') + '</div>' : '';
-                    return '<article class="card" style="margin-bottom: 24px; padding: 24px; border: 2px solid var(--trophy-border); border-radius: 16px;">' +
+                    return '<article class="card story-card" data-story-id="' + (s.id || '') + '" style="margin-bottom: 24px; padding: 24px; border: 2px solid var(--trophy-border); border-radius: 16px;">' +
                         '<h4 style="color: var(--trophy-primary); margin-bottom: 8px;">' + (s.icon || '') + ' ' + (s.title || '') + '</h4>' +
                         tagsHtml +
                         '<p style="opacity: 0.9; margin-bottom: 12px;">' + (s.subtitle || '') + '</p>' +
@@ -990,6 +2228,18 @@
                         (s.rewards && (s.rewards.game_points || s.rewards.xp_bonus || s.rewards.trophy_id) ? '<section style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.1); border-radius: 10px;"><strong>Rewards</strong><p style="margin: 6px 0 0;">' + (s.rewards.trophy_id ? 'Trophy: ' + s.rewards.trophy_id + '. ' : '') + (s.rewards.game_points ? 'Game points: ' + s.rewards.game_points + '. ' : '') + (s.rewards.xp_bonus ? 'XP bonus: ' + s.rewards.xp_bonus + '. ' : '') + (s.rewards.completion_note || '') + '</p></section>' : '') +
                         '</article>';
                 }).join('');
+                el.querySelectorAll('.story-card[data-story-id]').forEach(function(card) {
+                    card.addEventListener('click', function() {
+                        markStoryRead(card.getAttribute('data-story-id'));
+                    });
+                });
+                var params = new URLSearchParams(window.location.search);
+                var deepStory = params.get('story');
+                if (deepStory) {
+                    markStoryRead(deepStory);
+                    var target = el.querySelector('[data-story-id="' + deepStory + '"]');
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             } catch (e) {
                 el.innerHTML = '<div class="error">Failed to load stories.</div>';
             }
@@ -1127,7 +2377,43 @@
             if (lockedEl) lockedEl.textContent = String(locked);
             if (pointsEl) pointsEl.textContent = String(totalPoints).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             cachedAllTrophies = allTrophies;
+            updateSummary(allTrophies, unlocked);
+            detectNewUnlocks(allTrophies);
             renderTable(allTrophies, currentFilter);
+            try { renderNextUp(); } catch (_) {}
+        }
+
+        // Completion ring + per-rarity breakdown
+        function updateSummary(allTrophies, unlockedCount) {
+            const total = allTrophies.length || 0;
+            const unlocked = unlockedCount != null ? unlockedCount : allTrophies.filter(t => t.unlocked).length;
+            const pct = total ? Math.round((unlocked / total) * 100) : 0;
+            const fill = document.getElementById('trophy-ring-fill');
+            const pctEl = document.getElementById('trophy-ring-pct');
+            if (fill) {
+                const circ = 2 * Math.PI * 45;
+                fill.setAttribute('stroke-dashoffset', String(Math.max(0, circ - (pct / 100) * circ)));
+            }
+            if (pctEl) pctEl.textContent = String(pct);
+            const scoreEl = document.getElementById('trophy-score');
+            if (scoreEl) scoreEl.textContent = computeTrophyScore(allTrophies).toLocaleString();
+            ['common', 'rare', 'epic', 'legendary'].forEach(function(r) {
+                const inR = allTrophies.filter(t => (t.rarity || 'common') === r);
+                const el = document.querySelector('.rp-count[data-rarity="' + r + '"]');
+                if (el) el.textContent = inR.filter(t => t.unlocked).length + '/' + inR.length;
+            });
+        }
+
+        // Fire a toast for any trophy that just became unlocked (skips the first load)
+        function detectNewUnlocks(allTrophies) {
+            const nowUnlocked = new Set(allTrophies.filter(t => t.unlocked).map(t => String(t.id)));
+            // Until toasts are armed (page just loaded), only track the baseline — don't spam.
+            if (knownUnlockedIds === null || !toastsArmed) { knownUnlockedIds = nowUnlocked; return; }
+            allTrophies.forEach(function(t) {
+                const id = String(t.id);
+                if (t.unlocked && !knownUnlockedIds.has(id)) showTrophyToast(t);
+            });
+            knownUnlockedIds = nowUnlocked;
         }
 
         // Build trophy list from API response (definitions + earned trophies) — connects backend to page
@@ -1146,6 +2432,8 @@
                     reward: d.reward != null ? d.reward : 100,
                     requirement: d.requirement || d.description || '—',
                     rarity: d.rarity || 'common',
+                    progress_metric: d.progress_metric || null,
+                    progress_target: d.progress_target != null ? d.progress_target : null,
                     unlocked: earned.has(String(d.id))
                 };
             }).filter(Boolean);
@@ -1167,15 +2455,26 @@
 
             // 2) Fetch trophies API (and related) — connect backend definitions to page
             try {
-                const [achievementsRes, battleRes, listRes] = await Promise.all([
+                const [achievementsRes, battleRes, listRes, pointsRes] = await Promise.all([
                     fetch(`${API_BASE}/game/achievements?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
                     fetch(`${API_BASE}/battle/pvp/trophies?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-                    fetch(`${API_BASE}/trophies/list?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+                    fetch(`${API_BASE}/trophies/list?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+                    fetch(`${API_BASE}/points/all?user_id=${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
                 ]);
                 const earnedIds = new Set();
                 (achievementsRes.achievements || []).forEach(a => { if (a.unlocked || a.earned) earnedIds.add(String(a.id || a.name)); });
                 (battleRes.trophies || []).forEach(t => { if (t.unlocked) earnedIds.add(String(t.id || t.name)); });
                 (listRes.trophies || []).forEach(t => earnedIds.add(String(t.id || t.name)));
+
+                // Compute progress metrics from the unified points payload (best-effort)
+                computeUserMetrics(pointsRes.points || {}, achievementsRes, earnedIds.size);
+
+                // Server-side unlock wiring: award anything genuinely earned, merge results.
+                const syncRes = await syncTrophies();
+                if (syncRes && Array.isArray(syncRes.newly_unlocked)) {
+                    syncRes.newly_unlocked.forEach(t => earnedIds.add(String(t.id)));
+                }
+                fetchLevelStatus();
 
                 const apiDefs = listRes.definitions && typeof listRes.definitions === 'object' ? listRes.definitions : null;
                 const apiDefCount = apiDefs ? Object.keys(apiDefs).length : 0;
@@ -1195,6 +2494,27 @@
             }
         }
 
+        function sortTrophies(list, sort) {
+            if (!sort || sort === 'default') return list;
+            const arr = list.slice();
+            arr.sort((a, b) => {
+                switch (sort) {
+                    case 'name': return String(a.name || '').localeCompare(String(b.name || ''));
+                    case 'category': return String(a.category || '').localeCompare(String(b.category || '')) || String(a.name || '').localeCompare(String(b.name || ''));
+                    case 'rarity': return (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9);
+                    case 'reward': return (Number(b.reward) || 0) - (Number(a.reward) || 0);
+                    case 'status': return (b.unlocked ? 1 : 0) - (a.unlocked ? 1 : 0);
+                    case 'progress': {
+                        const pa = trophyProgress(a).ratio, pb = trophyProgress(b).ratio;
+                        const na = pa == null ? -1 : pa, nb = pb == null ? -1 : pb;
+                        return nb - na;
+                    }
+                    default: return 0;
+                }
+            });
+            return arr;
+        }
+
         function renderTable(trophies, filter) {
             const tbody = document.getElementById('trophy-tbody');
             if (!tbody) return;
@@ -1203,25 +2523,44 @@
             else if (filter === 'locked') filtered = trophies.filter(t => !t.unlocked);
             else if (filter && filter !== 'all') filtered = trophies.filter(t => t.category === filter);
 
+            // Search filter (name / description / requirement / category)
+            const q = (currentSearch || '').trim().toLowerCase();
+            if (q) {
+                filtered = filtered.filter(t =>
+                    [t.name, t.description, t.requirement, t.category].some(v => String(v || '').toLowerCase().includes(q))
+                );
+            }
+            filtered = sortTrophies(filtered, currentSort);
+
             const rarityClass = (r) => r || 'common';
             const rarityCls = (r) => 'rarity-' + rarityClass(r);
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No trophies in this view</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No trophies match this view</td></tr>';
                 return;
             }
             const check = (u) => u ? '<td class="col-check checked">☑</td>' : '<td class="col-check">☐</td>';
             const safe = (v, d) => (v == null || v === '') ? (d || '—') : String(v);
+            const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             tbody.innerHTML = filtered.map(t => {
+                const disp = displayTrophy(t);
                 const status = t.unlocked ? '<span class="badge unlocked">Unlocked</span>' : '<span class="badge locked">Locked</span>';
-                const req = safe(t.requirement, '—').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                return '<tr>' +
+                let reqHtml = esc(disp.requirement);
+                const prog = trophyProgress(t);
+                if (!t.unlocked && !t.hidden && prog.ratio != null) {
+                    const pct = Math.round(prog.ratio * 100);
+                    reqHtml += '<div class="trophy-progress">' +
+                        '<div class="trophy-progress-bar"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
+                        '<div class="trophy-progress-text">' + prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() + '</div></div>';
+                }
+                const aria = (t.unlocked ? 'Unlocked' : 'Locked') + ' trophy ' + esc(safe(disp.name, '')) + '. Activate for details.';
+                return '<tr data-trophy-id="' + esc(t.id || '') + '" tabindex="0" role="button" aria-label="' + aria + '">' +
                     check(t.unlocked) +
-                    '<td class="col-icon">' + safe(t.icon, '\uD83C\uDFC6') + '</td>' +
-                    '<td class="col-name">' + safe(t.name, '—').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</td>' +
-                    '<td>' + safe(t.category, '—') + '</td>' +
+                    '<td class="col-icon">' + safe(disp.icon, '\uD83C\uDFC6') + '</td>' +
+                    '<td class="col-name">' + esc(safe(disp.name, '—')) + '</td>' +
+                    '<td>' + esc(safe(t.category, '—')) + '</td>' +
                     '<td>' + status + '</td>' +
                     '<td>' + (t.unlocked ? '+' : '') + safe(t.reward, 0) + '</td>' +
-                    '<td>' + req + '</td>' +
+                    '<td>' + reqHtml + '</td>' +
                     '<td class="' + rarityCls(t.rarity) + '">' + safe(rarityClass(t.rarity), 'common') + '</td>' +
                     '</tr>';
             }).join('');
@@ -1253,8 +2592,9 @@
             }
             if (list.length > 0) {
                 cachedAllTrophies = list;
-                currentFilter = 'all';
-                renderTable(list, 'all');
+                if (!currentFilter) currentFilter = 'all';
+                renderTable(list, currentFilter);
+                updateSummary(list);
                 var totalEl = document.getElementById('total-trophies');
                 if (totalEl) totalEl.textContent = String(list.length);
                 var unlockedEl = document.getElementById('unlocked-trophies');
@@ -1266,33 +2606,16 @@
             }
             return false;
         }
+        // Single clean render path: paint immediately, then one idempotent safety check on
+        // full load in case another script cleared the tbody. (Replaces the previous
+        // always-on MutationObserver + duplicate timers — Feature 24.)
         fillTableSync();
-
-        // Run fill again after full page load (catches case where another script ran after us)
         window.addEventListener('load', function() {
             var tb = document.getElementById('trophy-tbody');
             if (tb && (cachedAllTrophies.length === 0 || tb.innerHTML.indexOf('Loading') !== -1 || tb.innerHTML.indexOf('No trophy') !== -1)) {
                 fillTableSync();
             }
         });
-
-        // If table appears later (e.g. injected by another script), fill it when it shows up
-        (function() {
-            var filledByObserver = false;
-            function tryFillWhenTableAppears() {
-                if (filledByObserver) return;
-                var tbody = document.getElementById('trophy-tbody');
-                if (!tbody) return;
-                var needsFill = tbody.innerHTML.indexOf('Loading') !== -1 || tbody.innerHTML.indexOf('No trophy') !== -1 || cachedAllTrophies.length === 0;
-                if (needsFill && fillTableSync()) filledByObserver = true;
-            }
-            if (document.body) {
-                var obs = new MutationObserver(function() { tryFillWhenTableAppears(); });
-                obs.observe(document.body, { childList: true, subtree: true });
-                tryFillWhenTableAppears();
-            }
-            setTimeout(tryFillWhenTableAppears, 1500);
-        })();
     </script>
     
     
@@ -1366,7 +2689,7 @@
                 <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
             </div>
             <div id="intelligence-panels"></div>
-            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            <div class="loading intel-loading"><p>Loading intelligence…</p></div>
         </div>
     </section>
 
@@ -1375,6 +2698,22 @@
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('trophy-theme-ww2');
+        var ww2 = document.getElementById('trophy-theme-ww2');
+        var gold = document.getElementById('trophy-theme-gold');
+        function setTheme(name) {
+            document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
+            document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
+            if (ww2) ww2.classList.toggle('active', name !== 'gold');
+            if (gold) gold.classList.toggle('active', name === 'gold');
+            try { localStorage.setItem('trophy_page_theme', name); } catch (e) {}
+        }
+        try {
+            var saved = localStorage.getItem('trophy_page_theme');
+            if (saved === 'gold') setTheme('gold');
+        } catch (e) {}
+        if (ww2) ww2.addEventListener('click', function() { setTheme('ww2'); });
+        if (gold) gold.addEventListener('click', function() { setTheme('gold'); });
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
         }

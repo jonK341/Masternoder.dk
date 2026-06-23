@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <style>
         .battlegrounds-page {
@@ -85,7 +86,35 @@
             border-radius: var(--radius-lg);
             margin: var(--spacing-lg) 0;
         }
+
+        .bg-mn2-tier {
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 212, 255, 0.45);
+            background: rgba(0, 212, 255, 0.12);
+            color: #00d4ff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .bg-mn2-tier:hover {
+            background: rgba(0, 212, 255, 0.22);
+        }
+
+        #bg-mn2-tiers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        #bg-mn2-status {
+            min-height: 1.2em;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
     </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614b">
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
@@ -98,12 +127,31 @@
             
             <!-- Payment Ticket Section -->
             <div class="payment-ticket">
-                <h2>💳 Access Ticket - $1</h2>
-                <p>Purchase a ticket to access battlegrounds and participate in Guild vs Clan battles</p>
+                <h2>💳 Access Ticket — USD or MN2</h2>
+                <p>Purchase arena access with PayPal ($1) or buy in with MN2 using official arena tiers (escrow + prize pool).</p>
                 <button class="btn" onclick="purchaseTicket()">
                     <i class="fas fa-ticket-alt"></i> Buy Ticket ($1)
                 </button>
             </div>
+
+            <section class="mn2-page-strip" aria-labelledby="bg-mn2-title">
+                <h2 id="bg-mn2-title">🪙 Arena MN2 buy-in</h2>
+                <p>Guild vs Clan battlegrounds use the same arena economy as tournaments. Pick a tier — funds go to escrow and build the prize pool.</p>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Your MN2</span><strong id="bg-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>USD / MN2</span><strong id="bg-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>House rake</span><strong id="bg-mn2-rake">—</strong></div>
+                </div>
+                <p style="font-size:0.85rem;margin:0 0 8px;color:rgba(255,255,255,0.65);" id="bg-mn2-ranked-fees">—</p>
+                <div id="bg-mn2-tiers"></div>
+                <p id="bg-mn2-status"></p>
+                <div class="mn2-page-actions">
+                    <a href="/profile#mn2-wallet">Wallet</a>
+                    <a href="/shop" class="secondary">Shop MN2</a>
+                    <a href="/battle" class="secondary">Battle arena</a>
+                    <a href="/staking-monitor" class="secondary">Staking</a>
+                </div>
+            </section>
             
             <!-- Active BattleGrounds -->
             <div id="battlegroundsList"></div>
@@ -141,6 +189,8 @@
     
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614b"></script>
+    <script src="/static/js/battlegrounds-mn2.js?v=20260614b"></script>
     <script>
         const API_BASE = window.location.origin;
         
