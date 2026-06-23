@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-06-23** (deploy **DONE** 2026-06-22 · provisioning backlog **cleared** · **30** hosted slots · daemon **v1.2.3.0** · **Ubuntu OS upgrade in progress** — see [UBUNTU_UPGRADE.md](UBUNTU_UPGRADE.md))
+Last updated: **2026-06-23** (Ubuntu **25.10** upgrade **DONE** · post-reboot stack **UP** · **konflikter** nedenfor — se § Ubuntu)
 
 See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -44,6 +44,7 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **Deploy 2026-06-22** — `deploy.py mn2_staking` + `static_pages` + `mn2_env` + `apply_updates.py --ask-pass`; fleet ops scripts live (RPC **9332**, config **775**, alias fix); `max_hosted_nodes=250`; `deploy.py` multi-manifest fix shipped.
 - **Provisioning backlog cleared (2026-06-23)** — `GET /api/mn2/masternode/service`: **30** hosted · **28** active · **2** in-flight provisioning (with collateral) · **0** stale provisioning · **220** slots free; on-chain **6** / **5** ENABLED (`mn2_check_activetime_public.py`).
 - **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **optional verify** if homepage tx table or redirect still wrong.
+- **Ubuntu 25.10 OS upgrade (2026-06-23)** — `do-release-upgrade` + reboot; post-verify **9/9** local (`ubuntu_upgrade_post_verify.sh`): nginx + masternoder2d + both uwsgi **active**; health **200 healthy**; daemon **v1.2.3.0**; cron **15** files; wallet `.env` + `config/` OK.
 
 ---
 
@@ -111,43 +112,57 @@ $CLI getmasternodecount
 
 ---
 
-## Ubuntu OS upgrade — IN PROGRESS
+## Ubuntu OS upgrade — DONE (2026-06-23)
 
-**Full guide:** [UBUNTU_UPGRADE.md](UBUNTU_UPGRADE.md)
+**Guide:** [UBUNTU_UPGRADE.md](UBUNTU_UPGRADE.md) · **OS:** Ubuntu **25.10** · **Kernel running:** `6.8.0-124-generic` (ny `6.17.0-35` installeret — **anden reboot pending**)
 
-| Phase | Action | Status |
-| ----- | ------ | ------ |
-| **Before** | Backup wallet (`config/`), `.env`, `data/` | Run prep script |
-| **Before** | Stop uwsgi workers (site 502 until reboot) | `ubuntu_upgrade_prep.sh` |
-| **During** | `do-release-upgrade` + reboot | **You are here** |
-| **After** | `ubuntu_upgrade_post_verify.sh` on server | Pending |
-| **After** | `--restore-staking` + public smoke from PC | Pending |
+| Phase | Result |
+| ----- | ------ |
+| Upgrade + første reboot | **Done** |
+| Manuel start efter 502 | `systemctl start masternoder2d uwsgi-vidgenerator uwsgi-vidgenerator-5001` — **Done** |
+| `ubuntu_upgrade_post_verify.sh` (server) | **9 passed**, 0 failed, 1 warn (diagnose script mangler på server) |
+| Public `/api/mn2/health` | **200** · `status: healthy` · staking **healthy** (restore-staking **ikke** nødvendig lige nu) |
+| Public camgirls API | **Konflikt** — se § **Konflikter efter Ubuntu** |
 
-**From PC (before upgrade):**
+---
 
-```powershell
-python scripts/deploy.py --files scripts/ubuntu_upgrade_prep.sh scripts/ubuntu_upgrade_post_verify.sh scripts/ubuntu_upgrade_prep_remote.py --ask-pass
-python scripts/ubuntu_upgrade_prep_remote.py --ask-pass
-```
+## Konflikter efter Ubuntu (åbne todos)
 
-**On server (before `do-release-upgrade`):**
+Kort opsummering af hvad der gik galt / stadig skævner efter OS-upgrade. Afkryds når løst.
+
+| # | Konflikt | Symptom | Sandsynlig årsag | Fix (owner) | Status |
+| - | -------- | ------- | ---------------- | ----------- | ------ |
+| **K1** | **502 efter reboot** | Hele sitet “Starting up” / nginx 502 | `uwsgi-vidgenerator` + `:5001` startede **ikke** automatisk efter kernel-pakke/reboot (needrestart genstartede kun bl.a. `masternoder2d`, ikke begge uwsgi) | Bekræft `systemctl is-enabled uwsgi-vidgenerator uwsgi-vidgenerator-5001`; evt. **P2 fleet boot** / dokumentér boot-rækkefølge | **Løst manuelt** — verificér ved næste reboot |
+| **K2** | **Dual uwsgi — camgirls API 404/200** | Public `GET /api/camgirls/performers` veksler **404** vs **200**; localhost `:5000` OK | Nginx upstream `:5000` + `:5001` — **én worker mangler** camgirls blueprint / gammel kode efter upgrade | `python scripts/deploy.py camgirls --ask-pass` · derefter burst-test begge porte (nedenfor) | **Åben** |
+| **K3** | **Camgirls agents/tools tomme svar** | HTTPS `agents` → `{"success":true}` uden `agents[]` på nogle hits | Samme som K2 — rammer “tom” worker uden fuld route/data | Løses med K2 deploy + dual restart | **Åben** |
+| **K4** | **Kernel ikke aktiv** | Kører `6.8.0-124`, GRUB har `6.17.0-35` | `needrestart`: “Pending kernel upgrade” — **anden reboot** ikke kørt | Planlæg `sudo reboot` (kort vindue) · kør post-verify igen bagefter | **Åben** |
+| **K5** | **Ops-scripts ikke på server** | `ubuntu_upgrade_*.sh` **SKIP missing** ved deploy; diagnose **WARN missing** | Scripts kun i git — ikke uploadet før upgrade | `python scripts/deploy.py mn2_env --ask-pass --upload-only` | **Åben** |
+| **K6** | **`DEPLOY_PASS` stale (PC)** | `deploy.py` / agenter får SSH **Authentication failed**; `--ask-pass` virker | Lokal `.env` matcher ikke server root-password | Opdatér `.env` · `python scripts/deploy_test_ssh.py` | **Åben** |
+| **K7** | **Public verify vs lokal** | Server: camgirls lite **200** · PC: `camgirls_post_deploy_verify` **1/4** | K2 upstream + langsom første health (~40s) | Efter K2: `python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk` → mål **4/4** | **Åben** |
+| **K8** | **Monetization-kø pauset** | PayPal Pro + tier enforcement ikke kørt | Bevidst pause under upgrade | Genoptag når K2+K7 grønne — § Active queue #2–#4 | **Venter** |
+
+**Verifikation K2 (kør på server efter camgirls deploy):**
 
 ```bash
-cd /var/www/html && sudo bash scripts/ubuntu_upgrade_prep.sh
+for p in 5000 5001; do
+  echo "=== :$p ==="
+  for i in 1 2 3 4; do
+    curl -s -o /dev/null -w "$i:%{http_code} " "http://127.0.0.1:$p/api/camgirls/performers?user_id=v&lite=1"
+  done
+  echo
+done
 ```
 
-**After reboot:**
+Begge porte skal give **200** hver gang.
 
-```bash
-cd /var/www/html && sudo bash scripts/ubuntu_upgrade_post_verify.sh
-```
+**Næste skridt (rækkefølge):**
 
-```powershell
-python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking
-python scripts/camgirls_post_deploy_verify.py --base-url https://masternoder.dk
-```
-
-**Pause monetization queue** (PayPal Pro, tier enforcement) until post-upgrade verify is green.
+1. `[ ]` **K5** — upload ops-scripts (`mn2_env --upload-only`)
+2. `[ ]` **K2+K3** — `deploy.py camgirls --ask-pass`
+3. `[ ]` **K7** — public verify 4/4 fra PC
+4. `[ ]` **K4** — planlagt reboot til kernel 6.17 (valgfri vindue)
+5. `[ ]` **K1** — efter K4 reboot: bekræft auto-start uden manuel `systemctl start`
+6. `[ ]` **K8** — genoptag PayPal Pro-kø
 
 ---
 
@@ -157,6 +172,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 
 | Pri | Task | Owner | Depends on | Command / note |
 | --- | ---- | ----- | ---------- | -------------- |
+| **P1** | **Fix K2 camgirls dual-uwsgi drift** — public performers 404/200 | **Win** + SSH | Ubuntu reboot | `python scripts/deploy.py camgirls --ask-pass` · burst `:5000`/`:5001` (§ Konflikter K2) |
 | **P1** | **Daemon v1.3 multi-ping** — ENABLED + `activetime` on **customer** nodes, not only `platformmn2` | **MasterNoder2 C++ repo** | Spike ManageStatus | ~2–3 weeks · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md) · until then: one `masternodeprivkey` + Option B multi-daemon |
 | **P1** | **Explorer VPS nginx verify** *(optional)* — eiquidus homepage tx table + `cam.masternoder.dk` redirect | SSH | `static_pages` deployed | Confirm or run `python scripts/fix_explorer_subdomains_remote.py --ask-pass` · `camgirls.masternoder.dk` homepage loads last txs |
 | **P1** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
@@ -170,7 +186,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 
 **Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **19+** masternodes on chain · provision pipeline working · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE 2026-06-22** · **provisioning backlog cleared 2026-06-23** (**30** hosted · **0** stale provisioning).
 
-**Watch (background — not blocking queue):** `/api/mn2/health` may still show **degraded** (`daemon_staking` inactive) after daemon restarts — re-run when convenient: `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking`. Only **`platformmn2`** gets ENABLED `activetime` until multi-ping ships (see P1). **2** hosts may still show **provisioning** while collateral/start completes — not stale (`stale_provisioning_count=0`).
+**Watch (background — not blocking queue):** ~~health degraded efter daemon restart~~ — **2026-06-23 post-Ubuntu:** health **healthy**, restore-staking **ikke** krævet nu. **K4:** planlagt kernel-reboot til `6.17.0-35`. Only **`platformmn2`** gets ENABLED `activetime` until multi-ping ships (see P1).
 
 ### `mn2_next_ops_remote.py` scope
 
