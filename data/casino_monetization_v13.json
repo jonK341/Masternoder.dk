@@ -1,0 +1,35 @@
+{
+  "version": "13.0.0",
+  "money_makers": [
+    {"id": "mm_ai_tips", "title": "AI host tips", "revenue": "coins", "description": "Tip Nova–Iris and traders for banter + strategy lines.", "margin": "100% virtual"},
+    {"id": "mm_uber_rake", "title": "Uber game edge", "revenue": "usd_mn2", "description": "Higher house edge on uber tier with premium UX.", "margin": "configurable"},
+    {"id": "mm_discord_vip", "title": "Discord VIP pass", "revenue": "coins", "price_coins": 500, "duration_days": 7, "description": "2× Discord play-earn + exclusive venue access."},
+    {"id": "mm_network_confirm", "title": "Network confirm fee", "revenue": "mn2", "fee_mn2": 0.01, "description": "Optional on-chain anchor for big wins (explorer visibility)."},
+    {"id": "mm_entertainment_bundle", "title": "Entertainment bundle", "revenue": "paypal", "price_usd": 9.99, "description": "AI host pack + 500 coins + uber day pass.", "sku": "casino-entertainment-bundle"},
+    {"id": "mm_deposit_match", "title": "First USD/MN2 match", "revenue": "retention", "match_pct": 0.1, "cap_usd": 25, "description": "Daily first buy-in match on discord-play site."}
+  ],
+  "payment_options": [
+    {"id": "paypal", "label": "PayPal USD", "real_money": true, "channels": ["casino", "discord_play", "uber"]},
+    {"id": "mn2", "label": "MN2 wallet", "real_money": true, "channels": ["casino", "discord_play", "uber", "hosting"]},
+    {"id": "usd", "label": "Casino USD balance", "real_money": true, "channels": ["casino", "discord_play", "uber"]},
+    {"id": "mn2_onchain", "label": "MN2 on-chain deposit", "real_money": true, "channels": ["casino", "discord_play", "uber", "hosting"]},
+    {"id": "credits", "label": "Coins", "real_money": false, "channels": ["casino", "shop"]},
+    {"id": "discord_credit", "label": "Discord play-earn credits", "real_money": false, "channels": ["discord_play"]},
+    {"id": "mobile_iap", "label": "Google Play IAP", "real_money": true, "channels": ["shop", "casino_app"]},
+    {"id": "apple_pay", "label": "Apple Pay", "real_money": true, "channels": ["casino"], "status": "planned"},
+    {"id": "google_pay", "label": "Google Pay", "real_money": true, "channels": ["casino", "discord_play"], "status": "planned"},
+    {"id": "lightning", "label": "Lightning BTC", "real_money": true, "channels": ["casino"], "status": "planned"}
+  ],
+  "discord_bot_features": [
+    {"id": "dbf_uber", "command": "uber", "monetize": "uber_rake"},
+    {"id": "dbf_ai", "command": "ai", "monetize": "ai_tips"},
+    {"id": "dbf_deposit", "command": "deposit", "monetize": "deposit_match"},
+    {"id": "dbf_network", "command": "network", "monetize": "network_confirm"},
+    {"id": "dbf_vip", "command": "vip", "monetize": "discord_vip"},
+    {"id": "dbf_tip", "command": "tip", "monetize": "ai_tips"},
+    {"id": "dbf_play_site", "command": "playnow", "monetize": "traffic"},
+    {"id": "dbf_balance", "command": "balance", "monetize": "engagement"},
+    {"id": "dbf_hosting", "command": "hosting", "monetize": "hosting"},
+    {"id": "dbf_bundle", "command": "bundle", "monetize": "entertainment_bundle"}
+  ]
+}

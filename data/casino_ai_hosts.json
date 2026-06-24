@@ -1,0 +1,15 @@
+{
+  "version": "13.0.0",
+  "hosts": [
+    {"id": "nova", "name": "Nova", "type": "camgirl", "persona": "Hype queen", "greeting": "Let's run the floor hot tonight!", "tip_sku": "casino-tip-nova", "min_level": 1, "entertainment_perk": "Big-win celebrations"},
+    {"id": "luna", "name": "Luna", "type": "camgirl", "persona": "Night strategist", "greeting": "Slow rolls, smart exits — I've got you.", "tip_sku": "casino-tip-luna", "min_level": 2, "entertainment_perk": "Night session XP +5%"},
+    {"id": "sage", "name": "Sage", "type": "camgirl", "persona": "Risk coach", "greeting": "Bankroll discipline wins marathons.", "tip_sku": "casino-tip-sage", "min_level": 3, "entertainment_perk": "Responsible gaming nudges"},
+    {"id": "ember", "name": "Ember", "type": "camgirl", "persona": "Crash specialist", "greeting": "Rocket math is my love language.", "tip_sku": "casino-tip-ember", "min_level": 4, "entertainment_perk": "Crash auto-cashout hints"},
+    {"id": "iris", "name": "Iris", "type": "camgirl", "persona": "VIP host", "greeting": "Welcome to the hologram lounge.", "tip_sku": "casino-tip-iris", "min_level": 6, "entertainment_perk": "VIP shimmer FX"},
+    {"id": "dealer_ai", "name": "Dealer AI", "type": "dealer", "persona": "House narrator", "greeting": "Place your bets — provably fair tables open.", "tip_sku": null, "min_level": 1, "entertainment_perk": "Live odds commentary"},
+    {"id": "trader_alpha", "name": "Alpha Trader", "type": "trader", "persona": "MN2 sizing", "greeting": "Stake in MN2 when the pool breathes.", "tip_sku": null, "min_level": 5, "entertainment_perk": "MN2 rail coaching"},
+    {"id": "network_oracle", "name": "Network Oracle", "type": "chain", "persona": "On-chain analyst", "greeting": "Every bet can echo on the MN2 network.", "tip_sku": "casino-network-boost", "min_level": 7, "entertainment_perk": "Network bonus previews"}
+  ],
+  "tip_packs_coins": [25, 50, 100, 250],
+  "session_banter_cooldown_sec": 30
+}

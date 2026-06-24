@@ -1,0 +1,32 @@
+{
+  "version": "13.0.0",
+  "currency": "coins",
+  "items": [
+    {"id": "casino-luck-booster-6h", "name": "Luck Booster 6h", "description": "+15% quest & walk coin rewards for 6 hours.", "icon": "🍀", "price_coins": 120, "min_level": 3, "category": "boosters", "effect": "quest_mult_1.15"},
+    {"id": "casino-neon-frame", "name": "Neon avatar frame", "description": "Profile frame shown on casino leaderboards.", "icon": "🖼️", "price_coins": 200, "min_level": 5, "category": "cosmetic"},
+    {"id": "casino-crash-trail", "name": "Crash rocket trail", "description": "Purple comet trail on crash canvas.", "icon": "🚀", "price_coins": 350, "min_level": 6, "category": "cosmetic"},
+    {"id": "casino-trophy-case-bronze", "name": "Bronze trophy case", "description": "Display 3 earned trophies in the social lounge.", "icon": "🏆", "price_coins": 150, "min_level": 4, "category": "trophies"},
+    {"id": "casino-trophy-case-gold", "name": "Gold trophy case", "description": "Display all trophies with shine FX.", "icon": "👑", "price_coins": 800, "min_level": 10, "category": "trophies"},
+    {"id": "casino-hunt-map", "name": "Hunt map unlock", "description": "Reveals hidden gaming hunt clues one level early.", "icon": "🗺️", "price_coins": 250, "min_level": 2, "category": "hunt"},
+    {"id": "casino-social-shout", "name": "Crew shoutout pack", "description": "5 crew lounge shoutouts for big wins.", "icon": "📣", "price_coins": 90, "min_level": 5, "category": "social"},
+    {"id": "casino-agent-brief", "name": "Extra agent briefing", "description": "One bonus strategy quest from your assigned advisor.", "icon": "🤖", "price_coins": 175, "min_level": 4, "category": "agents"},
+    {"id": "casino-daily-chest-plus", "name": "Daily chest +50", "description": "+50 coins on next daily walk completion.", "icon": "📦", "price_coins": 60, "min_level": 1, "category": "income"},
+    {"id": "casino-mn2-saver", "name": "MN2 saver token", "description": "10% off next MN2 buy-in pack (one use).", "icon": "🪙", "price_coins": 400, "min_level": 7, "category": "revalue"},
+    {"id": "casino-jackpot-ticket", "name": "Jackpot lucky ticket", "description": "Slightly boosted jackpot symbol odds for 24h.", "icon": "🎟️", "price_coins": 500, "min_level": 8, "category": "boosters"},
+    {"id": "casino-play-app-badge", "name": "Play App pioneer badge", "description": "Exclusive badge when playing via Google Play app.", "icon": "📱", "price_coins": 0, "min_level": 1, "category": "cosmetic", "requires_play_app": true},
+    {"id": "casino-theme-midnight", "name": "Midnight velvet theme", "description": "Deep purple lobby skin with gold accents.", "icon": "🌙", "price_coins": 280, "min_level": 4, "category": "themes"},
+    {"id": "casino-theme-vegas-neon", "name": "Vegas neon theme", "description": "Hot pink and cyan game chrome.", "icon": "🌆", "price_coins": 420, "min_level": 6, "category": "themes"},
+    {"id": "casino-theme-cyber-grid", "name": "Cyber grid theme", "description": "Tron-style lines on crash and plinko.", "icon": "🕹️", "price_coins": 550, "min_level": 8, "category": "themes"},
+    {"id": "casino-theme-aurora", "name": "Aurora borealis theme", "description": "Animated northern lights on the header.", "icon": "🌌", "price_coins": 720, "min_level": 10, "category": "themes"},
+    {"id": "casino-prognosis-lens", "name": "Future sights lens", "description": "Unlocks extended prognosis panel in casino.", "icon": "🔮", "price_coins": 320, "min_level": 5, "category": "intel"},
+    {"id": "casino-agent-autopilot", "name": "Agent autopilot token", "description": "One dry-run casino agent session (cron or manual).", "icon": "🤖", "price_coins": 450, "min_level": 7, "category": "agents"},
+    {"id": "casino-kelly-calculator", "name": "Kelly calculator pro", "description": "Shows Kelly stake on every game card.", "icon": "📐", "price_coins": 180, "min_level": 3, "category": "intel"},
+    {"id": "casino-win-guide-pack", "name": "Win/lose guide pack", "description": "Pinned rules overlay on all games.", "icon": "📖", "price_coins": 95, "min_level": 1, "category": "intel"},
+    {"id": "casino-trophy-spotlight", "name": "Trophy spotlight FX", "description": "Spotlight animation when earning trophies.", "icon": "✨", "price_coins": 260, "min_level": 6, "category": "trophies"},
+    {"id": "casino-trophy-platinum", "name": "Platinum trophy pedestal", "description": "Display pedestal for mythic trophies.", "icon": "💎", "price_coins": 950, "min_level": 11, "category": "trophies"},
+    {"id": "casino-reward-doubler-1h", "name": "Quest doubler 1h", "description": "Double quest coin rewards for one hour.", "icon": "⚡", "price_coins": 140, "min_level": 4, "category": "boosters", "effect": "quest_mult_2.0_1h"},
+    {"id": "casino-streak-shield", "name": "Streak shield", "description": "First loss after a 3-win streak refunds 25% stake once.", "icon": "🛡️", "price_coins": 380, "min_level": 7, "category": "boosters"},
+    {"id": "casino-mines-theme-gems", "name": "Gem mine skin", "description": "Emerald and ruby tiles on mines.", "icon": "💠", "price_coins": 210, "min_level": 5, "category": "themes"},
+    {"id": "casino-slot-reel-gold", "name": "Gold reel overlay", "description": "Golden reel frame on classic slots.", "icon": "🎰", "price_coins": 300, "min_level": 6, "category": "cosmetic"}
+  ]
+}

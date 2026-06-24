@@ -1,0 +1,15 @@
+{
+  "version": "12.0.0",
+  "quests": [
+    {"id": "hunt_floor_chip", "title": "Neon floor chip", "clue": "The first chip hides where rockets launch — check Crash.", "min_level": 1, "reward_coins": 20, "metric": "bets", "target": 1, "game_hub_link": "/game/?tab=social"},
+    {"id": "hunt_social_wave", "title": "Social wave", "clue": "Add one friend, then return to the social lounge.", "min_level": 2, "reward_coins": 35, "metric": "social_friends", "target": 1, "game_hub_link": "/social/"},
+    {"id": "hunt_quest_bridge", "title": "Quest bridge", "clue": "Claim a Hunters daily quest, then a casino walk step.", "min_level": 3, "reward_coins": 50, "reward_mn2": 0.01, "metric": "walk_steps", "target": 2, "game_hub_link": "/quests/"},
+    {"id": "hunt_plinko_rain", "title": "Plinko rain", "clue": "Land plinko in the high-risk bin once.", "min_level": 4, "reward_coins": 45, "metric": "bets", "target": 3},
+    {"id": "hunt_crew_signal", "title": "Crew signal", "clue": "Join a crew and score on the friends mini-board.", "min_level": 5, "reward_coins": 60, "metric": "wins", "target": 2, "game_hub_link": "/game/?tab=social"},
+    {"id": "hunt_mines_depth", "title": "Mines depth", "clue": "Cash out mines with 4+ safe tiles.", "min_level": 6, "reward_coins": 75, "metric": "wins", "target": 1},
+    {"id": "hunt_agent_echo", "title": "Agent echo", "clue": "Assign Nova or Sage, complete walk agent step.", "min_level": 5, "reward_mn2": 0.03, "metric": "walk_agent_days", "target": 1},
+    {"id": "hunt_jackpot_trail", "title": "Jackpot trail", "clue": "Contribute to any jackpot pool, then win any game.", "min_level": 7, "reward_coins": 100, "metric": "wins", "target": 2},
+    {"id": "hunt_battle_pass", "title": "Battle pass link", "clue": "Earn battle pass XP from casino bets today.", "min_level": 4, "reward_coins": 40, "metric": "bets", "target": 5, "game_hub_link": "/game/"},
+    {"id": "hunt_legend_key", "title": "Legend key", "clue": "Reach level 10 and claim a level reward.", "min_level": 10, "reward_mn2": 0.15, "metric": "casino_level", "target": 10}
+  ]
+}

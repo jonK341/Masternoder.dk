@@ -1,0 +1,55 @@
+{
+  "version": "14.0.0",
+  "tab_label": "MultiPlay",
+  "tagline": "30+ social rooms — play together, boost wins, sell-out jackpots",
+  "room_boost": {
+    "min_mult": 1.05,
+    "max_mult": 1.35,
+    "players_for_max": 48
+  },
+  "community_pot": {
+    "enabled": true,
+    "seed_coins": 5000,
+    "win_share_chance": 0.04,
+    "max_share_coins": 250
+  },
+  "categories": [
+    {"id": "party_blast", "label": "Party Blast", "icon": "🎉"},
+    {"id": "arena_wars", "label": "Arena Wars", "icon": "⚔️"},
+    {"id": "table_social", "label": "Table Social", "icon": "🃏"},
+    {"id": "slots_party", "label": "Slots Party", "icon": "🎰"},
+    {"id": "jackpot_convoy", "label": "Jackpot Convoy", "icon": "💰"}
+  ],
+  "games": [
+    {"id": "mp_coin_storm", "title": "Coin Storm", "category": "party_blast", "icon": "🪙", "engine": "coin_flip", "description": "50-player coin arena — room boost on every flip.", "min_bet": 5, "max_bet": 200, "min_players": 2, "max_players": 50, "engine_params": {"choice": "heads"}},
+    {"id": "mp_dice_royale", "title": "Dice Royale", "category": "party_blast", "icon": "🎲", "engine": "dice", "description": "Roll against the house with crowd momentum.", "min_bet": 5, "max_bet": 300, "min_players": 2, "max_players": 40, "engine_params": {"guess": 4}},
+    {"id": "mp_rps_showdown", "title": "RPS Showdown", "category": "party_blast", "icon": "✊", "engine": "rps_bet", "description": "Rock-paper-scissors party lane.", "min_bet": 10, "max_bet": 250, "min_players": 2, "max_players": 32, "engine_params": {"choice": "rock"}},
+    {"id": "mp_wheel_carnival", "title": "Wheel Carnival", "category": "party_blast", "icon": "🎡", "engine": "wheel", "description": "Carnival wheel with shared pot drips.", "min_bet": 5, "max_bet": 150, "min_players": 3, "max_players": 60, "engine_params": {"risk": "medium"}},
+    {"id": "mp_scratch_blitz", "title": "Scratch Blitz", "category": "party_blast", "icon": "🎫", "engine": "scratch_card", "description": "Mass scratch rush — top 10% share bonus.", "min_bet": 5, "max_bet": 100, "min_players": 4, "max_players": 80, "engine_params": {}},
+    {"id": "mp_mystery_mayhem", "title": "Mystery Mayhem", "category": "party_blast", "icon": "❓", "engine": "mystery_coin_flip", "description": "Multiplier flips with party heat.", "min_bet": 10, "max_bet": 200, "min_players": 2, "max_players": 45, "engine_params": {"choice": "tails"}},
+    {"id": "mp_battle_pool", "title": "Battle Pool", "category": "arena_wars", "icon": "🏟️", "engine": "battle_outcome", "description": "Predict battle outcomes in a shared pool.", "min_bet": 15, "max_bet": 400, "min_players": 2, "max_players": 36, "engine_params": {"prediction": "win"}},
+    {"id": "mp_meta_arena", "title": "Meta Arena", "category": "arena_wars", "icon": "🧠", "engine": "rps_distribution", "description": "Battle-stats RPS meta lane.", "min_bet": 10, "max_bet": 350, "min_players": 2, "max_players": 28, "engine_params": {"prediction": "paper"}},
+    {"id": "mp_counter_clash", "title": "Counter Clash", "category": "arena_wars", "icon": "🔄", "engine": "rps_counter_pick", "description": "Counter-pick duels with squad boost.", "min_bet": 10, "max_bet": 300, "min_players": 2, "max_players": 24, "engine_params": {"choice": "scissors"}},
+    {"id": "mp_limbo_rush", "title": "Limbo Rush", "category": "arena_wars", "icon": "🚀", "engine": "crash", "description": "Crash convoy — auto cash-out party line.", "min_bet": 10, "max_bet": 500, "min_players": 3, "max_players": 50, "engine_params": {"auto_cashout": 2.5}},
+    {"id": "mp_dice_duel", "title": "Dice Duel", "category": "arena_wars", "icon": "⚡", "engine": "dice", "description": "High-volatility dice duels.", "min_bet": 15, "max_bet": 400, "min_players": 2, "max_players": 20, "engine_params": {"guess": 6}},
+    {"id": "mp_plinko_arena", "title": "Plinko Arena", "category": "arena_wars", "icon": "🎯", "engine": "plinko", "description": "Plinko bins with arena multipliers.", "min_bet": 10, "max_bet": 250, "min_players": 4, "max_players": 40, "engine_params": {"risk": "high"}},
+    {"id": "mp_crash_race", "title": "Crash Race", "category": "arena_wars", "icon": "🏁", "engine": "crash", "description": "Race the multiplier with the crowd.", "min_bet": 5, "max_bet": 450, "min_players": 5, "max_players": 64, "engine_params": {"auto_cashout": 3.0}},
+    {"id": "mp_roulette_red", "title": "Roulette Red Circle", "category": "table_social", "icon": "🔴", "engine": "roulette", "description": "Community red bets — shared felt.", "min_bet": 5, "max_bet": 200, "min_players": 2, "max_players": 30, "engine_params": {"bet_type": "red"}},
+    {"id": "mp_roulette_black", "title": "Roulette Black Circle", "category": "table_social", "icon": "⚫", "engine": "roulette", "description": "Black lane social roulette.", "min_bet": 5, "max_bet": 200, "min_players": 2, "max_players": 30, "engine_params": {"bet_type": "black"}},
+    {"id": "mp_keno_community", "title": "Keno Community", "category": "table_social", "icon": "🎱", "engine": "keno", "description": "Pick 5 — community board heat.", "min_bet": 5, "max_bet": 150, "min_players": 3, "max_players": 50, "engine_params": {"picks": [1, 5, 10, 15, 20]}},
+    {"id": "mp_mines_squad", "title": "Mines Squad", "category": "table_social", "icon": "💣", "engine": "mines", "description": "Squad mines — safer grid, social pot.", "min_bet": 10, "max_bet": 300, "min_players": 2, "max_players": 16, "engine_params": {"mines": 4}},
+    {"id": "mp_mines_heist", "title": "Mines Heist", "category": "table_social", "icon": "💎", "engine": "mines", "description": "High-mine heist rooms.", "min_bet": 15, "max_bet": 400, "min_players": 2, "max_players": 12, "engine_params": {"mines": 7}},
+    {"id": "mp_blackjack_social", "title": "Blackjack Social", "category": "table_social", "icon": "🃏", "engine": "social_blackjack", "description": "Beat the dealer with room luck boost.", "min_bet": 10, "max_bet": 350, "min_players": 2, "max_players": 8, "engine_params": {}},
+    {"id": "mp_baccarat_lane", "title": "Baccarat Lane", "category": "table_social", "icon": "🎴", "engine": "social_baccarat", "description": "Player vs banker social lane.", "min_bet": 10, "max_bet": 350, "min_players": 2, "max_players": 8, "engine_params": {}},
+    {"id": "mp_slot_classic_pool", "title": "Classic Slot Pool", "category": "slots_party", "icon": "7️⃣", "engine": "slot", "description": "Classic 3-reel party pool.", "min_bet": 5, "max_bet": 100, "min_players": 4, "max_players": 100, "engine_params": {"slot_id": "slot_classic"}},
+    {"id": "mp_slot_diamond_pool", "title": "Diamond Slot Pool", "category": "slots_party", "icon": "💠", "engine": "slot", "description": "Diamond reels — shared jackpot drip.", "min_bet": 10, "max_bet": 200, "min_players": 4, "max_players": 80, "engine_params": {"slot_id": "slot_diamond"}},
+    {"id": "mp_slot_neon_party", "title": "Neon Party Slots", "category": "slots_party", "icon": "🌈", "engine": "slot", "description": "Neon reels nightclub.", "min_bet": 5, "max_bet": 150, "min_players": 5, "max_players": 90, "engine_params": {"slot_id": "slot_neon"}},
+    {"id": "mp_slot_cosmic_rush", "title": "Cosmic Rush", "category": "slots_party", "icon": "🌌", "engine": "slot", "description": "Cosmic scatter party spins.", "min_bet": 10, "max_bet": 250, "min_players": 3, "max_players": 70, "engine_params": {"slot_id": "slot_cosmic"}},
+    {"id": "mp_slot_battle_brigade", "title": "Battle Brigade", "category": "slots_party", "icon": "⚔️", "engine": "slot", "description": "Battle-themed slot brigade.", "min_bet": 10, "max_bet": 200, "min_players": 4, "max_players": 60, "engine_params": {"slot_id": "slot_battle"}},
+    {"id": "mp_slot_treasure_hunt", "title": "Treasure Hunt", "category": "slots_party", "icon": "🏴‍☠️", "engine": "slot", "description": "Treasure map scatter hunts.", "min_bet": 5, "max_bet": 180, "min_players": 4, "max_players": 75, "engine_params": {"slot_id": "slot_treasure"}},
+    {"id": "mp_slot_mega_convoy", "title": "Mega Convoy", "category": "jackpot_convoy", "icon": "🎰", "engine": "slot", "description": "Mega jackpot convoy — whale lane.", "min_bet": 25, "max_bet": 500, "min_players": 6, "max_players": 120, "engine_params": {"slot_id": "slot_mega"}},
+    {"id": "mp_wheel_jackpot", "title": "Wheel Jackpot", "category": "jackpot_convoy", "icon": "🎡", "engine": "wheel", "description": "High-risk wheel jackpot convoy.", "min_bet": 20, "max_bet": 400, "min_players": 5, "max_players": 55, "engine_params": {"risk": "high"}},
+    {"id": "mp_keno_mega", "title": "Keno Mega Board", "category": "jackpot_convoy", "icon": "🎯", "engine": "keno", "description": "6-spot mega keno board.", "min_bet": 10, "max_bet": 300, "min_players": 4, "max_players": 64, "engine_params": {"picks": [2, 8, 14, 20, 26, 32]}},
+    {"id": "mp_roulette_lucky7", "title": "Lucky 7 Straight", "category": "jackpot_convoy", "icon": "🍀", "engine": "roulette", "description": "Straight 7 — convoy long-shot.", "min_bet": 5, "max_bet": 100, "min_players": 2, "max_players": 40, "engine_params": {"bet_type": "straight", "selection": 7}}
+  ]
+}

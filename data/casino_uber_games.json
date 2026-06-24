@@ -1,0 +1,83 @@
+{
+  "version": "13.0.0",
+  "preferred_currency_order": ["usd", "mn2", "coins"],
+  "network_bonus": {
+    "mn2_per_usd_win": 0.002,
+    "mn2_per_mn2_win_pct": 0.01,
+    "min_bet_usd": 1.0,
+    "min_bet_mn2": 0.05,
+    "daily_cap_mn2": 0.5,
+    "requires_linked_wallet": false
+  },
+  "games": [
+    {
+      "id": "uber_crash",
+      "title": "Uber Crash",
+      "engine": "crash",
+      "icon": "🚀",
+      "description": "High-stakes crash — USD or MN2 preferred; MN2 network bonus on cash-out.",
+      "min_bet_usd": 5,
+      "max_bet_usd": 500,
+      "min_bet_mn2": 0.1,
+      "max_bet_mn2": 50,
+      "house_edge": 0.03,
+      "network_bonus_mult": 1.25
+    },
+    {
+      "id": "uber_plinko",
+      "title": "Uber Plinko",
+      "engine": "plinko",
+      "icon": "🎯",
+      "description": "Premium plinko bins — real balance rails with MN2 kickback.",
+      "min_bet_usd": 2,
+      "max_bet_usd": 200,
+      "min_bet_mn2": 0.05,
+      "max_bet_mn2": 25,
+      "risk_default": "high",
+      "network_bonus_mult": 1.15
+    },
+    {
+      "id": "uber_mines",
+      "title": "Uber Mines",
+      "engine": "mines",
+      "icon": "💎",
+      "description": "Diamond vault mines — MN2 whales welcome.",
+      "min_bet_usd": 3,
+      "max_bet_usd": 300,
+      "min_bet_mn2": 0.08,
+      "max_bet_mn2": 40,
+      "network_bonus_mult": 1.2
+    },
+    {
+      "id": "uber_wheel",
+      "title": "Uber Wheel",
+      "engine": "wheel",
+      "icon": "🎡",
+      "description": "Show wheel with USD jackpots + MN2 loyalty drip.",
+      "min_bet_usd": 1,
+      "max_bet_usd": 100,
+      "min_bet_mn2": 0.02,
+      "max_bet_mn2": 10,
+      "risk_default": "high",
+      "network_bonus_mult": 1.1
+    },
+    {
+      "id": "uber_keno",
+      "title": "Uber Keno",
+      "engine": "keno",
+      "icon": "🎱",
+      "description": "High-volatility keno — network confirms big hits.",
+      "min_bet_usd": 2,
+      "max_bet_usd": 150,
+      "min_bet_mn2": 0.04,
+      "max_bet_mn2": 20,
+      "network_bonus_mult": 1.18
+    }
+  ],
+  "discord_venues": [
+    {"id": "venue_casino_floor", "name": "Casino Floor", "channel": "casino", "href": "/discord-play/?venue=casino"},
+    {"id": "venue_uber_lounge", "name": "Uber Games Lounge", "channel": "casino", "href": "/discord-play/?venue=uber"},
+    {"id": "venue_high_roller", "name": "High Roller USD", "channel": "casino", "href": "/discord-play/?venue=usd&currency=usd"},
+    {"id": "venue_mn2_chain", "name": "MN2 Chain Room", "channel": "market", "href": "/discord-play/?venue=network&currency=mn2"}
+  ]
+}

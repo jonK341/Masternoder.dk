@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "comment": "Win/lose rules surfaced in casino UI and /api/casino/guides",
+  "games": {
+    "coin_flip": {
+      "win": "Your pick (heads/tails) matches the flip.",
+      "lose": "Pick does not match — you lose the full stake.",
+      "payout": "Stake × payout_multiplier (~1.9×) on win; 0 on loss.",
+      "tip": "Fair 50/50 — house edge comes from sub-2× payout."
+    },
+    "dice": {
+      "win": "Your guess (1–6) matches the rolled die.",
+      "lose": "Wrong number — lose full stake.",
+      "payout": "~4× stake on correct guess.",
+      "tip": "True odds 1/6; only bet when multiplier justifies risk."
+    },
+    "crash": {
+      "win": "Cash out before the rocket crashes; payout = stake × multiplier at cashout.",
+      "lose": "Crash before you cash out — lose full stake.",
+      "payout": "Multiplier rises until random crash point (provably fair).",
+      "tip": "Lower auto-cashout = safer; chasing 10×+ often busts."
+    },
+    "mines": {
+      "win": "Reveal safe tiles and cash out; each safe tile raises multiplier.",
+      "lose": "Hit a mine — lose stake (unless insured by cashout before).",
+      "payout": "Multiplier grows with safe reveals; cash out anytime.",
+      "tip": "More mines = higher risk/reward per tile."
+    },
+    "plinko": {
+      "win": "Ball lands in a bucket with multiplier > 0.",
+      "lose": "Bucket multiplier 0 or below stake (net loss).",
+      "payout": "Risk table sets bucket weights — high risk = rare huge hits.",
+      "tip": "Medium risk balances variance; high risk is lottery-style."
+    },
+    "wheel": {
+      "win": "Wheel stops on segment with multiplier ≥ 1 (or any win segment).",
+      "lose": "Lands on 0× segment — lose stake.",
+      "payout": "Weighted segments per risk profile.",
+      "tip": "High risk has many zero slices."
+    },
+    "slot_classic": {
+      "win": "Payline matches paytable (2–3 symbols, scatters, wilds).",
+      "lose": "No paying line — lose stake.",
+      "payout": "See in-game paytable; jackpot symbol may hit progressive pool.",
+      "tip": "Higher bet unlocks bigger line wins, not better odds."
+    },
+    "battle_outcome": {
+      "win": "Your prediction matches sampled live battle outcome distribution.",
+      "lose": "Prediction wrong — lose stake.",
+      "payout": "Varies by outcome rarity (win/draw/loss) from telemetry.",
+      "tip": "Check prognosis API before betting — meta shifts with fleet activity."
+    },
+    "rps_distribution": {
+      "win": "Predict the next dominant RPS move in battle meta.",
+      "lose": "Actual distribution pick differs from yours.",
+      "payout": "~2.2× on correct meta read.",
+      "tip": "Use /api/casino/prognosis for live rock/paper/scissors skew."
+    },
+    "scratch_card": {
+      "win": "Match 2 or 3 symbols on the revealed card.",
+      "lose": "No match — lose stake.",
+      "payout": "2-match ~1.5×; 3-match ~8×.",
+      "tip": "Fixed odds per card — pure variance."
+    },
+    "mines": {
+      "win": "Reveal safe tiles and cash out before hitting a mine.",
+      "lose": "Click a mine — lose entire stake.",
+      "payout": "Multiplier increases per safe tile; cash out anytime.",
+      "tip": "Fewer mines = safer grid; greed often wipes gains."
+    },
+    "wheel": {
+      "win": "Wheel stops on a segment with payout ≥ your stake.",
+      "lose": "Zero or sub-1× segment — net loss.",
+      "payout": "Risk tier sets slice weights.",
+      "tip": "High risk has more zero slices."
+    },
+    "keno": {
+      "win": "Enough of your picked numbers are drawn.",
+      "lose": "Too few hits — lose stake.",
+      "payout": "Paytable by spots matched.",
+      "tip": "More spots = harder to hit but bigger top prizes."
+    },
+    "hilo": {
+      "win": "Correctly predict higher/lower through the card chain.",
+      "lose": "Wrong guess ends the run — lose stake.",
+      "payout": "Multiplier stacks per correct step; cash out between cards.",
+      "tip": "Cash out early on weak cards."
+    },
+    "roulette": {
+      "win": "Ball lands on your number/color/bet type.",
+      "lose": "Ball misses your bet — lose stake.",
+      "payout": "Straight number ~35×; even-money ~2×.",
+      "tip": "Outside bets survive longer; inside bets spike variance."
+    },
+    "rps_bet": {
+      "win": "Your rock/paper/scissors beats the house pick.",
+      "lose": "House wins or ties (per rules) — lose or push.",
+      "payout": "~2× on win.",
+      "tip": "Pure 1/3 each move — no memory."
+    },
+    "rps_counter_pick": {
+      "win": "Your counter move beats the sampled meta opener.",
+      "lose": "House move beats yours — lose stake.",
+      "payout": "~2×; draw may return stake.",
+      "tip": "Use prognosis counter-pick hint before betting."
+    }
+  }
+}
