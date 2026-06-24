@@ -1,0 +1,125 @@
+{
+  "version": "12.0.0",
+  "experience_tiers": [
+    {"tier": 1, "label": "Rookie", "fx": "minimal", "sound_pack": "soft"},
+    {"tier": 2, "label": "Regular", "fx": "sparkle", "sound_pack": "soft"},
+    {"tier": 3, "label": "High roller", "fx": "glow", "sound_pack": "classic"},
+    {"tier": 4, "label": "VIP bronze", "fx": "glow", "sound_pack": "classic"},
+    {"tier": 5, "label": "VIP silver", "fx": "neon", "sound_pack": "classic"},
+    {"tier": 6, "label": "VIP gold", "fx": "neon", "sound_pack": "pulse"},
+    {"tier": 7, "label": "Elite", "fx": "hologram", "sound_pack": "pulse"},
+    {"tier": 8, "label": "Legend", "fx": "hologram", "sound_pack": "arena"},
+    {"tier": 9, "label": "Mythic", "fx": "cinematic", "sound_pack": "arena"},
+    {"tier": 10, "label": "House breaker", "fx": "cinematic", "sound_pack": "arena"}
+  ],
+  "levels": [
+    {"level": 1, "xp_required": 0, "title": "Floor guest", "reward_coins": 0, "reward_mn2": 0, "fx_unlock": "minimal", "story": "You step onto the virtual floor for the first time.", "social_perk": "View the global activity feed.", "hunt_clue": "Hunt #1: find the neon chip at Crash.", "shop_unlocks": ["casino-daily-chest-plus"], "earn_tip": "Claim daily quests for starter coins."},
+    {"level": 2, "xp_required": 120, "title": "Chip runner", "reward_coins": 25, "reward_mn2": 0, "fx_unlock": "minimal", "story": "Dealers know your face — keep the chips moving.", "social_perk": "Add friends from the Social tab.", "hunt_clue": "Hunt #2: wave to a friend in the lounge.", "shop_unlocks": ["casino-hunt-map"], "earn_tip": "Login streak boosts walk rewards."},
+    {"level": 3, "xp_required": 350, "title": "Lucky seven", "reward_coins": 50, "reward_mn2": 0.01, "fx_unlock": "sparkle", "story": "Seven brings luck — sparkle FX unlocks.", "social_perk": "Send your first casino challenge.", "hunt_clue": "Bridge Hunters quests with casino walk.", "shop_unlocks": ["casino-luck-booster-6h"], "earn_tip": "Battle pass XP doubles on bets."},
+    {"level": 4, "xp_required": 700, "title": "Table regular", "reward_coins": 75, "reward_mn2": 0.02, "fx_unlock": "sparkle", "story": "Regulars get whispered tips from the pit.", "social_perk": "Share win cards to social networks.", "hunt_clue": "Plinko rain — chase the high bin.", "shop_unlocks": ["casino-agent-brief", "casino-trophy-case-bronze"], "earn_tip": "Weekly rake-back starts here."},
+    {"level": 5, "xp_required": 1200, "title": "High stakes", "reward_coins": 100, "reward_mn2": 0.03, "fx_unlock": "glow", "story": "The glow tier opens — high stakes, high shine.", "social_perk": "Join or create a crew lounge.", "hunt_clue": "Crew signal on the mini-board.", "shop_unlocks": ["casino-neon-frame", "casino-social-shout"], "earn_tip": "5% shop discount begins."},
+    {"level": 6, "xp_required": 1800, "title": "Neon nights", "reward_coins": 150, "reward_mn2": 0.05, "fx_unlock": "glow", "story": "Neon nights reward the consistent roller.", "social_perk": "Crew jackpot pool share unlocked.", "hunt_clue": "Mines depth — four safe gems.", "shop_unlocks": ["casino-crash-trail"], "earn_tip": "Tournament pools open."},
+    {"level": 7, "xp_required": 2600, "title": "VIP lounge", "reward_coins": 200, "reward_mn2": 0.08, "fx_unlock": "neon", "story": "VIP doors open — MN2 micro-yield on big bets.", "social_perk": "Challenge winner side-pots.", "hunt_clue": "Jackpot trail — contribute then win.", "shop_unlocks": ["casino-mn2-saver"], "earn_tip": "Jackpot contributor rebates."},
+    {"level": 8, "xp_required": 3600, "title": "Jackpot hunter", "reward_coins": 300, "reward_mn2": 0.12, "fx_unlock": "neon", "story": "You hunt progressive pools like a pro.", "social_perk": "Trophy revalue exchange.", "hunt_clue": "Battle pass link — bet five times today.", "shop_unlocks": ["casino-jackpot-ticket"], "earn_tip": "Leaderboard MN2 drops near."},
+    {"level": 9, "xp_required": 5000, "title": "Elite strategist", "reward_coins": 400, "reward_mn2": 0.18, "fx_unlock": "hologram", "story": "Hologram FX — agents treat you as elite.", "social_perk": "Featured on friends crew board.", "hunt_clue": "Cross-link game hub social tab.", "shop_unlocks": [], "earn_tip": "Top-3 weekly MN2 drop eligible."},
+    {"level": 10, "xp_required": 6800, "title": "Legend", "reward_coins": 500, "reward_mn2": 0.25, "fx_unlock": "hologram", "story": "Legend status — trophy path completes.", "social_perk": "Legend shoutouts in feed.", "hunt_clue": "Legend key — claim level reward.", "shop_unlocks": ["casino-trophy-case-gold"], "earn_tip": "Comp point exchange unlocked."},
+    {"level": 11, "xp_required": 9000, "title": "Mythic roller", "reward_coins": 650, "reward_mn2": 0.35, "fx_unlock": "cinematic", "story": "Mythic rollers bend the house edge with discipline.", "social_perk": "Mythic crew challenges.", "hunt_clue": "Complete all hunt tiers for bonus MN2.", "shop_unlocks": [], "earn_tip": "Cinematic sound pack active."},
+    {"level": 12, "xp_required": 11500, "title": "Crypto whale", "reward_coins": 800, "reward_mn2": 0.5, "fx_unlock": "cinematic", "story": "Whale tier — crypto rewards scale up.", "social_perk": "Whale lounge feed filter.", "hunt_clue": "Whale cache in game hub battles.", "shop_unlocks": [], "earn_tip": "MN2 loyalty stamps on packs."},
+    {"level": 13, "xp_required": 14500, "title": "House breaker", "reward_coins": 1000, "reward_mn2": 0.75, "fx_unlock": "cinematic", "story": "You break the house — max tier reached.", "social_perk": "House breaker badge on all shares.", "hunt_clue": "Final hunt grants crown trophy.", "shop_unlocks": [], "earn_tip": "All 25 earn features unlocked."}
+  ],
+  "xp_per_bet": 8,
+  "xp_per_win": 22,
+  "xp_per_quest": 40,
+  "game_media": {
+    "crash": {"icon": "🚀", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Rocket climb loop"},
+    "plinko": {"icon": "🎯", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Ball drop"},
+    "mines": {"icon": "💎", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Gem reveal"},
+    "wheel": {"icon": "🎡", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Wheel spin"},
+    "keno": {"icon": "🎱", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Number draw"},
+    "roulette": {"icon": "🎰", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Wheel landing"},
+    "hilo": {"icon": "🃏", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Card flip"},
+    "coin_flip": {"icon": "🪙", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Coin toss"},
+    "dice": {"icon": "🎲", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Dice roll"},
+    "slot_classic": {"icon": "🍒", "preview_gif": "/static/img/casino/previews/game-loop.svg", "clip_label": "Reel spin"}
+  },
+  "daily_walk": [
+    {
+      "id": "walk_enter",
+      "title": "Enter the floor",
+      "description": "Open the casino and review today's balance.",
+      "clip": "/static/img/casino/previews/game-loop.svg",
+      "reward_coins": 5,
+      "click_action": "open_lobby"
+    },
+    {
+      "id": "walk_first_bet",
+      "title": "Place a warm-up bet",
+      "description": "Play any game once to warm up the tables.",
+      "clip": "/static/img/casino/previews/game-loop.svg",
+      "reward_coins": 15,
+      "click_action": "open_games",
+      "metric": "bets",
+      "target": 1
+    },
+    {
+      "id": "walk_agent_brief",
+      "title": "Brief your agent",
+      "description": "Assign a trader or camgirl advisor for today's strategy.",
+      "clip": "/static/img/casino/previews/game-loop.svg",
+      "reward_coins": 20,
+      "assign_agent": true,
+      "agent_pool": ["trader_agent_1", "trader_agent_2", "nova", "luna", "sage"]
+    },
+    {
+      "id": "walk_quest_claim",
+      "title": "Claim a daily quest",
+      "description": "Complete and claim any daily casino quest.",
+      "clip": "/static/img/casino/previews/game-loop.svg",
+      "reward_coins": 25,
+      "click_action": "open_quests",
+      "metric": "quests_claimed",
+      "target": 1
+    },
+    {
+      "id": "walk_big_moment",
+      "title": "Chase a highlight",
+      "description": "Land a win worth 3× or more on any game.",
+      "clip": "/static/img/casino/previews/game-loop.svg",
+      "reward_coins": 40,
+      "reward_mn2": 0.02,
+      "metric": "big_wins",
+      "target": 1
+    }
+  ],
+  "agent_casino_roles": [
+    {"id": "trader_agent_1", "type": "trader", "name": "Alpha Trader", "focus": "MN2 stake sizing", "strategy_tip": "Scale bets down after two losses."},
+    {"id": "trader_agent_2", "type": "trader", "name": "Beta Trader", "focus": "USD bankroll", "strategy_tip": "Prefer even-money games for streak quests."},
+    {"id": "nova", "type": "camgirl", "name": "Nova", "focus": "Hype & morale", "strategy_tip": "Play crash with tight auto cash-out."},
+    {"id": "luna", "type": "camgirl", "name": "Luna", "focus": "Night sessions", "strategy_tip": "Stack scratch + dice for quest progress."},
+    {"id": "sage", "type": "camgirl", "name": "Sage", "focus": "Risk coaching", "strategy_tip": "Use mines with low bomb count first."}
+  ],
+  "trophies": [
+    {"id": "trophy_first_win", "name": "First blood", "description": "Win any casino game.", "icon": "🏅", "metric": "wins", "target": 1, "reward_coins": 10},
+    {"id": "trophy_streak_3", "name": "Hot hand", "description": "Win 3 games in one day.", "icon": "🔥", "metric": "daily_wins", "target": 3, "reward_coins": 30},
+    {"id": "trophy_crash_5x", "name": "Rocket rider", "description": "Cash out crash at 5× or higher.", "icon": "🚀", "metric": "crash_cashout_5x", "target": 1, "reward_mn2": 0.05},
+    {"id": "trophy_quest_week", "name": "Quest master", "description": "Claim 7 daily quests in a week.", "icon": "📜", "metric": "weekly_quest_claims", "target": 7, "reward_coins": 100},
+    {"id": "trophy_jackpot", "name": "Jackpot spark", "description": "Hit any progressive jackpot.", "icon": "💰", "metric": "jackpot_wins", "target": 1, "reward_mn2": 0.1},
+    {"id": "trophy_agent_walk", "name": "Agent handler", "description": "Complete 5 daily walks with an agent assigned.", "icon": "🤖", "metric": "walk_agent_days", "target": 5, "reward_coins": 75},
+    {"id": "trophy_level_10", "name": "Legend status", "description": "Reach casino level 10.", "icon": "⭐", "metric": "casino_level", "target": 10, "reward_mn2": 0.25},
+    {"id": "trophy_crypto_13", "name": "House breaker", "description": "Reach level 13 and claim crypto rewards.", "icon": "👑", "metric": "casino_level", "target": 13, "reward_mn2": 1.0},
+    {"id": "trophy_shop_collector", "name": "Shop collector", "description": "Own 5 casino shop items.", "icon": "🛒", "metric": "shop_items_owned", "target": 5, "reward_coins": 120},
+    {"id": "trophy_hunt_master", "name": "Hunt master", "description": "Complete 5 gaming hunt quests.", "icon": "🎯", "metric": "hunt_claimed", "target": 5, "reward_mn2": 0.08},
+    {"id": "trophy_social_butterfly", "name": "Social butterfly", "description": "Have 10 casino friends.", "icon": "🦋", "metric": "social_friends", "target": 10, "reward_coins": 200},
+    {"id": "trophy_earn_features", "name": "Income architect", "description": "Unlock 15 earn features by level.", "icon": "💹", "metric": "casino_level", "target": 9, "reward_mn2": 0.12},
+    {"id": "trophy_play_app", "name": "Play pioneer", "description": "Claim Play App daily chest 7 times.", "icon": "📱", "metric": "play_app_chests", "target": 7, "reward_coins": 150},
+    {"id": "trophy_crew_champion", "name": "Crew champion", "description": "Win 3 casino social challenges.", "icon": "⚔️", "metric": "challenges_won", "target": 3, "reward_coins": 180},
+    {"id": "trophy_revalue_king", "name": "Revalue king", "description": "Earn 5000 coins from level + hunt rewards combined.", "icon": "♻️", "metric": "lifetime_earn_coins", "target": 5000, "reward_mn2": 0.2},
+    {"id": "trophy_kelly_master", "name": "Kelly master", "description": "Use the calculator hub 10 times.", "icon": "📐", "metric": "calculator_uses", "target": 10, "reward_coins": 80},
+    {"id": "trophy_prognosis_oracle", "name": "Prognosis oracle", "description": "Win a battle-outcome bet after checking prognosis.", "icon": "🔮", "metric": "prognosis_wins", "target": 1, "reward_coins": 60},
+    {"id": "trophy_agent_pilot", "name": "Agent pilot", "description": "Run casino agent bot once (dry-run or live).", "icon": "🤖", "metric": "agent_runs", "target": 1, "reward_coins": 100},
+    {"id": "trophy_theme_collector", "name": "Theme collector", "description": "Own 3 casino lobby themes.", "icon": "🎨", "metric": "themes_owned", "target": 3, "reward_coins": 250},
+    {"id": "trophy_plinko_rain", "name": "Plinko rain", "description": "Hit highest plinko bucket once.", "icon": "🌧️", "metric": "plinko_max_bucket", "target": 1, "reward_mn2": 0.06},
+    {"id": "trophy_mines_survivor", "name": "Mines survivor", "description": "Cash out mines with 8+ safe tiles.", "icon": "💎", "metric": "mines_cashout_8", "target": 1, "reward_coins": 90},
+    {"id": "trophy_intel_architect", "name": "Intel architect", "description": "Open future sights panel 5 days in a row.", "icon": "🧠", "metric": "prognosis_days", "target": 5, "reward_mn2": 0.15}
+  ]
+}

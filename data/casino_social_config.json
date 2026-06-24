@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "challenge_types": [
+    {
+      "id": "casino_bets_race",
+      "label": "Race to bets",
+      "description": "First player to place the target number of casino bets wins.",
+      "default_target": 10
+    },
+    {
+      "id": "casino_wins_race",
+      "label": "Race to wins",
+      "description": "First to reach the target number of casino wins.",
+      "default_target": 5
+    },
+    {
+      "id": "casino_crash_2x",
+      "label": "Crash cash-out duel",
+      "description": "First to cash out crash at 2× or higher.",
+      "default_target": 1
+    },
+    {
+      "id": "casino_walk_duo",
+      "label": "Daily walk duo",
+      "description": "Both complete today's casino daily walk.",
+      "default_target": 1
+    }
+  ],
+  "feed_action_prefixes": ["casino_"],
+  "share_default_text": "I'm playing at MasterNoder Casino — join my crew and challenge me!"
+}

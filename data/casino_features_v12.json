@@ -1,0 +1,31 @@
+{
+  "version": "12.0.0",
+  "theme": "income_revalue_earn",
+  "features": [
+    {"id": "earn_rakeback", "title": "Weekly rake-back", "category": "revalue", "description": "Recover a slice of net losses as coins every Monday.", "earn_type": "coins", "min_level": 4, "hook": "trophy_rebate"},
+    {"id": "earn_vip_drip", "title": "VIP coin drip", "category": "income", "description": "Higher casino levels unlock passive coin drips on login.", "earn_type": "coins", "min_level": 5, "hook": "level_login"},
+    {"id": "earn_referral_casino", "title": "Refer-a-player bonus", "category": "income", "description": "Friends who bet earn you a referral coin cut (on-site only).", "earn_type": "coins", "min_level": 3, "hook": "referral_purchase_rewards"},
+    {"id": "earn_crew_jackpot", "title": "Crew jackpot pool", "category": "income", "description": "Crew members share a slice of progressive jackpot hits.", "earn_type": "coins", "min_level": 6, "hook": "social_crew"},
+    {"id": "earn_streak_mult", "title": "Login streak multiplier", "category": "revalue", "description": "Daily walk streak boosts quest coin payouts.", "earn_type": "multiplier", "min_level": 2, "hook": "daily_walk"},
+    {"id": "earn_quest_bonus", "title": "Quest completion bonus", "category": "income", "description": "Claim daily casino quests for stacked coin rewards.", "earn_type": "coins", "min_level": 1, "hook": "casino_quests"},
+    {"id": "earn_mn2_micro", "title": "MN2 micro-yield", "category": "income", "description": "High-roller MN2 bets accrue micro MN2 from the rewards pool.", "earn_type": "mn2", "min_level": 7, "hook": "mn2_bet"},
+    {"id": "earn_booster_shop", "title": "Luck booster (+15%)", "category": "revalue", "description": "Shop booster amplifies quest and walk rewards for 6h.", "earn_type": "multiplier", "min_level": 3, "hook": "shop_booster"},
+    {"id": "earn_trophy_revalue", "title": "Trophy revalue exchange", "category": "revalue", "description": "Duplicate trophy progress converts to bonus coins.", "earn_type": "coins", "min_level": 8, "hook": "trophy_exchange"},
+    {"id": "earn_affiliate_share", "title": "Win share affiliate", "category": "income", "description": "Share big wins to X/Discord — earn referral credits when friends join.", "earn_type": "credits", "min_level": 4, "hook": "social_share"},
+    {"id": "earn_tournament_pool", "title": "Tournament prize pool", "category": "income", "description": "Enter weekly casino tournaments; top net wins split the pool.", "earn_type": "coins", "min_level": 6, "hook": "tournaments"},
+    {"id": "earn_leaderboard_mn2", "title": "Leaderboard MN2 drop", "category": "income", "description": "Top 3 weekly net players receive MN2 from the house marketing wallet.", "earn_type": "mn2", "min_level": 9, "hook": "leaderboard"},
+    {"id": "earn_discord_promo", "title": "Discord promo codes", "category": "income", "description": "Redeem DC-* codes from Discord for instant coin packs.", "earn_type": "coins", "min_level": 1, "hook": "discord_promo"},
+    {"id": "earn_camgirl_tipback", "title": "Advisor tip-back", "category": "revalue", "description": "Assigned camgirl/agent returns 5% of walk rewards as coins.", "earn_type": "coins", "min_level": 5, "hook": "agent_assign"},
+    {"id": "earn_agent_quest", "title": "Agent strategy quest", "category": "income", "description": "Complete agent briefings during daily walk for bonus MN2.", "earn_type": "mn2", "min_level": 4, "hook": "walk_agent"},
+    {"id": "earn_walk_escalator", "title": "Walk MN2 escalator", "category": "income", "description": "Each walk step can award escalating MN2 at higher levels.", "earn_type": "mn2", "min_level": 3, "hook": "daily_walk"},
+    {"id": "earn_level_shop_discount", "title": "Level shop discount", "category": "revalue", "description": "Casino level reduces coin prices in the casino shop tab.", "earn_type": "discount", "min_level": 5, "hook": "shop_catalog"},
+    {"id": "earn_hunt_clues", "title": "Gaming hunt clues", "category": "income", "description": "Follow hunt clues across casino + game hub for coin caches.", "earn_type": "coins", "min_level": 2, "hook": "hunt_quests"},
+    {"id": "earn_social_challenge_pot", "title": "Challenge winner pot", "category": "income", "description": "Win friend challenges to take the coin side-pot.", "earn_type": "coins", "min_level": 4, "hook": "social_challenge"},
+    {"id": "earn_jackpot_rebate", "title": "Jackpot contributor rebate", "category": "revalue", "description": "Players who contributed to a hit jackpot get a rebate coin slice.", "earn_type": "coins", "min_level": 7, "hook": "jackpot"},
+    {"id": "earn_comp_exchange", "title": "Comp point exchange", "category": "revalue", "description": "Convert casino XP milestones into shop comp points.", "earn_type": "coins", "min_level": 6, "hook": "xp_exchange"},
+    {"id": "earn_deposit_match", "title": "First deposit match", "category": "income", "description": "First USD/MN2 buy-in of the day gets a small match bonus.", "earn_type": "usd", "min_level": 5, "hook": "mn2_buyin"},
+    {"id": "earn_loyalty_stamp", "title": "MN2 pack loyalty stamp", "category": "revalue", "description": "Every 5th MN2 buy-in pack includes bonus casino coins.", "earn_type": "coins", "min_level": 4, "hook": "mn2_buyin"},
+    {"id": "earn_battle_pass_synergy", "title": "Battle pass synergy", "category": "income", "description": "Battle pass XP doubles on casino bet actions.", "earn_type": "xp", "min_level": 3, "hook": "battle_pass"},
+    {"id": "earn_play_app_chest", "title": "Play App daily chest", "category": "income", "description": "Google Play Casino Social app grants a daily virtual-coin chest.", "earn_type": "coins", "min_level": 1, "hook": "play_app_twa"}
+  ]
+}

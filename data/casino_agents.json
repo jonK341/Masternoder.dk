@@ -1,0 +1,36 @@
+{
+  "casino_kelly_agent": {
+    "user_id": "casino_kelly_user",
+    "model_id": "casino_kelly_agent",
+    "policy": {
+      "enabled": true,
+      "min_bet": 5,
+      "max_bet": 50,
+      "allowed_games": ["dice", "coin_flip", "plinko"],
+      "currency": "coins",
+      "leaderboard_period": "week"
+    }
+  },
+  "casino_safe_grinder": {
+    "user_id": "casino_grinder_user",
+    "model_id": "casino_safe_grinder",
+    "policy": {
+      "enabled": true,
+      "min_bet": 5,
+      "max_bet": 30,
+      "allowed_games": ["coin_flip", "plinko", "wheel"],
+      "currency": "coins"
+    }
+  },
+  "casino_meta_oracle": {
+    "user_id": "casino_oracle_user",
+    "model_id": "casino_meta_oracle",
+    "policy": {
+      "enabled": true,
+      "min_bet": 10,
+      "max_bet": 80,
+      "allowed_games": ["battle_outcome", "rps_distribution", "rps_counter_pick"],
+      "currency": "coins"
+    }
+  }
+}

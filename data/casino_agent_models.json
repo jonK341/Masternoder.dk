@@ -1,0 +1,36 @@
+{
+  "models": {
+    "casino_kelly_agent": {
+      "name": "Kelly Optimizer",
+      "strategy": "kelly_flat",
+      "skills": ["kelly_sizing", "play_dice", "play_coin_flip"],
+      "preferred_games": ["dice", "coin_flip", "plinko"],
+      "bet_fraction": 0.05,
+      "currency": "coins",
+      "task_kind": "casino_bet_plan",
+      "llm_task_type": "reason",
+      "spectator_persona": "Kelly sizes bets from balance and recent streaks."
+    },
+    "casino_safe_grinder": {
+      "name": "Safe Grinder",
+      "strategy": "flat_small",
+      "skills": ["play_coin_flip", "play_plinko"],
+      "preferred_games": ["coin_flip", "plinko", "wheel"],
+      "bet_fraction": 0.02,
+      "currency": "coins",
+      "task_kind": "casino_bet_plan",
+      "spectator_persona": "Plays small, steady coin flips and low-risk plinko."
+    },
+    "casino_meta_oracle": {
+      "name": "Meta Oracle",
+      "strategy": "prognosis_bias",
+      "skills": ["play_battle_outcome", "play_rps_distribution"],
+      "preferred_games": ["battle_outcome", "rps_distribution", "rps_counter_pick"],
+      "bet_fraction": 0.04,
+      "currency": "coins",
+      "task_kind": "casino_bet_plan",
+      "llm_task_type": "reason",
+      "spectator_persona": "Reads battle prognoses before meta bets."
+    }
+  }
+}
