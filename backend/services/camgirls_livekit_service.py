@@ -85,7 +85,7 @@ def issue_voice_token(
             if not user_has_unlock(uid, pid):
                 return {"success": False, "error": "unlock_required", "performer_id": pid}
         except Exception:
-            pass
+            return {"success": False, "error": "unlock_check_failed", "performer_id": pid}
 
     room = _room_name(pid, uid)
     identity = f"fan_{uid}"[:64]

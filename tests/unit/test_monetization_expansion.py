@@ -12,7 +12,11 @@ from backend.services.shop_checkout_promo_service import validate_checkout_promo
 from backend.services.monetization_priority_service import queue_priority_bonus
 from backend.services.scr_checkout_service import list_scr_checkout_skus
 from backend.services.generator_premium_checkout_service import quote_premium_render
-from backend.services.battle_pass_service import get_battle_pass_status, purchase_battle_pass_premium
+from backend.services.battle_pass_service import (
+    fulfill_battle_pass_paypal_purchase,
+    get_battle_pass_status,
+    purchase_battle_pass_premium,
+)
 from backend.services.generator_api_key_service import create_api_key, resolve_api_key
 from backend.services import shop_monetization_service as mon
 from backend.services import battle_pass_service as bp_mod
@@ -110,10 +114,44 @@ def test_battle_pass_paypal_skips_coin_charge(battle_pass_shop_db):
     reload_monetization_config()
     uid = "bp_paypal"
     battle_pass_shop_db.set_coins(uid, 0)
-    out = purchase_battle_pass_premium(uid, source="paypal")
+    out = fulfill_battle_pass_paypal_purchase(uid)
     assert out["success"] is True
     assert out.get("price_paid_coins") is None
     assert battle_pass_shop_db.coins[uid] == int(out.get("granted_coins") or 0)
+
+
+def test_battle_pass_paypal_source_rejected_on_public_purchase(battle_pass_shop_db):
+    reload_monetization_config()
+    out = purchase_battle_pass_premium("bp_hacker", source="paypal")
+    assert out["success"] is False
+    assert out.get("code") == "PAYPAL_CHECKOUT_REQUIRED"
+
+
+def test_battle_pass_record_action_awards_xp_once(monkeypatch):
+    reload_monetization_config()
+    from backend.services.battle_pass_service import get_battle_pass_status, record_battle_pass_action
+
+    tmp_dir = tempfile.mkdtemp(prefix="bp_xp_")
+    state_path = os.path.join(tmp_dir, "battle_pass.json")
+    monkeypatch.setattr(bp_mod, "_STATE", state_path)
+    try:
+        uid = "bp_quest_user"
+        before = get_battle_pass_status(uid)
+        assert before["success"] is True
+        assert int(before.get("xp") or 0) == 0
+
+        out = record_battle_pass_action(uid, "casino_bet")
+        assert out is not None
+        assert out["xp_gained"] == 50
+        assert out["xp"] == 50
+
+        again = record_battle_pass_action(uid, "casino_bet")
+        assert again is None
+
+        after = get_battle_pass_status(uid)
+        assert int(after.get("xp") or 0) == 50
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 def test_api_key_roundtrip(monkeypatch):

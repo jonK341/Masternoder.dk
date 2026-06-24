@@ -127,9 +127,28 @@ def battle_pass_status():
 def battle_pass_purchase():
     data = request.get_json(silent=True) or {}
     user_id = data.get("user_id") or _resolve_user_id()
-    from backend.services.battle_pass_service import purchase_battle_pass_premium
+    from backend.services.account_security_service import check_purchase_action
+    from backend.services.battle_pass_service import get_battle_pass_status, purchase_battle_pass_premium
 
-    out = purchase_battle_pass_premium(user_id, source=data.get("source") or "shop")
+    status = get_battle_pass_status(user_id)
+    if not status.get("success"):
+        return jsonify(status), 404
+    try:
+        price_usd = float(status.get("price_usd") or 0)
+    except (TypeError, ValueError):
+        price_usd = 0.0
+    token = (data.get("verification_token") or data.get("security_token") or "").strip() or None
+    sec_err = check_purchase_action(user_id, verification_token=token, price_usd=price_usd)
+    if sec_err:
+        return jsonify({
+            "success": False,
+            "error": sec_err,
+            "code": "PASSWORD_VERIFICATION_REQUIRED",
+            "requires_verification": True,
+        }), 403
+
+    # Coin purchase only — PayPal is fulfilled in /api/paypal/capture after payment.
+    out = purchase_battle_pass_premium(user_id, source="shop")
     return jsonify(out), 200 if out.get("success") else 400
 
 
