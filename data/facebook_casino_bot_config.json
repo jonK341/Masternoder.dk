@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "bot_name": "MasterNoder Casino",
+  "page_username": "MasterNoderCasino",
+  "verify_token_env": "FACEBOOK_VERIFY_TOKEN",
+  "page_access_token_env": "FACEBOOK_PAGE_ACCESS_TOKEN",
+  "app_secret_env": "FACEBOOK_APP_SECRET",
+  "earn": {
+    "coins_per_bet": 3,
+    "coins_per_win": 12,
+    "mn2_per_big_win": 0.002,
+    "big_win_net_threshold_coins": 80,
+    "daily_claim_coins": 50,
+    "daily_claim_mn2": 0.008,
+    "daily_play_cap_coins": 400,
+    "requires_link": true,
+    "referral_coins": 100,
+    "vip_mult": 2.5
+  },
+  "messenger_commands": [
+    {"keyword": "CASINO", "description": "Open casino + MultiPlay tab"},
+    {"keyword": "MULTIPLAY", "description": "30+ social room games"},
+    {"keyword": "PLAY", "description": "Quick play link"},
+    {"keyword": "LINK", "description": "Link Facebook to site account"},
+    {"keyword": "BALANCE", "description": "Coins, MN2, USD"},
+    {"keyword": "DEPOSIT", "description": "PayPal + MN2 buy-in paths"},
+    {"keyword": "SHOP", "description": "Coin packs + VIP"},
+    {"keyword": "REFERRAL", "description": "Invite friends — earn coins"},
+    {"keyword": "HELP", "description": "Command list"}
+  ],
+  "money_makers": [
+    {"id": "fb_coin_starter", "title": "Messenger coin starter", "price_usd": 0.99, "coins": 150, "sku": "fb-coin-starter"},
+    {"id": "fb_multiplay_pass", "title": "MultiPlay week pass", "price_usd": 2.99, "duration_days": 7, "room_boost_bonus": 0.1, "sku": "fb-multiplay-pass"},
+    {"id": "fb_vip_week", "title": "Facebook VIP week", "price_usd": 4.99, "duration_days": 7, "earn_mult": 2.5, "sku": "fb-vip-week"},
+    {"id": "fb_whale_pack", "title": "Whale convoy pack", "price_usd": 19.99, "coins": 5000, "mn2_bonus": 0.05, "sku": "fb-whale-pack"},
+    {"id": "fb_referral_bonus", "title": "Referral bonus", "revenue": "growth", "coins": 100},
+    {"id": "fb_instant_game_ad", "title": "Instant Games ad gate", "revenue": "ads", "status": "planned"}
+  ],
+  "compliance_note": "Real-money play on masternoder.dk only. Messenger is the seller + controller — no custody in chat."
+}
