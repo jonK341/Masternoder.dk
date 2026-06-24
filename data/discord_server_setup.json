@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "server_name": "MasterNoder",
+  "env_role_id": "DISCORD_HOSTING_VIP_ROLE_ID",
+  "env_guild_id": "DISCORD_GUILD_ID",
+  "roles": [
+    {"name": "Hosting VIP", "color": "#ffd700", "hoist": true, "mentionable": false, "note": "Paid masternode renters — bot must be above this role"},
+    {"name": "Casino VIP", "color": "#ff6b9d", "hoist": false},
+    {"name": "MN2 Whale", "color": "#00d4ff", "hoist": false},
+    {"name": "Generator Pro", "color": "#00ff88", "hoist": false},
+    {"name": "Community", "color": "#99aab5", "hoist": false, "default": true}
+  ],
+  "categories": [
+    {
+      "name": "📢 ANNOUNCEMENTS",
+      "channels": [
+        {"name": "announcements", "type": "text", "topic": "Platform news, deploys, season launches", "env_webhook": "DISCORD_CHANNEL_ID_ANNOUNCEMENTS"},
+        {"name": "ops-alerts", "type": "text", "topic": "Cron + uptime (staff only)", "env_webhook": "DISCORD_CHANNEL_ID_OPS", "private": true}
+      ]
+    },
+    {
+      "name": "🎰 CASINO & PLAY",
+      "channels": [
+        {"name": "casino", "type": "text", "topic": "/casino /playnow /uber — PayPal + MN2 play links", "env_webhook": "DISCORD_CHANNEL_ID_CASINO"},
+        {"name": "discord-play", "type": "text", "topic": "Uber lounge + play-earn daily claims"},
+        {"name": "wins-and-trophies", "type": "text", "topic": "Big wins, hunt trophies, social tab highlights"},
+        {"name": "promo-codes", "type": "text", "topic": "DISCORD-STARTER · HOSTMN5 · shop promos"}
+      ]
+    },
+    {
+      "name": "🖥️ HOSTING & MARKET",
+      "channels": [
+        {"name": "masternode-hosting", "type": "text", "topic": "/hosting — fleet slots from $4.99"},
+        {"name": "market", "type": "text", "topic": "Trader market + camgirls spotlight", "env_webhook": "DISCORD_CHANNEL_ID_MARKET"},
+        {"name": "mn2", "type": "text", "topic": "MN2 hub — staking, market, ledger · /mn2", "env_webhook": "DISCORD_CHANNEL_ID_MN2"},
+        {"name": "staking", "type": "text", "topic": "MN2 staking monitor + advisor"}
+      ]
+    },
+    {
+      "name": "🎬 CREATE & QUEST",
+      "channels": [
+        {"name": "generator", "type": "text", "topic": "AI video generator drops", "env_webhook": "DISCORD_CHANNEL_ID_GENERATOR"},
+        {"name": "quests", "type": "text", "topic": "/quests daily progression"},
+        {"name": "game-hub", "type": "text", "topic": "Battles + hunters game", "env_webhook": "DISCORD_CHANNEL_ID_GAME"}
+      ]
+    },
+    {
+      "name": "💬 COMMUNITY",
+      "channels": [
+        {"name": "general", "type": "text", "topic": "Community chat"},
+        {"name": "support", "type": "text", "topic": "Help + /link account issues"},
+        {"name": "voice-lounge", "type": "voice", "topic": "Casino voice / LiveKit hangout"}
+      ]
+    }
+  ],
+  "onboarding_checklist": [
+    "Set Interactions URL to https://masternoder.dk/api/discord/interactions (no trailing slash)",
+    "Run: python scripts/discord_register_commands.py on server after deploy",
+    "Invite bot with applications.commands + Manage Roles",
+    "Create webhooks per channel → paste full URLs into DISCORD_CHANNEL_ID_* in .env",
+    "Configure MN2 hub: python scripts/discord_mn2_channel.py show && python scripts/discord_mn2_channel.py reload",
+    "Drag Hosting VIP role below the bot role",
+    "Upload icon/banner from static/discord-branding/ to Developer Portal"
+  ]
+}

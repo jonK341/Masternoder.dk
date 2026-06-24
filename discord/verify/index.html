@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Linked Role Verification — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260624">
+    <style>
+        body { max-width: 640px; margin: 0 auto; padding: 48px 20px; text-align: center; color: #e8e8f0; }
+        h1 { color: #5865f2; }
+        .btn { display: inline-block; margin: 12px; padding: 14px 24px; background: #5865f2; color: #fff; border-radius: 10px; text-decoration: none; font-weight: 600; }
+        .btn.secondary { background: rgba(255,255,255,0.12); }
+        #status { margin-top: 24px; padding: 16px; border-radius: 12px; background: rgba(0,255,136,0.08); text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Discord Linked Roles</h1>
+    <p>Verify your MasterNoder account to unlock Discord roles (e.g. <strong>Hosting VIP</strong> after a paid masternode rental).</p>
+    <p>
+        <a class="btn" href="/api/discord/role-connection/start">Verify with Discord</a>
+        <a class="btn secondary" href="/profile/">Link account first</a>
+    </p>
+    <div id="status" hidden></div>
+    <script>
+        (function () {
+            var p = new URLSearchParams(window.location.search);
+            var box = document.getElementById('status');
+            if (p.get('verified') === '1') {
+                box.hidden = false;
+                box.innerHTML = '<strong>Verified.</strong> Return to Discord — your linked role should update within a minute.';
+            } else if (p.get('error')) {
+                box.hidden = false;
+                box.innerHTML = '<strong>Error:</strong> ' + p.get('error');
+            }
+        })();
+    </script>
+</body>
+</html>

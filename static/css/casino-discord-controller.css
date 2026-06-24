@@ -1,0 +1,83 @@
+/* Casino Discord controller tab */
+
+.casino-discord-hero {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.casino-discord-hero p {
+    font-size: 0.88rem;
+    opacity: 0.85;
+    max-width: 520px;
+    margin: 0.5rem auto 0;
+}
+
+.casino-discord-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--spacing-md);
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.casino-discord-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(88, 101, 242, 0.35);
+    background: rgba(88, 101, 242, 0.06);
+}
+
+.casino-discord-card h3 {
+    margin: 0 0 0.5rem;
+    color: #aab2ff;
+}
+
+.casino-discord-code {
+    font-family: monospace;
+    font-size: 1.25rem;
+    letter-spacing: 0.12em;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.35);
+    text-align: center;
+    margin: 0.5rem 0;
+}
+
+.casino-discord-apps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.casino-discord-apps li {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.85rem;
+}
+
+.casino-discord-apps a {
+    color: var(--primary);
+}
+
+.casino-discord-btn {
+    width: 100%;
+    margin-top: 0.45rem;
+    padding: 0.45rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: #5865f2;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.casino-discord-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+body[data-casino-v10-tab="discord"] .casino-v10-lobby-only {
+    display: none !important;
+}

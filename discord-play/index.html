@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Play — MasterNoder</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260624">
+    <link rel="stylesheet" href="/static/css/discord-play.css?v=20260624">
+    <meta name="theme-color" content="#1a1035">
+</head>
+<body class="discord-play-body">
+    <header class="dp-header">
+        <div class="dp-header-inner">
+            <h1>🎮 Discord Play</h1>
+            <p class="dp-tagline">Uber games · real USD/MN2 · MN2 network bonuses</p>
+            <div id="dp-session-badge" class="dp-session-badge hidden" role="status"></div>
+        </div>
+        <nav class="dp-nav" aria-label="Play site">
+            <a href="/casino/">Full casino</a>
+            <a href="/chat/">Chat</a>
+            <a href="/profile/">Profile</a>
+        </nav>
+    </header>
+
+    <main class="dp-main">
+        <section class="dp-rails" aria-label="Payment options">
+            <h2>Payment rails</h2>
+            <div id="dp-payment-chips" class="dp-chips">Loading…</div>
+            <p class="dp-hint">Real currency preferred. Coins are for tips &amp; shop on the main casino.</p>
+        </section>
+
+        <section class="dp-venues" aria-label="Discord venues">
+            <h2>Venues</h2>
+            <div id="dp-venues" class="dp-grid"></div>
+        </section>
+
+        <section class="dp-uber" aria-label="Uber games">
+            <h2>Uber games</h2>
+            <div class="dp-currency-row">
+                <label>Currency
+                    <select id="dp-currency" aria-label="Bet currency">
+                        <option value="usd">USD</option>
+                        <option value="mn2">MN2</option>
+                    </select>
+                </label>
+            </div>
+            <div id="dp-games" class="dp-grid"></div>
+            <div id="dp-play-result" class="dp-result" role="status" aria-live="polite"></div>
+        </section>
+
+        <aside class="dp-sidebar" aria-label="AI hosts and network">
+            <h2>AI hosts</h2>
+            <div id="dp-ai-hosts" class="dp-ai-list">Link Discord on casino to unlock hosts.</div>
+            <h2>MN2 network</h2>
+            <div id="dp-network" class="dp-network-card">—</div>
+            <a class="dp-cta" href="/casino/?tab=discord">Link Discord account</a>
+        </aside>
+    </main>
+
+    <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
+    <script src="/static/js/discord-play.js?v=20260624" defer></script>
+</body>
+</html>

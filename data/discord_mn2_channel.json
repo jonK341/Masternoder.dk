@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "channel_id": "1061038152367755307",
+  "webhook_url": "",
+  "env_webhook_key": "DISCORD_CHANNEL_ID_MN2",
+  "topic": "MN2 hub \u2014 staking \u00b7 market \u00b7 ledger \u00b7 /mn2 for status \u00b7 all balances on masternoder.dk",
+  "pinned_info": {
+    "title": "MasterNoder MN2 Hub",
+    "body": "Welcome to the MN2 channel. Use `/mn2` for live service status and earn links.\n\n\u2022 **Wallet & deposit** \u2014 Profile \u2192 MN2 wallet (on-chain credits after daemon confirms)\n\u2022 **Staking** \u2014 /explorer?tab=staking \u00b7 monitor at /staking-monitor/\n\u2022 **Market** \u2014 /explorer?tab=market (limit orders, no custody here)\n\u2022 **Hosting** \u2014 /hosting/ \u00b7 promo **HOSTMN5** in Shop\n\u2022 **Earn** \u2014 quests, generator, casino MN2 rail \u2014 claim rewards on-site only\n\nGate S: Discord never holds MN2. Link account with `/link CODE` from Casino \u2192 Discord tab."
+  },
+  "info_links": [
+    {
+      "id": "wallet",
+      "label": "MN2 Wallet",
+      "path": "/profile/"
+    },
+    {
+      "id": "staking",
+      "label": "Staking monitor",
+      "path": "/staking-monitor/"
+    },
+    {
+      "id": "market",
+      "label": "Trader market",
+      "path": "/explorer?tab=market"
+    },
+    {
+      "id": "hosting",
+      "label": "Masternode hosting",
+      "path": "/hosting/"
+    },
+    {
+      "id": "explorer",
+      "label": "Network explorer",
+      "path": "/explorer/"
+    },
+    {
+      "id": "earn",
+      "label": "Daily quests",
+      "path": "/quests/"
+    },
+    {
+      "id": "generator",
+      "label": "Video generator",
+      "path": "/generator/"
+    },
+    {
+      "id": "reserves",
+      "label": "Proof of reserves",
+      "path": "/proof-of-reserves/"
+    }
+  ],
+  "enabled_streams": {
+    "casino": true,
+    "game": true,
+    "market": true,
+    "generator": true,
+    "mn2_ledger": true,
+    "social": false
+  },
+  "stream_channel_map": {
+    "casino": "casino",
+    "market": "market",
+    "game": "game",
+    "generator": "generator",
+    "quests": "social",
+    "activity": "mn2_ledger",
+    "ops": "mn2_ledger",
+    "announcements": "social"
+  },
+  "digest": {
+    "enabled": true,
+    "hour_utc": 12,
+    "message_id_prefix": "mn2-digest"
+  },
+  "compliance_note": "No custody in Discord \u2014 MN2 balances, stakes, and withdrawals on masternoder.dk only."
+}

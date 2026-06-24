@@ -52,6 +52,7 @@ _SUPPORT_FAQ = [
     {"q": "camgirls", "a": "Browse performers at /camgirls/ — unlock and tip with in-app coins. All rewards claimed on-site."},
     {"q": "compendium", "a": "Read V1–V16 rulebooks at /compendium/?calm=1 — calm mode syncs progress to Game Hub."},
     {"q": "library", "a": "Same as compendium — open /compendium/?calm=1 for the rulebook library and reading progress."},
+    {"q": "mn2", "a": "Use `/mn2` in Discord for hub links and service status. Wallet, staking, and market actions stay on masternoder.dk — no custody in chat."},
 ]
 
 
@@ -269,6 +270,13 @@ def post_generator_showcase(
     return {"success": pub.get("success"), "news": pub.get("item"), "discord": disc}
 
 
+def run_mn2_channel_digest(*, force: bool = False) -> Dict[str, Any]:
+    """Daily MN2 hub status digest → #mn2 channel (cron-friendly)."""
+    from backend.services.discord_mn2_channel_service import post_info_digest
+
+    return post_info_digest(force=force)
+
+
 def support_faq_answer(query: str) -> Dict[str, Any]:
     """M8 #60 — lightweight FAQ (no custody; directs users to site)."""
     q = (query or "").strip().lower()
@@ -285,4 +293,51 @@ def support_faq_answer(query: str) -> Dict[str, Any]:
         "success": True,
         "answer": "For account help visit Profile or contact ops. We cannot move funds via chat.",
         "topics": [row["q"] for row in _SUPPORT_FAQ],
+    }
+
+
+def run_casino_play_app_spider_bot(*, play_store_url: Optional[str] = None) -> Dict[str, Any]:
+    """Spider bot — announce Casino Social Play App when live on Google Play (M8 casino funnel)."""
+    from backend.services.discord_service import post_message
+    from backend.services.platform_news_publish import publish
+
+    store_url = (play_store_url or os.environ.get("CASINO_PLAY_STORE_URL") or "").strip()
+    if not store_url:
+        store_url = "https://play.google.com/store/apps/details?id=dk.masternoder.casino"
+    casino_url = f"{_BASE_URL}/casino/?app=casino-twa&tab=earn"
+    title = "Casino Social is LIVE on Google Play"
+    summary = (
+        "MasterNoder Casino Social on Google Play — virtual-coin lounge, friends, crews, "
+        "25 earn features, daily Play App chest, gaming hunt, shop & trophies."
+    )
+    pub = publish(
+        item_id=f"play-app-spider:{_iso_day()}",
+        title=title,
+        summary=summary,
+        channel="casino",
+        href=store_url,
+        featured=True,
+    )
+    payload = {
+        "content": "🕷️ **Spider bot — Casino Social is LIVE on Google Play**",
+        "embeds": [{
+            "title": "🎰 MasterNoder Casino Social",
+            "description": (
+                "• Virtual-coin lounge · friends · crews · 25 earn features\n"
+                "• Daily chest from Play App · gaming hunt · shop & trophies\n"
+                f"📱 [Google Play]({store_url})\n"
+                f"🌐 [Open in browser]({casino_url})"
+            ),
+            "url": store_url,
+            "footer": {"text": "Rewards claimed on masternoder.dk only — Gate S."},
+        }],
+    }
+    disc = post_message("casino", payload, message_id=f"spider-play-app:{_iso_day()}")
+    ok = bool(disc.get("success")) and bool(pub.get("success"))
+    return {
+        "success": ok,
+        "play_store_url": store_url,
+        "casino_url": casino_url,
+        "news": pub.get("item"),
+        "discord": disc,
     }

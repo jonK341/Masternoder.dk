@@ -50,6 +50,16 @@ def _webhook_config_error(url: str, env_key: str) -> Optional[str]:
 
 
 def _webhook_for_channel(channel: str) -> tuple[Optional[str], Optional[str]]:
+    ch = (channel or "").strip().lower()
+    if ch == "mn2":
+        try:
+            from backend.services.discord_mn2_channel_service import resolve_webhook
+
+            mn2_url = resolve_webhook()
+            if mn2_url:
+                return mn2_url, "discord_mn2_channel.json"
+        except Exception:
+            pass
     key = f"DISCORD_CHANNEL_ID_{channel.upper()}"
     per = (os.environ.get(key) or "").strip()
     if per:
@@ -58,6 +68,17 @@ def _webhook_for_channel(channel: str) -> tuple[Optional[str], Optional[str]]:
     if default:
         return default, "DISCORD_WEBHOOK_URL"
     return None, None
+
+
+def _mirror_mn2_if_enabled(source_channel: str, payload: Dict[str, Any], *, posted_ok: bool) -> None:
+    if not posted_ok or (source_channel or "").strip().lower() == "mn2":
+        return
+    try:
+        from backend.services.discord_mn2_channel_service import mirror_post
+
+        mirror_post(source_channel, payload)
+    except Exception:
+        pass
 
 
 def post_message(
@@ -114,6 +135,8 @@ def post_message(
     _append(_OUTBOX, row)
     if ok or not webhook:
         _SENT_IDS.add(mid)
+    if ok:
+        _mirror_mn2_if_enabled(channel, payload, posted_ok=True)
 
     try:
         from backend.services.activity_events_service import emit

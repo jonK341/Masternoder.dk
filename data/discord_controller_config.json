@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "bot_name": "MasterNoder Controller",
+  "earn": {
+    "coins_per_bet": 2,
+    "coins_per_win": 8,
+    "mn2_per_big_win": 0.001,
+    "big_win_net_threshold_coins": 100,
+    "daily_claim_coins": 35,
+    "daily_claim_mn2": 0.005,
+    "daily_play_cap_coins": 250,
+    "requires_link": true,
+    "vip_mult": 2.0,
+    "new_user_mn2": 50,
+    "new_user_coins": 0
+  },
+  "slash_commands": [
+    {"name": "play", "description": "List MasterNoder activities"},
+    {"name": "playnow", "description": "Open Discord Play Site (1h session)", "options": [
+      {"name": "venue", "type": "STRING", "description": "Venue: uber or casino", "required": false},
+      {"name": "currency", "type": "STRING", "description": "usd or mn2", "required": false}
+    ]},
+    {"name": "casino", "description": "Casino status + play link"},
+    {"name": "uber", "description": "Uber games — real USD/MN2 + network bonus"},
+    {"name": "ai", "description": "AI casino hosts Nova–Iris"},
+    {"name": "hosting", "description": "Masternode hosting status"},
+    {"name": "shop", "description": "Open the game shop"},
+    {"name": "earn", "description": "Discord play-earn + daily claim"},
+    {"name": "network", "description": "MN2 network bonus status"},
+    {"name": "deposit", "description": "PayPal, MN2, on-chain deposit paths"},
+    {"name": "balance", "description": "Coins, MN2, USD balances"},
+    {"name": "mn2", "description": "MN2 hub — staking, market, earn links, service status"},
+    {"name": "vip", "description": "Discord VIP pass info"},
+    {"name": "tip", "description": "Tip AI hosts on-site"},
+    {"name": "bundle", "description": "Entertainment bundle $9.99"},
+    {"name": "link", "description": "Link Discord account", "options": [{"name": "code", "type": "STRING", "description": "Link code from Profile or Casino Discord tab", "required": true}]},
+    {"name": "quests", "description": "Daily quests"}
+  ],
+  "promo_codes_channel": "casino",
+  "compliance_note": "Real-money play on-site only. Discord is the controller — no custody in chat."
+}
