@@ -64,8 +64,7 @@ def _read_new_events() -> tuple[List[Dict[str, Any]], int]:
                 continue
             if row.get("channel") != "market":
                 continue
-            et = row.get("type") or ""
-            if et not in _MARKET_EVENT_TYPES:
+            if (row.get("type") or "") not in _MARKET_EVENT_TYPES:
                 continue
             rows.append(row)
     return rows, line_no
@@ -82,21 +81,14 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         mn2 = float(payload.get("mn2") or 0)
         if mn2 < min_mn2:
             return None
-        coins = payload.get("coins")
-        buyer = payload.get("buyer") or "buyer"
-        seller = payload.get("seller") or "seller"
-        if str(buyer).startswith("trader_agent_"):
-            buyer = buyer.replace("_", " ")
-        if str(seller).startswith("trader_agent_"):
-            seller = seller.replace("_", " ")
+        buyer = str(payload.get("buyer") or "buyer").replace("trader_agent_", "").replace("_", " ")
+        seller = str(payload.get("seller") or "seller").replace("trader_agent_", "").replace("_", " ")
         return {
             "embeds": [{
                 "title": "Market fill",
                 "description": (
-                    f"**{mn2:.4f} MN2** @ **{coins} coins** total\n"
-                    f"{seller} → {buyer}\n\n"
-                    f"[Open order book]({market_url})\n\n"
-                    "_Custodial in-app market — not financial advice._"
+                    f"**{mn2:.4f} MN2** @ **{payload.get('coins')} coins** total\n"
+                    f"{seller} → {buyer}\n\n[Open order book]({market_url})"
                 ),
                 "color": 0x00FF88,
             }],
@@ -106,14 +98,12 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         trades = int(payload.get("trades") or 0)
         if trades <= 0:
             return None
-        agents = payload.get("agents") or 6
         return {
             "embeds": [{
                 "title": "Trader fleet tick",
                 "description": (
-                    f"**{trades}** cross-trade(s) across **{agents}** trader agents.\n\n"
-                    f"[Market tab]({market_url})\n\n"
-                    "_Liquidity bot activity — rewards stay on-site._"
+                    f"**{trades}** cross-trade(s) across **{payload.get('agents') or 6}** trader agents.\n\n"
+                    f"[Market tab]({market_url})"
                 ),
                 "color": 0x5865F2,
             }],
@@ -124,15 +114,12 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         mn2 = float(payload.get("mn2_amount") or payload.get("remaining_mn2") or 0)
         if side != "sell" or mn2 < min_mn2:
             return None
-        price = payload.get("price_coins_per_mn2")
-        uid = payload.get("user_id") or "trader"
-        if str(uid).startswith("trader_agent_"):
-            uid = uid.replace("_", " ")
+        uid = str(payload.get("user_id") or "trader").replace("trader_agent_", "").replace("_", " ")
         return {
             "embeds": [{
                 "title": "New sell listing",
                 "description": (
-                    f"**{uid}** listed **{mn2:.4f} MN2** @ **{price} coins/MN2**\n\n"
+                    f"**{uid}** listed **{mn2:.4f} MN2** @ **{payload.get('price_coins_per_mn2')} coins/MN2**\n\n"
                     f"[Trade on market]({market_url})"
                 ),
                 "color": 0xFEE75C,
@@ -143,19 +130,17 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def run_fanout(*, dry_run: bool = False) -> Dict[str, Any]:
-    """Process new market channel activity events → Discord #market."""
     rows, end_line = _read_new_events()
     posted: List[str] = []
     skipped: List[str] = []
     errors: List[str] = []
-
     from backend.services.discord_service import post_message
 
     for row in rows:
         et = row.get("type") or "event"
         ts = row.get("ts") or ""
-        bet_id = (row.get("payload") or {}).get("order_id") or (row.get("payload") or {}).get("ref")
-        msg_id = f"market-fanout:{et}:{bet_id or ts}"
+        ref = (row.get("payload") or {}).get("order_id") or (row.get("payload") or {}).get("ref")
+        msg_id = f"market-fanout:{et}:{ref or ts}"
         embed = _embed_for_event(row)
         if embed is None:
             skipped.append(et)

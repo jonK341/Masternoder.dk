@@ -37,6 +37,9 @@
     battlegrounds: [{ title: 'Enter battlegrounds', href: '/battlegrounds/', desc: 'MN2 zone battles', reward: 'Zone MN2' }],
     social: [
       { title: 'Social hub', href: '/social/', desc: 'Posts & crews', reward: 'Tip MN2' },
+      { title: 'Discord play', href: '/discord-play/', desc: 'Slash commands + earn', reward: '50 MN2 link' },
+      { title: 'Facebook casino', href: '/casino/#casino-platform-hub', desc: 'Messenger bot', reward: '25 MN2 link' },
+      { title: 'YouTube', href: '/podcast/', desc: 'Episodes + clips', reward: '0.01 MN2 sub' },
       { title: 'Chat (Lab room)', href: '/lab/#discussion', desc: 'Lab discussion', reward: '—' },
     ],
     generator: [

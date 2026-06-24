@@ -261,6 +261,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP discord: {e}")
     try:
+        from backend.routes.social_platform_routes import social_platform_bp
+        if "social_platform" not in app.blueprints:
+            app.register_blueprint(social_platform_bp)
+            n += 1
+            print("  [OK] Registered social_platform blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP social_platform: {e}")
+    try:
         from backend.routes.customer_aggregator_routes import customer_aggregator_bp
         if "customer_aggregator" not in app.blueprints:
             app.register_blueprint(customer_aggregator_bp)
@@ -1439,6 +1447,17 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import discord: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering discord: {e}")
+
+    try:
+        from backend.routes.social_platform_routes import social_platform_bp
+        if "social_platform" not in app.blueprints:
+            app.register_blueprint(social_platform_bp)
+            registered_count += 1
+            print("  [OK] Registered social_platform blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import social_platform: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering social_platform: {e}")
 
     try:
         from backend.routes.customer_aggregator_routes import customer_aggregator_bp
