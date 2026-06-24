@@ -20,8 +20,7 @@ try:
 except Exception:
     pass
 
-import paramiko
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 from mn2_release_config import MANIFEST_URL, RELEASE_URL, TARGET_VERSION
 
 
@@ -30,6 +29,13 @@ def release_asset_available(url: str = RELEASE_URL) -> bool:
         req = urllib.request.Request(url, method="HEAD")
         with urllib.request.urlopen(req, timeout=25) as resp:
             return 200 <= resp.status < 400
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+        pass
+    # GitHub release assets often 302/405 on HEAD; probe with a 1-byte range GET.
+    try:
+        req = urllib.request.Request(url, headers={"Range": "bytes=0-0"})
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            return resp.status in (200, 206)
     except (urllib.error.URLError, OSError):
         return False
 
@@ -42,20 +48,21 @@ def sh(ssh, cmd: str, timeout: int = 180) -> str:
 
 
 def audit_checks(web: str) -> list[tuple[str, str]]:
+    cli = "masternoder2-cli -datadir=/var/www/html/config"
     return [
         ("systemd", "systemctl is-active masternoder2d 2>/dev/null || echo inactive"),
         (
             "binary",
             "/opt/masternoder2d/masternoder2d -version 2>/dev/null || masternoder2-cli -version 2>/dev/null || echo no-version",
         ),
-        ("mnsync", "masternoder2-cli mnsync 2>/dev/null | head -c 200 || echo no-mnsync"),
+        ("mnsync", f"{cli} mnsync status 2>/dev/null | head -c 200 || echo no-mnsync"),
         (
             "getstakinginfo",
-            "masternoder2-cli getstakinginfo 2>/dev/null | head -c 400 || echo no-getstakinginfo",
+            f"{cli} getstakinginfo 2>/dev/null | head -c 400 || echo no-getstakinginfo",
         ),
         (
             "staking",
-            f"cd {web} && ./venv/bin/python -c \"import json; from backend.services.mn2_rpc_client import getstakingstatus; print(json.dumps(getstakingstatus(), indent=2))\" 2>/dev/null || echo no-staking-rpc",
+            f"cd {web} && python3 -c \"import json; from backend.services.mn2_rpc_client import getstakingstatus; print(json.dumps(getstakingstatus(), indent=2))\" 2>/dev/null || echo no-staking-rpc",
         ),
         ("health", "curl -s http://127.0.0.1:5000/api/mn2/health"),
         (
@@ -66,16 +73,17 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
 
 
 def post_verify_checks(web: str) -> list[tuple[str, str, str]]:
+    cli = "masternoder2-cli -datadir=/var/www/html/config"
     return [
         ("systemd-active", "systemctl is-active masternoder2d", "contains:active"),
         ("daemon-version", "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1", "contains:1.3"),
-        ("mnsync", "masternoder2-cli mnsync 2>&1 | head -c 200", "no_error"),
-        ("getstakinginfo", "masternoder2-cli getstakinginfo 2>&1 | head -c 400", "no_error"),
-        ("getnewaddress", "masternoder2-cli getnewaddress 2>&1 | head -1", "no_error"),
-        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"ok"'),
+        ("mnsync", f"{cli} mnsync status 2>&1 | head -c 400", "no_error"),
+        ("getstakinginfo", f"{cli} getstakinginfo 2>&1 | head -c 400", "no_error"),
+        ("getnewaddress", f"{cli} getnewaddress 2>&1 | head -1", "no_error"),
+        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", "contains:healthy"),
         (
             "staking-rpc",
-            f"cd {web} && ./venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
+            f"cd {web} && python3 -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
             "contains:ok",
         ),
     ]
@@ -149,10 +157,8 @@ def main() -> int:
 
     host, user = deploy_host(), deploy_user()
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=user, password=pw, timeout=30)
-    print(f"Connected {user}@{host}\n")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"Connected {user}@{host} ({auth_method})\n")
 
     web = "/var/www/html"
 
@@ -161,11 +167,6 @@ def main() -> int:
             print(f"=== {label} ===")
             print(sh(ssh, cmd, timeout=120))
             print()
-
-    if args.verify_post:
-        ok = run_post_verify(ssh, web)
-        ssh.close()
-        return 0 if ok else 1
 
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
@@ -230,6 +231,14 @@ sleep 15
 masternoder2-cli -datadir=/var/www/html/config startmasternode local false 2>/dev/null || true
 """
         print(sh(ssh, script, timeout=600))
+        if args.verify_post:
+            ok = run_post_verify(ssh, web)
+            ssh.close()
+            return 0 if ok else 1
+        ssh.close()
+        return 0
+
+    if args.verify_post:
         ok = run_post_verify(ssh, web)
         ssh.close()
         return 0 if ok else 1

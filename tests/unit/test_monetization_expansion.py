@@ -128,3 +128,42 @@ def test_api_key_roundtrip(monkeypatch):
 def test_queue_priority_bonus():
     b = queue_priority_bonus("default_user")
     assert b == 0
+
+
+def test_generator_api_tiers_public():
+    reload_monetization_config()
+    from backend.services.monetization_config_service import get_generator_api_tiers
+
+    tiers = get_generator_api_tiers()
+    assert len(tiers) == 3
+    assert "gen-api-starter" in tiers
+
+
+def test_marketplace_escrow_summary():
+    from backend.services.shop_auction_service import get_user_bid_escrow_summary
+
+    out = get_user_bid_escrow_summary("escrow_test_user")
+    assert out["success"] is True
+    assert out.get("escrow_coins_total") == 0
+
+
+def test_discord_starter_promo_validate():
+    reload_monetization_config()
+    out = validate_checkout_promo("DISCORD-STARTER", "u_discord", amount_usd=9.99)
+    assert out["success"] is True
+
+
+def test_casino_mn2_buyin_packs():
+    from backend.services.casino_service import get_mn2_buyin_packs
+
+    out = get_mn2_buyin_packs()
+    assert out["success"] is True
+    assert len(out.get("packs") or []) >= 3
+
+
+def test_livekit_public_status():
+    from backend.services.camgirls_livekit_service import public_status
+
+    out = public_status()
+    assert out["success"] is True
+    assert out.get("mode") in ("stub", "live")

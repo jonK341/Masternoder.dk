@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-06-24** (monetization revenue-track waterfall — services/crons restored · routes for tiers/escrow/livekit/casino B6 · Pro + tier enforcement **live on prod**)
+Last updated: **2026-06-24** (v1.3.0.0 **built + published** · monetization revenue-track fixes in repo · **next:** daemon upgrade + site deploy)
 
 See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -125,7 +125,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 
 | Pri | Task | Owner | Depends on | Command / note |
 | --- | ---- | ----- | ---------- | -------------- |
-| **P1** | **Daemon v1.3 build/deploy + enable multi-ping** — customer ENABLED + rising ctivetime | **MasterNoder2 C++** + SSH | **Site PR #30 merged** | Build v1.3.0.0 → mn2_daemon_upgrade_remote.py --ask-pass --apply → QA probes → set multi_ping_enabled: true + deploy.py mn2_staking --ask-pass|
+| **P1** | **Daemon v1.3 deploy + enable multi-ping** — customer ENABLED + rising activetime | **SSH** | **Build + publish DONE 2026-06-24** | `python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` → enable `multi_ping_enabled: true` + `deploy.py mn2_staking --ask-pass` |
 | **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **PayPal dashboard** + **Server `.env`** | PayPal live plan created | **Code shipped** — env maps `P-PLACEHOLDER-PRO` template; no JSON rename. `python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-… --paypal-webhook-id WH-… --reload --verify` |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
@@ -370,7 +370,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Profile hub (PR #31)** — tab bar, wallet fix, security layers, avatar · `static_pages` deploy (2026-06-23)
 - [x] **Fleet boot autostart (M5)** — `mn2-fleet-autostart.service` enabled + active (2026-06-23)
 - [x] **Multi-ping site integration (PR #30)** — helpers + probes + C++ patch doc; flag **multi_ping_enabled: false** until v1.3 on prod
-- [ ] **Daemon v1.3 deploy + enable multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
+- [ ] **Daemon v1.3 deploy + enable multi-ping (P1)** — **build + GitHub publish DONE 2026-06-24** · run `mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
 - [ ] **Shop UI browser spot-check** — optional P2 (API/automated done)
 - [x] **Deploy camgirls catalog perf fix** — live ~3.6s on `/api/camgirls/performers?lite=1` (2026-06-20)
 - [x] **Re-run Discord spotlight fan-out** — `#market` webhook fixed; spotlight re-posted 2026-06-20

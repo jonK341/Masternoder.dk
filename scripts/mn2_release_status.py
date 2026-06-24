@@ -36,6 +36,12 @@ def _head_ok(url: str) -> bool:
         req = urllib.request.Request(url, method="HEAD")
         with urllib.request.urlopen(req, timeout=20) as resp:
             return 200 <= resp.status < 400
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+        pass
+    try:
+        req = urllib.request.Request(url, headers={"Range": "bytes=0-0"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status in (200, 206)
     except (urllib.error.URLError, OSError):
         return False
 
@@ -149,6 +155,8 @@ def main() -> int:
         print("  python scripts/mn2_daemon_upgrade_remote.py --ask-pass --verify-post")
         print("  python scripts/mn2_probe_multi_ping.py --public")
     else:
+        print("  All-in-one:  python scripts/mn2_release_pipeline.py --ask-pass")
+        print("  (optional)   python scripts/mn2_release_pipeline.py --ask-pass --push-upstream")
         print("  1. Build:    python scripts/mn2_build_release_remote.py --ask-pass")
         print(
             "  2. Publish:  python scripts/mn2_publish_release.py --tarball dist/masternoder2d.tar.gz "

@@ -159,6 +159,54 @@ def generator_api_key_list():
     return jsonify(list_keys_for_org(org)), 200
 
 
+# --- C7 metered generator API tiers (public) ---
+@monetization_expansion_bp.route("/api/generator/api/tiers", methods=["GET"])
+def generator_api_tiers_public():
+    from backend.services.monetization_config_service import get_generator_api_tiers
+
+    tiers_map = get_generator_api_tiers()
+    tiers = []
+    for tid, row in tiers_map.items():
+        entry = dict(row) if isinstance(row, dict) else {}
+        entry.setdefault("id", tid)
+        tiers.append(entry)
+    return jsonify({"success": True, "tiers": tiers, "count": len(tiers)}), 200
+
+
+# --- D1 marketplace bid escrow ---
+@monetization_expansion_bp.route("/api/shop/marketplace/escrow", methods=["GET"])
+def shop_marketplace_escrow():
+    user_id = request.args.get("user_id") or _resolve_user_id()
+    from backend.services.shop_auction_service import get_user_bid_escrow_summary
+
+    return jsonify(get_user_bid_escrow_summary(user_id)), 200
+
+
+# --- D2 LiveKit voice ---
+@monetization_expansion_bp.route("/api/camgirls/livekit/status", methods=["GET"])
+def camgirls_livekit_status():
+    from backend.services.camgirls_livekit_service import public_status
+
+    return jsonify(public_status()), 200
+
+
+@monetization_expansion_bp.route("/api/camgirls/livekit/token", methods=["POST"])
+def camgirls_livekit_token():
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id") or _resolve_user_id()
+    performer_id = (data.get("performer_id") or request.args.get("performer_id") or "").strip()
+    require_unlock = data.get("require_unlock", True)
+    if isinstance(require_unlock, str):
+        require_unlock = require_unlock.lower() not in ("0", "false", "no")
+    from backend.services.camgirls_livekit_service import issue_voice_token
+
+    out = issue_voice_token(user_id, performer_id, require_unlock=bool(require_unlock))
+    code = 200 if out.get("success") else 400
+    if out.get("error") == "auth_required":
+        code = 401
+    return jsonify(out), code
+
+
 # --- #4 Camgirls PayPal ---
 @monetization_expansion_bp.route("/api/camgirls/paypal/quote", methods=["GET"])
 def camgirls_paypal_quote():
