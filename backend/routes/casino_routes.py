@@ -45,6 +45,17 @@ def _casino_settings_payload():
     return payload
 
 
+@casino_bp.route("/api/casino/hub", methods=["GET"])
+def casino_hub():
+    try:
+        from backend.services.casino_hub_service import get_casino_hub
+
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(get_casino_hub(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/settings", methods=["GET"])
 def casino_settings():
     try:

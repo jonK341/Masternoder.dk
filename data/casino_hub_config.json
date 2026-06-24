@@ -1,0 +1,90 @@
+{
+  "hero": {
+    "title": "MasterNoder Casino",
+    "subtitle": "Provably fair · MN2-native · Social play-earn",
+    "tagline": "Crash, slots, tournaments — earn MN2 while you play"
+  },
+  "featured_games": [
+    {"id": "crash", "label": "🚀 Crash", "tag": "Hot", "category": "live"},
+    {"id": "plinko", "label": "🟡 Plinko", "tag": "Trending", "category": "instant"},
+    {"id": "mines", "label": "💣 Mines", "tag": "Classic", "category": "instant"},
+    {"id": "wheel", "label": "🎡 Wheel", "tag": "Big wins", "category": "instant"},
+    {"id": "slots", "label": "🎰 Slots", "tag": "Jackpots", "category": "slots"},
+    {"id": "roulette", "label": "🎯 Roulette", "tag": "Table", "category": "table"}
+  ],
+  "categories": [
+    {"id": "all", "label": "All games", "icon": "🎮"},
+    {"id": "featured", "label": "Featured", "icon": "⭐"},
+    {"id": "slots", "label": "Slots", "icon": "🎰"},
+    {"id": "table", "label": "Table", "icon": "🃏"},
+    {"id": "live", "label": "Live action", "icon": "🚀"},
+    {"id": "instant", "label": "Instant", "icon": "⚡"},
+    {"id": "crypto", "label": "Crypto specials", "icon": "⛓️"},
+    {"id": "social", "label": "Social & battle", "icon": "⚔️"}
+  ],
+  "game_categories": {
+    "crash": "live",
+    "plinko": "instant",
+    "mines": "instant",
+    "wheel": "instant",
+    "keno": "table",
+    "roulette": "table",
+    "hilo": "table",
+    "slots": "slots",
+    "coin-flip": "instant",
+    "dice": "instant",
+    "rps": "instant",
+    "mystery": "instant",
+    "scratch": "instant",
+    "free-flip": "instant",
+    "counter-pick": "crypto",
+    "rps-meta": "social",
+    "battle-outcome": "social",
+    "tournaments": "featured"
+  },
+  "events": [
+    {
+      "id": "weekend_mn2_cup",
+      "title": "Weekend MN2 Cup",
+      "description": "Top net scorers split the MN2 prize pool — join from the Tournaments tab.",
+      "cta_label": "View tournaments",
+      "cta_href": "#casino-games-grid",
+      "cta_game": "tournaments",
+      "badge": "Live event",
+      "accent": "#00ff88",
+      "enabled": true
+    },
+    {
+      "id": "discord_play_earn",
+      "title": "Play in Discord — earn MN2",
+      "description": "Link your account and play from Discord for link bonuses + live fan-out wins.",
+      "cta_label": "Open Discord play",
+      "cta_href": "/discord-play/",
+      "badge": "Social earn",
+      "accent": "#5865F2",
+      "enabled": true
+    }
+  ],
+  "cross_links": [
+    {"id": "shop", "label": "Coin packs", "href": "/shop/", "icon": "🛒", "desc": "Boost your balance"},
+    {"id": "wallet", "label": "MN2 wallet", "href": "/profile/#wallet", "icon": "💳", "desc": "Deposit & stake"},
+    {"id": "explorer", "label": "Explorer", "href": "/explorer/", "icon": "⛓️", "desc": "On-chain MN2"},
+    {"id": "camgirls", "label": "Live shows", "href": "/camgirls/", "icon": "📺", "desc": "Aggregator discovery"},
+    {"id": "command", "label": "Command center", "href": "/command-center/", "icon": "🎛️", "desc": "Ecosystem hub"}
+  ],
+  "jackpot_display": {
+    "show_progress": true,
+    "highlight_currency": "mn2",
+    "poll_seconds": 12
+  },
+  "daily_bonus": {
+    "label": "Daily free flip",
+    "description": "One free flip per day — counts for quests",
+    "cta_game": "free-flip"
+  },
+  "social_sidebar": {
+    "discord_deep_link": "/discord-play/",
+    "discord_earn_preview_mn2": 50,
+    "show_platform_hub": true
+  }
+}
