@@ -72,15 +72,48 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
     ]
 
 
+def _fetch_manifest() -> dict | None:
+    try:
+        with urllib.request.urlopen(MANIFEST_URL, timeout=25) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, json.JSONDecodeError, ValueError):
+        return None
+
+
+def _expected_daemon_sha() -> str | None:
+    doc = _fetch_manifest()
+    if not isinstance(doc, dict):
+        return None
+    binaries = doc.get("binaries") if isinstance(doc.get("binaries"), dict) else {}
+    row = binaries.get("masternoder2d") if isinstance(binaries.get("masternoder2d"), dict) else {}
+    sha = (row.get("sha256") or "").strip()
+    return sha or None
+
+
 def post_verify_checks(web: str) -> list[tuple[str, str, str]]:
     cli = "masternoder2-cli -datadir=/var/www/html/config"
+    expected_sha = _expected_daemon_sha() or ""
+    sha_rule = f"sha256:{expected_sha}" if expected_sha else "contains:61caddb"
     return [
         ("systemd-active", "systemctl is-active masternoder2d", "contains:active"),
-        ("daemon-version", "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1", "contains:1.3"),
-        ("mnsync", f"{cli} mnsync status 2>&1 | head -c 400", "no_error"),
+        (
+            "daemon-binary",
+            "sha256sum /opt/masternoder2d/masternoder2d 2>/dev/null | awk '{print $1}'",
+            sha_rule,
+        ),
+        (
+            "daemon-version",
+            "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1",
+            "contains:61caddb",
+        ),
+        (
+            "mnsync",
+            f"{cli} getstakinginfo 2>&1 | head -c 400",
+            "contains:\"mnsync\": true",
+        ),
         ("getstakinginfo", f"{cli} getstakinginfo 2>&1 | head -c 400", "no_error"),
         ("getnewaddress", f"{cli} getnewaddress 2>&1 | head -1", "no_error"),
-        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", "contains:healthy"),
+        ("health-json", "curl -s http://127.0.0.1:5000/api/mn2/health", "json_health"),
         (
             "staking-rpc",
             f"cd {web} && python3 -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
@@ -96,6 +129,16 @@ def _check_output(out: str, rule: str) -> bool:
     low = text.lower()
     if rule == "no_error":
         return "error" not in low and "connection refused" not in low
+    if rule == "json_health":
+        try:
+            doc = json.loads(text)
+            return doc.get("success") is True and doc.get("status") == "healthy"
+        except json.JSONDecodeError:
+            return "healthy" in low and "success" in low
+    if rule.startswith("sha256:"):
+        expected = rule.split(":", 1)[1].strip().lower()
+        actual = text.split()[0].strip().lower() if text else ""
+        return bool(expected) and actual == expected
     if rule.startswith("contains:"):
         return rule.split(":", 1)[1] in text
     return True
@@ -171,6 +214,10 @@ def main() -> int:
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
         print(f"=== upgrade {TARGET_VERSION} (stop → backup wallet → fetch → verify → install → start) ===")
+        if manifest_ok:
+            print(f"Manifest: {MANIFEST_URL}")
+        else:
+            print("WARN: manifest not reachable — skipping tarball/binary sha256 verify on server")
         script = f"""
 set -e
 MANIFEST_URL='{manifest_url}'
