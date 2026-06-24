@@ -399,6 +399,86 @@
       "assigned_to": null,
       "tags": [],
       "progress": 0
+    },
+    "d4e5f6a7-b8c9-0123-def4-567890abcdef": {
+      "id": "d4e5f6a7-b8c9-0123-def4-567890abcdef",
+      "title": "Social platform fan-out (Discord/FB/YT)",
+      "description": "Implemented: social_platform_fanout_service, /api/social/platforms/hub, Facebook outbox + YouTube queue, casino wallet strip + platform cards. Slash command registration tracked separately in Discord Controller portal todo.",
+      "priority": "medium",
+      "category": "integration",
+      "status": "completed",
+      "dependencies": [],
+      "estimated_hours": null,
+      "created_at": "2026-06-24T22:00:00.000000",
+      "updated_at": "2026-06-24T22:00:00.000000",
+      "completed_at": "2026-06-24T22:00:00.000000",
+      "assigned_to": null,
+      "tags": ["discord", "facebook", "youtube", "casino", "fanout"],
+      "progress": 100
+    },
+    "e5f6a7b8-c9d0-1234-ef56-7890abcdef01": {
+      "id": "e5f6a7b8-c9d0-1234-ef56-7890abcdef01",
+      "title": "Discord Controller — portal registration",
+      "description": "P0 ops: Developer Portal Interactions URL (no trailing slash), DISCORD_PUBLIC_KEY on server, python scripts/discord_register_commands.py, Discord smoke /play→/link→/playnow→/earn. Checklist: docs/DISCORD_CASINO_BOT.md · python scripts/discord_casino_bot_post_deploy.py",
+      "priority": "high",
+      "category": "integration",
+      "status": "pending",
+      "dependencies": [],
+      "estimated_hours": 0.5,
+      "created_at": "2026-06-24T22:00:00.000000",
+      "updated_at": "2026-06-24T23:59:00.000000",
+      "completed_at": null,
+      "assigned_to": null,
+      "tags": ["discord", "bot", "casino", "post-deploy"],
+      "progress": 0
+    },
+    "a7b8c9d0-e1f2-3456-7890-abcdef012345": {
+      "id": "a7b8c9d0-e1f2-3456-7890-abcdef012345",
+      "title": "Discord Casino Bot — post-deploy verify",
+      "description": "Run python scripts/discord_casino_bot_post_deploy.py after mn2_staking+static_pages deploy; fix any FAIL (env, interactions route, webhooks). Wired in post_deploy_verify.py --discord and docs/DISCORD_CASINO_BOT.md.",
+      "priority": "high",
+      "category": "integration",
+      "status": "pending",
+      "dependencies": ["e5f6a7b8-c9d0-1234-ef56-7890abcdef01"],
+      "estimated_hours": 0.25,
+      "created_at": "2026-06-24T23:59:00.000000",
+      "updated_at": "2026-06-24T23:59:00.000000",
+      "completed_at": null,
+      "assigned_to": null,
+      "tags": ["discord", "bot", "casino", "ops"],
+      "progress": 0
+    },
+    "b8c9d0e1-f2a3-4567-8901-bcdef0123456": {
+      "id": "b8c9d0e1-f2a3-4567-8901-bcdef0123456",
+      "title": "Spider bot — Google Play casino app announce",
+      "description": "When Casino Social TWA is live on Google Play: python scripts/casino_play_app_discord_spider.py --play-store-url <url>. Backend: run_casino_play_app_spider_bot in discord_m8_streams.py. Blocked until Play publish (PLATFORM_TODO deferred).",
+      "priority": "low",
+      "category": "integration",
+      "status": "pending",
+      "dependencies": [],
+      "estimated_hours": 0.1,
+      "created_at": "2026-06-24T23:59:00.000000",
+      "updated_at": "2026-06-24T23:59:00.000000",
+      "completed_at": null,
+      "assigned_to": null,
+      "tags": ["discord", "casino", "google-play", "spider"],
+      "progress": 0
+    },
+    "f6a7b8c9-d0e1-2345-f678-90abcdef0123": {
+      "id": "f6a7b8c9-d0e1-2345-f678-90abcdef0123",
+      "title": "Casino super experience hub",
+      "description": "Shipped: GET /api/casino/hub, casino_hub_service + config, hero live stats, quick-play carousel, category lobby, event banners, sticky wallet pulse, Discord earn strip, cross-links. Pending: blackjack/video poker, PvP duels, full ledger migration for leaderboards.",
+      "priority": "high",
+      "category": "features",
+      "status": "completed",
+      "dependencies": [],
+      "estimated_hours": null,
+      "created_at": "2026-06-24T23:30:00.000000",
+      "updated_at": "2026-06-24T23:30:00.000000",
+      "completed_at": "2026-06-24T23:30:00.000000",
+      "assigned_to": null,
+      "tags": ["casino", "mn2", "discord", "super-experience"],
+      "progress": 100
     }
   },
   "categories": {
@@ -413,7 +493,11 @@
       "8ae53877-2392-4828-abf7-83ea9fc36a63",
       "423aaebc-6130-4f6d-9688-16eaa2ae915e",
       "d0f11511-18fa-4032-840a-615732e18725",
-      "60d8a71e-600e-492f-ac12-60d9ed7dbcc7"
+      "60d8a71e-600e-492f-ac12-60d9ed7dbcc7",
+      "d4e5f6a7-b8c9-0123-def4-567890abcdef",
+      "e5f6a7b8-c9d0-1234-ef56-7890abcdef01",
+      "a7b8c9d0-e1f2-3456-7890-abcdef012345",
+      "b8c9d0e1-f2a3-4567-8901-bcdef0123456"
     ],
     "testing": [
       "7c2279af-44df-45c4-b333-85da4dab6056",
@@ -423,7 +507,8 @@
       "9656b377-a779-4ba5-a3c9-12b9b4696a7b",
       "3099856a-593c-4e76-b84c-1ffec4d47051",
       "c174853d-30c9-4602-a598-b5ef332730ee",
-      "c2f8450c-afd7-4438-9185-4d59d37cb227"
+      "c2f8450c-afd7-4438-9185-4d59d37cb227",
+      "f6a7b8c9-d0e1-2345-f678-90abcdef0123"
     ],
     "enhancements": [
       "348a462a-95f3-4fed-bba1-ac70321c6445",
@@ -438,5 +523,5 @@
     "bug_fixes": [],
     "documentation": []
   },
-  "updated_at": "2026-03-13T12:00:00.000000"
+  "updated_at": "2026-06-24T22:00:00.000000"
 }
