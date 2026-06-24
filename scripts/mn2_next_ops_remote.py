@@ -201,7 +201,7 @@ ENDCG'''
     if args.fleet_local:
         import subprocess
         fleet = os.path.join(os.path.dirname(__file__), "mn2_masternode_fleet_ops_remote.py")
-        cmd = [sys.executable, fleet, "--watch", "--interval", "30"]
+        cmd = [sys.executable, fleet, "--watch", "--target-all", "--interval", "30"]
         if args.ask_pass:
             cmd.append("--ask-pass")
         rc = subprocess.call(cmd)
