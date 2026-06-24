@@ -469,6 +469,15 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 | **Game fan-out**        | Installed on `mn2_staking` deploy                                                |
 | **Promo rotator**       | ✓ `DISCORD-STARTER` / `HOSTMN5` / `MARKET-BONUS` / `GENERATE10` in daily rotator |
 | **Partner spotlight**   | ✓ Platform news 2026-06-18 · ✓ `#market` fan-out re-posted 2026-06-20 |
+| **Interactions URL**    | ✓ Live `GET /api/discord/interactions` on prod (2026-06-24) |
+| **Legal + icon**        | ✓ `/legal/terms/` · `/legal/privacy/` · `/static/discord-branding/discord-app-icon.png` |
+| **Slash commands**      | ✓ **17** registered globally for app `1519205048599576587` (2026-06-24) |
 
+**Portal URLs** (paste in Developer Portal — see [DISCORD_SERVER_SETUP.md](DISCORD_SERVER_SETUP.md)):
 
-**Next:** compendium milestone webhooks — ✓ shipped; progress reader emits on 25/25.
+- Interactions: `https://masternoder.dk/api/discord/interactions`
+- Terms: `https://masternoder.dk/legal/terms/`
+- Privacy: `https://masternoder.dk/legal/privacy/`
+- Linked Roles: `https://masternoder.dk/api/discord/role-connection/callback`
+
+**Pending:** `deploy.py mn2_env --ask-pass` — push `DISCORD_BOT_TOKEN` + aligned `DISCORD_APPLICATION_ID` to server (prod still shows `bot_token_configured: false`).

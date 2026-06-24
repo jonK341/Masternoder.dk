@@ -48,7 +48,7 @@ PAGES = [
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
     'market', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
-    'podcast',
+    'podcast', 'discord-play',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
@@ -209,6 +209,39 @@ def create_page_route(page_name):
 # Create routes for all pages
 for page in PAGES:
     create_page_route(page)
+
+
+def _serve_nested_page(*parts: str):
+    base_path = _base_path()
+    page_path = os.path.join(base_path, *parts, "index.html")
+    if not os.path.isfile(page_path):
+        return None
+    directory = os.path.dirname(page_path)
+    resp = send_from_directory(directory, "index.html", mimetype="text/html; charset=utf-8")
+    resp.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=60"
+    resp.headers["ETag"] = CONTENT_VERSION
+    return resp
+
+
+@all_page_bp.route("/legal/terms", methods=["GET"])
+@all_page_bp.route("/legal/terms/", methods=["GET"])
+def legal_terms_page():
+    resp = _serve_nested_page("legal", "terms")
+    return resp if resp else ("Terms not found", 404)
+
+
+@all_page_bp.route("/legal/privacy", methods=["GET"])
+@all_page_bp.route("/legal/privacy/", methods=["GET"])
+def legal_privacy_page():
+    resp = _serve_nested_page("legal", "privacy")
+    return resp if resp else ("Privacy policy not found", 404)
+
+
+@all_page_bp.route("/discord/verify", methods=["GET"])
+@all_page_bp.route("/discord/verify/", methods=["GET"])
+def discord_verify_page():
+    resp = _serve_nested_page("discord", "verify")
+    return resp if resp else ("Discord verify page not found", 404)
 
 
 @all_page_bp.route('/casino', methods=['GET'])
