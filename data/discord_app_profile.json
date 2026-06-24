@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "name": "MasterNoder Casino Stream",
+  "short_name": "MasterNoder Casino",
+  "description": "Official MasterNoder controller for casino play, MN2 masternode hosting, shop checkout, and daily quests. Slash commands open the full site — PayPal deposits, MN2/crypto buy-ins, Discord play-earn, and hosting VIP rewards. Real-money play stays on masternoder.dk; Discord is the control surface only.",
+  "tags": [
+    "casino",
+    "crypto",
+    "mn2",
+    "masternode",
+    "gaming",
+    "play-to-earn",
+    "paypal",
+    "staking",
+    "ai",
+    "generator"
+  ],
+  "interactions_endpoint_url": "https://masternoder.dk/api/discord/interactions",
+  "interactions_endpoint_note": "No trailing slash. Discord POSTs signed payloads; GET returns health JSON only.",
+  "portal_urls": {
+    "interactions_endpoint_url": "https://masternoder.dk/api/discord/interactions",
+    "terms_of_service_url": "https://masternoder.dk/legal/terms/",
+    "privacy_policy_url": "https://masternoder.dk/legal/privacy/",
+    "linked_roles_verification_url": "https://masternoder.dk/api/discord/role-connection/callback",
+    "linked_roles_user_page": "https://masternoder.dk/discord/verify/"
+  },
+  "linked_roles_metadata_keys": [
+    {"key": "linked", "name": "Account linked", "description": "1 if Discord is linked to a MasterNoder site account"},
+    {"key": "hosting_customer", "name": "Hosting customer", "description": "1 if user has a paid masternode hosting order"}
+  ],
+  "branding": {
+    "icon_png": "/static/discord-branding/discord-app-icon.png",
+    "icon_png_1024": "/static/discord-branding/discord-app-icon-1024.png",
+    "icon_gif": "/static/discord-branding/discord-app-icon.gif",
+    "banner_png": "/static/discord-branding/discord-app-banner.png",
+    "banner_gif": "/static/discord-branding/discord-app-banner.gif"
+  },
+  "upload_hints": {
+    "icon": "Developer Portal → App → Bot or General → upload discord-app-icon.png (1024×1024) or animated GIF",
+    "banner": "Developer Portal → App → Bot → Banner → upload discord-app-banner.gif (680×240 recommended)"
+  }
+}

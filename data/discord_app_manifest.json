@@ -1,0 +1,115 @@
+{
+  "version": "2.0.0",
+  "application_id_env": "DISCORD_APPLICATION_ID",
+  "base_url": "https://masternoder.dk",
+  "activities": [
+    {
+      "id": "discord_play",
+      "name": "Discord Play Site",
+      "description": "Uber games with USD/MN2 — MN2 network bonuses. Open via /playnow.",
+      "url": "/discord-play/",
+      "discord_deep_link": "https://masternoder.dk/discord-play/",
+      "channel": "casino",
+      "icon": "🎮"
+    },
+    {
+      "id": "uber_lounge",
+      "name": "Uber Lounge",
+      "description": "Premium crash, plinko, mines — real currency + network rewards.",
+      "url": "/discord-play/?venue=uber",
+      "discord_deep_link": "https://masternoder.dk/discord-play/?venue=uber",
+      "channel": "casino",
+      "icon": "💎"
+    },
+    {
+      "id": "casino_social",
+      "name": "MasterNoder Casino",
+      "description": "Virtual-coin casino — friends, hunt, shop, AI hosts, uber tier.",
+      "url": "/casino/?tab=lobby",
+      "discord_deep_link": "https://masternoder.dk/casino/?tab=social",
+      "channel": "casino",
+      "icon": "🎰"
+    },
+    {
+      "id": "hosting",
+      "name": "MN2 Masternode Hosting",
+      "description": "Provision and manage hosted masternode slots.",
+      "url": "/hosting/",
+      "discord_deep_link": "https://masternoder.dk/hosting/",
+      "channel": "market",
+      "icon": "🖥️"
+    },
+    {
+      "id": "shop",
+      "name": "Game Shop",
+      "description": "Coin packs, boosters, entertainment bundle, hosting SKUs.",
+      "url": "/shop/",
+      "discord_deep_link": "https://masternoder.dk/shop/",
+      "channel": "announcements",
+      "icon": "🛒"
+    },
+    {
+      "id": "game_hub",
+      "name": "Hunters Game Hub",
+      "description": "Battles, quests, trophies, social tab.",
+      "url": "/game/",
+      "discord_deep_link": "https://masternoder.dk/game/?tab=social",
+      "channel": "game",
+      "icon": "⚔️"
+    },
+    {
+      "id": "explorer",
+      "name": "MN2 Explorer",
+      "description": "Wallet, staking, trader market, masternodes.",
+      "url": "/explorer/",
+      "discord_deep_link": "https://masternoder.dk/explorer/",
+      "channel": "explorer",
+      "icon": "🔭"
+    },
+    {
+      "id": "generator",
+      "name": "AI Video Generator",
+      "description": "Generate and showcase videos — earn MN2 on usage.",
+      "url": "/generator/",
+      "discord_deep_link": "https://masternoder.dk/generator/",
+      "channel": "generator",
+      "icon": "🎬"
+    },
+    {
+      "id": "camgirls",
+      "name": "Camgirls Lounge",
+      "description": "AI performers, tips, LiveKit voice spikes.",
+      "url": "/camgirls/",
+      "discord_deep_link": "https://masternoder.dk/camgirls/",
+      "channel": "market",
+      "icon": "✨"
+    },
+    {
+      "id": "quests",
+      "name": "Daily Quests",
+      "description": "90-level quest progression and MN2 rewards.",
+      "url": "/quests/",
+      "discord_deep_link": "https://masternoder.dk/quests/",
+      "channel": "quests",
+      "icon": "📜"
+    },
+    {
+      "id": "staking",
+      "name": "MN2 Staking",
+      "description": "Stake MN2, view rewards and staking monitor.",
+      "url": "/profile/#staking",
+      "discord_deep_link": "https://masternoder.dk/staking-monitor/",
+      "channel": "explorer",
+      "icon": "💎"
+    },
+    {
+      "id": "play_app",
+      "name": "Casino Play App",
+      "description": "Google Play TWA — daily chest + mobile social lounge.",
+      "url": "/casino/?app=casino-twa",
+      "discord_deep_link": "https://masternoder.dk/casino/?app=casino-twa&tab=earn",
+      "channel": "casino",
+      "icon": "📱"
+    }
+  ]
+}
