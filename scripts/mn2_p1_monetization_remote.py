@@ -186,7 +186,9 @@ def main() -> int:
 
     ssh.close()
     print("P1 monetization pass complete.")
-    print("PayPal dashboard: create billing plan → pass --paypal-plan-pro + --paypal-webhook-id above.")
+    print("PayPal dashboard (Live): create Pro plan P-… + webhook WH-… then:")
+    print("  python scripts/mn2_p1_monetization_remote.py --ask-pass --paypal-plan-pro P-... --paypal-webhook-id WH-... --enable-tier-enforcement --reload --verify")
+    print("Deploy profile + security UI: python scripts/deploy.py static_pages --ask-pass")
     return 0
 
 

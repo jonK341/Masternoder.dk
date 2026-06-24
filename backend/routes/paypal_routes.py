@@ -44,6 +44,21 @@ def paypal_create_order():
             "message": "Please create or log in to an account in Profile before buying with PayPal.",
         }), 400
 
+    try:
+        from backend.services.account_security_service import check_purchase_action
+
+        token = (data.get("verification_token") or data.get("security_token") or "").strip() or None
+        sec_err = check_purchase_action(user_id, verification_token=token, price_usd=amount)
+        if sec_err:
+            return jsonify({
+                "success": False,
+                "error": sec_err,
+                "code": "PASSWORD_VERIFICATION_REQUIRED",
+                "requires_verification": True,
+            }), 403
+    except Exception:
+        pass
+
     base = _get_base_url()
     if not base:
         base = request.url_root.rstrip("/")

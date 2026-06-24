@@ -204,6 +204,17 @@ def bind_session():
         user_id = (data.get('user_id') or '').strip()
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
+
+        from backend.services.account_security_service import check_bind_session_action
+
+        sec_err = check_bind_session_action(user_id, password=data.get('password') or '')
+        if sec_err:
+            return jsonify({
+                'success': False,
+                'error': sec_err,
+                'requires_password': 'password' in sec_err.lower(),
+            }), 401
+
         set_session_user(user_id)
         # Ensure user exists in DB on session bind
         db_result = {}
