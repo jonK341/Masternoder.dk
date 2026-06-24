@@ -10,14 +10,63 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/casino.css?v=20260616a">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20260624a">
 </head>
 <body>
     <div class="casino-page">
-        <header class="casino-header">
-            <h1>🎰 Casino</h1>
-            <p>Play with virtual coins, MN2 wallet balance, or PayPal-funded USD stakes.</p>
-        </header>
+        <div id="casino-wallet-strip" class="casino-wallet-strip casino-wallet-sticky" aria-label="Wallet and social links">
+            <div class="casino-wallet-balances">
+                <span id="casino-wallet-coins" class="casino-wallet-chip">Coins …</span>
+                <span id="casino-wallet-mn2" class="casino-wallet-chip casino-wallet-mn2">MN2 …</span>
+                <span id="casino-wallet-usd" class="casino-wallet-chip">USD …</span>
+            </div>
+            <div class="casino-wallet-actions">
+                <a href="/explorer/" class="casino-wallet-link">⛓️ Explorer</a>
+                <a href="/profile/#wallet" class="casino-wallet-link">💳 Wallet</a>
+                <a href="/discord-play/" class="casino-wallet-link">🕷️ Discord</a>
+                <a href="#casino-platform-hub" class="casino-wallet-link">📱 Social</a>
+            </div>
+        </div>
+
+        <section id="casino-hero" class="casino-hero" aria-label="Casino hub">
+            <div class="casino-hero-glow" aria-hidden="true"></div>
+            <div class="casino-hero-main">
+                <p class="casino-hero-eyebrow" id="casino-hero-eyebrow">Provably fair · MN2-native</p>
+                <h1 class="casino-hero-title" id="casino-hero-title">🎰 MasterNoder Casino</h1>
+                <p class="casino-hero-sub" id="casino-hero-sub">Loading super experience…</p>
+                <div class="casino-hero-stats" id="casino-hero-stats">
+                    <div class="casino-hero-stat"><span class="casino-hero-stat-val" id="casino-stat-jackpot">—</span><span class="casino-hero-stat-lbl">Jackpot pool</span></div>
+                    <div class="casino-hero-stat"><span class="casino-hero-stat-val" id="casino-stat-online">—</span><span class="casino-hero-stat-lbl">Players active</span></div>
+                    <div class="casino-hero-stat"><span class="casino-hero-stat-val" id="casino-stat-mn2">—</span><span class="casino-hero-stat-lbl">MN2 won today</span></div>
+                    <div class="casino-hero-stat casino-hero-stat-streak hidden" id="casino-stat-streak-wrap"><span class="casino-hero-stat-val" id="casino-stat-streak">0</span><span class="casino-hero-stat-lbl">Day streak 🔥</span></div>
+                </div>
+                <div class="casino-hero-ctas">
+                    <button type="button" class="casino-hero-cta primary" id="casino-daily-bonus-cta">🎁 Daily bonus</button>
+                    <a href="/discord-play/" class="casino-hero-cta discord" id="casino-discord-cta">🕷️ Play in Discord</a>
+                </div>
+            </div>
+            <aside class="casino-hero-side" id="casino-hero-side" aria-label="Live wins preview">
+                <h2 class="casino-hero-side-title">Recent big wins</h2>
+                <ul id="casino-hero-wins" class="casino-hero-wins"><li>Loading…</li></ul>
+            </aside>
+        </section>
+
+        <div id="casino-event-banner" class="casino-event-banner hidden" role="region" aria-label="Casino events"></div>
+
+        <section class="casino-quick-play" aria-label="Quick play">
+            <div class="casino-quick-play-head">
+                <h2>⚡ Quick play</h2>
+                <span class="casino-quick-play-hint">Tap a game to jump in</span>
+            </div>
+            <div id="casino-quick-play-track" class="casino-quick-play-track" role="list">Loading featured games…</div>
+        </section>
+
+        <nav class="casino-category-nav" id="casino-category-nav" aria-label="Game categories" role="tablist"></nav>
+
+        <section class="casino-cross-links" id="casino-cross-links" aria-label="Ecosystem links">
+            <h2 class="casino-cross-links-title">Explore the ecosystem</h2>
+            <div id="casino-cross-links-grid" class="casino-cross-links-grid">Loading…</div>
+        </section>
 
         <div id="casino-ticker" class="casino-ticker" aria-live="polite" aria-label="Recent winners">
             <span class="casino-ticker-label">🏆 Live wins</span>
@@ -86,6 +135,18 @@
                 <div id="casino-social-board" class="casino-social-board">Loading…</div>
                 <h3 class="casino-subheading">Hall of fame</h3>
                 <div id="casino-hall-of-fame" class="casino-hall-of-fame">Loading…</div>
+            </article>
+            <article class="casino-panel casino-panel-wide" id="casino-platform-hub" aria-label="Social platform rewards">
+                <h2>Social play-earn</h2>
+                <div id="casino-discord-earn-strip" class="casino-discord-earn-strip hidden">
+                    <div class="casino-discord-earn-copy">
+                        <strong>Play in Discord</strong>
+                        <span id="casino-discord-earn-preview">Link &amp; play to earn MN2</span>
+                    </div>
+                    <a id="casino-discord-earn-link" href="/discord-play/" class="casino-discord-earn-btn">Open Discord →</a>
+                </div>
+                <p class="casino-platform-hub-note">Link Discord or Facebook to earn MN2 while playing. YouTube subscribe bonus available.</p>
+                <div id="casino-platform-cards" class="casino-platform-cards">Loading platforms…</div>
             </article>
         </section>
 
@@ -448,7 +509,7 @@
     </div>
 
     <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
-    <script src="/static/js/casino.js?v=20260616a" defer></script>
+    <script src="/static/js/casino.js?v=20260624a" defer></script>
     <script>
     (function () {
         if (window.__casinoBootstrapped) return;

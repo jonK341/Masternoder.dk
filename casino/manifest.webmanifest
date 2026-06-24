@@ -1,0 +1,28 @@
+{
+  "name": "MasterNoder Casino Social",
+  "short_name": "MN Casino",
+  "description": "Social casino lounge — friends, crews, challenges, and virtual-coin games on MasterNoder.",
+  "start_url": "/casino/?app=casino-twa&tab=lobby",
+  "scope": "/casino/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e14",
+  "theme_color": "#1a1035",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/static/img/casino/previews/game-loop.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "dk.masternoder.casino",
+      "url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino"
+    }
+  ],
+  "prefer_related_applications": false
+}
