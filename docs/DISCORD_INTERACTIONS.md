@@ -88,3 +88,92 @@ Implementation: `backend/routes/discord_routes.py` · tests: `tests/unit/test_di
 - a uWSGI reload after env changes.
 
 After deploy, save the Interactions Endpoint URL in the portal (step 4 above). No separate Discord Gateway connection is required for HTTP interactions.
+
+---
+
+## Troubleshooting — “Interactions Endpoint URL could not be verified”
+
+Discord shows this when its signed `PING` does not get `200` + `{"type":1}` back. Work through these checks in order.
+
+### 1. Route deployed (not 404)
+
+```bash
+curl -sS -X POST "https://masternoder.dk/api/discord/interactions" \
+  -H "Content-Type: application/json" -d "{}"
+```
+
+| Response | Meaning |
+|----------|---------|
+| `404` | Route not deployed — deploy `backend/routes/discord_routes.py` and restart uWSGI |
+| `401` + `missing_signature_headers` | Route live; signature gate active (expected for unsigned curl) |
+| `501` + `unsupported_interaction_type` | Route live but `DISCORD_PUBLIC_KEY` unset (verify skipped — set key in production) |
+
+### 2. Public key diagnostics
+
+```bash
+curl -sS "https://masternoder.dk/api/discord/status"
+```
+
+After deploy of commit `1634531`+, expect:
+
+- `interactions_public_key_configured: true`
+- `interactions_public_key_valid_length: true`
+
+If those fields are **missing**, production is on an older `discord_routes.py` — redeploy and restart uWSGI.
+
+### 3. `DISCORD_PUBLIC_KEY` must match Developer Portal exactly
+
+1. Open [Discord Developer Portal](https://discord.com/developers/applications) → your app → **General Information**.
+2. Copy **Public Key** (64 hex chars, same application as **Application ID** / `DISCORD_CLIENT_ID`).
+3. Set on server in `/var/www/html/.env`:
+
+   ```
+   DISCORD_PUBLIC_KEY=<64-char-hex-from-portal>
+   ```
+
+4. **Reload uWSGI** after any `.env` change (env is read at worker start):
+
+   ```bash
+   python scripts/deploy_all_and_restart_uwsgi.py --no-upload
+   ```
+
+5. Confirm local and server keys match (prints SHA-256 fingerprints only, not secrets):
+
+   ```bash
+   python scripts/_discord_public_key_fingerprint.py
+   python scripts/_discord_public_key_remote_shape.py
+   ```
+
+Wrong key → Discord’s signed `PING` gets `401 invalid_signature` → portal verification fails.
+
+### 4. Middleware must not parse JSON before the route
+
+Deploy `backend/middleware/signal_processor_middleware.py` (skips `/api/discord/interactions`). On server, this line must exist:
+
+```python
+if request.path == "/api/discord/interactions":
+    return
+```
+
+Check remotely: `grep discord/interactions /var/www/html/backend/middleware/signal_processor_middleware.py`
+
+### 5. Nginx / proxy headers
+
+Nginx `proxy_pass` to Flask forwards client headers by default. Discord sends `X-Signature-Ed25519` and `X-Signature-Timestamp` (hyphens, not underscores). Inspect with `python scripts/_nginx_discord_headers_remote.py` if needed.
+
+### 6. Retry in Developer Portal
+
+After env + deploy + uWSGI reload:
+
+1. **General Information → Interactions Endpoint URL** → paste `https://masternoder.dk/api/discord/interactions`
+2. Click **Save Changes** — Discord sends a fresh signed `PING`.
+
+### 7. Safe to skip?
+
+**Yes — optional for now.** The Interactions Endpoint is only required for **slash commands / buttons delivered over HTTP**. These still work without it:
+
+- Outbound **webhooks** (`DISCORD_WEBHOOK_URL`, casino fan-out)
+- **Linked roles** OAuth (`/api/discord/linked-role`)
+- Account **link** routes
+
+Add the endpoint when you register slash commands (e.g. `/casino status`).
