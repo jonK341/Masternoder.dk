@@ -2,6 +2,8 @@
 Virtual-coins casino API with optional MN2 and PayPal USD rails.
 """
 import os
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
@@ -43,6 +45,16 @@ def _casino_settings_payload():
     payload = casino_service.get_public_config()
     payload["success"] = True
     return payload
+
+
+@casino_bp.route("/api/casino/health", methods=["GET"])
+def casino_health():
+    return jsonify({
+        "success": True,
+        "service": "casino",
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }), 200
 
 
 @casino_bp.route("/api/casino/settings", methods=["GET"])
@@ -1027,6 +1039,94 @@ def casino_share_big_win():
             bet_id=(data.get("bet_id") or "").strip() or None,
         )
         return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral", methods=["GET"])
+def casino_social_referral():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_referral_invite(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/register", methods=["POST"])
+def casino_social_referral_register():
+    try:
+        from backend.services import casino_social_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_social_service.register_casino_referral(
+            user_id,
+            data.get("referral_code") or data.get("ref") or "",
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/follow", methods=["GET", "POST", "DELETE"])
+def casino_social_follow():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        if request.method == "GET":
+            period = request.args.get("period", "week")
+            limit = request.args.get("limit", 5, type=int)
+            currency = _currency_from_query()
+            return jsonify(casino_social_service.get_top_players_to_follow(
+                user_id, period=period, limit=limit, currency=currency,
+            )), 200
+        data = request.get_json(silent=True) or {}
+        target = (data.get("target_user_id") or request.args.get("target_user_id") or "").strip()
+        if request.method == "DELETE":
+            return jsonify(casino_social_service.unfollow_player(user_id, target)), 200
+        return jsonify(casino_social_service.follow_player(user_id, target)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/follow/list", methods=["GET"])
+def casino_social_follow_list():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_follow_state(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/feed/reactions", methods=["GET", "POST"])
+def casino_social_feed_reactions():
+    try:
+        from backend.services import casino_social_service
+        if request.method == "GET":
+            raw_ids = request.args.get("item_ids") or ""
+            item_ids = [x.strip() for x in raw_ids.split(",") if x.strip()] or None
+            return jsonify(casino_social_service.get_feed_reactions(item_ids)), 200
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_social_service.react_to_feed_item(
+            user_id,
+            data.get("item_id") or data.get("bet_id") or "",
+            data.get("reaction") or "",
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/crew-challenge", methods=["GET"])
+def casino_social_crew_challenge():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_crew_casino_challenge_hook(
+            user_id, currency=_currency_from_query(),
+        )), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

@@ -617,9 +617,20 @@ def build_big_win_share(
         "share_urls": {
             "facebook": f"https://www.facebook.com/sharer/sharer.php?u={q_url}",
             "twitter": f"https://twitter.com/intent/tweet?text={q_text}&url={q_url}",
+            "x": f"https://twitter.com/intent/tweet?text={q_text}&url={q_url}",
             "linkedin": f"https://www.linkedin.com/sharing/share-offsite/?url={q_url}",
             "telegram": f"https://t.me/share/url?url={q_url}&text={q_text}",
+            "whatsapp": f"https://wa.me/?text={quote(text + ' ' + share_url, safe='')}",
         },
+        "thread_share": {
+            "lines": [
+                f"🎰 {title}",
+                desc,
+                f"Play at MasterNoder Casino → {share_url}",
+            ],
+            "x_intent_url": f"https://twitter.com/intent/tweet?text={quote(title + ' — ' + desc, safe='')}&url={q_url}",
+        },
+        "copy_text": f"{text}\n{share_url}",
         "rg_footer": _RG_FOOTER,
     }
 
@@ -627,3 +638,270 @@ def build_big_win_share(
 def discord_integration_config() -> Dict[str, Any]:
     cfg = _load_casino_config()
     return cfg.get("discord_integration") if isinstance(cfg.get("discord_integration"), dict) else {}
+
+
+# ---------------------------------------------------------------------------
+# Extended social layer — referrals, follows, reactions, crew hooks (no RTP perks)
+# ---------------------------------------------------------------------------
+
+_SOCIAL_STATE_DIR = os.path.join(_BASE, "logs", "casino_social")
+_FOLLOWS_PATH = os.path.join(_SOCIAL_STATE_DIR, "follows.json")
+_REACTIONS_PATH = os.path.join(_SOCIAL_STATE_DIR, "feed_reactions.json")
+_CASINO_REFERRALS_PATH = os.path.join(_SOCIAL_STATE_DIR, "casino_referrals.json")
+_ALLOWED_REACTIONS = {"fire", "clap", "wow", "gg", "lucky"}
+
+
+def _load_json_store(path: str, default: Any) -> Any:
+    if not os.path.isfile(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, type(default)) else default
+    except Exception:
+        return default
+
+
+def _save_json_store(path: str, data: Any) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with _LOCK:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp, path)
+
+
+def _referral_code_for_user(user_id: str) -> str:
+    digest = hashlib.md5(user_id.strip().encode("utf-8")).hexdigest()[:8].upper()
+    return f"MN-{digest}"
+
+
+def get_referral_invite(user_id: str) -> Dict[str, Any]:
+    """Casino referral code + invite link (cosmetic/trophy tracking only — no RTP perks)."""
+    code = _referral_code_for_user(user_id)
+    base = _base_url()
+    invite_url = f"{base}/casino/?ref={code}"
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    codes = store.setdefault("codes", {})
+    codes[code] = user_id
+    _save_json_store(_CASINO_REFERRALS_PATH, store)
+    signups = [
+        r for r in store.get("signups") or []
+        if (r.get("referrer_user_id") or "").strip() == user_id
+    ]
+    from urllib.parse import quote as url_quote
+    return {
+        "success": True,
+        "referral_code": code,
+        "invite_url": invite_url,
+        "copy_text": f"Join me at MasterNoder Casino — use code {code}\n{invite_url}",
+        "whatsapp_url": (
+            "https://wa.me/?text="
+            + url_quote(f"Join me at MasterNoder Casino! Code: {code} {invite_url}", safe="")
+        ),
+        "successful_invites": len(signups),
+        "note": "Referrals track social trophies only — no house-edge or RTP changes.",
+    }
+
+
+def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[str, Any]:
+    code = (referral_code or "").strip().upper()
+    if not code:
+        return {"success": False, "error": "referral_code required"}
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    codes = store.setdefault("codes", {})
+    referrer_id = codes.get(code)
+    if not referrer_id:
+        for uid, existing in codes.items():
+            if existing and _referral_code_for_user(str(existing)) == code:
+                referrer_id = existing
+                code = uid
+                break
+    if not referrer_id:
+        return {"success": False, "error": "invalid_code"}
+    if referrer_id == referred_user_id:
+        return {"success": False, "error": "self_referral"}
+    existing = next(
+        (r for r in store.get("signups") or [] if r.get("referred_user_id") == referred_user_id),
+        None,
+    )
+    if existing:
+        return {"success": True, "referral": existing, "message": "already_registered"}
+    row = {
+        "id": secrets.token_hex(4),
+        "referrer_user_id": referrer_id,
+        "referred_user_id": referred_user_id,
+        "referral_code": code,
+        "registered_at": _iso(),
+        "first_play_at": None,
+    }
+    store.setdefault("signups", []).append(row)
+    _save_json_store(_CASINO_REFERRALS_PATH, store)
+    _emit(
+        "casino_referral_signup",
+        user_id=referred_user_id,
+        payload={"referrer": anonymize_user(referrer_id), "code": code},
+    )
+    return {"success": True, "referral": row}
+
+
+def track_referral_casino_play(user_id: str) -> None:
+    """Mark first casino play for referral trophy stats (no balance/RTP changes)."""
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    updated = False
+    for row in store.get("signups") or []:
+        if row.get("referred_user_id") == user_id and not row.get("first_play_at"):
+            row["first_play_at"] = _iso()
+            updated = True
+            _emit(
+                "casino_referral_first_play",
+                user_id=user_id,
+                payload={"referrer_user_id": row.get("referrer_user_id"), "code": row.get("referral_code")},
+            )
+            break
+    if updated:
+        _save_json_store(_CASINO_REFERRALS_PATH, store)
+
+
+def _load_follows() -> Dict[str, List[str]]:
+    return _load_json_store(_FOLLOWS_PATH, {})
+
+
+def follow_player(user_id: str, target_user_id: str) -> Dict[str, Any]:
+    target = (target_user_id or "").strip()
+    if not target or target == user_id:
+        return {"success": False, "error": "invalid_target"}
+    follows = _load_follows()
+    current = list(follows.get(user_id) or [])
+    if target in current:
+        return {"success": True, "following": True, "target_user_id": target}
+    current.append(target)
+    follows[user_id] = current[-50:]
+    _save_json_store(_FOLLOWS_PATH, follows)
+    _emit("casino_follow_player", user_id=user_id, payload={"target": anonymize_user(target)})
+    return {"success": True, "following": True, "target_user_id": target, "follow_count": len(follows[user_id])}
+
+
+def unfollow_player(user_id: str, target_user_id: str) -> Dict[str, Any]:
+    target = (target_user_id or "").strip()
+    follows = _load_follows()
+    current = [x for x in (follows.get(user_id) or []) if x != target]
+    follows[user_id] = current
+    _save_json_store(_FOLLOWS_PATH, follows)
+    return {"success": True, "following": False, "target_user_id": target}
+
+
+def get_follow_state(user_id: str) -> Dict[str, Any]:
+    follows = _load_follows()
+    followed = list(follows.get(user_id) or [])
+    return {"success": True, "followed_user_ids": followed, "follow_count": len(followed)}
+
+
+def get_top_players_to_follow(
+    user_id: str,
+    *,
+    period: str = "week",
+    limit: int = 5,
+    currency: str = "coins",
+) -> Dict[str, Any]:
+    import backend.services.casino_service as casino
+
+    board = casino.get_leaderboard(period=period, limit=max(10, int(limit or 5) * 2), currency=currency)
+    rows = board.get("leaderboard") or []
+    followed = set(_load_follows().get(user_id) or [])
+    players = []
+    for row in rows:
+        uid = row.get("user_id")
+        if not uid or uid == user_id:
+            continue
+        players.append({
+            "user_id": uid,
+            "display": anonymize_user(uid),
+            "net": row.get("net"),
+            "rank": row.get("rank"),
+            "following": uid in followed,
+        })
+        if len(players) >= max(1, min(int(limit or 5), 10)):
+            break
+    return {
+        "success": True,
+        "period": period,
+        "currency": currency,
+        "players": players,
+        "followed_count": len(followed),
+    }
+
+
+def _load_reactions() -> Dict[str, Dict[str, int]]:
+    return _load_json_store(_REACTIONS_PATH, {})
+
+
+def react_to_feed_item(user_id: str, item_id: str, reaction: str) -> Dict[str, Any]:
+    item = (item_id or "").strip()
+    react = (reaction or "").strip().lower()
+    if not item:
+        return {"success": False, "error": "item_id required"}
+    if react not in _ALLOWED_REACTIONS:
+        return {"success": False, "error": "invalid_reaction", "allowed": sorted(_ALLOWED_REACTIONS)}
+    store = _load_reactions()
+    row = store.setdefault(item, {"counts": {}, "users": {}})
+    counts = row.setdefault("counts", {})
+    users = row.setdefault("users", {})
+    prev = users.get(user_id)
+    if prev and prev in counts:
+        counts[prev] = max(0, int(counts.get(prev) or 0) - 1)
+    users[user_id] = react
+    counts[react] = int(counts.get(react) or 0) + 1
+    store[item] = row
+    _save_json_store(_REACTIONS_PATH, store)
+    return {"success": True, "item_id": item, "reaction": react, "counts": counts}
+
+
+def get_feed_reactions(item_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    store = _load_reactions()
+    if item_ids:
+        subset = {k: store[k] for k in item_ids if k in store}
+        return {"success": True, "reactions": {k: v.get("counts", {}) for k, v in subset.items()}}
+    return {
+        "success": True,
+        "reactions": {k: v.get("counts", {}) for k, v in list(store.items())[-100:]},
+        "allowed": sorted(_ALLOWED_REACTIONS),
+    }
+
+
+def get_crew_casino_challenge_hook(user_id: str, currency: str = "coins") -> Dict[str, Any]:
+    """UI hook for crew casino challenges — links Compete tab data without RTP perks."""
+    import backend.services.casino_service as casino
+
+    social = casino._load_social_data()
+    crew_id = (social.get("user_crews") or {}).get(user_id)
+    crew_name = None
+    member_count = 0
+    if crew_id:
+        for crew in social.get("crews") or []:
+            if isinstance(crew, dict) and crew.get("id") == crew_id:
+                crew_name = crew.get("name") or crew_id
+                members = crew.get("member_ids") or crew.get("members") or []
+                member_count = len(members)
+                break
+    crew_board = casino.get_crew_casino_leaderboard(user_id, currency=currency)
+    challenges = [c for c in (social.get("challenges") or []) if isinstance(c, dict)]
+    open_challenges = [
+        c for c in challenges
+        if c.get("status") in (None, "open", "active", "pending")
+    ][:5]
+    return {
+        "success": True,
+        "in_crew": bool(crew_id),
+        "crew_id": crew_id,
+        "crew_name": crew_name,
+        "member_count": member_count,
+        "crew_leaderboard": crew_board.get("crew_leaderboard") or [],
+        "your_crew_rank": next(
+            (i + 1 for i, r in enumerate(crew_board.get("crew_leaderboard") or []) if r.get("is_yours")),
+            None,
+        ),
+        "open_crew_challenges": open_challenges,
+        "compete_tab_hint": "Open the Compete tab for crew leaderboard and casino duels.",
+        "join_crew_href": "/game#social",
+    }

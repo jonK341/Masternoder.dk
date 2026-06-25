@@ -114,7 +114,7 @@ def recent_wins(limit: int = 12, currency: Optional[str] = None) -> List[Dict[st
                 params.append(safe_limit)
                 cur = conn.execute(
                     f"""
-                    SELECT user_id, game, currency, bet, payout, net, outcome, created_at, details
+                    SELECT bet_id, user_id, game, currency, bet, payout, net, outcome, created_at, details
                     FROM casino_bets
                     WHERE {where}
                     ORDER BY created_at DESC

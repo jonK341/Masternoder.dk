@@ -138,3 +138,82 @@ def test_build_big_win_share_service():
     assert card["success"] is True
     assert card["card"]["handle"].startswith("Player#")
     assert "plinko" in card["card"]["share_url"]
+    assert "whatsapp" in card["share_urls"]
+    assert card.get("thread_share", {}).get("lines")
+
+
+def _patch_social_state(tmp_path, monkeypatch):
+    import backend.services.casino_social_service as css
+    state = tmp_path / "casino_social"
+    state.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(css, "_SOCIAL_STATE_DIR", str(state))
+    monkeypatch.setattr(css, "_FOLLOWS_PATH", str(state / "follows.json"))
+    monkeypatch.setattr(css, "_REACTIONS_PATH", str(state / "feed_reactions.json"))
+    monkeypatch.setattr(css, "_CASINO_REFERRALS_PATH", str(state / "casino_referrals.json"))
+
+
+def test_casino_referral_invite_route(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/social/referral?user_id=player-ref")
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["success"] is True
+    assert data["referral_code"].startswith("MN-")
+    assert "ref=" in data["invite_url"]
+    assert "whatsapp_url" in data
+
+
+def test_casino_referral_register_route(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        inviter = client.get("/api/casino/social/referral?user_id=referrer-a").get_json()
+        code = inviter["referral_code"]
+        reg = client.post(
+            "/api/casino/social/referral/register",
+            json={"user_id": "new-player", "referral_code": code},
+        )
+    data = reg.get_json()
+    assert reg.status_code == 200
+    assert data["success"] is True
+    assert data["referral"]["referrer_user_id"] == "referrer-a"
+
+
+def test_casino_follow_player_route(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        follow = client.post(
+            "/api/casino/social/follow",
+            json={"user_id": "viewer-1", "target_user_id": "top-player-2"},
+        )
+    data = follow.get_json()
+    assert follow.status_code == 200
+    assert data["success"] is True
+    assert data["following"] is True
+
+
+def test_casino_feed_reactions_route(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        react = client.post(
+            "/api/casino/social/feed/reactions",
+            json={"user_id": "u1", "item_id": "bet-abc", "reaction": "fire"},
+        )
+        get_r = client.get("/api/casino/social/feed/reactions?item_ids=bet-abc")
+    assert react.status_code == 200
+    assert react.get_json()["success"] is True
+    assert get_r.get_json()["reactions"]["bet-abc"]["fire"] >= 1
+
+
+def test_casino_crew_challenge_hook_route(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/social/crew-challenge?user_id=solo-player")
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["success"] is True
+    assert "compete_tab_hint" in data

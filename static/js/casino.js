@@ -1208,6 +1208,196 @@
             }
         }
         initMobileInstall();
+        await refreshReferralInvite();
+        await refreshFollowLeaders();
+        await refreshCrewChallengeHook();
+        await refreshSocialActivityFeed();
+    }
+
+    async function refreshReferralInvite() {
+        var codeEl = $('casino-referral-code');
+        if (!codeEl) return;
+        var data = await api('/api/casino/social/referral?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            codeEl.textContent = data.error || 'Unavailable';
+            return;
+        }
+        codeEl.textContent = data.referral_code || '—';
+        codeEl.dataset.inviteUrl = data.invite_url || '';
+        codeEl.dataset.copyText = data.copy_text || '';
+        codeEl.dataset.whatsappUrl = data.whatsapp_url || '';
+    }
+
+    function copyReferralCode() {
+        var codeEl = $('casino-referral-code');
+        if (!codeEl || !codeEl.textContent || codeEl.textContent === 'Loading…') return;
+        navigator.clipboard.writeText(codeEl.textContent).then(function () {
+            showToast('Referral code copied');
+        }).catch(function () {
+            showToast('Copy: ' + codeEl.textContent);
+        });
+    }
+
+    function copyReferralLink() {
+        var codeEl = $('casino-referral-code');
+        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/casino/');
+        navigator.clipboard.writeText(link).then(function () {
+            showToast('Invite link copied');
+        }).catch(function () {
+            showToast('Copy link: ' + link);
+        });
+    }
+
+    async function refreshFollowLeaders() {
+        var list = $('casino-follow-leaders-list');
+        if (!list) return;
+        var data = await api('/api/casino/social/follow?user_id=' + encodeURIComponent(userId) + '&period=week&limit=5');
+        if (!data.success || !(data.players || []).length) {
+            list.textContent = 'No leaderboard players yet this week.';
+            return;
+        }
+        list.innerHTML = '';
+        data.players.forEach(function (p) {
+            var row = document.createElement('div');
+            row.className = 'casino-follow-row';
+            row.innerHTML = '<span>#' + (p.rank || '?') + ' ' + (p.display || shortUser(p.user_id)) +
+                ' (' + (p.net || 0) + ')</span>';
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-share-site-btn';
+            btn.textContent = p.following ? 'Following' : 'Follow';
+            btn.disabled = !!p.following;
+            btn.addEventListener('click', async function () {
+                var res = await api('/api/casino/social/follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, target_user_id: p.user_id }),
+                });
+                if (res.success) {
+                    btn.textContent = 'Following';
+                    btn.disabled = true;
+                    showToast('Following ' + (p.display || 'player'));
+                }
+            });
+            row.appendChild(btn);
+            list.appendChild(row);
+        });
+    }
+
+    async function refreshCrewChallengeHook() {
+        var body = $('casino-crew-challenge-body');
+        if (!body) return;
+        var data = await api('/api/casino/social/crew-challenge?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            body.textContent = data.error || 'Crew data unavailable';
+            return;
+        }
+        if (!data.in_crew) {
+            body.innerHTML = '<p>Join a crew on the <a href="/game#social">game social hub</a> to compete in crew casino leaderboards.</p>';
+            return;
+        }
+        var rank = data.your_crew_rank ? ('#' + data.your_crew_rank) : '—';
+        body.innerHTML = '<p><strong>' + (data.crew_name || 'Your crew') + '</strong> · ' +
+            (data.member_count || 0) + ' members · crew rank ' + rank + '</p>' +
+            '<p>' + (data.compete_tab_hint || '') + '</p>' +
+            '<button type="button" class="casino-share-site-btn" id="casino-goto-compete">Open Compete tab</button>';
+        var go = $('casino-goto-compete');
+        if (go) {
+            go.addEventListener('click', function () {
+                var tab = document.querySelector('[data-casino-tab="compete"]');
+                if (tab) tab.click();
+            });
+        }
+    }
+
+    async function refreshSocialActivityFeed() {
+        var list = $('casino-social-feed-list');
+        if (!list) return;
+        var feed = await api('/api/casino/activity-feed?limit=6');
+        if (!feed.success || !(feed.feed || []).length) {
+            list.textContent = 'No recent wins yet.';
+            return;
+        }
+        var ids = feed.feed.map(function (f) { return f.bet_id || (f.user_id + '-' + (f.created_at || '')); }).join(',');
+        var reactions = { reactions: {} };
+        try {
+            reactions = await api('/api/casino/social/feed/reactions?item_ids=' + encodeURIComponent(ids));
+        } catch (e) { /* optional */ }
+        list.innerHTML = '';
+        feed.feed.forEach(function (f) {
+            var itemId = f.bet_id || (f.user_id + '-' + (f.created_at || ''));
+            var row = document.createElement('div');
+            row.className = 'casino-social-feed-item';
+            row.innerHTML = '<div>🏆 ' + shortUser(f.user_id) + ' · ' + formatFeedAmount(f.net, f.currency) +
+                ' on ' + prettyGame(f.game) + '</div>';
+            var reactBar = document.createElement('div');
+            reactBar.className = 'casino-feed-reactions';
+            ['fire', 'clap', 'wow'].forEach(function (emoji) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'casino-feed-react-btn';
+                var counts = (reactions.reactions && reactions.reactions[itemId]) || {};
+                b.textContent = emoji + (counts[emoji] ? ' ' + counts[emoji] : '');
+                b.addEventListener('click', async function () {
+                    var res = await api('/api/casino/social/feed/reactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId, item_id: itemId, reaction: emoji }),
+                    });
+                    if (res.success) {
+                        b.textContent = emoji + (res.counts && res.counts[emoji] ? ' ' + res.counts[emoji] : '');
+                    }
+                });
+                reactBar.appendChild(b);
+            });
+            row.appendChild(reactBar);
+            list.appendChild(row);
+        });
+    }
+
+    async function shareViaWhatsApp() {
+        var codeEl = $('casino-referral-code');
+        if (codeEl && codeEl.dataset.whatsappUrl) {
+            window.open(codeEl.dataset.whatsappUrl, '_blank', 'noopener');
+            return;
+        }
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino';
+        window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+    }
+
+    async function shareXThread() {
+        var payload = lastBigWin ? {
+            user_id: userId,
+            game: lastBigWin.game,
+            net: lastBigWin.net,
+            currency: lastBigWin.currency,
+            multiplier: lastBigWin.multiple,
+        } : { user_id: userId, game: 'casino', net: 0, currency: 'coins' };
+        var card = await api('/api/casino/share/big-win', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (card && card.thread_share && card.thread_share.x_intent_url) {
+            window.open(card.thread_share.x_intent_url, '_blank', 'noopener');
+            showToast('X thread starter opened — paste follow-up lines from share card');
+            return;
+        }
+        shareCasinoWin();
+    }
+
+    async function registerCasinoReferralFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var ref = params.get('ref');
+        if (!ref || userId === 'default_user') return;
+        try {
+            await api('/api/casino/social/referral/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, referral_code: ref }),
+            });
+        } catch (e) { /* best effort */ }
     }
 
     async function shareCasinoWin() {
@@ -3301,6 +3491,10 @@
         bindChange('outcome-dist-lane', refreshOutcomeDistribution);
         bindClick('casino-share-win-btn', shareCasinoWin);
         bindClick('casino-share-site-btn', shareCasinoSite);
+        bindClick('casino-share-whatsapp-btn', shareViaWhatsApp);
+        bindClick('casino-share-x-thread-btn', shareXThread);
+        bindClick('casino-copy-referral-code', copyReferralCode);
+        bindClick('casino-copy-referral-link', copyReferralLink);
         bindChange('casino-share-wins-toggle', function () {
             toggleShareWins($('casino-share-wins-toggle').checked);
         });
@@ -3318,6 +3512,7 @@
 
         try { initMainTabNav(); } catch (e) { console.warn('[casino] tab nav failed:', e); }
         try { applyDeepLinks(); } catch (e) { console.warn('[casino] deep links failed:', e); }
+        try { registerCasinoReferralFromUrl(); } catch (e) { /* optional */ }
 
         try {
             await refreshBalance();

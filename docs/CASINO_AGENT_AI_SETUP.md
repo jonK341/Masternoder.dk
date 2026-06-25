@@ -87,14 +87,39 @@ Override per agent in `data/casino_agent_models.json`:
 
 | `llm_task_type` | Provider chain (first configured wins) | Best for |
 |-----------------|----------------------------------------|----------|
-| `reason` | deepseek → openrouter → anthropic → openai → groq | Kelly sizing, strategy, game pick |
-| `speed` | groq → cerebras → together → openai | Fast cron ticks, high bet frequency |
-| `free` | groq → cerebras → gemini → openrouter → deepseek | Zero-cost dev / low-volume prod |
-| `context` | gemini → openai → anthropic | Long leaderboard + history context |
+| `reason` | deepseek → openrouter → fireworks → anthropic → openai → groq → cohere → huggingface | Kelly sizing, strategy, game pick |
+| `speed` | groq → cerebras → fireworks → together → openai | Fast cron ticks, high bet frequency |
+| `free` | groq → cerebras → gemini → openrouter → deepseek → mistral → together → ollama → cohere | Zero-cost dev / low-volume prod |
+| `context` | gemini → openai → anthropic → openrouter → cohere → huggingface | Long leaderboard + history context |
 
-**Bet planning vs chat:** The same call produces structured JSON (`game`, `bet`, `params`) plus natural-language `reasoning` and `spectator_line` for Discord/social. No separate chat endpoint is required for autonomous play.
+**Ollama / local:** Set `OLLAMA_ENABLED=1` and `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434/v1`). No real API key required — uses OpenAI-compatible `/v1/chat/completions`. Listed in the `free` chain only when enabled.
 
-**Ollama / local:** Not registered in `llm_service.PROVIDERS`. For self-hosted models, run an OpenAI-compatible proxy (e.g. LiteLLM → Ollama) and add a custom provider entry, or route via OpenRouter if the model is listed there.
+---
+
+## API key audit (env ↔ code)
+
+| Env var | In `.env.example` | In `llm_service.PROVIDERS` | In `TASK_ROUTES` | Notes |
+|---------|-------------------|----------------------------|------------------|-------|
+| `OPENAI_API_KEY` | Yes | `openai` | default, speed, reason | Paid primary |
+| `GROQ_API_KEY` | Yes | `groq` | speed, free, reason | Free tier |
+| `GOOGLE_AI_API_KEY` | Yes | `gemini` (+ `GOOGLE_GEMINI_API_KEY`) | context, free | 1M context |
+| `OPENROUTER_API_KEY` | Yes | `openrouter` | reason, context, free | Multi-model fallback |
+| `DEEPSEEK_API_KEY` | Yes | `deepseek` | reason, free | Best for Kelly JSON |
+| `CEREBRAS_API_KEY` | Yes | `cerebras` | speed, free | Ultra-fast backup |
+| `MISTRAL_API_KEY` | Yes | `mistral` | code, free | Codestral / code |
+| `TOGETHER_API_KEY` | Yes | `together` | speed, free, default | Llama 3.3 hosted |
+| `ANTHROPIC_API_KEY` | Yes | `anthropic` | reason, context, code | Native Claude API |
+| `COHERE_API_KEY` | Yes | `cohere` | reason, context, free | Command R+ |
+| `AZURE_OPENAI_*` | Yes | `azure` | default | Needs endpoint + deployment |
+| `FIREWORKS_API_KEY` | Yes | `fireworks` | speed, reason, default | Fast Llama hosting |
+| `HF_TOKEN` / `HUGGINGFACE_HUB_TOKEN` | Yes | `huggingface` | reason, context, default | HF Inference router |
+| `OLLAMA_*` + `OLLAMA_ENABLED=1` | Yes | `ollama` | free, default | Local self-hosted |
+| `CASINO_AGENT_LLM` | Yes | — | Enables planner | Not an LLM key |
+| `AGENT_CASINO_SECRET` | Yes | — | Agent route auth | Not an LLM key |
+
+**Casino planner wiring:** `casino_agent_llm_planner.plan_bet()` → `agent_ai_router.routed_chat(task_kind=casino_bet_plan)` → `llm_service.chat(task_type=reason|override)`. No direct provider calls in the planner.
+
+**Not wired (documented only / planned):** `CASINO_AGENT_AUTOMATION`, `CASINO_AGENT_LLM_REQUIRED`, `CASINO_AGENT_LLM_TIMEOUT` — use `CASINO_AGENT_LLM` + `LLM_TIMEOUT_SECONDS` today.
 
 ---
 
@@ -113,6 +138,11 @@ Sign up at official sites only. Rate limits change — check each dashboard afte
 | **Together AI** | [api.together.xyz/settings/api-keys](https://api.together.xyz/settings/api-keys) | `TOGETHER_API_KEY` | Limited promos | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | Account limits | Good | Good |
 | **Mistral** | [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys/) | `MISTRAL_API_KEY` | ~1B tok/month | `mistral-small-latest` | Free tier caps | OK | Better for code tasks |
 | **Cerebras** | [cloud.cerebras.ai](https://cloud.cerebras.ai/) | `CEREBRAS_API_KEY` | Yes | `llama3.3-70b` | ~1M tok/day free | Good speed backup | Adequate |
+| **Fireworks AI** | [fireworks.ai/account/api-keys](https://fireworks.ai/account/api-keys) | `FIREWORKS_API_KEY` | Limited credits | `accounts/fireworks/models/llama-v3p3-70b-instruct` | Account limits | Good JSON | Fast inference |
+| **Hugging Face Inference** | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN` | Pay-per-use / free models | `meta-llama/Meta-Llama-3-8B-Instruct` (override via `HF_INFERENCE_MODEL`) | HF rate limits | Good fallback | OpenAI-compatible router |
+| **Ollama (local)** | [ollama.com](https://ollama.com/) | `OLLAMA_ENABLED=1` + `OLLAMA_BASE_URL` | Free (self-hosted) | `llama3.3` (`OLLAMA_MODEL`) | Your hardware | Depends on model | Private / offline dev |
+
+**Bet planning vs chat:** The same call produces structured JSON (`game`, `bet`, `params`) plus natural-language `reasoning` and `spectator_line` for Discord/social. No separate chat endpoint is required for autonomous play.
 
 ### Recommended stacks after deploy
 
@@ -121,6 +151,10 @@ Sign up at official sites only. Rate limits change — check each dashboard afte
 **Best strategy (low cost):** add `DEEPSEEK_API_KEY` — first in the `reason` chain for Kelly/game selection.
 
 **Resilient prod:** Groq + DeepSeek + OpenRouter — three keys cover speed, reasoning, and failover.
+
+**Self-hosted / privacy:** `OLLAMA_ENABLED=1` with local Llama — good for dry-run dev without cloud keys.
+
+**Extra cloud fallbacks:** add `FIREWORKS_API_KEY` (speed) or `HF_TOKEN` (HF Inference router) for additional redundancy.
 
 **Premium quality:** add `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for harder strategy; keep Groq for high-frequency cron.
 

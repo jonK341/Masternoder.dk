@@ -588,6 +588,11 @@ def _finalize_bet(
         record_after_bet(user_id, net, currency)
     except ImportError:
         pass
+    try:
+        from backend.services.casino_social_service import track_referral_casino_play
+        track_referral_casino_play(user_id)
+    except Exception:
+        pass
     if not skip_stake and bet > 0:
         try:
             from backend.services.battle_pass_service import record_battle_pass_action
@@ -1031,6 +1036,7 @@ def get_activity_feed(limit: int = 12, currency: Optional[str] = None) -> Dict[s
     feed = []
     for row in wins:
         feed.append({
+            "bet_id": row.get("bet_id"),
             "user_id": row.get("user_id"),
             "game": row.get("game"),
             "currency": row.get("currency"),

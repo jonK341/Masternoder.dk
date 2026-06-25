@@ -79,6 +79,38 @@ def casino_agent_share_big_win():
     return jsonify(result), 200 if result.get("success") else 400
 
 
+@agent_casino_bp.route("/api/agent/casino/social/referral", methods=["GET"])
+def casino_agent_social_referral():
+    from backend.services import casino_social_service
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    return jsonify(casino_social_service.get_referral_invite(user_id)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/social/follow", methods=["GET", "POST"])
+def casino_agent_social_follow():
+    from backend.services import casino_social_service
+    user_id = (request.args.get("user_id") or (request.get_json(silent=True) or {}).get("user_id") or "").strip() or "default_user"
+    if request.method == "GET":
+        return jsonify(casino_social_service.get_top_players_to_follow(
+            user_id,
+            period=request.args.get("period", "week"),
+            limit=request.args.get("limit", 5, type=int),
+            currency=(request.args.get("currency") or "coins"),
+        )), 200
+    data = request.get_json(silent=True) or {}
+    target = (data.get("target_user_id") or "").strip()
+    return jsonify(casino_social_service.follow_player(user_id, target)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/social/crew-challenge", methods=["GET"])
+def casino_agent_social_crew_challenge():
+    from backend.services import casino_social_service
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    return jsonify(casino_social_service.get_crew_casino_challenge_hook(
+        user_id, currency=(request.args.get("currency") or "coins"),
+    )), 200
+
+
 @agent_casino_bp.route("/api/agent/casino/discord/notify", methods=["POST"])
 def casino_agent_discord_notify():
     if not _authorized():

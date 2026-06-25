@@ -2013,6 +2013,59 @@
     font-weight: 600;
 }
 
+.casino-referral-invite,
+.casino-follow-leaders,
+.casino-crew-challenge-hook,
+.casino-social-activity-feed {
+    max-width: 560px;
+    margin: 0 auto var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.casino-referral-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    align-items: center;
+    justify-content: center;
+}
+
+.casino-referral-row code {
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: rgba(124, 58, 237, 0.2);
+    font-size: 0.95rem;
+}
+
+.casino-follow-row,
+.casino-social-feed-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.casino-feed-reactions {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.casino-feed-react-btn {
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.78rem;
+}
+
 @media (max-width: 640px) {
     .casino-lb-podium {
         grid-template-columns: 1fr;
