@@ -1,5 +1,55 @@
 {
   "currency": "coins",
+  "featured_games": [
+    {"id": "crash", "label": "Crash", "icon": "🚀", "tag": "Hot", "blurb": "Ride the multiplier — cash out before the bust."},
+    {"id": "plinko", "label": "Plinko", "icon": "🟡", "tag": "Trending", "blurb": "Drop the ball through pegs for edge multipliers."},
+    {"id": "mines", "label": "Mines", "icon": "💣", "tag": "Classic", "blurb": "Reveal gems, dodge mines, cash out anytime."},
+    {"id": "wheel", "label": "Wheel", "icon": "🎡", "tag": "Spin", "blurb": "Weighted wheel segments — low, medium, or high risk."},
+    {"id": "slots", "label": "Slots", "icon": "🎰", "tag": "Jackpots", "blurb": "Seven machines with progressive jackpot hits."},
+    {"id": "coin-flip", "label": "Coin flip", "icon": "🪙", "tag": "Quick", "blurb": "Heads or tails — instant 1.9× payout."}
+  ],
+  "social_links": [
+    {"id": "discord", "label": "Discord", "icon": "💬", "url": "https://discord.gg/masternoder", "type": "follow"},
+    {"id": "youtube", "label": "YouTube", "icon": "▶️", "url": "https://youtube.com/@MasterNoder", "type": "follow"},
+    {"id": "facebook", "label": "Facebook", "icon": "f", "url": "https://facebook.com/MasterNoder", "type": "follow"},
+    {"id": "x", "label": "X (Twitter)", "icon": "𝕏", "url": "https://twitter.com/MasterNoder", "type": "follow"},
+    {"id": "instagram", "label": "Instagram", "icon": "📷", "url": "https://instagram.com/masternoder", "type": "follow"},
+    {"id": "tiktok", "label": "TikTok", "icon": "🎵", "url": "https://tiktok.com/@masternoder", "type": "follow"},
+    {"id": "telegram", "label": "Telegram", "icon": "✈️", "url": "https://t.me/masternoder", "type": "follow"},
+    {"id": "github", "label": "GitHub", "icon": "🐙", "url": "https://github.com/MasterNoder", "type": "follow"},
+    {"id": "discord_play", "label": "Discord Casino", "icon": "🎰", "url": "/discord-play/", "type": "play"},
+    {"id": "google_play", "label": "Google Play", "icon": "▶️", "url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino", "type": "mobile"},
+    {"id": "facebook_casino", "label": "Facebook Casino", "icon": "📘", "url": "https://facebook.com/MasterNoder", "type": "follow"}
+  ],
+  "mobile": {
+    "package_id": "dk.masternoder.casino",
+    "play_store_url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino",
+    "start_url": "/casino/?app=casino-twa&tab=lobby",
+    "deep_link_base": "https://masternoder.dk/casino/",
+    "theme_color": "#1A1035",
+    "background_color": "#0A0E14",
+    "orientation": "portrait-primary",
+    "install_prompt_enabled": true
+  },
+  "discord_integration": {
+    "enabled": true,
+    "webhook_env": "DISCORD_CHANNEL_ID_CASINO",
+    "invite_url": "https://discord.gg/masternoder",
+    "activity_invite_url": "https://discord.gg/masternoder",
+    "earn_coins_join": 25,
+    "discord_play_path": "/discord-play/"
+  },
+  "facebook": {
+    "page_url": "https://facebook.com/MasterNoder",
+    "og_title": "MasterNoder Casino — Social lounge",
+    "og_description": "Play crash, slots, plinko, mines and more. Virtual coins first — share big wins with friends.",
+    "og_image": "/static/img/casino/og-share.svg",
+    "pixel_id_env": "META_PIXEL_ID"
+  },
+  "social": {
+    "share_base_url": "https://masternoder.dk",
+    "default_share_text": "Play at MasterNoder Casino — crash, slots, plinko, tournaments, and more."
+  },
   "disclaimer": "Play with virtual coins, MN2, or PayPal-funded USD balance.",
   "min_bet": 5,
   "max_bet": 500,
@@ -178,9 +228,42 @@
       "pockets": 37,
       "rtp_estimate": 97.3
     },
+    "blackjack": {
+      "label": "Blackjack",
+      "icon": "🃏",
+      "rtp_estimate": 99.5,
+      "blackjack_payout": 1.5,
+      "hit_soft_17": true,
+      "max_round_seconds": 7200
+    },
+    "baccarat": {
+      "label": "Baccarat",
+      "icon": "🎴",
+      "rtp_estimate": 98.9,
+      "banker_commission": 0.05
+    },
+    "video_poker": {
+      "label": "Jacks or Better",
+      "icon": "🎴",
+      "rtp_estimate": 99.5,
+      "paytable": {
+        "royal_flush": 250,
+        "straight_flush": 50,
+        "four_kind": 25,
+        "full_house": 9,
+        "flush": 6,
+        "straight": 4,
+        "three_kind": 3,
+        "two_pair": 2,
+        "jacks_or_better": 1
+      }
+    },
     "slot_classic": {
       "label": "Classic Reels",
       "icon": "🎰",
+      "theme_color": "#ffd700",
+      "accent": "#c41e3a",
+      "glow_color": "rgba(255, 215, 0, 0.55)",
       "volatility": "medium",
       "rtp_estimate": 96.2,
       "reels": 3,
@@ -201,6 +284,9 @@
     "slot_diamond": {
       "label": "Diamond Rush",
       "icon": "💎",
+      "theme_color": "#22d3ee",
+      "accent": "#a855f7",
+      "glow_color": "rgba(34, 211, 238, 0.5)",
       "volatility": "high",
       "rtp_estimate": 95.0,
       "reels": 3,
@@ -220,6 +306,9 @@
     "slot_neon": {
       "label": "Neon Pulse",
       "icon": "🌃",
+      "theme_color": "#ff00ff",
+      "accent": "#00f0ff",
+      "glow_color": "rgba(255, 0, 255, 0.5)",
       "volatility": "medium",
       "rtp_estimate": 96.5,
       "reels": 3,
@@ -240,6 +329,9 @@
     "slot_cosmic": {
       "label": "Cosmic Orbit",
       "icon": "🌌",
+      "theme_color": "#818cf8",
+      "accent": "#fbbf24",
+      "glow_color": "rgba(129, 140, 248, 0.55)",
       "volatility": "high",
       "rtp_estimate": 94.8,
       "reels": 3,
@@ -262,6 +354,9 @@
     "slot_battle": {
       "label": "Battle Arena",
       "icon": "⚔️",
+      "theme_color": "#ef4444",
+      "accent": "#64748b",
+      "glow_color": "rgba(239, 68, 68, 0.5)",
       "volatility": "medium",
       "rtp_estimate": 96.0,
       "reels": 3,
@@ -282,6 +377,9 @@
     "slot_treasure": {
       "label": "Treasure Cove",
       "icon": "🏴‍☠️",
+      "theme_color": "#14b8a6",
+      "accent": "#f59e0b",
+      "glow_color": "rgba(20, 184, 166, 0.5)",
       "volatility": "low",
       "rtp_estimate": 97.1,
       "reels": 3,
@@ -301,6 +399,9 @@
     "slot_mega": {
       "label": "Mega 777",
       "icon": "🔥",
+      "theme_color": "#f97316",
+      "accent": "#fcd34d",
+      "glow_color": "rgba(249, 115, 22, 0.6)",
       "volatility": "extreme",
       "rtp_estimate": 93.5,
       "reels": 3,
@@ -319,7 +420,97 @@
         "three": {"mega7": 25.0, "bar": 10.0, "fire": 8.0, "gold": 5.0, "blank": 2.0},
         "two": {"mega7": 4.0, "bar": 2.5, "fire": 2.0}
       }
+    },
+    "slot_pharaoh": {
+      "label": "Pharaoh's Gold",
+      "icon": "🏺",
+      "theme_color": "#fbbf24",
+      "accent": "#d4a574",
+      "glow_color": "rgba(251, 191, 36, 0.55)",
+      "volatility": "high",
+      "rtp_estimate": 95.5,
+      "reels": 5,
+      "symbols": ["ankh", "scarab", "eye", "pyramid", "sand", "wild"],
+      "symbol_display": {"ankh": "☥", "scarab": "🪲", "eye": "👁️", "pyramid": "🔺", "sand": "🏜️", "wild": "🃏"},
+      "weights": {"ankh": 1, "scarab": 2, "eye": 2, "pyramid": 3, "sand": 4, "wild": 1},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "eye",
+      "scatter_min": 3,
+      "scatter_multiplier": 4.0,
+      "paytable": {
+        "default_five": 12.0,
+        "default_three": 6.0,
+        "five": {"ankh": 40.0, "scarab": 25.0, "eye": 18.0, "pyramid": 12.0, "sand": 8.0},
+        "three": {"ankh": 18.0, "scarab": 12.0, "eye": 9.0}
+      }
+    },
+    "slot_ocean": {
+      "label": "Ocean Depths",
+      "icon": "🐚",
+      "theme_color": "#06b6d4",
+      "accent": "#1e40af",
+      "glow_color": "rgba(6, 182, 212, 0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.8,
+      "reels": 5,
+      "symbols": ["pearl", "whale", "coral", "fish", "shell", "wild"],
+      "symbol_display": {"pearl": "🔮", "whale": "🐋", "coral": "🪸", "fish": "🐠", "shell": "🐚", "wild": "🌊"},
+      "weights": {"pearl": 1, "whale": 2, "coral": 3, "fish": 4, "shell": 4, "wild": 2},
+      "wild_symbols": ["wild"],
+      "scatter_symbol": "pearl",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {"pearl": 30.0, "whale": 20.0, "coral": 14.0, "fish": 9.0, "shell": 7.0},
+        "three": {"pearl": 15.0, "whale": 10.0, "coral": 7.0}
+      }
+    },
+    "slot_forest": {
+      "label": "Enchanted Forest",
+      "icon": "🌲",
+      "theme_color": "#4ade80",
+      "accent": "#166534",
+      "glow_color": "rgba(74, 222, 128, 0.5)",
+      "volatility": "low",
+      "rtp_estimate": 97.2,
+      "reels": 5,
+      "symbols": ["fairy", "mushroom", "owl", "leaf", "acorn", "wild"],
+      "symbol_display": {"fairy": "🧚", "mushroom": "🍄", "owl": "🦉", "leaf": "🍃", "acorn": "🌰", "wild": "✨"},
+      "weights": {"fairy": 1, "mushroom": 2, "owl": 3, "leaf": 4, "acorn": 5, "wild": 2},
+      "wild_symbols": ["wild"],
+      "jackpot_symbol": "fairy",
+      "jackpot_multiplier": 18.0,
+      "paytable": {
+        "default_five": 9.0,
+        "default_three": 4.8,
+        "five": {"fairy": 28.0, "mushroom": 16.0, "owl": 11.0, "leaf": 7.0, "acorn": 5.0},
+        "three": {"fairy": 14.0, "mushroom": 8.0, "owl": 6.0}
+      }
     }
+  },
+  "progression": {
+    "xp_per_coin_wagered": 1.0,
+    "mn2_xp_per_unit": 100,
+    "usd_xp_per_unit": 50,
+    "levels": [
+      {"level": 1, "title": "Rookie", "xp_required": 0, "reward_coins": 0},
+      {"level": 2, "title": "Regular", "xp_required": 500, "reward_coins": 50},
+      {"level": 3, "title": "High Roller", "xp_required": 2000, "reward_coins": 150},
+      {"level": 4, "title": "VIP Guest", "xp_required": 5000, "reward_coins": 300},
+      {"level": 5, "title": "House Legend", "xp_required": 15000, "reward_coins": 750}
+    ],
+    "vip_tiers": [
+      {"id": "bronze", "label": "Bronze", "badge": "🥉", "min_wager": 0},
+      {"id": "silver", "label": "Silver", "badge": "🥈", "min_wager": 5000},
+      {"id": "gold", "label": "Gold", "badge": "🥇", "min_wager": 25000},
+      {"id": "platinum", "label": "Platinum", "badge": "💎", "min_wager": 100000},
+      {"id": "diamond", "label": "Diamond", "badge": "👑", "min_wager": 500000}
+    ]
+  },
+  "pvp": {
+    "rake_percent": 5.0
   },
   "daily_quests": [
     {
@@ -502,7 +693,39 @@
         "buy_in": 2.0,
         "house_seed": 25.0,
         "duration_hours": 24
+      },
+      {
+        "id": "weekly_coins_sprint",
+        "name": "Weekly Coin Sprint",
+        "currency": "coins",
+        "buy_in": 100,
+        "house_seed": 5000,
+        "duration_hours": 168,
+        "rivalry_callout": true
+      },
+      {
+        "id": "weekly_mn2_high_roller",
+        "name": "MN2 High Roller Cup",
+        "currency": "mn2",
+        "buy_in": 1.0,
+        "house_seed": 20.0,
+        "duration_hours": 168,
+        "rivalry_callout": true
+      },
+      {
+        "id": "monthly_coins_grand",
+        "name": "Monthly Grand Prix",
+        "currency": "coins",
+        "buy_in": 250,
+        "house_seed": 15000,
+        "duration_hours": 720,
+        "rivalry_callout": true
       }
     ]
+  },
+  "competition": {
+    "rival_board_enabled": true,
+    "achievement_races_enabled": true,
+    "crew_leaderboard_enabled": true
   }
 }

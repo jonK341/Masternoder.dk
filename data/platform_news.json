@@ -2,6 +2,106 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "casino-tournament-daily_coins-20260625111252-610dd0",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-start-daily_coins-20260625111252-610dd0",
+      "title": "Tournament live \u2014 Daily Coin Cup",
+      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-daily_coins-20260625111144-485981",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-start-daily_coins-20260625111144-485981",
+      "title": "Tournament live \u2014 Daily Coin Cup",
+      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-daily_coins-20260625110613-6d2920",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-start-daily_coins-20260625110613-6d2920",
+      "title": "Tournament live \u2014 Daily Coin Cup",
+      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-daily_coins-20260625105935-f20481",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-start-daily_coins-20260625105935-f20481",
+      "title": "Tournament live \u2014 Daily Coin Cup",
+      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-daily_coins-20260625105748-752ac1",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-daily_coins-20260625105144-e33064",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-06-25",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
       "id": "news-casino-real-money",
       "title": "Casino now supports MN2 and PayPal USD",
       "summary": "Stake with virtual coins, MN2 wallet balance, or PayPal-funded USD play balance. Deposit USD via PayPal, then switch currency in the casino.",
@@ -13,7 +113,7 @@
     {
       "id": "news-casino-slots",
       "title": "New slot machines in the casino",
-      "summary": "Classic Reels and Diamond Rush slots are live — spin for multi-symbol payouts on coins, MN2, or USD.",
+      "summary": "Classic Reels and Diamond Rush slots are live \u2014 spin for multi-symbol payouts on coins, MN2, or USD.",
       "date": "2026-05-19",
       "category": "feature",
       "href": "/casino/",

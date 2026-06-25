@@ -9,7 +9,7 @@ import random
 import uuid
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _CONFIG_PATH = os.path.join(_ROOT, "data", "casino_config.json")
@@ -75,6 +75,13 @@ def _append_ledger(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     # Progressive jackpot: contribute from this wager and maybe drop the pool.
     # Returns an award dict when the jackpot hits, which callers attach to the
     # play result. Never fails the bet.
+    # Progressive jackpot: contribute from this wager and maybe drop the pool.
+    # Progression XP / achievements — best-effort, before jackpot return.
+    try:
+        from backend.services import casino_progression
+        casino_progression.on_bet(row)
+    except Exception:
+        pass
     try:
         from backend.services import casino_jackpot
         return casino_jackpot.on_bet(row)
@@ -311,15 +318,24 @@ def get_public_config() -> Dict[str, Any]:
             for field in ("icon", "rtp_estimate", "pockets"):
                 if game.get(field) is not None:
                     row[field] = game.get(field)
+        for card_key in ("blackjack", "baccarat", "video_poker"):
+            if key == card_key:
+                for field in ("icon", "rtp_estimate", "house_edge", "blackjack_payout", "banker_commission", "paytable"):
+                    if game.get(field) is not None:
+                        row[field] = game.get(field)
         public_games[key] = row
     pay = _payment_config()
     mn2_cfg = _mn2_config()
+    featured = cfg.get("featured_games") if isinstance(cfg.get("featured_games"), list) else []
+    social_links = cfg.get("social_links") if isinstance(cfg.get("social_links"), list) else []
     return {
         "currency": cfg.get("currency") or "coins",
         "disclaimer": pay["disclaimer_coins"] if not pay["enabled"] else pay["disclaimer_mn2"],
         "min_bet": int(cfg.get("min_bet") or 1),
         "max_bet": int(cfg.get("max_bet") or 500),
         "max_bets_per_day": int(cfg.get("max_bets_per_day") or 200),
+        "featured_games": featured,
+        "social_links": social_links,
         "games": public_games,
         "real_money": {
             "enabled": pay["enabled"],
@@ -381,6 +397,8 @@ def get_balance(user_id: str) -> Dict[str, Any]:
             "paypal_deposit_packs": pay["paypal_deposit_packs"],
             "disclaimer": pay["disclaimer_coins"],
             "games": cfg.get("games") or {},
+            "featured_games": cfg.get("featured_games") or [],
+            "social_links": cfg.get("social_links") or [],
         }
     except Exception as exc:
         return {
@@ -597,6 +615,17 @@ def _finalize_bet(
     }
     if jackpot_award:
         result["jackpot"] = jackpot_award
+        try:
+            from backend.services.casino_social_service import on_jackpot_win
+            on_jackpot_win(
+                user_id=user_id,
+                currency=jackpot_award.get("currency") or currency,
+                amount=float(jackpot_award.get("amount") or 0),
+                reason=str((details or {}).get("jackpot_reason") or "jackpot"),
+                bet_id=row["bet_id"],
+            )
+        except Exception:
+            pass
     if trophy_rebate:
         result["trophy_rebate"] = trophy_rebate
         result["balance"] = _user_balance(user_id, currency)
@@ -1012,6 +1041,74 @@ def get_activity_feed(limit: int = 12, currency: Optional[str] = None) -> Dict[s
             "multiplier": (row.get("details") or {}).get("cashout"),
         })
     return {"success": True, "feed": feed}
+
+
+def get_activity_stats(days: int = 5, currency: Optional[str] = None) -> Dict[str, Any]:
+    from backend.services import casino_ledger
+
+    cur = _normalize_currency(currency) if currency else None
+    safe_days = max(1, min(int(days or 5), 30))
+    daily = casino_ledger.daily_stats(days=safe_days, currency=cur)
+    tournament_joins = 0
+    try:
+        tpath = os.path.join(_ROOT, "logs", "casino_tournament_ledger.jsonl")
+        if os.path.isfile(tpath):
+            from datetime import datetime, timedelta, timezone
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=safe_days - 1)).strftime("%Y-%m-%d")
+            with open(tpath, "r", encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if str(row.get("type") or "") != "buyin":
+                        continue
+                    created = str(row.get("created_at") or "")[:10]
+                    if created >= cutoff:
+                        tournament_joins += 1
+    except OSError:
+        pass
+    return {
+        "success": True,
+        "days": safe_days,
+        "currency": cur or "all",
+        "daily": daily,
+        "tournament_joins": tournament_joins,
+    }
+
+
+def get_casino_social_preferences(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_social_service
+
+    prefs = casino_social_service.get_preferences(user_id)
+    links = casino_social_service.get_social_links()
+    discord = links.get("discord") or {}
+    return {
+        "success": True,
+        "preferences": prefs,
+        "share_ok": casino_social_service.may_share_win(user_id),
+        "discord_earn_href": discord.get("discord_play_path") or "/discord-play/",
+        "discord_invite_url": discord.get("invite_url"),
+        "discord_earn_coins": discord.get("earn_coins_join") or 0,
+    }
+
+
+def set_casino_social_preferences(
+    user_id: str,
+    *,
+    share_wins: Optional[bool] = None,
+    country_code: Optional[str] = None,
+) -> Dict[str, Any]:
+    from backend.services import casino_social_service
+
+    return casino_social_service.set_preferences(
+        user_id,
+        share_wins=share_wins,
+        country_code=country_code,
+    )
 
 
 def get_jackpots() -> Dict[str, Any]:
@@ -1527,36 +1624,48 @@ def get_leaderboard(
 ) -> Dict[str, Any]:
     safe_limit = max(1, min(int(limit or 10), 50))
     currency = _normalize_currency(currency)
-    path = _ledger_path()
     agg: Dict[str, Dict[str, float]] = defaultdict(lambda: {"net": 0.0, "bets": 0, "wins": 0, "wagered": 0.0})
-    if os.path.isfile(path):
-        try:
-            with open(path, "r", encoding="utf-8", errors="replace") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        row = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    if not isinstance(row, dict) or not row.get("user_id"):
-                        continue
-                    row_currency = _normalize_currency(row.get("currency") or "coins")
-                    if row_currency != currency:
-                        continue
-                    if row.get("exclude_leaderboard"):
-                        continue
-                    if not _row_in_period(row, period):
-                        continue
-                    uid = str(row["user_id"])
-                    agg[uid]["net"] += float(row.get("net") or 0)
-                    agg[uid]["bets"] += 1
-                    agg[uid]["wagered"] += float(row.get("bet") or 0)
-                    if row.get("outcome") == "win":
-                        agg[uid]["wins"] += 1
-        except OSError:
-            pass
+
+    # Prefer indexed DB when available (ledger migration slice).
+    try:
+        from backend.services import casino_ledger
+        db_rows = casino_ledger.leaderboard_aggregate(period=period, currency=currency)
+        if db_rows:
+            for uid, stats in db_rows.items():
+                agg[uid] = stats
+    except Exception:
+        pass
+
+    if not agg:
+        path = _ledger_path()
+        if os.path.isfile(path):
+            try:
+                with open(path, "r", encoding="utf-8", errors="replace") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            row = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if not isinstance(row, dict) or not row.get("user_id"):
+                            continue
+                        row_currency = _normalize_currency(row.get("currency") or "coins")
+                        if row_currency != currency:
+                            continue
+                        if row.get("exclude_leaderboard"):
+                            continue
+                        if not _row_in_period(row, period):
+                            continue
+                        uid = str(row["user_id"])
+                        agg[uid]["net"] += float(row.get("net") or 0)
+                        agg[uid]["bets"] += 1
+                        agg[uid]["wagered"] += float(row.get("bet") or 0)
+                        if row.get("outcome") == "win":
+                            agg[uid]["wins"] += 1
+            except OSError:
+                pass
 
     def _row_stats(uid: str, stats: Dict[str, float], rank: int) -> Dict[str, Any]:
         bets = int(stats["bets"])
@@ -2813,6 +2922,9 @@ def _scatter_bonus(reels: list, game_cfg: dict, bet_amount: float, currency: str
 
 def play_slot(user_id: str, slot_id: str, bet: float, currency: str = "coins") -> Dict[str, Any]:
     """Unified slot engine — config-driven reels, wilds, scatters, jackpots."""
+    from backend.services import casino_rng
+    from backend.services.engines import slots as slots_engine
+
     currency = _normalize_currency(currency)
     slot_id = (slot_id or "").strip()
     cfg = get_public_config()
@@ -2833,11 +2945,18 @@ def play_slot(user_id: str, slot_id: str, bet: float, currency: str = "coins") -
         return {"success": False, "error": err}
     amount = _parse_bet_amount(bet, currency) or 0
 
-    reels = [_pick_weighted_symbol(symbols, weights) for _ in range(reel_count)]
-    outcome, payout, match_info = _slot_payout(reels, paytable, amount, currency, wild_symbols=wild_symbols)
+    proof = casino_rng.draw(user_id)
+    floats = [proof["float"]]
+    for i in range(1, reel_count):
+        extra = casino_rng.draw(user_id)
+        floats.append(extra["float"])
+    reels = slots_engine.spin_reels(reel_count, symbols, weights, floats)
+    _, mult, match_info = slots_engine.evaluate_line(reels, paytable, wild_symbols=wild_symbols)
+    outcome = "win" if mult > 0 else "loss"
+    payout = _round_payout(amount * mult, currency) if mult > 0 else 0
 
     jackpot_sym = game_cfg.get("jackpot_symbol")
-    if jackpot_sym and reels[0] == reels[1] == reels[2] == jackpot_sym:
+    if jackpot_sym and len(reels) >= 3 and all(r == jackpot_sym for r in reels[:3]):
         bonus_mult = float(game_cfg.get("jackpot_multiplier") or 15.0)
         payout = _round_payout(amount * bonus_mult, currency)
         outcome = "win"
@@ -2849,12 +2968,17 @@ def play_slot(user_id: str, slot_id: str, bet: float, currency: str = "coins") -
             "win_positions": list(range(reel_count)),
         }
 
-    scatter_pay, scatter_info = _scatter_bonus(reels, game_cfg, amount, currency)
-    if scatter_pay > 0:
-        payout = _round_payout(payout + scatter_pay, currency)
-        if outcome == "loss":
-            outcome = "win"
-        match_info = {**match_info, **scatter_info}
+    scatter_sym = game_cfg.get("scatter_symbol")
+    if scatter_sym:
+        sc_count, sc_mult = slots_engine.scatter_bonus(
+            reels, scatter_sym, int(game_cfg.get("scatter_min") or 3), float(game_cfg.get("scatter_multiplier") or 2.0)
+        )
+        if sc_count > 0:
+            scatter_pay = _round_payout(amount * sc_mult, currency)
+            payout = _round_payout(payout + scatter_pay, currency)
+            if outcome == "loss":
+                outcome = "win"
+            match_info = {**match_info, "scatter_count": sc_count, "scatter_bonus": scatter_pay, "scatter_multiplier": sc_mult}
 
     return _finalize_bet(
         user_id,
@@ -2870,6 +2994,11 @@ def play_slot(user_id: str, slot_id: str, bet: float, currency: str = "coins") -
             "volatility": game_cfg.get("volatility"),
             "rtp_estimate": game_cfg.get("rtp_estimate"),
             "symbol_display": symbol_display,
+            "fairness": {
+                "server_seed_hash": proof["server_seed_hash"],
+                "client_seed": proof["client_seed"],
+                "nonce": proof["nonce"],
+            },
         },
         currency=currency,
     )
@@ -3298,8 +3427,12 @@ def list_slot_machines() -> Dict[str, Any]:
             "symbol_display": game.get("symbol_display") or {},
             "has_wild": bool(game.get("wild_symbols")),
             "has_scatter": bool(game.get("scatter_symbol")),
+            "scatter_symbol": game.get("scatter_symbol"),
             "jackpot_symbol": game.get("jackpot_symbol"),
             "jackpot_multiplier": game.get("jackpot_multiplier"),
+            "theme_color": game.get("theme_color"),
+            "accent": game.get("accent"),
+            "glow_color": game.get("glow_color"),
         })
     return {"success": True, "slots": slots, "count": len(slots)}
 
@@ -3752,6 +3885,751 @@ def hilo_cashout(user_id: str, round_id: str) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Blackjack — stateful hit / stand / double
+# ---------------------------------------------------------------------------
+
+def _blackjack_config() -> Dict[str, Any]:
+    cfg = _load_config()
+    game = (cfg.get("games") or {}).get("blackjack") if isinstance(cfg.get("games"), dict) else {}
+    game = game if isinstance(game, dict) else {}
+    return {
+        "label": game.get("label") or "Blackjack",
+        "icon": game.get("icon") or "🃏",
+        "rtp_estimate": float(game.get("rtp_estimate") or 99.5),
+        "blackjack_payout": float(game.get("blackjack_payout") or 1.5),
+        "hit_soft_17": bool(game.get("hit_soft_17", True)),
+        "max_round_seconds": float(game.get("max_round_seconds") or 7200),
+    }
+
+
+def _bj_rounds_path() -> str:
+    os.makedirs(_log_dir(), exist_ok=True)
+    return os.path.join(_log_dir(), "casino_blackjack_rounds.json")
+
+
+def _load_bj_rounds() -> Dict[str, Any]:
+    path = _bj_rounds_path()
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_bj_rounds(data: Dict[str, Any]) -> None:
+    try:
+        with open(_bj_rounds_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def _bj_cards_public(cards: List[int]) -> List[str]:
+    from backend.services.engines import cards as cards_engine
+    return [cards_engine.card_label(c) for c in cards]
+
+
+def _settle_blackjack_round(state: Dict[str, Any], outcome: str, payout: float) -> Dict[str, Any]:
+    user_id = state["user_id"]
+    currency = _normalize_currency(state.get("currency"))
+    bet = _parse_bet_amount(state.get("bet"), currency) or 0
+    payout = _round_payout(payout, currency)
+    net = _round_payout(payout - bet, currency)
+    if payout > 0:
+        _apply_balance_delta(user_id, payout, currency, "blackjack", {"phase": "payout"})
+    details = {
+        "player": _bj_cards_public(state.get("player") or []),
+        "dealer": _bj_cards_public(state.get("dealer") or []),
+        "dealer_hidden": state.get("dealer_hidden"),
+        "doubled": state.get("doubled"),
+        "fairness": state.get("fairness"),
+    }
+    row = {
+        "bet_id": state.get("round_id") or str(uuid.uuid4()),
+        "user_id": user_id,
+        "game": "blackjack",
+        "bet": bet,
+        "currency": currency,
+        "outcome": outcome,
+        "payout": payout,
+        "net": net,
+        "details": details,
+        "created_at": _iso(),
+        "exclude_leaderboard": False,
+        "parent_bet_id": None,
+        "double_step": 0,
+    }
+    jackpot_award = _append_ledger(row)
+    result = {
+        "success": True,
+        "bet_id": row["bet_id"],
+        "round_id": state.get("round_id"),
+        "game": "blackjack",
+        "bet": bet,
+        "currency": currency,
+        "outcome": outcome,
+        "payout": payout,
+        "net": net,
+        "player": details["player"],
+        "dealer": details["dealer"],
+        "balance": _user_balance(user_id, currency),
+        "coins_balance": _user_coins(user_id),
+        "mn2_balance": _user_mn2_balance(user_id),
+        "fiat_balance": _user_fiat_balance(user_id),
+        "details": details,
+    }
+    if jackpot_award:
+        result["jackpot"] = jackpot_award
+    return result
+
+
+def start_blackjack_round(user_id: str, bet: float, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    currency = _normalize_currency(currency)
+    conf = _blackjack_config()
+    rounds = _load_bj_rounds()
+    for rid, state in rounds.items():
+        if isinstance(state, dict) and state.get("user_id") == user_id and not state.get("settled"):
+            return {"success": False, "error": "Finish your active blackjack hand first", "code": "BJ_ROUND_ACTIVE", "round_id": rid}
+
+    err = _validate_bet(user_id, bet, currency)
+    if err:
+        return {"success": False, "error": err}
+    amount = _parse_bet_amount(bet, currency) or 0
+    proof = casino_rng.draw(user_id)
+    deck = cards_engine.shuffle_deck(proof["float"])
+    player, deck = cards_engine.draw_cards(deck, 2)
+    dealer, deck = cards_engine.draw_cards(deck, 2)
+    _apply_balance_delta(user_id, -amount, currency, "blackjack", {"phase": "stake"})
+
+    round_id = str(uuid.uuid4())
+    state = {
+        "round_id": round_id,
+        "user_id": user_id,
+        "bet": amount,
+        "currency": currency,
+        "player": player,
+        "dealer": dealer,
+        "deck": deck,
+        "dealer_hidden": True,
+        "doubled": False,
+        "settled": False,
+        "can_double": True,
+        "started_at": _iso(),
+        "fairness": {"server_seed_hash": proof["server_seed_hash"], "client_seed": proof["client_seed"], "nonce": proof["nonce"]},
+        "config": conf,
+    }
+
+    if cards_engine.is_blackjack(player):
+        state["dealer_hidden"] = False
+        if cards_engine.is_blackjack(dealer):
+            state["settled"] = True
+            result = _settle_blackjack_round(state, "push", amount)
+            rounds.pop(round_id, None)
+            _save_bj_rounds(rounds)
+            return result
+        state["settled"] = True
+        mult = 1.0 + conf["blackjack_payout"]
+        result = _settle_blackjack_round(state, "win", amount * mult)
+        rounds.pop(round_id, None)
+        _save_bj_rounds(rounds)
+        return result
+
+    rounds[round_id] = state
+    _save_bj_rounds(rounds)
+    return {
+        "success": True,
+        "round_id": round_id,
+        "bet": amount,
+        "currency": currency,
+        "player": _bj_cards_public(player),
+        "dealer_up": _bj_cards_public([dealer[0]])[0],
+        "player_value": cards_engine.blackjack_value(player),
+        "can_hit": True,
+        "can_stand": True,
+        "can_double": True,
+        "fairness": state["fairness"],
+        "balance": _user_balance(user_id, currency),
+    }
+
+
+def _bj_get_round(user_id: str, round_id: str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    rounds = _load_bj_rounds()
+    state = rounds.get(round_id)
+    if not isinstance(state, dict):
+        return None, {"success": False, "error": "Round not found", "code": "BJ_ROUND_NOT_FOUND"}
+    if state.get("user_id") != user_id:
+        return None, {"success": False, "error": "Round does not belong to this user"}
+    if state.get("settled"):
+        return None, {"success": False, "error": "Round already settled", "code": "BJ_ALREADY_SETTLED"}
+    return state, None
+
+
+def blackjack_hit(user_id: str, round_id: str) -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    state, err = _bj_get_round(user_id, round_id)
+    if err:
+        return err
+    proof = casino_rng.draw(user_id)
+    deck = state.get("deck") or []
+    if not deck:
+        deck = cards_engine.shuffle_deck(proof["float"])
+    drawn, deck = cards_engine.draw_cards(deck, 1)
+    state["player"] = list(state.get("player") or []) + drawn
+    state["deck"] = deck
+    state["can_double"] = False
+    val = cards_engine.blackjack_value(state["player"])
+    if val > 21:
+        state["settled"] = True
+        state["dealer_hidden"] = False
+        rounds = _load_bj_rounds()
+        result = _settle_blackjack_round(state, "loss", 0.0)
+        rounds.pop(round_id, None)
+        _save_bj_rounds(rounds)
+        result["busted"] = True
+        result["player_value"] = val
+        return result
+    rounds = _load_bj_rounds()
+    rounds[round_id] = state
+    _save_bj_rounds(rounds)
+    return {
+        "success": True,
+        "round_id": round_id,
+        "player": _bj_cards_public(state["player"]),
+        "player_value": val,
+        "can_hit": True,
+        "can_stand": True,
+        "can_double": False,
+    }
+
+
+def _blackjack_dealer_play(state: Dict[str, Any]) -> None:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    conf = state.get("config") or _blackjack_config()
+    deck = list(state.get("deck") or [])
+    while cards_engine.dealer_should_hit(state["dealer"], conf.get("hit_soft_17", True)):
+        if not deck:
+            proof = casino_rng.draw(state["user_id"])
+            deck = cards_engine.shuffle_deck(proof["float"])
+        drawn, deck = cards_engine.draw_cards(deck, 1)
+        state["dealer"] = list(state.get("dealer") or []) + drawn
+    state["deck"] = deck
+    state["dealer_hidden"] = False
+
+
+def blackjack_stand(user_id: str, round_id: str) -> Dict[str, Any]:
+    from backend.services.engines import cards as cards_engine
+
+    state, err = _bj_get_round(user_id, round_id)
+    if err:
+        return err
+    _blackjack_dealer_play(state)
+    conf = state.get("config") or _blackjack_config()
+    outcome, mult = cards_engine.blackjack_outcome(
+        state["player"], state["dealer"], blackjack_payout=conf["blackjack_payout"]
+    )
+    bet = _parse_bet_amount(state.get("bet"), _normalize_currency(state.get("currency"))) or 0
+    state["settled"] = True
+    result = _settle_blackjack_round(state, outcome, bet * mult)
+    rounds = _load_bj_rounds()
+    rounds.pop(round_id, None)
+    _save_bj_rounds(rounds)
+    result["player_value"] = cards_engine.blackjack_value(state["player"])
+    result["dealer_value"] = cards_engine.blackjack_value(state["dealer"])
+    return result
+
+
+def blackjack_double(user_id: str, round_id: str) -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    state, err = _bj_get_round(user_id, round_id)
+    if err:
+        return err
+    if not state.get("can_double"):
+        return {"success": False, "error": "Double not allowed on this hand"}
+    currency = _normalize_currency(state.get("currency"))
+    extra = _parse_bet_amount(state.get("bet"), currency) or 0
+    bal_err = _validate_bet(user_id, extra, currency)
+    if bal_err:
+        return {"success": False, "error": bal_err}
+    _apply_balance_delta(user_id, -extra, currency, "blackjack", {"phase": "double"})
+    state["bet"] = extra * 2
+    state["doubled"] = True
+    state["can_double"] = False
+    proof = casino_rng.draw(user_id)
+    deck = state.get("deck") or cards_engine.shuffle_deck(proof["float"])
+    drawn, deck = cards_engine.draw_cards(deck, 1)
+    state["player"] = list(state.get("player") or []) + drawn
+    state["deck"] = deck
+    val = cards_engine.blackjack_value(state["player"])
+    if val > 21:
+        state["settled"] = True
+        state["dealer_hidden"] = False
+        result = _settle_blackjack_round(state, "loss", 0.0)
+        rounds = _load_bj_rounds()
+        rounds.pop(round_id, None)
+        _save_bj_rounds(rounds)
+        result["busted"] = True
+        return result
+    return blackjack_stand(user_id, round_id)
+
+
+# ---------------------------------------------------------------------------
+# Baccarat — single-call player / banker / tie
+# ---------------------------------------------------------------------------
+
+def _baccarat_config() -> Dict[str, Any]:
+    cfg = _load_config()
+    game = (cfg.get("games") or {}).get("baccarat") if isinstance(cfg.get("games"), dict) else {}
+    game = game if isinstance(game, dict) else {}
+    return {
+        "label": game.get("label") or "Baccarat",
+        "icon": game.get("icon") or "🎴",
+        "rtp_estimate": float(game.get("rtp_estimate") or 98.9),
+        "banker_commission": float(game.get("banker_commission") or 0.05),
+    }
+
+
+def play_baccarat(user_id: str, bet: float, side: str, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    currency = _normalize_currency(currency)
+    conf = _baccarat_config()
+    pick = (side or "").strip().lower()
+    if pick not in ("player", "banker", "tie"):
+        return {"success": False, "error": "side must be player, banker, or tie"}
+    err = _validate_bet(user_id, bet, currency)
+    if err:
+        return {"success": False, "error": err}
+    amount = _parse_bet_amount(bet, currency) or 0
+    proof = casino_rng.draw(user_id)
+    deal = cards_engine.baccarat_deal(proof["float"])
+    winner = str(deal["winner"])
+    mult = cards_engine.baccarat_payout(pick, winner, banker_commission=conf["banker_commission"])
+    payout = _round_payout(amount * mult, currency)
+    if mult == 1.0 and pick in ("player", "banker") and winner == "tie":
+        outcome = "push"
+    elif mult > 1.0:
+        outcome = "win"
+    elif mult == 0.0:
+        outcome = "loss"
+    else:
+        outcome = "push"
+    return _finalize_bet(
+        user_id,
+        "baccarat",
+        amount,
+        outcome,
+        payout,
+        {
+            "side": pick,
+            "winner": winner,
+            "player": _bj_cards_public(list(deal["player"])),
+            "banker": _bj_cards_public(list(deal["banker"])),
+            "player_total": deal["player_total"],
+            "banker_total": deal["banker_total"],
+            "multiplier": mult,
+            "rtp_estimate": conf["rtp_estimate"],
+            "fairness": {
+                "server_seed_hash": proof["server_seed_hash"],
+                "client_seed": proof["client_seed"],
+                "nonce": proof["nonce"],
+            },
+        },
+        currency=currency,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Video poker — Jacks or Better (deal + hold/draw)
+# ---------------------------------------------------------------------------
+
+def _vp_rounds_path() -> str:
+    os.makedirs(_log_dir(), exist_ok=True)
+    return os.path.join(_log_dir(), "casino_video_poker_rounds.json")
+
+
+def _load_vp_rounds() -> Dict[str, Any]:
+    path = _vp_rounds_path()
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_vp_rounds(data: Dict[str, Any]) -> None:
+    try:
+        with open(_vp_rounds_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def _video_poker_config() -> Dict[str, Any]:
+    cfg = _load_config()
+    game = (cfg.get("games") or {}).get("video_poker") if isinstance(cfg.get("games"), dict) else {}
+    game = game if isinstance(game, dict) else {}
+    return {
+        "label": game.get("label") or "Video Poker",
+        "icon": game.get("icon") or "🎴",
+        "rtp_estimate": float(game.get("rtp_estimate") or 99.5),
+        "paytable": game.get("paytable") or {},
+    }
+
+
+def start_video_poker_round(user_id: str, bet: float, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    currency = _normalize_currency(currency)
+    rounds = _load_vp_rounds()
+    for rid, state in rounds.items():
+        if isinstance(state, dict) and state.get("user_id") == user_id and not state.get("settled"):
+            return {"success": False, "error": "Finish your active video poker hand first", "code": "VP_ROUND_ACTIVE", "round_id": rid}
+    err = _validate_bet(user_id, bet, currency)
+    if err:
+        return {"success": False, "error": err}
+    amount = _parse_bet_amount(bet, currency) or 0
+    proof = casino_rng.draw(user_id)
+    hand = cards_engine.video_poker_deal(proof["float"])
+    _apply_balance_delta(user_id, -amount, currency, "video_poker", {"phase": "stake"})
+    round_id = str(uuid.uuid4())
+    state = {
+        "round_id": round_id,
+        "user_id": user_id,
+        "bet": amount,
+        "currency": currency,
+        "hand": hand,
+        "settled": False,
+        "fairness": {"server_seed_hash": proof["server_seed_hash"], "client_seed": proof["client_seed"], "nonce": proof["nonce"]},
+    }
+    rounds[round_id] = state
+    _save_vp_rounds(rounds)
+    return {
+        "success": True,
+        "round_id": round_id,
+        "bet": amount,
+        "currency": currency,
+        "hand": _bj_cards_public(hand),
+        "fairness": state["fairness"],
+        "balance": _user_balance(user_id, currency),
+    }
+
+
+def video_poker_draw(user_id: str, round_id: str, hold: Optional[List[int]] = None) -> Dict[str, Any]:
+    from backend.services import casino_rng
+    from backend.services.engines import cards as cards_engine
+
+    rounds = _load_vp_rounds()
+    state = rounds.get(round_id)
+    if not isinstance(state, dict):
+        return {"success": False, "error": "Round not found", "code": "VP_ROUND_NOT_FOUND"}
+    if state.get("user_id") != user_id:
+        return {"success": False, "error": "Round does not belong to this user"}
+    if state.get("settled"):
+        return {"success": False, "error": "Round already settled", "code": "VP_ALREADY_SETTLED"}
+
+    conf = _video_poker_config()
+    hold_idx = [int(i) for i in (hold or []) if 0 <= int(i) < 5]
+    proof = casino_rng.draw(user_id)
+    final_hand = cards_engine.video_poker_draw(state.get("hand") or [], hold_idx, proof["float"])
+    hand_name, mult = cards_engine.evaluate_video_poker(final_hand, conf.get("paytable"))
+    currency = _normalize_currency(state.get("currency"))
+    bet = _parse_bet_amount(state.get("bet"), currency) or 0
+    payout = _round_payout(bet * mult, currency) if mult > 0 else 0
+    outcome = "win" if payout > bet else ("push" if payout == bet else "loss")
+    if payout > 0:
+        _apply_balance_delta(user_id, payout, currency, "video_poker", {"phase": "payout"})
+    details = {
+        "hand": _bj_cards_public(final_hand),
+        "hold": hold_idx,
+        "hand_name": hand_name,
+        "multiplier": mult,
+        "fairness": {**state.get("fairness", {}), "draw_nonce": proof["nonce"]},
+    }
+    row = {
+        "bet_id": round_id,
+        "user_id": user_id,
+        "game": "video_poker",
+        "bet": bet,
+        "currency": currency,
+        "outcome": outcome,
+        "payout": payout,
+        "net": _round_payout(payout - bet, currency),
+        "details": details,
+        "created_at": _iso(),
+        "exclude_leaderboard": False,
+        "parent_bet_id": None,
+        "double_step": 0,
+    }
+    jackpot_award = _append_ledger(row)
+    rounds.pop(round_id, None)
+    _save_vp_rounds(rounds)
+    result = {
+        "success": True,
+        "bet_id": round_id,
+        "round_id": round_id,
+        "game": "video_poker",
+        "bet": bet,
+        "currency": currency,
+        "outcome": outcome,
+        "payout": payout,
+        "net": row["net"],
+        "hand_name": hand_name,
+        "multiplier": mult,
+        "hand": details["hand"],
+        "balance": _user_balance(user_id, currency),
+        "details": details,
+    }
+    if jackpot_award:
+        result["jackpot"] = jackpot_award
+    return result
+
+
+# ---------------------------------------------------------------------------
+# PvP duels — coin-flip or RPS head-to-head escrow
+# ---------------------------------------------------------------------------
+
+def _duels_path() -> str:
+    os.makedirs(_log_dir(), exist_ok=True)
+    return os.path.join(_log_dir(), "casino_duels.json")
+
+
+def _load_duels() -> Dict[str, Any]:
+    path = _duels_path()
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_duels(data: Dict[str, Any]) -> None:
+    try:
+        with open(_duels_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def _duel_rake() -> float:
+    cfg = _load_config()
+    social = cfg.get("pvp") if isinstance(cfg.get("pvp"), dict) else {}
+    return float(social.get("rake_percent") or 5.0) / 100.0
+
+
+def create_pvp_duel(
+    user_id: str,
+    bet: float,
+    game: str = "coin_flip",
+    choice: str = "",
+    currency: str = "coins",
+) -> Dict[str, Any]:
+    currency = _normalize_currency(currency)
+    game = (game or "coin_flip").strip().lower()
+    if game not in ("coin_flip", "rps", "dice"):
+        return {"success": False, "error": "game must be coin_flip, rps, or dice"}
+    pick = (choice or "").strip().lower()
+    if game == "coin_flip" and pick not in ("heads", "tails"):
+        return {"success": False, "error": "choice must be heads or tails"}
+    if game == "rps" and pick not in _RPS_MOVES:
+        return {"success": False, "error": f"choice must be one of {_RPS_MOVES}"}
+    if game == "dice" and pick not in ("high", "low"):
+        return {"success": False, "error": "choice must be high or low"}
+    err = _validate_bet(user_id, bet, currency)
+    if err:
+        return {"success": False, "error": err}
+    amount = _parse_bet_amount(bet, currency) or 0
+    _apply_balance_delta(user_id, -amount, currency, "pvp_duel", {"phase": "escrow", "role": "challenger"})
+    duel_id = str(uuid.uuid4())
+    duel = {
+        "duel_id": duel_id,
+        "game": game,
+        "bet": amount,
+        "currency": currency,
+        "challenger_id": user_id,
+        "challenger_choice": pick,
+        "acceptor_id": None,
+        "acceptor_choice": None,
+        "status": "open",
+        "created_at": _iso(),
+    }
+    duels = _load_duels()
+    duels[duel_id] = duel
+    _save_duels(duels)
+    return {"success": True, "duel": {**duel, "challenger_choice": None}}
+
+
+def accept_pvp_duel(user_id: str, duel_id: str, choice: str = "") -> Dict[str, Any]:
+    from backend.services import casino_rng
+
+    duels = _load_duels()
+    duel = duels.get(duel_id)
+    if not isinstance(duel, dict):
+        return {"success": False, "error": "Duel not found"}
+    if duel.get("status") != "open":
+        return {"success": False, "error": "Duel is not open"}
+    if duel.get("challenger_id") == user_id:
+        return {"success": False, "error": "Cannot accept your own duel"}
+    currency = _normalize_currency(duel.get("currency"))
+    amount = _parse_bet_amount(duel.get("bet"), currency) or 0
+    game = duel.get("game")
+    pick = (choice or "").strip().lower()
+    if game == "coin_flip":
+        if pick not in ("heads", "tails"):
+            return {"success": False, "error": "choice must be heads or tails"}
+        if pick == duel.get("challenger_choice"):
+            return {"success": False, "error": "Pick the opposite side from the challenger"}
+    elif game == "rps":
+        if pick not in _RPS_MOVES:
+            return {"success": False, "error": f"choice must be one of {_RPS_MOVES}"}
+    elif game == "dice":
+        if pick not in ("high", "low"):
+            return {"success": False, "error": "choice must be high or low"}
+        opp = "low" if pick == "high" else "high"
+        if pick == duel.get("challenger_choice"):
+            return {"success": False, "error": f"Pick {opp} — challenger took {pick}"}
+    else:
+        return {"success": False, "error": "Unknown duel game"}
+
+    err = _validate_bet(user_id, amount, currency)
+    if err:
+        return {"success": False, "error": err}
+    _apply_balance_delta(user_id, -amount, currency, "pvp_duel", {"phase": "escrow", "role": "acceptor"})
+
+    proof = casino_rng.draw(user_id)
+    challenger = duel["challenger_id"]
+    c_choice = duel["challenger_choice"]
+    pot = amount * 2
+    rake = round(pot * _duel_rake(), 8 if currency == "mn2" else 2)
+    prize = _round_payout(pot - rake, currency)
+    winner_id = None
+    result_detail: Dict[str, Any] = {"fairness": {"server_seed_hash": proof["server_seed_hash"], "client_seed": proof["client_seed"], "nonce": proof["nonce"]}}
+
+    if game == "coin_flip":
+        outcome_face = "heads" if proof["float"] < 0.5 else "tails"
+        result_detail["result"] = outcome_face
+        if c_choice == outcome_face:
+            winner_id = challenger
+        elif pick == outcome_face:
+            winner_id = user_id
+        result_detail["challenger_choice"] = c_choice
+        result_detail["acceptor_choice"] = pick
+    elif game == "rps":
+        if _RPS_BEATS.get(pick) == c_choice:
+            winner_id = user_id
+        elif _RPS_BEATS.get(c_choice) == pick:
+            winner_id = challenger
+        result_detail["challenger_choice"] = c_choice
+        result_detail["acceptor_choice"] = pick
+    elif game == "dice":
+        roll = int(proof["float"] * 6) + 1
+        result_detail["roll"] = roll
+        high_wins = roll >= 4
+        c_wins = (c_choice == "high" and high_wins) or (c_choice == "low" and not high_wins)
+        a_wins = (pick == "high" and high_wins) or (pick == "low" and not high_wins)
+        if c_wins and not a_wins:
+            winner_id = challenger
+        elif a_wins and not c_wins:
+            winner_id = user_id
+        result_detail["challenger_choice"] = c_choice
+        result_detail["acceptor_choice"] = pick
+
+    if winner_id:
+        _apply_balance_delta(winner_id, prize, currency, "pvp_duel", {"phase": "payout", "duel_id": duel_id})
+        outcome = "win"
+    else:
+        # tie — refund both minus rake split
+        half = _round_payout((pot - rake) / 2, currency)
+        _apply_balance_delta(challenger, half, currency, "pvp_duel", {"phase": "refund", "duel_id": duel_id})
+        _apply_balance_delta(user_id, half, currency, "pvp_duel", {"phase": "refund", "duel_id": duel_id})
+        outcome = "push"
+        winner_id = None
+
+    duel["status"] = "resolved"
+    duel["acceptor_id"] = user_id
+    duel["acceptor_choice"] = pick
+    duel["winner_id"] = winner_id
+    duel["resolved_at"] = _iso()
+    duels[duel_id] = duel
+    _save_duels(duels)
+
+    for uid, role in ((challenger, "challenger"), (user_id, "acceptor")):
+        net = prize - amount if winner_id == uid else (-amount if winner_id else -rake / 2)
+        if winner_id is None:
+            net = half - amount
+        row = {
+            "bet_id": str(uuid.uuid4()),
+            "user_id": uid,
+            "game": "pvp_duel",
+            "bet": amount,
+            "currency": currency,
+            "outcome": outcome if (winner_id == uid or winner_id is None) else "loss",
+            "payout": prize if winner_id == uid else (half if winner_id is None else 0),
+            "net": net,
+            "details": {**result_detail, "duel_id": duel_id, "role": role, "game_type": game},
+            "created_at": _iso(),
+            "exclude_leaderboard": False,
+            "parent_bet_id": None,
+            "double_step": 0,
+        }
+        _append_ledger(row)
+
+    try:
+        from backend.services import casino_competition_service
+        loser = None
+        if winner_id:
+            loser = user_id if winner_id == challenger else challenger
+        casino_competition_service.on_duel_settled(winner_id, loser, challenger, user_id)
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "duel_id": duel_id,
+        "winner_id": winner_id,
+        "prize": prize if winner_id else None,
+        "rake": rake,
+        "outcome": outcome,
+        "details": result_detail,
+        "balance": _user_balance(user_id, currency),
+    }
+
+
+def list_pvp_duels(status: str = "open") -> Dict[str, Any]:
+    duels = _load_duels()
+    status = (status or "open").lower()
+    rows = []
+    for d in duels.values():
+        if not isinstance(d, dict):
+            continue
+        if status != "all" and d.get("status") != status:
+            continue
+        pub = {k: v for k, v in d.items() if k != "challenger_choice"}
+        rows.append(pub)
+    rows.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+    return {"success": True, "duels": rows, "count": len(rows)}
+
+
+# ---------------------------------------------------------------------------
 # Tournaments — thin wrappers over the casino_tournaments module
 # ---------------------------------------------------------------------------
 
@@ -3773,3 +4651,53 @@ def join_tournament(user_id: str, tournament_id: str) -> Dict[str, Any]:
 def reconcile_tournaments() -> Dict[str, Any]:
     from backend.services import casino_tournaments
     return casino_tournaments.reconcile()
+
+
+def get_progression(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_progression
+    return casino_progression.get_profile(user_id)
+
+
+def get_achievements(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_progression
+    return casino_progression.list_achievements(user_id)
+
+
+def spin_daily_wheel(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_progression
+    return casino_progression.spin_daily_wheel(user_id)
+
+
+def get_shop_catalog(user_id: Optional[str] = None) -> Dict[str, Any]:
+    from backend.services import casino_shop_service
+    return casino_shop_service.list_catalog(user_id)
+
+
+def get_shop_owned(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_shop_service
+    return casino_shop_service.list_owned(user_id)
+
+
+def purchase_shop_item(user_id: str, item_id: str, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_shop_service
+    return casino_shop_service.purchase(user_id, item_id, currency)
+
+
+def get_casino_trophies(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_trophies_service
+    return casino_trophies_service.list_trophies(user_id)
+
+
+def get_rival_board(user_id: str, period: str = "week", currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_competition_service
+    return casino_competition_service.get_rival_board(user_id, period=period, currency=currency)
+
+
+def get_achievement_races(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_competition_service
+    return casino_competition_service.get_achievement_races(user_id)
+
+
+def get_crew_casino_leaderboard(user_id: str, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_competition_service
+    return casino_competition_service.get_crew_casino_leaderboard(user_id, currency=currency)

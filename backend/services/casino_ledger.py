@@ -133,3 +133,117 @@ def recent_wins(limit: int = 12, currency: Optional[str] = None) -> List[Dict[st
         return rows
     except Exception:
         return []
+
+
+def _period_cutoff(period: str) -> Optional[str]:
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    p = (period or "today").lower()
+    if p == "today":
+        return now.strftime("%Y-%m-%d")
+    if p == "week":
+        return (now - timedelta(days=7)).isoformat().replace("+00:00", "Z")
+    return None
+
+
+def daily_stats(days: int = 5, currency: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Per-day bet aggregates for the activity monitor (last N calendar days, UTC)."""
+    from datetime import datetime, timedelta, timezone
+
+    safe_days = max(1, min(int(days or 5), 30))
+    now = datetime.now(timezone.utc)
+    day_keys = [
+        (now - timedelta(days=offset)).strftime("%Y-%m-%d")
+        for offset in range(safe_days - 1, -1, -1)
+    ]
+    empty = {k: {"bets": 0, "wins": 0, "unique_players": 0, "jackpot_hits": 0, "total_net": 0.0} for k in day_keys}
+    try:
+        with _LOCK:
+            conn = _connect()
+            try:
+                _ensure_schema(conn)
+                params: List[Any] = []
+                where = "1=1"
+                if currency:
+                    where += " AND currency = ?"
+                    params.append(str(currency).lower())
+                cutoff = (now - timedelta(days=safe_days - 1)).strftime("%Y-%m-%d")
+                where += " AND substr(created_at, 1, 10) >= ?"
+                params.append(cutoff)
+                cur = conn.execute(
+                    f"""
+                    SELECT substr(created_at, 1, 10) AS day,
+                           COUNT(*) AS bets,
+                           SUM(CASE WHEN outcome = 'win' THEN 1 ELSE 0 END) AS wins,
+                           COUNT(DISTINCT user_id) AS unique_players,
+                           SUM(CASE WHEN details LIKE '%"jackpot"%' THEN 1 ELSE 0 END) AS jackpot_hits,
+                           SUM(net) AS total_net
+                    FROM casino_bets
+                    WHERE {where}
+                    GROUP BY day
+                    ORDER BY day ASC
+                    """,
+                    params,
+                )
+                for row in cur.fetchall():
+                    day = str(row["day"])
+                    if day not in empty:
+                        continue
+                    empty[day] = {
+                        "bets": int(row["bets"] or 0),
+                        "wins": int(row["wins"] or 0),
+                        "unique_players": int(row["unique_players"] or 0),
+                        "jackpot_hits": int(row["jackpot_hits"] or 0),
+                        "total_net": float(row["total_net"] or 0),
+                    }
+            finally:
+                conn.close()
+    except Exception:
+        pass
+    return [{"day": day, **empty[day]} for day in day_keys]
+
+
+def leaderboard_aggregate(period: str = "today", currency: str = "coins") -> Dict[str, Dict[str, float]]:
+    """Aggregate net/wins/wagered per user from the DB mirror (leaderboard migration slice)."""
+    currency = (currency or "coins").lower()
+    cutoff_date = _period_cutoff(period)
+    try:
+        with _LOCK:
+            conn = _connect()
+            try:
+                _ensure_schema(conn)
+                params: List[Any] = [currency]
+                where = "currency = ? AND exclude_leaderboard = 0"
+                if cutoff_date:
+                    if period == "today":
+                        where += " AND created_at >= ?"
+                        params.append(cutoff_date)
+                    else:
+                        where += " AND created_at >= ?"
+                        params.append(cutoff_date)
+                cur = conn.execute(
+                    f"""
+                    SELECT user_id,
+                           SUM(net) AS net,
+                           COUNT(*) AS bets,
+                           SUM(bet) AS wagered,
+                           SUM(CASE WHEN outcome = 'win' THEN 1 ELSE 0 END) AS wins
+                    FROM casino_bets
+                    WHERE {where}
+                    GROUP BY user_id
+                    """,
+                    params,
+                )
+                out: Dict[str, Dict[str, float]] = {}
+                for row in cur.fetchall():
+                    out[str(row["user_id"])] = {
+                        "net": float(row["net"] or 0),
+                        "bets": float(row["bets"] or 0),
+                        "wagered": float(row["wagered"] or 0),
+                        "wins": float(row["wins"] or 0),
+                    }
+                return out
+            finally:
+                conn.close()
+    except Exception:
+        return {}

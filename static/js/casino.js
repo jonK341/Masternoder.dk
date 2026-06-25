@@ -13,6 +13,13 @@
     let disclaimers = { coins: '', mn2: '', paypal: '' };
     let securityToken = localStorage.getItem('casino_security_token') || '';
     let securityExpires = localStorage.getItem('casino_security_expires') || '';
+    let activeMainTab = localStorage.getItem('casino_main_tab') || 'home';
+    let featuredGames = [];
+    let socialLinks = [];
+    let shareNetworks = [];
+    let lastBigWin = null;
+    let mobileConfig = null;
+    let deferredInstallPrompt = null;
 
     function securityTokenValid() {
         if (!securityToken || !securityExpires) return false;
@@ -58,7 +65,10 @@
         if (!soundEnabled) return;
         try {
             audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            var notes = { tick: [660, 0.04, 0.05], win: [880, 0.06, 0.16], big: [1200, 0.09, 0.32], bust: [180, 0.07, 0.3] };
+            var notes = {
+                tick: [660, 0.04, 0.05], win: [880, 0.06, 0.16], big: [1200, 0.09, 0.32], bust: [180, 0.07, 0.3],
+                spin: [520, 0.025, 0.03], stop: [320, 0.07, 0.09], scatter: [1040, 0.08, 0.22], jackpot: [880, 0.12, 0.45]
+            };
             var spec = notes[type] || notes.win;
             var osc = audioCtx.createOscillator();
             var gain = audioCtx.createGain();
@@ -110,8 +120,10 @@
         if (bet <= 0 || payout <= 0) return;
         var multiple = payout / bet;
         if (multiple >= 10) {
+            lastBigWin = { net: data.net, currency: data.currency, game: data.game, multiple: multiple };
             celebrate('MEGA WIN', '+' + formatNet(data.net) + ' ' + currencyLabel(data.currency) + ' · ' + multiple.toFixed(2) + '×', 'mega');
         } else if (multiple >= 3) {
+            lastBigWin = { net: data.net, currency: data.currency, game: data.game, multiple: multiple };
             celebrate('BIG WIN', '+' + formatNet(data.net) + ' ' + currencyLabel(data.currency) + ' · ' + multiple.toFixed(2) + '×', 'big');
         }
     }
@@ -259,7 +271,9 @@
             ['casino-disclaimer-text', 'Casino data unavailable — refresh the page'],
             ['casino-slots-grid', 'Slot machines unavailable — refresh the page'],
             ['casino-deposit-packs', 'PayPal deposits unavailable'],
-            ['casino-social-board', 'Social board unavailable'],
+            ['casino-featured-grid', 'Featured games unavailable'],
+            ['casino-activity-charts', 'Activity monitor unavailable'],
+            ['casino-social-follow-grid', 'Social links unavailable'],
             ['counter-pick-hint', 'Counter hint unavailable'],
             ['rps-distribution-stats', 'Battle stats unavailable'],
             ['outcome-distribution-stats', 'Battle outcomes unavailable'],
@@ -289,6 +303,213 @@
         if (!uid) return '—';
         if (uid.length <= 14) return uid;
         return uid.slice(0, 10) + '…';
+    }
+
+    function avatarInitial(uid) {
+        var s = String(uid || '?');
+        return s.charAt(0).toUpperCase();
+    }
+
+    var TAB_ALIASES = { lobby: 'home', walk: 'home', lounge: 'home', games: 'home' };
+
+    function normalizeDeepLinkTab(tab) {
+        if (!tab) return null;
+        var key = String(tab).toLowerCase();
+        return TAB_ALIASES[key] || key;
+    }
+
+    function resolveDeepLinkTabFromUrl() {
+        if (window.__casinoMobile && window.__casinoMobile.resolveDeepLinkTab) {
+            return window.__casinoMobile.resolveDeepLinkTab();
+        }
+        var params = new URLSearchParams(window.location.search);
+        var game = params.get('game');
+        if (game && document.getElementById('casino-tab-' + game)) return game;
+        var tab = normalizeDeepLinkTab(params.get('tab'));
+        if (tab && document.getElementById('casino-tab-' + tab)) return tab;
+        var hash = (window.location.hash || '').replace(/^#tab-/, '');
+        if (hash && document.getElementById('casino-tab-' + hash)) return hash;
+        return null;
+    }
+
+    function applyDeepLinks() {
+        var target = resolveDeepLinkTabFromUrl();
+        if (target) switchMainTab(target);
+    }
+
+    function isStandaloneDisplay() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true ||
+            new URLSearchParams(window.location.search).get('app') === 'casino-twa';
+    }
+
+    function isAndroid() {
+        return /Android/i.test(navigator.userAgent || '');
+    }
+
+    async function initMobileInstall() {
+        var panel = $('casino-play-install');
+        var badge = $('casino-play-store-badge');
+        var pwaBtn = $('casino-pwa-install-btn');
+        if (!panel) return;
+        try {
+            mobileConfig = await fetch(baseUrl + '/api/casino/mobile/config').then(function (r) { return r.json(); });
+        } catch (e) {
+            mobileConfig = null;
+        }
+        if (badge && mobileConfig && mobileConfig.play_store_url) {
+            badge.href = mobileConfig.play_store_url;
+        }
+        if (!isStandaloneDisplay() && (isAndroid() || deferredInstallPrompt)) {
+            panel.classList.remove('hidden');
+        }
+        if (pwaBtn && deferredInstallPrompt) {
+            pwaBtn.classList.remove('hidden');
+            pwaBtn.addEventListener('click', async function () {
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                try { await deferredInstallPrompt.userChoice; } catch (e) { /* ignore */ }
+                deferredInstallPrompt = null;
+                pwaBtn.classList.add('hidden');
+            });
+        }
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        var panel = $('casino-play-install');
+        var pwaBtn = $('casino-pwa-install-btn');
+        if (panel) panel.classList.remove('hidden');
+        if (pwaBtn) pwaBtn.classList.remove('hidden');
+    });
+
+    function switchMainTab(tabId) {
+        activeMainTab = tabId || 'home';
+        localStorage.setItem('casino_main_tab', activeMainTab);
+        document.querySelectorAll('.casino-main-tab').forEach(function (btn) {
+            var on = btn.getAttribute('data-tab') === activeMainTab;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.casino-tab-panel').forEach(function (panel) {
+            var match = panel.id === 'casino-tab-' + activeMainTab;
+            panel.classList.toggle('active', match);
+            panel.hidden = !match;
+        });
+        if (activeMainTab === 'leaderboard') {
+            safeRefresh('leaderboard', refreshLeaderboard);
+        } else if (activeMainTab === 'activity') {
+            safeRefresh('activityMonitor', refreshActivityMonitor);
+        } else if (activeMainTab === 'social') {
+            safeRefresh('socialTab', initSocialTab);
+        } else if (activeMainTab === 'compete') {
+            safeRefresh('competeTab', refreshCompeteTab);
+        }
+        try {
+            if (history.replaceState) {
+                var qs = new URLSearchParams(window.location.search);
+                if (qs.get('game')) {
+                    history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-' + activeMainTab);
+                } else {
+                    history.replaceState(null, '', '#tab-' + activeMainTab);
+                }
+            }
+        } catch (e) { /* optional */ }
+        try {
+            if (window.__casinoMobile && window.__casinoMobile.hapticLight) {
+                window.__casinoMobile.hapticLight();
+            }
+        } catch (e) { /* optional haptics */ }
+    }
+
+    window.__casinoSwitchTab = switchMainTab;
+
+    function renderFeaturedGames() {
+        var grid = $('casino-featured-grid');
+        if (!grid) return;
+        if (!featuredGames.length) {
+            grid.textContent = 'No featured games configured.';
+            return;
+        }
+        grid.innerHTML = '';
+        featuredGames.forEach(function (fg) {
+            var card = document.createElement('article');
+            card.className = 'casino-featured-card';
+            card.setAttribute('data-game', fg.id);
+            card.innerHTML =
+                '<div class="casino-featured-icon">' + (fg.icon || '🎮') + '</div>' +
+                (fg.tag ? '<span class="casino-featured-tag">' + fg.tag + '</span>' : '') +
+                '<div class="casino-featured-label">' + (fg.label || fg.id) + '</div>' +
+                '<div class="casino-featured-blurb">' + (fg.blurb || 'Play now') + '</div>' +
+                '<button type="button" class="casino-featured-play">Quick play</button>';
+            card.querySelector('.casino-featured-play').addEventListener('click', function (e) {
+                e.stopPropagation();
+                switchMainTab(fg.id);
+            });
+            card.addEventListener('click', function () { switchMainTab(fg.id); });
+            grid.appendChild(card);
+        });
+    }
+
+    function initMainTabNav() {
+        var nav = $('casino-main-tabs');
+        var panelsRoot = $('casino-tab-panels');
+        var grid = $('casino-games-grid');
+        if (!nav || !panelsRoot) return;
+
+        function addTabBtn(id, label, isActive) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-main-tab' + (isActive ? ' active' : '');
+            btn.id = 'casino-tab-btn-' + id;
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('data-tab', id);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            btn.textContent = label;
+            btn.addEventListener('click', function () { switchMainTab(id); });
+            nav.appendChild(btn);
+            return btn;
+        }
+
+        nav.innerHTML = '';
+        addTabBtn('home', '🏠 Home', activeMainTab === 'home');
+
+        if (grid) {
+            var cards = grid.querySelectorAll('.casino-card[data-casino-game]');
+            cards.forEach(function (card) {
+                var gameId = card.getAttribute('data-casino-game');
+                var label = card.getAttribute('data-casino-label') || gameId;
+                var panel = document.createElement('section');
+                panel.className = 'casino-tab-panel';
+                panel.id = 'casino-tab-' + gameId;
+                panel.setAttribute('role', 'tabpanel');
+                panel.hidden = true;
+                panel.appendChild(card);
+                panelsRoot.insertBefore(panel, $('casino-tab-leaderboard'));
+                addTabBtn(gameId, label, activeMainTab === gameId);
+            });
+            grid.remove();
+        }
+
+        addTabBtn('leaderboard', '🏆 Leaderboard', activeMainTab === 'leaderboard');
+        addTabBtn('activity', '📊 Activity', activeMainTab === 'activity');
+        addTabBtn('compete', '⚔️ Compete', activeMainTab === 'compete');
+        addTabBtn('social', '🌐 Social', activeMainTab === 'social');
+
+        var deepTab = resolveDeepLinkTabFromUrl();
+        if (deepTab) {
+            activeMainTab = deepTab;
+        } else {
+            var hash = (window.location.hash || '').replace(/^#tab-/, '');
+            if (hash && document.getElementById('casino-tab-' + hash)) {
+                activeMainTab = hash;
+            }
+        }
+        switchMainTab(activeMainTab);
+        try {
+            window.dispatchEvent(new CustomEvent('casino:ready'));
+        } catch (e) { /* optional */ }
     }
 
     function setResult(el, data) {
@@ -467,6 +688,9 @@
             }
         }
         if (!data.success) return;
+        featuredGames = data.featured_games || [];
+        socialLinks = data.social_links || [];
+        try { renderFeaturedGames(); } catch (e) { /* optional */ }
         try {
             realMoneyEnabled = !!(data.real_money && data.real_money.enabled);
             paypalEnabled = realMoneyEnabled && (data.real_money.rails || []).indexOf('paypal') >= 0;
@@ -739,40 +963,314 @@
     }
 
     async function refreshLeaderboard() {
-        const tbody = $('casino-leaderboard-body');
-        const rankBar = $('casino-rank-bar');
-        if (!tbody) return;
-        const data = await api(apiPathWithCurrency('/api/casino/leaderboard?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=10'));
-        tbody.innerHTML = '';
+        var podium = $('casino-lb-podium');
+        var list = $('casino-lb-list');
+        var youEl = $('casino-lb-you');
+        var rankBar = $('casino-rank-bar');
+        if (!list && !podium) {
+            return;
+        }
+        var data = await api(apiPathWithCurrency('/api/casino/leaderboard?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=25'));
         if (!data.success) {
-            tbody.innerHTML = '<tr><td colspan="5">' + (data.error || 'Leaderboard unavailable') + '</td></tr>';
+            if (list) list.innerHTML = '<li>' + (data.error || 'Leaderboard unavailable') + '</li>';
+            if (podium) podium.innerHTML = '';
+            if (youEl) youEl.textContent = '';
             if (rankBar) rankBar.textContent = data.error || 'Rank unavailable';
             return;
         }
-        (data.leaderboard || []).forEach(function (row) {
-            const tr = document.createElement('tr');
-            const highlight = row.user_id === userId ? ' class="casino-you"' : '';
-            tr.innerHTML =
-                '<td' + highlight + '>' + row.rank + '</td>' +
-                '<td' + highlight + '>' + shortUser(row.user_id) + '</td>' +
-                '<td' + highlight + '>' + row.net + '</td>' +
-                '<td' + highlight + '>' + (row.win_rate != null ? row.win_rate + '%' : '—') + '</td>' +
-                '<td' + highlight + '>' + (row.roi != null ? row.roi + '%' : '—') + '</td>';
-            tbody.appendChild(tr);
-        });
-        if (!(data.leaderboard || []).length) {
-            tbody.innerHTML = '<tr><td colspan="5">No bets yet for this period</td></tr>';
+        var rows = data.leaderboard || [];
+        var medals = ['🥇', '🥈', '🥉'];
+
+        if (podium) {
+            podium.innerHTML = '';
+            [1, 0, 2].forEach(function (idx) {
+                var row = rows[idx];
+                var rank = idx + 1;
+                var slot = document.createElement('div');
+                slot.className = 'casino-lb-podium-slot rank-' + rank;
+                if (!row) {
+                    slot.innerHTML = '<div class="casino-lb-medal">' + medals[idx] + '</div><div class="casino-lb-handle">—</div>';
+                } else {
+                    slot.innerHTML =
+                        '<div class="casino-lb-medal">' + medals[idx] + '</div>' +
+                        '<div class="casino-lb-avatar" aria-hidden="true">' + avatarInitial(row.user_id) + '</div>' +
+                        '<div class="casino-lb-handle">' + shortUser(row.user_id) + '</div>' +
+                        '<div class="casino-lb-net">+' + row.net + ' ' + currencyLabel(row.currency) + '</div>';
+                }
+                podium.appendChild(slot);
+            });
         }
-        if (rankBar) {
-            const you = data.your_rank;
-            if (!you) {
-                rankBar.textContent = 'Your rank: unranked this period — place a bet to appear.';
+
+        if (list) {
+            list.innerHTML = '';
+            if (!rows.length) {
+                list.innerHTML = '<li class="casino-lb-row">No bets yet for this period</li>';
             } else {
-                rankBar.textContent =
-                    'Your rank #' + you.rank + ' · Net ' + you.net + ' · Win ' + you.win_rate + '% · ROI ' + you.roi + '%' +
+                rows.forEach(function (row) {
+                    var li = document.createElement('li');
+                    var extra = '';
+                    if (row.rank === 1) extra = ' top-gold';
+                    else if (row.rank === 2) extra = ' top-silver';
+                    else if (row.rank === 3) extra = ' top-bronze';
+                    if (row.user_id === userId) extra += ' you';
+                    li.className = 'casino-lb-row' + extra;
+                    li.innerHTML =
+                        '<span class="casino-lb-rank-num">' + row.rank + '</span>' +
+                        '<span class="casino-lb-mini-avatar" aria-hidden="true">' + avatarInitial(row.user_id) + '</span>' +
+                        '<span class="casino-lb-handle">' + shortUser(row.user_id) + '</span>' +
+                        '<span class="casino-lb-net">' + row.net + '</span>' +
+                        '<span class="casino-lb-roi">' + (row.win_rate != null ? row.win_rate + '% win' : '') + '</span>';
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        if (youEl) {
+            var you = data.your_rank;
+            if (!you) {
+                youEl.textContent = 'Your rank: unranked this period — place a bet to appear.';
+            } else {
+                youEl.textContent =
+                    'You are #' + you.rank + ' · Net ' + you.net + ' · Win ' + you.win_rate + '% · ROI ' + you.roi + '%' +
                     (you.gap_to_first > 0 ? ' · ' + you.gap_to_first + ' behind #1' : ' · Leading!');
             }
         }
+        if (rankBar) {
+            var yr = data.your_rank;
+            if (!yr) {
+                rankBar.textContent = 'Your rank: unranked — open Leaderboard tab after your first bet.';
+            } else {
+                rankBar.textContent =
+                    'Your rank #' + yr.rank + ' · Net ' + yr.net + ' · Win ' + yr.win_rate + '% · ROI ' + yr.roi + '%' +
+                    (yr.gap_to_first > 0 ? ' · ' + yr.gap_to_first + ' behind #1' : ' · Leading!');
+            }
+        }
+    }
+
+    async function refreshActivityMonitor() {
+        var charts = $('casino-activity-charts');
+        var feedList = $('casino-activity-feed-list');
+        if (!charts) return;
+        var data = await api(apiPathWithCurrency('/api/casino/activity-stats?days=5'));
+        if (!data.success || !(data.daily || []).length) {
+            charts.textContent = data.error || 'Activity data unavailable';
+            return;
+        }
+        var daily = data.daily;
+        var metrics = [
+            { key: 'bets', label: 'Bets', color: '#60a5fa' },
+            { key: 'wins', label: 'Wins', color: '#34d399' },
+            { key: 'unique_players', label: 'Unique players', color: '#c084fc' },
+            { key: 'jackpot_hits', label: 'Jackpot hits', color: '#fbbf24' },
+        ];
+        charts.innerHTML = '';
+        metrics.forEach(function (metric) {
+            var max = 1;
+            daily.forEach(function (d) { max = Math.max(max, Number(d[metric.key] || 0)); });
+            var block = document.createElement('div');
+            block.className = 'casino-activity-metric';
+            block.innerHTML = '<h3>' + metric.label + '</h3><div class="casino-activity-bars"></div>';
+            var bars = block.querySelector('.casino-activity-bars');
+            daily.forEach(function (d) {
+                var val = Number(d[metric.key] || 0);
+                var wrap = document.createElement('div');
+                wrap.className = 'casino-activity-bar-wrap';
+                var bar = document.createElement('div');
+                bar.className = 'casino-activity-bar';
+                bar.style.height = Math.max(4, Math.round((val / max) * 64)) + 'px';
+                bar.style.background = 'linear-gradient(180deg, ' + metric.color + ', #7c3aed)';
+                bar.title = String(val);
+                wrap.appendChild(bar);
+                var lbl = document.createElement('span');
+                lbl.textContent = (d.day || '').slice(5);
+                wrap.appendChild(lbl);
+                bars.appendChild(wrap);
+            });
+            charts.appendChild(block);
+        });
+        if (data.tournament_joins != null) {
+            var tnote = document.createElement('p');
+            tnote.className = 'casino-activity-sub';
+            tnote.textContent = 'Tournament buy-ins (5d): ' + data.tournament_joins;
+            charts.appendChild(tnote);
+        }
+        if (feedList) {
+            var feed = await api('/api/casino/activity-feed?limit=8');
+            if (!feed.success || !(feed.feed || []).length) {
+                feedList.textContent = 'No recent wins yet.';
+            } else {
+                feedList.innerHTML = '<h3>Recent wins</h3>' + feed.feed.map(function (f) {
+                    return '<div class="casino-activity-feed-item">🏆 ' + shortUser(f.user_id) + ' won ' +
+                        formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + '</div>';
+                }).join('');
+            }
+        }
+    }
+
+    function buildSocialLinkCard(link, isShare) {
+        var a = document.createElement('a');
+        a.className = 'casino-social-link-card';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        var href = link.url || '#';
+        if (isShare && link.share_url) {
+            var text = encodeURIComponent(shareNetworks.default_share_text || 'MasterNoder Casino');
+            var url = encodeURIComponent((shareNetworks.share_base_url || baseUrl) + '/casino/');
+            href = link.share_url.replace('{text}', text).replace('{url}', url);
+        } else if (href.indexOf('/') === 0) {
+            href = baseUrl + href;
+        }
+        a.href = href;
+        a.innerHTML =
+            '<span class="casino-social-link-icon">' + (link.icon || '🌐') + '</span>' +
+            '<span class="casino-social-link-label">' + (link.label || link.name || link.id) + '</span>';
+        return a;
+    }
+
+    async function initSocialTab() {
+        var followGrid = $('casino-social-follow-grid');
+        var shareGrid = $('casino-social-share-grid');
+        if (!followGrid) return;
+
+        var linksData = null;
+        try {
+            linksData = await api('/api/casino/social/links');
+        } catch (e) {
+            linksData = null;
+        }
+        if (linksData && linksData.success) {
+            shareNetworks = {
+                share_base_url: linksData.share_base_url || baseUrl,
+                default_share_text: linksData.default_share_text || 'MasterNoder Casino',
+                networks: linksData.share_networks || [],
+            };
+            socialLinks = linksData.follow_links || socialLinks;
+            var discord = linksData.discord || {};
+            var fb = linksData.facebook || {};
+            var playBadge = $('casino-play-store-badge');
+            if (playBadge && linksData.mobile && linksData.mobile.play_store_url) {
+                playBadge.href = linksData.mobile.play_store_url;
+            }
+            var discordActivity = $('casino-discord-activity-link');
+            if (discordActivity && discord.activity_invite_url) {
+                discordActivity.href = discord.activity_invite_url;
+                discordActivity.classList.remove('hidden');
+            }
+            if (fb.page_url) {
+                var hasFb = socialLinks.some(function (l) { return l.id === 'facebook'; });
+                if (!hasFb) {
+                    socialLinks.push({ id: 'facebook', label: 'Facebook', icon: 'f', url: fb.page_url, type: 'follow' });
+                }
+            }
+        } else if (!shareNetworks.networks) {
+            try {
+                var sn = await fetch(baseUrl + '/data/social_networks.json').then(function (r) { return r.json(); });
+                shareNetworks = sn || {};
+            } catch (e) {
+                shareNetworks = {};
+            }
+        }
+
+        followGrid.innerHTML = '';
+        (socialLinks.length ? socialLinks : []).forEach(function (link) {
+            if (link.type === 'play' || link.type === 'follow' || link.type === 'mobile') {
+                followGrid.appendChild(buildSocialLinkCard(link, false));
+            }
+        });
+        if (!socialLinks.length) {
+            followGrid.textContent = 'Social links loading from config…';
+        }
+
+        if (shareGrid) {
+            shareGrid.innerHTML = '';
+            (shareNetworks.networks || []).forEach(function (net) {
+                shareGrid.appendChild(buildSocialLinkCard(net, true));
+            });
+        }
+
+        var prefs = await api('/api/casino/social/preferences');
+        var toggle = $('casino-share-wins-toggle');
+        if (toggle && prefs.success && prefs.preferences) {
+            toggle.checked = !!prefs.preferences.share_wins;
+        }
+        var discordLink = $('casino-discord-play-link');
+        if (discordLink) {
+            if (prefs.discord_earn_href) discordLink.href = prefs.discord_earn_href;
+            if (prefs.discord_earn_coins) {
+                var earnStrip = $('casino-discord-earn');
+                if (earnStrip) {
+                    var p = earnStrip.querySelector('p');
+                    if (p) {
+                        p.textContent = 'Opt in to mirror big wins to Discord. Join the server to earn ' +
+                            prefs.discord_earn_coins + ' bonus coins.';
+                    }
+                }
+            }
+        }
+        initMobileInstall();
+    }
+
+    async function shareCasinoWin() {
+        if (!lastBigWin) {
+            showToast('Win something big first (3× or more), then share!');
+            return;
+        }
+        var payload = {
+            user_id: userId,
+            game: lastBigWin.game,
+            net: lastBigWin.net,
+            currency: lastBigWin.currency,
+            multiplier: lastBigWin.multiple,
+        };
+        var card = null;
+        try {
+            card = await api('/api/casino/share/big-win', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        } catch (e) {
+            card = null;
+        }
+        if (card && card.success && card.share_urls) {
+            window.open(card.share_urls.twitter || card.share_urls.facebook, '_blank', 'noopener');
+            showToast('Share card ready — pick your network');
+            return;
+        }
+        var text = 'I just won ' + formatNet(lastBigWin.net) + ' ' + currencyLabel(lastBigWin.currency) +
+            ' on ' + prettyGame(lastBigWin.game) + ' at MasterNoder Casino!';
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        var xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+        window.open(xUrl, '_blank', 'noopener');
+    }
+
+    async function shareCasinoSite() {
+        var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        try {
+            var card = await api('/api/casino/share/big-win', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, game: 'casino', net: 0, currency: 'coins' }),
+            });
+            if (card && card.success && card.share_urls && card.share_urls.facebook) {
+                window.open(card.share_urls.facebook, '_blank', 'noopener');
+                showToast('Facebook share opened');
+                return;
+            }
+        } catch (e) { /* fallback */ }
+        var fb = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+        window.open(fb, '_blank', 'noopener');
+        showToast('Share dialog opened — paste your message: ' + text);
+    }
+
+    async function toggleShareWins(enabled) {
+        await api('/api/casino/social/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ share_wins: !!enabled, user_id: userId }),
+        });
+        showToast(enabled ? 'Discord win sharing enabled' : 'Discord win sharing off');
     }
 
     function refreshFreeBetStatus(status) {
@@ -979,6 +1477,8 @@
 
     let slotCatalog = [];
 
+    var SLOT_FLICKER_DEFAULT = ['🍒', '7️⃣', '💎', '⭐', '🔔', '🎰', '⚡', '🌟'];
+
     function displaySymbol(sym, symbolDisplay) {
         if (symbolDisplay && symbolDisplay[sym]) return symbolDisplay[sym];
         var fallbacks = {
@@ -988,7 +1488,10 @@
             sun: '☀️', moon: '🌙', comet: '☄️', orbit: '🪐', void: '🕳️',
             sword: '⚔️', shield: '🛡️', crown: '👑', banner: '🚩', skull: '💀',
             chest: '🧰', map: '🗺️', anchor: '⚓', rum: '🍾', parrot: '🦜',
-            mega7: '7️⃣', fire: '🔥', gold: '🥇', blank: '⬜'
+            mega7: '7️⃣', fire: '🔥', gold: '🥇', blank: '⬜',
+            ankh: '☥', scarab: '🪲', eye: '👁️', pyramid: '🔺', sand: '🏜️',
+            pearl: '🔮', whale: '🐋', coral: '🪸', fish: '🐠', shell: '🐚',
+            fairy: '🧚', mushroom: '🍄', owl: '🦉', leaf: '🍃', acorn: '🌰'
         };
         return fallbacks[sym] || sym || '?';
     }
@@ -997,58 +1500,261 @@
         return String(slotId).replace(/[^a-z0-9_-]/gi, '-');
     }
 
-    function renderSlotReels(containerId, reels, symbolDisplay, winPositions) {
+    function getSlotMeta(slotId) {
+        for (var i = 0; i < slotCatalog.length; i++) {
+            if (slotCatalog[i].id === slotId) return slotCatalog[i];
+        }
+        return { id: slotId, reels: 3 };
+    }
+
+    function slotThemeStyle(slot) {
+        if (!slot) return '';
+        var parts = [];
+        if (slot.theme_color) parts.push('--slot-theme:' + slot.theme_color);
+        if (slot.accent) parts.push('--slot-accent:' + slot.accent);
+        if (slot.glow_color) parts.push('--slot-glow:' + slot.glow_color);
+        return parts.length ? ' style="' + parts.join(';') + '"' : '';
+    }
+
+    function computeNearMissPositions(reels) {
+        if (!reels || reels.length !== 3) return [];
+        if (reels[0] === reels[1] && reels[0] !== reels[2]) return [0, 1];
+        if (reels[1] === reels[2] && reels[1] !== reels[0]) return [1, 2];
+        if (reels[0] === reels[2] && reels[0] !== reels[1]) return [0, 2];
+        return [];
+    }
+
+    function scatterPositions(reels, scatterSym) {
+        if (!scatterSym || !reels) return [];
+        var pos = [];
+        reels.forEach(function (sym, idx) {
+            if (sym === scatterSym) pos.push(idx);
+        });
+        return pos;
+    }
+
+    function renderSlotReels(containerId, reels, symbolDisplay, winPositions, nearMissPositions, scatterPos) {
         const el = $(containerId);
         if (!el) return;
-        el.innerHTML = '';
         var wins = winPositions || [];
-        (reels || ['?', '?', '?']).forEach(function (sym, idx) {
+        var near = nearMissPositions || [];
+        var scat = scatterPos || [];
+        var count = (reels && reels.length) ? reels.length : 3;
+        el.classList.remove('reels-3', 'reels-4', 'reels-5');
+        el.classList.add('reels-' + Math.min(5, Math.max(3, count)));
+        el.innerHTML = '';
+        (reels || Array(count).fill('?')).forEach(function (sym, idx) {
             const reel = document.createElement('div');
             reel.className = 'casino-slot-reel';
             if (wins.indexOf(idx) >= 0) reel.classList.add('win');
+            if (near.indexOf(idx) >= 0) reel.classList.add('near-miss');
+            if (scat.indexOf(idx) >= 0) reel.classList.add('scatter-hit');
+            const track = document.createElement('div');
+            track.className = 'casino-slot-reel-track';
             const inner = document.createElement('span');
             inner.className = 'casino-slot-reel-symbol';
             inner.textContent = sym === '?' ? '❓' : displaySymbol(sym, symbolDisplay);
-            reel.appendChild(inner);
+            track.appendChild(inner);
+            reel.appendChild(track);
             el.appendChild(reel);
         });
     }
 
-    function spinPlaceholder(containerId) {
-        renderSlotReels(containerId, ['?', '?', '?'], {}, []);
+    function spinPlaceholder(containerId, reelCount) {
+        var n = reelCount || 3;
+        var blanks = [];
+        for (var i = 0; i < n; i++) blanks.push('?');
+        renderSlotReels(containerId, blanks, {}, [], [], []);
     }
 
     function delay(ms) {
         return new Promise(function (resolve) { setTimeout(resolve, ms); });
     }
 
-    async function animateSlotSpin(containerId, finalReels, symbolDisplay, winPositions) {
+    function rafDelay(ms) {
+        return new Promise(function (resolve) {
+            var start = performance.now();
+            function tick(now) {
+                if (now - start >= ms) resolve();
+                else requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
+    }
+
+    function isMobileSlot() {
+        try { return window.matchMedia && window.matchMedia('(max-width: 640px)').matches; } catch (e) { return false; }
+    }
+
+    function spawnSlotParticles(machineEl, kind, intensity) {
+        if (!machineEl || prefersReducedMotion()) return;
+        var layer = machineEl.querySelector('.casino-slot-fx-layer');
+        if (!layer) return;
+        var count = (intensity === 'mega' ? 28 : intensity === 'big' ? 16 : 8) * (isMobileSlot() ? 0.5 : 1);
+        count = Math.max(4, Math.round(count));
+        var coins = kind === 'coins';
+        for (var i = 0; i < count; i++) {
+            var p = document.createElement('span');
+            p.className = coins ? 'casino-slot-coin' : 'casino-slot-confetti';
+            p.textContent = coins ? '🪙' : ['✨', '⭐', '💫', '🎉'][i % 4];
+            p.style.left = (10 + Math.random() * 80) + '%';
+            p.style.animationDelay = (Math.random() * 0.35) + 's';
+            p.style.animationDuration = (0.7 + Math.random() * 0.6) + 's';
+            layer.appendChild(p);
+            setTimeout(function (node) {
+                if (node.parentNode) node.parentNode.removeChild(node);
+            }, 1600, p);
+        }
+    }
+
+    function flashWinLine(machineEl) {
+        if (!machineEl || prefersReducedMotion()) return;
+        var line = machineEl.querySelector('.casino-slot-win-line');
+        if (!line) return;
+        line.classList.add('active');
+        setTimeout(function () { line.classList.remove('active'); }, 900);
+    }
+
+    function pulseSlotCabinet(machineEl, tier) {
+        if (!machineEl) return;
+        machineEl.classList.remove('slot-win-pulse', 'slot-mega-pulse', 'slot-scatter-pulse', 'slot-near-pulse');
+        if (tier === 'mega') machineEl.classList.add('slot-mega-pulse');
+        else if (tier === 'scatter') machineEl.classList.add('slot-scatter-pulse');
+        else if (tier === 'near') machineEl.classList.add('slot-near-pulse');
+        else machineEl.classList.add('slot-win-pulse');
+        setTimeout(function () {
+            machineEl.classList.remove('slot-win-pulse', 'slot-mega-pulse', 'slot-scatter-pulse', 'slot-near-pulse');
+        }, tier === 'mega' ? 2200 : 1400);
+    }
+
+    async function animateSlotSpin(containerId, finalReels, symbolDisplay, details) {
         const el = $(containerId);
         if (!el) return;
+        details = details || {};
+        var winPositions = details.win_positions || [];
+        var nearMiss = details.near_miss ? computeNearMissPositions(finalReels) : [];
+        var scatPos = details.scatter_bonus ? scatterPositions(finalReels, details.scatter_symbol) : [];
+        var machineEl = el.closest('.casino-slot-machine');
+
+        if (prefersReducedMotion()) {
+            renderSlotReels(containerId, finalReels, symbolDisplay, winPositions, nearMiss, scatPos);
+            if (winPositions.length) flashWinLine(machineEl);
+            return;
+        }
+
         const pool = Object.values(symbolDisplay || {});
-        const flicker = pool.length ? pool : ['🍒', '7️⃣', '💎', '⭐', '🔔', '🎰'];
-        const reels = el.querySelectorAll('.casino-slot-reel');
-        if (!reels.length) {
-            renderSlotReels(containerId, ['?', '?', '?'], symbolDisplay, []);
-        }
+        const flicker = pool.length ? pool : SLOT_FLICKER_DEFAULT;
+        const reelCount = (finalReels || []).length || 3;
+        renderSlotReels(containerId, Array(reelCount).fill('?'), symbolDisplay, [], [], []);
         const cols = el.querySelectorAll('.casino-slot-reel');
-        for (var pass = 0; pass < 8; pass++) {
-            cols.forEach(function (col, idx) {
-                col.classList.add('spinning');
-                var sym = col.querySelector('.casino-slot-reel-symbol');
-                if (sym) sym.textContent = flicker[(pass + idx) % flicker.length];
+        if (!cols.length) return;
+
+        if (machineEl) machineEl.classList.add('is-spinning');
+        var baseDuration = 900 + reelCount * 80;
+        var stagger = 280;
+        var stopped = {};
+        var lastTick = 0;
+        var startTime = performance.now();
+        var spinSoundAt = 0;
+
+        await new Promise(function (resolve) {
+            function frame(now) {
+                var elapsed = now - startTime;
+                var allDone = true;
+                cols.forEach(function (col, idx) {
+                    var stopAt = baseDuration + idx * stagger;
+                    if (stopped[idx]) {
+                        return;
+                    }
+                    allDone = false;
+                    if (elapsed >= stopAt) {
+                        stopped[idx] = true;
+                        col.classList.remove('spinning');
+                        col.classList.add('stopping');
+                        var symEl = col.querySelector('.casino-slot-reel-symbol');
+                        if (symEl) {
+                            symEl.textContent = displaySymbol(finalReels[idx], symbolDisplay);
+                        }
+                        playSound('stop');
+                        setTimeout(function (c) {
+                            c.classList.remove('stopping');
+                            c.classList.add('landed');
+                            setTimeout(function (cc) { cc.classList.remove('landed'); }, 320);
+                        }, 280, col);
+                        return;
+                    }
+                    col.classList.add('spinning');
+                    var tick = Math.floor(elapsed / 55);
+                    if (tick !== lastTick && idx === 0) {
+                        lastTick = tick;
+                        if (now - spinSoundAt > 95) {
+                            playSound('spin');
+                            spinSoundAt = now;
+                        }
+                    }
+                    var symEl = col.querySelector('.casino-slot-reel-symbol');
+                    if (symEl) symEl.textContent = flicker[(tick + idx * 3) % flicker.length];
+                });
+                if (allDone) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(frame);
+                }
+            }
+            requestAnimationFrame(frame);
+        });
+
+        if (machineEl) machineEl.classList.remove('is-spinning');
+        renderSlotReels(containerId, finalReels, symbolDisplay, winPositions, nearMiss, scatPos);
+
+        if (winPositions.length) {
+            flashWinLine(machineEl);
+            await rafDelay(120);
+        }
+        if (nearMiss.length) {
+            var nearCols = el.querySelectorAll('.casino-slot-reel');
+            nearCols.forEach(function (c, i) {
+                if (nearMiss.indexOf(i) >= 0) c.classList.add('near-miss-tease');
             });
-            await delay(70 + pass * 8);
+            await rafDelay(500);
+            el.querySelectorAll('.near-miss-tease').forEach(function (c) { c.classList.remove('near-miss-tease'); });
         }
-        for (var stop = 0; stop < (finalReels || []).length; stop++) {
-            cols[stop]?.classList.remove('spinning');
-            cols[stop]?.classList.add('stopping');
-            var symEl = cols[stop]?.querySelector('.casino-slot-reel-symbol');
-            if (symEl) symEl.textContent = displaySymbol(finalReels[stop], symbolDisplay);
-            await delay(280);
-            cols[stop]?.classList.remove('stopping');
+    }
+
+    function celebrateSlotOutcome(data, slotId) {
+        if (!data || !data.success) return;
+        var dom = slotDomId(slotId);
+        var machineEl = document.querySelector('.casino-slot-machine[data-slot-id="' + slotId + '"]');
+        var det = data.details || {};
+        var bet = Number(data.bet || 0);
+        var payout = Number(data.payout || 0);
+        var multiple = bet > 0 ? payout / bet : Number(det.multiplier || 0);
+
+        if (det.match === 'jackpot' || det.scatter_bonus) {
+            playSound(det.match === 'jackpot' ? 'jackpot' : 'scatter');
+            pulseSlotCabinet(machineEl, det.match === 'jackpot' ? 'mega' : 'scatter');
+            spawnSlotParticles(machineEl, 'confetti', 'big');
         }
-        renderSlotReels(containerId, finalReels, symbolDisplay, winPositions);
+        if (det.near_miss && data.outcome !== 'win') {
+            pulseSlotCabinet(machineEl, 'near');
+            playSound('tick');
+        }
+        if (data.outcome === 'win') {
+            if (multiple >= 10) {
+                spawnSlotParticles(machineEl, 'coins', 'mega');
+                pulseSlotCabinet(machineEl, 'mega');
+            } else if (multiple >= 3) {
+                spawnSlotParticles(machineEl, 'coins', 'big');
+                pulseSlotCabinet(machineEl, 'win');
+            } else if (winPositionsFromDetails(det).length) {
+                playSound('win');
+                spawnSlotParticles(machineEl, 'confetti', 'small');
+            }
+        }
+    }
+
+    function winPositionsFromDetails(det) {
+        return det.win_positions || [];
     }
 
     function volatilityClass(v) {
@@ -1059,7 +1765,9 @@
     function buildSlotMachineCard(slot) {
         var sid = slot.id;
         var dom = slotDomId(sid);
-        return '<article class="casino-slot-machine" data-slot-id="' + sid + '">' +
+        var reelN = slot.reels || 3;
+        var reelCls = 'reels-' + Math.min(5, Math.max(3, reelN));
+        return '<article class="casino-slot-machine" data-slot-id="' + sid + '" data-slot="' + sid + '"' + slotThemeStyle(slot) + '>' +
             '<div class="casino-slot-machine-head">' +
             '<span class="casino-slot-icon">' + (slot.icon || '🎰') + '</span>' +
             '<div><h3>' + (slot.label || sid) + '</h3>' +
@@ -1071,11 +1779,13 @@
             (slot.jackpot_symbol ? '<span class="casino-slot-tag jackpot">JACKPOT ' + (slot.jackpot_multiplier || '') + '×</span>' : '') +
             '</div></div></div>' +
             '<div class="casino-slot-cabinet">' +
-            '<div id="slot-reels-' + dom + '" class="casino-slot-reels"></div>' +
+            '<div class="casino-slot-win-line" aria-hidden="true"></div>' +
+            '<div id="slot-reels-' + dom + '" class="casino-slot-reels ' + reelCls + '"></div>' +
+            '<div class="casino-slot-fx-layer" aria-hidden="true"></div>' +
             '</div>' +
             '<div class="casino-controls">' +
             '<input id="slot-bet-' + dom + '" type="number" min="5" max="500" value="25" aria-label="' + (slot.label || sid) + ' bet">' +
-            '<button type="button" class="casino-slot-spin-btn" data-slot-id="' + sid + '">Spin</button>' +
+            '<button type="button" class="casino-slot-spin-btn" data-slot-id="' + sid + '"><span class="casino-slot-spin-label">Spin</span></button>' +
             '</div>' +
             '<div id="slot-result-' + dom + '" class="casino-result"></div>' +
             '</article>';
@@ -1091,12 +1801,25 @@
                 icon: g.icon || '🎰',
                 volatility: g.volatility || 'medium',
                 rtp_estimate: g.rtp_estimate,
+                reels: g.reels || 3,
                 symbol_display: g.symbol_display || {},
                 has_wild: !!(g.has_wild || (g.wild_symbols && g.wild_symbols.length)),
                 has_scatter: !!(g.has_scatter || g.scatter_symbol),
+                scatter_symbol: g.scatter_symbol,
                 jackpot_symbol: g.jackpot_symbol,
                 jackpot_multiplier: g.jackpot_multiplier,
+                theme_color: g.theme_color,
+                accent: g.accent,
+                glow_color: g.glow_color,
             };
+        });
+    }
+
+    function bindSlotSpinButtons(grid) {
+        grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                playSlot(btn.getAttribute('data-slot-id'));
+            });
         });
     }
 
@@ -1111,13 +1834,9 @@
         slotCatalog = catalog;
         grid.innerHTML = catalog.map(buildSlotMachineCard).join('');
         catalog.forEach(function (slot) {
-            spinPlaceholder('slot-reels-' + slotDomId(slot.id));
+            spinPlaceholder('slot-reels-' + slotDomId(slot.id), slot.reels || 3);
         });
-        grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                playSlot(btn.getAttribute('data-slot-id'));
-            });
-        });
+        bindSlotSpinButtons(grid);
     }
 
     async function loadSlotMachines() {
@@ -1130,13 +1849,9 @@
                 slotCatalog = data.slots;
                 grid.innerHTML = slotCatalog.map(buildSlotMachineCard).join('');
                 slotCatalog.forEach(function (slot) {
-                    spinPlaceholder('slot-reels-' + slotDomId(slot.id));
+                    spinPlaceholder('slot-reels-' + slotDomId(slot.id), slot.reels || 3);
                 });
-                grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        playSlot(btn.getAttribute('data-slot-id'));
-                    });
-                });
+                bindSlotSpinButtons(grid);
                 return;
             }
             var settings = await api('/api/casino/settings', null, 8000);
@@ -1152,17 +1867,23 @@
 
     async function playSlot(slotId) {
         if (!slotId) return;
+        var meta = getSlotMeta(slotId);
         var dom = slotDomId(slotId);
         var reelsId = 'slot-reels-' + dom;
         var resultId = 'slot-result-' + dom;
         var betInput = $('slot-bet-' + dom);
         var btn = document.querySelector('.casino-slot-spin-btn[data-slot-id="' + slotId + '"]');
-        if (btn) btn.disabled = true;
-        spinPlaceholder(reelsId);
+        var machineEl = document.querySelector('.casino-slot-machine[data-slot-id="' + slotId + '"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('spinning');
+        }
+        spinPlaceholder(reelsId, meta.reels || 3);
         var reelEl = $(reelsId);
-        if (reelEl) {
+        if (reelEl && !prefersReducedMotion()) {
             reelEl.querySelectorAll('.casino-slot-reel').forEach(function (c) { c.classList.add('spinning'); });
         }
+        playSound('spin');
 
         const data = await api('/api/casino/play/slot', {
             method: 'POST',
@@ -1174,19 +1895,21 @@
         });
 
         if (data.success && data.details) {
-            await animateSlotSpin(
-                reelsId,
-                data.details.reels || [],
-                data.details.symbol_display || {},
-                data.details.win_positions || []
-            );
+            var det = data.details;
+            if (!det.scatter_symbol && meta.scatter_symbol) det.scatter_symbol = meta.scatter_symbol;
+            await animateSlotSpin(reelsId, det.reels || [], det.symbol_display || {}, det);
+            celebrateSlotOutcome(data, slotId);
         } else {
-            spinPlaceholder(reelsId);
+            spinPlaceholder(reelsId, meta.reels || 3);
         }
         setResult($(resultId), data);
         showDoubleOffer(data);
         await afterPlay();
-        if (btn) btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('spinning');
+        }
+        if (machineEl) machineEl.classList.remove('is-spinning');
     }
 
     async function verifyCasinoSecurity() {
@@ -2254,6 +2977,179 @@
         await afterPlay();
     }
 
+    // -- Blackjack / Baccarat / Video Poker / Duels / Progression ------------
+    var bj = { roundId: null, active: false };
+    var vp = { roundId: null, hold: [] };
+
+    function setBjControls(active) {
+        bj.active = active;
+        ['bj-hit', 'bj-stand', 'bj-double'].forEach(function (id) {
+            var el = $(id); if (el) el.disabled = !active;
+        });
+        var d = $('bj-deal'); if (d) d.disabled = active;
+    }
+
+    async function dealBlackjack() {
+        var bet = parseFloat(($('bj-bet') || {}).value || 25);
+        var data = await api('/api/casino/play/blackjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        if (!data.success) { $('bj-result') && ($('bj-result').textContent = data.error || 'Failed'); return; }
+        if (data.bet_id) { setResult($('bj-result'), data); await afterPlay(); return; }
+        bj.roundId = data.round_id;
+        $('bj-player') && ($('bj-player').textContent = (data.player || []).join(' ') + ' (' + (data.player_value || '?') + ')');
+        $('bj-dealer') && ($('bj-dealer').textContent = 'Dealer: ' + (data.dealer_up || '?'));
+        setBjControls(true);
+        $('bj-result') && ($('bj-result').textContent = '');
+    }
+
+    async function bjAction(path) {
+        if (!bj.roundId) return;
+        var data = await api(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, round_id: bj.roundId }),
+        });
+        if (!data.success) { $('bj-result') && ($('bj-result').textContent = data.error || 'Failed'); return; }
+        if (data.player) $('bj-player') && ($('bj-player').textContent = data.player.join(' ') + (data.player_value != null ? ' (' + data.player_value + ')' : ''));
+        if (data.dealer) $('bj-dealer') && ($('bj-dealer').textContent = 'Dealer: ' + data.dealer.join(' ') + (data.dealer_value != null ? ' (' + data.dealer_value + ')' : ''));
+        if (data.bet_id || data.outcome) {
+            setResult($('bj-result'), data);
+            bj.roundId = null; setBjControls(false);
+            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            await afterPlay();
+        }
+    }
+
+    async function playBaccarat() {
+        var bet = parseFloat(($('baccarat-bet') || {}).value || 25);
+        var side = ($('baccarat-side') || {}).value || 'player';
+        var data = await api('/api/casino/play/baccarat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, side: side, currency: activeCurrency }),
+        });
+        setResult($('baccarat-result'), data);
+        if (data.success) { try { maybeCelebrate(data); } catch (e) { /* optional */ } await afterPlay(); }
+    }
+
+    function renderVpHold(hand) {
+        var el = $('vp-hold');
+        if (!el || !hand) return;
+        el.innerHTML = hand.map(function (c, i) {
+            return '<label><input type="checkbox" class="vp-hold-cb" value="' + i + '"> Hold ' + c + '</label>';
+        }).join(' ');
+    }
+
+    async function dealVideoPoker() {
+        var bet = parseFloat(($('vp-bet') || {}).value || 25);
+        var data = await api('/api/casino/play/video-poker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        if (!data.success) { setResult($('vp-result'), data); return; }
+        vp.roundId = data.round_id;
+        $('vp-hand') && ($('vp-hand').textContent = (data.hand || []).join(' '));
+        renderVpHold(data.hand);
+        var dr = $('vp-draw'); if (dr) dr.disabled = false;
+        var de = $('vp-deal'); if (de) de.disabled = true;
+        $('vp-result') && ($('vp-result').textContent = '');
+    }
+
+    async function drawVideoPoker() {
+        if (!vp.roundId) return;
+        var hold = [];
+        document.querySelectorAll('.vp-hold-cb:checked').forEach(function (cb) { hold.push(parseInt(cb.value, 10)); });
+        var data = await api('/api/casino/play/video-poker/draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, round_id: vp.roundId, hold: hold }),
+        });
+        setResult($('vp-result'), data);
+        vp.roundId = null;
+        var dr = $('vp-draw'); if (dr) dr.disabled = true;
+        var de = $('vp-deal'); if (de) de.disabled = false;
+        if (data.success) { try { maybeCelebrate(data); } catch (e) { /* optional */ } await afterPlay(); }
+    }
+
+    async function refreshDuels() {
+        var el = $('duel-open-list');
+        if (!el) return;
+        var data = await api('/api/casino/duels?status=open');
+        if (!data.success || !(data.duels || []).length) {
+            el.textContent = 'No open duels — create one!';
+            return;
+        }
+        el.innerHTML = data.duels.map(function (d) {
+            return '<div class="casino-duel-row">' + d.game + ' · ' + d.bet + ' ' + currencyLabel(d.currency) +
+                ' <button type="button" class="duel-accept-btn" data-id="' + d.duel_id + '">Accept</button></div>';
+        }).join('');
+        el.querySelectorAll('.duel-accept-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { acceptDuel(btn.getAttribute('data-id')); });
+        });
+    }
+
+    async function createDuel() {
+        var game = ($('duel-game') || {}).value || 'coin_flip';
+        var choice = ($('duel-choice') || {}).value || 'heads';
+        if (game === 'rps') {
+            choice = prompt('Pick rock, paper, or scissors', 'rock') || 'rock';
+        } else if (game === 'dice') {
+            choice = prompt('Pick high or low', 'high') || 'high';
+        }
+        var data = await api('/api/casino/duels/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: parseFloat(($('duel-bet') || {}).value || 25), game: game, choice: choice, currency: activeCurrency }),
+        });
+        setResult($('duel-result'), data);
+        if (data.success) await refreshDuels();
+    }
+
+    async function acceptDuel(duelId) {
+        var gameEl = $('duel-game');
+        var game = gameEl ? gameEl.value : 'coin_flip';
+        var choice = ($('duel-choice') || {}).value || 'tails';
+        if (game === 'rps') choice = prompt('Pick rock, paper, or scissors', 'rock') || 'rock';
+        else if (game === 'dice') choice = prompt('Pick high or low (opposite of challenger)', 'low') || 'low';
+        else choice = choice === 'heads' ? 'tails' : 'heads';
+        var data = await api('/api/casino/duels/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: duelId, choice: choice }),
+        });
+        setResult($('duel-result'), data);
+        if (data.success) { await refreshDuels(); await afterPlay(); }
+    }
+
+    async function refreshProgression() {
+        var el = $('casino-progression');
+        if (!el) return;
+        var data = await api('/api/casino/progression?user_id=' + encodeURIComponent(userId));
+        if (!data.success) { el.textContent = 'Progression unavailable.'; return; }
+        var xp = data.xp || {};
+        var vip = data.vip || {};
+        el.innerHTML = '<div class="casino-prog-row">' + (vip.badge || '') + ' ' + (vip.label || 'Bronze') +
+            ' · Level ' + (xp.level || 1) + ' ' + (xp.title || '') + '</div>' +
+            '<div class="casino-prog-row">XP ' + Math.round(xp.xp || 0) +
+            (xp.next_level_xp ? ' / ' + xp.next_level_xp : '') + '</div>';
+    }
+
+    async function spinDailyWheel() {
+        var data = await api('/api/casino/daily-wheel/spin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
+        });
+        if (data.success) showToast('Daily wheel: ' + (data.label || data.coins_awarded + ' coins'));
+        else showToast(data.error || 'Wheel unavailable');
+        await refreshProgression();
+        await afterPlay();
+    }
+
     // -- Tournaments --------------------------------------------------------
     function tournamentAmount(currency, value) {
         var v = Number(value || 0);
@@ -2376,6 +3272,23 @@
         bindClick('hilo-higher', function () { hiloGuess('higher'); });
         bindClick('hilo-lower', function () { hiloGuess('lower'); });
         bindClick('hilo-cashout', hiloCashout);
+        bindClick('bj-deal', dealBlackjack);
+        bindClick('bj-hit', function () { bjAction('/api/casino/play/blackjack/hit'); });
+        bindClick('bj-stand', function () { bjAction('/api/casino/play/blackjack/stand'); });
+        bindClick('bj-double', function () { bjAction('/api/casino/play/blackjack/double'); });
+        bindClick('baccarat-play', playBaccarat);
+        bindClick('vp-deal', dealVideoPoker);
+        bindClick('vp-draw', drawVideoPoker);
+        bindClick('duel-create', createDuel);
+        bindClick('casino-daily-wheel', spinDailyWheel);
+        bindChange('duel-game', function () {
+            var g = ($('duel-game') || {}).value;
+            var sel = $('duel-choice');
+            if (!sel) return;
+            if (g === 'rps') sel.innerHTML = '<option value="rock">Rock</option><option value="paper">Paper</option><option value="scissors">Scissors</option>';
+            else if (g === 'dice') sel.innerHTML = '<option value="high">High (4-6)</option><option value="low">Low (1-3)</option>';
+            else sel.innerHTML = '<option value="heads">Heads</option><option value="tails">Tails</option>';
+        });
         bindClick('casino-sound-toggle', toggleSound);
         updateSoundToggle();
         document.querySelectorAll('.casino-currency-btn').forEach(function (btn) {
@@ -2386,9 +3299,14 @@
         bindChange('rps-dist-lane', refreshDistribution);
         bindChange('rps-dist-context', refreshDistribution);
         bindChange('outcome-dist-lane', refreshOutcomeDistribution);
-        document.querySelectorAll('.casino-tab').forEach(function (tab) {
+        bindClick('casino-share-win-btn', shareCasinoWin);
+        bindClick('casino-share-site-btn', shareCasinoSite);
+        bindChange('casino-share-wins-toggle', function () {
+            toggleShareWins($('casino-share-wins-toggle').checked);
+        });
+        document.querySelectorAll('.casino-lb-period-tabs .casino-tab').forEach(function (tab) {
             tab.addEventListener('click', function () {
-                document.querySelectorAll('.casino-tab').forEach(function (t) { t.classList.remove('active'); });
+                document.querySelectorAll('.casino-lb-period-tabs .casino-tab').forEach(function (t) { t.classList.remove('active'); });
                 tab.classList.add('active');
                 leaderboardPeriod = tab.getAttribute('data-period') || 'today';
                 refreshLeaderboard();
@@ -2397,6 +3315,9 @@
         });
 
         setTimeout(markStaleLoadingPanels, 15000);
+
+        try { initMainTabNav(); } catch (e) { console.warn('[casino] tab nav failed:', e); }
+        try { applyDeepLinks(); } catch (e) { console.warn('[casino] deep links failed:', e); }
 
         try {
             await refreshBalance();
@@ -2421,6 +3342,8 @@
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
         safeRefresh('tournaments', refreshTournaments);
+        safeRefresh('progression', refreshProgression);
+        safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }

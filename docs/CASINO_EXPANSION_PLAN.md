@@ -99,6 +99,74 @@ python scripts/deploy.py --files \
 
 ---
 
+## ✅ Shipped — competition, shop, trophies & achievements (C6 slice)
+
+Decisions locked: cosmetic-only shop items (no RTP perks), coin rewards for trophies/achievements, three currency rails unchanged, `virtual_casino` blueprint only.
+
+**User competition**
+- **PvP duels** extended: coin flip, RPS, and **dice** (high/low 4–6 vs 1–3) with escrow + rake; ledgered; hooks into progression/trophies on settle.
+- **Rival boards** — `GET /api/casino/rivals` weekly/monthly net-vs-peers; "Rival of the week" callout; duel streak battles.
+- **Achievement races** — first-to-unlock races (`first_jackpot`, `first_duel_10`, `first_shop_15`) with coin prizes; `GET /api/casino/achievement-races`.
+- **Crew casino leaderboard** — `GET /api/casino/crew-leaderboard` aggregates crew member casino net from ledger (hooks `data/social_structure.json` crews).
+- **Tournament enhancements** — weekly/monthly templates with `rivalry_callout`; tournament close hooks award progression/trophies.
+
+**Casino shop (24 items)** — `data/casino_shop_catalog.json`
+- Avatar frames, table skins, card backs, slot themes, free-bet vouchers, VIP badges, emotes, win celebrations, tournament/duel tokens, trophy pedestals, profile banners.
+- Service: `backend/services/casino_shop_service.py`
+- Routes: `GET /api/casino/shop/catalog`, `GET /api/casino/shop/owned`, `POST /api/casino/shop/purchase`
+
+**Trophies (25)** — `data/casino_trophies.json`
+- Win streaks, jackpots, tournament placements, duel wins/streaks, game exploration, high roller, daily grinder, crash/plinko/mines, social, shop/achievement collection, rival of the week.
+- Service: `backend/services/casino_trophies_service.py`; awards coin rewards + syncs global trophy DB when available.
+- Route: `GET /api/casino/trophies`
+
+**Achievements (35, bronze/silver/gold tiers)** — `data/casino_achievements.json`
+- Per-game milestones, competitive (rival beats, tournament, duels), collection (shop/trophies), streaks, volume, achievement races.
+- Extended `backend/services/casino_progression.py` with metric-based `on_event()` + progress bars; hooked from `_append_ledger`, duel settle, tournament close, shop purchase.
+- Route: `GET /api/casino/achievements` (progress % included)
+
+**Competition orchestration** — `backend/services/casino_competition_service.py`
+
+**UI** — Compete tab in `casino/index.html` + `static/js/casino.js`: rival board, achievement races, crew board, shop grid with buy, trophies grid, achievements grid with progress bars. Dice added to duel game selector.
+
+**Tests:** `tests/unit/test_casino_competition_expansion.py` (6 passing) — shop purchase, trophies/achievements lists, rivals/races/crew, dice duel, progression unlock.
+
+**Still to build (next waves):** rest of the roster polish, moving leaderboard/quest reads onto the DB ledger, spectating/shareable duel cards.
+
+---
+
+## ✅ Shipped — mobile, Discord, and Facebook integration (Play / social slice)
+
+Cross-platform casino distribution and social fan-out:
+
+**Google Play / TWA (`mobile/casino-twa/`)**
+- `casino/manifest.webmanifest` — standalone PWA, icons, Play `related_applications`
+- `static/.well-known/assetlinks.json` — Digital Asset Links template (replace Play signing SHA-256)
+- `static/js/casino-twa-shell.js` + `casino-twa-shell.css` — bottom nav for `?app=casino-twa`
+- Deep links: `?game=crash`, `?tab=social`, `?app=casino-twa`
+- Social tab: Google Play badge + PWA install prompt on Android
+- `mobile/casino-twa/PLAY_STORE_LISTING.md` — store copy + screenshot checklist
+
+**Discord casino fan-out**
+- `backend/services/casino_discord_fanout.py` — activity_events → `#casino` embeds (big win, jackpot, tournament start/end)
+- Hooks: `_finalize_bet` → `on_big_win` / `on_jackpot_win`; tournaments → start/end events
+- Opt-in + geo gate via `casino_social_service` (existing); cron `cron/discord_casino_fanout.sh`
+- Routes: `POST /api/casino/discord/notify`, `POST /api/discord/casino/fanout`
+
+**Facebook / share**
+- Open Graph + Twitter Card meta on `casino/index.html`
+- `POST /api/casino/share/big-win` — share card + network URLs
+- Facebook page link in Social tab; no new OAuth (existing `social_auth_service` unchanged)
+
+**APIs**
+- `GET /api/casino/mobile/config`, `GET /api/casino/social/links`
+- Agent parity on `/api/agent/casino/*`
+- Config blocks: `mobile`, `discord_integration`, `facebook`, `social` in `data/casino_config.json`
+
+**Ops (not in repo):** set `DISCORD_CHANNEL_ID_CASINO` webhook URL, replace assetlinks SHA-256, upload AAB to Play Console.
+
+---
+
 ## 0. Core constraints (read first)
 
 These are **locked** and the expansion must respect them:
@@ -348,3 +416,22 @@ C1 is a prerequisite for the rest (engines + ledger). C2–C5 can interleave; C6
 4. **Scope first cut:** do you want C1+C2 as the first shippable milestone, or a thin vertical slice (1 new game end‑to‑end with the show layer) to validate the pattern before the full roster?
 
 > Default recommendation if you don't pick: ship **C1 + a vertical slice (Crash, coins + MN2)** first — it exercises the engine refactor, provably‑fair RNG, DB ledger, stateful rounds, and the animation/ticker layer in one go, then fan out the rest of the roster.
+
+---
+
+## Shipped this session (2026-06-25)
+
+Consolidated deploy pass from parallel casino workers:
+
+| Area | Shipped |
+|------|---------|
+| **UI** | Tabbed casino hub (`casino/index.html`, `casino.js`, `casino.css`); slot polish and show-layer hooks |
+| **Games / backend** | Expanded `casino_service` + routes (crash, engines: `slots`, `cards`); ledger and config in `data/casino_config.json` |
+| **Progression** | `casino_progression`, achievements data, shop + trophies services and catalogs |
+| **Competition** | `casino_competition_service`, tournaments wiring |
+| **Agents** | `agent_casino_routes`, Kelly-style casino agents, LLM planner, skillset sync |
+| **Social** | `casino_social_service`, Discord fanout (`casino_discord_fanout`), platform news hooks |
+| **Mobile** | `mobile/casino-twa`, `mobile/casino-app`, `casino/manifest.webmanifest`, `casino-twa-shell.js` |
+| **Tests** | `test_casino_crash`, routes, agents, discord fanout, competition expansion, agent LLM (77 tests green) |
+
+**Ops / follow-up:** set Discord webhook env vars for win fanout; Play Store / App Store builds are scaffold-only until signing and store listings are configured; enable `AGENT_CASINO_SECRET` and optional `CASINO_AGENT_LLM` in production.

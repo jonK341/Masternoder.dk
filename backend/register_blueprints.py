@@ -909,6 +909,18 @@ def register_all_blueprints(app):
     except Exception as e:
         print(f"  [ERROR] Error registering casino: {e}")
 
+    # Casino betting agents (Kelly / dry-run orchestration)
+    try:
+        from backend.routes.agent_casino_routes import agent_casino_bp
+        if 'agent_casino' not in app.blueprints:
+            app.register_blueprint(agent_casino_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_casino blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_casino: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_casino: {e}")
+
     # PayPal (real-money payments — add PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET to .env)
     try:
         from backend.routes.paypal_routes import paypal_bp

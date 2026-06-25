@@ -203,6 +203,37 @@ def on_big_win(
     )
 
 
+def on_tournament_start(
+    *,
+    tournament_id: str,
+    title: str,
+    currency: str,
+    pool: float,
+    end_at: str,
+) -> None:
+    pool_label = _format_amount(pool, currency)
+    _publish_news(
+        item_id=f"casino-tournament-start-{tournament_id}",
+        title=f"Tournament live — {title}",
+        summary=(
+            f"A new {pool_label} prize pool tournament is open. "
+            f"Join before it ends and climb the leaderboard. {_RG_FOOTER}"
+        ),
+        featured=False,
+    )
+    _emit(
+        "casino_tournament_start",
+        user_id=None,
+        payload={
+            "tournament_id": tournament_id,
+            "title": title,
+            "currency": currency,
+            "pool": pool,
+            "end_at": end_at,
+        },
+    )
+
+
 def on_tournament_end(
     *,
     tournament_id: str,
@@ -409,3 +440,190 @@ def check_vip_discord_eligibility(user_id: str) -> Dict[str, Any]:
 
 def rg_footer() -> str:
     return _RG_FOOTER
+
+
+def _base_url() -> str:
+    return (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+
+
+def _load_casino_config() -> Dict[str, Any]:
+    path = os.path.join(_BASE, "data", "casino_config.json")
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def get_mobile_config() -> Dict[str, Any]:
+    """TWA / Capacitor / App Store metadata for casino mobile shell."""
+    cfg = _load_casino_config()
+    mobile = cfg.get("mobile") if isinstance(cfg.get("mobile"), dict) else {}
+    base = _base_url()
+    start_path = mobile.get("start_url") or "/casino/?app=casino-capacitor&tab=lobby"
+    ios_start = mobile.get("ios_start_url") or "/casino/?app=casino-capacitor&tab=lobby"
+    return {
+        "success": True,
+        "app_version": mobile.get("app_version") or "1.0.0",
+        "package_id": mobile.get("package_id") or "dk.masternoder.casino",
+        "bundle_id": mobile.get("bundle_id") or "dk.masternoder.casino",
+        "play_store_url": mobile.get("play_store_url") or (
+            "https://play.google.com/store/apps/details?id=dk.masternoder.casino"
+        ),
+        "app_store_url": mobile.get("app_store_url") or (
+            "https://apps.apple.com/app/id0000000000"
+        ),
+        "manifest_url": f"{base}/casino/manifest.webmanifest",
+        "assetlinks_url": f"{base}/.well-known/assetlinks.json",
+        "aasa_url": f"{base}/.well-known/apple-app-site-association",
+        "start_url": f"{base}{start_path}" if start_path.startswith("/") else start_path,
+        "ios_start_url": f"{base}{ios_start}" if ios_start.startswith("/") else ios_start,
+        "deep_link_base": mobile.get("deep_link_base") or f"{base}/casino/",
+        "deep_link_params": {
+            "game": "Opens game tab (e.g. crash, plinko, slot_classic)",
+            "tab": "Main tab (home, social, lobby, walk, leaderboard, activity)",
+            "app": "Shell chrome: casino-twa (Play TWA), casino-capacitor, casino-pwa",
+        },
+        "url_scheme": mobile.get("url_scheme") or "masternoder",
+        "custom_scheme_examples": [
+            "masternoder://casino?game=crash",
+            "masternoder://casino?tab=social",
+        ],
+        "universal_link_paths": mobile.get("universal_link_paths") or ["/casino", "/casino/*"],
+        "theme_color": mobile.get("theme_color") or "#1A1035",
+        "background_color": mobile.get("background_color") or "#0A0E14",
+        "display": "standalone",
+        "orientation": mobile.get("orientation") or "portrait-primary",
+        "twa_app_param": "casino-twa",
+        "capacitor_app_param": "casino-capacitor",
+        "pwa_app_param": "casino-pwa",
+        "install_prompt_enabled": bool(mobile.get("install_prompt_enabled", True)),
+        "feature_flags": {
+            "haptics": bool(mobile.get("haptics", True)),
+            "bottom_nav_shell": bool(mobile.get("bottom_nav_shell", True)),
+            "universal_links": bool(mobile.get("universal_links", True)),
+        },
+    }
+
+
+def get_social_links() -> Dict[str, Any]:
+    """Official social URLs and share networks for the casino Social tab."""
+    cfg = _load_casino_config()
+    links = cfg.get("social_links") if isinstance(cfg.get("social_links"), list) else []
+    discord_cfg = cfg.get("discord_integration") if isinstance(cfg.get("discord_integration"), dict) else {}
+    facebook_cfg = cfg.get("facebook") if isinstance(cfg.get("facebook"), dict) else {}
+    social_cfg = cfg.get("social") if isinstance(cfg.get("social"), dict) else {}
+    networks: List[Dict[str, Any]] = []
+    sn_path = os.path.join(_BASE, "data", "social_networks.json")
+    if os.path.isfile(sn_path):
+        try:
+            with open(sn_path, "r", encoding="utf-8") as f:
+                sn = json.load(f)
+            if isinstance(sn.get("networks"), list):
+                networks = sn["networks"]
+        except Exception:
+            pass
+    base = social_cfg.get("share_base_url") or _base_url()
+    mobile = get_mobile_config()
+    return {
+        "success": True,
+        "follow_links": links,
+        "share_networks": networks,
+        "share_base_url": base,
+        "default_share_text": social_cfg.get("default_share_text") or (
+            "Play at MasterNoder Casino — crash, slots, plinko, and more."
+        ),
+        "discord": {
+            "invite_url": discord_cfg.get("invite_url") or "https://discord.gg/masternoder",
+            "activity_invite_url": discord_cfg.get("activity_invite_url") or discord_cfg.get("invite_url"),
+            "earn_coins_join": int(discord_cfg.get("earn_coins_join") or 0),
+            "discord_play_path": discord_cfg.get("discord_play_path") or "/discord-play/",
+            "webhook_env": discord_cfg.get("webhook_env") or "DISCORD_CHANNEL_ID_CASINO",
+            "enabled": bool(discord_cfg.get("enabled", True)),
+        },
+        "facebook": {
+            "page_url": facebook_cfg.get("page_url") or "https://facebook.com/MasterNoder",
+            "og_title": facebook_cfg.get("og_title") or "MasterNoder Casino",
+            "og_description": facebook_cfg.get("og_description") or (
+                "Social casino lounge — virtual coins, big wins, and tournaments."
+            ),
+            "og_image": facebook_cfg.get("og_image") or "/static/img/casino/og-share.svg",
+            "pixel_id_env": facebook_cfg.get("pixel_id_env") or "META_PIXEL_ID",
+        },
+        "mobile": {
+            "play_store_url": mobile.get("play_store_url"),
+            "package_id": mobile.get("package_id"),
+        },
+    }
+
+
+def build_big_win_share(
+    user_id: str,
+    *,
+    game: Optional[str] = None,
+    net: Optional[float] = None,
+    currency: Optional[str] = None,
+    multiplier: Optional[float] = None,
+    bet_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Share card payload for Facebook, X, Discord, and in-app copy."""
+    cfg = _load_casino_config()
+    facebook_cfg = cfg.get("facebook") if isinstance(cfg.get("facebook"), dict) else {}
+    base = _base_url()
+    handle = anonymize_user(user_id) if user_id else "Player"
+    game_label = (game or "casino").replace("_", " ").replace("-", " ")
+    cur = (currency or "coins").lower()
+    win_net = float(net or 0)
+    mult = float(multiplier or 0) if multiplier is not None else None
+    image_path = facebook_cfg.get("og_image") or "/static/img/casino/og-share.svg"
+    image_url = image_path if image_path.startswith("http") else f"{base}{image_path}"
+    title = f"{handle} won on {game_label}!"
+    if win_net > 0:
+        desc = f"Big win: {_format_amount(win_net, cur)} on {game_label}"
+        if mult and mult >= 1:
+            desc += f" ({mult:.1f}×)"
+    else:
+        desc = f"Playing {game_label} at MasterNoder Casino"
+    params = {"share": "big-win", "game": game or "casino"}
+    if win_net > 0:
+        params["net"] = str(int(win_net) if cur == "coins" else win_net)
+        params["currency"] = cur
+    if mult and mult >= 1:
+        params["mult"] = f"{mult:.2f}"
+    if bet_id:
+        params["bet"] = bet_id
+    from urllib.parse import urlencode
+    share_url = f"{base}/casino/?{urlencode(params)}"
+    text = f"{desc} — MasterNoder Casino"
+    from urllib.parse import quote
+    q_url = quote(share_url, safe="")
+    q_text = quote(text, safe="")
+    return {
+        "success": True,
+        "card": {
+            "handle": handle,
+            "game": game or "casino",
+            "net": win_net,
+            "currency": cur,
+            "multiplier": mult,
+            "title": title,
+            "description": desc,
+            "image_url": image_url,
+            "share_url": share_url,
+        },
+        "share_urls": {
+            "facebook": f"https://www.facebook.com/sharer/sharer.php?u={q_url}",
+            "twitter": f"https://twitter.com/intent/tweet?text={q_text}&url={q_url}",
+            "linkedin": f"https://www.linkedin.com/sharing/share-offsite/?url={q_url}",
+            "telegram": f"https://t.me/share/url?url={q_url}&text={q_text}",
+        },
+        "rg_footer": _RG_FOOTER,
+    }
+
+
+def discord_integration_config() -> Dict[str, Any]:
+    cfg = _load_casino_config()
+    return cfg.get("discord_integration") if isinstance(cfg.get("discord_integration"), dict) else {}

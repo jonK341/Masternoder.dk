@@ -50,6 +50,17 @@ def discord_digest_run():
     return jsonify(result), 200
 
 
+@discord_bp.route("/api/discord/casino/fanout", methods=["POST"])
+def discord_casino_fanout():
+    """Cron entry — casino activity_events → #casino (alias of /api/casino/discord/notify)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services import casino_discord_fanout
+    data = request.get_json(silent=True) or {}
+    result = casino_discord_fanout.run_fanout(dry_run=bool(data.get("dry_run")))
+    return jsonify(result), 200
+
+
 @discord_bp.route("/api/discord/link", methods=["POST"])
 def discord_link():
     body = request.get_json(silent=True) or {}
