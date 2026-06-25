@@ -1,1 +1,0 @@
-{"ts": "2026-06-24T05:59:36.373001Z", "channel": "mn2", "message_id": "mn2-test:1782280776", "payload": {"embeds": [{"title": "MN2 channel test", "description": "Webhook OK from terminal CLI \u00b7 https://masternoder.dk", "footer": {"text": "Delete this message after verifying delivery"}}]}, "webhook_configured": false, "success": true, "error": "webhook_not_configured"}

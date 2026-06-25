@@ -1,1 +1,0 @@
-{"currency":"coins","min_bet":5,"max_bet":500,"max_bets_per_day":50,"jackpot":{"enabled":true,"rails":{"coins":{"seed":1000,"contribution_rate":0.01,"win_chance":0,"reseed":1000}}},"games":{"coin_flip":{"label":"Coin flip","payout_multiplier":1.9,"choices":["heads","tails"]}}}

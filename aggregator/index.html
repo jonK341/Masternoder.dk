@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=7">
-    <link rel="stylesheet" href="/static/css/aggregator-hub-v2.css?v=20260624">
+    <link rel="stylesheet" href="/static/css/aggregator-hub-v2.css?v=20260618a">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
@@ -221,7 +221,7 @@
     <script src="/static/js/story-monitor-5d.js?v=1"></script>
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>
-    <script src="/static/js/aggregator-hub-v2.js?v=20260624" defer></script>
+    <script src="/static/js/aggregator-hub-v2.js?v=20260618a"></script>
     <script src="/static/js/aggregator-monitor-game.js?v=3"></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script>
@@ -306,27 +306,15 @@
         applyAggTab(valid ? requested : 'monitor');
       })();
     </script>
-    <script src="/static/js/intelligence-widget.js?v=20260305100000" defer></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
-        var intelLoaded = false;
-        function loadIntelIfNeeded() {
-          if (intelLoaded) return;
-          if (!window.IntelligenceWidget || !document.getElementById('intelligence-panels-agg')) return;
-          intelLoaded = true;
+        if (window.IntelligenceWidget && document.getElementById('intelligence-panels-agg')) {
           window.IntelligenceWidget.load({
             panelsSelector: 'intelligence-panels-agg',
             loadingSelector: '.intel-loading-agg'
           });
         }
-        var nav = document.getElementById('agg-hub-nav');
-        if (nav) {
-          nav.addEventListener('click', function (ev) {
-            var btn = ev.target.closest('[data-agg-tab]');
-            if (btn && btn.getAttribute('data-agg-tab') === 'intelligence') loadIntelIfNeeded();
-          });
-        }
-        if (new URLSearchParams(window.location.search).get('tab') === 'intelligence') loadIntelIfNeeded();
       });
     </script>
 </body>

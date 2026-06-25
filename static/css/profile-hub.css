@@ -26,14 +26,6 @@
     white-space: nowrap;
 }
 
-.profile-route-focused .section-card:not([hidden]) {
-    scroll-margin-top: 88px;
-}
-
-.profile-route-focused #profile-content-block {
-    padding-bottom: 24px;
-}
-
 .profile-wallet-subnav.page-tabs {
     flex-wrap: wrap;
     margin-bottom: 16px;
