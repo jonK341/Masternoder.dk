@@ -1,0 +1,82 @@
+{
+  "brand": "MasterNoder2 Casino",
+  "short_name": "MN2 Casino",
+  "site_url": "https://masternoder.dk/casino/",
+  "tagline": "Ride the rocket. Hit the jackpot. Own the lounge.",
+  "short_description": "MasterNoder2 Casino — crash, slots, plinko, tournaments & big wins on MN2.",
+  "full_description_ref": "docs/CASINO_MARKETING.md",
+  "banner": {
+    "svg": "/static/img/casino/banner-masternoder2-casino.svg",
+    "png": "/static/img/casino/banner-masternoder2-casino.png",
+    "og_image": "/static/img/casino/banner-masternoder2-casino.png",
+    "feature_graphic": "/static/img/casino/banner-masternoder2-casino.png",
+    "alt": "MasterNoder2 Casino — neon lounge with crash, slots, plinko, and jackpots"
+  },
+  "feature_bullets": [
+    "Crash — provably fair multiplier chase",
+    "Slots — seven machines with progressive jackpots",
+    "Plinko — drop balls for edge multipliers",
+    "Mines — reveal gems, dodge bombs, cash out anytime",
+    "Daily lucky wheel and weekly quest chains",
+    "Live tournaments and hall-of-fame leaderboards",
+    "Friends, crews, and social big-win sharing",
+    "Discord fan-out for community celebrations",
+    "Virtual coins, MN2 wallet, or PayPal USD stakes",
+    "Responsible gaming limits and password verification",
+    "Same account on web, TWA, and masternoder.dk",
+    "Neon arcade roster: dice, roulette, keno, RPS and more"
+  ],
+  "tags": [
+    "MasterNoder2 Casino",
+    "MN2 Casino",
+    "social casino",
+    "virtual casino",
+    "crash game",
+    "plinko",
+    "slots",
+    "mines",
+    "provably fair",
+    "casino tournaments",
+    "jackpot slots",
+    "online arcade",
+    "entertainment",
+    "masternoder.dk",
+    "Discord casino",
+    "virtual coins",
+    "MN2 wallet",
+    "casino lounge",
+    "multiplayer casino",
+    "leaderboards",
+    "daily wheel",
+    "responsible gaming",
+    "Play Store casino",
+    "TWA casino app"
+  ],
+  "keywords": "MasterNoder2 Casino, MN2 casino, masternoder.dk casino, social casino, virtual coins, crash game, plinko, slots, mines, provably fair, progressive jackpot, casino tournaments, hall of fame, Discord casino, MN2 wallet, PayPal casino deposit, responsible gaming, online arcade, entertainment hub",
+  "hashtags": [
+    "#MasterNoder",
+    "#MasterNoder2",
+    "#MN2Casino",
+    "#MN2",
+    "#SocialCasino",
+    "#CrashGame",
+    "#Plinko",
+    "#Slots",
+    "#BigWin",
+    "#CasinoLounge",
+    "#VirtualCoins",
+    "#ProvablyFair"
+  ],
+  "categories": [
+    "Entertainment",
+    "Casino games",
+    "Social gaming",
+    "Arcade"
+  ],
+  "play_store": {
+    "title": "MasterNoder2 Casino",
+    "package_id": "dk.masternoder.casino",
+    "category_primary": "Game",
+    "category_secondary": "Casino"
+  }
+}

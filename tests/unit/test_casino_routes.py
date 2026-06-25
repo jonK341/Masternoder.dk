@@ -34,6 +34,30 @@ def _app(tmp_path, monkeypatch):
     return app
 
 
+def test_casino_health_endpoint(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/health")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["service"] == "casino"
+    assert body["status"] == "healthy"
+    assert "timestamp" in body
+
+
+def test_casino_marketing_endpoint(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/marketing")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body.get("brand") == "MasterNoder2 Casino"
+    assert "tags" in body and len(body["tags"]) >= 15
+    assert body.get("banner", {}).get("png") == "/static/img/casino/banner-masternoder2-casino.png"
+
+
 def test_casino_config_and_balance(tmp_path, monkeypatch):
     app = _app(tmp_path, monkeypatch)
     mock_points = MagicMock()

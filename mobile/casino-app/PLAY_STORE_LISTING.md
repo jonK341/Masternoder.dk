@@ -1,18 +1,23 @@
-# Google Play — MasterNoder Casino Social
+# Google Play — MasterNoder2 Casino
 
 Package: **`dk.masternoder.casino`**
 
+Marketing source: `docs/CASINO_MARKETING.md` · `data/casino_marketing.json` · `GET /api/casino/marketing`
+
 ## Listing copy (draft)
 
-**Title:** MasterNoder Casino Social  
-**Short description:** Social casino lounge — virtual coins, crews, crash & slots.  
+**Title:** MasterNoder2 Casino  
+**Short description:** MasterNoder2 Casino — crash, slots, plinko, tournaments & big wins on MN2.  
+**Tagline:** Ride the rocket. Hit the jackpot. Own the lounge.
+
 **Full description:**
 
-> Play crash, slots, plinko, mines, and more in the MasterNoder social casino lounge. Earn quests, climb leaderboards, join crews, and share big wins — virtual coins first.
+> MasterNoder2 Casino is the social gaming lounge on masternoder.dk — crash, slots, plinko, mines, wheel, and more with virtual coins first.
 >
-> • Provably fair crash and instant games  
+> • Provably fair crash and instant arcade games  
+> • Seven slot machines with progressive jackpots  
 > • Daily wheel, tournaments, and hall of fame  
-> • Friends, crews, and social feed  
+> • Friends, crews, and social big-win sharing  
 > • Same account as masternoder.dk  
 >
 > Real-money MN2/USD stakes are available on the website with age and region checks. This app focuses on the social virtual-coin experience.
@@ -23,8 +28,8 @@ Package: **`dk.masternoder.casino`**
 ## Graphics checklist
 
 - [ ] Hi-res icon 512×512 PNG (run `npm run assets` in `mobile/casino-app/`)
-- [ ] Feature graphic 1024×500
-- [ ] Phone screenshots (portrait): lobby, crash, social tab
+- [ ] Feature graphic 1024×500 — `/static/img/casino/banner-masternoder2-casino.png`
+- [ ] Phone screenshots (portrait): lobby with banner, crash, social tab
 - [ ] 7″ and 10″ tablet screenshots (optional)
 
 ## Technical checklist

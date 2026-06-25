@@ -1,6 +1,7 @@
 """
 Virtual-coins casino API with optional MN2 and PayPal USD rails.
 """
+import json
 import os
 from datetime import datetime, timezone
 
@@ -11,6 +12,12 @@ import backend.services.casino_service as casino_service
 
 
 casino_bp = Blueprint("virtual_casino", __name__)
+
+_MARKETING_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data",
+    "casino_marketing.json",
+)
 
 
 def _resolve_casino_user_id(from_body: bool = False, from_query: bool = True) -> str:
@@ -47,6 +54,15 @@ def _casino_settings_payload():
     return payload
 
 
+def _load_casino_marketing() -> dict:
+    try:
+        with open(_MARKETING_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 @casino_bp.route("/api/casino/health", methods=["GET"])
 def casino_health():
     return jsonify({
@@ -69,6 +85,17 @@ def casino_settings():
 def casino_config_compat():
     """Backward-compatible alias for older clients."""
     return casino_settings()
+
+
+@casino_bp.route("/api/casino/marketing", methods=["GET"])
+def casino_marketing():
+    """Public marketing copy, tags, and banner URLs for store listings and social."""
+    try:
+        payload = _load_casino_marketing()
+        payload["success"] = True
+        return jsonify(payload), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @casino_bp.route("/api/casino/balance", methods=["GET"])
