@@ -9,15 +9,25 @@ discord_bp = Blueprint("discord", __name__)
 _INTERACTION_PING = 1
 
 
+def _discord_public_key_hex() -> str:
+    """Portal Public Key from env (64 hex chars). Empty => signature verify skipped."""
+    raw = (os.environ.get("DISCORD_PUBLIC_KEY") or "").strip().strip('"').strip("'")
+    if raw.lower().startswith("0x"):
+        raw = raw[2:]
+    return "".join(raw.split())
+
+
 def _verify_discord_signature(raw_body: bytes) -> tuple[bool, str | None]:
     """Verify Discord Ed25519 signature when DISCORD_PUBLIC_KEY is set."""
-    public_key_hex = (os.environ.get("DISCORD_PUBLIC_KEY") or "").strip()
+    public_key_hex = _discord_public_key_hex()
     if not public_key_hex:
         return True, None
     signature = (request.headers.get("X-Signature-Ed25519") or "").strip()
     timestamp = (request.headers.get("X-Signature-Timestamp") or "").strip()
     if not signature or not timestamp:
         return False, "missing_signature_headers"
+    if len(public_key_hex) != 64:
+        return False, "invalid_public_key_config"
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -56,9 +66,13 @@ def discord_status():
     from backend.services.discord_service import recent_outbox
     rows = recent_outbox(5)
     last = rows[0] if rows else None
+    public_key = _discord_public_key_hex()
     return jsonify({
         "success": True,
         "webhook_configured": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
+        "interactions_public_key_configured": bool(public_key),
+        "interactions_public_key_valid_length": len(public_key) == 64 if public_key else False,
+        "interactions_endpoint": "https://masternoder.dk/api/discord/interactions",
         "last_post": last,
         "recent_failures": sum(1 for r in rows if not r.get("success")),
     }), 200
