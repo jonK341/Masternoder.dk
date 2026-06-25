@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260624">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -688,8 +688,21 @@
             color: rgba(255, 255, 255, 0.82);
             font-size: 0.9rem;
         }
-        .profile-route-focused .profile-route-note {
+        .profile-route-focused [data-profile-route][hidden] {
+            display: none !important;
+        }
+
+        .profile-route-focused .profile-content-block [data-profile-route]:not([hidden]) {
+            max-height: min(75vh, 900px);
+            overflow-y: auto;
+        }
+
+        .profile-route-focused .profile-content {
             display: block;
+        }
+
+        .profile-route-focused .main-section {
+            gap: 16px;
         }
 
         .mn2-5d-chart {
@@ -743,7 +756,7 @@
     <div class="profile-page">
         <div class="profile-container">
             <!-- Account & Login first so it works even when profile is loading -->
-            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="overview account" style="margin-bottom: 20px;">
+            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account &amp; Login</h2>
                 <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 12px;">Create an account or sign in. Your user ID is stored in this browser until you clear it.</p>
                 <div class="account-row">
@@ -860,7 +873,7 @@
             </div>
 
             <!-- Sync status (points, users, profiles, rulebooks, agents) -->
-            <div id="sync-status-widget" data-profile-route="overview account" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
+            <div id="sync-status-widget" data-profile-route="overview" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
 
             <!-- Connect: Profile · Generator · Agents · Gallery · Aggregator · Themes -->
             <p style="text-align:center;margin:16px 0;font-size:0.9rem;opacity:0.9;">
@@ -880,24 +893,16 @@
 
             <nav class="profile-hub-nav page-tabs" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
                 <button type="button" class="tab-btn active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
-                <button type="button" class="tab-btn" data-hub-scroll="avatar" role="tab" aria-selected="false">Avatar</button>
-                <button type="button" class="tab-btn" data-hub-scroll="account" role="tab" aria-selected="false">Account</button>
-                <button type="button" class="tab-btn" data-hub-scroll="skills" role="tab" aria-selected="false">Skills</button>
-                <button type="button" class="tab-btn" data-hub-scroll="trophies" role="tab" aria-selected="false">Trophies</button>
-                <button type="button" class="tab-btn" data-hub-scroll="points" role="tab" aria-selected="false">Points</button>
-                <button type="button" class="tab-btn" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
-                <button type="button" class="tab-btn" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
+                <button type="button" class="tab-btn" data-hub-scroll="profile" role="tab" aria-selected="false">Profile</button>
+                <button type="button" class="tab-btn" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
                 <button type="button" class="tab-btn" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
-                <button type="button" class="tab-btn" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
-                <button type="button" class="tab-btn" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
+                <button type="button" class="tab-btn" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
                 <button type="button" class="tab-btn" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
                 <button type="button" class="tab-btn" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
-                <button type="button" class="tab-btn" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
-                <button type="button" class="tab-btn" data-hub-scroll="battle" role="tab" aria-selected="false">Battle</button>
-                <button type="button" class="tab-btn" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
+                <button type="button" class="tab-btn" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
             </nav>
             <div id="profile-route-note" class="profile-route-note">One section per tab — use the bar above to switch.</div>
-            <div class="section-card" id="profile-section-avatar" data-profile-route="avatar overview">
+            <div class="section-card" id="profile-section-avatar" data-profile-route="avatar">
                 <h2 class="section-title">Avatar</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Choose a preset or paste an image URL. Same pattern as agent avatars on the platform.</p>
                 <div class="profile-avatar-panel">
@@ -1662,7 +1667,7 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260624"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -1755,7 +1760,6 @@
                         this.loadQuickBattleAndLeaderboard();
                         this.loadAgentControl();
                         this.loadMonetization25();
-                        this.loadProfileMn2Wallet();
                         this.loadCryptoWalletAgentsCatalog();
                         this.loadShopInventoryV9();
                         this.loadAccountPrivacyControls();
@@ -3923,22 +3927,33 @@
             }
         }
 
+        var PROFILE_TAB_GROUPS = {
+            overview: ['overview'],
+            profile: ['avatar', 'account', 'settings'],
+            progress: ['skills', 'trophies', 'points', 'leaderboard', 'progress'],
+            wallet: ['wallet'],
+            shop: ['shop'],
+            agents: ['agents', 'battle'],
+            activity: ['activity', 'lab'],
+            security: ['security']
+        };
+
         function applyFocusedProfileRoute(route) {
             var activeRoute = route || 'overview';
             document.body.classList.add('profile-route-focused');
+            var group = PROFILE_TAB_GROUPS[activeRoute] || [activeRoute];
             document.querySelectorAll('[data-profile-route]').forEach(function(el) {
                 var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
-                el.hidden = routes.indexOf(activeRoute) === -1;
+                el.hidden = !routes.some(function(r) { return group.indexOf(r) >= 0; });
             });
             var note = document.getElementById('profile-route-note');
             if (note) {
                 var labels = {
-                    overview: 'Overview', avatar: 'Avatar', account: 'Account', skills: 'Skills',
-                    trophies: 'Trophies', points: 'Points', leaderboard: 'Leaderboard', shop: 'Shop',
-                    wallet: 'Wallet', security: 'Security', settings: 'Settings',
-                    agents: 'Agents', activity: 'Activity', lab: 'Lab', battle: 'Battle', progress: 'Progress'
+                    overview: 'Overview', profile: 'Profile & account', progress: 'Progress & stats',
+                    wallet: 'Wallet & MN2', shop: 'Shop inventory', agents: 'Agents & battle',
+                    activity: 'Activity & lab', security: 'Security & privacy'
                 };
-                note.textContent = 'Viewing: ' + (labels[activeRoute] || activeRoute) + '. Switch tabs above to browse other sections.';
+                note.textContent = 'Viewing: ' + (labels[activeRoute] || activeRoute) + '. Switch tabs above — one group per tab.';
             }
             document.querySelectorAll('#profile-hub-nav [data-hub-scroll]').forEach(function(x) {
                 var on = x.getAttribute('data-hub-scroll') === activeRoute;
@@ -3963,21 +3978,18 @@
             var uid = localStorage.getItem('game_user_id') || 'default_user';
             var scrollMap = {
                 overview: 'profile-hub-overview',
-                avatar: 'profile-section-avatar',
-                account: 'profile-section-account',
-                skills: 'profile-section-skills',
-                trophies: 'profile-trophies-card',
-                points: 'profile-section-points',
-                leaderboard: 'profile-section-leaderboard',
+                profile: 'profile-section-avatar',
+                progress: 'profile-section-skills',
                 shop: 'profile-section-shop',
                 wallet: 'profile-mn2-wallet-card',
-                settings: 'account-privacy-card',
                 security: 'profile-section-security-layer',
                 agents: 'my-agents-card',
-                activity: 'profile-section-activity',
-                lab: 'profile-section-lab-logbook',
-                battle: 'quick-battle-profile-card',
-                progress: 'profile-section-achievements'
+                activity: 'profile-section-activity'
+            };
+            var legacyTabMap = {
+                account: 'profile', user: 'profile', avatar: 'profile', settings: 'profile',
+                skills: 'progress', trophies: 'progress', points: 'progress', leaderboard: 'progress',
+                progress: 'progress', inventory: 'shop', lab: 'activity', battle: 'agents'
             };
             var nav = document.getElementById('profile-hub-nav');
             if (nav) {
@@ -4028,18 +4040,16 @@
                 });
             var tab = new URLSearchParams(window.location.search).get('tab');
             if (tab) {
-                var btnKey = {
-                    account: 'account', user: 'account', avatar: 'avatar', skills: 'skills',
-                    trophies: 'trophies', progress: 'progress', points: 'points',
-                    leaderboard: 'leaderboard', activity: 'activity', shop: 'shop',
-                    inventory: 'shop', wallet: 'wallet', security: 'security', settings: 'settings',
-                    agents: 'agents', lab: 'lab', battle: 'battle'
-                };
-                var ds = btnKey[tab] || (scrollMap[tab] ? tab : 'overview');
+                var ds = legacyTabMap[tab] || (PROFILE_TAB_GROUPS[tab] ? tab : 'overview');
                 setTimeout(function() {
                     var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + ds + '"]');
                     if (btn) btn.click();
                     else applyFocusedProfileRoute(ds);
+                }, 400);
+            } else if (window.location.hash === '#mn2-wallet') {
+                setTimeout(function() {
+                    var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="wallet"]');
+                    if (btn) btn.click();
                 }, 400);
             } else {
                 applyFocusedProfileRoute('overview');

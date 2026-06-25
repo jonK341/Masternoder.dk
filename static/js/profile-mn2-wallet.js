@@ -128,6 +128,21 @@
     var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
     var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
     var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
+
+    function drawQr(text) {
+      if (!qrEl || !text) return;
+      if (typeof QRCode === 'undefined') {
+        setTimeout(function () { drawQr(text); }, 200);
+        return;
+      }
+      qrEl.innerHTML = '';
+      try {
+        new QRCode(qrEl, { text: text, width: 96, height: 96 });
+      } catch (e) {
+        qrEl.innerHTML = '';
+      }
+    }
+
     if (addrData && addrData.success && addrData.deposit_address) {
       if (addrEl) addrEl.textContent = addrData.deposit_address;
       if (depositErrEl) {
@@ -141,14 +156,7 @@
         explorerLink.href = addrData.explorer_address_url;
         explorerLink.style.display = '';
       }
-      if (qrEl && typeof QRCode !== 'undefined') {
-        qrEl.innerHTML = '';
-        try {
-          new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 });
-        } catch (e) {
-          qrEl.innerHTML = '';
-        }
-      }
+      drawQr(addrData.deposit_address);
     } else {
       if (addrEl) addrEl.textContent = '—';
       var errMsg =
@@ -296,6 +304,18 @@
         if (!addr || addr === '--' || addr === '—') return;
         navigator.clipboard.writeText(addr).then(function () {
           if (typeof toast !== 'undefined') toast.success('Address copied');
+        });
+      });
+    }
+    var copyRevBtn = document.getElementById('profile-mn2-copy-revenue');
+    var revAddrEl = document.getElementById('profile-mn2-revenue-address');
+    if (copyRevBtn && !copyRevBtn._mn2Wired) {
+      copyRevBtn._mn2Wired = true;
+      copyRevBtn.addEventListener('click', function () {
+        var addr = revAddrEl && revAddrEl.textContent ? revAddrEl.textContent.trim() : '';
+        if (!addr) return;
+        navigator.clipboard.writeText(addr).then(function () {
+          if (typeof toast !== 'undefined') toast.success('Revenue address copied');
         });
       });
     }

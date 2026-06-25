@@ -389,7 +389,7 @@
         // Load monetization recap
         async function loadRecap() {
             try {
-                const response = await fetch(`${BASE_URL}/api/monetization/recap`);
+                const response = await fetch(`${BASE_URL}/api/monetization/streams/v1/recap`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -411,7 +411,7 @@
         // Load top 25 streams
         async function loadTop25() {
             try {
-                const response = await fetch(`${BASE_URL}/api/monetization/top-25`);
+                const response = await fetch(`${BASE_URL}/api/monetization/streams/v1/top-25`);
                 const data = await response.json();
                 
                 if (data.success && data.top_25_streams) {

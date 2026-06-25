@@ -1,0 +1,1 @@
+{"hero": {"title": "Test Casino", "subtitle": "Test sub", "tagline": "Play"}, "featured_games": [{"id": "crash", "label": "Crash", "tag": "Hot"}], "categories": [{"id": "all", "label": "All", "icon": "\ud83c\udfae"}], "events": [{"id": "ev1", "title": "Event", "enabled": true}], "cross_links": [{"id": "shop", "label": "Shop", "href": "/shop/"}]}

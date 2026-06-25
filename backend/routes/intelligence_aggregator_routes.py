@@ -172,7 +172,44 @@ def aggregator_mn2_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-        return jsonify({"success": False, "error": str(e)}), 500
+@intelligence_aggregator_bp.route('/api/aggregators/catalog', methods=['GET'])
+def aggregator_catalog():
+    from backend.services.aggregator_catalog_service import list_catalog
+    limit = request.args.get('limit', 75, type=int)
+    category = request.args.get('category')
+    search = request.args.get('search') or request.args.get('q')
+    return jsonify(list_catalog(limit=limit, category=category, search=search)), 200
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/top25', methods=['GET'])
+def aggregator_top25():
+    from backend.services.aggregator_catalog_service import top25_list
+    return jsonify(top25_list()), 200
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/fulfillment', methods=['GET'])
+def aggregator_fulfillment():
+    from backend.services.aggregator_catalog_service import fulfillment_section
+    return jsonify(fulfillment_section()), 200
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/progress', methods=['GET'])
+def aggregator_progress():
+    from backend.services.aggregator_catalog_service import progress_snapshot
+    user_id = request.args.get('user_id') or _resolve_uid_agg()
+    return jsonify(progress_snapshot(user_id)), 200
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/assign', methods=['POST'])
+def aggregator_assign():
+    from backend.services.aggregator_catalog_service import assign_agent
+    data = request.get_json(silent=True) or {}
+    user_id = (data.get('user_id') or _resolve_uid_agg()) or 'default_user'
+    agg_id = (data.get('aggregator_id') or data.get('id') or '').strip()
+    agent_id = (data.get('agent_id') or '').strip()
+    if not agg_id or not agent_id:
+        return jsonify({'success': False, 'error': 'aggregator_id and agent_id required'}), 400
+    return jsonify(assign_agent(user_id, agg_id, agent_id)), 200
 
 
 @intelligence_aggregator_bp.route('/api/aggregators/callback/bet', methods=['POST'])

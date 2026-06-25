@@ -91,7 +91,7 @@ def _default_key_paths() -> list:
     if env_key:
         paths.append(os.path.expanduser(env_key))
     home = os.path.expanduser("~/.ssh")
-    for name in ("id_ed25519", "id_rsa", "id_ecdsa"):
+    for name in ("id_ed25519", "id_rsa", "id_ecdsa", "id_ed25519_deploy"):
         p = os.path.join(home, name)
         if p not in paths:
             paths.append(p)
@@ -114,6 +114,49 @@ def _password_connect(
     return ssh
 
 
+def _try_ssh_key_auth(
+    host: str,
+    user: str,
+    *,
+    timeout: int = 30,
+) -> Optional[Tuple[paramiko.SSHClient, str]]:
+    """Try SSH agent and key files. Returns (client, label) or None."""
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(
+            host,
+            username=user,
+            timeout=timeout,
+            look_for_keys=True,
+            allow_agent=True,
+        )
+        return ssh, "agent:ssh-agent"
+    except paramiko.AuthenticationException:
+        pass
+    except Exception:
+        pass
+
+    for key_path in _default_key_paths():
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            ssh.connect(
+                host,
+                username=user,
+                key_filename=key_path,
+                timeout=timeout,
+                look_for_keys=False,
+                allow_agent=True,
+            )
+            return ssh, f"key:{key_path}"
+        except paramiko.AuthenticationException:
+            continue
+        except Exception:
+            continue
+    return None
+
+
 def connect_deploy_ssh(
     password: Optional[str] = None,
     *,
@@ -126,19 +169,9 @@ def connect_deploy_ssh(
     """
     host = deploy_host()
     user = deploy_user()
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    for key_path in _default_key_paths():
-        try:
-            ssh.connect(
-                host, username=user, key_filename=key_path, timeout=timeout,
-                look_for_keys=False, allow_agent=True,
-            )
-            return ssh, f"key:{key_path}", None
-        except paramiko.AuthenticationException:
-            continue
-        except Exception:
-            continue
+    key_result = _try_ssh_key_auth(host, user, timeout=timeout)
+    if key_result:
+        return key_result[0], key_result[1], None
     if not password:
         password = require_deploy_pass()
     try:
@@ -176,12 +209,8 @@ def print_auth_help(host: str, user: str, *, used_ask_pass: bool = False) -> Non
     else:
         print("  DEPLOY_PASS from .env / environment was rejected.", file=sys.stderr)
     print(file=sys.stderr)
-    print("  Fix:", file=sys.stderr)
-    print("  1. Get the current root password from your hosting panel.", file=sys.stderr)
-    print(f"  2. Test:  ssh {user}@{host}", file=sys.stderr)
-    print('  3. Update .env:  DEPLOY_PASS="current-password"  (optional)', file=sys.stderr)
-    print("  4. Re-run with --ask-pass:", file=sys.stderr)
-    print("       python scripts/deploy.py <manifest> --ask-pass", file=sys.stderr)
-    print("       python scripts/apply_updates.py --ask-pass", file=sys.stderr)
+    print("  Fix (recommended — passwordless):", file=sys.stderr)
+    print("    python scripts/setup_deploy_ssh_key.py --ask-pass", file=sys.stderr)
+    print("  Or update password:", file=sys.stderr)
     print("=" * 60 + "\n", file=sys.stderr)
 
