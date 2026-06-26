@@ -561,6 +561,7 @@ MANIFESTS = {
         "backend/services/agent_cron_service.py",
         "backend/routes/paypal_routes.py",
         "backend/services/discord_link_service.py",
+        "backend/services/discord_linked_roles_service.py",
         "backend/services/shop_discord_promo_service.py",
         "backend/services/shop_checkout_promo_service.py",
         "backend/routes/battle_routes.py",

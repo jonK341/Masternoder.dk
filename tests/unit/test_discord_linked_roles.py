@@ -70,7 +70,10 @@ def test_build_oauth_start_returns_auth_url(monkeypatch):
             dlr._STATE_PATH = old
 
 
-def test_linked_role_routes(app_client_factory=None):
+def test_linked_role_schema_route_returns_200(monkeypatch):
+    """Schema route must not 500 when linked-roles service is importable."""
+    monkeypatch.setenv("SOCIAL_AUTH_BASE_URL", "https://masternoder.dk")
+
     from flask import Flask
     from backend.routes.discord_routes import discord_bp
 
@@ -83,3 +86,6 @@ def test_linked_role_routes(app_client_factory=None):
         body = r.get_json()
         assert body["success"] is True
         assert body["verification_url"].endswith("/api/discord/linked-role")
+        assert body["redirect_uri"].endswith("/api/discord/linked-role/callback")
+        assert isinstance(body["metadata_schema"], list)
+        assert any(row.get("key") == "casino_vip" for row in body["metadata_schema"])
