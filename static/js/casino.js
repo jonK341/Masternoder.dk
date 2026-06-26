@@ -21,6 +21,37 @@
     let lastBigWin = null;
     let mobileConfig = null;
     let deferredInstallPrompt = null;
+    let metaPixelId = null;
+
+    function initMetaPixel(pixelId) {
+        if (!pixelId || metaPixelId || window.fbq) return;
+        metaPixelId = String(pixelId);
+        (function (f, b, e, v) {
+            if (f.fbq) return;
+            var n = f.fbq = function () {
+                n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = '2.0';
+            n.queue = [];
+            var t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            var s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+        })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+        window.fbq('init', metaPixelId);
+        window.fbq('track', 'PageView');
+    }
+
+    function trackMetaEvent(name, params) {
+        if (!metaPixelId || !window.fbq) return;
+        try {
+            window.fbq('trackCustom', name, params || {});
+        } catch (e) { /* optional analytics */ }
+    }
 
     function securityTokenValid() {
         if (!securityToken || !securityExpires) return false;
@@ -126,6 +157,13 @@
         } else if (multiple >= 3) {
             lastBigWin = { net: data.net, currency: data.currency, game: data.game, multiple: multiple };
             celebrate('BIG WIN', '+' + formatNet(data.net) + ' ' + currencyLabel(data.currency) + ' · ' + multiple.toFixed(2) + '×', 'big');
+        }
+        if (multiple >= 3) {
+            trackMetaEvent('CasinoBigWin', {
+                game: data.game || 'unknown',
+                multiple: multiple,
+                currency: data.currency || 'coins',
+            });
         }
     }
 
@@ -1174,6 +1212,9 @@
                 if (!hasFb) {
                     socialLinks.push({ id: 'facebook', label: 'Facebook', icon: 'f', url: fb.page_url, type: 'follow' });
                 }
+            }
+            if (fb.pixel_id) {
+                initMetaPixel(fb.pixel_id);
             }
         } else if (!shareNetworks.networks) {
             try {

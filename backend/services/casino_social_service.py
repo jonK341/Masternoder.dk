@@ -528,6 +528,8 @@ def get_social_links() -> Dict[str, Any]:
             pass
     base = social_cfg.get("share_base_url") or _base_url()
     mobile = get_mobile_config()
+    pixel_env = facebook_cfg.get("pixel_id_env") or "META_PIXEL_ID"
+    pixel_id = (os.environ.get(pixel_env) or "").strip()
     return {
         "success": True,
         "follow_links": links,
@@ -551,7 +553,8 @@ def get_social_links() -> Dict[str, Any]:
                 "Social casino lounge — virtual coins, big wins, and tournaments."
             ),
             "og_image": facebook_cfg.get("og_image") or "/static/img/casino/og-share.svg",
-            "pixel_id_env": facebook_cfg.get("pixel_id_env") or "META_PIXEL_ID",
+            "pixel_id_env": pixel_env,
+            "pixel_id": pixel_id or None,
         },
         "mobile": {
             "play_store_url": mobile.get("play_store_url"),

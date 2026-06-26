@@ -60,6 +60,18 @@ def test_casino_social_links_route(tmp_path, monkeypatch):
     assert len(data["follow_links"]) >= 1
     assert data["discord"]["earn_coins_join"] == 25
     assert "facebook" in data["facebook"]["page_url"]
+    assert data["facebook"]["pixel_id_env"] == "META_PIXEL_ID"
+    assert data["facebook"]["pixel_id"] is None
+
+
+def test_casino_social_links_exposes_pixel_when_env_set(tmp_path, monkeypatch):
+    monkeypatch.setenv("META_PIXEL_ID", "123456789012345")
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/social/links")
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["facebook"]["pixel_id"] == "123456789012345"
 
 
 def test_casino_share_big_win_route(tmp_path, monkeypatch):

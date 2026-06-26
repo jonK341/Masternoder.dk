@@ -2,80 +2,82 @@
 
 Audit date: **2026-06-26** · Branch: `feat/casino-mega-expansion`
 
+MasterNoder2 Casino is an **entertainment platform**: social lounge, virtual coins, tournaments, and community loops — built for engagement and sustainable monetization (MN2 packs, optional fiat where licensed), not unrealistic gambling claims.
+
 Discord is **done** — this doc covers Facebook/Meta, other social, mobile stores, casino AI agents, deploy gaps, global sync, revenue reports, and production verification.
 
-Related ops runbooks: [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) · [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) · [CASINO_MARKETING.md](CASINO_MARKETING.md) · [CASINO_GLOBAL_SYNC.md](CASINO_GLOBAL_SYNC.md) · [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md)
+Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) · [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) · [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) · [CASINO_IDEAS.md](CASINO_IDEAS.md)
 
 ---
 
 ## Status table
 
 | Integration | Status | Next action | Doc link |
-|-------------|--------|-------------|----------|
-| **YouTube (social link)** | **Wired** — `social_links` → `https://youtube.com/@MasterNoder` | Verify channel is live; no YouTube Data API in casino stack | `data/casino_config.json` |
-| **YouTube API / embed** | **Not built** — no `YOUTUBE_API_KEY` usage in casino | Optional: live stream embed on Social tab | — |
-| **Main site casino** | **Done (prod)** — `GET /casino/` → 200, settings/social APIs live | Deploy mega-expansion slice (global/revenue/slots) | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
-| **Global hub sync** | **Code done** — `casino_global_controller`, hub config, UI network tab | Deploy + verify `GET /api/casino/global/leaderboard` (not Register Intelligence stub) | [CASINO_GLOBAL_SYNC.md](CASINO_GLOBAL_SYNC.md) |
+| ----------- | ------ | ----------- | -------- |
+| **YouTube (social link)** | **Wired** — `social_links` → `https://youtube.com/@MasterNoder` | Verify channel is live | `data/casino_config.json` |
+| **YouTube API / embed** | **Not built** | Optional: live stream embed on Social tab | — |
+| **Main site casino** | **Done (prod)** — `GET /casino/` → 200 | Deploy mega-expansion slice | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
+| **Global hub sync** | **Code done** — `casino_global_controller`, hub config, UI network tab | Deploy + verify `GET /api/casino/global/leaderboard` | [CASINO_GLOBAL_SYNC.md](CASINO_GLOBAL_SYNC.md) |
 | **Revenue daily reports** | **Code done** — `casino_revenue_report`, cron script | Deploy; schedule `cron/casino_daily_revenue_report.sh` | [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
 | **Slot catalog** | **35 machines** (10 original + 25 themed expansion) | Deploy `data/casino_config.json` + `casino.css` | `GET /api/casino/slots` |
-| **Facebook OG tags** | **Done** — `casino/index.html` has `og:*` + Twitter card meta | Generate & deploy `banner-masternoder2-casino.png` (OG image 404 on prod; only SVG exists) | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
-| **Meta Pixel (`META_PIXEL_ID`)** | **Partial** — config exposes `pixel_id_env` via API; **no `fbq` script in UI** | Create pixel in Meta Events Manager → add to server `.env` → (optional) wire pixel snippet in `casino/index.html` | [CASINO_DEPLOY_OPS.md § C.4](CASINO_DEPLOY_OPS.md) |
-| **Share big-win API** | **Done** — `POST /api/casino/share/big-win` returns Facebook/X/WhatsApp/Telegram URLs | Smoke-test from Social tab after a real win | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
-| **Facebook page link (Social tab)** | **Done** — `data/casino_config.json` → `facebook.page_url` + follow card | Confirm `https://facebook.com/MasterNoder` is the real page URL | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
-| **Facebook casino webhook bot** | **Not built** — no `facebook_*` routes; MN2_TODO E3 pending | Defer or implement webhook + `FACEBOOK_PAGE_ACCESS_TOKEN` | [MN2_TODO.md](MN2_TODO.md) |
-| **Social follow links** | **Wired** — Discord, YouTube, Facebook, X, Instagram, TikTok, Telegram, GitHub, Google Play | **Verify each URL** is a live account (currently brand placeholders) | `data/casino_config.json` |
-| **Social tab UI** | **Done** — follow grid, share bar, WhatsApp, X thread, referral, Discord opt-in | Deploy latest `casino.js` if UI lags API | `static/js/casino.js` |
-| **Share network grid** | **Done** — from `data/social_networks.json` via `GET /api/casino/social/links` | Redeploy `data/social_networks.json` if WhatsApp/X-thread missing on prod | `data/social_networks.json` |
-| **Marketing API** | **Code done; prod missing** — `GET /api/casino/marketing` → 404 on prod | Deploy casino manifest slice (includes route + `data/casino_marketing.json`) | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
-| **Google Play registration** | **Ops TODO** — one-time **$25** developer account | [Create Play Console account](https://play.google.com/console/signup) | [mobile/casino-app/PLAY_STORE_LISTING.md](../mobile/casino-app/PLAY_STORE_LISTING.md) |
-| **Android TWA (Bubblewrap)** | **Code done** — `mobile/casino-twa/` | Build AAB, internal testing track | [mobile/casino-twa/README.md](../mobile/casino-twa/README.md) |
-| **Android/iOS Capacitor** | **Code done** — `mobile/casino-app/` + `ios/` project | `npm run assets` → signed AAB / Xcode archive | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
-| **Digital Asset Links** | **Partial** — prod has short fingerprint `305253597` (verify full SHA-256 from Play Console) | Copy Play App Signing SHA-256 → `static/.well-known/assetlinks.json` → `deploy.py well_known` | [CASINO_DEPLOY_OPS.md § C.1](CASINO_DEPLOY_OPS.md) |
-| **Play Store listing copy** | **Draft done** — all graphics/checklist items unchecked | Screenshots + feature graphic + content rating questionnaire | [PLAY_STORE_LISTING.md](../mobile/casino-app/PLAY_STORE_LISTING.md) |
-| **Apple AASA (Universal Links)** | **Placeholder on prod** — `TEAMID.dk.masternoder.casino` | Replace `TEAMID` with Apple Developer Team ID → deploy well-known | [CASINO_DEPLOY_OPS.md § C.2](CASINO_DEPLOY_OPS.md) |
-| **App Store URL** | **Placeholder** — API returns `id0000000000` | After App Store approval, set `mobile.app_store_url` in `casino_config.json` | [APP_STORE_LISTING.md](../mobile/casino-app/APP_STORE_LISTING.md) |
-| **Capacitor iOS project** | **Done** — Associated Domains `applinks:masternoder.dk` in entitlements | Set Xcode Team, archive, upload to App Store Connect | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
+| **Facebook OG tags** | **Done** — `casino/index.html` has `og:*` + Twitter card meta | Generate & deploy `banner-masternoder2-casino.png` | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
+| **Meta Pixel (`META_PIXEL_ID`)** | **Wired** — API returns `pixel_id` when env set; `casino.js` loads `fbq` + `PageView` + `CasinoBigWin` events | Set `META_PIXEL_ID` on server `.env` if not already | [CASINO_DEPLOY_OPS.md § C.4](CASINO_DEPLOY_OPS.md) |
+| **Share big-win API** | **Done** — `POST /api/casino/share/big-win` | Smoke-test from Social tab after a real win | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
+| **Facebook page link** | **Done** — `data/casino_config.json` → `facebook.page_url` | Confirm live page URL | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
+| **Facebook casino webhook bot** | **Not built** — MN2_TODO E3 pending | Defer or implement webhook | [MN2_TODO.md](MN2_TODO.md) |
+| **Social follow links** | **Wired** — Discord, YouTube, Facebook, X, Instagram, TikTok, Telegram, GitHub, Google Play | Verify each URL is a live account | `data/casino_config.json` |
+| **Social tab UI** | **Done** — follow grid, share bar, WhatsApp, X thread, referral, Discord opt-in | Deploy latest `casino.js` | `static/js/casino.js` |
+| **Share network grid** | **Done** — from `data/social_networks.json` | Redeploy if networks missing on prod | `data/social_networks.json` |
+| **Marketing API** | **Code done; prod missing** — `GET /api/casino/marketing` → 404 on prod | Deploy casino manifest slice | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
+| **Google Play registration** | **Tuesday** — $25 fee scheduled; account not yet active | Pay fee → upload AAB → get App Signing SHA | [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) |
+| **Android TWA (Bubblewrap)** | **Code done** — `mobile/casino-twa/` | Build AAB after Play account | [mobile/casino-twa/README.md](../mobile/casino-twa/README.md) |
+| **Android/iOS Capacitor** | **Code done** — `mobile/casino-app/` + `ios/` | `npm run assets` → signed AAB / Xcode archive | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
+| **Digital Asset Links** | **Fixed structure** — placeholder `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` (64 hex after Tuesday) | Tuesday: Play Console SHA → deploy `well_known` | [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) |
+| **Play Store listing copy** | **Draft done** | Screenshots + content rating after Play account | [PLAY_STORE_LISTING.md](../mobile/casino-app/PLAY_STORE_LISTING.md) |
+| **Apple AASA (Universal Links)** | **PAUSED** — no Apple Developer account; `TEAMID` placeholder on prod | Resume when Apple Developer enrolled | [CASINO_DEPLOY_OPS.md § C.2](CASINO_DEPLOY_OPS.md) |
+| **iOS without Apple account** | **Works** — PWA + custom scheme `masternoder://` | No action until Apple account | `mobile/casino-app/README.md` |
+| **App Store URL** | **Placeholder** — `id0000000000` | After App Store approval, update `casino_config.json` | [APP_STORE_LISTING.md](../mobile/casino-app/APP_STORE_LISTING.md) |
+| **Capacitor iOS project** | **Done** — Associated Domains in entitlements | Set Xcode Team when account exists | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
 | **Casino AI agent docs** | **Done** | — | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **Casino AI agent routes** | **Code done; prod stub** — `GET /api/agent/casino/models` returns Register Intelligence auto-created placeholder | Deploy `agent_casino_routes` + seed JSON files | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **Agent seed data** | **Missing** — no `data/casino_agents.json` or `data/casino_agent_models.json` in repo | Add seed files + add to `deploy.py` casino manifest | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **`AGENT_CASINO_SECRET` + LLM keys** | **Server env TODO** | Generate secret, add `GROQ_API_KEY` / `DEEPSEEK_API_KEY` (min), `CASINO_AGENT_LLM=1` | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **feat/casino-mega-expansion deploy** | **Local branch** | Commit → push → deploy casino manifest to prod | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
+| **Casino AI agent routes** | **Code done; prod stub** | Deploy casino manifest + restart uWSGI | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
+| **Agent seed data** | **Done** — `data/casino_agents.json`, `data/casino_agent_models.json` (Kelly, Safe Grinder, Meta Oracle) | Deploy with casino manifest | [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) |
+| **`AGENT_CASINO_SECRET` + LLM keys** | **Server env** — user uploaded `.env` | Verify dry-run `run-all` after deploy | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
+| **feat/casino-mega-expansion deploy** | **Ready to push** | Commit → push → deploy casino + well_known | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
 
 ---
 
 ## Production curl results (2026-06-26)
 
 | Check | Result |
-|-------|--------|
+| ----- | ------ |
 | `GET /casino/` | **200** |
-| `GET /api/casino/social/links` | **200** — follow links, share networks, `pixel_id_env: META_PIXEL_ID` |
-| `GET /api/casino/mobile/config` | **200** — `app_store_url` = `id0000000000`, Play URL set |
-| `GET /.well-known/assetlinks.json` | **200** — SHA placeholder `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` |
-| `GET /.well-known/apple-app-site-association` | **200** — `TEAMID` placeholder |
-| `POST /api/casino/share/big-win` | **200** — share URLs for Facebook, X, WhatsApp, Telegram |
+| `GET /api/casino/social/links` | **200** — follow links, share networks, `pixel_id` when `META_PIXEL_ID` set |
+| `GET /api/casino/mobile/config` | **200** — `app_store_url` placeholder, Play URL set |
+| `GET /.well-known/assetlinks.json` | **200** — placeholder until Tuesday Play SHA |
+| `GET /.well-known/apple-app-site-association` | **200** — `TEAMID` placeholder (**paused**) |
+| `POST /api/casino/share/big-win` | **200** |
 | `GET /api/casino/marketing` | **404** — not deployed |
-| `GET /api/casino/global/leaderboard` | **Stub** — Register Intelligence auto-created (deploy real route) |
-| `GET /api/casino/revenue/daily` | **Stub** — Register Intelligence auto-created (deploy real route) |
-| `GET /api/casino/slots` | **200** — count depends on deployed config |
-| `GET /static/img/casino/banner-masternoder2-casino.png` | **404** — OG meta points here; use SVG or generate PNG |
-| `GET /api/agent/casino/models` | **Stub** — Register Intelligence auto-created (real route not on prod) |
+| `GET /api/casino/global/leaderboard` | **Stub** — deploy real route |
+| `GET /api/casino/revenue/daily` | **Stub** — deploy real route |
+| `GET /api/casino/slots` | **200** |
+| `GET /api/agent/casino/models` | **Stub** — deploy agent routes + seed JSON |
 | `GET /api/agents/intelligence/llm-status` | **Stub** — same |
 
 ---
 
 ## Prioritized “do next” (top 5)
 
-1. **Merge PR #43 and deploy the full casino slice** — closes prod gaps (`/api/casino/marketing`, agent routes, latest social JS).  
-2. **Google Play path** — $25 dev account → build AAB (Capacitor or TWA) → paste **real** App Signing SHA-256 into `assetlinks.json` → deploy `well_known` → internal testing.  
-3. **Apple path** — Apple Developer account → replace `TEAMID` in AASA → deploy → Xcode archive with bundle `dk.masternoder.casino`.  
-4. **Casino AI agents** — add `data/casino_agents.json` + `data/casino_agent_models.json`, set `AGENT_CASINO_SECRET` + at least one LLM key, `CASINO_AGENT_LLM=1`, dry-run `run-all`.  
-5. **Social polish** — generate OG banner PNG, verify/update real social profile URLs, optionally set `META_PIXEL_ID` on server.
+1. **Tuesday Play SHA** — $25 fee → AAB upload → paste App Signing SHA → `python scripts/deploy.py well_known --ask-pass`.
+2. **Deploy casino slice** — closes prod gaps (marketing, global, revenue, agent routes, Meta Pixel JS, seed agents).
+3. **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
+4. **Agent dry-run** — after deploy, `POST /api/agent/casino/run-all` with `{"dry_run": true}`.
+5. **Social polish** — OG banner PNG, verify profile URLs.
 
 ---
 
 ## Copy-paste commands
 
-### 1. Deploy casino + well-known (after merge or from branch)
+### 1. Deploy casino + well-known
 
 ```powershell
 cd C:\Users\jonkh\UsecaseSampler\Masternoder.dk
@@ -84,10 +86,11 @@ python scripts/deploy.py casino --ask-pass
 python scripts/deploy.py well_known --ask-pass
 ```
 
-### 2. Google Play — fix Digital Asset Links
+### 2. Google Play — Tuesday SHA (see full guide)
+
+[CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
 
 ```powershell
-# After Play Console → App signing → copy SHA-256 (AA:BB:CC:... format)
 $sha = "AA:BB:CC:DD:..."
 (Get-Content static\.well-known\assetlinks.json -Raw) `
   -replace 'REPLACE_WITH_PLAY_APP_SIGNING_SHA256', $sha |
@@ -95,47 +98,38 @@ $sha = "AA:BB:CC:DD:..."
 python scripts/deploy.py well_known --upload-only --ask-pass
 ```
 
-Verify: [Digital Asset Links tester](https://developers.google.com/digital-asset-links/tools/generator) for `dk.masternoder.casino` + `masternoder.dk`.
+**Local TWA only (pre-Play):** debug keystore SHA via `keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android`
 
-### 3. Apple — fix AASA Team ID
+### 3. Apple — PAUSED
+
+Universal Links / AASA updates are **paused** until an Apple Developer account exists. PWA install and `masternoder://` deep links work without Apple enrollment. When ready:
 
 ```powershell
-$team = "ABCDE12345"   # Apple Developer → Membership → Team ID
-(Get-Content static\.well-known\apple-app-site-association -Raw) `
-  -replace 'TEAMID', $team |
+$team = "ABCDE12345"
+(Get-Content static\.well-known\apple-app-site-association -Raw) -replace 'TEAMID', $team |
   Set-Content static\.well-known\apple-app-site-association -NoNewline
 python scripts/deploy.py well_known --upload-only --ask-pass
 ```
 
-```bash
-curl -sSI https://masternoder.dk/.well-known/apple-app-site-association | head -5
-```
+### 4. Meta Pixel
 
-### 4. Meta Pixel (optional)
+Server `.env`:
 
 ```bash
-# On server SSH
-grep -q '^META_PIXEL_ID=' /var/www/html/.env || \
-  echo 'META_PIXEL_ID=YOUR_PIXEL_ID' >> /var/www/html/.env
+grep -q '^META_PIXEL_ID=' /var/www/html/.env || echo 'META_PIXEL_ID=YOUR_PIXEL_ID' >> /var/www/html/.env
 systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001
 ```
 
-Note: pixel ID is **not injected** in `casino/index.html` today — add Meta base snippet if you want client-side events.
+Client: `casino.js` reads `facebook.pixel_id` from `GET /api/casino/social/links` and initializes `fbq` automatically. No pixel ID is stored in the repo.
 
 ### 5. Casino AI agents — server env + dry-run
 
 ```bash
-# Generate secret locally
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-
-# On server /var/www/html/.env
 AGENT_CASINO_SECRET=<paste-secret>
 CASINO_AGENT_LLM=1
 GROQ_API_KEY=gsk_...
 DEEPSEEK_API_KEY=sk-...
 LLM_TIMEOUT_SECONDS=12
-
-systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001
 ```
 
 ```bash
@@ -146,83 +140,36 @@ curl -sS -X POST https://masternoder.dk/api/agent/casino/run-all \
   -d '{"dry_run": true}' | jq .
 ```
 
-### 6. Share big-win smoke test
-
-```powershell
-Invoke-RestMethod -Uri "https://masternoder.dk/api/casino/share/big-win" -Method POST `
-  -ContentType "application/json" `
-  -Body '{"user_id":"demo","game":"crash","net":500,"currency":"coins","multiplier":12.5}'
-```
-
-### 7. Production verification bundle
+### 6. Production verification bundle
 
 ```bash
 BASE=https://masternoder.dk
 curl -sS -o /dev/null -w "casino %{http_code}\n" "$BASE/casino/"
-curl -sS "$BASE/api/casino/social/links" | jq '.facebook, .mobile, (.follow_links | length)'
-curl -sS "$BASE/api/casino/mobile/config" | jq '.app_store_url, .play_store_url, .assetlinks_url'
+curl -sS "$BASE/api/casino/social/links" | jq '.facebook.pixel_id, (.follow_links | length)'
 curl -sS "$BASE/.well-known/assetlinks.json" | jq .
-curl -sS "$BASE/.well-known/apple-app-site-association" | jq .
 curl -sS "$BASE/api/casino/marketing" | jq .
 curl -sS "$BASE/api/agent/casino/models" | jq .
 ```
 
-### 8. Android Capacitor build (local)
-
-```bash
-cd mobile/casino-app
-npm install
-npm run assets
-npx cap sync android
-npm run open:android
-# Android Studio → Generate Signed Bundle / APK
-```
-
-### 9. Android TWA build (lighter Play-only option)
-
-```bash
-cd mobile/casino-twa
-# Follow mobile/casino-twa/README.md for bubblewrap init + build
-```
-
-### 10. PR #43
+### 7. PR #43
 
 ```powershell
 gh pr view 43
 gh pr checks 43
-# After review:
-gh pr merge 43 --squash
+gh pr merge 43 --squash   # after review
 ```
-
-### 11. Update social URLs (when accounts are confirmed)
-
-Edit `data/casino_config.json` → `social_links` and `facebook.page_url`, then:
-
-```powershell
-python scripts/deploy.py --files data/casino_config.json --ask-pass
-```
-
-### 12. App Store URL after approval
-
-Add to `data/casino_config.json` under `mobile`:
-
-```json
-"app_store_url": "https://apps.apple.com/app/id<NUMERIC_ID>"
-```
-
-Redeploy config + update `casino/manifest.webmanifest` `related_applications` if adding iOS store entry.
 
 ---
 
 ## Quick reference
 
 | Item | Value / location |
-|------|------------------|
+| ---- | ---------------- |
 | Android package | `dk.masternoder.casino` |
-| assetlinks placeholder | `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` |
-| AASA placeholder | `TEAMID` → `TEAMID.dk.masternoder.casino` |
+| assetlinks placeholder | `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` (64 hex after Tuesday) |
+| AASA | **PAUSED** — `TEAMID` placeholder |
 | App Store placeholder | `https://apps.apple.com/app/id0000000000` |
-| Meta pixel env | `META_PIXEL_ID` (optional, UI not wired) |
+| Meta pixel | `META_PIXEL_ID` in server `.env` → `fbq` in `casino.js` |
 | Agent auth | `AGENT_CASINO_SECRET` + header `X-Agent-Casino-Key` |
-| Agent LLM toggle | `CASINO_AGENT_LLM=1` |
+| Agent seed bots | Kelly Optimizer, Safe Grinder, Meta Oracle |
 | Ops shell checklist | `bash scripts/casino_ops_setup.sh` |
