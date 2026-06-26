@@ -31,6 +31,8 @@ Optional (outbound Discord — not the interactions endpoint itself):
 - `DISCORD_WEBHOOK_URL` / `DISCORD_CHANNEL_ID_*` — outbound posts (news, casino fan-out)
 - `DISCORD_OPS_SECRET` — cron/ops routes under `/api/discord/*`
 
+**Webhook setup (casino, market, testing):** [DISCORD_WEBHOOK_SETUP.md](DISCORD_WEBHOOK_SETUP.md)
+
 See `.env.example` (Discord section) and `docs/DISCORD_LINKED_ROLES.md` for linked-role OAuth vars.
 
 **Public key format:** 64 hex chars; optional `0x` prefix and surrounding quotes are stripped. If unset locally, signature verify is skipped (tests only — **always set on production**).
@@ -177,3 +179,23 @@ After env + deploy + uWSGI reload:
 - Account **link** routes
 
 Add the endpoint when you register slash commands (e.g. `/casino status`).
+
+---
+
+## Related `.env` mistakes (outbound / roles — not interactions)
+
+These do **not** block Interactions Endpoint verification but break other Discord features:
+
+| Issue | Symptom | Fix |
+|-------|---------|-----|
+| `DISCORD_HOSTING_VIP_ROLE_ID` truncated (e.g. 18 digits, looks like Application ID minus last digit) | Bot `PUT …/roles/{role_id}` returns `404 Unknown Role` | Discord → Server Settings → Roles → right-click role → **Copy Role ID** (Developer Mode on). Must be the **role** snowflake, not Application ID. |
+| `DISCORD_CHANNEL_ID_CASINO=` empty | Casino fan-out posts to `DISCORD_WEBHOOK_URL` default channel, not `#casino` | Create a webhook for `#casino` → set `DISCORD_CHANNEL_ID_CASINO=https://discord.com/api/webhooks/…` |
+| Numeric value in `DISCORD_CHANNEL_ID_*` | `invalid_webhook:… is a numeric channel ID` in outbox | Vars named `DISCORD_CHANNEL_ID_*` expect a **full webhook URL**, not a channel snowflake (`discord_service._webhook_for_channel`). |
+| `DISCORD_APPLICATION_ID` set but `DISCORD_CLIENT_ID` empty | OAuth / linked roles fail | Code reads `DISCORD_CLIENT_ID` only; `DISCORD_APPLICATION_ID` is redundant — set `DISCORD_CLIENT_ID` to Application ID. |
+| Inline `# comment` on same line as a secret | Rare parsers include comment in value | Put comments on their own line above the variable. |
+
+Confirm local vs server public key (fingerprints only):
+
+```bash
+python scripts/_discord_public_key_fingerprint.py
+```

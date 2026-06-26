@@ -31,7 +31,7 @@ python -m pytest tests/ -q
 python scripts/deploy.py casino --list-files
 ```
 
-(Current manifest: **49** paths — backend casino services/routes, `data/casino_*.json`, `casino/*`, static casino JS/CSS/icons, `cron/discord_casino_fanout.sh`. **Does not** include `static/.well-known/*`; ship those via `--files` below.)
+(Current manifest: **49** paths — backend casino services/routes, `data/casino_*.json`, `casino/*`, static casino JS/CSS/icons, `cron/discord_casino_fanout.sh`. **Does not** include `static/.well-known/*`; ship via `well_known` manifest below.)
 
 ### SSH / auth (from `deploy_ssh_env.py`)
 
@@ -84,6 +84,20 @@ python scripts/deploy.py casino --upload-only --ask-pass
 
 ### Well-known + icons (not in `casino` manifest)
 
+**Recommended** — uploads to `static/.well-known/` and auto-syncs to nginx web root `/.well-known/`:
+
+```powershell
+python scripts/deploy.py well_known --upload-only --ask-pass
+```
+
+Same manifest with nginx reload (no uwsgi restart):
+
+```powershell
+python scripts/deploy.py well_known --ask-pass
+```
+
+Legacy `--files` (also triggers web-root sync):
+
 ```powershell
 python scripts/deploy.py --files static/.well-known/assetlinks.json static/.well-known/apple-app-site-association --upload-only --ask-pass
 ```
@@ -94,13 +108,7 @@ Optional icons if missing in production:
 python scripts/deploy.py --files static/img/casino/icon-192.svg static/img/casino/icon-512.svg static/img/casino/icon-maskable.svg static/img/casino/og-share.svg casino/manifest.webmanifest --upload-only --ask-pass
 ```
 
-**Nginx note:** Mobile API advertises `https://masternoder.dk/.well-known/assetlinks.json`. Repo source lives under `static/.well-known/`. After upload, ensure the public URL is served (many setups copy or alias to site root):
-
-```bash
-# On server (SSH) — adjust if your nginx already aliases static/.well-known
-mkdir -p /var/www/html/.well-known
-cp -a /var/www/html/static/.well-known/* /var/www/html/.well-known/
-```
+**Nginx note:** Mobile API advertises `https://masternoder.dk/.well-known/assetlinks.json`. Repo source lives under `static/.well-known/`; deploy uploads to `/var/www/html/static/.well-known/` then copies to `/var/www/html/.well-known/` (nginx root). Flask fallback routes exist in `all_page_routes.py` but production nginx typically serves the root path directly.
 
 Static-only HTML/CSS deploy (large; no uwsgi restart):
 
@@ -146,10 +154,8 @@ sed -i "s/REPLACE_WITH_PLAY_APP_SIGNING_SHA256/$SHA/" static/.well-known/assetli
 **Re-deploy well-known:**
 
 ```powershell
-python scripts/deploy.py --files static/.well-known/assetlinks.json --upload-only --ask-pass
+python scripts/deploy.py well_known --upload-only --ask-pass
 ```
-
-Then run the server **copy to `/.well-known/`** step in section B if needed.
 
 **Verify:** [Google Statement List Tester](https://developers.google.com/digital-asset-links/tools/generator) for `dk.masternoder.casino` + your domain.
 
@@ -180,7 +186,7 @@ sed -i "s/TEAMID/$TEAM/g" static/.well-known/apple-app-site-association
 **Deploy:**
 
 ```powershell
-python scripts/deploy.py --files static/.well-known/apple-app-site-association --upload-only --ask-pass
+python scripts/deploy.py well_known --upload-only --ask-pass
 ```
 
 **Xcode / Capacitor:** Enable **Associated Domains** → `applinks:masternoder.dk` (and `webcredentials:masternoder.dk` if using password autofill). Rebuild iOS app after AASA is live.
@@ -190,6 +196,8 @@ Paths in file: `/casino`, `/casino/*`.
 ---
 
 ### C.3 Discord `#casino` webhook
+
+**Full walkthrough (Discord UI clicks, testing, troubleshooting):** [DISCORD_WEBHOOK_SETUP.md](DISCORD_WEBHOOK_SETUP.md)
 
 Config reference: `data/casino_config.json` → `discord_integration.webhook_env` = **`DISCORD_CHANNEL_ID_CASINO`**.
 
@@ -290,7 +298,7 @@ curl -sS "$BASE/api/casino/mobile/config" | jq .
 curl -sS "$BASE/api/casino/social/links" | jq '.discord.webhook_env, .facebook.pixel_id_env'
 ```
 
-If `/.well-known/*` 404s but `/static/.well-known/*` works, run the server copy step in section B.
+If `/.well-known/*` 404s but `/static/.well-known/*` works, run `python scripts/deploy.py well_known --upload-only --ask-pass`.
 
 ### On-server (uwsgi)
 
