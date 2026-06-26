@@ -241,6 +241,51 @@ def casino_leaderboard():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/global/leaderboard", methods=["GET"])
+def casino_global_leaderboard():
+    try:
+        from backend.services import casino_global_controller
+        period = request.args.get("period", "today")
+        limit = request.args.get("limit", 25)
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_global_controller.get_global_leaderboard(
+            period=period,
+            limit=limit,
+            user_id=user_id,
+            currency=_currency_from_query(),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/global/stats", methods=["GET"])
+def casino_global_stats():
+    try:
+        from backend.services import casino_global_controller
+        return jsonify(casino_global_controller.get_global_stats()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/daily", methods=["GET"])
+def casino_revenue_daily():
+    try:
+        from backend.services import casino_revenue_report
+        days = request.args.get("days", 7)
+        return jsonify(casino_revenue_report.daily_reports(days=days)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/report/today", methods=["GET"])
+def casino_revenue_today():
+    try:
+        from backend.services import casino_revenue_report
+        return jsonify(casino_revenue_report.today_summary()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/play/free-daily-bet", methods=["POST"])
 def casino_free_daily_bet():
     try:

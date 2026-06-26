@@ -4,6 +4,7 @@
     const userId = localStorage.getItem('game_user_id') || 'default_user';
     const baseUrl = window.location.origin;
     let leaderboardPeriod = 'today';
+    let leaderboardScope = 'local';
     let lastDoubleBetId = null;
     let activeCurrency = localStorage.getItem('casino_currency') || 'coins';
     let realMoneyEnabled = false;
@@ -970,7 +971,19 @@
         if (!list && !podium) {
             return;
         }
-        var data = await api(apiPathWithCurrency('/api/casino/leaderboard?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=25'));
+        var lbPath = leaderboardScope === 'global'
+            ? '/api/casino/global/leaderboard'
+            : '/api/casino/leaderboard';
+        var data = await api(apiPathWithCurrency(lbPath + '?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=25'));
+        var badge = $('casino-lb-network-badge');
+        if (badge) {
+            if (leaderboardScope === 'global' && data.network_label) {
+                badge.textContent = data.network_label;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
         if (!data.success) {
             if (list) list.innerHTML = '<li>' + (data.error || 'Leaderboard unavailable') + '</li>';
             if (podium) podium.innerHTML = '';
@@ -3505,6 +3518,14 @@
                 leaderboardPeriod = tab.getAttribute('data-period') || 'today';
                 refreshLeaderboard();
                 refreshSocialBoard();
+            });
+        });
+        document.querySelectorAll('.casino-lb-scope-tabs .casino-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.casino-lb-scope-tabs .casino-tab').forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                leaderboardScope = tab.getAttribute('data-lb-scope') || 'local';
+                refreshLeaderboard();
             });
         });
 

@@ -1797,6 +1797,24 @@
     margin-bottom: var(--spacing-md);
 }
 
+.casino-lb-scope-tabs {
+    justify-content: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.casino-lb-network-badge {
+    display: inline-block;
+    margin-top: var(--spacing-xs);
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(34, 211, 238, 0.25));
+    border: 1px solid rgba(129, 140, 248, 0.45);
+    color: #e0e7ff;
+}
+
 .casino-lb-podium {
     display: grid;
     grid-template-columns: 1fr 1.15fr 1fr;
@@ -2145,3 +2163,30 @@
 .casino-header {
     padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top, 0px));
 }
+
+/* Themed slots (expansion batch) */
+.casino-slot-machine[data-slot="slot_abyss"] { --slot-theme: #0e7490; --slot-accent: #164e63; --slot-glow: rgba(14,116,144,0.55); }
+.casino-slot-machine[data-slot="slot_anime"] { --slot-theme: #ec4899; --slot-accent: #8b5cf6; --slot-glow: rgba(236,72,153,0.55); }
+.casino-slot-machine[data-slot="slot_candy"] { --slot-theme: #f472b6; --slot-accent: #fde047; --slot-glow: rgba(244,114,182,0.55); }
+.casino-slot-machine[data-slot="slot_circus"] { --slot-theme: #ef4444; --slot-accent: #fde047; --slot-glow: rgba(239,68,68,0.55); }
+.casino-slot-machine[data-slot="slot_city"] { --slot-theme: #3b82f6; --slot-accent: #f97316; --slot-glow: rgba(59,130,246,0.55); }
+.casino-slot-machine[data-slot="slot_cyberpunk"] { --slot-theme: #00ff9f; --slot-accent: #ff0080; --slot-glow: rgba(0,255,159,0.5); }
+.casino-slot-machine[data-slot="slot_desert"] { --slot-theme: #fbbf24; --slot-accent: #b45309; --slot-glow: rgba(251,191,36,0.5); }
+.casino-slot-machine[data-slot="slot_dragon"] { --slot-theme: #dc2626; --slot-accent: #fbbf24; --slot-glow: rgba(220,38,38,0.55); }
+.casino-slot-machine[data-slot="slot_fairy_ring"] { --slot-theme: #c084fc; --slot-accent: #86efac; --slot-glow: rgba(192,132,252,0.5); }
+.casino-slot-machine[data-slot="slot_farm"] { --slot-theme: #84cc16; --slot-accent: #a3e635; --slot-glow: rgba(132,204,22,0.5); }
+.casino-slot-machine[data-slot="slot_horror"] { --slot-theme: #4c1d95; --slot-accent: #1f2937; --slot-glow: rgba(76,29,149,0.55); }
+.casino-slot-machine[data-slot="slot_ice"] { --slot-theme: #bae6fd; --slot-accent: #60a5fa; --slot-glow: rgba(186,230,253,0.6); }
+.casino-slot-machine[data-slot="slot_jungle"] { --slot-theme: #16a34a; --slot-accent: #ca8a04; --slot-glow: rgba(22,163,74,0.5); }
+.casino-slot-machine[data-slot="slot_lava"] { --slot-theme: #ea580c; --slot-accent: #fef08a; --slot-glow: rgba(234,88,12,0.55); }
+.casino-slot-machine[data-slot="slot_magic"] { --slot-theme: #7c3aed; --slot-accent: #2dd4bf; --slot-glow: rgba(124,58,237,0.55); }
+.casino-slot-machine[data-slot="slot_music"] { --slot-theme: #a855f7; --slot-accent: #f43f5e; --slot-glow: rgba(168,85,247,0.55); }
+.casino-slot-machine[data-slot="slot_ninja"] { --slot-theme: #1f2937; --slot-accent: #ef4444; --slot-glow: rgba(31,41,55,0.6); }
+.casino-slot-machine[data-slot="slot_pirate_king"] { --slot-theme: #1e3a5f; --slot-accent: #eab308; --slot-glow: rgba(30,58,95,0.55); }
+.casino-slot-machine[data-slot="slot_robot"] { --slot-theme: #94a3b8; --slot-accent: #38bdf8; --slot-glow: rgba(148,163,184,0.55); }
+.casino-slot-machine[data-slot="slot_space"] { --slot-theme: #6366f1; --slot-accent: #22d3ee; --slot-glow: rgba(99,102,241,0.55); }
+.casino-slot-machine[data-slot="slot_sphinx"] { --slot-theme: #d4a574; --slot-accent: #854d0e; --slot-glow: rgba(212,165,116,0.55); }
+.casino-slot-machine[data-slot="slot_sports"] { --slot-theme: #22c55e; --slot-accent: #ffffff; --slot-glow: rgba(34,197,94,0.5); }
+.casino-slot-machine[data-slot="slot_steampunk"] { --slot-theme: #a16207; --slot-accent: #78716c; --slot-glow: rgba(161,98,7,0.5); }
+.casino-slot-machine[data-slot="slot_viking"] { --slot-theme: #64748b; --slot-accent: #f59e0b; --slot-glow: rgba(100,116,139,0.55); }
+.casino-slot-machine[data-slot="slot_western"] { --slot-theme: #d97706; --slot-accent: #78350f; --slot-glow: rgba(217,119,6,0.5); }

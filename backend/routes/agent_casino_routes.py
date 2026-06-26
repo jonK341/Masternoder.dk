@@ -118,3 +118,34 @@ def casino_agent_discord_notify():
     from backend.services import casino_discord_fanout
     data = request.get_json(silent=True) or {}
     return jsonify(casino_discord_fanout.run_fanout(dry_run=bool(data.get("dry_run")))), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/global/leaderboard", methods=["GET"])
+def casino_agent_global_leaderboard():
+    from backend.services import casino_global_controller
+    period = request.args.get("period", "today")
+    limit = request.args.get("limit", 25)
+    user_id = (request.args.get("user_id") or "").strip() or None
+    currency = (request.args.get("currency") or "coins").strip().lower()
+    return jsonify(casino_global_controller.get_global_leaderboard(
+        period=period, limit=limit, user_id=user_id, currency=currency,
+    )), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/global/stats", methods=["GET"])
+def casino_agent_global_stats():
+    from backend.services import casino_global_controller
+    return jsonify(casino_global_controller.get_global_stats()), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/revenue/daily", methods=["GET"])
+def casino_agent_revenue_daily():
+    from backend.services import casino_revenue_report
+    days = request.args.get("days", 7)
+    return jsonify(casino_revenue_report.daily_reports(days=days)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/revenue/report/today", methods=["GET"])
+def casino_agent_revenue_today():
+    from backend.services import casino_revenue_report
+    return jsonify(casino_revenue_report.today_summary()), 200
