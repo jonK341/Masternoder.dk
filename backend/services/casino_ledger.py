@@ -248,6 +248,40 @@ def top_big_wins(days: int = 7, limit: int = 20, currency: Optional[str] = None)
         return []
 
 
+def user_bets_for_export(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    """Recent settled bets for a user — used by provably-fair CSV export."""
+    safe_limit = max(1, min(int(limit or 100), 500))
+    uid = str(user_id or "").strip()
+    if not uid:
+        return []
+    try:
+        with _LOCK:
+            conn = _connect()
+            try:
+                _ensure_schema(conn)
+                cur = conn.execute(
+                    """
+                    SELECT bet_id, user_id, game, currency, bet, payout, net, outcome, created_at, details
+                    FROM casino_bets
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (uid, safe_limit),
+                )
+                rows = [dict(r) for r in cur.fetchall()]
+            finally:
+                conn.close()
+        for r in rows:
+            try:
+                r["details"] = json.loads(r.get("details") or "{}")
+            except Exception:
+                r["details"] = {}
+        return rows
+    except Exception:
+        return []
+
+
 def bet_count_since(day_prefix: str) -> int:
     """Count bets on or after a UTC date prefix (YYYY-MM-DD)."""
     try:

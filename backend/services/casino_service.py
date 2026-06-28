@@ -570,6 +570,24 @@ def _finalize_bet(
             )
         except Exception:
             pass
+        try:
+            from backend.services.exchange_casino_leaderboard_service import record_highroller_net
+
+            record_highroller_net(user_id, net)
+        except Exception:
+            pass
+        if net > 0 and outcome in ("win", "jackpot", "payout"):
+            try:
+                from backend.services.exchange_casino_quest_service import record_bridge_action, emit_bridge_market_event
+
+                record_bridge_action(user_id, "casino_mn2_win")
+                min_net = float(os.environ.get("BRIDGE_MARKET_MIN_MN2_WIN", "0.5"))
+                if net >= min_net:
+                    emit_bridge_market_event("casino_mn2_big_win", user_id, {
+                        "game": game, "net": net, "bet": bet, "payout": payout, "outcome": outcome,
+                    })
+            except Exception:
+                pass
     if net > 0 and outcome in ("win", "jackpot", "payout"):
         try:
             from backend.services.casino_social_service import on_big_win
@@ -589,8 +607,9 @@ def _finalize_bet(
     except ImportError:
         pass
     try:
-        from backend.services.casino_social_service import track_referral_casino_play
+        from backend.services.casino_social_service import track_referral_casino_play, track_referral_bet
         track_referral_casino_play(user_id)
+        track_referral_bet(user_id)
     except Exception:
         pass
     if not skip_stake and bet > 0:
@@ -2307,6 +2326,173 @@ def get_slot_of_the_day() -> Dict[str, Any]:
             "blurb": (game_cfg or {}).get("blurb") or f"Today's featured machine — {picked.get('label')}",
         },
     }
+
+
+def get_seasonal_slots() -> Dict[str, Any]:
+    """Active seasonal slot overlays from casino_config — limited-time reskins only."""
+    from datetime import datetime, timezone
+
+    cfg = _load_config()
+    seasonal = cfg.get("seasonal_overlays") if isinstance(cfg.get("seasonal_overlays"), dict) else {}
+    if seasonal.get("enabled") is False:
+        return {"success": True, "enabled": False, "active_windows": [], "slots": []}
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    windows_cfg = seasonal.get("windows") if isinstance(seasonal.get("windows"), list) else []
+    machines = {m["id"]: m for m in (list_slot_machines().get("slots") or []) if m.get("id")}
+    active_windows: List[Dict[str, Any]] = []
+    merged_slots: Dict[str, Dict[str, Any]] = {}
+
+    for win in windows_cfg:
+        if not isinstance(win, dict):
+            continue
+        start = str(win.get("starts_at") or "")[:10]
+        end = str(win.get("ends_at") or "")[:10]
+        if start and today < start:
+            continue
+        if end and today > end:
+            continue
+        overlays = win.get("overlays") if isinstance(win.get("overlays"), dict) else {}
+        if not overlays:
+            continue
+        active_windows.append({
+            "id": win.get("id"),
+            "label": win.get("label"),
+            "starts_at": start,
+            "ends_at": end,
+        })
+        for slot_id, overlay in overlays.items():
+            if not isinstance(overlay, dict):
+                continue
+            base = machines.get(slot_id) or {"id": slot_id, "label": slot_id, "icon": "🎰"}
+            existing = merged_slots.get(slot_id) or dict(base)
+            label = (base.get("label") or slot_id) + str(overlay.get("label_suffix") or "")
+            merged_slots[slot_id] = {
+                **existing,
+                "id": slot_id,
+                "label": label.strip(),
+                "icon": overlay.get("icon") or existing.get("icon") or "🎰",
+                "theme_color": overlay.get("theme_color") or existing.get("theme_color"),
+                "accent": overlay.get("accent") or existing.get("accent"),
+                "glow_color": overlay.get("glow_color") or existing.get("glow_color"),
+                "seasonal": True,
+                "seasonal_window": win.get("id"),
+                "seasonal_label": win.get("label"),
+            }
+
+    return {
+        "success": True,
+        "enabled": True,
+        "badge_label": seasonal.get("badge_label") or "Seasonal",
+        "day": today,
+        "active_windows": active_windows,
+        "slots": list(merged_slots.values()),
+        "count": len(merged_slots),
+    }
+
+
+def get_vip_lounge(user_id: str) -> Dict[str, Any]:
+    """VIP lounge state — gated by XP threshold; cosmetic frames + daily wheel link only."""
+    from backend.services import casino_progression
+
+    cfg = _load_config()
+    lounge = cfg.get("vip_lounge") if isinstance(cfg.get("vip_lounge"), dict) else {}
+    if lounge.get("enabled") is False:
+        return {"success": True, "enabled": False, "unlocked": False}
+
+    min_xp = float(lounge.get("min_xp") or 5000)
+    profile = casino_progression.get_profile(user_id)
+    xp_block = profile.get("xp") if isinstance(profile.get("xp"), dict) else {}
+    user_xp = float(xp_block.get("xp") or 0)
+    unlocked = user_xp >= min_xp
+    frames = lounge.get("frame_previews") if isinstance(lounge.get("frame_previews"), list) else []
+    wheel_spun = bool(profile.get("daily_wheel_spun_today"))
+
+    return {
+        "success": True,
+        "enabled": True,
+        "user_id": user_id,
+        "unlocked": unlocked,
+        "min_xp": min_xp,
+        "user_xp": round(user_xp, 2),
+        "xp_to_unlock": max(0, round(min_xp - user_xp, 2)),
+        "level": xp_block.get("level"),
+        "level_title": xp_block.get("title"),
+        "vip_tier": profile.get("vip"),
+        "title": lounge.get("title") or "VIP Lounge",
+        "subtitle": lounge.get("subtitle") or "Cosmetic perks only — house edge unchanged.",
+        "frame_previews": frames if unlocked else [],
+        "frame_previews_locked": [] if unlocked else frames[:2],
+        "daily_wheel": {
+            "href": lounge.get("daily_wheel_href") or "/casino/?tab=home",
+            "available": unlocked and not wheel_spun,
+            "spun_today": wheel_spun,
+            "note": "Same wheel odds for all players — VIP unlocks lounge access only.",
+        },
+        "shop_frames_href": lounge.get("shop_frames_href") or "/casino/?tab=compete",
+        "note": "No RTP or house-edge perks from VIP lounge.",
+    }
+
+
+def export_fairness_audit(user_id: str, limit: int = 100) -> Dict[str, Any]:
+    """Build provably-fair audit rows for CSV export."""
+    from backend.services import casino_ledger
+
+    uid = str(user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required"}
+    safe_limit = max(1, min(int(limit or 100), 500))
+    rows = casino_ledger.user_bets_for_export(uid, limit=safe_limit)
+    audit_rows: List[Dict[str, Any]] = []
+    for row in rows:
+        details = row.get("details") if isinstance(row.get("details"), dict) else {}
+        fairness = details.get("fairness") if isinstance(details.get("fairness"), dict) else {}
+        if not fairness and isinstance(details, dict):
+            fairness = {
+                k: details[k]
+                for k in ("server_seed_hash", "client_seed", "nonce", "server_seed")
+                if k in details
+            }
+        audit_rows.append({
+            "bet_id": row.get("bet_id"),
+            "created_at": row.get("created_at"),
+            "game": row.get("game"),
+            "currency": row.get("currency"),
+            "bet": row.get("bet"),
+            "payout": row.get("payout"),
+            "net": row.get("net"),
+            "outcome": row.get("outcome"),
+            "server_seed_hash": fairness.get("server_seed_hash") or "",
+            "server_seed": fairness.get("server_seed") or "",
+            "client_seed": fairness.get("client_seed") or "",
+            "nonce": fairness.get("nonce"),
+        })
+    return {
+        "success": True,
+        "user_id": uid,
+        "count": len(audit_rows),
+        "rows": audit_rows,
+    }
+
+
+def fairness_audit_csv(user_id: str, limit: int = 100) -> str:
+    """CSV string for provably-fair audit download."""
+    import csv
+    import io
+
+    payload = export_fairness_audit(user_id, limit=limit)
+    if not payload.get("success"):
+        return "error,user_id required\n"
+    buf = io.StringIO()
+    fields = [
+        "bet_id", "created_at", "game", "currency", "bet", "payout", "net", "outcome",
+        "server_seed_hash", "server_seed", "client_seed", "nonce",
+    ]
+    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for row in payload.get("rows") or []:
+        writer.writerow(row)
+    return buf.getvalue()
 
 
 _BATTLE_OUTCOMES = ("win", "draw", "loss")

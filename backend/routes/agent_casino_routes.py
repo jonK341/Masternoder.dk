@@ -127,6 +127,56 @@ def casino_agent_social_crew_challenge():
     )), 200
 
 
+@agent_casino_bp.route("/api/agent/casino/social/referral/quests", methods=["GET"])
+def casino_agent_social_referral_quests():
+    from backend.services import casino_social_service
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    return jsonify(casino_social_service.get_referral_quests(user_id)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/seasonal/slots", methods=["GET"])
+def casino_agent_seasonal_slots():
+    import backend.services.casino_service as casino
+    return jsonify(casino.get_seasonal_slots()), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/vip/lounge", methods=["GET"])
+def casino_agent_vip_lounge():
+    import backend.services.casino_service as casino
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    return jsonify(casino.get_vip_lounge(user_id)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/crew/leaderboard", methods=["GET"])
+def casino_agent_crew_leaderboard():
+    import backend.services.casino_service as casino
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    currency = (request.args.get("currency") or "coins").strip().lower()
+    return jsonify(casino.get_crew_casino_leaderboard(user_id, currency=currency)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/fairness/export", methods=["GET"])
+def casino_agent_fairness_export():
+    import backend.services.casino_service as casino
+    user_id = (request.args.get("user_id") or "").strip() or "default_user"
+    limit = request.args.get("limit", 100, type=int)
+    fmt = (request.args.get("format") or "json").strip().lower()
+    if fmt == "csv":
+        from flask import Response
+        csv_body = casino.fairness_audit_csv(user_id, limit=limit)
+        return Response(csv_body, mimetype="text/csv")
+    return jsonify(casino.export_fairness_audit(user_id, limit=limit)), 200
+
+
+@agent_casino_bp.route("/api/agent/casino/activity-feed/stream", methods=["GET"])
+def casino_agent_activity_feed_stream():
+    """Agent parity — redirect to public SSE endpoint metadata."""
+    import backend.services.casino_service as casino
+    limit = request.args.get("limit", 12, type=int)
+    currency = request.args.get("currency")
+    return jsonify(casino.get_activity_feed(limit=limit, currency=currency)), 200
+
+
 @agent_casino_bp.route("/api/agent/casino/discord/notify", methods=["POST"])
 def casino_agent_discord_notify():
     if not _authorized():

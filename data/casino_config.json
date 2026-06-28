@@ -10,6 +10,132 @@
     "rotate_daily": true,
     "badge_label": "Slot of the Day"
   },
+  "seasonal_overlays": {
+    "enabled": true,
+    "badge_label": "Seasonal",
+    "windows": [
+      {
+        "id": "summer_neon_2026",
+        "label": "Neon Summer",
+        "starts_at": "2026-06-01",
+        "ends_at": "2026-09-01",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Neon",
+            "icon": "🌴",
+            "theme_color": "#00ffd5",
+            "accent": "#ff00aa",
+            "glow_color": "rgba(0, 255, 213, 0.45)"
+          },
+          "slot_fruit": {
+            "label_suffix": " Tropic",
+            "icon": "🍹",
+            "theme_color": "#ffb347",
+            "accent": "#ff6b6b",
+            "glow_color": "rgba(255, 179, 71, 0.5)"
+          }
+        }
+      },
+      {
+        "id": "halloween_2026",
+        "label": "Spooky Reels",
+        "starts_at": "2026-10-01",
+        "ends_at": "2026-11-02",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Halloween",
+            "icon": "🎃",
+            "theme_color": "#ff6600",
+            "accent": "#1a0a00",
+            "glow_color": "rgba(255, 102, 0, 0.55)"
+          },
+          "slot_magic": {
+            "label_suffix": " Witching",
+            "icon": "🧙",
+            "theme_color": "#7b2cbf",
+            "accent": "#ff6600",
+            "glow_color": "rgba(123, 44, 191, 0.5)"
+          },
+          "slot_dragon": {
+            "label_suffix": " Phantom",
+            "icon": "👻",
+            "theme_color": "#2d1b4e",
+            "accent": "#39ff14",
+            "glow_color": "rgba(57, 255, 20, 0.35)"
+          }
+        }
+      },
+      {
+        "id": "winter_neon_2026",
+        "label": "Frost & Neon",
+        "starts_at": "2026-12-01",
+        "ends_at": "2027-01-15",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Winter",
+            "icon": "❄️",
+            "theme_color": "#a8d8ff",
+            "accent": "#0047ab",
+            "glow_color": "rgba(168, 216, 255, 0.55)"
+          },
+          "slot_diamond": {
+            "label_suffix": " Ice",
+            "icon": "💎",
+            "theme_color": "#e0f7ff",
+            "accent": "#0066cc",
+            "glow_color": "rgba(224, 247, 255, 0.6)"
+          }
+        }
+      },
+      {
+        "id": "mn2_halving_2026",
+        "label": "MN2 Halving",
+        "starts_at": "2026-04-01",
+        "ends_at": "2026-12-31",
+        "overlays": {
+          "slot_crypto": {
+            "label_suffix": " Halving",
+            "icon": "⛏️",
+            "theme_color": "#f7931a",
+            "accent": "#ffd700",
+            "glow_color": "rgba(247, 147, 26, 0.5)"
+          },
+          "slot_mn2": {
+            "label_suffix": " Genesis",
+            "icon": "🪙",
+            "theme_color": "#ffd700",
+            "accent": "#1a1035",
+            "glow_color": "rgba(255, 215, 0, 0.55)"
+          }
+        }
+      }
+    ]
+  },
+  "referral_quests": {
+    "enabled": true,
+    "max_bets_tracked": 10,
+    "milestones": [
+      {"bets": 1, "referrer_coins": 10, "badge": "🌱", "label": "First bet"},
+      {"bets": 3, "referrer_coins": 25, "badge": "🎯", "label": "Warming up"},
+      {"bets": 5, "referrer_coins": 50, "badge": "🔥", "label": "Regular"},
+      {"bets": 10, "referrer_coins": 100, "badge": "👑", "label": "Dedicated"}
+    ],
+    "note": "Referrer coin rewards only — no RTP or house-edge changes for referees."
+  },
+  "vip_lounge": {
+    "enabled": true,
+    "min_xp": 5000,
+    "title": "VIP Lounge",
+    "subtitle": "Cosmetic perks and daily wheel — house edge unchanged.",
+    "frame_previews": [
+      {"id": "frame_gold", "label": "Gold Frame", "icon": "🥇", "preview_color": "#ffd700"},
+      {"id": "frame_platinum", "label": "Platinum Frame", "icon": "💎", "preview_color": "#e5e4e2"},
+      {"id": "frame_neon", "label": "Neon Pulse", "icon": "✨", "preview_color": "#00ffd5"},
+      {"id": "frame_legend", "label": "House Legend", "icon": "👑", "preview_color": "#c084fc"}
+    ],
+    "daily_wheel_href": "/casino/?tab=home#casino-daily-wheel",
+    "shop_frames_href": "/casino/?tab=compete"
+  },
   "featured_games": [
     {
       "id": "crash",

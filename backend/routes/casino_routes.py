@@ -107,6 +107,34 @@ def casino_balance():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/exchange-bridge", methods=["GET"])
+def casino_exchange_bridge():
+    """Unified wallet strip: casino balance + exchange profit cash-out."""
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        from backend.services.exchange_user_controller_service import hub_state, load_config as ctrl_cfg
+
+        hub = hub_state(user_id)
+        pub = casino_service.get_public_config()
+        rm = (pub.get("real_money") or {}) if isinstance(pub, dict) else {}
+        bridge = rm.get("exchange_bridge") or {}
+        ctrl = ctrl_cfg()
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "bridge": bridge,
+            "mn2_balance": (hub.get("balances") or {}).get("mn2", 0),
+            "shop_coins": (hub.get("balances") or {}).get("coins", 0),
+            "exchange_profit_usd": hub.get("cash_out_available_usd", 0),
+            "rental_count": hub.get("rental_count", 0),
+            "controller_url": bridge.get("exchange_page_url") or "/exchange#cex-control-center",
+            "cross_promo": bridge.get("cross_promo") or ctrl.get("casino_bridge", {}).get("note", ""),
+            "casino_coins_per_usd": (ctrl.get("cash_out") or {}).get("casino_coins_per_usd", 100),
+        }), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/history", methods=["GET"])
 def casino_history():
     try:
@@ -950,6 +978,98 @@ def casino_crew_leaderboard():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/crew/leaderboard", methods=["GET"])
+def casino_crew_leaderboard_v2():
+    """Wave 2 alias — weekly crew net leaderboard with discord guild metadata."""
+    return casino_crew_leaderboard()
+
+
+@casino_bp.route("/api/casino/seasonal/slots", methods=["GET"])
+def casino_seasonal_slots():
+    try:
+        return jsonify(casino_service.get_seasonal_slots()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/vip/lounge", methods=["GET"])
+def casino_vip_lounge():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_vip_lounge(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/fairness/export", methods=["GET"])
+def casino_fairness_export():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        limit = request.args.get("limit", 100, type=int)
+        fmt = (request.args.get("format") or "csv").strip().lower()
+        if fmt == "json":
+            return jsonify(casino_service.export_fairness_audit(user_id, limit=limit)), 200
+        from flask import Response
+        csv_body = casino_service.fairness_audit_csv(user_id, limit=limit)
+        filename = f"casino-fairness-{user_id[:16]}.csv"
+        return Response(
+            csv_body,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/activity-feed/stream", methods=["GET"])
+def casino_activity_feed_stream():
+    """SSE stream of recent casino wins from ledger mirror — poll fallback in JS."""
+    import json
+    import time
+    from flask import Response, request, stream_with_context
+
+    interval = max(3, min(int(request.args.get("interval", 8)), 60))
+    limit = max(3, min(int(request.args.get("limit", 12)), 50))
+    currency = request.args.get("currency")
+    max_ticks = request.args.get("max_ticks", type=int)
+
+    def generate():
+        yield "data: " + json.dumps({
+            "type": "connected",
+            "channel": "casino_wins",
+            "interval_sec": interval,
+        }) + "\n\n"
+        last_sig = None
+        tick = 0
+        while True:
+            try:
+                payload = casino_service.get_activity_feed(limit=limit, currency=currency)
+                feed = payload.get("feed") or []
+                sig = json.dumps(feed[:3], sort_keys=True, default=str)
+                if sig != last_sig:
+                    last_sig = sig
+                    yield "data: " + json.dumps({
+                        "type": "wins",
+                        "feed": feed,
+                        "count": len(feed),
+                        "ts": time.time(),
+                    }) + "\n\n"
+                else:
+                    yield "data: " + json.dumps({"type": "heartbeat", "ts": time.time()}) + "\n\n"
+            except Exception as exc:
+                yield "data: " + json.dumps({"type": "error", "error": str(exc)}) + "\n\n"
+            tick += 1
+            if max_ticks is not None and tick >= max_ticks:
+                break
+            time.sleep(interval)
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @casino_bp.route("/api/casino/tournaments", methods=["GET"])
 def casino_tournaments_list():
     try:
@@ -1197,6 +1317,16 @@ def casino_social_referral_leaderboard():
         from backend.services import casino_social_service
         limit = request.args.get("limit", 10, type=int)
         return jsonify(casino_social_service.get_referral_leaderboard(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/quests", methods=["GET"])
+def casino_social_referral_quests():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_referral_quests(user_id)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

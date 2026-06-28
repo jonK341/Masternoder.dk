@@ -58,6 +58,33 @@
     text-align: center;
 }
 
+.casino-exchange-bridge {
+    max-width: 1180px;
+    margin: 0 auto var(--spacing-md);
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.15), rgba(0, 212, 255, 0.12));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.casino-exchange-bridge-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    font-size: 0.82rem;
+}
+.casino-exchange-bridge-label { font-weight: 700; color: var(--text-primary); }
+.casino-exchange-bridge-cta {
+    margin-left: auto;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(0, 212, 255, 0.2);
+    color: #7ee8ff;
+    text-decoration: none;
+    font-weight: 600;
+}
+.casino-exchange-bridge-cta:hover { background: rgba(0, 212, 255, 0.35); }
+
 .casino-cockpit {
     max-width: 1180px;
     margin: 0 auto var(--spacing-lg);
@@ -2353,6 +2380,42 @@
     cursor: pointer;
 }
 .casino-slot-of-day:hover { filter: brightness(1.08); }
+.casino-seasonal-badge {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.35rem 0 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(0,255,213,0.18), rgba(255,0,170,0.18));
+    border: 1px solid rgba(0,255,213,0.35);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.casino-seasonal-slots { opacity: 0.85; font-size: 0.82rem; }
+.casino-vip-lounge {
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255,215,0,0.25);
+    background: rgba(26,16,53,0.6);
+}
+.casino-vip-frames { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0; }
+.casino-vip-frame {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--frame-color, #ffd700);
+    font-size: 0.82rem;
+}
+.casino-ref-quest-row {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+.casino-crew-row, .casino-crew-week { font-size: 0.88rem; padding: 0.2rem 0; }
+.casino-fairness-export-link { font-size: 0.88rem; color: #60a5fa; }
 .casino-big-win-hof, .casino-home-achievements { font-size: 0.88rem; line-height: 1.45; }
 .casino-big-win-row { padding: 0.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
 .casino-home-ach-item {

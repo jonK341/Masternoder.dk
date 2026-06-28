@@ -793,6 +793,141 @@ def track_referral_casino_play(user_id: str) -> None:
         _save_json_store(_CASINO_REFERRALS_PATH, store)
 
 
+def _referral_quest_config() -> Dict[str, Any]:
+    cfg = _load_casino_config()
+    rq = cfg.get("referral_quests") if isinstance(cfg.get("referral_quests"), dict) else {}
+    milestones = rq.get("milestones") if isinstance(rq.get("milestones"), list) else [
+        {"bets": 1, "referrer_coins": 10, "badge": "🌱", "label": "First bet"},
+        {"bets": 3, "referrer_coins": 25, "badge": "🎯", "label": "Warming up"},
+        {"bets": 5, "referrer_coins": 50, "badge": "🔥", "label": "Regular"},
+        {"bets": 10, "referrer_coins": 100, "badge": "👑", "label": "Dedicated"},
+    ]
+    return {
+        "enabled": rq.get("enabled", True),
+        "max_bets_tracked": int(rq.get("max_bets_tracked") or 10),
+        "milestones": sorted(
+            [m for m in milestones if isinstance(m, dict)],
+            key=lambda x: int(x.get("bets") or 0),
+        ),
+        "note": rq.get("note") or "Referrer coin rewards only — no RTP changes.",
+    }
+
+
+def track_referral_bet(user_id: str) -> None:
+    """Increment referred-user bet count and grant tier rewards to referrer (coins only)."""
+    rq_cfg = _referral_quest_config()
+    if not rq_cfg.get("enabled"):
+        return
+    max_bets = rq_cfg["max_bets_tracked"]
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    target_row = None
+    for row in store.get("signups") or []:
+        if row.get("referred_user_id") == user_id:
+            target_row = row
+            break
+    if not target_row:
+        return
+    prev = int(target_row.get("bet_count") or 0)
+    if prev >= max_bets:
+        return
+    target_row["bet_count"] = prev + 1
+    if not target_row.get("first_play_at"):
+        target_row["first_play_at"] = _iso()
+    new_count = target_row["bet_count"]
+    claimed = set(target_row.get("tiers_claimed") or [])
+    referrer_id = str(target_row.get("referrer_user_id") or "").strip()
+    rewards_granted: List[Dict[str, Any]] = []
+    for milestone in rq_cfg["milestones"]:
+        need = int(milestone.get("bets") or 0)
+        tier_key = f"bets_{need}"
+        if new_count < need or tier_key in claimed:
+            continue
+        coins = int(milestone.get("referrer_coins") or 0)
+        if referrer_id and coins > 0:
+            try:
+                from backend.services import casino_service
+                casino_service._apply_coin_delta(
+                    referrer_id,
+                    coins,
+                    "referral_quest",
+                    {
+                        "milestone_bets": need,
+                        "referred_user_id": user_id,
+                        "tier": tier_key,
+                    },
+                )
+            except Exception:
+                pass
+        claimed.add(tier_key)
+        target_row.setdefault("tiers_claimed", []).append(tier_key)
+        rewards_granted.append({
+            "tier": tier_key,
+            "bets": need,
+            "referrer_coins": coins,
+            "badge": milestone.get("badge"),
+            "label": milestone.get("label"),
+        })
+        _emit(
+            "casino_referral_quest_tier",
+            user_id=referrer_id,
+            payload={
+                "referred": anonymize_user(user_id),
+                "milestone_bets": need,
+                "referrer_coins": coins,
+            },
+        )
+    _save_json_store(_CASINO_REFERRALS_PATH, store)
+
+
+def get_referral_quests(user_id: str) -> Dict[str, Any]:
+    """Referral quest progress for a referrer — tier rewards when referees hit bet milestones."""
+    rq_cfg = _referral_quest_config()
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    referrals = [
+        r for r in store.get("signups") or []
+        if isinstance(r, dict) and str(r.get("referrer_user_id") or "").strip() == user_id
+    ]
+    milestones = rq_cfg["milestones"]
+    rows = []
+    total_coins_earned = 0
+    for ref in referrals:
+        bet_count = min(int(ref.get("bet_count") or 0), rq_cfg["max_bets_tracked"])
+        claimed = set(ref.get("tiers_claimed") or [])
+        tier_status = []
+        for m in milestones:
+            need = int(m.get("bets") or 0)
+            tier_key = f"bets_{need}"
+            tier_status.append({
+                "bets_required": need,
+                "label": m.get("label"),
+                "badge": m.get("badge"),
+                "referrer_coins": int(m.get("referrer_coins") or 0),
+                "completed": bet_count >= need,
+                "claimed": tier_key in claimed,
+            })
+            if tier_key in claimed:
+                total_coins_earned += int(m.get("referrer_coins") or 0)
+        rows.append({
+            "referred_user_id": ref.get("referred_user_id"),
+            "display": anonymize_user(str(ref.get("referred_user_id") or "")),
+            "bet_count": bet_count,
+            "max_bets": rq_cfg["max_bets_tracked"],
+            "registered_at": ref.get("registered_at"),
+            "first_play_at": ref.get("first_play_at"),
+            "tiers": tier_status,
+        })
+    return {
+        "success": True,
+        "user_id": user_id,
+        "enabled": rq_cfg.get("enabled", True),
+        "milestones": milestones,
+        "referrals": rows,
+        "referral_count": len(rows),
+        "total_coins_earned": total_coins_earned,
+        "note": rq_cfg.get("note"),
+    }
+
+
 def _load_follows() -> Dict[str, List[str]]:
     return _load_json_store(_FOLLOWS_PATH, {})
 

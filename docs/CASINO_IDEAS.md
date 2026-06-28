@@ -23,10 +23,25 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 
 ---
 
+## Wave 2 status (feat/casino-mega-expansion — 2026-06-28)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Seasonal slot skins (#1) | ✅ | `seasonal_overlays` in `casino_config.json`, `/api/casino/seasonal/slots`, home badge |
+| Referral quests v2 (#11) | ✅ | Tier rewards on first 10 referred bets, `/api/casino/social/referral/quests` |
+| Crew leaderboards (#12) | ✅ | `/api/casino/crew/leaderboard` — weekly net, `week_key`, discord guild id |
+| VIP lounge tab (#17) | ✅ | `/api/casino/vip/lounge` — XP gate, frame previews, daily wheel link |
+| Provably-fair audit export (#10) | ✅ | `/api/casino/fairness/export?user_id=&limit=100` CSV |
+| Live activity ticker v2 SSE (#18) | ✅ | `/api/casino/activity-feed/stream` + poll fallback in `casino.js` |
+| Revenue digest email (#25) | ✅ | `cron/casino_daily_revenue_report.sh` email stub via `CASINO_REVENUE_EMAIL` |
+| Crash crew mode (#2) | — | Deferred to Wave 3 (shared round complexity) |
+
+---
+
 ## 25 feature ideas (feasible next waves)
 
 ### Games & mechanics
-1. **Seasonal slot skins** — reskin existing 35 machines with limited-time themes (Halloween, MN2 halving) without new engine code.
+1. **Seasonal slot skins** — reskin existing 35 machines with limited-time themes (Halloween, MN2 halving) without new engine code. *(✅ `seasonal_overlays` + home badge)*
 2. **Crash crew mode** — shared multiplier pool where friends cash out on the same round with split payouts.
 3. **Plinko battle** — two players, same seed reveal, highest bin wins a pot.
 4. **Mines duel** — turn-based tile picks on a shared board; bomb ends round.
@@ -35,17 +50,17 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 7. **Blackjack tournaments** — bracketed single-elimination using existing BJ engine + ledger.
 8. **Video poker ladder** — daily escalating pay tables for ranked players.
 9. **Wheel raid boss** — community jackpot triggered when aggregate spins hit a threshold.
-10. **Provably-fair audit export** — one-click CSV of seeds/nonces for transparency-minded players.
+10. **Provably-fair audit export** — one-click CSV of seeds/nonces for transparency-minded players. *(✅ `/api/casino/fairness/export`)*
 
 ### Social & retention
-11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets. *(✅ leaderboard slice — full quest tiers next)*
-12. **Crew leaderboards** — Discord guild ID maps to a crew; aggregate weekly net for prizes.
+11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets. *(✅ `/api/casino/social/referral/quests` + referrer coin milestones)*
+12. **Crew leaderboards** — Discord guild ID maps to a crew; aggregate weekly net for prizes. *(✅ `/api/casino/crew/leaderboard`)*
 13. **Big-win clip cards** — auto-generate share image (SVG/PNG) from `POST /api/casino/share/big-win`.
 14. **Spectator mode** — watch AI agents (Kelly, Safe Grinder, Meta Oracle) with spectator lines from LLM.
 15. **Friend challenges** — send duel invite link; winner takes configurable coin pot.
 16. **Streak shields** — one loss-forgiving token per week for engagement (virtual coins only).
-17. **VIP lounge tab** — unlock at XP threshold; cosmetic frames + higher daily wheel odds (house-edge neutral).
-18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll. *(✅ ledger mirror + 7d big-win HOF; SSE next)*
+17. **VIP lounge tab** — unlock at XP threshold; cosmetic frames + higher daily wheel odds (house-edge neutral). *(✅ `/api/casino/vip/lounge` — same wheel odds, cosmetic gate)*
+18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll. *(✅ `/api/casino/activity-feed/stream` + poll fallback)*
 19. **Cross-promo with Lab** — complete Lab quest → casino free bet coupon.
 20. **Podcast portal tie-in** — bonus coins when listening during a live casino tournament window.
 
@@ -54,7 +69,7 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 22. **MN2 rake rebate tiers** — extend trophy rake rebate with visible progress bar in rank tab.
 23. **PayPal deposit bundles** — limited-time “starter packs” in `casino_config` deposit packs.
 24. **Global hub affiliate nodes** — other MasterNoder sites report into `casino_global_controller` for network leaderboard.
-25. **Revenue digest email** — optional weekly operator summary from `casino_revenue_report` (ops-only, no PII).
+25. **Revenue digest email** — optional weekly operator summary from `casino_revenue_report` (ops-only, no PII). *(✅ cron email stub via `CASINO_REVENUE_EMAIL`)*
 
 ---
 

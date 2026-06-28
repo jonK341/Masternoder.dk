@@ -257,12 +257,13 @@ def try_claim_race(user_id: str, race_id: str, metric_value: float, target: floa
 
 
 def get_crew_casino_leaderboard(user_id: str, currency: str = "coins") -> Dict[str, Any]:
-    """Aggregate casino net per crew from social_structure."""
+    """Aggregate casino net per crew from social_structure — weekly window."""
     social = _load_social()
     crews = social.get("crews") or []
     now = datetime.now(timezone.utc)
-    since = now - timedelta(days=7)
+    since = now - timedelta(days=now.weekday())
     since = since.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_key = _week_key()
 
     rows = []
     my_crew_id = (social.get("user_crews") or {}).get(user_id)
@@ -274,12 +275,23 @@ def get_crew_casino_leaderboard(user_id: str, currency: str = "coins") -> Dict[s
         if not members:
             continue
         total_net = sum(_ledger_net_since(str(m), since, currency) for m in members)
+        total_bets = 0
+        for m in members:
+            try:
+                from backend.services import casino_ledger
+                agg = casino_ledger.leaderboard_aggregate("week", currency)
+                member_stats = agg.get(str(m)) or {}
+                total_bets += int(member_stats.get("bets") or 0)
+            except Exception:
+                pass
         rows.append({
             "crew_id": cid,
             "name": crew.get("name") or cid,
             "member_count": len(members),
             "week_net": round(total_net, 2),
+            "week_bets": total_bets,
             "is_yours": cid == my_crew_id,
+            "discord_guild_id": crew.get("discord_guild_id") or crew.get("guild_id"),
         })
     rows.sort(key=lambda r: r.get("week_net") or 0, reverse=True)
     for i, row in enumerate(rows, 1):
@@ -288,8 +300,12 @@ def get_crew_casino_leaderboard(user_id: str, currency: str = "coins") -> Dict[s
         "success": True,
         "user_id": user_id,
         "currency": currency,
+        "period": "week",
+        "week_key": week_key,
+        "since": since.isoformat().replace("+00:00", "Z"),
         "crew_leaderboard": rows[:20],
         "your_crew_id": my_crew_id,
+        "note": "Weekly crew net from casino ledger — cosmetic prizes only, no RTP perks.",
     }
 
 

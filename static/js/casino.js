@@ -1266,6 +1266,7 @@
         initMobileInstall();
         await refreshReferralInvite();
         await refreshReferralLeaderboard();
+        await refreshReferralQuests();
         await refreshFollowLeaders();
         await refreshCrewChallengeHook();
         await refreshSocialActivityFeed();
@@ -1597,6 +1598,177 @@
             '<span>' + (slot.icon || '🎰') + ' ' + (slot.label || slot.id) + '</span>';
         el.title = slot.blurb || 'Play today\'s featured slot';
         el.onclick = function () { switchMainTab('slots'); };
+    }
+
+    async function refreshSeasonalBadge() {
+        var el = $('casino-seasonal-badge');
+        if (!el) return;
+        var data = await api('/api/casino/seasonal/slots');
+        if (!data.success || !data.enabled || !(data.slots || []).length) {
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden');
+        var winLabel = (data.active_windows && data.active_windows[0]) ? data.active_windows[0].label : 'Seasonal';
+        var slotLabels = (data.slots || []).slice(0, 3).map(function (s) {
+            return (s.icon || '🎃') + ' ' + (s.label || s.id);
+        }).join(' · ');
+        el.innerHTML = '<span>🍂 ' + (data.badge_label || 'Seasonal') + '</span>' +
+            '<span>' + winLabel + '</span>' +
+            '<span class="casino-seasonal-slots">' + slotLabels + '</span>';
+        el.title = 'Limited-time slot reskins — same RTP, new look';
+        el.onclick = function () { switchMainTab('slots'); };
+    }
+
+    async function refreshVipLounge() {
+        var wrap = $('casino-vip-lounge');
+        var body = $('casino-vip-lounge-body');
+        if (!wrap || !body) return;
+        var data = await api('/api/casino/vip/lounge?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !data.enabled) {
+            wrap.classList.add('hidden');
+            return;
+        }
+        wrap.classList.remove('hidden');
+        if (!data.unlocked) {
+            body.innerHTML = '<p class="casino-vip-locked">🔒 Unlock at ' + Math.round(data.min_xp) +
+                ' XP — you have ' + Math.round(data.user_xp || 0) + ' (' +
+                Math.round(data.xp_to_unlock || 0) + ' to go). Cosmetic lounge only.</p>';
+            return;
+        }
+        var frames = (data.frame_previews || []).map(function (f) {
+            return '<span class="casino-vip-frame" style="--frame-color:' + (f.preview_color || '#ffd700') + '">' +
+                (f.icon || '🖼️') + ' ' + (f.label || f.id) + '</span>';
+        }).join('');
+        var wheelNote = data.daily_wheel && data.daily_wheel.available
+            ? 'Daily wheel ready — same odds for everyone.'
+            : (data.daily_wheel && data.daily_wheel.spun_today ? 'Daily wheel spun today.' : '');
+        body.innerHTML = '<p class="casino-vip-unlocked">✨ ' + (data.title || 'VIP Lounge') + ' — ' +
+            (data.subtitle || '') + '</p>' +
+            '<div class="casino-vip-frames">' + frames + '</div>' +
+            '<p class="casino-vip-wheel-note">' + wheelNote + '</p>';
+    }
+
+    async function refreshReferralQuests() {
+        var el = $('casino-referral-quests');
+        if (!el) return;
+        var data = await api('/api/casino/social/referral/quests?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            el.textContent = 'Referral quests unavailable.';
+            return;
+        }
+        if (!(data.referrals || []).length) {
+            el.innerHTML = '<p>Share your invite link — earn coin trophies when friends complete their first 10 bets. No RTP perks.</p>';
+            return;
+        }
+        el.innerHTML = (data.referrals || []).map(function (r) {
+            var tiers = (r.tiers || []).map(function (t) {
+                var mark = t.claimed ? '✓' : (t.completed ? '○' : '·');
+                return mark + ' ' + (t.badge || '') + ' ' + (t.label || t.bets_required) +
+                    ' (' + t.bets_required + ' bets, +' + t.referrer_coins + ' coins)';
+            }).join('<br>');
+            return '<div class="casino-ref-quest-row"><strong>' + (r.display || 'Friend') +
+                '</strong> · ' + r.bet_count + '/' + r.max_bets + ' bets<br>' + tiers + '</div>';
+        }).join('');
+        if (data.total_coins_earned) {
+            el.innerHTML += '<p class="casino-ref-quest-total">Total quest coins earned: ' + data.total_coins_earned + '</p>';
+        }
+    }
+
+    async function refreshCompeteTab() {
+        var crewEl = $('casino-crew-board');
+        if (crewEl) {
+            var crew = await api('/api/casino/crew/leaderboard?user_id=' + encodeURIComponent(userId) +
+                '&currency=' + encodeURIComponent(activeCurrency));
+            if (!crew.success || !(crew.crew_leaderboard || []).length) {
+                crewEl.textContent = 'No crew data yet — join a crew on the game social hub.';
+            } else {
+                crewEl.innerHTML = '<p class="casino-crew-week">Week ' + (crew.week_key || '') + ' · ' +
+                    (crew.currency || 'coins') + '</p>' +
+                    (crew.crew_leaderboard || []).map(function (c) {
+                        var tag = c.is_yours ? ' ★' : '';
+                        return '<div class="casino-crew-row">#' + c.rank + ' ' + (c.name || c.crew_id) +
+                            tag + ' · net ' + c.week_net + ' · ' + (c.member_count || 0) + ' members</div>';
+                    }).join('');
+            }
+        }
+        var rivalsEl = $('casino-rivals');
+        if (rivalsEl) {
+            var rivals = await api('/api/casino/rival-board?user_id=' + encodeURIComponent(userId) +
+                '&period=week&currency=' + encodeURIComponent(activeCurrency));
+            if (!rivals.success || !(rivals.board || []).length) {
+                rivalsEl.textContent = 'Rival board loads after you and friends place bets.';
+            } else {
+                rivalsEl.innerHTML = (rivals.board || []).slice(0, 8).map(function (r) {
+                    return '<div>#' + (r.rank || '?') + ' ' + shortUser(r.user_id) +
+                        (r.is_you ? ' (you)' : '') + ' · net ' + r.net + '</div>';
+                }).join('');
+            }
+        }
+        var racesEl = $('casino-achievement-races');
+        if (racesEl) {
+            var races = await api('/api/casino/achievement-races?user_id=' + encodeURIComponent(userId));
+            if (!races.success || !(races.races || []).length) {
+                racesEl.textContent = 'Achievement races — compete for cosmetic coin prizes.';
+            } else {
+                racesEl.innerHTML = (races.races || []).map(function (r) {
+                    return '<div>' + (r.title || r.id) + ' — ' + (r.status || 'open') + '</div>';
+                }).join('');
+            }
+        }
+    }
+
+    function setupFairnessExportLink() {
+        var link = $('casino-fairness-export-link');
+        if (!link) return;
+        link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';
+        link.setAttribute('download', 'casino-fairness-audit.csv');
+    }
+
+    var activityFeedEventSource = null;
+
+    function renderActivityFeedItems(feed) {
+        var track = $('casino-ticker-track');
+        if (!track) return;
+        if (!(feed || []).length) {
+            track.innerHTML = '<span class="casino-ticker-item">Be the first big win today…</span>';
+            return;
+        }
+        var items = feed.map(function (f) {
+            var mult = f.multiplier ? (' @ ' + Number(f.multiplier).toFixed(2) + '×') : '';
+            return '<span class="casino-ticker-item">🏆 ' + shortUser(f.user_id) + ' won ' +
+                formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + mult + '</span>';
+        });
+        track.innerHTML = items.join('') + items.join('');
+    }
+
+    function startActivityFeedStream() {
+        if (typeof EventSource === 'undefined') return false;
+        try {
+            if (activityFeedEventSource) {
+                activityFeedEventSource.close();
+            }
+            var url = '/api/casino/activity-feed/stream?limit=12&interval=8';
+            if (activeCurrency) url += '&currency=' + encodeURIComponent(activeCurrency);
+            activityFeedEventSource = new EventSource(url);
+            activityFeedEventSource.onmessage = function (ev) {
+                try {
+                    var msg = JSON.parse(ev.data);
+                    if (msg.type === 'wins' && msg.feed) {
+                        renderActivityFeedItems(msg.feed);
+                    }
+                } catch (e) { /* ignore parse errors */ }
+            };
+            activityFeedEventSource.onerror = function () {
+                if (activityFeedEventSource) {
+                    activityFeedEventSource.close();
+                    activityFeedEventSource = null;
+                }
+            };
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     async function refreshNewsTicker() {
@@ -2406,6 +2578,7 @@
     }
 
     async function refreshActivityFeed() {
+        if (activityFeedEventSource) return;
         var track = $('casino-ticker-track');
         if (!track) return;
         var data = await api('/api/casino/activity-feed?limit=12', null, 8000);
@@ -2413,12 +2586,7 @@
             track.innerHTML = '<span class="casino-ticker-item">Be the first big win today…</span>';
             return;
         }
-        var items = data.feed.map(function (f) {
-            var mult = f.multiplier ? (' @ ' + Number(f.multiplier).toFixed(2) + '×') : '';
-            return '<span class="casino-ticker-item">🏆 ' + shortUser(f.user_id) + ' won ' +
-                formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + mult + '</span>';
-        });
-        track.innerHTML = items.join('') + items.join('');
+        renderActivityFeedItems(data.feed);
     }
 
     // -- Crash --------------------------------------------------------------
@@ -3737,6 +3905,8 @@
         safeRefresh('hallOfFame', refreshHallOfFame);
         safeRefresh('bigWinHof', refreshBigWinHallOfFame);
         safeRefresh('slotOfDay', refreshSlotOfTheDay);
+        safeRefresh('seasonalBadge', refreshSeasonalBadge);
+        safeRefresh('vipLounge', refreshVipLounge);
         safeRefresh('homeAchievements', refreshHomeAchievements);
         safeRefresh('newsTicker', refreshNewsTicker);
         safeRefresh('rgBanner', refreshResponsibleGamingBanner);
@@ -3756,7 +3926,12 @@
         try { buildMinesGrid(); } catch (e) { /* grid optional */ }
         try { buildKenoGrid(); } catch (e) { /* grid optional */ }
         try { updateRouletteSelectionField(); } catch (e) { /* optional */ }
-        setInterval(function () { safeRefresh('activityFeed', refreshActivityFeed); }, 15000);
+        setupFairnessExportLink();
+        if (!startActivityFeedStream()) {
+            setInterval(function () { safeRefresh('activityFeed', refreshActivityFeed); }, 15000);
+        } else {
+            safeRefresh('activityFeed', refreshActivityFeed);
+        }
         setInterval(function () { safeRefresh('jackpotMeter', refreshJackpotMeter); }, 12000);
         setInterval(function () { safeRefresh('tournaments', refreshTournaments); }, 30000);
     }
