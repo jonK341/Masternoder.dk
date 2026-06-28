@@ -105,7 +105,8 @@ def discord_casino_fanout():
         return jsonify({"success": False, "error": "unauthorized"}), 403
     from backend.services import casino_discord_fanout
     data = request.get_json(silent=True) or {}
-    result = casino_discord_fanout.run_fanout(dry_run=bool(data.get("dry_run")))
+    dry_run = True if "dry_run" not in data else bool(data.get("dry_run"))
+    result = casino_discord_fanout.run_fanout(dry_run=dry_run)
     return jsonify(result), 200
 
 

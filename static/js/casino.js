@@ -233,6 +233,7 @@
         refreshHouseStats();
         refreshSocialBoard();
         safeRefresh('jackpotMeter', refreshJackpotMeter);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('tournaments', refreshTournaments);
     }
 
@@ -440,6 +441,7 @@
             safeRefresh('leaderboard', refreshLeaderboard);
         } else if (activeMainTab === 'activity') {
             safeRefresh('activityMonitor', refreshActivityMonitor);
+            safeRefresh('revenueDashboard', refreshRevenueDashboard);
         } else if (activeMainTab === 'social') {
             safeRefresh('socialTab', initSocialTab);
         } else if (activeMainTab === 'compete') {
@@ -1263,6 +1265,7 @@
         }
         initMobileInstall();
         await refreshReferralInvite();
+        await refreshReferralLeaderboard();
         await refreshFollowLeaders();
         await refreshCrewChallengeHook();
         await refreshSocialActivityFeed();
@@ -1565,6 +1568,136 @@
         });
     }
 
+    async function refreshBigWinHallOfFame() {
+        var el = $('casino-big-win-hof');
+        if (!el) return;
+        var data = await api('/api/casino/big-wins/hall-of-fame?days=7&limit=8');
+        if (!data.success || !(data.wins || []).length) {
+            el.textContent = 'No big multipliers in the last 7 days yet — be the first!';
+            return;
+        }
+        el.innerHTML = (data.wins || []).map(function (w) {
+            return '<div class="casino-big-win-row">#' + w.rank + ' ' + shortUser(w.user_id) +
+                ' · ' + Number(w.multiplier).toFixed(2) + '× on ' + prettyGame(w.game) +
+                ' · +' + formatFeedAmount(w.net, w.currency) + '</div>';
+        }).join('');
+    }
+
+    async function refreshSlotOfTheDay() {
+        var el = $('casino-slot-of-day');
+        if (!el) return;
+        var data = await api('/api/casino/slot-of-the-day');
+        if (!data.success || !data.enabled || !data.slot) {
+            el.classList.add('hidden');
+            return;
+        }
+        var slot = data.slot;
+        el.classList.remove('hidden');
+        el.innerHTML = '<span>⭐ ' + (data.badge_label || 'Slot of the Day') + '</span>' +
+            '<span>' + (slot.icon || '🎰') + ' ' + (slot.label || slot.id) + '</span>';
+        el.title = slot.blurb || 'Play today\'s featured slot';
+        el.onclick = function () { switchMainTab('slots'); };
+    }
+
+    async function refreshNewsTicker() {
+        var bar = $('casino-news-ticker');
+        var track = $('casino-news-ticker-track');
+        if (!bar || !track) return;
+        var data = await api('/api/casino/news/platform?limit=6', null, 8000);
+        if (!data.success || !(data.news || []).length) {
+            bar.classList.add('hidden');
+            return;
+        }
+        var items = (data.news || []).map(function (n) {
+            var title = n.title || n.summary || 'Casino update';
+            return '<span class="casino-news-item">' + title + '</span>';
+        });
+        track.innerHTML = items.join('') + items.join('');
+        bar.classList.remove('hidden');
+    }
+
+    async function refreshHomeAchievements() {
+        var el = $('casino-home-achievements');
+        if (!el) return;
+        var data = await api('/api/casino/achievements?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !(data.achievements || []).length) {
+            el.textContent = 'Complete quests and bets to unlock achievements.';
+            return;
+        }
+        var rows = (data.achievements || []).slice(0, 4).map(function (a) {
+            var pct = a.target ? Math.min(100, Math.round((a.progress / a.target) * 100)) : (a.unlocked ? 100 : 0);
+            return '<div class="casino-home-ach-item"><span>' + (a.icon || '🏅') + ' ' + (a.name || a.id) +
+                '</span><span>' + (a.unlocked ? '✓' : (a.progress || 0) + '/' + (a.target || '?')) + '</span></div>' +
+                '<div class="casino-home-ach-bar"><span style="width:' + pct + '%"></span></div>';
+        });
+        el.innerHTML = rows.join('');
+    }
+
+    async function refreshResponsibleGamingBanner() {
+        var el = $('casino-rg-banner');
+        if (!el) return;
+        var data = await api('/api/casino/responsible-gaming/status?user_id=' + encodeURIComponent(userId) +
+            '&currency=' + encodeURIComponent(activeCurrency));
+        if (!data.success || !data.enabled) {
+            el.classList.add('hidden');
+            return;
+        }
+        var parts = [];
+        if (data.session_minutes > 0) {
+            parts.push('Session ' + data.session_minutes + ' min');
+        }
+        if (data.session_loss_cap != null) {
+            parts.push('Loss ' + data.session_loss + '/' + data.session_loss_cap + ' ' + data.currency);
+        }
+        if (data.nudge) {
+            parts.push(data.nudge);
+        }
+        if (!parts.length) {
+            el.classList.add('hidden');
+            return;
+        }
+        el.innerHTML = parts.join(' · ') + ' · <a href="/profile">Responsible play</a>';
+        el.classList.remove('hidden');
+    }
+
+    async function refreshRevenueDashboard() {
+        var el = $('casino-revenue-dashboard');
+        if (!el) return;
+        var today = await api('/api/casino/revenue/report/today');
+        var recon = await api('/api/casino/revenue/reconcile');
+        if (!today.success) {
+            el.textContent = today.error || 'Revenue data unavailable';
+            return;
+        }
+        var s = today.summary || {};
+        var coins = (today.by_currency || {}).coins || {};
+        var html = [
+            '<div class="casino-revenue-stat"><span>House edge (all rails)</span><strong>' +
+                (today.house_edge_profit_total != null ? today.house_edge_profit_total : '—') + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Big wins today</span><strong>' + (s.big_wins || 0) + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Coins bets today</span><strong>' + (coins.bets || 0) + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Quest rewards granted</span><strong>' + (s.reward_coins_granted || 0) + ' coins</strong></div>',
+        ];
+        if (recon.success) {
+            html.push('<div class="casino-revenue-stat ' + (recon.ok ? 'ok' : 'warn') + '"><span>Ledger reconcile</span><strong>' +
+                (recon.ok ? 'OK' : 'Drift ' + recon.drift) + '</strong></div>');
+        }
+        el.innerHTML = html.join('');
+    }
+
+    async function refreshReferralLeaderboard() {
+        var el = $('casino-referral-leaderboard');
+        if (!el) return;
+        var data = await api('/api/casino/social/referral/leaderboard?limit=8');
+        if (!data.success || !(data.leaderboard || []).length) {
+            el.textContent = 'No referral signups yet — share your link to climb the board.';
+            return;
+        }
+        el.innerHTML = (data.leaderboard || []).map(function (r) {
+            return '<li>#' + r.rank + ' ' + shortUser(r.user_id) + ' · ' + r.referrals + ' invites</li>';
+        }).join('');
+    }
+
     async function playDouble() {
         if (!lastDoubleBetId) return;
         const data = await api('/api/casino/double-or-nothing', {
@@ -1614,6 +1747,7 @@
         await refreshSocialBoard();
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
     }
 
     async function playCoinFlip() {
@@ -2229,7 +2363,16 @@
             bar.classList.add('hidden');
             return;
         }
-        el.innerHTML = parts.join('<span class="casino-jackpot-sep">·</span>');
+        var networkLabel = '';
+        try {
+            var gst = await api('/api/casino/global/stats', null, 6000);
+            if (gst.success && gst.hub_id) {
+                networkLabel = '<span class="casino-jackpot-network">🌐 ' +
+                    (gst.network_label || 'Network') + ' · ' + (gst.totals && gst.totals.bets != null ? gst.totals.bets + ' bets' : 'live') +
+                    '</span>';
+            }
+        } catch (e) { /* optional */ }
+        el.innerHTML = parts.join('<span class="casino-jackpot-sep">·</span>') + networkLabel;
         bar.classList.remove('hidden');
     }
 
@@ -3592,6 +3735,11 @@
         safeRefresh('leaderboard', refreshLeaderboard);
         safeRefresh('personalBests', refreshPersonalBests);
         safeRefresh('hallOfFame', refreshHallOfFame);
+        safeRefresh('bigWinHof', refreshBigWinHallOfFame);
+        safeRefresh('slotOfDay', refreshSlotOfTheDay);
+        safeRefresh('homeAchievements', refreshHomeAchievements);
+        safeRefresh('newsTicker', refreshNewsTicker);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);

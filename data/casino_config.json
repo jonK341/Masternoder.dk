@@ -5,6 +5,11 @@
     "hub_id": "masternoder-main",
     "network_label": "MasterNoder Network"
   },
+  "slot_of_the_day": {
+    "enabled": true,
+    "rotate_daily": true,
+    "badge_label": "Slot of the Day"
+  },
   "featured_games": [
     {
       "id": "crash",
@@ -240,6 +245,13 @@
       "mn2",
       "paypal"
     ],
+    "exchange_bridge": {
+      "enabled": true,
+      "shared_mn2_wallet": true,
+      "profit_cashout_to_casino_coins": true,
+      "exchange_page_url": "/exchange#cex-control-center",
+      "cross_promo": "Cash exchange bot profit to casino play coins in Agent Control Center."
+    },
     "mn2_min_bet": 0.05,
     "mn2_max_bet": 5.0,
     "paypal_min_bet": 0.5,

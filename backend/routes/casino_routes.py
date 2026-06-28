@@ -329,6 +329,57 @@ def casino_hall_of_fame():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/big-wins/hall-of-fame", methods=["GET"])
+def casino_big_win_hall_of_fame():
+    try:
+        days = request.args.get("days", 7, type=int)
+        limit = request.args.get("limit", 15, type=int)
+        currency = request.args.get("currency") or None
+        return jsonify(casino_service.get_big_win_hall_of_fame(
+            days=days, limit=limit, currency=currency,
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/slot-of-the-day", methods=["GET"])
+def casino_slot_of_the_day():
+    try:
+        return jsonify(casino_service.get_slot_of_the_day()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/responsible-gaming/status", methods=["GET"])
+def casino_responsible_gaming_status():
+    try:
+        from backend.services.casino_responsible_gaming import status_for_user
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        currency = _currency_from_query()
+        return jsonify(status_for_user(user_id, currency)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/reconcile", methods=["GET"])
+def casino_revenue_reconcile():
+    try:
+        from backend.services import casino_revenue_report
+        day = request.args.get("day")
+        return jsonify(casino_revenue_report.reconcile_check(day=day)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/shop/rtp-audit", methods=["GET"])
+def casino_shop_rtp_audit():
+    try:
+        from backend.services import casino_shop_service
+        return jsonify(casino_shop_service.audit_rtp_compliance()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/play/mystery-coin-flip", methods=["POST"])
 def casino_mystery_coin_flip():
     try:
@@ -1140,6 +1191,16 @@ def casino_social_referral_register():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/social/referral/leaderboard", methods=["GET"])
+def casino_social_referral_leaderboard():
+    try:
+        from backend.services import casino_social_service
+        limit = request.args.get("limit", 10, type=int)
+        return jsonify(casino_social_service.get_referral_leaderboard(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/social/follow", methods=["GET", "POST", "DELETE"])
 def casino_social_follow():
     try:
@@ -1203,6 +1264,15 @@ def casino_social_crew_challenge():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+def _fanout_dry_run(data: dict) -> bool:
+    """Default dry_run=True for ops/cron safety unless explicitly disabled."""
+    if "dry_run" not in data:
+        return True
+    if data.get("dry_run") is False:
+        return False
+    return bool(data.get("dry_run"))
+
+
 @casino_bp.route("/api/casino/discord/notify", methods=["POST"])
 def casino_discord_notify():
     """Internal/cron hook — fan out pending casino events to Discord #casino."""
@@ -1211,7 +1281,7 @@ def casino_discord_notify():
     try:
         from backend.services import casino_discord_fanout
         data = request.get_json(silent=True) or {}
-        result = casino_discord_fanout.run_fanout(dry_run=bool(data.get("dry_run")))
+        result = casino_discord_fanout.run_fanout(dry_run=_fanout_dry_run(data))
         return jsonify(result), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

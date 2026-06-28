@@ -291,3 +291,59 @@ def today_summary() -> Dict[str, Any]:
         "tournament_payouts": (report.get("tournaments") or {}).get("tournament_payouts", 0),
     }
     return report
+
+
+def _jsonl_bet_count_for_day(day: str) -> int:
+    path = os.path.join(_log_dir(), "casino_bets.jsonl")
+    if not os.path.isfile(path):
+        return 0
+    count = 0
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                ts = str(row.get("created_at") or row.get("ts") or "")
+                if ts.startswith(day):
+                    count += 1
+    except OSError:
+        pass
+    return count
+
+
+def reconcile_check(day: Optional[str] = None) -> Dict[str, Any]:
+    """Compare SQLite ledger mirror vs JSONL bet log for a calendar day."""
+    day = (day or _utc_today()).strip()[:10]
+    from backend.services import casino_ledger
+
+    db_count = 0
+    db_path = os.path.join(_log_dir(), "casino_ledger.db")
+    if os.path.isfile(db_path):
+        try:
+            conn = sqlite3.connect(db_path, timeout=5.0)
+            cur = conn.execute(
+                "SELECT COUNT(*) FROM casino_bets WHERE substr(created_at, 1, 10) = ?",
+                (day,),
+            )
+            db_count = int(cur.fetchone()[0] or 0)
+            conn.close()
+        except Exception:
+            pass
+    jsonl_count = _jsonl_bet_count_for_day(day)
+    drift = abs(db_count - jsonl_count)
+    ok = drift == 0 or (db_count == 0 and jsonl_count == 0)
+    return {
+        "success": True,
+        "day": day,
+        "ledger_db_bets": db_count,
+        "jsonl_bets": jsonl_count,
+        "drift": drift,
+        "ok": ok,
+        "message": "Ledger mirror matches JSONL" if ok else f"Investigate drift: DB={db_count} JSONL={jsonl_count}",
+        "total_db_bets": casino_ledger.bet_count_since("1970-01-01"),
+    }

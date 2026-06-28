@@ -148,3 +148,38 @@ def purchase(user_id: str, item_id: str, currency: str = "coins") -> Dict[str, A
         "price": float(price),
         "quantity": qty,
     }
+
+
+_RTP_FORBIDDEN_KEYS = frozenset({
+    "rtp_boost", "rtp_multiplier", "house_edge_delta", "win_rate_boost",
+    "affects_rtp", "edge_perk", "payout_multiplier_boost",
+})
+
+
+def audit_rtp_compliance() -> Dict[str, Any]:
+    """Ensure shop catalog items are cosmetic-only and carry no RTP-affecting keys."""
+    items = _load_catalog().get("items") or []
+    violations: List[Dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        item_id = str(item.get("id") or "")
+        issues: List[str] = []
+        if not item.get("cosmetic_only", False):
+            issues.append("cosmetic_only must be true")
+        for key in item:
+            lk = str(key).lower()
+            if lk in _RTP_FORBIDDEN_KEYS or "rtp" in lk and lk not in ("description",):
+                issues.append(f"forbidden key: {key}")
+        effect = str(item.get("effect") or "").lower()
+        if effect in ("rtp_boost", "house_edge", "win_boost"):
+            issues.append(f"forbidden effect: {effect}")
+        if issues:
+            violations.append({"id": item_id, "issues": issues})
+    return {
+        "success": True,
+        "ok": len(violations) == 0,
+        "item_count": len(items),
+        "violations": violations,
+        "policy": "Shop items are cosmetic-only — never affect RTP or house edge.",
+    }

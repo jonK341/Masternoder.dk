@@ -2244,6 +2244,71 @@ def get_hall_of_fame(limit: int = 3) -> Dict[str, Any]:
     return {"success": True, "weeks": entries}
 
 
+def get_big_win_hall_of_fame(days: int = 7, limit: int = 15, currency: Optional[str] = None) -> Dict[str, Any]:
+    """Top payout multipliers from the ledger mirror (last N days)."""
+    from backend.services import casino_ledger
+
+    rows = casino_ledger.top_big_wins(days=days, limit=limit, currency=currency)
+    feed = []
+    for idx, row in enumerate(rows, start=1):
+        feed.append({
+            "rank": idx,
+            "user_id": row.get("user_id"),
+            "game": row.get("game"),
+            "currency": row.get("currency"),
+            "bet": row.get("bet"),
+            "payout": row.get("payout"),
+            "net": row.get("net"),
+            "multiplier": row.get("multiplier"),
+            "created_at": row.get("created_at"),
+        })
+    return {
+        "success": True,
+        "days": max(1, min(int(days or 7), 30)),
+        "wins": feed,
+        "count": len(feed),
+    }
+
+
+def get_slot_of_the_day() -> Dict[str, Any]:
+    """Featured rotating slot — deterministic daily pick from configured machines."""
+    from datetime import datetime, timezone
+
+    cfg = _load_config()
+    sod = cfg.get("slot_of_the_day") if isinstance(cfg.get("slot_of_the_day"), dict) else {}
+    if sod.get("enabled") is False:
+        return {"success": True, "enabled": False, "slot": None}
+
+    machines = list_slot_machines().get("slots") or []
+    if not machines:
+        return {"success": True, "enabled": True, "slot": None, "message": "No slots configured"}
+
+    override_id = (sod.get("slot_id") or "").strip()
+    rotate = sod.get("rotate_daily", True)
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    picked = None
+    if override_id and not rotate:
+        picked = next((m for m in machines if m.get("id") == override_id), None)
+        if not picked:
+            return {"success": True, "enabled": True, "slot": None, "error": "slot_id not found"}
+    else:
+        idx = sum(ord(c) for c in day) % len(machines)
+        picked = machines[idx]
+
+    games = (cfg.get("games") or {})
+    game_cfg = games.get(picked["id"]) if isinstance(games, dict) else {}
+    return {
+        "success": True,
+        "enabled": True,
+        "day": day,
+        "badge_label": sod.get("badge_label") or "Slot of the Day",
+        "slot": {
+            **picked,
+            "blurb": (game_cfg or {}).get("blurb") or f"Today's featured machine — {picked.get('label')}",
+        },
+    }
+
+
 _BATTLE_OUTCOMES = ("win", "draw", "loss")
 
 

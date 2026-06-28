@@ -4,6 +4,25 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 
 ---
 
+## Wave 1 status (feat/casino-mega-expansion — 2026-06-28)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Daily revenue dashboard (Activity tab) | ✅ | `/api/casino/revenue/report/today` + reconcile flag |
+| Slot of the Day (config + home badge) | ✅ | `slot_of_the_day` in `casino_config.json`, `/api/casino/slot-of-the-day` |
+| Big Win Hall of Fame (7d multipliers) | ✅ | `/api/casino/big-wins/hall-of-fame` from ledger mirror |
+| Referral leaderboard | ✅ | `/api/casino/social/referral/leaderboard` — trophies only, no RTP |
+| Casino news ticker | ✅ | `/api/casino/news/platform` → home marquee |
+| Responsible gaming reminders | ✅ | `/api/casino/responsible-gaming/status` + session banner |
+| Achievement showcase (home) | ✅ | Top 4 progress widgets from `/api/casino/achievements` |
+| Network jackpot ticker | ✅ | Jackpot bar polls `/api/casino/jackpots` + global stats |
+| Shop RTP audit | ✅ | `/api/casino/shop/rtp-audit` — all items `cosmetic_only` |
+| Ledger reconcile check | ✅ | `/api/casino/revenue/reconcile` |
+| Agent run-all rate limit | ✅ | 60s cooldown on non-`dry_run` POST |
+| Discord fanout dry_run default | ✅ | Cron + routes default `dry_run=true` until `CASINO_FANOUT_LIVE=1` |
+
+---
+
 ## 25 feature ideas (feasible next waves)
 
 ### Games & mechanics
@@ -19,14 +38,14 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 10. **Provably-fair audit export** — one-click CSV of seeds/nonces for transparency-minded players.
 
 ### Social & retention
-11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets.
+11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets. *(✅ leaderboard slice — full quest tiers next)*
 12. **Crew leaderboards** — Discord guild ID maps to a crew; aggregate weekly net for prizes.
 13. **Big-win clip cards** — auto-generate share image (SVG/PNG) from `POST /api/casino/share/big-win`.
 14. **Spectator mode** — watch AI agents (Kelly, Safe Grinder, Meta Oracle) with spectator lines from LLM.
 15. **Friend challenges** — send duel invite link; winner takes configurable coin pot.
 16. **Streak shields** — one loss-forgiving token per week for engagement (virtual coins only).
 17. **VIP lounge tab** — unlock at XP threshold; cosmetic frames + higher daily wheel odds (house-edge neutral).
-18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll.
+18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll. *(✅ ledger mirror + 7d big-win HOF; SSE next)*
 19. **Cross-promo with Lab** — complete Lab quest → casino free bet coupon.
 20. **Podcast portal tie-in** — bonus coins when listening during a live casino tournament window.
 
@@ -41,12 +60,12 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 
 ## 10 critical considerations when continuing
 
-1. **Compliance & positioning** — Market as **entertainment / social casino** with virtual coins; disclose MN2/USD rails, age gates, and responsible-gaming tools. Never imply guaranteed profit.
-2. **RTP & fairness** — Keep house edge and provably-fair seeds documented; run `tests/unit/test_casino_*` before every deploy; spot-check new games with `engines/*.rtp()` helpers.
+1. **Compliance & positioning** — Market as **entertainment / social casino** with virtual coins; disclose MN2/USD rails, age gates, and responsible-gaming tools. Never imply guaranteed profit. *(✅ RG status API + home banner)*
+2. **RTP & fairness** — Keep house edge and provably-fair seeds documented; run `tests/unit/test_casino_*` before every deploy; spot-check new games with `engines/*.rtp()` helpers. *(✅ shop RTP audit endpoint)*
 3. **Secret rotation** — `AGENT_CASINO_SECRET`, LLM keys, Discord webhooks, PayPal credentials: rotate on exposure; never commit `.env`.
 4. **Deploy discipline** — Casino + Discord fanout + revenue routes affect **live users**. Always deploy `casino` manifest + restart uWSGI; verify with curl bundle in [CASINO_INTEGRATIONS_CHECKLIST.md](CASINO_INTEGRATIONS_CHECKLIST.md).
-5. **Ledger reconciliation** — `casino_ledger.db` and JSONL logs must agree; investigate drift before changing payout tables.
-6. **Agent bet limits** — Seed agents with conservative `max_bet` in `data/casino_agents.json`; use `dry_run` before enabling cron `run-all`.
+5. **Ledger reconciliation** — `casino_ledger.db` and JSONL logs must agree; investigate drift before changing payout tables. *(✅ `/api/casino/revenue/reconcile`)*
+6. **Agent bet limits** — Seed agents with conservative `max_bet` in `data/casino_agents.json`; use `dry_run` before enabling cron `run-all`. *(✅ run-all rate limit + fanout dry_run default)*
 7. **PR #43 review** — Mega-expansion PR touches broadcast, social fanout, and monetization paths — treat as **critical infrastructure**, not cosmetic UI.
 8. **Mobile association files** — `assetlinks.json` needs **64-char** Play SHA (Tuesday); Apple AASA **paused** until Developer account; PWA + `masternoder://` scheme works without Apple.
 9. **Meta Pixel privacy** — Only load `fbq` when `META_PIXEL_ID` is set server-side; respect cookie/consent requirements in target markets.

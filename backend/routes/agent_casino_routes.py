@@ -1,10 +1,14 @@
 """Agent API for autonomous casino play."""
 import os
+import time
 from flask import Blueprint, jsonify, request
 
 import backend.services.casino_agents_service as agents
 
 agent_casino_bp = Blueprint("agent_casino", __name__)
+
+_LAST_NON_DRY_RUN_ALL = 0.0
+_RUN_ALL_COOLDOWN_SEC = 60
 
 
 def _secret() -> str:
@@ -39,6 +43,18 @@ def casino_agent_run_all():
         }), 403
     data = request.get_json(silent=True) or {}
     dry_run = bool(data.get("dry_run"))
+    if not dry_run:
+        global _LAST_NON_DRY_RUN_ALL
+        now = time.time()
+        elapsed = now - _LAST_NON_DRY_RUN_ALL
+        if elapsed < _RUN_ALL_COOLDOWN_SEC:
+            return jsonify({
+                "success": False,
+                "error": "rate_limited",
+                "hint": f"Non-dry run-all limited to once per {_RUN_ALL_COOLDOWN_SEC}s",
+                "retry_after_sec": round(_RUN_ALL_COOLDOWN_SEC - elapsed, 1),
+            }), 429
+        _LAST_NON_DRY_RUN_ALL = now
     return jsonify(agents.run_all(dry_run=dry_run)), 200
 
 
@@ -117,7 +133,8 @@ def casino_agent_discord_notify():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
     from backend.services import casino_discord_fanout
     data = request.get_json(silent=True) or {}
-    return jsonify(casino_discord_fanout.run_fanout(dry_run=bool(data.get("dry_run")))), 200
+    dry_run = True if "dry_run" not in data else bool(data.get("dry_run"))
+    return jsonify(casino_discord_fanout.run_fanout(dry_run=dry_run)), 200
 
 
 @agent_casino_bp.route("/api/agent/casino/global/leaderboard", methods=["GET"])

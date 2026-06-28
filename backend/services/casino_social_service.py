@@ -707,6 +707,33 @@ def get_referral_invite(user_id: str) -> Dict[str, Any]:
     }
 
 
+def get_referral_leaderboard(limit: int = 10) -> Dict[str, Any]:
+    """Top referrers by successful casino signups (cosmetic/trophy tracking only)."""
+    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    counts: Dict[str, int] = {}
+    for row in store.get("signups") or []:
+        if not isinstance(row, dict):
+            continue
+        referrer = str(row.get("referrer_user_id") or "").strip()
+        if referrer:
+            counts[referrer] = counts.get(referrer, 0) + 1
+    ranked = sorted(counts.items(), key=lambda x: (-x[1], x[0]))[: max(1, min(int(limit or 10), 50))]
+    board = []
+    for idx, (uid, n) in enumerate(ranked, start=1):
+        board.append({
+            "rank": idx,
+            "user_id": uid,
+            "referrals": n,
+            "referral_code": _referral_code_for_user(uid),
+        })
+    return {
+        "success": True,
+        "leaderboard": board,
+        "count": len(board),
+        "note": "Referral leaderboard tracks invites only — no RTP or balance perks.",
+    }
+
+
 def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[str, Any]:
     code = (referral_code or "").strip().upper()
     if not code:

@@ -55,12 +55,70 @@
             <div class="casino-ticker-track" id="casino-ticker-track"><span class="casino-ticker-item">Waiting for the next big win…</span></div>
         </div>
 
+        <div id="casino-news-ticker" class="casino-news-ticker hidden" aria-live="polite" aria-label="Casino news">
+            <span class="casino-news-ticker-label">📰 News</span>
+            <div class="casino-news-ticker-track" id="casino-news-ticker-track"></div>
+        </div>
+
         <div id="casino-jackpot-bar" class="casino-jackpot-bar hidden" aria-live="polite" aria-label="Progressive jackpots">
             <span class="casino-jackpot-label">💰 Progressive jackpot</span>
             <div id="casino-jackpot-pools" class="casino-jackpot-pools">Loading…</div>
         </div>
 
         <div id="casino-disclaimer-text" class="casino-disclaimer">Loading…</div>
+        <section class="casino-cockpit" id="casino-cockpit" aria-labelledby="casino-cockpit-title">
+            <div class="casino-cockpit-head">
+                <div>
+                    <h2 id="casino-cockpit-title">Casino Exchange Cockpit</h2>
+                    <p>Table of contents, MN2 funding, socials, camgirls lounge, income monitors, and casino-evolution agents.</p>
+                </div>
+                <a href="/command-center" class="casino-cockpit-command">Open Command Center</a>
+            </div>
+            <nav class="casino-toc" aria-label="Casino table of contents">
+                <a href="#casino-tab-home">Games</a>
+                <a href="#casino-tab-leaderboard">Contests</a>
+                <a href="#casino-tab-social">Socials</a>
+                <a href="/exchange?tab=onramp">Buy MN2</a>
+                <a href="/camgirls">Camgirls lounge</a>
+                <a href="/profile">Profile</a>
+            </nav>
+            <div class="casino-cockpit-grid">
+                <article class="casino-cockpit-card casino-cockpit-card--money">
+                    <h3>PayPal -> MN2 -> Casino</h3>
+                    <p>Buy MasterNoder2 coin through PayPal on the exchange, then play MN2 tables or tip performers from the same wallet.</p>
+                    <a href="/exchange?tab=onramp">Buy MN2 with PayPal</a>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Player profile &amp; social proof</h3>
+                    <p>Profiles, friends, crews, referrals, and public wins help users trust the lounge before they buy in.</p>
+                    <a href="/profile">Profile</a>
+                    <a href="/social">Social hub</a>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Camgirls retention lane</h3>
+                    <p>Age-gated performers, MN2 unlocks, tips, fan clubs, and studio agents keep premium users active between games.</p>
+                    <a href="/camgirls">Enter lounge</a>
+                    <span id="casino-cockpit-camgirls">Checking performers...</span>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Income monitor</h3>
+                    <p id="casino-cockpit-income">Loading house and exchange monitor...</p>
+                    <div class="casino-cockpit-meter"><span id="casino-cockpit-income-fill"></span></div>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Casino evolution agents</h3>
+                    <p>Specialized agents handle odds explainers, responsible-play nudges, VIP retention, tournament ops, and performer pairing.</p>
+                    <div class="casino-agent-skill-pills">
+                        <span>Risk Sentinel</span><span>VIP Host</span><span>Tournament Ops</span><span>Camgirl Concierge</span>
+                    </div>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Contest table</h3>
+                    <p>Leaderboards, tournaments, streak quests, and camgirls fan goals form the contest backbone.</p>
+                    <a href="#casino-tab-leaderboard">View leaderboard</a>
+                </article>
+            </div>
+        </section>
         <div id="casino-rg-banner" class="casino-rg-banner hidden" role="status" aria-live="polite"></div>
         <div id="casino-currency-bar" class="casino-currency-bar">
             <span class="casino-currency-label">Stake with:</span>
@@ -101,6 +159,7 @@
                     <div class="casino-featured-banner" aria-hidden="true">
                         <img src="/static/img/casino/banner-masternoder2-casino.svg" width="1200" height="630" alt="" loading="lazy" decoding="async">
                     </div>
+                    <div id="casino-slot-of-day" class="casino-slot-of-day hidden" aria-live="polite"></div>
                     <h2 class="casino-featured-title">Featured games</h2>
                     <p class="casino-featured-sub">Quick-play the hottest tables and arcade hits — full roster in the tabs above.</p>
                 </div>
@@ -120,6 +179,10 @@
                         <div id="casino-social-board" class="casino-social-board">Loading…</div>
                         <h3 class="casino-subheading">Hall of fame</h3>
                         <div id="casino-hall-of-fame" class="casino-hall-of-fame">Loading…</div>
+                        <h3 class="casino-subheading">Big-win hall of fame (7d)</h3>
+                        <div id="casino-big-win-hof" class="casino-big-win-hof">Loading…</div>
+                        <h3 class="casino-subheading">Achievement progress</h3>
+                        <div id="casino-home-achievements" class="casino-home-achievements">Loading…</div>
                     </article>
                 </div>
             </section>
@@ -544,6 +607,11 @@
                 </div>
                 <div id="casino-activity-charts" class="casino-activity-charts">Loading activity…</div>
                 <div id="casino-activity-feed-list" class="casino-activity-feed-list" aria-label="Recent wins"></div>
+                <article class="casino-panel casino-revenue-panel">
+                    <h3>Today's revenue dashboard</h3>
+                    <p class="casino-activity-sub">Operator-facing house edge, big wins, jackpots, and ledger reconcile (virtual coins first).</p>
+                    <div id="casino-revenue-dashboard" class="casino-revenue-dashboard">Loading revenue…</div>
+                </article>
             </section>
 
             <section id="casino-tab-compete" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-compete" hidden>
@@ -601,6 +669,8 @@
                         <button type="button" id="casino-copy-referral-code" class="casino-share-site-btn">Copy code</button>
                         <button type="button" id="casino-copy-referral-link" class="casino-share-site-btn">Copy link</button>
                     </div>
+                    <h3 class="casino-subheading">Top referrers</h3>
+                    <ol id="casino-referral-leaderboard" class="casino-referral-leaderboard">Loading…</ol>
                 </div>
                 <div id="casino-follow-leaders" class="casino-follow-leaders">
                     <h3>Follow top players</h3>
@@ -650,6 +720,7 @@
     <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
     <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
     <script src="/static/js/casino.js?v=20260625b" defer></script>
+    <script src="/static/js/casino-cockpit.js?v=20260626" defer></script>
     <script>
     (function () {
         if (window.__casinoBootstrapped) return;

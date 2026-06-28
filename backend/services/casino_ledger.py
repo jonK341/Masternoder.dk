@@ -203,6 +203,70 @@ def daily_stats(days: int = 5, currency: Optional[str] = None) -> List[Dict[str,
     return [{"day": day, **empty[day]} for day in day_keys]
 
 
+def top_big_wins(days: int = 7, limit: int = 20, currency: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Top winning bets by payout multiplier over the last N days (ledger mirror)."""
+    from datetime import datetime, timedelta, timezone
+
+    safe_days = max(1, min(int(days or 7), 30))
+    safe_limit = max(1, min(int(limit or 20), 50))
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=safe_days)).isoformat().replace("+00:00", "Z")
+    try:
+        with _LOCK:
+            conn = _connect()
+            try:
+                _ensure_schema(conn)
+                params: List[Any] = [cutoff]
+                where = "net > 0 AND bet > 0 AND exclude_leaderboard = 0 AND created_at >= ?"
+                if currency:
+                    where += " AND currency = ?"
+                    params.append(str(currency).lower())
+                params.append(safe_limit)
+                cur = conn.execute(
+                    f"""
+                    SELECT bet_id, user_id, game, currency, bet, payout, net, outcome, created_at, details,
+                           (payout / bet) AS multiplier
+                    FROM casino_bets
+                    WHERE {where}
+                    ORDER BY multiplier DESC, net DESC
+                    LIMIT ?
+                    """,
+                    params,
+                )
+                rows = [dict(r) for r in cur.fetchall()]
+            finally:
+                conn.close()
+        for r in rows:
+            try:
+                r["details"] = json.loads(r.get("details") or "{}")
+            except Exception:
+                r["details"] = {}
+            bet = float(r.get("bet") or 0)
+            payout = float(r.get("payout") or 0)
+            r["multiplier"] = round(payout / bet, 2) if bet > 0 else 0.0
+        return rows
+    except Exception:
+        return []
+
+
+def bet_count_since(day_prefix: str) -> int:
+    """Count bets on or after a UTC date prefix (YYYY-MM-DD)."""
+    try:
+        with _LOCK:
+            conn = _connect()
+            try:
+                _ensure_schema(conn)
+                cur = conn.execute(
+                    "SELECT COUNT(*) AS n FROM casino_bets WHERE substr(created_at, 1, 10) >= ?",
+                    (day_prefix[:10],),
+                )
+                row = cur.fetchone()
+                return int(row["n"] if row else 0)
+            finally:
+                conn.close()
+    except Exception:
+        return 0
+
+
 def leaderboard_aggregate(period: str = "today", currency: str = "coins") -> Dict[str, Dict[str, float]]:
     """Aggregate net/wins/wagered per user from the DB mirror (leaderboard migration slice)."""
     currency = (currency or "coins").lower()
