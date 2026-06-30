@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN2 Wallets — Download MasterNoder2 Core</title>
+    <meta name="description" content="Download MasterNoder2 daemon and Qt wallet for Windows and Linux. Verified releases with checksums — run your own MN2 node or desktop wallet.">
+    <link rel="canonical" href="https://masternoder.dk/wallets/">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260630">
+    <link rel="stylesheet" href="/static/css/mn2-wallets.css?v=20260630">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="layout-standard">
+    <div class="mn2-wallets-page">
+        <header class="mn2-wallets-hero">
+            <h1><i class="fas fa-wallet"></i> MN2 Wallets</h1>
+            <p class="lead">Download official MasterNoder2 software to run a full node, stake on your machine, or use the desktop wallet. Custodial balance on the site is separate — these are for self-custody and advanced operators.</p>
+            <div class="mn2-wallets-meta">
+                <span class="mn2-wallets-pill">Latest release: <strong id="mn2-wallets-version">—</strong></span>
+                <span class="mn2-wallets-pill">P2P port: 17646</span>
+                <span class="mn2-wallets-pill">RPC port: 9332</span>
+            </div>
+        </header>
+
+        <nav class="mn2-wallets-nav" aria-label="Wallet shortcuts">
+            <a href="/profile#mn2-wallet">In-app wallet</a>
+            <a href="/explorer">Crypto hub</a>
+            <a href="/hosting">Masternode hosting</a>
+            <a id="mn2-wallets-github" href="https://github.com/jonK341/MasterNoder2/releases" target="_blank" rel="noopener">All GitHub releases ↗</a>
+        </nav>
+
+        <section class="mn2-page-strip" data-mn2-auto data-balance-id="wallets-mn2-balance" data-rate-id="wallets-mn2-rate">
+            <h2>Your platform wallet</h2>
+            <p>Deposit, spend, and withdraw MN2 on masternoder.dk without installing anything.</p>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>Balance</span><strong id="wallets-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="wallets-mn2-rate">—</strong></div>
+            </div>
+            <div class="mn2-page-actions">
+                <a href="/profile#mn2-wallet">Open wallet</a>
+                <a href="/shop?tab=mn2" class="secondary">Buy MN2</a>
+            </div>
+        </section>
+
+        <h2 style="font-size:1rem;color:#00d4ff;margin:0 0 14px;">Desktop &amp; server downloads</h2>
+            <div id="mn2-wallets-network" class="mn2-wallets-network-strip" aria-live="polite" style="margin-bottom:16px;font-size:0.85rem;opacity:0.9;">Loading network status…</div>
+
+        <div id="mn2-wallets-grid" class="mn2-wallets-grid" aria-live="polite">
+            <p style="opacity:0.75;grid-column:1/-1;">Loading release catalog…</p>
+        </div>
+
+        <section class="mn2-wallets-section" aria-label="Connect to network">
+            <h2>Connect to the MN2 network</h2>
+            <p>New wallets often stall at “0 connections” if bootstrap peers are missing. MasterNoder2 uses <strong>P2P port 17646</strong> (not 5133). RPC for local apps is <strong>9332</strong>.</p>
+            <ol class="mn2-wallets-steps">
+                <li>After first launch, open <code>masternoder2.conf</code> in your datadir (<code>%APPDATA%\MasterNoder2</code> on Windows, <code>~/.masternoder2</code> on Linux).</li>
+                <li>Ensure <code>listen=1</code>, <code>port=17646</code>, <code>dnsseed=1</code>, and several <code>addnode=host:17646</code> lines — <em>do not</em> use <code>connect=localhost</code> (that isolates the wallet).</li>
+                <li>Restart the wallet; you should see 4+ peers within a few minutes. Use the peer list below or fetch <a href="/api/mn2/network-peers" style="color:#00d4ff;">/api/mn2/network-peers</a>.</li>
+            </ol>
+            <div id="mn2-wallets-peers" class="mn2-wallets-peers" aria-live="polite">
+                <p style="opacity:0.75;">Loading recommended peers…</p>
+            </div>
+            <button type="button" id="mn2-wallets-copy-conf" class="mn2-wallet-dl-btn mn2-wallet-dl-btn--ghost" style="margin-top:12px;display:none;">Copy bootstrap conf snippet</button>
+        </section>
+
+        <section class="mn2-wallets-section" aria-label="Setup guide">
+            <h2>Quick setup</h2>
+            <ol class="mn2-wallets-steps">
+                <li>Download the build for your platform above (daemon for servers, Qt for desktop).</li>
+                <li>Extract the archive and run <code>masternoder2d</code> or <code>masternoder2-qt</code>.</li>
+                <li>Copy <code>config/masternoder2.conf.example</code> from this repo to your datadir and set <code>rpcuser</code> / <code>rpcpassword</code>.</li>
+                <li>Wait for sync, then send MN2 to your <a href="/profile#mn2-wallet" style="color:#00d4ff;">profile deposit address</a> to fund your in-app balance.</li>
+            </ol>
+            <p class="mn2-wallets-note">Windows users without WSL: use the Qt wallet zip, or run the Linux daemon inside WSL for headless RPC. See project docs <em>MN2_DAEMON_SETUP.md</em> on GitHub for full details.</p>
+        </section>
+
+        <section class="mn2-wallets-section" aria-label="Security">
+            <h2>Verify downloads</h2>
+            <p>Compare the SHA256 checksum shown on each card with your file after download. Release manifests are published on <a href="https://github.com/jonK341/MasterNoder2/releases" target="_blank" rel="noopener" style="color:#00d4ff;">GitHub releases</a>. Never enter your wallet seed or private keys on masternoder.dk — only on official MN2 software you run locally.</p>
+        </section>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260630" defer></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260630" defer></script>
+    <script src="/static/js/mn2-wallets.js?v=20260630" defer></script>
+</body>
+</html>

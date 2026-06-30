@@ -166,11 +166,20 @@ def _probe_proof_of_reserves() -> Dict[str, Any]:
 # Static catalog — status filled by probes at runtime.
 _SERVICE_DEFS: List[Dict[str, Any]] = [
     {
+        "id": "wallet_downloads",
+        "name": "Desktop Wallets",
+        "category": "core",
+        "description": "Official MN2 daemon and Qt wallet downloads with checksums.",
+        "api": ["/api/mn2/releases"],
+        "page_url": "/wallets",
+        "probe": lambda: {"status": "healthy"},
+    },
+    {
         "id": "wallet",
         "name": "MN2 Wallet",
         "category": "core",
         "description": "Custodial in-app MN2 balance, deposits, withdrawals, ledger.",
-        "api": ["/api/mn2/balance", "/api/mn2/deposit-address", "/api/mn2/transactions"],
+        "api": ["/api/mn2/balance", "/api/mn2/deposit-address", "/api/mn2/transactions", "/api/mn2/wallet-hub", "/api/mn2/recent-transactions"],
         "page_url": "/profile#mn2-wallet",
         "probe": _probe_wallet,
     },
@@ -224,7 +233,7 @@ _SERVICE_DEFS: List[Dict[str, Any]] = [
         "name": "Network Explorer",
         "category": "data",
         "description": "Live stats, blocks, masternodes; links to self-hosted eiquidus + Chainz.",
-        "api": ["/api/mn2/network-overview", "/api/mn2/recent-blocks"],
+        "api": ["/api/mn2/network-overview", "/api/mn2/recent-blocks", "/api/mn2/network-dashboard"],
         "page_url": "/explorer",
         "probe": _probe_explorer,
     },

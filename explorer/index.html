@@ -54,7 +54,7 @@
             <button type="button" class="mn2-hub-tab" data-mn2-tab="masternodes" role="tab" aria-selected="false">🏛️ Masternodes</button>
 
             <button type="button" class="mn2-hub-tab" data-mn2-tab="market" role="tab" aria-selected="false">📈 Market</button>
-
+            <a class="mn2-hub-tab mn2-hub-tab--link" href="/wallets" role="link">💾 Wallets</a>
         </nav>
 
         <div id="mn2-route-note" class="mn2-route-note">Viewing: Explorer overview. Switch tabs above to browse the MN2 crypto hub.</div>
@@ -153,6 +153,23 @@
 
                 <tbody id="ex-blocks"><tr><td colspan="4">Loading…</td></tr></tbody>
 
+            </table>
+
+            <div class="ex-section-title" style="margin-top:28px">Ops spork gates <span id="ex-spork-meta" style="opacity:0.7;font-weight:400"></span></div>
+            <div class="ex-tiles" id="ex-spork-tiles">
+                <div class="ex-tile"><div class="label">Maintenance</div><div class="value" id="t-sp-maint">—</div></div>
+                <div class="ex-tile"><div class="label">Exchange live</div><div class="value" id="t-sp-ex">—</div></div>
+                <div class="ex-tile"><div class="label">Casino real $</div><div class="value" id="t-sp-cas">—</div></div>
+                <div class="ex-tile"><div class="label">Payout live</div><div class="value" id="t-sp-pay">—</div></div>
+            </div>
+
+            <div class="ex-section-title" style="margin-top:28px">Network bootstrap <span id="ex-peer-meta" style="opacity:0.7;font-weight:400"></span></div>
+            <pre id="ex-peer-snippet" class="mn2-wallets-peer-pre" style="max-height:120px;overflow:auto;font-size:0.78rem;">Loading peer snippet…</pre>
+
+            <div class="ex-section-title" style="margin-top:28px">Recent platform activity <span id="ex-platform-tx-meta" style="opacity:0.7;font-weight:400"></span></div>
+            <table>
+                <thead><tr><th>Source</th><th>Type</th><th>Amount</th><th>When</th></tr></thead>
+                <tbody id="ex-platform-tx"><tr><td colspan="4">Loading…</td></tr></tbody>
             </table>
 
             <div class="ex-section-title" style="margin-top:28px">Masternodes <span id="mn-summary" style="opacity:0.7;font-weight:400"></span></div>
@@ -317,6 +334,15 @@
 
             <table><tbody id="pr-breakdown"><tr><td colspan="2">Loading…</td></tr></tbody></table>
 
+            <h2>Exchange treasury &amp; fees</h2>
+
+            <div class="pr-tiles">
+                <div class="pr-tile"><div class="label">Platform treasury</div><div class="value" id="t-treasury-mn2">--</div><div class="sub" id="t-treasury-sub">bot profit stash</div></div>
+                <div class="pr-tile"><div class="label">Treasury stashed (USD)</div><div class="value" id="t-treasury-usd">--</div><div class="sub" id="t-treasury-ledger">ledger entries</div></div>
+                <div class="pr-tile"><div class="label">Exchange fees collected</div><div class="value" id="t-fee-mn2">--</div><div class="sub" id="t-fee-usd">fee treasury pool</div></div>
+                <div class="pr-tile"><div class="label">Daemon staking</div><div class="value" id="t-daemon-stake">--</div><div class="sub" id="t-pool-staked">pool + APR</div></div>
+            </div>
+
             <h2>Realized yield vs rewards paid</h2>
 
             <div class="pr-tiles">
@@ -393,6 +419,12 @@
 
             <div class="ex-section-title">Platform fleet <span id="mn-host-summary" class="mn-section-meta"></span></div>
             <div class="mn-node-grid" id="mn-node-grid"><div class="mn-node-card mn-node-card--empty">Loading fleet…</div></div>
+
+            <div class="ex-section-title">Your hosting orders</div>
+            <table>
+                <thead><tr><th>Order</th><th>Status</th><th>Slots</th><th class="num">Total</th><th>Paid</th></tr></thead>
+                <tbody id="mn-my-orders"><tr><td colspan="5">Sign in to see your order history.</td></tr></tbody>
+            </table>
 
             <div class="ex-section-title">Network masternodes <span class="mn-section-meta">active time = ping uptime toward ENABLED</span></div>
             <table class="mn-net-table">
@@ -542,7 +574,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260630" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 

@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/mn2-wallets.css?v=20260630">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -772,9 +773,12 @@
                     </button>
                     <span id="social-login-status" class="account-status social-status"></span>
                 </div>
+                <div id="account-password-cta" class="profile-password-cta" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid rgba(251,191,36,0.35);background:rgba(251,191,36,0.08);">
+                    <strong style="color:#fbbf24;">Set your account password</strong>
+                    <p style="margin:6px 0 10px;font-size:0.86rem;opacity:0.88;">Protect login, trusted addresses, and real-money actions with a profile password.</p>
+                    <a href="?tab=security#password-protection-card" class="aps-cta-link" id="account-password-cta-link">Open password setup →</a>
+                </div>
             </div>
-
-            <!-- User account & identity: all user ID data and where progress is stored -->
             <div class="section-card" id="user-identity-card" data-profile-route="account" style="margin-bottom: 20px;">
                 <h2 class="section-title">🔐 User account &amp; identity</h2>
                 <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Server view of your user ID, session, and where your progress is saved. Use <strong>Sync session</strong> so the server stores progress under this account.</p>
@@ -1004,12 +1008,12 @@
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                    <div class="section-card profile-mn2-wallet-card" id="profile-mn2-wallet-card" data-profile-route="wallet">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
-                        <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
-                            <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
-                            <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. Need a desktop node? <a href="/wallets" style="color: #00ff88;">Download wallets ↗</a></p>
+                        <div id="profile-mn2-showcase" class="profile-mn2-showcase">
+                            <div class="profile-mn2-showcase-label">MN2 balance showcase</div>
+                            <div id="profile-mn2-showcase-balance" class="profile-mn2-showcase-balance">—</div>
                         </div>
                         <nav id="profile-wallet-subnav" class="profile-wallet-subnav page-tabs" role="tablist" aria-label="Wallet sections">
                             <button type="button" class="tab-btn active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
@@ -1018,15 +1022,21 @@
                             <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
                             <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
                             <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
-                            <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Wallet settings</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="desktop" role="tab" aria-selected="false">Downloads</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
                         </nav>
-                        <div data-wallet-panel="overview" style="margin-bottom: 14px;">
+                        <div data-wallet-panel="overview" class="profile-wallet-panel" style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Balance:</strong>
                             <span id="profile-mn2-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
                             <span id="profile-mn2-balance-fiat" style="font-size: 0.85rem; opacity: 0.75; margin-left: 6px;"></span>
                             <label style="display:inline-flex; align-items:center; gap:6px; margin-left:12px; font-size:0.78rem; opacity:0.85; cursor:pointer;">
                                 <input type="checkbox" id="mn2-fiat-toggle"> Show USD
                             </label>
+                            <div class="profile-wallet-desktop-cta" style="margin-top:14px;">
+                                <p>Self-custody? Download the official daemon or Qt wallet for Windows and Linux.</p>
+                                <a href="/wallets">Download wallets</a>
+                            </div>
+                            <div id="profile-mn2-network-status" class="profile-mn2-network-status" style="margin-top:12px;font-size:0.82rem;opacity:0.88;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">Loading network…</div>
                             <div style="margin-top: 14px;">
                                 <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
                                 <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
@@ -1128,10 +1138,18 @@
                                 <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
                             </div>
                         </div>
-                        <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
+                        <div data-wallet-panel="desktop" class="profile-wallet-panel" style="display:none; margin-bottom:14px;">
+                            <p style="font-size:0.88rem;opacity:0.85;margin:0 0 12px;">Run your own MasterNoder2 node or Qt wallet locally. The in-app wallet above is custodial — downloads are for self-custody and advanced use.</p>
+                            <div id="profile-wallet-downloads" class="mn2-wallets-grid" style="margin-bottom:12px;">Loading downloads…</div>
+                            <div class="profile-wallet-desktop-cta">
+                                <p>Full setup guide, checksums, and all platforms on the dedicated wallets page.</p>
+                                <a href="/wallets"><i class="fas fa-download"></i> Open wallets hub</a>
+                            </div>
+                        </div>
+                        <div data-wallet-panel="settings" class="profile-wallet-panel" style="display:none; margin-bottom:14px;">
                             <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
                             <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7);">MN2 value can be volatile. Not financial advice.</p>
-                            <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a> · <a href="/explorer/" style="color:#00d4ff;">MN2 Explorer</a></p>
+                            <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop — MN2 tab</a> · <a href="/explorer/" style="color:#00d4ff;">Crypto hub</a> · <a href="/wallets" style="color:#00ff88;">Desktop downloads</a></p>
                         </div>
 
                         <p class="mn2-disclaimer" data-wallet-panel="overview" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
@@ -1184,7 +1202,7 @@
                           .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
                       }
                       if (yearEl) yearEl.addEventListener('change', load);
-                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+                      window.profileMn2LoadStatement = load;
                     })();
                     </script>
                     <script>
@@ -1538,19 +1556,9 @@
                     </div>
 
                     <div class="section-card" id="password-protection-card" data-profile-route="security account">
-                        <h2 class="section-title">🔐 Password protection</h2>
-                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Unlock by earning points or completing Star Map investigations; set a password and get a small reward.</p>
-                        <div id="password-protection-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
-                        <div id="password-protection-actions" style="display:flex;flex-direction:column;gap:8px;">
-                            <input type="password" id="password-protection-input" placeholder="New password (min 6 chars)" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;display:none;">
-                            <button type="button" id="password-protection-set-btn" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;">Set password (+reward)</button>
-                            <button type="button" id="password-protection-unlock-btn" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.15);color:#00d4ff;cursor:pointer;">Check unlock</button>
-                            <button type="button" id="password-recovery-request-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24;cursor:pointer;">Request recovery token</button>
-                            <input type="text" id="password-recovery-token-input" placeholder="Recovery token" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;">
-                            <input type="password" id="password-recovery-new-input" placeholder="Reset password (min 6 chars)" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;">
-                            <button type="button" id="password-recovery-reset-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24;cursor:pointer;">Reset with token</button>
-                        </div>
-                        <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
+                        <h2 class="section-title">🔐 Account password</h2>
+                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Guided setup with unlock progress, confirmation, and recovery. Earn points to unlock — or use fast track when you have email, social login, or a real-money balance.</p>
+                        <div id="account-password-setup" aria-live="polite">Loading password setup…</div>
                     </div>
 
                     <div class="section-card" id="account-security-card" data-profile-route="security account">
@@ -1662,8 +1670,10 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260630" defer></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
+        <link rel="stylesheet" href="/static/css/account-password-setup.css?v=20260625">
+        <script src="/static/js/account-password-setup.js?v=20260625"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
@@ -1943,7 +1953,7 @@
                     { label: 'First activity', done: activities.length > 0, action: 'Generate or play' },
                     { label: 'Featured progress', done: achievements.length > 0 || trophies.length > 0, action: 'Earn achievement' },
                     { label: 'Agent roster', done: agents.length > 0, action: 'Activate agents' },
-                    { label: 'Password protection', done: Boolean(passwordStatus.has_password), action: passwordStatus.can_unlock ? 'Set password' : 'Unlock via points' }
+                    { label: 'Password protection', done: Boolean(passwordStatus.has_password), action: passwordStatus.has_password ? '' : (passwordStatus.can_set_password ? 'Set in Security tab' : 'Unlock in Security tab') }
                 ];
                 const doneCount = checks.filter(function(item) { return item.done; }).length;
                 const pct = Math.round((doneCount / checks.length) * 100);
@@ -1961,7 +1971,9 @@
                             '</div>';
                         }).join('') +
                     '</div>' +
-                    '<p style="margin:12px 0 0;font-size:0.85rem;opacity:0.82;">Use the Account tab for identity/session setup, then edit your profile to complete public details.</p>';
+                    '<p style="margin:12px 0 0;font-size:0.85rem;opacity:0.82;">Use the Account tab for identity/session setup. Set your password under <a href="?tab=security#password-protection-card" style="color:#00d4ff;">Security → Account password</a>.</p>';
+                var cta = document.getElementById('account-password-cta');
+                if (cta) cta.style.display = passwordStatus.has_password ? 'none' : 'block';
             }
 
             async loadAccountPrivacyControls() {
@@ -2223,129 +2235,25 @@
 
             loadPasswordProtection() {
                 const uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-                const statusEl = document.getElementById('password-protection-status');
-                const inputEl = document.getElementById('password-protection-input');
-                const setBtn = document.getElementById('password-protection-set-btn');
-                const unlockBtn = document.getElementById('password-protection-unlock-btn');
-                const policyEl = document.getElementById('password-protection-policy');
-                const recoveryRequestBtn = document.getElementById('password-recovery-request-btn');
-                const recoveryResetBtn = document.getElementById('password-recovery-reset-btn');
-                if (!statusEl) return;
-                fetch('/api/auth/password/status?user_id=' + encodeURIComponent(uid))
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (!data.success) {
-                            statusEl.textContent = 'Could not load status.';
-                            return;
+                if (!window._accountPasswordSetup) {
+                    window._accountPasswordSetup = AccountPasswordSetup.mount('account-password-setup', {
+                        userId: uid,
+                        onSaved: function () {
+                            if (window.profileManager && typeof window.profileManager.refreshProfilePoints === 'function') {
+                                window.profileManager.refreshProfilePoints();
+                            }
+                            if (window.profileManager && typeof window.profileManager.loadAccountSecurity === 'function') {
+                                window.profileManager.loadAccountSecurity();
+                            }
+                        },
+                        onRefresh: function (data) {
+                            var cta = document.getElementById('account-password-cta');
+                            if (cta && data) cta.style.display = data.has_password ? 'none' : 'block';
                         }
-                        const hasPassword = data.has_password;
-                        const canUnlock = data.can_unlock;
-                        const hasUnlocked = data.has_unlocked;
-                        const rule = data.unlock_rule || {};
-                        const reward = data.reward_on_set || {};
-                        const recovery = data.recovery || {};
-                        if (policyEl) {
-                            const parts = [];
-                            if (recovery.has_email) parts.push('email ' + (recovery.email_masked || 'available'));
-                            if (recovery.provider) parts.push(recovery.provider + ' provider');
-                            const methods = parts.length ? parts.join(' and ') : 'no verified recovery method yet';
-                            policyEl.textContent = 'Recovery: ' + methods + '. ' + (recovery.email_delivery_configured ? 'Email delivery is configured.' : 'Token is shown locally until email delivery is configured.');
-                        }
-                        if (hasPassword) {
-                            statusEl.textContent = 'Account protected. Password set ' + (data.set_at ? 'on ' + data.set_at.slice(0, 10) : '') + '. Enter a new password below to change it.';
-                            if (inputEl) { inputEl.style.display = 'block'; inputEl.value = ''; inputEl.placeholder = 'New password to change (min 6 chars)'; }
-                            if (setBtn) { setBtn.style.display = 'inline-block'; setBtn.textContent = 'Change password'; }
-                            if (unlockBtn) unlockBtn.style.display = 'none';
-                            return;
-                        }
-                        if (hasUnlocked || canUnlock) {
-                            statusEl.textContent = 'You can set a password. Unlock: ' + (rule.description || (rule.min_game_points + ' game_points or ' + rule.min_investigations + ' Star Map investigation(s).')) + ' Reward: +' + (reward.game_points || 0) + ' game_points on first set.';
-                            if (inputEl) { inputEl.style.display = 'block'; inputEl.value = ''; inputEl.placeholder = 'New password (min 6 chars)'; }
-                            if (setBtn) { setBtn.style.display = 'inline-block'; setBtn.textContent = 'Set password (+reward)'; }
-                            if (unlockBtn) unlockBtn.style.display = 'none';
-                        } else {
-                            statusEl.textContent = 'Unlock password protection by earning ' + (rule.min_game_points || 50) + ' game_points or completing ' + (rule.min_investigations || 1) + ' Star Map investigation(s).';
-                            if (inputEl) inputEl.style.display = 'none';
-                            if (setBtn) setBtn.style.display = 'none';
-                            if (unlockBtn) { unlockBtn.style.display = 'inline-block'; unlockBtn.textContent = 'Check unlock'; }
-                        }
-                    })
-                    .catch(function() { statusEl.textContent = 'Failed to load password status.'; });
-
-                if (setBtn && !setBtn._wired) {
-                    setBtn._wired = true;
-                    setBtn.addEventListener('click', function() {
-                        const pwd = (document.getElementById('password-protection-input') || {}).value || '';
-                        if (pwd.length < 6) { statusEl.textContent = 'Password must be at least 6 characters.'; return; }
-                        setBtn.disabled = true;
-                        statusEl.textContent = 'Saving password...';
-                        fetch('/api/auth/password/set', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid, password: pwd })
-                        }).then(function(r) { return r.json(); }).then(function(res) {
-                            setBtn.disabled = false;
-                            if (res.success) {
-                                statusEl.textContent = 'Password saved.' + (res.points_awarded ? ' +' + res.points_awarded + ' game_points reward.' : '');
-                                window.profileManager.loadPasswordProtection();
-                                if (window.profileManager.refreshProfilePoints) window.profileManager.refreshProfilePoints();
-                            } else statusEl.textContent = res.error || 'Failed to set password.';
-                        }).catch(function() { setBtn.disabled = false; statusEl.textContent = 'Request failed.'; });
                     });
-                }
-                if (unlockBtn && !unlockBtn._wired) {
-                    unlockBtn._wired = true;
-                    unlockBtn.addEventListener('click', function() {
-                        unlockBtn.disabled = true;
-                        fetch('/api/auth/password/unlock', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid })
-                        }).then(function(r) { return r.json(); }).then(function(res) {
-                            unlockBtn.disabled = false;
-                            if (res.success) window.profileManager.loadPasswordProtection();
-                            else statusEl.textContent = res.error || 'Unlock requirement not met.';
-                        }).catch(function() { unlockBtn.disabled = false; });
-                    });
-                }
-                if (recoveryRequestBtn && !recoveryRequestBtn._wired) {
-                    recoveryRequestBtn._wired = true;
-                    recoveryRequestBtn.addEventListener('click', function() {
-                        recoveryRequestBtn.disabled = true;
-                        statusEl.textContent = 'Creating recovery request...';
-                        fetch('/api/auth/password/recovery/request', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid })
-                        }).then(function(r) { return r.json(); }).then(function(res) {
-                            recoveryRequestBtn.disabled = false;
-                            if (!res.success) { statusEl.textContent = res.error || 'Recovery request failed.'; return; }
-                            const tokenInput = document.getElementById('password-recovery-token-input');
-                            if (res.reset_token && tokenInput) tokenInput.value = res.reset_token;
-                            statusEl.textContent = res.message || 'Recovery request created.';
-                        }).catch(function() { recoveryRequestBtn.disabled = false; statusEl.textContent = 'Recovery request failed.'; });
-                    });
-                }
-                if (recoveryResetBtn && !recoveryResetBtn._wired) {
-                    recoveryResetBtn._wired = true;
-                    recoveryResetBtn.addEventListener('click', function() {
-                        const token = (document.getElementById('password-recovery-token-input') || {}).value || '';
-                        const password = (document.getElementById('password-recovery-new-input') || {}).value || '';
-                        if (!token.trim()) { statusEl.textContent = 'Recovery token is required.'; return; }
-                        if (password.length < 6) { statusEl.textContent = 'Password must be at least 6 characters.'; return; }
-                        recoveryResetBtn.disabled = true;
-                        fetch('/api/auth/password/recovery/reset', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: uid, token: token, password: password })
-                        }).then(function(r) { return r.json(); }).then(function(res) {
-                            recoveryResetBtn.disabled = false;
-                            if (res.success) {
-                                statusEl.textContent = 'Password reset.';
-                                window.profileManager.loadPasswordProtection();
-                            } else statusEl.textContent = res.error || 'Password reset failed.';
-                        }).catch(function() { recoveryResetBtn.disabled = false; statusEl.textContent = 'Password reset failed.'; });
-                    });
+                } else {
+                    window._accountPasswordSetup.options.userId = uid;
+                    window._accountPasswordSetup.refresh();
                 }
             }
 

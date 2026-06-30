@@ -1,0 +1,32 @@
+{
+  "version": "v1.3.0.0",
+  "git_tag": "v1.3.0.0",
+  "git_sha": "61caddbfd3c8f4465012d1033206501fb6690b14",
+  "built_at": "2026-06-24T03:21:41Z",
+  "build_host": "Masternoder-Website",
+  "use_depends": false,
+  "binaries": {
+    "masternoder2d": {
+      "sha256": "f91ac58f4890735524f58a3e569d0027555787fcc34b5e999dc404e54149812c",
+      "size": 7791424
+    },
+    "masternoder2-cli": {
+      "sha256": "9b8938b828711e6456f7d54e49017e91f193aad74eadabeee942d9cbf5906a44",
+      "size": 408160
+    }
+  },
+  "tarball_sha256": "b2c69017c15d7248b71d9799b910c4b04f7383953e57ae1816559eddb912237d",
+  "tarball_name": "masternoder2d.tar.gz",
+  "qt_assets": {
+    "MasterNoder2-qt-win.zip": {
+      "sha256": "0686144133367ed1408c67a7344d17f6fbfdf5135351c0aeec5ae093b99ef83e",
+      "size_bytes": 20553825,
+      "fallback_tag": "v1.2.2.0"
+    },
+    "MasterNoder2-qt-linux.tar.gz": {
+      "sha256": "0c6ba20f4bc50abcad037409fd7402d110c51dafd906abd3befcbfae0ac606cb",
+      "size_bytes": 23559943,
+      "fallback_tag": "v1.2.2.0"
+    }
+  }
+}

@@ -34,9 +34,10 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <style>
-        .host-page { max-width: 920px; margin: 0 auto; padding: 28px 16px 72px; }
+        .host-page { max-width: 920px; margin: 0 auto; }
         .host-hero { text-align: center; margin-bottom: 36px; }
         .host-hero h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0 0 10px; background: linear-gradient(135deg, #ffc439, #00ff88); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .host-hero p.lead { color: var(--text-secondary); line-height: 1.6; max-width: 42rem; margin: 0 auto 20px; font-size: 1.02rem; }
@@ -54,6 +55,11 @@
         .host-card p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; }
         .host-rails { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
         .host-rails li { font-size: 0.82rem; padding: 6px 12px; border-radius: 999px; background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid rgba(0,212,255,0.25); }
+        .host-rentals { margin: 24px 0; }
+        .host-rentals h2 { font-size: 1.05rem; margin-bottom: 12px; color: var(--secondary); }
+        .host-rental-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .host-rental-card { padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); font-size: 0.88rem; }
+        .host-rental-card strong { color: var(--primary); display: block; margin-bottom: 4px; }
         .host-faq { margin-top: 32px; }
         .host-faq h2 { font-size: 1.15rem; margin-bottom: 14px; }
         .host-faq details { margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; background: rgba(0,0,0,0.2); }
@@ -70,6 +76,7 @@
                 <div class="host-stat"><strong id="host-slots">—</strong><span>Slots available</span></div>
                 <div class="host-stat"><strong id="host-price">$4.99</strong><span>Per slot (USD)</span></div>
                 <div class="host-stat"><strong id="host-live">—</strong><span>Live on network</span></div>
+                <div class="host-stat"><strong id="host-hosted">—</strong><span>Hosted fleet</span></div>
             </div>
             <div class="host-cta">
                 <a class="primary" href="/shop?tab=mn2">Reserve a slot in Shop</a>
@@ -102,6 +109,12 @@
             </article>
         </section>
 
+        <section class="host-rentals" aria-label="Agent rental bots">
+            <h2>Exchange agent rentals</h2>
+            <p style="font-size:0.88rem;color:var(--text-secondary);margin:0 0 12px;">Rent trading bots by the week — separate from masternode hosting slots.</p>
+            <div id="host-agent-rentals" class="host-rental-grid">Loading agent rentals…</div>
+        </section>
+
         <section class="host-faq" aria-label="FAQ">
             <h2>Frequently asked</h2>
             <details>
@@ -120,22 +133,38 @@
     </div>
     <script>
     (function () {
-        fetch('/api/mn2/masternode/service', { credentials: 'same-origin' })
+        fetch('/api/mn2/rental-overview', { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d || !d.success) return;
-                var avail = d.slots_available != null ? d.slots_available : (d.hosting && d.hosting.slots_available);
-                var live = d.enabled_count != null ? d.enabled_count : (d.network && d.network.enabled_masternodes);
-                var pp = d.paypal || {};
+                var host = d.masternode_hosting || {};
+                var pp = host.paypal || {};
                 var price = pp.price_usd_per_slot;
-                if (avail != null) document.getElementById('host-slots').textContent = String(avail);
-                if (live != null) document.getElementById('host-live').textContent = String(live);
+                if (host.slots_available != null) document.getElementById('host-slots').textContent = String(host.slots_available);
+                if (host.enabled_count != null) document.getElementById('host-live').textContent = String(host.enabled_count);
+                if (host.hosted_count != null) document.getElementById('host-hosted').textContent = String(host.hosted_count);
                 if (price != null) document.getElementById('host-price').textContent = '$' + Number(price).toFixed(2);
+                var grid = document.getElementById('host-agent-rentals');
+                var listings = (d.agent_rental && d.agent_rental.listings) || [];
+                if (!grid) return;
+                if (!listings.length) {
+                    grid.innerHTML = '<p style="opacity:0.8;margin:0;">No agent rental listings configured.</p>';
+                    return;
+                }
+                grid.innerHTML = listings.map(function (item) {
+                    return '<article class="host-rental-card"><strong>' + (item.name || item.id) + '</strong>' +
+                        (item.days ? item.days + ' days · ' : '') +
+                        (item.price_mn2 != null ? item.price_mn2 + ' MN2' : '') +
+                        (item.description ? '<p style="margin:6px 0 0;opacity:0.85;">' + item.description + '</p>' : '') +
+                        '</article>';
+                }).join('');
             })
             .catch(function () {});
     })();
     </script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="hosting" defer></script>
+    <script src="/static/js/faq-widget.js?v=20260624" defer></script>
+    <script src="/static/js/copy-assist-widget.js?v=20260624" data-copy-assist="hosting" defer></script>
 </body>
 </html>

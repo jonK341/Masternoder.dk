@@ -811,12 +811,27 @@
             <div id="tier-b-onramp-steps" style="font-size:0.9rem;color:var(--text-secondary);">Loading bundle steps…</div>
             <p id="tier-b-auction-fee" style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);"></p>
         </div>
+        <div class="card" id="buy-mn2-packs-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
+            <div style="padding: var(--spacing-lg);">
+                <h2 style="color: var(--secondary); margin-bottom: var(--spacing-sm);">🪙 Buy MN2 (instant credit)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">Pay with PayPal or shop coins — MN2 is credited to your in-wallet balance automatically after checkout.</p>
+                <div id="mn2-packs-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                    <div class="skeleton-loader" style="height: 180px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-bottom: var(--spacing-lg); border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+            <h2 style="margin: 0 0 8px; font-size: 1.05rem; color: var(--primary);">Desktop MN2 wallets</h2>
+            <p style="margin: 0 0 12px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Download the official daemon (Linux/WSL) or Qt wallet (Windows/Linux) with verified checksums.</p>
+            <a href="/wallets" class="btn-purchase" style="display:inline-block;width:auto;padding:10px 18px;text-decoration:none;font-size:0.9rem;">💾 Open wallets download hub</a>
+        </div>
         <div class="card" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
-            <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';">
-                <h3 style="color: var(--secondary); margin: 0;">MN2 Wallet</h3>
+            <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) { var open=b.style.display !== 'none'; b.style.display = open ? 'none' : 'block'; if(!open && typeof loadMn2WalletFull==='function') loadMn2WalletFull(); }">
+                <h3 style="color: var(--secondary); margin: 0;">MN2 Wallet <span style="font-size:0.75rem;font-weight:400;opacity:0.75;">(quick view)</span></h3>
                 <span id="mn2-wallet-balance-badge" style="color: var(--text-secondary);">-- MN2</span>
             </div>
-            <div id="mn2-wallet-body" style="display: block; padding: var(--spacing-lg); border-top: 1px solid var(--border-primary);">
+            <p style="margin:0;padding:0 var(--spacing-md) var(--spacing-sm);font-size:0.82rem;color:var(--text-secondary);">Full wallet with 2FA, statements, and downloads: <a href="/profile?tab=wallet#profile-mn2-wallet-card" style="color:#00d4ff;">Open Profile wallet →</a></p>
+            <div id="mn2-wallet-body" style="display: none; padding: var(--spacing-lg); border-top: 1px solid var(--border-primary);">
                 <div style="margin-bottom: var(--spacing-lg);">
                     <strong style="color: var(--secondary);">Balance:</strong>
                     <span id="mn2-wallet-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
@@ -993,6 +1008,8 @@
                 </div>
                 <button type="button" id="my-stall-refresh-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">Refresh stall</button>
             </div>
+            <div data-copy-anchor="shop_listing" style="padding:0 var(--spacing-md) var(--spacing-sm);"></div>
+            <div data-copy-anchor="product_title" style="padding:0 var(--spacing-md) var(--spacing-sm);"></div>
             <div style="padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
                 <div id="my-stall-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
             </div>
@@ -1293,6 +1310,9 @@
             try {
                 if (history.replaceState) history.replaceState(null, '', '#shop-' + name);
             } catch (e) {}
+            if (name === 'mn2') {
+                if (typeof loadMn2WalletBadge === 'function') loadMn2WalletBadge();
+            }
         }
 
         function initShopTabs() {
@@ -2550,6 +2570,53 @@
             }
         }
 
+        async function loadMn2Packs() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/mn2-packs`);
+                const data = await response.json();
+                const container = document.getElementById('mn2-packs-container');
+                if (!container) return;
+                if (!data.success || !data.mn2_packs?.length) {
+                    container.innerHTML = '<p style="color: var(--text-secondary);">MN2 packs unavailable.</p>';
+                    return;
+                }
+                const packs = [...data.mn2_packs].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+                container.innerHTML = packs.map(pack => {
+                    const featured = !!(pack.featured || pack.tag === 'best_value' || pack.id === 'mn2-pack-m');
+                    const border = featured ? '3px solid var(--secondary)' : '2px solid rgba(0,212,255,0.45)';
+                    const badge = featured ? '<div style="position:absolute;top:8px;right:8px;background:var(--secondary);color:#000;font-size:0.65rem;font-weight:800;padding:2px 8px;border-radius:999px;">BEST VALUE</div>' : '';
+                    const coins = pack.price_coins || 0;
+                    return `
+                    <div class="shop-item" style="position:relative;border:${border};${featured ? 'box-shadow:0 0 24px rgba(0,212,255,0.15);' : ''}">
+                        ${badge}
+                        <div class="item-icon">${pack.icon || '🪙'}</div>
+                        <div class="item-name">${pack.name}</div>
+                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">${pack.description || ''}</div>
+                        <div class="item-price" style="font-size: 1.2rem;">$${Number(pack.price_usd || 0).toFixed(2)} · ${coins} coins</div>
+                        <button class="btn-purchase btn-paypal-mn2-pack" data-pack-id="${pack.id}" data-amount="${pack.price_usd}" data-name="${(pack.name || '').replace(/"/g, '&quot;')}" style="margin-top:8px;background:linear-gradient(135deg,#0070ba,#1546a0);">
+                            <i class="fab fa-paypal"></i> Pay with PayPal
+                        </button>
+                        <button class="btn-purchase btn-coins-mn2-pack" data-pack-id="${pack.id}" data-coins="${coins}" style="margin-top:8px;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">
+                            Buy with ${coins} coins
+                        </button>
+                    </div>`;
+                }).join('');
+                container.querySelectorAll('.btn-paypal-mn2-pack').forEach(btn => {
+                    btn.addEventListener('click', () => buyItemWithPayPal(
+                        btn.dataset.packId,
+                        parseFloat(btn.dataset.amount),
+                        btn.dataset.name
+                    ));
+                });
+                container.querySelectorAll('.btn-coins-mn2-pack').forEach(btn => {
+                    btn.addEventListener('click', () => purchaseItem(btn.dataset.packId));
+                });
+            } catch (e) {
+                const container = document.getElementById('mn2-packs-container');
+                if (container) container.innerHTML = '<p style="color: var(--danger);">Failed to load MN2 packs.</p>';
+            }
+        }
+
         async function loadSubscriptionPlans() {
             const container = document.getElementById('subscription-plans-container');
             if (!container) return;
@@ -2875,10 +2942,18 @@
                 }
                 if (data.success) {
                     const earned = data.loyalty_earned || 0;
-                    if (typeof toast !== 'undefined') toast.success(`Purchased ${data.item?.name || 'item'}!` + (earned ? ` (+${earned} loyalty)` : ''));
+                    const isMn2Pack = String(itemId || '').indexOf('mn2-pack') === 0;
+                    if (typeof toast !== 'undefined') {
+                        toast.success(
+                            isMn2Pack
+                                ? `Purchased ${data.item?.name || 'MN2 pack'} — credited to your wallet.`
+                                : `Purchased ${data.item?.name || 'item'}!` + (earned ? ` (+${earned} loyalty)` : '')
+                        );
+                    }
                     if (window.ShopV9) ShopV9.recordPurchase(Object.assign({ success: true, item_id: itemId }, data));
                     loadCurrency();
                     loadUnifiedPoints();
+                    if (isMn2Pack && typeof loadMn2Wallet === 'function') loadMn2Wallet();
                     loadInventory();
                     loadPurchases();
                     loadShopItems();
@@ -2977,8 +3052,12 @@
                     const data = await response.json();
                     if (data.success) {
                         const coins = data.coins_granted || 0;
+                        const mn2Granted = data.mn2_granted || 0;
                         const itemGranted = data.item_granted;
-                        if (coins) {
+                        if (mn2Granted > 0) {
+                            if (typeof toast !== 'undefined') toast.success(`Purchased ${mn2Granted} MN2 — credited to your wallet.`);
+                            loadMn2Wallet();
+                        } else if (coins) {
                             if (typeof toast !== 'undefined') toast.success(`Purchased ${coins} coins!`);
                         } else if (itemGranted) {
                             if (typeof toast !== 'undefined') toast.success('Item purchased! Check your inventory.');
@@ -3041,6 +3120,32 @@
                 if (typeof toast !== 'undefined') toast.error('Could not complete subscription setup');
             }
             window.history.replaceState({}, '', window.location.pathname);
+        }
+
+        let mn2WalletFullLoaded = false;
+
+        async function loadMn2WalletBadge() {
+            const badge = document.getElementById('mn2-wallet-balance-badge');
+            const balanceEl = document.getElementById('mn2-wallet-balance');
+            try {
+                const balRes = await fetch(`${BASE_URL}/api/mn2/balance?user_id=${userId}`);
+                const balData = balRes.ok ? await balRes.json() : {};
+                if (balData.success) {
+                    mn2Balance = Number(balData.mn2_balance) || 0;
+                    if (balData.coins_per_mn2 != null) coinsPerMn2 = Number(balData.coins_per_mn2) || 100;
+                }
+                const usd = (balData.mn2_usd_price != null && mn2Balance != null && mn2Balance > 0) ? (mn2Balance * balData.mn2_usd_price).toFixed(2) : null;
+                if (badge) badge.textContent = (mn2Balance != null ? mn2Balance.toFixed(4) : '--') + ' MN2' + (usd ? ' ≈ $' + usd : '');
+                if (balanceEl) balanceEl.textContent = mn2Balance != null ? mn2Balance.toFixed(8) : '--';
+            } catch (e) {
+                if (badge) badge.textContent = '— MN2';
+            }
+        }
+
+        async function loadMn2WalletFull() {
+            if (mn2WalletFullLoaded) return;
+            mn2WalletFullLoaded = true;
+            await loadMn2Wallet();
         }
 
         async function loadMn2Wallet() {
@@ -3628,7 +3733,8 @@
             loadAuctionListings();
             loadMyAuctionState();
             loadShopItems();
-            loadMn2Wallet();
+            loadMn2WalletBadge();
+            loadMn2Packs();
             loadTierBOnrampPanel();
             initMn2WalletHandlers();
             initDealsHandlers();
@@ -3862,6 +3968,8 @@
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script src="/static/js/faq-widget.js?v=20260624" defer></script>
+    <script src="/static/js/copy-assist-widget.js?v=20260624" data-copy-assist="shop" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
