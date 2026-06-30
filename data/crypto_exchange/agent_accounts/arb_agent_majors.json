@@ -1,0 +1,19 @@
+{
+  "agent_id": "arb_agent_majors",
+  "realized_profit_usd": 0.0,
+  "trade_count": 0,
+  "notional_traded_usd": 0.0,
+  "by_venue": {},
+  "wallet_label": "arb_majors_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_majors",
+    "executed": false,
+    "reason": "no_profitable_spread",
+    "best": null,
+    "mode": "paper"
+  },
+  "created_at": "2026-06-27T20:44:47.007997Z",
+  "ticks": 733,
+  "game_time_sec": 2638800,
+  "agent_level": 15
+}

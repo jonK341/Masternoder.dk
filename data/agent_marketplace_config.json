@@ -1,0 +1,182 @@
+{
+
+  "enabled": true,
+
+  "currency": "MN2",
+
+  "default_volatility": 0.35,
+
+  "default_cycles_per_day": 24,
+
+  "owner_revenue_share_pct": 100,
+
+  "templates": [
+
+    {
+
+      "id": "tmpl_starter_spatial",
+
+      "name": "Starter Spatial Bot",
+
+      "tier": "Starter",
+
+      "skill_set": "starter_arbitrage",
+
+      "price_mn2": 250,
+
+      "price_usd": 12.5,
+
+      "skills": ["spatial_arbitrage", "withdrawal_aware_routing"],
+
+      "capital_usd": 500,
+
+      "risk": "low",
+
+      "cycles_per_day": 18,
+
+      "description": "Entry-level cross-venue spatial arbitrage with withdrawal-aware routing. Safe, steady spreads."
+
+    },
+
+    {
+
+      "id": "tmpl_pro_triangular",
+
+      "name": "Pro Triangular Bot",
+
+      "tier": "Pro",
+
+      "skill_set": "pro_triangular",
+
+      "price_mn2": 750,
+
+      "price_usd": 37.5,
+
+      "skills": ["triangular_arbitrage", "stablecoin_peg", "latency_twap"],
+
+      "capital_usd": 1500,
+
+      "risk": "low",
+
+      "cycles_per_day": 30,
+
+      "description": "In-venue triangular loops plus stablecoin peg trades, executed with latency-aware TWAP."
+
+    },
+
+    {
+
+      "id": "tmpl_pro_carry",
+
+      "name": "Pro Funding Carry Bot",
+
+      "tier": "Pro",
+
+      "skill_set": "pro_carry",
+
+      "price_mn2": 900,
+
+      "price_usd": 45.0,
+
+      "skills": ["funding_rate_carry", "inventory_band"],
+
+      "capital_usd": 2000,
+
+      "risk": "medium",
+
+      "cycles_per_day": 12,
+
+      "description": "Collects perp funding while keeping inventory inside target bands."
+
+    },
+
+    {
+
+      "id": "tmpl_elite_momentum",
+
+      "name": "Elite Momentum Bot",
+
+      "tier": "Elite",
+
+      "skill_set": "elite_momentum",
+
+      "price_mn2": 1800,
+
+      "price_usd": 90.0,
+
+      "skills": ["volatility_breakout", "cross_pair_momentum", "mean_reversion_scalp"],
+
+      "capital_usd": 3500,
+
+      "risk": "high",
+
+      "cycles_per_day": 40,
+
+      "premium": true,
+
+      "description": "Aggressive directional engine: volatility breakouts, cross-pair momentum, mean-reversion scalps. Premium: prediction boost + priority scanning."
+
+    },
+
+    {
+
+      "id": "tmpl_quant_multi",
+
+      "name": "Quant Multi-Skill Bot",
+
+      "tier": "Quant",
+
+      "skill_set": "quant_multi",
+
+      "price_mn2": 4000,
+
+      "price_usd": 200.0,
+
+      "skills": ["spatial_arbitrage", "triangular_arbitrage", "funding_rate_carry", "internal_rebalance", "maker_rebate_harvest", "withdrawal_aware_routing"],
+
+      "capital_usd": 8000,
+
+      "risk": "medium",
+
+      "cycles_per_day": 48,
+
+      "premium": true,
+
+      "description": "Flagship multi-strategy quant bot blending six skills across arbitrage, carry, and rebates. Premium: prediction boost + priority scanning + fee discount."
+
+    },
+
+    {
+
+      "id": "tmpl_sentient_apex",
+
+      "name": "Sentient Apex Bot",
+
+      "tier": "Sentient",
+
+      "skill_set": "sentient_apex",
+
+      "price_mn2": 9000,
+
+      "price_usd": 450.0,
+
+      "skills": ["market_making_as", "statistical_arbitrage", "sentiment_alpha", "ml_price_forecast", "latency_momentum", "kelly_sizing"],
+
+      "capital_usd": 20000,
+
+      "risk": "medium",
+
+      "cycles_per_day": 64,
+
+      "premium": true,
+
+      "super": true,
+
+      "description": "Self-learning flagship: Avellaneda-Stoikov market making, z-score statistical arbitrage, AI sentiment + ML forecasting, oracle-lag latency momentum, all sized by Kelly. Skills grow proficiency and intelligence (IQ) from realized profit. Premium + super: max prediction boost, priority scanning, fee discount, and adaptive learning."
+
+    }
+
+  ]
+
+}
+

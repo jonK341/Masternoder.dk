@@ -1,0 +1,17 @@
+{
+  "xp": 105.0,
+  "claimed_levels": [],
+  "achievements": {
+    "crypto_initiate": "2026-06-27T20:57:08.119550Z"
+  },
+  "stats": {
+    "agents_owned": 0,
+    "premium_owned": 0,
+    "crypto_buys": 3.0,
+    "total_agent_profit_usd": 0,
+    "total_ticks": 0,
+    "total_game_time_sec": 0,
+    "sweeps": 0
+  },
+  "daily": {}
+}

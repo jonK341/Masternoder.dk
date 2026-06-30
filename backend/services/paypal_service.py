@@ -64,7 +64,11 @@ def create_order(
         return {"success": False, "error": "requests library required"}
     token = get_access_token()
     if not token:
-        return {"success": False, "error": "PayPal authentication failed"}
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
     base_url = os.environ.get("BASE_URL", "https://masternoder.dk")
     return_url = return_url or f"{base_url}/shop?paypal=success"
@@ -115,7 +119,11 @@ def capture_order(order_id: str) -> Dict:
         return {"success": False, "error": "requests library required"}
     token = get_access_token()
     if not token:
-        return {"success": False, "error": "PayPal authentication failed"}
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
     base = _get_base_url()
     r = requests.post(
@@ -162,7 +170,11 @@ def create_billing_subscription(
         return {"success": False, "error": "missing plan_id"}
     token = get_access_token()
     if not token:
-        return {"success": False, "error": "PayPal authentication failed"}
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
     base_url = os.environ.get("BASE_URL", "https://masternoder.dk").strip().rstrip("/")
     if base_url.endswith("/vidgenerator"):
@@ -224,7 +236,11 @@ def get_billing_subscription(subscription_id: str) -> Dict:
         return {"success": False, "error": "missing subscription_id"}
     token = get_access_token()
     if not token:
-        return {"success": False, "error": "PayPal authentication failed"}
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
     base = _get_base_url()
     r = requests.get(
@@ -245,4 +261,172 @@ def get_billing_subscription(subscription_id: str) -> Dict:
         "plan_id": plan,
         "status": data.get("status"),
         "raw": data,
+    }
+
+
+def ensure_pro_subscription_plan(
+    *,
+    name: str = "Pro monthly",
+    price_usd: float = 19.99,
+    product_name: str = "MasterNoder Pro",
+) -> Dict:
+    """
+    Create catalog product + billing plan via PayPal REST API when plan env is unset.
+    Returns plan_id (P-…) on success.
+    """
+    if not requests:
+        return {"success": False, "error": "requests library required"}
+    token = get_access_token()
+    if not token:
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
+
+    base = _get_base_url()
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Prefer": "return=representation",
+    }
+
+    prod_payload = {
+        "name": product_name[:127],
+        "type": "SERVICE",
+        "category": "SOFTWARE",
+        "description": "MasterNoder Pro subscription — generator credits and premium caps.",
+    }
+    r = requests.post(f"{base}/v1/catalogs/products", headers=headers, json=prod_payload, timeout=20)
+    if r.status_code not in (200, 201):
+        return {"success": False, "error": r.text or str(r.status_code), "step": "create_product"}
+    product_id = (r.json() or {}).get("id")
+    if not product_id:
+        return {"success": False, "error": "missing product_id", "step": "create_product"}
+
+    plan_payload = {
+        "product_id": product_id,
+        "name": name[:127],
+        "description": "Monthly Pro subscription for MasterNoder.dk",
+        "billing_cycles": [
+            {
+                "frequency": {"interval_unit": "MONTH", "interval_count": 1},
+                "tenure_type": "REGULAR",
+                "sequence": 1,
+                "total_cycles": 0,
+                "pricing_scheme": {
+                    "fixed_price": {"value": f"{float(price_usd):.2f}", "currency_code": "USD"},
+                },
+            }
+        ],
+        "payment_preferences": {
+            "auto_bill_outstanding": True,
+            "setup_fee_failure_action": "CONTINUE",
+            "payment_failure_threshold": 3,
+        },
+    }
+    r = requests.post(f"{base}/v1/billing/plans", headers=headers, json=plan_payload, timeout=20)
+    if r.status_code not in (200, 201):
+        return {"success": False, "error": r.text or str(r.status_code), "step": "create_plan", "product_id": product_id}
+    plan_id = (r.json() or {}).get("id")
+    if not plan_id:
+        return {"success": False, "error": "missing plan_id", "step": "create_plan", "product_id": product_id}
+
+    r = requests.post(f"{base}/v1/billing/plans/{plan_id}/activate", headers=headers, json={}, timeout=20)
+    if r.status_code not in (200, 204):
+        err_text = r.text or str(r.status_code)
+        if "PLAN_STATUS_INVALID" in err_text:
+            return {
+                "success": True,
+                "plan_id": plan_id,
+                "product_id": product_id,
+                "price_usd": float(price_usd),
+                "mode": os.environ.get("PAYPAL_MODE") or "sandbox",
+                "note": "plan_already_active",
+            }
+        return {
+            "success": False,
+            "error": err_text,
+            "step": "activate_plan",
+            "plan_id": plan_id,
+            "product_id": product_id,
+        }
+
+    return {
+        "success": True,
+        "plan_id": plan_id,
+        "product_id": product_id,
+        "price_usd": float(price_usd),
+        "mode": os.environ.get("PAYPAL_MODE") or "sandbox",
+    }
+
+
+def create_payout(
+    receiver_email: str,
+    amount_usd: float,
+    *,
+    currency: str = "USD",
+    note: str = "MasterNoder exchange profit",
+    sender_batch_id: Optional[str] = None,
+) -> Dict:
+    """Send funds to a PayPal account via Payouts API (requires Payouts enabled on the app)."""
+    if not requests:
+        return {"success": False, "error": "requests library required"}
+    email = (receiver_email or "").strip()
+    if not email or "@" not in email:
+        return {"success": False, "error": "invalid_receiver_email"}
+    amt = round(float(amount_usd or 0), 2)
+    if amt < 0.01:
+        return {"success": False, "error": "amount_too_small"}
+
+    token = get_access_token()
+    if not token:
+        cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+        if not cid or not secret:
+            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+        return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
+
+    import uuid
+
+    batch_id = (sender_batch_id or f"mn2-profit-{uuid.uuid4().hex[:16]}")[:127]
+    payload = {
+        "sender_batch_header": {
+            "sender_batch_id": batch_id,
+            "email_subject": "MasterNoder profit payout",
+            "email_message": "You received a profit payout from MasterNoder exchange trading.",
+        },
+        "items": [
+            {
+                "recipient_type": "EMAIL",
+                "amount": {"value": f"{amt:.2f}", "currency_code": currency.upper()},
+                "receiver": email,
+                "note": (note or "")[:255],
+                "sender_item_id": batch_id,
+            }
+        ],
+    }
+    base = _get_base_url()
+    r = requests.post(
+        f"{base}/v1/payments/payouts",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        json=payload,
+        timeout=30,
+    )
+    if r.status_code not in (200, 201):
+        return {"success": False, "error": r.text or str(r.status_code), "status_code": r.status_code}
+
+    data = r.json()
+    batch = data.get("batch_header") or {}
+    return {
+        "success": True,
+        "payout_batch_id": batch.get("payout_batch_id") or data.get("batch_header", {}).get("payout_batch_id"),
+        "batch_status": batch.get("batch_status"),
+        "sender_batch_id": batch_id,
+        "amount_usd": amt,
+        "receiver_email": email,
+        "mode": os.environ.get("PAYPAL_MODE") or "sandbox",
     }

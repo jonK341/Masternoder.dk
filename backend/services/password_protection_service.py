@@ -70,6 +70,62 @@ def can_unlock_password(user_id: str) -> bool:
     return _user_game_points(user_id) >= min_pts or _user_investigations_count(user_id) >= min_inv
 
 
+def _real_money_account(user_id: str) -> bool:
+    try:
+        from backend.services.account_security_service import _real_money_balances
+
+        return bool(_real_money_balances(user_id).get("has_real_money"))
+    except Exception:
+        return False
+
+
+def _fast_track_reason(user_id: str) -> Optional[str]:
+    """Accounts with verified identity or real-money balance can set a password immediately."""
+    recovery = get_recovery_status(user_id)
+    if recovery.get("has_email"):
+        return "verified email on profile"
+    if recovery.get("provider_recovery_supported"):
+        provider = recovery.get("provider") or "social"
+        return f"linked {provider} account"
+    if _real_money_account(user_id):
+        return "real-money balance (MN2 or casino USD)"
+    return None
+
+
+def get_unlock_progress(user_id: str) -> Dict[str, Any]:
+    data = _load_protection()
+    rule = data.get("unlock_rule", {})
+    min_pts = int(rule.get("min_game_points", 50))
+    min_inv = int(rule.get("min_investigations", 1))
+    game_points = _user_game_points(user_id)
+    investigations = _user_investigations_count(user_id)
+    points_pct = min(100, int((game_points / min_pts) * 100)) if min_pts > 0 else 100
+    inv_pct = min(100, int((investigations / min_inv) * 100)) if min_inv > 0 else 100
+    primary_path = "investigations" if inv_pct >= points_pct else "game_points"
+    return {
+        "game_points": game_points,
+        "min_game_points": min_pts,
+        "game_points_percent": points_pct,
+        "investigations": investigations,
+        "min_investigations": min_inv,
+        "investigations_percent": inv_pct,
+        "overall_percent": max(points_pct, inv_pct),
+        "primary_path": primary_path,
+        "rule_met": can_unlock_password(user_id),
+    }
+
+
+def can_set_password(user_id: str) -> bool:
+    """True when the account may set or change a password in the guided setup flow."""
+    data = _load_protection()
+    user = data.get("users", {}).get(user_id, {})
+    if user.get("password_hash") or user.get("unlocked_at"):
+        return True
+    if can_unlock_password(user_id):
+        return True
+    return bool(_fast_track_reason(user_id))
+
+
 def get_password_status(user_id: str) -> Dict[str, Any]:
     """Returns has_unlocked, has_password, can_unlock, unlock_rule, reward_on_set."""
     data = _load_protection()
@@ -79,11 +135,16 @@ def get_password_status(user_id: str) -> Dict[str, Any]:
     unlocked_at = user.get("unlocked_at")
     has_unlocked = bool(unlocked_at) or has_password
     can_unlock = can_unlock_password(user_id)
+    fast_track_reason = _fast_track_reason(user_id)
     return {
         "user_id": user_id,
         "has_unlocked": has_unlocked,
         "has_password": has_password,
         "can_unlock": can_unlock and not has_unlocked,
+        "can_set_password": can_set_password(user_id),
+        "fast_track": bool(fast_track_reason),
+        "fast_track_reason": fast_track_reason,
+        "unlock_progress": get_unlock_progress(user_id),
         "unlock_rule": data.get("unlock_rule", {}),
         "reward_on_set": data.get("reward_on_set", {}),
         "set_at": user.get("set_at"),
@@ -225,17 +286,28 @@ def unlock_password_protection(user_id: str) -> Dict[str, Any]:
     return {"success": True, "unlocked": True, "user_id": user_id}
 
 
-def set_password(user_id: str, new_password: str) -> Dict[str, Any]:
-    """Set or change password. User must have unlocked first (or meet rule in same call). Awards reward_on_set game_points once."""
+def set_password(user_id: str, new_password: str, current_password: Optional[str] = None) -> Dict[str, Any]:
+    """Set or change password. User must be eligible (unlock rule, fast track, or already unlocked). Awards reward_on_set game_points once."""
     if not (new_password and len(new_password) >= 6):
         return {"success": False, "error": "Password must be at least 6 characters"}
     data = _load_protection()
     users = data.get("users", {})
     if user_id not in users:
         users[user_id] = {}
+    existing_hash = users[user_id].get("password_hash")
+    if existing_hash:
+        if not current_password:
+            return {"success": False, "error": "Current password required to change your password."}
+        if not _check_password(existing_hash, current_password):
+            return {"success": False, "error": "Current password is incorrect."}
     if not users[user_id].get("unlocked_at"):
-        if not can_unlock_password(user_id):
-            return {"success": False, "error": "Unlock requirement not met. Earn points or complete Star Map investigations."}
+        if not can_set_password(user_id):
+            progress = get_unlock_progress(user_id)
+            return {
+                "success": False,
+                "error": "Unlock requirement not met. Earn points or complete Star Map investigations.",
+                "unlock_progress": progress,
+            }
         unlock_password_protection(user_id)
         data = _load_protection()
         users = data.get("users", {})

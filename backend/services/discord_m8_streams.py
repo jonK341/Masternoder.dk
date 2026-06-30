@@ -270,19 +270,25 @@ def post_generator_showcase(
 
 
 def support_faq_answer(query: str) -> Dict[str, Any]:
-    """M8 #60 — lightweight FAQ (no custody; directs users to site)."""
-    q = (query or "").strip().lower()
-    if not q:
+    """M8 #60 — FAQ (keyword fast path; LLM when SUPPORT_FAQ_LLM=1)."""
+    use_llm = (os.environ.get("SUPPORT_FAQ_LLM") or "").strip().lower() in ("1", "true", "yes", "on")
+    try:
+        from backend.services.support_faq_service import faq_answer
+
+        return faq_answer(query, use_llm=use_llm, channel="discord")
+    except Exception:
+        q = (query or "").strip().lower()
+        if not q:
+            return {
+                "success": True,
+                "answer": "Ask about deposit, withdraw, staking, casino, market, camgirls, compendium, or discord linking.",
+                "topics": [row["q"] for row in _SUPPORT_FAQ],
+            }
+        for row in _SUPPORT_FAQ:
+            if row["q"] in q or q in row["a"].lower():
+                return {"success": True, "topic": row["q"], "answer": row["a"]}
         return {
             "success": True,
-            "answer": "Ask about deposit, withdraw, staking, casino, market, camgirls, compendium, or discord linking.",
+            "answer": "For account help visit Profile or contact ops. We cannot move funds via chat.",
             "topics": [row["q"] for row in _SUPPORT_FAQ],
         }
-    for row in _SUPPORT_FAQ:
-        if row["q"] in q or q in row["a"].lower():
-            return {"success": True, "topic": row["q"], "answer": row["a"]}
-    return {
-        "success": True,
-        "answer": "For account help visit Profile or contact ops. We cannot move funds via chat.",
-        "topics": [row["q"] for row in _SUPPORT_FAQ],
-    }

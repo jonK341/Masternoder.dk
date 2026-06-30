@@ -635,7 +635,56 @@ def build_big_win_share(
         },
         "copy_text": f"{text}\n{share_url}",
         "rg_footer": _RG_FOOTER,
+        "svg_url": f"{base}/api/casino/share/big-win/card.svg?{urlencode(params)}",
     }
+
+
+def build_big_win_svg(
+    *,
+    game: Optional[str] = None,
+    net: Optional[float] = None,
+    currency: Optional[str] = None,
+    multiplier: Optional[float] = None,
+    handle: Optional[str] = None,
+) -> str:
+    """Render a shareable SVG clip card (Wave 3)."""
+    game_label = (game or "casino").replace("_", " ").replace("-", " ").title()
+    cur = (currency or "coins").lower()
+    win_net = float(net or 0)
+    mult = float(multiplier or 0) if multiplier is not None else None
+    player = handle or "Player"
+    amount = _format_amount(win_net, cur) if win_net > 0 else "Big win"
+    mult_line = f"{mult:.1f}× multiplier" if mult and mult >= 1 else "MasterNoder Casino"
+    esc = lambda s: (
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="55%" stop-color="#141a33"/>
+      <stop offset="100%" stop-color="#1a0f2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#21d07a"/>
+      <stop offset="100%" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="40" y="40" width="1120" height="550" rx="28" fill="none" stroke="url(#accent)" stroke-width="4" opacity="0.85"/>
+  <text x="80" y="130" fill="#8ea0c8" font-family="Segoe UI, Arial, sans-serif" font-size="28">BIG WIN CLIP</text>
+  <text x="80" y="230" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700">{esc(player)}</text>
+  <text x="80" y="310" fill="#21d07a" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="700">{esc(amount)}</text>
+  <text x="80" y="380" fill="#c8d4ff" font-family="Segoe UI, Arial, sans-serif" font-size="36">{esc(game_label)} · {esc(mult_line)}</text>
+  <text x="80" y="520" fill="#8ea0c8" font-family="Segoe UI, Arial, sans-serif" font-size="24">masternoder.dk/casino · virtual coins · entertainment only</text>
+  <circle cx="980" cy="315" r="120" fill="url(#accent)" opacity="0.18"/>
+  <text x="980" y="340" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="72">🎰</text>
+</svg>"""
 
 
 def discord_integration_config() -> Dict[str, Any]:

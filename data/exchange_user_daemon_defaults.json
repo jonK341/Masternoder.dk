@@ -1,0 +1,24 @@
+{
+
+  "strategy": "cross_exchange_farm",
+
+  "venues": [
+
+    "binance", "okx", "bybit", "kucoin", "nonkyc", "mexc", "bitget",
+
+    "bingx", "poloniex", "bitmart", "coinex", "whitebit", "upbit", "phemex", "xt"
+
+  ],
+
+  "symbols": ["BTC", "ETH", "SOL", "XRP", "AVAX", "LINK", "DOGE"],
+
+  "notional_usd": 250,
+
+  "auto_run_with_marketplace": true,
+
+  "include_rentals": true,
+
+  "include_owned": true
+
+}
+

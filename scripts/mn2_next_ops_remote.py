@@ -12,10 +12,8 @@ import argparse
 import os
 import sys
 
-import paramiko
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 WEB = "/var/www/html"
 
@@ -152,10 +150,8 @@ ENDSCRIPT
         return 0
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
-    print(f"== Connected {deploy_user()}@{deploy_host()} ==\n")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"== Connected {deploy_user()}@{deploy_host()} ({auth_method}) ==\n")
     out = sh(ssh, remote, timeout=120)
     print(out)
     ok = "OK max_hosted_nodes=" in out and "FAIL" not in out

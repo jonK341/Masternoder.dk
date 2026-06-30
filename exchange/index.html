@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Exchange — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260630a">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="cex-page">
+        <header class="cex-header">
+            <div class="cex-hero-wrap">
+                <img src="/static/img/exchange/hero-exchange.svg" alt="" class="cex-hero-img" width="1200" height="320" />
+                <div class="cex-hero-text">
+                    <h1><i class="fas fa-chart-line"></i> MasterNoder Exchange</h1>
+                    <p class="cex-sub">25 cryptocurrencies · instant swap · limit orders · staking rewards · tax records</p>
+                </div>
+            </div>
+            <div class="cex-visual-row" aria-hidden="true">
+                <img src="/static/img/exchange/visual-agents.svg" alt="Trading agents" width="280" height="160" />
+                <img src="/static/img/exchange/visual-arbitrage.svg" alt="Cross-venue arbitrage" width="280" height="160" />
+                <img src="/static/img/exchange/visual-profit.svg" alt="Profit tracking" width="280" height="160" />
+            </div>
+            <div class="cex-legal" id="cex-legal-notice">Loading compliance notice…</div>
+            <nav class="cex-shortcuts" aria-label="Exchange shortcuts">
+                <a href="/exchange?tab=onramp" class="cex-mini-link">PayPal buy</a>
+                <a href="/exchange?tab=limit" class="cex-mini-link">Limit order</a>
+                <a href="/exchange?tab=tax" class="cex-mini-link">Tax report</a>
+                <a href="#cex-control-center" class="cex-mini-link">Agent control</a>
+                <a href="#cex-daemon-control" class="cex-mini-link">Daemon control</a>
+                <a href="#cex-rental-hub" class="cex-mini-link">Rent bots</a>
+                <a href="#cex-exchange-shop" class="cex-mini-link">Exchange shop</a>
+                <a href="#cex-profit-oracle" class="cex-mini-link">Profit Oracle</a>
+                <a href="#cex-gateway-layer" class="cex-mini-link">Gateway layer</a>
+                <a href="#cex-agent-cross-trading" class="cex-mini-link">Bot daemon</a>
+                <a href="#cex-agent-marketplace" class="cex-mini-link">Agent marketplace</a>
+            </nav>
+        </header>
+
+        <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
+            <h2>Platform wallet (MN2)</h2>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>MN2 balance</span><strong id="cex-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cex-mn2-rate">—</strong></div>
+                <div class="mn2-page-metric"><span>Fee tier</span><strong id="cex-fee-tier">—</strong></div>
+            </div>
+        </section>
+
+        <div class="cex-grid">
+            <aside class="cex-panel cex-assets">
+                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span></h2>
+                <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
+                <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
+            </aside>
+
+            <main class="cex-panel cex-trade" id="cex-trading-desk">
+                <div class="cex-tabs">
+                    <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
+                    <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
+                    <button type="button" class="cex-tab" data-tab="limit">Limit order</button>
+                    <button type="button" class="cex-tab" data-tab="staking">Staking</button>
+                    <button type="button" class="cex-tab" data-tab="tax">Tax report</button>
+                </div>
+
+                <div id="cex-tab-swap" class="cex-tab-panel active">
+                    <div class="cex-selected" id="cex-selected-asset">Select an asset</div>
+                    <div class="cex-form-row">
+                        <label>Side
+                            <select id="cex-swap-side" class="cex-input">
+                                <option value="buy">Buy</option>
+                                <option value="sell">Sell</option>
+                            </select>
+                        </label>
+                        <label>Amount
+                            <input type="number" id="cex-swap-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                        </label>
+                        <label>Quote
+                            <select id="cex-swap-quote" class="cex-input">
+                                <option value="MN2">MN2</option>
+                                <option value="COINS">Coins</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="cex-quote-preview" class="cex-quote-preview"></div>
+                    <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--primary">Get quote &amp; swap</button>
+                </div>
+
+                <div id="cex-tab-onramp" class="cex-tab-panel">
+                    <div class="cex-onramp-head">
+                        <h2>Buy crypto with PayPal</h2>
+                        <p class="cex-muted">PayPal is the fiat redirect. Funds settle to the configured PayPal business account, then the selected crypto is credited to your custodial exchange wallet after capture.</p>
+                    </div>
+                    <div class="cex-paypal-buy-box">
+                        <h3>Direct PayPal crypto buy</h3>
+                        <div class="cex-form-row">
+                            <label>Asset
+                                <input id="cex-paypal-symbol" class="cex-input" readonly value="BTC">
+                            </label>
+                            <label>USD amount
+                                <input type="number" id="cex-paypal-usd" class="cex-input" min="5" step="0.01" value="25">
+                            </label>
+                        </div>
+                        <div id="cex-paypal-crypto-preview" class="cex-quote-preview"></div>
+                        <button type="button" id="cex-paypal-crypto-btn" class="cex-btn cex-btn--primary">Buy selected crypto with PayPal</button>
+                    </div>
+                    <hr class="cex-divider">
+                    <h3>MN2 PayPal packs</h3>
+                    <div id="cex-paypal-mn2-packs" class="cex-pack-grid">Loading PayPal MN2 packs…</div>
+                    <div class="cex-flow-note">
+                        <strong>Flow:</strong> PayPal checkout -> business PayPal account -> custodial exchange wallet credit -> exchange/casino/camgirls spend.
+                    </div>
+                </div>
+
+                <div id="cex-tab-limit" class="cex-tab-panel">
+                    <div class="cex-form-row">
+                        <label>Asset<input id="cex-limit-symbol" class="cex-input" readonly></label>
+                        <label>Side<select id="cex-limit-side" class="cex-input"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+                        <label>Amount<input type="number" id="cex-limit-amount" class="cex-input" min="0" step="any"></label>
+                        <label>Limit price<input type="number" id="cex-limit-price" class="cex-input" min="0" step="any"></label>
+                    </div>
+                    <button type="button" id="cex-limit-btn" class="cex-btn">Place limit order</button>
+                    <div id="cex-open-orders" class="cex-orders"></div>
+                </div>
+
+                <div id="cex-tab-staking" class="cex-tab-panel">
+                    <p class="cex-muted">Daily staking rewards on idle exchange balances (APY varies by asset).</p>
+                    <div id="cex-staking-list"></div>
+                </div>
+
+                <div id="cex-tab-tax" class="cex-tab-panel">
+                    <p class="cex-muted">Informational DAC8-style trade log for Denmark/EU. Not tax advice.</p>
+                    <button type="button" id="cex-tax-btn" class="cex-btn cex-btn--ghost">Load tax report</button>
+                    <pre id="cex-tax-report" class="cex-tax-pre"></pre>
+                </div>
+
+                <p id="cex-msg" class="cex-msg"></p>
+            </main>
+
+            <aside class="cex-panel cex-wallet">
+                <h2>Exchange wallet</h2>
+                <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
+
+                <div class="cex-bonus-card" id="cex-bonus-card">
+                    <h3>Welcome bonus</h3>
+                    <p id="cex-bonus-desc">One-time lawful promotional MN2 credit (terms apply).</p>
+                    <label class="cex-check"><input type="checkbox" id="cex-bonus-accept"> I accept the promotional terms (18+, no guaranteed returns)</label>
+                    <button type="button" id="cex-bonus-btn" class="cex-btn cex-btn--accent">Claim bonus</button>
+                </div>
+
+                <h3>Recent trades</h3>
+                <div id="cex-recent-trades" class="cex-trades">—</div>
+
+                <div class="cex-profile-card cex-progress-card" id="cex-progress-monitor">
+                    <h3>User progress monitor</h3>
+                    <div id="cex-progress-summary" class="cex-progress-summary">Loading progress…</div>
+                    <div class="cex-progress-bar"><span id="cex-progress-fill"></span></div>
+                    <div id="cex-high-scores" class="cex-high-scores"></div>
+                    <div id="cex-status-report" class="cex-status-report"></div>
+                </div>
+
+                <div class="cex-profile-card cex-monitor-card" id="cex-live-monitor">
+                    <h3>Live trading monitor <span class="cex-live-dot" id="cex-live-dot"></span></h3>
+                    <div id="cex-monitor-totals" class="cex-monitor-totals">Loading live trading…</div>
+                    <div id="cex-monitor-bots" class="cex-monitor-bots"></div>
+                    <h4 class="cex-monitor-h4">Activity feed</h4>
+                    <div id="cex-monitor-feed" class="cex-monitor-feed"></div>
+                </div>
+
+                <div class="cex-profile-card cex-watch-card" id="cex-live-watch">
+                    <h3>Live Watch · trust review</h3>
+                    <p class="cex-market-sub" style="margin:0 0 10px">Review activations, composite IQ, and trust before bots trade.</p>
+                    <div id="cex-watch-summary" class="cex-monitor-totals">Loading…</div>
+                    <div id="cex-watch-agents" class="cex-watch-agents"></div>
+                </div>
+
+                <div class="cex-profile-card cex-profit-card" id="cex-profit-oracle">
+                    <h3>Profit Oracle Agent</h3>
+                    <div id="cex-profit-summary" class="cex-progress-summary">Calculating profit intelligence…</div>
+                    <div id="cex-profit-insights" class="cex-status-report"></div>
+                    <div id="cex-agent-performance" class="cex-agent-list"></div>
+                </div>
+
+                <div class="cex-profile-card" id="cex-gateway-layer">
+                    <h3>Gateway layer</h3>
+                    <div id="cex-gateway-status" class="cex-progress-summary">Checking payment gateway…</div>
+                </div>
+
+                <div class="cex-profile-card" id="cex-social-links">
+                    <h3>Social profile lane</h3>
+                    <p>Build trust before trading: view your public profile, casino social board, and camgirls fan perks.</p>
+                    <a href="/profile" class="cex-mini-link">Profile</a>
+                    <a href="/social" class="cex-mini-link">Social</a>
+                    <a href="/casino#casino-tab-social" class="cex-mini-link">Casino lounge</a>
+                </div>
+
+                <div class="cex-profile-card" id="cex-agent-cross-trading">
+                    <h3>Agent cross-trading</h3>
+                    <p id="cex-agent-summary">Loading exchange agents…</p>
+                    <div id="cex-agent-list" class="cex-agent-list"></div>
+                    <button type="button" id="cex-agent-tick-btn" class="cex-btn cex-btn--ghost" disabled>Daemon controlled</button>
+                </div>
+
+                <div class="cex-profile-card cex-daemon-card" id="cex-daemon-control">
+                    <h3>Your trading daemon <span class="cex-badge" id="cex-daemon-badge">—</span></h3>
+                    <p class="cex-market-sub" style="margin:0 0 10px">Rent a bot below, then choose exchanges and assets to farm. Runs on live public prices (paper profit by default).</p>
+                    <div id="cex-daemon-status" class="cex-monitor-totals muted">Loading daemon…</div>
+                    <label class="cex-calc-row">Strategy
+                        <select id="cex-daemon-strategy" class="cex-input">
+                            <option value="cross_exchange_farm">Cross-exchange farm</option>
+                            <option value="spatial_arbitrage">Spatial arbitrage</option>
+                            <option value="internal_vs_external">Internal vs external</option>
+                            <option value="ai_multi_venue">AI multi-venue</option>
+                        </select>
+                    </label>
+                    <label class="cex-calc-row">Trade size (USD)<input type="number" id="cex-daemon-notional" class="cex-input" min="10" step="10" value="250"></label>
+                    <div class="cex-daemon-section">
+                        <h4 class="cex-monitor-h4">Exchanges to farm</h4>
+                        <div id="cex-daemon-venues" class="cex-venue-grid">Loading venues…</div>
+                    </div>
+                    <div class="cex-daemon-section">
+                        <h4 class="cex-monitor-h4">Assets</h4>
+                        <div id="cex-daemon-symbols" class="cex-venue-grid">Loading…</div>
+                    </div>
+                    <div class="cex-daemon-section">
+                        <h4 class="cex-monitor-h4">Bots to run</h4>
+                        <div id="cex-daemon-bots" class="cex-daemon-bots muted">Rent or buy a bot first.</div>
+                    </div>
+                    <div id="cex-daemon-preview" class="cex-daemon-preview muted"></div>
+                    <div class="cex-daemon-actions">
+                        <button type="button" id="cex-daemon-save" class="cex-btn cex-btn--ghost">Save config</button>
+                        <button type="button" id="cex-daemon-preview-btn" class="cex-btn cex-btn--ghost">Scan spreads</button>
+                        <button type="button" id="cex-daemon-run" class="cex-btn">Run daemon now</button>
+                    </div>
+                    <label class="cex-trust-toggle" style="display:block;margin-top:10px"><input type="checkbox" id="cex-daemon-auto" checked /> Auto-run with “Run my bots”</label>
+                </div>
+
+                <div class="cex-profile-card cex-ai-trading-card" id="cex-ai-trading">
+                    <h3>AI multi-venue trader <span class="cex-badge" id="cex-ai-mode">—</span></h3>
+                    <p class="cex-market-sub" style="margin:0 0 8px">Analyzes all major exchanges, scores with super-skills, executes API calls (paper by default).</p>
+                    <div id="cex-ai-status" class="cex-monitor-totals">Loading AI trader…</div>
+                    <div id="cex-ai-top-pick" class="cex-ai-pick muted"></div>
+                    <button type="button" id="cex-ai-analyze-btn" class="cex-btn cex-btn--ghost">Analyze market</button>
+                </div>
+            </aside>
+        </div>
+
+        <section class="cex-market" id="cex-agent-marketplace">
+            <h2>Agent marketplace — buy bots that earn on your account</h2>
+            <p class="cex-market-sub">Purchase a generated trading bot with its own skill set. It runs in your account and accrues profit to you.</p>
+
+            <div class="cex-level" id="cex-level">
+                <div class="cex-level-head">
+                    <div>
+                        <div class="cex-level-rank" id="cex-level-rank">🐣 Rookie Trader</div>
+                        <div class="cex-level-num" id="cex-level-num">Level 1</div>
+                    </div>
+                    <div class="cex-level-meta">
+                        <div id="cex-level-xp" class="cex-level-xp">0 / 100 XP</div>
+                        <button type="button" id="cex-level-claim" class="cex-btn cex-btn--ghost" style="display:none">Claim rewards</button>
+                    </div>
+                </div>
+                <div class="cex-level-bar"><div class="cex-level-fill" id="cex-level-fill"></div></div>
+                <div class="cex-level-perks" id="cex-level-perks"></div>
+                <div class="cex-ach" id="cex-ach">Loading achievements…</div>
+            </div>
+
+            <div class="cex-trust" id="cex-trust">
+                <div class="cex-trust-head">
+                    <div>
+                        <div class="cex-trust-tier" id="cex-trust-tier">⚪ Unverified</div>
+                        <div class="cex-trust-score" id="cex-trust-score">Trust 0</div>
+                    </div>
+                    <div class="cex-trust-controls">
+                        <label class="cex-trust-toggle"><input type="checkbox" id="cex-trust-auto" /> Auto-run bots</label>
+                        <label class="cex-trust-toggle"><input type="checkbox" id="cex-trust-alerts" checked /> Trust alerts</label>
+                    </div>
+                </div>
+                <div id="cex-trust-activations" class="cex-trust-acts"></div>
+            </div>
+
+            <div id="cex-market-catalog" class="cex-market-grid">Loading marketplace…</div>
+
+            <section class="cex-skill-sets" id="cex-skill-sets">
+                <h3>Trading bot skill sets</h3>
+                <p class="cex-market-sub">Each bot ships with a named skill set — blended edge uses diminishing returns across skills.</p>
+                <div id="cex-skill-set-grid" class="cex-skill-set-grid">Loading skill sets…</div>
+            </section>
+
+            <div class="cex-radar" id="cex-radar">
+                <h3>Profit prediction radar <span class="cex-premium-tag">premium</span></h3>
+                <p class="cex-market-sub">Live ranked symbols by predicted net edge. Heuristic signals — no profit is guaranteed.</p>
+                <div id="cex-radar-list" class="cex-radar-list">Loading radar…</div>
+            </div>
+
+            <div class="cex-market-split">
+                <div class="cex-market-col">
+                    <h3>My trading bots</h3>
+                    <div id="cex-market-portfolio" class="cex-market-portfolio">Sign in to see your bots.</div>
+                    <button type="button" id="cex-market-run-all" class="cex-btn cex-btn--ghost">Run my bots</button>
+                </div>
+                <div class="cex-market-col">
+                    <h3>Cross-trade profit calculator</h3>
+                    <label class="cex-calc-row">Capital (USD)<input type="number" id="cex-calc-capital" value="1000" min="0" /></label>
+                    <label class="cex-calc-row">Skills (comma ids)<input type="text" id="cex-calc-skills" list="cex-calc-skill-list" value="spatial_arbitrage,triangular_arbitrage" /></label>
+                    <datalist id="cex-calc-skill-list"></datalist>
+                    <label class="cex-calc-row">Volatility<input type="number" id="cex-calc-vol" value="0.35" step="0.05" min="0" /></label>
+                    <label class="cex-calc-row">Cycles/day<input type="number" id="cex-calc-cycles" value="24" min="1" /></label>
+                    <label class="cex-calc-row">Risk
+                        <select id="cex-calc-risk"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option></select>
+                    </label>
+                    <button type="button" id="cex-calc-run" class="cex-btn">Calculate</button>
+                    <div id="cex-calc-result" class="cex-calc-result"></div>
+                </div>
+            </div>
+
+            <section class="cex-control-center" id="cex-control-center">
+                <h3><img src="/static/img/exchange/visual-agents.svg" alt="" class="cex-section-icon" width="48" height="29" /> Agent control center</h3>
+                <p class="cex-market-sub">Rent bots, add skills, buy boosts, and cash out profit — pay with MN2, coins, or PayPal.</p>
+                <div id="cex-ctrl-wallet" class="cex-ctrl-wallet">Loading wallet…</div>
+                <div class="cex-ctrl-layout">
+                    <div class="cex-ctrl-panel">
+                        <h4 class="cex-monitor-h4">1 · Choose</h4>
+                        <label class="cex-ctrl-label">Type
+                            <select id="cex-ctrl-type">
+                                <option value="rent">Rent bot</option>
+                                <option value="buy">Buy bot</option>
+                                <option value="addon">Add skill</option>
+                                <option value="shop">Shop item</option>
+                            </select>
+                        </label>
+                        <label class="cex-ctrl-label">Item
+                            <select id="cex-ctrl-target"></select>
+                        </label>
+                        <label class="cex-ctrl-label" id="cex-ctrl-agent-wrap">Bot
+                            <select id="cex-ctrl-agent"><option value="">— select rental / bot —</option></select>
+                        </label>
+                        <label class="cex-auto-renew" id="cex-ctrl-autorenew-wrap"><input type="checkbox" id="cex-ctrl-autorenew" /> Auto-renew (−10%)</label>
+                        <div id="cex-ctrl-quote" class="cex-ctrl-quote muted">Select an item for pricing.</div>
+                    </div>
+                    <div class="cex-ctrl-panel">
+                        <h4 class="cex-monitor-h4">2 · Pay</h4>
+                        <div class="cex-ctrl-pay-rails" id="cex-ctrl-rails">
+                            <button type="button" class="cex-btn cex-btn--primary" data-pay="mn2">Pay MN2</button>
+                            <button type="button" class="cex-btn" data-pay="coins">Pay coins</button>
+                            <button type="button" class="cex-btn" data-pay="paypal">PayPal</button>
+                        </div>
+                        <p id="cex-ctrl-msg" class="cex-ctrl-msg muted"></p>
+                    </div>
+                    <div class="cex-ctrl-panel">
+                        <h4 class="cex-monitor-h4">3 · Cash out profit</h4>
+                        <p class="cex-market-sub">Convert paper trading profit to MN2, shop coins, or casino play coins.</p>
+                        <label class="cex-ctrl-label">Destination
+                            <select id="cex-ctrl-cash-dest">
+                                <option value="mn2">MN2 wallet</option>
+                                <option value="coins">Shop coins</option>
+                                <option value="casino_coins">Casino play coins</option>
+                            </select>
+                        </label>
+                        <label class="cex-ctrl-label">Amount USD (blank = all)
+                            <input type="number" id="cex-ctrl-cash-amt" min="0" step="0.01" placeholder="All available" />
+                        </label>
+                        <button type="button" id="cex-ctrl-cash-btn" class="cex-btn cex-btn--ghost">Cash out</button>
+                        <div id="cex-ctrl-cash-info" class="muted"></div>
+                    </div>
+                </div>
+                <div id="cex-ctrl-agents" class="cex-ctrl-agents"></div>
+                <div class="cex-bridge-product">
+                    <h4 class="cex-monitor-h4">Cross-bridge quests &amp; leaderboard</h4>
+                    <div id="cex-bridge-quests" class="cex-bridge-quests muted">Loading quests…</div>
+                    <div id="cex-bridge-leaderboard" class="cex-bridge-leaderboard muted">Loading leaderboard…</div>
+                </div>
+            </section>
+
+            <section class="cex-rental" id="cex-rental-hub">
+                <h3><img src="/static/img/exchange/rent-starter.svg" alt="" class="cex-section-icon" width="48" height="29" /> Easy rental — try before you buy</h3>
+                <p class="cex-market-sub">Rent a bot for a few days, bolt on extra skills, keep the profit. Completion rewards when the term ends.</p>
+                <label class="cex-auto-renew cex-auto-renew--new"><input type="checkbox" id="cex-rent-auto-new" /> Auto-renew new rentals (−10% MN2)</label>
+                <div id="cex-rental-catalog" class="cex-rental-grid">Loading rentals…</div>
+                <h4 class="cex-monitor-h4">Skill add-ons (attach to any active rental or owned bot)</h4>
+                <div id="cex-rental-addons" class="cex-addon-grid"></div>
+                <div id="cex-my-rentals" class="cex-my-rentals"></div>
+            </section>
+
+            <section class="cex-shop" id="cex-exchange-shop">
+                <h3><img src="/static/img/exchange/shop-chest.svg" alt="" class="cex-section-icon" width="40" height="40" /> Exchange shop — rewards &amp; boosts</h3>
+                <p class="cex-market-sub">Rewards, skill packs, trust badges, profit boosts, and rental extensions — all paid in MN2.</p>
+                <div id="cex-shop-active" class="cex-shop-active muted"></div>
+                <div id="cex-shop-catalog" class="cex-shop-grid">Loading shop…</div>
+            </section>
+        </section>
+    </div>
+
+    <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
+    <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260626"></script>
+    <script src="/static/js/agent-marketplace.js?v=20260630c"></script>
+</body>
+</html>

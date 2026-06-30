@@ -1,0 +1,462 @@
+.cex-page {
+  min-height: 100vh;
+  padding: 90px 16px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: #e8e8f0;
+}
+.cex-header h1 { margin: 0 0 8px; font-size: 1.75rem; color: #7df9ff; }
+.cex-sub { opacity: 0.75; margin: 0 0 12px; }
+.cex-legal {
+  font-size: 0.78rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 180, 0, 0.08);
+  border: 1px solid rgba(255, 180, 0, 0.25);
+  margin-bottom: 20px;
+}
+.cex-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 1024px) {
+  .cex-grid { grid-template-columns: 1fr; }
+}
+.cex-panel {
+  background: rgba(12, 14, 28, 0.92);
+  border: 1px solid rgba(0, 212, 255, 0.22);
+  border-radius: 14px;
+  padding: 16px;
+}
+.cex-panel h2 { font-size: 1rem; margin: 0 0 12px; color: #a8d4ff; }
+.cex-badge {
+  font-size: 0.7rem;
+  background: rgba(0, 212, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+.cex-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  margin-top: 4px;
+}
+.cex-asset-list { max-height: 520px; overflow-y: auto; }
+.cex-asset-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+.cex-asset-row:hover, .cex-asset-row.active {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.35);
+}
+.cex-asset-row .sym { font-weight: 700; color: #7df9ff; }
+.cex-asset-row .price { opacity: 0.8; font-size: 0.75rem; }
+.cex-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.cex-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+}
+.cex-tab.active { border-color: #00d4ff; color: #00d4ff; background: rgba(0,212,255,0.1); }
+.cex-tab-panel { display: none; }
+.cex-tab-panel.active { display: block; }
+.cex-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.cex-form-row label { font-size: 0.78rem; opacity: 0.85; }
+.cex-selected { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: #fff; }
+.cex-quote-preview {
+  min-height: 48px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.3);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+.cex-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #00d4ff;
+  background: rgba(0, 212, 255, 0.15);
+  color: #00d4ff;
+  cursor: pointer;
+  font-weight: 600;
+}
+.cex-btn--primary { background: linear-gradient(135deg, #0066cc, #00d4ff); color: #fff; border: none; }
+.cex-btn--accent { border-color: #ffd700; color: #ffd700; background: rgba(255,215,0,0.12); }
+.cex-btn--ghost { border-color: rgba(255,255,255,0.2); color: #aaa; }
+.cex-msg { min-height: 1.2em; color: #7df9ff; font-size: 0.88rem; margin-top: 10px; }
+.cex-muted { font-size: 0.82rem; opacity: 0.7; }
+.cex-wallet-list { font-size: 0.82rem; max-height: 200px; overflow-y: auto; }
+.cex-wallet-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cex-bonus-card {
+  margin: 16px 0;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(255, 215, 0, 0.06);
+  font-size: 0.82rem;
+}
+.cex-bonus-card h3 { margin: 0 0 6px; color: #ffd700; font-size: 0.95rem; }
+.cex-check { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; cursor: pointer; }
+.cex-trades { font-size: 0.75rem; max-height: 180px; overflow-y: auto; opacity: 0.85; }
+.cex-tax-pre {
+  font-size: 0.72rem;
+  max-height: 320px;
+  overflow: auto;
+  background: rgba(0,0,0,0.4);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+.cex-orders { margin-top: 12px; font-size: 0.8rem; }
+.cex-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.cex-pack {
+  padding: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(0, 212, 255, 0.06);
+}
+.cex-pack strong { display: block; color: #fff; margin-bottom: 4px; }
+.cex-pack span { display: block; font-size: 0.8rem; opacity: 0.75; margin-bottom: 8px; }
+.cex-flow-note,
+.cex-profile-card {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  font-size: 0.82rem;
+}
+.cex-profile-card h3 { margin: 0 0 6px; color: #a8d4ff; font-size: 0.95rem; }
+.cex-mini-link {
+  display: inline-block;
+  margin: 4px 6px 0 0;
+  color: #7df9ff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(125,249,255,0.35);
+}
+.cex-paypal-buy-box {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  background: rgba(255, 215, 0, 0.06);
+  margin-bottom: 14px;
+}
+.cex-paypal-buy-box h3 {
+  margin: 0 0 10px;
+  color: #ffd700;
+}
+.cex-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 16px 0;
+}
+.cex-agent-list {
+  font-size: 0.76rem;
+  max-height: 150px;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+.cex-agent-row {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.cex-progress-summary {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.86);
+}
+.cex-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.1);
+  overflow: hidden;
+  margin: 10px 0;
+}
+.cex-progress-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #00ff88, #00d4ff);
+}
+.cex-high-scores,
+.cex-status-report {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.76);
+}
+.cex-status-pill {
+  display: block;
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* --- Agent marketplace + calculator --- */
+.cex-market {
+  margin-top: 26px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(12,16,28,0.72);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.cex-market h2 { margin: 0 0 4px; font-size: 1.05rem; }
+.cex-market-sub { margin: 0 0 16px; color: rgba(255,255,255,0.6); font-size: 0.82rem; }
+.cex-market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.cex-market-card {
+  background: rgba(20,26,40,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cex-market-tier {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #00d4ff;
+  border: 1px solid rgba(0,212,255,0.4);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.cex-market-card h4 { margin: 4px 0 0; font-size: 0.95rem; }
+.cex-market-desc { font-size: 0.76rem; color: rgba(255,255,255,0.62); margin: 0; }
+.cex-market-skills { margin: 4px 0; padding-left: 16px; font-size: 0.72rem; color: rgba(255,255,255,0.7); }
+.cex-market-meta { font-size: 0.74rem; color: rgba(255,255,255,0.66); }
+.cex-market-price { font-weight: 700; color: #00ff88; margin: 6px 0; font-size: 0.86rem; }
+.cex-skill-set-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.cex-skill-set-card {
+  border: 1px solid rgba(0,212,255,0.18);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(0,0,0,0.22);
+}
+.cex-skill-set-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cex-skill-set-tier {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #00d4ff;
+  border: 1px solid rgba(0,212,255,0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.cex-skill-set-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,0.45);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.cex-skill-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.cex-skill-chip {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.cex-skill-chip small { opacity: 0.75; margin-left: 4px; }
+.cex-skill-arbitrage { border-color: rgba(0,255,136,0.35); color: #86efac; }
+.cex-skill-directional { border-color: rgba(251,191,36,0.35); color: #fcd34d; }
+.cex-skill-ai_signal, .cex-skill-stat_arb, .cex-skill-hft { border-color: rgba(167,139,250,0.35); color: #c4b5fd; }
+.cex-skill-carry, .cex-skill-market_making, .cex-skill-rebate, .cex-skill-execution, .cex-skill-risk { border-color: rgba(0,212,255,0.35); color: #7dd3fc; }
+.cex-port-row { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.cex-port-meta { white-space: nowrap; font-size: 0.76rem; color: rgba(255,255,255,0.72); }
+.cex-market-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+.cex-market-col h3 { font-size: 0.9rem; margin: 0 0 10px; color: #00d4ff; }
+.cex-market-portfolio { font-size: 0.8rem; color: rgba(255,255,255,0.78); margin-bottom: 10px; }
+.cex-port-head { font-weight: 700; margin-bottom: 6px; color: #00ff88; }
+.cex-port-row { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.cex-calc-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.74rem; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+.cex-calc-row input, .cex-calc-row select {
+  background: rgba(8,11,20,0.9);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #fff;
+  padding: 7px 9px;
+  font-size: 0.82rem;
+}
+.cex-calc-result { margin-top: 12px; font-size: 0.8rem; color: rgba(255,255,255,0.8); }
+.cex-calc-big { font-size: 1.4rem; font-weight: 800; color: #00ff88; }
+.cex-calc-big span { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+
+/* --- Prediction radar + premium --- */
+.cex-radar {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(123,97,255,0.06));
+  border: 1px solid rgba(0,212,255,0.18);
+}
+.cex-radar h3 { margin: 0 0 4px; font-size: 0.92rem; color: #00d4ff; }
+.cex-premium-tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #ffd24a;
+  border: 1px solid rgba(255,210,74,0.5);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.cex-radar-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.cex-radar-row {
+  display: grid;
+  grid-template-columns: 70px 90px 1fr 1fr 1fr;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.78);
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.cex-radar-sym { font-weight: 700; color: #fff; }
+.cex-radar-dir.up { color: #00ff88; }
+.cex-radar-dir.down { color: #ff5d6c; }
+.cex-radar-dir.flat { color: rgba(255,255,255,0.5); }
+
+/* Trader leveling + achievements */
+.cex-level {
+  background: linear-gradient(135deg, rgba(124,92,255,0.12), rgba(0,224,255,0.06));
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 14px 0 20px;
+}
+.cex-level-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.cex-level-rank { font-weight: 800; font-size: 1.02rem; color: #fff; }
+.cex-level-num { font-size: 0.8rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
+.cex-level-meta { text-align: right; }
+.cex-level-xp { font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-bottom: 6px; }
+.cex-level-bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,0.1); overflow: hidden; margin: 12px 0 8px; }
+.cex-level-fill { height: 100%; background: linear-gradient(90deg, #7c5cff, #00e0ff); width: 0; transition: width 0.4s ease; }
+.cex-level-perks { font-size: 0.76rem; color: rgba(255,255,255,0.6); margin-bottom: 10px; }
+.cex-ach { display: flex; flex-wrap: wrap; gap: 8px; }
+.cex-ach-item { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; border: 1px solid rgba(255,255,255,0.08); }
+.cex-ach-item.on { background: rgba(0,255,136,0.14); border-color: rgba(0,255,136,0.4); color: #d6ffe9; }
+.cex-ach-item.off { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); }
+.cex-ach-icon { font-size: 0.9rem; }
+.cex-port-lvl { font-size: 0.66rem; background: rgba(124,92,255,0.3); border-radius: 8px; padding: 1px 6px; color: #d9d0ff; }
+
+/* Live trading monitor */
+.cex-monitor-card { border: 1px solid rgba(0,224,255,0.2); }
+.cex-live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #00ff88; margin-left: 6px; box-shadow: 0 0 8px #00ff88; animation: cexpulse 1.6s infinite; }
+@keyframes cexpulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.cex-monitor-totals { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.cex-mon-kpi { font-size: 0.74rem; color: rgba(255,255,255,0.6); }
+.cex-mon-kpi b { display: block; font-size: 0.95rem; color: #fff; }
+.cex-mon-bot { padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.cex-mon-bot-top { display: flex; justify-content: space-between; font-size: 0.82rem; color: #fff; }
+.cex-mon-bot-sub { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 2px; }
+.cex-monitor-h4 { margin: 12px 0 6px; font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+.cex-monitor-feed { max-height: 260px; overflow-y: auto; }
+.cex-mon-feed-row { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; padding: 4px 0; font-size: 0.74rem; border-top: 1px solid rgba(255,255,255,0.04); }
+.cex-mon-feed-row.you .cex-mon-feed-tx { color: #d6ffe9; }
+.cex-mon-feed-row.market .cex-mon-feed-tx { color: rgba(255,255,255,0.65); }
+.cex-mon-feed-ts { color: rgba(255,255,255,0.4); font-size: 0.68rem; }
+.cex-mon-empty { font-size: 0.74rem; color: rgba(255,255,255,0.4); padding: 6px 0; }
+
+/* Trust system */
+.cex-trust {
+  background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(124,92,255,0.08));
+  border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 14px 16px; margin: 0 0 16px;
+}
+.cex-trust-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.cex-trust-tier { font-weight: 800; font-size: 1rem; color: #fff; }
+.cex-trust-score { font-size: 0.78rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
+.cex-trust-controls { display: flex; flex-direction: column; gap: 6px; font-size: 0.74rem; color: rgba(255,255,255,0.7); }
+.cex-trust-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.cex-trust-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cex-trust-act { font-size: 0.72rem; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); }
+.cex-trust-act.on { background: rgba(0,255,136,0.12); border-color: rgba(0,255,136,0.35); color: #d6ffe9; }
+.cex-trust-act.off { color: rgba(255,255,255,0.45); }
+.cex-watch-card { border: 1px solid rgba(124,92,255,0.25); }
+.cex-watch-agents { margin-top: 10px; }
+.cex-watch-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; }
+.cex-act-btn { font-size: 0.72rem !important; padding: 4px 10px !important; }
+
+/* Hero + visuals */
+.cex-hero-wrap { position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+.cex-hero-img { width: 100%; height: auto; display: block; max-height: 200px; object-fit: cover; }
+.cex-hero-text { position: absolute; left: 24px; top: 24px; pointer-events: none; }
+.cex-hero-text h1 { margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+.cex-visual-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.cex-visual-row img { border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); flex: 1; min-width: 140px; max-width: 280px; height: auto; }
+
+/* Rental + shop */
+.cex-rental, .cex-shop, .cex-control-center { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+.cex-control-center { background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.05)); border-radius: 16px; padding: 18px; border: 1px solid rgba(0,212,255,0.15); }
+.cex-ctrl-wallet { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 16px; font-size: 0.85rem; }
+.cex-ctrl-wallet span { background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 8px; }
+.cex-ctrl-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.cex-ctrl-panel { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.08); }
+.cex-ctrl-label { display: block; font-size: 0.78rem; margin-bottom: 10px; color: rgba(255,255,255,0.75); }
+.cex-ctrl-label select, .cex-ctrl-label input { display: block; width: 100%; margin-top: 4px; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.35); color: #fff; }
+.cex-ctrl-quote { font-size: 0.82rem; margin-top: 10px; line-height: 1.5; }
+.cex-ctrl-pay-rails { display: flex; flex-wrap: wrap; gap: 8px; }
+.cex-ctrl-msg { font-size: 0.78rem; margin-top: 10px; min-height: 1.2em; }
+.cex-ctrl-agents { margin-top: 14px; font-size: 0.8rem; }
+.cex-bridge-product { margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.cex-bridge-quests, .cex-bridge-leaderboard { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; font-size: 0.78rem; line-height: 1.5; }
+.cex-quest-row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cex-quest-row.done { opacity: 0.7; }
+.cex-lb-row { display: flex; gap: 10px; padding: 4px 0; }
+.cex-rental-card .cex-btn, .cex-addon-card .cex-btn, .cex-shop-card .cex-btn { margin-top: 6px; margin-right: 6px; }
+.cex-section-icon { vertical-align: middle; margin-right: 8px; border-radius: 8px; }
+.cex-rental-grid, .cex-shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
+.cex-rental-card, .cex-shop-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; }
+.cex-card-img { width: 100%; height: auto; border-radius: 10px; margin-bottom: 10px; max-height: 120px; object-fit: cover; }
+.cex-addon-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.cex-addon-card { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(124,92,255,0.12); border-radius: 12px; font-size: 0.78rem; }
+.cex-daemon-card { border: 1px solid rgba(56,189,248,0.25); background: rgba(56,189,248,0.04); }
+.cex-venue-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; max-height: 140px; overflow-y: auto; }
+.cex-venue-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); font-size: 0.78rem; cursor: pointer; }
+.cex-venue-chip input { margin: 0; }
+.cex-venue-chip.active { border-color: rgba(56,189,248,0.6); background: rgba(56,189,248,0.15); color: #7dd3fc; }
+.cex-daemon-preview { margin: 12px 0; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.25); font-size: 0.82rem; min-height: 2em; }
+.cex-daemon-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cex-daemon-bots label { display: block; margin: 4px 0; font-size: 0.85rem; }
+.cex-daemon-badge-daemon { background: rgba(167,139,250,0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; margin-left: 6px; }
+.cex-my-rentals { margin-top: 16px; }
+.cex-shop-active { font-size: 0.76rem; margin: 8px 0; color: rgba(255,255,255,0.65); }

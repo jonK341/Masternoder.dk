@@ -9,6 +9,25 @@ rpcport=9332
 rpcallowip=127.0.0.1
 rpcbind=127.0.0.1
 
+# --- P2P network (wallet / daemon must reach peers on port 17646) ---
+listen=1
+port=17646
+dns=1
+dnsseed=1
+discover=1
+# Use addnode= (NOT connect=) so DNS seeding and peer relay stay enabled.
+# Full list also at GET https://masternoder.dk/api/mn2/network-peers
+addnode=explorer.masternoder.dk:17646
+addnode=192.46.237.230:17646
+addnode=213.136.90.158:17646
+addnode=85.10.148.5:17646
+addnode=144.91.75.27:17646
+addnode=140.82.39.124:17646
+addnode=34.42.67.197:17646
+addnode=34.44.119.78:17646
+addnode=34.172.145.22:17646
+addnode=167.86.110.23:17646
+
 # Fleet hosting (multiple lines in masternode.conf):
 #   1) After purchase or conf change, start with local first (ping / activetime):
 #        python3 scripts/mn2_start_masternode.py --alias <alias>
@@ -27,3 +46,7 @@ externalip=140.82.39.124
 masternode=1
 masternodeprivkey=<same privkey as one masternode.conf line, e.g. platformmn2>
 masternodeaddr=127.0.0.1:17646
+
+# Chain-owner spork signing key — required to broadcast spork updates (e.g. SPORK_112_EXCHANGE_LIVE_TRADING).
+# Set only on the ops node; never commit the real value. Restart masternoder2d after adding.
+# sporkkey=<your-spork-private-key>

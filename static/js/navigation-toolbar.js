@@ -67,6 +67,7 @@
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
             { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
+            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
             { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
             { name: 'Agents', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
             { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' },
@@ -76,6 +77,7 @@
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
+            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'Download MN2 daemon and Qt wallet' },
             { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
         ],
         apiBase: window.location.origin + APP_BASE

@@ -1,0 +1,33 @@
+{
+  "enabled": true,
+  "treasury_user_id": "platform_treasury",
+  "stash_quote": "MN2",
+  "min_stash_usd": 0.01,
+  "auto_stash_on_trade": true,
+  "auto_paypal_sweep": true,
+  "daemon_mesh_enabled": true,
+  "sync_internal_to_external_mid": true,
+  "mesh_symbols": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "USDC",
+    "USDT"
+  ],
+  "liquidity_pipeline": {
+    "enabled": true,
+    "transfer_pct": 0.05,
+    "min_transfer_mn2": 500,
+    "limit_sell_pct": 0.5,
+    "liquidity_agent_id": "exchange_agent_casino_liquidity",
+    "sell_quote": "COINS",
+    "note": "When enabled, exchange master daemon moves a % of platform_treasury MN2 to the Casino Liquidity Bot and posts limit sells. Paper until live gates are on."
+  },
+  "fee_allocation": {
+    "platform_treasury_pct": 60,
+    "liquidity_pipeline_pct": 25,
+    "operating_reserve_pct": 15,
+    "note": "Target split for exchange fee_treasury MN2. Use GET /api/exchange/treasury/status fee_allocation field; allocation is informational until swept."
+  },
+  "note": "Realized bot profit is converted to MN2 on the exchange treasury. When EXCHANGE_PAYOUT_PAYPAL_EMAIL is set, auto_paypal_sweep sends the configured share to your PayPal via Payouts API."
+}

@@ -1,0 +1,19 @@
+{
+  "agent_id": "arb_agent_payments",
+  "realized_profit_usd": 0.8202,
+  "trade_count": 1,
+  "notional_traded_usd": 150.0,
+  "by_venue": {},
+  "wallet_label": "arb_payments_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_payments",
+    "executed": false,
+    "reason": "no_profitable_spread",
+    "best": null,
+    "mode": "paper"
+  },
+  "created_at": "2026-06-27T20:44:47.205491Z",
+  "ticks": 731,
+  "game_time_sec": 2631600,
+  "agent_level": 15
+}

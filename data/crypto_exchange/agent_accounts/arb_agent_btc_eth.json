@@ -1,0 +1,19 @@
+{
+  "agent_id": "arb_agent_btc_eth",
+  "realized_profit_usd": 0.0,
+  "trade_count": 0,
+  "notional_traded_usd": 0.0,
+  "by_venue": {},
+  "wallet_label": "arb_btc_eth_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_btc_eth",
+    "executed": false,
+    "reason": "no_profitable_spread",
+    "best": null,
+    "mode": "paper"
+  },
+  "created_at": "2026-06-27T20:44:46.968420Z",
+  "ticks": 735,
+  "game_time_sec": 2646000,
+  "agent_level": 15
+}

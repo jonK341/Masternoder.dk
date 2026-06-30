@@ -1,0 +1,94 @@
+{
+  "enabled": true,
+  "currency": "MN2",
+  "items": [
+    {
+      "id": "ex_reward_starter_chest",
+      "name": "Trader Starter Chest",
+      "category": "reward",
+      "price_mn2": 30,
+      "reward_mn2": 5,
+      "reward_xp": 25,
+      "shop_linked": true,
+      "featured": true,
+      "image": "/static/img/exchange/shop-chest.svg",
+      "description": "Instant MN2 + XP boost for active traders."
+    },
+    {
+      "id": "ex_skill_pack_arb",
+      "name": "Arbitrage Skill Pack",
+      "category": "skill",
+      "price_mn2": 80,
+      "skill_ids": ["spatial_arbitrage", "triangular_arbitrage"],
+      "skill_days": 14,
+      "shop_linked": false,
+      "image": "/static/img/exchange/shop-skill-pack.svg",
+      "description": "Attach two arbitrage skills to any owned or rented bot for 14 days."
+    },
+    {
+      "id": "ex_rental_extension_3d",
+      "name": "Rental +3 Days",
+      "category": "rental",
+      "price_mn2": 25,
+      "extend_days": 3,
+      "shop_linked": false,
+      "image": "/static/img/exchange/shop-extension.svg",
+      "description": "Extend any active rental by 3 days."
+    },
+    {
+      "id": "ex_trust_badge_silver",
+      "name": "Silver Trust Badge",
+      "category": "trust",
+      "price_mn2": 100,
+      "trust_bonus": 8,
+      "trust_days": 30,
+      "shop_linked": true,
+      "featured": true,
+      "image": "/static/img/exchange/shop-trust.svg",
+      "description": "+8 trust score for 30 days — unlocks activations faster."
+    },
+    {
+      "id": "ex_profit_boost_24h",
+      "name": "Profit Boost 24h",
+      "category": "boost",
+      "price_mn2": 50,
+      "profit_multiplier": 1.25,
+      "boost_hours": 24,
+      "shop_linked": true,
+      "featured": true,
+      "image": "/static/img/exchange/shop-boost.svg",
+      "description": "25% paper-profit boost on all bots for 24 hours."
+    },
+    {
+      "id": "ex_fee_discount_card",
+      "name": "Fee Discount Card",
+      "category": "fee",
+      "price_mn2": 40,
+      "fee_discount_bps": 15,
+      "fee_days": 14,
+      "shop_linked": true,
+      "image": "/static/img/exchange/shop-fee.svg",
+      "description": "15 bps off exchange fees for 14 days."
+    },
+    {
+      "id": "ex_premium_scan_token",
+      "name": "Premium Scan Token",
+      "category": "tool",
+      "price_mn2": 35,
+      "scan_uses": 10,
+      "shop_linked": true,
+      "image": "/static/img/exchange/shop-scan.svg",
+      "description": "10 priority opportunity-radar scans with premium edge uplift."
+    },
+    {
+      "id": "ex_sentient_trial_rental",
+      "name": "Sentient Trial Voucher",
+      "category": "rental_voucher",
+      "price_mn2": 200,
+      "rental_id": "rent_elite_3d",
+      "shop_linked": false,
+      "image": "/static/img/exchange/shop-voucher.svg",
+      "description": "Discount voucher: redeems one elite rental at half the usual skill cap."
+    }
+  ]
+}

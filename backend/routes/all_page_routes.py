@@ -47,8 +47,9 @@ PAGES = [
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
-    'market', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
-    'podcast',
+    'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'wallets',
+    'podcast', 'business-control',
 ]
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
@@ -516,6 +517,8 @@ _SITEMAP_PATHS = (
     '/',
     '/generator/',
     '/camgirls/',
+    '/exchange/',
+    '/casino/',
     '/hosting/',
     '/shop/',
     '/game/',
@@ -547,7 +550,7 @@ def sitemap_xml():
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for path in _SITEMAP_PATHS:
         loc = base + (path if path != '/' else '/')
-        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/') else '0.7')
+        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/') else '0.7')
         lines.append('  <url>')
         lines.append(f'    <loc>{loc}</loc>')
         lines.append(f'    <changefreq>weekly</changefreq>')

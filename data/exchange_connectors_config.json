@@ -1,0 +1,508 @@
+{
+  "enabled": true,
+  "mode": "live",
+  "live_env_flag": "EXCHANGE_ARBITRAGE_LIVE",
+  "request_timeout_sec": 6,
+  "price_cache_ttl_sec": 30,
+  "paper_trade_usd": 250.0,
+  "min_margin_bps": 30,
+  "transfer_cost_bps": 20,
+  "supported_symbols": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "ADA",
+    "DOGE",
+    "LTC",
+    "AVAX",
+    "LINK",
+    "DOT",
+    "SHIB",
+    "BNB",
+    "UNI",
+    "ATOM",
+    "TRX",
+    "NEAR"
+  ],
+  "venues": [
+    {
+      "id": "binance",
+      "name": "Binance",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Per-asset flat network fee; USDT on TRC20 cheapest."
+    },
+    {
+      "id": "coinbase",
+      "name": "Coinbase",
+      "enabled": true,
+      "fee_taker_bps": 60,
+      "quote": "USD",
+      "ticker_url": "https://api.exchange.coinbase.com/products/{pair}/ticker",
+      "pair_template": "{base}-{quote}",
+      "withdrawal_note": "On-chain network fee; strong fiat rails."
+    },
+    {
+      "id": "nonkyc",
+      "name": "NonKYC.io",
+      "enabled": true,
+      "fee_taker_bps": 20,
+      "quote": "USDT",
+      "ticker_url": "https://api.nonkyc.io/api/v2/ticker/{pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "Privacy-focused spot exchange; USDT pairs (BTC_USDT). API keys at nonkyc.io account settings."
+    },
+    {
+      "id": "kucoin",
+      "name": "KuCoin",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.kucoin.com/api/v1/market/orderbook/level1?symbol={pair}",
+      "pair_template": "{base}-{quote}",
+      "withdrawal_note": "Wide mid-cap listing; per-asset network fee."
+    },
+    {
+      "id": "okx",
+      "name": "OKX",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://www.okx.com/api/v5/market/ticker?instId={pair}",
+      "pair_template": "{base}-{quote}",
+      "withdrawal_note": "Spot + derivatives; funding-rate edge available."
+    },
+    {
+      "id": "bybit",
+      "name": "Bybit",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.bybit.com/v5/market/tickers?category=spot&symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Spot + perp; good for funding carry."
+    },
+    {
+      "id": "bitfinex",
+      "name": "Bitfinex",
+      "enabled": true,
+      "fee_taker_bps": 20,
+      "quote": "USD",
+      "ticker_url": "https://api-pub.bitfinex.com/v2/ticker/t{pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "USD pairs; lending/funding markets."
+    },
+    {
+      "id": "gateio",
+      "name": "Gate.io",
+      "enabled": true,
+      "fee_taker_bps": 20,
+      "quote": "USDT",
+      "ticker_url": "https://api.gateio.ws/api/v4/spot/tickers?currency_pair={pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "Long-tail listings; per-asset network fee."
+    },
+    {
+      "id": "bitstamp",
+      "name": "Bitstamp",
+      "enabled": true,
+      "fee_taker_bps": 30,
+      "quote": "usd",
+      "ticker_url": "https://www.bitstamp.net/api/v2/ticker/{pair}/",
+      "pair_template": "{base}{quote}",
+      "lowercase_pair": true,
+      "withdrawal_note": "EU-friendly; EUR/USD pairs."
+    },
+    {
+      "id": "cryptocom",
+      "name": "Crypto.com",
+      "enabled": true,
+      "fee_taker_bps": 40,
+      "quote": "USDT",
+      "ticker_url": "https://api.crypto.com/v2/public/get-ticker?instrument_name={pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "Retail + card on-ramp."
+    },
+    {
+      "id": "mexc",
+      "name": "MEXC",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.mexc.com/api/v3/ticker/bookTicker?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Long-tail listings; fast spot."
+    },
+    {
+      "id": "bitget",
+      "name": "Bitget",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.bitget.com/api/v2/spot/market/tickers?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Copy-trading hub; solid spot depth."
+    },
+    {
+      "id": "htx",
+      "name": "HTX (Huobi)",
+      "enabled": true,
+      "fee_taker_bps": 20,
+      "quote": "USDT",
+      "ticker_url": "https://api.huobi.pro/market/detail/merged?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "lowercase_pair": true,
+      "withdrawal_note": "Asia liquidity; lowercase pairs."
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "enabled": true,
+      "fee_taker_bps": 35,
+      "quote": "USD",
+      "ticker_url": "https://api.gemini.com/v1/pubticker/{pair}",
+      "pair_template": "{base}{quote}",
+      "lowercase_pair": true,
+      "withdrawal_note": "US-regulated; USD pairs."
+    },
+    {
+      "id": "bingx",
+      "name": "BingX",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://open-api.bingx.com/openApi/spot/v1/ticker/bookTicker?symbol={pair}",
+      "pair_template": "{base}-{quote}",
+      "withdrawal_note": "Global spot + copy-trading; USDT pairs."
+    },
+    {
+      "id": "poloniex",
+      "name": "Poloniex",
+      "enabled": true,
+      "fee_taker_bps": 15,
+      "quote": "USDT",
+      "ticker_url": "https://api.poloniex.com/markets/{pair}/ticker24h",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "Legacy US exchange; deep altcoin books."
+    },
+    {
+      "id": "bitmart",
+      "name": "BitMart",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api-cloud.bitmart.com/spot/quotation/v3/ticker?symbol={pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "Top-20 global volume; long-tail listings."
+    },
+    {
+      "id": "coinex",
+      "name": "CoinEx",
+      "enabled": true,
+      "fee_taker_bps": 12,
+      "quote": "USDT",
+      "ticker_url": "https://api.coinex.com/v1/market/ticker?market={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "CET fee discounts; solid mid-cap depth."
+    },
+    {
+      "id": "lbank",
+      "name": "LBank",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.lbkex.com/v2/ticker/24hr.do?symbol={pair}",
+      "pair_template": "{base}_{quote}",
+      "lowercase_pair": true,
+      "withdrawal_note": "Asia-focused; wide altcoin coverage."
+    },
+    {
+      "id": "whitebit",
+      "name": "WhiteBIT",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://whitebit.com/api/v4/public/ticker/{pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "EU-licensed; strong USDT spot."
+    },
+    {
+      "id": "upbit",
+      "name": "Upbit",
+      "enabled": true,
+      "fee_taker_bps": 25,
+      "quote": "USDT",
+      "ticker_url": "https://api.upbit.com/v1/orderbook?markets={pair}",
+      "pair_template": "{quote}-{base}",
+      "withdrawal_note": "Korea #1 exchange; USDT quote pairs for global arb."
+    },
+    {
+      "id": "xt",
+      "name": "XT.com",
+      "enabled": true,
+      "fee_taker_bps": 12,
+      "quote": "USDT",
+      "ticker_url": "https://sapi.xt.com/v4/public/ticker?symbol={pair}",
+      "pair_template": "{base}_{quote}",
+      "lowercase_pair": true,
+      "withdrawal_note": "Global spot; competitive taker fees."
+    },
+    {
+      "id": "bitunix",
+      "name": "Bitunix",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://openapi.bitunix.com/spot/v1/ticker/24hr?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Fast-growing derivatives + spot venue."
+    },
+    {
+      "id": "phemex",
+      "name": "Phemex",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://api.phemex.com/md/v2/ticker/24hr?symbol={pair}",
+      "pair_template": "{base}{quote}",
+      "withdrawal_note": "Spot + perp; zero-fee spot promos."
+    },
+    {
+      "id": "tapbit",
+      "name": "Tapbit",
+      "enabled": true,
+      "fee_taker_bps": 10,
+      "quote": "USDT",
+      "ticker_url": "https://openapi.tapbit.com/spot/instruments/ticker/24hr?instrumentId={pair}",
+      "pair_template": "{base}-{quote}",
+      "withdrawal_note": "Derivatives-first with growing spot books."
+    },
+    {
+      "id": "xeggex",
+      "name": "XeggeX",
+      "enabled": true,
+      "fee_taker_bps": 15,
+      "quote": "USDT",
+      "ticker_url": "https://api.xeggex.com/api/v2/ticker/{pair}",
+      "pair_template": "{base}_{quote}",
+      "withdrawal_note": "No-KYC altcoin exchange; USDT pairs. API keys at xeggex.com account settings."
+    }
+  ],
+  "arbitrage_agents": [
+    {
+      "id": "arb_agent_btc_eth",
+      "name": "BTC/ETH Spatial",
+      "symbols": [
+        "BTC",
+        "ETH"
+      ],
+      "venues": [
+        "binance",
+        "coinbase",
+        "nonkyc",
+        "xeggex",
+        "bitstamp",
+        "gemini",
+        "bingx"
+      ],
+      "paper_trade_usd": 500.0,
+      "wallet_label": "arb_btc_eth_wallet"
+    },
+    {
+      "id": "arb_agent_majors",
+      "name": "Majors Router",
+      "symbols": [
+        "SOL",
+        "XRP",
+        "ADA"
+      ],
+      "venues": [
+        "binance",
+        "okx",
+        "kucoin",
+        "bybit",
+        "mexc",
+        "bitget",
+        "bingx"
+      ],
+      "paper_trade_usd": 300.0,
+      "wallet_label": "arb_majors_wallet"
+    },
+    {
+      "id": "arb_agent_midcap",
+      "name": "Mid-cap Scout",
+      "symbols": [
+        "AVAX",
+        "LINK",
+        "DOT"
+      ],
+      "venues": [
+        "kucoin",
+        "gateio",
+        "okx",
+        "bybit",
+        "bitmart",
+        "coinex",
+        "xt"
+      ],
+      "paper_trade_usd": 200.0,
+      "wallet_label": "arb_midcap_wallet"
+    },
+    {
+      "id": "arb_agent_internal",
+      "name": "Internal Rebalancer",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "LTC"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "xeggex",
+        "internal"
+      ],
+      "paper_trade_usd": 250.0,
+      "strategy": "internal_vs_external",
+      "wallet_label": "arb_internal_wallet"
+    },
+    {
+      "id": "arb_agent_payments",
+      "name": "Payments Spread",
+      "symbols": [
+        "XRP",
+        "LTC",
+        "DOGE"
+      ],
+      "venues": [
+        "binance",
+        "cryptocom",
+        "bitfinex",
+        "gateio",
+        "whitebit",
+        "lbank"
+      ],
+      "paper_trade_usd": 150.0,
+      "wallet_label": "arb_payments_wallet"
+    },
+    {
+      "id": "arb_agent_global_farm",
+      "name": "Global Farm Mesh",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "XRP",
+        "AVAX"
+      ],
+      "venues": [
+        "binance",
+        "okx",
+        "bybit",
+        "kucoin",
+        "mexc",
+        "bitget",
+        "htx",
+        "poloniex",
+        "upbit",
+        "phemex"
+      ],
+      "paper_trade_usd": 350.0,
+      "wallet_label": "arb_global_farm_wallet"
+    },
+    {
+      "id": "arb_agent_meme",
+      "name": "Meme Momentum",
+      "symbols": [
+        "DOGE",
+        "SHIB"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "xeggex",
+        "mexc",
+        "bitget"
+      ],
+      "paper_trade_usd": 120.0,
+      "wallet_label": "arb_meme_wallet"
+    },
+    {
+      "id": "arb_agent_defi",
+      "name": "DeFi Spatial",
+      "symbols": [
+        "LINK",
+        "UNI",
+        "ATOM",
+        "ARB",
+        "OP"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "okx",
+        "kucoin",
+        "gateio"
+      ],
+      "paper_trade_usd": 180.0,
+      "wallet_label": "arb_defi_wallet"
+    },
+    {
+      "id": "arb_live_dual_farm",
+      "name": "Live Binance+NonKYC Farm",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "XRP",
+        "DOGE",
+        "LTC"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc"
+      ],
+      "paper_trade_usd": 350.0,
+      "wallet_label": "arb_live_dual_wallet"
+    },
+    {
+      "id": "arb_stablecoin_peg",
+      "name": "Stablecoin Peg",
+      "symbols": [
+        "USDT",
+        "USDC"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "internal"
+      ],
+      "paper_trade_usd": 200.0,
+      "strategy": "stablecoin_peg",
+      "wallet_label": "arb_stable_wallet"
+    },
+    {
+      "id": "arb_triangular_paper",
+      "name": "Triangular Loops",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "XRP",
+        "LTC"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc"
+      ],
+      "paper_trade_usd": 150.0,
+      "strategy": "triangular",
+      "wallet_label": "arb_triangular_wallet"
+    }
+  ]
+}

@@ -39,11 +39,16 @@ _ROOT = os.path.dirname(os.path.abspath(__file__))
 if os.path.basename(_ROOT) == "tests":
     _ROOT = os.path.dirname(_ROOT)
 
+_DEFAULT_BASETEMP = os.path.join(_ROOT, ".pytest-tmp-local")
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
     """Ensure project root is on path and cwd before any test runs."""
     basetemp = config.getoption("basetemp", default=None)
-    if sys.platform == "win32" and basetemp and _basetemp_needs_fallback(basetemp):
+    if not basetemp:
+        config.option.basetemp = _DEFAULT_BASETEMP
+    elif sys.platform == "win32" and _basetemp_needs_fallback(basetemp):
         config.option.basetemp = _fallback_basetemp(basetemp)
     if _ROOT not in sys.path:
         sys.path.insert(0, _ROOT)

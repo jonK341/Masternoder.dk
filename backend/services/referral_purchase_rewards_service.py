@@ -74,6 +74,8 @@ def classify_purchase(*, item_id: str = "", product: str = "", is_coin_pack: boo
     prod = (product or "").strip().lower()
     if is_coin_pack or iid.startswith("coin-pack") or iid.startswith("overage-pack"):
         return "coin_pack"
+    if iid.startswith("mn2-pack"):
+        return "mn2_pack"
     if prod == "mn2_masternode_hosting" or iid.startswith("mnq_"):
         return "hosting"
     if iid.startswith("bundle-"):

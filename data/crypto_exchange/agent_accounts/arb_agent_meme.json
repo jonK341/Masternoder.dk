@@ -1,0 +1,19 @@
+{
+  "agent_id": "arb_agent_meme",
+  "realized_profit_usd": 0.0,
+  "trade_count": 0,
+  "notional_traded_usd": 0.0,
+  "by_venue": {},
+  "wallet_label": "arb_meme_wallet",
+  "game_time_sec": 79200,
+  "ticks": 22,
+  "agent_level": 1,
+  "last_action": {
+    "agent_id": "arb_agent_meme",
+    "executed": false,
+    "reason": "no_profitable_spread",
+    "best": null,
+    "mode": "paper"
+  },
+  "created_at": "2026-06-30T22:16:32.760435Z"
+}

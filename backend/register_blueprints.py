@@ -195,6 +195,46 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP casino: {e}")
     try:
+        from backend.routes.agent_casino_routes import agent_casino_bp
+        if "agent_casino" not in app.blueprints:
+            app.register_blueprint(agent_casino_bp)
+            n += 1
+            print("  [OK] Registered agent_casino blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_casino: {e}")
+    try:
+        from backend.routes.facebook_casino_routes import facebook_casino_bp
+        if "facebook_casino" not in app.blueprints:
+            app.register_blueprint(facebook_casino_bp)
+            n += 1
+            print("  [OK] Registered facebook_casino blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP facebook_casino: {e}")
+    try:
+        from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+        if "crypto_exchange" not in app.blueprints:
+            app.register_blueprint(crypto_exchange_bp)
+            n += 1
+            print("  [OK] Registered crypto_exchange blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP crypto_exchange: {e}")
+    try:
+        from backend.routes.camgirls_routes import camgirls_bp
+        if "camgirls" not in app.blueprints:
+            app.register_blueprint(camgirls_bp)
+            n += 1
+            print("  [OK] Registered camgirls blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP camgirls: {e}")
+    try:
+        from backend.routes.monetization_expansion_routes import monetization_expansion_bp
+        if "monetization_expansion" not in app.blueprints:
+            app.register_blueprint(monetization_expansion_bp)
+            n += 1
+            print("  [OK] Registered monetization_expansion blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP monetization_expansion: {e}")
+    try:
         from backend.routes.paypal_routes import paypal_bp
         app.register_blueprint(paypal_bp)
         n += 1
@@ -347,6 +387,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP chat: {e}")
     try:
+        from backend.routes.ai_assist_routes import ai_assist_bp
+        app.register_blueprint(ai_assist_bp)
+        n += 1
+        print("  [OK] Registered ai_assist blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP ai_assist: {e}")
+    try:
         from backend.routes.ai_providers_routes import ai_providers_bp
         app.register_blueprint(ai_providers_bp)
         n += 1
@@ -395,6 +442,24 @@ def register_lite_blueprints(app):
         print("  [OK] Registered advanced_calculator blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP advanced_calculator: {e}")
+
+    # Distribution streams + COGS monetization APIs (hub, top-25, recap, config)
+    try:
+        from backend.routes.monetization_routes import monetization_bp
+        if "monetization" not in app.blueprints:
+            app.register_blueprint(monetization_bp)
+            n += 1
+            print("  [OK] Registered monetization blueprint (streams v1)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP monetization: {e}")
+    try:
+        from backend.routes.cogs_routes import cogs_bp
+        if "cogs" not in app.blueprints:
+            app.register_blueprint(cogs_bp)
+            n += 1
+            print("  [OK] Registered cogs blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP cogs: {e}")
 
     # ----- Debugger / diagnostics suite -----
     # The /vidgenerator/debugger admin page calls these APIs. Without them the
@@ -921,6 +986,18 @@ def register_all_blueprints(app):
     except Exception as e:
         print(f"  [ERROR] Error registering agent_casino: {e}")
 
+    # Facebook Messenger casino bot (E3 distribution stream)
+    try:
+        from backend.routes.facebook_casino_routes import facebook_casino_bp
+        if 'facebook_casino' not in app.blueprints:
+            app.register_blueprint(facebook_casino_bp)
+            registered_count += 1
+            print("  [OK] Registered facebook_casino blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import facebook_casino: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering facebook_casino: {e}")
+
     # PayPal (real-money payments — add PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET to .env)
     try:
         from backend.routes.paypal_routes import paypal_bp
@@ -1409,6 +1486,26 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import shop_monetization: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering shop_monetization: {e}")
+
+    try:
+        from backend.routes.monetization_expansion_routes import monetization_expansion_bp
+        app.register_blueprint(monetization_expansion_bp)
+        registered_count += 1
+        print("  [OK] Registered monetization_expansion blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import monetization_expansion: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering monetization_expansion: {e}")
+
+    try:
+        from backend.routes.monetization_routes import monetization_bp
+        app.register_blueprint(monetization_bp)
+        registered_count += 1
+        print("  [OK] Registered monetization blueprint (streams v1)")
+    except ImportError as e:
+        print(f"  [WARN] Could not import monetization: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering monetization: {e}")
 
     # Social Auth Routes
     try:
@@ -2030,6 +2127,16 @@ def register_all_blueprints(app):
         print(f"  [WARN] Could not import chat: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering chat: {e}")
+
+    try:
+        from backend.routes.ai_assist_routes import ai_assist_bp
+        app.register_blueprint(ai_assist_bp)
+        registered_count += 1
+        print("  [OK] Registered ai_assist blueprint (FAQ, copy assist, risk admin)")
+    except ImportError as e:
+        print(f"  [WARN] Could not import ai_assist: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering ai_assist: {e}")
 
     # AI Providers Routes (multi-provider status, test, reset, chat)
     try:

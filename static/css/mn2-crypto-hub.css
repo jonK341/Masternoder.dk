@@ -45,6 +45,11 @@ body.mn2-crypto-hub:not(.layout-standard) .mn2-hub-wrap {
   background: rgba(0, 255, 136, 0.2);
   color: #fff;
 }
+a.mn2-hub-tab--link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
 .mn2-route-note {
   margin-bottom: 18px;
   padding: 10px 12px;
