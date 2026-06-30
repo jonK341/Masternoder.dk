@@ -43,6 +43,11 @@
       {"id": "casino_usd_5", "label": "$5 play balance", "amount_usd": 5.0},
       {"id": "casino_usd_10", "label": "$10 play balance", "amount_usd": 10.0},
       {"id": "casino_usd_25", "label": "$25 play balance", "amount_usd": 25.0}
+    ],
+    "mn2_buyin_packs": [
+      {"id": "casino_mn2_starter", "label": "MN2 starter bankroll", "price_mn2": 25, "casino_usd_credit": 8, "tag": "B6"},
+      {"id": "casino_mn2_grinder", "label": "MN2 grinder pack", "price_mn2": 75, "casino_usd_credit": 25, "tag": "B6"},
+      {"id": "casino_mn2_highroller", "label": "MN2 high-roller pack", "price_mn2": 200, "casino_usd_credit": 70, "tag": "B6"}
     ]
   },
   "games": {

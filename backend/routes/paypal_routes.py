@@ -44,6 +44,18 @@ def paypal_create_order():
             "message": "Please create or log in to an account in Profile before buying with PayPal.",
         }), 400
 
+    from backend.services.account_security_service import check_purchase_action
+
+    token = (data.get("verification_token") or data.get("security_token") or "").strip() or None
+    sec_err = check_purchase_action(user_id, verification_token=token, price_usd=amount)
+    if sec_err:
+        return jsonify({
+            "success": False,
+            "error": sec_err,
+            "code": "PASSWORD_VERIFICATION_REQUIRED",
+            "requires_verification": True,
+        }), 403
+
     base = _get_base_url()
     if not base:
         base = request.url_root.rstrip("/")
@@ -109,7 +121,18 @@ def paypal_capture():
         paypal_items = _get_paypal_shop_items()
         shop_item = paypal_items.get(item_id) if item_id else None
 
-        if pack and pack.get("coins_granted"):
+        from backend.services.battle_pass_service import (
+            fulfill_battle_pass_paypal_purchase,
+            is_battle_pass_paypal_item,
+        )
+
+        if is_battle_pass_paypal_item(item_id):
+            bp_out = fulfill_battle_pass_paypal_purchase(user_id)
+            if bp_out.get("success"):
+                item_granted = item_id
+            else:
+                fulfillment_error = bp_out.get("error") or "battle_pass_fulfillment_failed"
+        elif pack and pack.get("coins_granted"):
             coins_granted = int(pack["coins_granted"])
             if unified_points_db and coins_granted > 0:
                 unified_points_db.add_points(

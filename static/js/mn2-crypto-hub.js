@@ -293,7 +293,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || !d.success) return;
-        var max = d.max_hosted_nodes || 100;
+        var max = d.max_hosted_nodes || 350;
         var used = d.hosted_count || 0;
         var open = d.slots_available != null ? d.slots_available : Math.max(0, max - used);
         var pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;

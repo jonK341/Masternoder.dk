@@ -18,7 +18,15 @@ def _utcnow() -> datetime:
 
 def _load_settings() -> Dict[str, Any]:
     if not os.path.exists(_SETTINGS_PATH):
-        return {"users": {}, "defaults": {"require_password_login": True, "require_password_real_money": True, "require_password_purchases": False}}
+        return {
+            "users": {},
+            "defaults": {
+                "require_password_login": True,
+                "require_password_bind_session": False,
+                "require_password_real_money": True,
+                "require_password_purchases": False,
+            },
+        }
     try:
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -51,16 +59,28 @@ def get_security_settings(user_id: str) -> Dict[str, Any]:
     user = (data.get("users") or {}).get(user_id) or {}
     merged = {
         "require_password_login": defaults.get("require_password_login", True),
+        "require_password_bind_session": defaults.get("require_password_bind_session", False),
         "require_password_real_money": defaults.get("require_password_real_money", True),
         "require_password_purchases": defaults.get("require_password_purchases", False),
+        "security_preset": "balanced",
     }
     merged.update({k: v for k, v in user.items() if k.startswith("require_")})
+    if user.get("security_preset"):
+        merged["security_preset"] = str(user.get("security_preset"))
     return merged
 
 
 def update_security_settings(user_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
-    allowed = {"require_password_login", "require_password_real_money", "require_password_purchases"}
+    allowed = {
+        "require_password_login",
+        "require_password_bind_session",
+        "require_password_real_money",
+        "require_password_purchases",
+    }
     clean = {k: bool(v) for k, v in updates.items() if k in allowed}
+    preset = (updates.get("security_preset") or "").strip().lower()
+    if preset in ("balanced", "secure", "maximum"):
+        clean["security_preset"] = preset
     data = _load_settings()
     users = data.setdefault("users", {})
     row = dict(users.get(user_id) or {})
@@ -69,6 +89,51 @@ def update_security_settings(user_id: str, updates: Dict[str, Any]) -> Dict[str,
     users[user_id] = row
     _save_settings(data)
     return {"success": True, "settings": get_security_settings(user_id)}
+
+
+def _monetization_account_summary(user_id: str) -> Dict[str, Any]:
+    out: Dict[str, Any] = {
+        "tier": "creator",
+        "tier_enforcement_enabled": False,
+        "subscription_pro_live": False,
+        "has_subscription": False,
+    }
+    try:
+        from backend.services.monetization_tier_service import resolve_user_tier
+
+        out["tier"] = resolve_user_tier(user_id)
+    except Exception:
+        pass
+    try:
+        from backend.services.monetization_config_service import (
+            get_public_config,
+            live_pro_subscription_plan_id,
+        )
+
+        cfg = get_public_config()
+        out["tier_enforcement_enabled"] = bool(cfg.get("tier_enforcement_enabled"))
+        out["subscription_pro_live"] = bool(cfg.get("subscription_pro_live"))
+    except Exception:
+        try:
+            out["subscription_pro_live"] = bool(live_pro_subscription_plan_id())
+        except Exception:
+            pass
+    try:
+        from backend.services.monetization_allowance_service import get_user_usage_allowance
+
+        allowance = get_user_usage_allowance(user_id, period_days=30)
+        if allowance.get("success"):
+            sub = allowance.get("subscription") or {}
+            out["has_subscription"] = bool(sub.get("has_subscription"))
+            out["subscription"] = sub
+            out["usage"] = {
+                "metering": allowance.get("metering"),
+                "wallet_generation_credits": allowance.get("wallet_generation_credits"),
+                "nudge": allowance.get("nudge"),
+            }
+    except Exception:
+        pass
+    return out
 
 
 def get_security_status(user_id: str) -> Dict[str, Any]:
@@ -87,6 +152,7 @@ def get_security_status(user_id: str) -> Dict[str, Any]:
         "casino_fiat_balance": balances["casino_fiat_balance"],
         "settings": settings,
         "recommendations": _recommendations(pwd, balances, settings),
+        "monetization": _monetization_account_summary(user_id),
     }
 
 
@@ -173,6 +239,27 @@ def check_real_money_action(user_id: str, verification_token: Optional[str] = No
     if _token_valid(user_id, verification_token):
         return None
     return "Password verification required. Verify at /api/user/security/verify with your account password."
+
+
+def bind_session_requires_password(user_id: str) -> bool:
+    settings = get_security_settings(user_id)
+    if not settings.get("require_password_bind_session"):
+        return False
+    return has_password(user_id)
+
+
+def check_bind_session_action(user_id: str, password: Optional[str] = None) -> Optional[str]:
+    """Return error message if bind blocked, else None."""
+    if not bind_session_requires_password(user_id):
+        return None
+    if not password:
+        return "Password required to bind session"
+    from backend.services.password_protection_service import verify_password
+
+    verified = verify_password(user_id, password)
+    if not verified.get("success"):
+        return verified.get("error") or "Invalid password"
+    return None
 
 
 def check_purchase_action(user_id: str, verification_token: Optional[str] = None, price_usd: float = 0) -> Optional[str]:

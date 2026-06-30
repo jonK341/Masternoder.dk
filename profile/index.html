@@ -1496,6 +1496,15 @@
                         <a href="/battle" style="font-size:0.85rem;color:#00ff88;text-decoration:none;">Full battle page →</a>
                     </div>
 
+                    <!-- Pro plan + usage (PayPal subscription) -->
+                    <div class="section-card" id="profile-pro-plan-card" data-profile-route="wallet account">
+                        <h2 class="section-title">⭐ Pro plan &amp; usage</h2>
+                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Your generation tier, monthly allowance, and PayPal Pro subscription status.</p>
+                        <div id="profile-pro-plan-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
+                        <div id="profile-pro-plan-usage" style="font-size:0.82rem;opacity:0.9;margin-bottom:10px;"></div>
+                        <a href="/shop#paypal-coins" style="font-size:0.85rem;color:#00d4ff;text-decoration:none;">Shop → PayPal &amp; Pro subscribe →</a>
+                    </div>
+
                     <!-- Monetization 25: AI + agents hooked to make money -->
                     <div class="section-card" id="monetization-25-card" data-profile-route="agents">
                         <h2 class="section-title">💰 Monetization 25</h2>
@@ -1579,6 +1588,13 @@
                                 <input type="checkbox" id="sec-require-purchases"> Require password for paid shop purchases
                             </label>
                             <button type="button" id="account-security-save-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;max-width:220px;">Save security settings</button>
+                        </div>
+                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
+                            <strong style="font-size:0.88rem;color:#00d4ff;">Step-up verification</strong>
+                            <p style="font-size:0.8rem;opacity:0.8;margin:6px 0;">Verify your password once to get a 15-minute token for casino bets, MN2 withdrawals, and paid purchases (when enabled).</p>
+                            <input type="password" id="sec-verify-password" placeholder="Account password" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;margin-bottom:8px;max-width:260px;">
+                            <button type="button" id="sec-verify-btn" style="display:block;padding:8px 14px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.15);color:#00d4ff;cursor:pointer;max-width:220px;margin-bottom:8px;">Verify password (15 min)</button>
+                            <div id="sec-verify-status" style="font-size:0.8rem;opacity:0.85;"></div>
                         </div>
                     </div>
 
@@ -1752,6 +1768,7 @@
                         this.loadRecentClipDownload();
                         this.loadPasswordProtection();
                         this.loadAccountSecurity();
+                        this.loadProfileProPlan();
                         this.loadQuickBattleAndLeaderboard();
                         this.loadAgentControl();
                         this.loadMonetization25();
@@ -2366,6 +2383,11 @@
                         if (!data.success) { statusEl.textContent = data.error || 'Failed to load security status.'; return; }
                         var bal = 'MN2: ' + (data.mn2_balance || 0) + ' · Casino USD: ' + (data.casino_fiat_balance || 0);
                         statusEl.textContent = (data.has_password ? 'Password set.' : 'No password yet.') + ' · ' + bal;
+                        var mono = data.monetization || {};
+                        if (mono.tier) {
+                            statusEl.textContent += ' · Tier: ' + String(mono.tier).toUpperCase();
+                            if (mono.has_subscription) statusEl.textContent += ' (subscribed)';
+                        }
                         if (recEl) {
                             recEl.innerHTML = (data.recommendations || []).map(function(r) { return '<div>• ' + profileEscapeHtml(r) + '</div>'; }).join('');
                         }
@@ -2418,6 +2440,86 @@
                         }).catch(function() { saveBtn.disabled = false; statusEl.textContent = 'Save failed.'; });
                     });
                 }
+                var verifyBtn = document.getElementById('sec-verify-btn');
+                var verifyPwd = document.getElementById('sec-verify-password');
+                var verifyStatus = document.getElementById('sec-verify-status');
+                if (verifyBtn && !verifyBtn._wired) {
+                    verifyBtn._wired = true;
+                    verifyBtn.addEventListener('click', function() {
+                        var pwd = verifyPwd ? verifyPwd.value : '';
+                        if (!pwd) { if (verifyStatus) verifyStatus.textContent = 'Enter your password.'; return; }
+                        verifyBtn.disabled = true;
+                        fetch('/api/user/security/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: uid, password: pwd })
+                        }).then(function(r) { return r.json(); }).then(function(res) {
+                            verifyBtn.disabled = false;
+                            if (res.success && res.verification_token) {
+                                try {
+                                    sessionStorage.setItem('mn2_security_token', res.verification_token);
+                                    sessionStorage.setItem('mn2_security_token_expires', res.expires_at || '');
+                                } catch (e) { /* ignore */ }
+                                if (verifyStatus) verifyStatus.textContent = 'Verified until ' + (res.expires_at || '15 min') + '. Token saved for this browser session.';
+                                if (verifyPwd) verifyPwd.value = '';
+                            } else {
+                                if (verifyStatus) verifyStatus.textContent = res.error || 'Verification failed.';
+                            }
+                        }).catch(function() {
+                            verifyBtn.disabled = false;
+                            if (verifyStatus) verifyStatus.textContent = 'Verification request failed.';
+                        });
+                    });
+                }
+                try {
+                    var tokExp = sessionStorage.getItem('mn2_security_token_expires');
+                    if (verifyStatus && tokExp) verifyStatus.textContent = 'Active token expires ' + tokExp;
+                } catch (e) { /* ignore */ }
+            }
+
+            loadProfileProPlan() {
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var statusEl = document.getElementById('profile-pro-plan-status');
+                var usageEl = document.getElementById('profile-pro-plan-usage');
+                if (!statusEl) return;
+                Promise.all([
+                    fetch('/api/user/security/status?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }),
+                    fetch('/api/monetization/usage-allowance?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.json(); }).catch(function() { return {}; }),
+                    fetch('/api/monetization/config').then(function(r) { return r.json(); }).catch(function() { return {}; })
+                ]).then(function(results) {
+                    var sec = results[0] || {};
+                    var allowance = results[1] || {};
+                    var cfg = results[2] || {};
+                    var mono = sec.monetization || {};
+                    var tier = (mono.tier || cfg.default_tier || 'creator').toString().toUpperCase();
+                    var proLive = mono.subscription_pro_live || cfg.subscription_pro_live;
+                    var parts = ['Plan tier: <strong>' + profileEscapeHtml(tier) + '</strong>'];
+                    if (mono.has_subscription) {
+                        var sub = mono.subscription || (allowance.subscription || {});
+                        parts.push('PayPal: <strong>' + profileEscapeHtml(sub.plan_label || 'Pro monthly') + '</strong>');
+                    } else if (proLive) {
+                        parts.push('Pro subscription available — <a href="/shop#paypal-coins" style="color:#00ff88;">subscribe in shop</a>');
+                    } else {
+                        parts.push('Pro subscription coming soon (ops configuring PayPal plan)');
+                    }
+                    if (mono.tier_enforcement_enabled || cfg.tier_enforcement_enabled) {
+                        parts.push('Tier limits: <strong>enforced</strong>');
+                    }
+                    statusEl.innerHTML = parts.join(' · ');
+                    if (usageEl && allowance.success) {
+                        var m = allowance.metering || {};
+                        var nudge = allowance.nudge || {};
+                        var used = m.generation_credits_used != null ? m.generation_credits_used : 0;
+                        var sub = allowance.subscription || {};
+                        var monthly = sub.monthly_generation_credits || 0;
+                        var line = 'Usage (30d): ' + used + ' generation credits';
+                        if (monthly > 0) line += ' / ' + monthly + ' monthly allowance';
+                        if (nudge.message) line += ' — ' + nudge.message;
+                        usageEl.textContent = line;
+                    } else if (usageEl) {
+                        usageEl.textContent = '';
+                    }
+                }).catch(function() { statusEl.textContent = 'Could not load plan status.'; });
             }
 
             loadQuickBattleAndLeaderboard() {

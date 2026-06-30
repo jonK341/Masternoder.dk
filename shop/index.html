@@ -1912,7 +1912,7 @@
                 mn2HostingStatus = d;
                 mn2HostingCheckoutConfig = cfgR.ok ? await cfgR.json() : null;
                 const avail = d.slots_available != null ? d.slots_available : '—';
-                const max = d.max_hosted_nodes != null ? d.max_hosted_nodes : 50;
+                const max = d.max_hosted_nodes != null ? d.max_hosted_nodes : 350;
                 const hosted = d.hosted_count != null ? d.hosted_count : '—';
                 const price = d.paypal && d.paypal.price_usd_per_slot != null ? d.paypal.price_usd_per_slot : 4.99;
                 if (meter) {
