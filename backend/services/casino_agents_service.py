@@ -114,8 +114,10 @@ def run_agent(agent_id: str, *, dry_run: bool = False) -> Dict[str, Any]:
         return resolved
     plan = resolved["plan"]
     if dry_run:
+        _log_spectator_event(agent_id, user_id, model, plan, None, dry_run=True)
         return {"success": True, "agent_id": agent_id, "dry_run": True, "plan": plan, "used_ai": resolved.get("used_ai")}
     result = _execute_plan(user_id, plan)
+    _log_spectator_event(agent_id, user_id, model, plan, result, dry_run=False)
     return {
         "success": bool(result.get("success")),
         "agent_id": agent_id,
@@ -135,3 +137,130 @@ def run_all(*, dry_run: bool = False) -> Dict[str, Any]:
         if out.get("success") and not dry_run:
             ran += 1
     return {"success": True, "ran": ran, "dry_run": dry_run, "results": results}
+
+
+def _spectator_log_path() -> str:
+    log_dir = casino._log_dir()
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, "casino_agent_spectator.jsonl")
+
+
+def _log_spectator_event(
+    agent_id: str,
+    user_id: str,
+    model: Dict[str, Any],
+    plan: Dict[str, Any],
+    result: Optional[Dict[str, Any]],
+    *,
+    dry_run: bool,
+) -> None:
+    line = {
+        "ts": casino._iso() if hasattr(casino, "_iso") else None,
+        "agent_id": agent_id,
+        "agent_name": model.get("name") or agent_id,
+        "user_id": user_id,
+        "game": plan.get("game"),
+        "bet": plan.get("bet"),
+        "currency": plan.get("currency") or "coins",
+        "spectator_line": plan.get("spectator_line") or plan.get("reasoning") or "",
+        "dry_run": dry_run,
+        "outcome": (result or {}).get("outcome") if isinstance(result, dict) else None,
+        "net": (result or {}).get("net") if isinstance(result, dict) else None,
+    }
+    if not line["ts"]:
+        from datetime import datetime, timezone
+        line["ts"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    try:
+        with open(_spectator_log_path(), "a", encoding="utf-8") as f:
+            f.write(json.dumps(line, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def _agent_user_ids() -> List[str]:
+    agents = _load_json(_AGENTS_FILE)
+    ids: List[str] = []
+    for row in agents.values():
+        if isinstance(row, dict):
+            uid = str(row.get("user_id") or "").strip()
+            if uid:
+                ids.append(uid)
+    return ids
+
+
+def get_spectator_feed(limit: int = 20) -> Dict[str, Any]:
+    """Recent agent bets + spectator lines for the home/compete spectator panel."""
+    limit = max(1, min(int(limit or 20), 50))
+    events: List[Dict[str, Any]] = []
+    path = _spectator_log_path()
+    if os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            for raw in reversed(lines[-limit * 3:]):
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    row = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(row, dict):
+                    events.append(row)
+                if len(events) >= limit:
+                    break
+        except OSError:
+            pass
+
+    if len(events) < limit:
+        agent_ids = set(_agent_user_ids())
+        ledger_path = casino._ledger_path()
+        if os.path.isfile(ledger_path):
+            try:
+                with open(ledger_path, "r", encoding="utf-8", errors="replace") as f:
+                    ledger_lines = f.readlines()
+                for raw in reversed(ledger_lines):
+                    raw = raw.strip()
+                    if not raw:
+                        continue
+                    try:
+                        row = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+                    if row.get("user_id") not in agent_ids:
+                        continue
+                    events.append({
+                        "ts": row.get("created_at"),
+                        "agent_id": row.get("user_id"),
+                        "agent_name": row.get("user_id"),
+                        "user_id": row.get("user_id"),
+                        "game": row.get("game"),
+                        "bet": row.get("bet"),
+                        "currency": row.get("currency"),
+                        "spectator_line": "",
+                        "dry_run": False,
+                        "outcome": row.get("outcome"),
+                        "net": row.get("net"),
+                        "source": "ledger",
+                    })
+                    if len(events) >= limit:
+                        break
+            except OSError:
+                pass
+
+    models = _load_json(_MODELS_PATH).get("models") or _load_json(_MODELS_PATH)
+    agents = _load_json(_AGENTS_FILE)
+    for ev in events:
+        aid = ev.get("agent_id")
+        agent_row = agents.get(aid) if isinstance(agents, dict) else None
+        if isinstance(agent_row, dict):
+            mid = agent_row.get("model_id") or aid
+            model = models.get(mid) if isinstance(models, dict) else {}
+            if isinstance(model, dict) and model.get("name"):
+                ev["agent_name"] = model["name"]
+        if not ev.get("spectator_line"):
+            game = ev.get("game") or "casino"
+            bet = ev.get("bet")
+            ev["spectator_line"] = f"Watching {ev.get('agent_name', aid)} on {game}" + (f" for {bet} coins" if bet else "")
+
+    return {"success": True, "events": events[:limit], "count": min(len(events), limit)}

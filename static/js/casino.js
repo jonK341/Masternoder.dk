@@ -19,6 +19,7 @@
     let socialLinks = [];
     let shareNetworks = [];
     let lastBigWin = null;
+    let lastLossBet = null;
     let mobileConfig = null;
     let deferredInstallPrompt = null;
     let metaPixelId = null;
@@ -446,6 +447,8 @@
             safeRefresh('socialTab', initSocialTab);
         } else if (activeMainTab === 'compete') {
             safeRefresh('competeTab', refreshCompeteTab);
+        } else if (activeMainTab === 'home') {
+            safeRefresh('agentSpectator', refreshAgentSpectator);
         }
         try {
             if (history.replaceState) {
@@ -566,6 +569,9 @@
             return;
         }
         el.classList.add(data.outcome || 'draw');
+        if (data.outcome === 'loss' && Number(data.bet || 0) > 0) {
+            lastLossBet = { bet: Number(data.bet), currency: data.currency || activeCurrency, game: data.game };
+        }
         const details = data.details || {};
         if (data.game === 'coin_flip') {
             el.textContent = data.outcome.toUpperCase() + ': ' + details.result + ' (picked ' + details.choice + ') — net ' + data.net;
@@ -1481,6 +1487,9 @@
             card = null;
         }
         if (card && card.success && card.share_urls) {
+            if (card.svg_url) {
+                window.open(card.svg_url, '_blank', 'noopener');
+            }
             window.open(card.share_urls.twitter || card.share_urls.facebook, '_blank', 'noopener');
             showToast('Share card ready — pick your network');
             return;
@@ -1492,7 +1501,39 @@
         window.open(xUrl, '_blank', 'noopener');
     }
 
-    async function shareCasinoSite() {
+    async function openBigWinClipCard() {
+        if (!lastBigWin) {
+            showToast('Win something big first (3× or more), then open the clip card.');
+            return;
+        }
+        var params = new URLSearchParams({
+            user_id: userId,
+            game: lastBigWin.game || 'casino',
+            net: String(lastBigWin.net || 0),
+            currency: lastBigWin.currency || activeCurrency,
+        });
+        if (lastBigWin.multiple >= 1) params.set('mult', String(lastBigWin.multiple));
+        window.open('/api/casino/share/big-win/card.svg?' + params.toString(), '_blank', 'noopener');
+    }
+
+    async function redeemLabCoupon() {
+        var code = (($('casino-coupon-code') || {}).value || '').trim();
+        if (!code) {
+            showToast('Enter a coupon code');
+            return;
+        }
+        var data = await api('/api/casino/coupons/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, code: code }),
+        });
+        setResult($('casino-coupon-result'), data);
+        if (data.success) {
+            showToast(data.message || 'Coupon redeemed!');
+            refreshBalance();
+        }
+    }
+
         var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
         var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
         try {
@@ -1716,9 +1757,173 @@
                 }).join('');
             }
         }
+        var bpEl = $('casino-battle-pass');
+        if (bpEl) {
+            var bp = await api('/api/shop/battle-pass?user_id=' + encodeURIComponent(userId));
+            if (!bp.success) {
+                bpEl.textContent = bp.error || 'Battle pass not configured.';
+            } else {
+                bpEl.innerHTML = '<p><strong>' + (bp.name || 'Season pass') + '</strong> · tier ' +
+                    (bp.tier_level || 0) + ' · ' + (bp.xp || 0) + ' XP</p>' +
+                    '<p>' + (bp.premium_owned ? 'Premium lane unlocked' : 'Free lane — upgrade for bonus cosmetics') + '</p>' +
+                    (bp.premium_owned ? '' : '<button type="button" class="casino-share-site-btn" id="casino-bp-buy">Buy premium (' +
+                        (bp.price_coins || '?') + ' coins)</button>');
+                var buyBtn = $('casino-bp-buy');
+                if (buyBtn) {
+                    buyBtn.addEventListener('click', async function () {
+                        var purchased = await api('/api/shop/battle-pass/purchase', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, source: 'casino' }),
+                        });
+                        showToast(purchased.success ? 'Battle pass premium unlocked!' : (purchased.error || 'Purchase failed'));
+                        refreshCompeteTab();
+                    });
+                }
+            }
+        }
+        var shieldEl = $('casino-streak-shield');
+        if (shieldEl) {
+            var shield = await api('/api/casino/streak-shield?user_id=' + encodeURIComponent(userId));
+            if (!shield.enabled) {
+                shieldEl.textContent = 'Streak shields are off.';
+            } else {
+                shieldEl.innerHTML = '<p>Week ' + (shield.week_key || '') + ' · ' +
+                    (shield.shields_remaining || 0) + ' shield(s) left · refunds ' +
+                    (shield.refund_pct || 50) + '% of a loss (coins only)</p>' +
+                    '<button type="button" class="casino-share-site-btn" id="casino-shield-use">Use shield on last bet</button>';
+                var useBtn = $('casino-shield-use');
+                if (useBtn) {
+                    useBtn.disabled = !(shield.shields_remaining > 0 && lastLossBet && lastLossBet.bet > 0);
+                    useBtn.addEventListener('click', async function () {
+                        var betAmt = lastLossBet ? lastLossBet.bet : 25;
+                        var cur = lastLossBet ? lastLossBet.currency : 'coins';
+                        var applied = await api('/api/casino/streak-shield/apply', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, bet: betAmt, currency: cur }),
+                        });
+                        showToast(applied.success ? ('Shield applied — +' + applied.refund + ' coins') : (applied.error || 'Failed'));
+                        refreshBalance();
+                        refreshCompeteTab();
+                    });
+                }
+            }
+        }
+        await refreshAgentSpectator('casino-compete-spectator');
+        await refreshMinesDuels();
     }
 
-    function setupFairnessExportLink() {
+    async function refreshAgentSpectator(targetId) {
+        var el = $(targetId || 'casino-agent-spectator');
+        if (!el) return;
+        var data = await api('/api/casino/agents/spectate?limit=8');
+        if (!data.success || !(data.events || []).length) {
+            el.innerHTML = '<p>Watch Kelly Optimizer, Safe Grinder, and Meta Oracle — run <code>scripts/run_casino_agent_daemon.cmd</code> to feed live bets.</p>';
+            return;
+        }
+        el.innerHTML = (data.events || []).map(function (ev) {
+            var line = ev.spectator_line || ('Bet on ' + (ev.game || 'casino'));
+            var net = ev.net != null ? ' · net ' + ev.net : '';
+            return '<div class="casino-spectator-row"><strong>' + (ev.agent_name || ev.agent_id) +
+                '</strong> · ' + (ev.game || '?') + ' · ' + (ev.bet || '?') + ' ' +
+                currencyLabel(ev.currency || 'coins') + net + '<br><em>' + line + '</em></div>';
+        }).join('');
+    }
+
+    var minesDuel = { duelId: null, tiles: 25, revealed: [] };
+
+    async function refreshMinesDuels() {
+        var list = $('mines-duel-open');
+        if (!list) return;
+        var data = await api('/api/casino/duels/mines?status=open');
+        if (!data.success || !(data.duels || []).length) {
+            list.textContent = 'No open mines duels — create one above.';
+            return;
+        }
+        list.innerHTML = (data.duels || []).map(function (d) {
+            return '<div class="casino-duel-row">Mines duel · ' + d.bet + ' ' + currencyLabel(d.currency) +
+                ' <button type="button" class="mines-duel-accept-btn" data-id="' + d.duel_id + '">Accept</button></div>';
+        }).join('');
+        list.querySelectorAll('.mines-duel-accept-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { acceptMinesDuel(btn.getAttribute('data-id')); });
+        });
+        if (minesDuel.duelId) {
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(minesDuel.duelId) +
+                '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel && st.duel.status === 'live') renderMinesDuelBoard(st.duel);
+        }
+    }
+
+    async function refreshMinesDuelsOpen() {
+        await refreshMinesDuels();
+    }
+
+    function renderMinesDuelBoard(duel) {
+        var board = $('mines-duel-board');
+        if (!board) return;
+        var tiles = duel.tiles || minesDuel.tiles || 25;
+        minesDuel.tiles = tiles;
+        minesDuel.revealed = duel.revealed || [];
+        board.classList.remove('hidden');
+        board.innerHTML = '';
+        board.style.display = 'grid';
+        board.style.gridTemplateColumns = 'repeat(' + Math.round(Math.sqrt(tiles)) + ', 1fr)';
+        board.style.gap = '4px';
+        for (var i = 0; i < tiles; i++) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = minesDuel.revealed.indexOf(i) >= 0 ? '💎' : '?';
+            btn.disabled = minesDuel.revealed.indexOf(i) >= 0 || duel.turn !== userId;
+            btn.dataset.tile = String(i);
+            btn.addEventListener('click', function () { pickMinesDuelTile(parseInt(this.dataset.tile, 10)); });
+            board.appendChild(btn);
+        }
+    }
+
+    async function createMinesDuel() {
+        var bet = parseFloat(($('mines-duel-bet') || {}).value) || 25;
+        var data = await api('/api/casino/duels/mines/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.success && data.duel) {
+            minesDuel.duelId = data.duel.duel_id;
+            refreshMinesDuelsOpen();
+        }
+    }
+
+    async function acceptMinesDuel(duelId) {
+        var data = await api('/api/casino/duels/mines/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: duelId }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.success) {
+            minesDuel.duelId = duelId;
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(duelId) + '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel) renderMinesDuelBoard(st.duel);
+        }
+    }
+
+    async function pickMinesDuelTile(tile) {
+        if (!minesDuel.duelId) return;
+        var data = await api('/api/casino/duels/mines/pick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: minesDuel.duelId, tile: tile }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.status === 'live') {
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(minesDuel.duelId) + '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel) renderMinesDuelBoard(st.duel);
+        } else if (data.success && data.winner_id) {
+            await refreshBalance();
+        }
+    }
         var link = $('casino-fairness-export-link');
         if (!link) return;
         link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';
@@ -2808,6 +3013,170 @@
         refreshFairnessState();
     }
 
+    // -- Crash crew (Wave 3) ------------------------------------------------
+    var crashCrew = { roomId: null, pollTimer: null, growth: 0.13863, startMs: 0, bust: null, active: false };
+
+    function stopCrashCrewPoll() {
+        if (crashCrew.pollTimer) {
+            clearInterval(crashCrew.pollTimer);
+            crashCrew.pollTimer = null;
+        }
+    }
+
+    function crashCrewMemberState(room) {
+        if (!room || !(room.members || []).length) return null;
+        for (var i = 0; i < room.members.length; i++) {
+            if (room.members[i].user_id === userId) return room.members[i];
+        }
+        return null;
+    }
+
+    function updateCrashCrewControls(room) {
+        var launchBtn = $('crash-crew-launch');
+        var cashBtn = $('crash-crew-cashout');
+        var status = $('crash-crew-status');
+        if (!room) {
+            if (launchBtn) launchBtn.disabled = true;
+            if (cashBtn) cashBtn.disabled = true;
+            crashCrew.active = false;
+            return;
+        }
+        var me = crashCrewMemberState(room);
+        var isHost = room.host === userId;
+        if (launchBtn) {
+            launchBtn.disabled = !(isHost && room.status === 'lobby' && (room.member_count || 0) >= 2);
+        }
+        if (cashBtn) {
+            cashBtn.disabled = !(room.status === 'live' && me && !me.settled && !me.cashed_out);
+        }
+        if (status) {
+            if (room.status === 'lobby') {
+                status.textContent = 'Lobby · ' + (room.member_count || 0) + '/' + (room.max_players || 6) +
+                    ' players · bet ' + (room.bet || 0) + ' ' + currencyLabel(room.currency || activeCurrency);
+            } else if (room.status === 'live') {
+                status.textContent = 'Live crew round · shared bust hidden until settle · cash out individually';
+            } else {
+                status.textContent = 'Room ' + (room.status || 'done');
+            }
+        }
+        crashCrew.active = room.status === 'live';
+        crashCrew.bust = room.bust;
+        if (room.started_at && room.status === 'live') {
+            try {
+                crashCrew.startMs = Date.parse(room.started_at);
+            } catch (e) { /* keep prior */ }
+        }
+        crashCrew.growth = (room.fairness && room.growth_per_second) ? room.growth_per_second : 0.13863;
+    }
+
+    async function refreshCrashCrewLobbies() {
+        var list = $('crash-crew-lobbies');
+        if (!list) return;
+        var data = await api('/api/casino/crash-crew/rooms?limit=8');
+        if (!data.success) {
+            list.innerHTML = '<li>' + (data.error || 'Crash crew unavailable') + '</li>';
+            return;
+        }
+        var rooms = data.rooms || [];
+        if (!rooms.length) {
+            list.innerHTML = '<li>No open lobbies — create one above.</li>';
+            return;
+        }
+        list.innerHTML = rooms.map(function (r) {
+            var tag = r.room_id === crashCrew.roomId ? ' ★' : '';
+            return '<li><button type="button" class="casino-share-site-btn crash-crew-join-btn" data-room="' +
+                r.room_id + '">Join ' + r.room_id + tag + ' · ' + (r.member_count || 0) + 'p · ' +
+                (r.bet || 0) + '</button></li>';
+        }).join('');
+        list.querySelectorAll('.crash-crew-join-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                joinCrashCrewRoom(btn.getAttribute('data-room'));
+            });
+        });
+    }
+
+    async function refreshCrashCrewRoom() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/room/' + encodeURIComponent(crashCrew.roomId));
+        if (!data.success || !data.room) return;
+        updateCrashCrewControls(data.room);
+        if (data.room.status === 'settled' || data.room.status === 'cancelled') {
+            stopCrashCrewPoll();
+            crashCrew.roomId = null;
+            refreshCrashCrewLobbies();
+        }
+    }
+
+    function startCrashCrewPoll() {
+        stopCrashCrewPoll();
+        crashCrew.pollTimer = setInterval(refreshCrashCrewRoom, 2000);
+    }
+
+    async function createCrashCrewRoom() {
+        var bet = parseFloat(($('crash-crew-bet') || {}).value) || 25;
+        var data = await api('/api/casino/crash-crew/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            crashCrew.roomId = data.room.room_id;
+            updateCrashCrewControls(data.room);
+            startCrashCrewPoll();
+            refreshCrashCrewLobbies();
+            showToast('Lobby created — invite friends to join');
+        }
+    }
+
+    async function joinCrashCrewRoom(roomId) {
+        if (!roomId) return;
+        var autoVal = parseFloat(($('crash-crew-auto') || {}).value);
+        var body = { user_id: userId, room_id: roomId };
+        if (autoVal >= 1.01) body.auto_cashout = autoVal;
+        var data = await api('/api/casino/crash-crew/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            crashCrew.roomId = data.room.room_id;
+            updateCrashCrewControls(data.room);
+            startCrashCrewPoll();
+            showToast('Joined crew lobby');
+        }
+    }
+
+    async function launchCrashCrewRoom() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/launch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, room_id: crashCrew.roomId }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            updateCrashCrewControls(data.room);
+            showToast('Crew round live — cash out before shared bust!');
+        }
+    }
+
+    async function cashoutCrashCrew() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/cashout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, room_id: crashCrew.roomId }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success) {
+            refreshBalance();
+            if (data.crew) updateCrashCrewControls(data.crew);
+            showToast(data.outcome === 'win' ? 'Crew cash-out win!' : 'Busted with the crew');
+        }
+    }
+
     // -- Plinko -------------------------------------------------------------
     var plinko = { rows: 12, riskTables: {}, drawing: false };
 
@@ -3634,22 +4003,43 @@
         var el = $('duel-open-list');
         if (!el) return;
         var data = await api('/api/casino/duels?status=open');
-        if (!data.success || !(data.duels || []).length) {
+        var plinko = await api('/api/casino/duels/plinko-battle?status=open');
+        var rows = (data.duels || []).concat(plinko.duels || []);
+        if (!rows.length) {
             el.textContent = 'No open duels — create one!';
             return;
         }
-        el.innerHTML = data.duels.map(function (d) {
+        el.innerHTML = rows.map(function (d) {
+            var acceptApi = d.game === 'plinko_battle' ? 'plinko' : 'std';
             return '<div class="casino-duel-row">' + d.game + ' · ' + d.bet + ' ' + currencyLabel(d.currency) +
-                ' <button type="button" class="duel-accept-btn" data-id="' + d.duel_id + '">Accept</button></div>';
+                ' <button type="button" class="duel-accept-btn" data-id="' + d.duel_id + '" data-api="' + acceptApi + '">Accept</button></div>';
         }).join('');
         el.querySelectorAll('.duel-accept-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () { acceptDuel(btn.getAttribute('data-id')); });
+            btn.addEventListener('click', function () {
+                acceptDuel(btn.getAttribute('data-id'), btn.getAttribute('data-api'));
+            });
         });
     }
 
     async function createDuel() {
         var game = ($('duel-game') || {}).value || 'coin_flip';
         var choice = ($('duel-choice') || {}).value || 'heads';
+        if (game === 'plinko_battle') {
+            var risk = ($('plinko-risk') || {}).value || 'medium';
+            var pb = await api('/api/casino/duels/plinko-battle/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    bet: parseFloat(($('duel-bet') || {}).value || 25),
+                    risk: risk,
+                    currency: activeCurrency,
+                }),
+            });
+            setResult($('duel-result'), pb);
+            if (pb.success) await refreshDuels();
+            return;
+        }
         if (game === 'rps') {
             choice = prompt('Pick rock, paper, or scissors', 'rock') || 'rock';
         } else if (game === 'dice') {
@@ -3664,7 +4054,17 @@
         if (data.success) await refreshDuels();
     }
 
-    async function acceptDuel(duelId) {
+    async function acceptDuel(duelId, apiKind) {
+        if (apiKind === 'plinko') {
+            var pb = await api('/api/casino/duels/plinko-battle/accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, duel_id: duelId }),
+            });
+            setResult($('duel-result'), pb);
+            if (pb.success) { await refreshDuels(); await refreshBalance(); }
+            return;
+        }
         var gameEl = $('duel-game');
         var game = gameEl ? gameEl.value : 'coin_flip';
         var choice = ($('duel-choice') || {}).value || 'tails';
@@ -3812,6 +4212,9 @@
         bindClick('crash-launch', launchCrash);
         bindClick('crash-cashout', function () { doCrashCashout(null); });
         bindClick('crash-rotate-seed', rotateCrashSeed);
+        bindClick('crash-crew-create', createCrashCrewRoom);
+        bindClick('crash-crew-launch', launchCrashCrewRoom);
+        bindClick('crash-crew-cashout', cashoutCrashCrew);
         bindClick('plinko-drop', playPlinko);
         bindChange('plinko-risk', function () { if (!plinko.drawing) drawPlinkoBoard(null, null); });
         bindClick('wheel-spin', playWheel);
@@ -3835,6 +4238,7 @@
         bindClick('vp-deal', dealVideoPoker);
         bindClick('vp-draw', drawVideoPoker);
         bindClick('duel-create', createDuel);
+        bindClick('mines-duel-create', createMinesDuel);
         bindClick('casino-daily-wheel', spinDailyWheel);
         bindChange('duel-game', function () {
             var g = ($('duel-game') || {}).value;
@@ -3842,6 +4246,7 @@
             if (!sel) return;
             if (g === 'rps') sel.innerHTML = '<option value="rock">Rock</option><option value="paper">Paper</option><option value="scissors">Scissors</option>';
             else if (g === 'dice') sel.innerHTML = '<option value="high">High (4-6)</option><option value="low">Low (1-3)</option>';
+            else if (g === 'plinko_battle') sel.innerHTML = '<option value="medium">Same-seed plinko</option>';
             else sel.innerHTML = '<option value="heads">Heads</option><option value="tails">Tails</option>';
         });
         bindClick('casino-sound-toggle', toggleSound);
@@ -3855,7 +4260,9 @@
         bindChange('rps-dist-context', refreshDistribution);
         bindChange('outcome-dist-lane', refreshOutcomeDistribution);
         bindClick('casino-share-win-btn', shareCasinoWin);
+        bindClick('casino-share-win-card-btn', openBigWinClipCard);
         bindClick('casino-share-site-btn', shareCasinoSite);
+        bindClick('casino-coupon-redeem', redeemLabCoupon);
         bindClick('casino-share-whatsapp-btn', shareViaWhatsApp);
         bindClick('casino-share-x-thread-btn', shareXThread);
         bindClick('casino-copy-referral-code', copyReferralCode);
@@ -3908,6 +4315,7 @@
         safeRefresh('seasonalBadge', refreshSeasonalBadge);
         safeRefresh('vipLounge', refreshVipLounge);
         safeRefresh('homeAchievements', refreshHomeAchievements);
+        safeRefresh('agentSpectator', refreshAgentSpectator);
         safeRefresh('newsTicker', refreshNewsTicker);
         safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('houseStats', refreshHouseStats);
@@ -3920,6 +4328,7 @@
         safeRefresh('progression', refreshProgression);
         safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
+        safeRefresh('crashCrewLobbies', refreshCrashCrewLobbies);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }
         try { drawWheel(wheel.rotation, -1); } catch (e) { /* canvas optional */ }

@@ -131,7 +131,21 @@ Decisions locked: cosmetic-only shop items (no RTP perks), coin rewards for trop
 
 **Tests:** `tests/unit/test_casino_competition_expansion.py` (6 passing) — shop purchase, trophies/achievements lists, rivals/races/crew, dice duel, progression unlock.
 
-**Still to build (next waves):** rest of the roster polish, moving leaderboard/quest reads onto the DB ledger, spectating/shareable duel cards.
+**Still to build (next waves):** keno syndicate, blackjack tournaments, wheel raid boss, friend challenge links, podcast tie-in — see [CASINO_TODO.md](CASINO_TODO.md) Wave 4.
+
+---
+
+## ✅ Shipped — Wave 3 social PvP & spectator (2026-06-30)
+
+**Plinko battle** — `/api/casino/duels/plinko-battle/create|accept|GET` — dual provably-fair drops, higher bin wins escrow pot (5% rake).
+
+**Mines duel** — `/api/casino/duels/mines/create|accept|pick|GET` — turn-based shared board; hit mine → opponent wins.
+
+**Spectator mode** — `GET /api/casino/agents/spectate`; agent daemon writes `logs/casino_agent_spectator.jsonl`; home + Compete panels.
+
+**Crash crew, clip cards, battle pass bet XP, Lab coupons, streak shields** — see [CASINO_IDEAS.md](CASINO_IDEAS.md) Wave 3 table.
+
+**Tests:** `tests/unit/test_casino_ideas_wave3.py` (8 passing).
 
 ---
 

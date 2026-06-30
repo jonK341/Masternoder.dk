@@ -2984,6 +2984,41 @@
     "achievement_races_enabled": true,
     "crew_leaderboard_enabled": true
   },
+  "crash_crew": {
+    "enabled": true,
+    "lobby_seconds": 30,
+    "min_players": 2,
+    "max_players": 6
+  },
+  "mines_duel": {
+    "enabled": true,
+    "tiles": 25,
+    "mines": 3
+  },
+  "casino_battle_pass": {
+    "enabled": true,
+    "season_id": "casino-s1",
+    "xp_per_bet_coin": 1,
+    "xp_per_tier": 100,
+    "tiers": [
+      {"tier": 1, "reward_coins": 25, "badge": "casino-rookie", "cosmetic_only": true},
+      {"tier": 3, "reward_coins": 50, "badge": "high-roller-frame", "cosmetic_only": true},
+      {"tier": 5, "reward_coins": 100, "badge": "vip-chrome", "cosmetic_only": true}
+    ]
+  },
+  "streak_shield": {
+    "enabled": true,
+    "shields_per_week": 1,
+    "refund_pct": 50,
+    "currency": "coins"
+  },
+  "lab_coupons": {
+    "enabled": true,
+    "codes": {
+      "LAB-FREEBET": {"type": "free_daily_bet", "uses": 1, "label": "Lab quest free bet"},
+      "LAB-CRASH-CREW": {"type": "crew_invite_boost", "uses": 1, "label": "Lab crew invite token"}
+    }
+  },
   "Jon vinder igen!": {
     "Løn er enabled": true,
     "Start_coins": 10000,

@@ -212,6 +212,12 @@ def casino_agent_revenue_daily():
     return jsonify(casino_revenue_report.daily_reports(days=days)), 200
 
 
+@agent_casino_bp.route("/api/agent/casino/agents/spectate", methods=["GET"])
+def casino_agent_spectate():
+    limit = request.args.get("limit", 20, type=int)
+    return jsonify(agents.get_spectator_feed(limit=limit)), 200
+
+
 @agent_casino_bp.route("/api/agent/casino/revenue/report/today", methods=["GET"])
 def casino_agent_revenue_today():
     from backend.services import casino_revenue_report

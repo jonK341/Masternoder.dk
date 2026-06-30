@@ -1,6 +1,16 @@
 # Casino mega-expansion — delivery report
 
-**Date:** 2026-06-26 · **Branch:** `feat/casino-mega-expansion` · **Site:** [masternoder.dk/casino/](https://masternoder.dk/casino/)
+**Date:** 2026-06-30 · **Branch:** `feat/casino-mega-expansion` · **Site:** [masternoder.dk/casino/](https://masternoder.dk/casino/)
+
+---
+
+## Wave 2 summary (5b81c54)
+
+Seasonal slot skins, referral quests v2, crew leaderboards, VIP lounge tab, provably-fair CSV export, SSE activity ticker v2, revenue digest email cron stub.
+
+## Wave 3 summary (2026-06-30)
+
+Crash crew lobbies, big-win SVG clip cards, **Plinko battle** and **mines duel** PvP escrow routes, battle-pass bet-volume XP (`casino_battle_pass` config), Lab coupon redeem-lab hook, **AI agent spectator feed** (`GET /api/casino/agents/spectate`), streak shields. Eight unit tests in `tests/unit/test_casino_ideas_wave3.py`.
 
 ---
 
@@ -27,8 +37,12 @@ The **casino mega-expansion** ships a full entertainment platform layer on Maste
 ## TODO (actionable)
 
 1. **Tuesday (Play $25)** — Pay developer fee → upload AAB → paste App Signing SHA-256 into `assetlinks.json` → `python scripts/deploy.py well_known --ask-pass`. See [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md).
-2. **Deploy agent + expansion slice** — `python scripts/deploy.py casino --ask-pass` (includes `agent_casino_routes`, seed JSON, global/revenue services).
-3. **Merge PR #43** — after review of broadcast, Discord fanout, and revenue paths (critical infrastructure).
+2. **Deploy Wave 3 slice** — `python scripts/deploy.py casino --ask-pass` (crash crew, plinko/mines duels, spectator, coupons, `casino.js`).
+3. **Start agent daemon** — `scripts/run_casino_agent_daemon.cmd` on ops host (dry-run with `CASINO_AGENT_DRY_RUN=1` first).
+4. **Merge PR #43** — after review of broadcast, Discord fanout, and revenue paths (critical infrastructure).
+5. **Post-deploy curl** — spectate, plinko-battle list, crash-crew rooms (see [CASINO_TODO.md](CASINO_TODO.md)).
+
+Master checklist: [CASINO_TODO.md](CASINO_TODO.md)
 
 ---
 

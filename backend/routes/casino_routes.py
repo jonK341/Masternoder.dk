@@ -1286,6 +1286,284 @@ def casino_share_big_win():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/share/big-win/card.svg", methods=["GET"])
+def casino_share_big_win_card_svg():
+    try:
+        from flask import Response
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        mult = request.args.get("mult") or request.args.get("multiplier")
+        svg = casino_social_service.build_big_win_svg(
+            game=(request.args.get("game") or "").strip() or None,
+            net=request.args.get("net", type=float),
+            currency=(request.args.get("currency") or "").strip() or None,
+            multiplier=float(mult) if mult is not None else None,
+            handle=casino_social_service.anonymize_user(user_id) if user_id else "Player",
+        )
+        return Response(svg, mimetype="image/svg+xml")
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/rooms", methods=["GET"])
+def casino_crash_crew_rooms():
+    try:
+        from backend.services import casino_crash_crew_service
+        limit = request.args.get("limit", 12, type=int)
+        return jsonify(casino_crash_crew_service.list_open_rooms(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/create", methods=["POST"])
+def casino_crash_crew_create():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.create_room(
+            user_id,
+            data.get("bet"),
+            currency=_currency_from_body(data),
+            max_players=data.get("max_players"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/join", methods=["POST"])
+def casino_crash_crew_join():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.join_room(
+            user_id,
+            (data.get("room_id") or "").strip(),
+            auto_cashout=data.get("auto_cashout"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/launch", methods=["POST"])
+def casino_crash_crew_launch():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.launch_room(
+            user_id,
+            (data.get("room_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/room/<room_id>", methods=["GET"])
+def casino_crash_crew_room(room_id):
+    try:
+        from backend.services import casino_crash_crew_service
+        return jsonify(casino_crash_crew_service.get_room(room_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/cashout", methods=["POST"])
+def casino_crash_crew_cashout():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.cashout(
+            user_id,
+            (data.get("room_id") or "").strip(),
+            multiplier=data.get("multiplier"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/streak-shield", methods=["GET"])
+def casino_streak_shield_status():
+    try:
+        from backend.services import casino_streak_shield_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_streak_shield_service.status(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/streak-shield/apply", methods=["POST"])
+def casino_streak_shield_apply():
+    try:
+        from backend.services import casino_streak_shield_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_streak_shield_service.apply_shield(
+            user_id,
+            bet=data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/coupons/redeem-lab", methods=["POST"])
+def casino_coupon_redeem_lab():
+    """Lab quest completion hook — alias for coupon redeem."""
+    try:
+        from backend.services import casino_coupon_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_coupon_service.redeem(
+            user_id,
+            (data.get("code") or data.get("coupon") or "LAB-FREEBET").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/agents/spectate", methods=["GET"])
+def casino_agents_spectate():
+    try:
+        import backend.services.casino_agents_service as agents
+        limit = request.args.get("limit", 20, type=int)
+        return jsonify(agents.get_spectator_feed(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle/create", methods=["POST"])
+def casino_plinko_battle_create():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.create_plinko_battle(
+            user_id,
+            data.get("bet"),
+            risk=(data.get("risk") or "medium").strip(),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle/accept", methods=["POST"])
+def casino_plinko_battle_accept():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.accept_plinko_battle(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle", methods=["GET"])
+def casino_plinko_battle_list():
+    try:
+        from backend.services import casino_game_duel_service
+        status = request.args.get("status", "open")
+        return jsonify(casino_game_duel_service.list_game_duels("plinko_battle", status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/create", methods=["POST"])
+def casino_mines_duel_create():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.create_mines_duel(
+            user_id,
+            data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/accept", methods=["POST"])
+def casino_mines_duel_accept():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.accept_mines_duel(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/pick", methods=["POST"])
+def casino_mines_duel_pick():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.pick_mines_duel_tile(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+            data.get("tile"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines", methods=["GET"])
+def casino_mines_duel_list():
+    try:
+        from backend.services import casino_game_duel_service
+        status = request.args.get("status", "open")
+        return jsonify(casino_game_duel_service.list_mines_duels(status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/<duel_id>", methods=["GET"])
+def casino_mines_duel_get(duel_id):
+    try:
+        from backend.services import casino_game_duel_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_game_duel_service.get_mines_duel(duel_id, user_id=user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/coupons/redeem", methods=["POST"])
+def casino_coupon_redeem():
+    try:
+        from backend.services import casino_coupon_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_coupon_service.redeem(
+            user_id,
+            (data.get("code") or data.get("coupon") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/social/referral", methods=["GET"])
 def casino_social_referral():
     try:

@@ -38,13 +38,28 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 
 ---
 
+## Wave 3 status (feat/casino-mega-expansion — 2026-06-30)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Crash crew mode (#2) | ✅ | Shared bust, individual cash-outs — `/api/casino/crash-crew/*` + lobby UI |
+| Big-win clip cards (#13) | ✅ | `GET /api/casino/share/big-win/card.svg` + Social tab button |
+| Plinko battle (#3) | ✅ | `/api/casino/duels/plinko-battle/*` — same-seed bins, higher wins pot |
+| Mines duel (#4) | ✅ | Turn-based shared board — `/api/casino/duels/mines/*` + Compete tab |
+| Battle pass casino track (#21) | ✅ | `casino_battle_pass` in config + bet-volume XP; Compete tab polls `/api/shop/battle-pass` |
+| Lab free-bet coupons (#19) | ✅ | `/api/casino/coupons/redeem` + `/api/casino/coupons/redeem-lab` |
+| Spectator mode for AI agents (#14) | ✅ | `GET /api/casino/agents/spectate` + home/compete panels; `run_casino_agent_daemon.cmd` |
+| Streak shields (#16) | ✅ | `/api/casino/streak-shield` — one weekly 50% loss refund (coins) |
+
+---
+
 ## 25 feature ideas (feasible next waves)
 
 ### Games & mechanics
 1. **Seasonal slot skins** — reskin existing 35 machines with limited-time themes (Halloween, MN2 halving) without new engine code. *(✅ `seasonal_overlays` + home badge)*
-2. **Crash crew mode** — shared multiplier pool where friends cash out on the same round with split payouts.
-3. **Plinko battle** — two players, same seed reveal, highest bin wins a pot.
-4. **Mines duel** — turn-based tile picks on a shared board; bomb ends round.
+2. **Crash crew mode** — shared multiplier pool where friends cash out on the same round with split payouts. *(✅ `/api/casino/crash-crew/*`)*
+3. **Plinko battle** — two players, same seed reveal, highest bin wins a pot. *(✅ `/api/casino/duels/plinko-battle/*`)*
+4. **Mines duel** — turn-based tile picks on a shared board; bomb ends round. *(✅ `/api/casino/duels/mines/*`)*
 5. **Keno syndicate** — group ticket: N players pick spots together, split wins by stake share.
 6. **Roulette side bets** — config-only add-ons (hot/cold numbers) on existing roulette engine.
 7. **Blackjack tournaments** — bracketed single-elimination using existing BJ engine + ledger.
@@ -55,17 +70,17 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 ### Social & retention
 11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets. *(✅ `/api/casino/social/referral/quests` + referrer coin milestones)*
 12. **Crew leaderboards** — Discord guild ID maps to a crew; aggregate weekly net for prizes. *(✅ `/api/casino/crew/leaderboard`)*
-13. **Big-win clip cards** — auto-generate share image (SVG/PNG) from `POST /api/casino/share/big-win`.
-14. **Spectator mode** — watch AI agents (Kelly, Safe Grinder, Meta Oracle) with spectator lines from LLM.
+13. **Big-win clip cards** — auto-generate share image (SVG/PNG) from `POST /api/casino/share/big-win`. *(✅ `GET /api/casino/share/big-win/card.svg`)*
+14. **Spectator mode** — watch AI agents (Kelly, Safe Grinder, Meta Oracle) with spectator lines from LLM. *(✅ `/api/casino/agents/spectate` + daemon feed)*
 15. **Friend challenges** — send duel invite link; winner takes configurable coin pot.
-16. **Streak shields** — one loss-forgiving token per week for engagement (virtual coins only).
+16. **Streak shields** — one loss-forgiving token per week for engagement (virtual coins only). *(✅ `/api/casino/streak-shield`)*
 17. **VIP lounge tab** — unlock at XP threshold; cosmetic frames + higher daily wheel odds (house-edge neutral). *(✅ `/api/casino/vip/lounge` — same wheel odds, cosmetic gate)*
 18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll. *(✅ `/api/casino/activity-feed/stream` + poll fallback)*
-19. **Cross-promo with Lab** — complete Lab quest → casino free bet coupon.
+19. **Cross-promo with Lab** — complete Lab quest → casino free bet coupon. *(✅ `/api/casino/coupons/redeem`)*
 20. **Podcast portal tie-in** — bonus coins when listening during a live casino tournament window.
 
 ### Monetization & platform
-21. **Battle pass (casino track)** — parallel to shop battle pass; cosmetic badges + coin bundles.
+21. **Battle pass (casino track)** — parallel to shop battle pass; cosmetic badges + coin bundles. *(✅ Compete tab + `/api/shop/battle-pass`)*
 22. **MN2 rake rebate tiers** — extend trophy rake rebate with visible progress bar in rank tab.
 23. **PayPal deposit bundles** — limited-time “starter packs” in `casino_config` deposit packs.
 24. **Global hub affiliate nodes** — other MasterNoder sites report into `casino_global_controller` for network leaderboard.

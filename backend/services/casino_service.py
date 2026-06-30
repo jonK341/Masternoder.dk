@@ -614,9 +614,11 @@ def _finalize_bet(
         pass
     if not skip_stake and bet > 0:
         try:
-            from backend.services.battle_pass_service import record_battle_pass_action
+            from backend.services.battle_pass_service import record_battle_pass_action, record_casino_bet_volume
 
             record_battle_pass_action(user_id, "casino_bet")
+            if currency == "coins":
+                record_casino_bet_volume(user_id, bet)
         except Exception:
             pass
     trophy_rebate = None
@@ -833,7 +835,7 @@ def _settle_crash_round(round_state: Dict[str, Any], payout: float, outcome: str
     row = {
         "bet_id": round_state.get("round_id") or str(uuid.uuid4()),
         "user_id": user_id,
-        "game": "crash",
+        "game": round_state.get("game") or "crash",
         "bet": bet,
         "currency": currency,
         "outcome": outcome,
@@ -1008,6 +1010,38 @@ def cashout_crash_round(
     rounds.pop(round_id, None)
     _save_crash_rounds(rounds)
     result["multiplier"] = outcome_calc["multiplier"]
+    return result
+
+
+def record_crash_crew_settlement(
+    user_id: str,
+    *,
+    bet: float,
+    currency: str,
+    bust: float,
+    cashout: float,
+    payout: float,
+    outcome: str,
+    fairness: Dict[str, Any],
+    growth_per_second: float,
+    crew_room_id: str,
+) -> Dict[str, Any]:
+    """Ledger a crash crew member result (individual stake already debited on launch)."""
+    round_state = {
+        "round_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "game": "crash_crew",
+        "bet": bet,
+        "currency": _normalize_currency(currency),
+        "bust": bust,
+        "cashout": cashout,
+        "growth_per_second": growth_per_second,
+        "fairness": {**(fairness or {}), "crew_room_id": crew_room_id},
+        "auto_cashout": None,
+    }
+    result = _settle_crash_round(round_state, payout=payout, outcome=outcome)
+    result["game"] = "crash_crew"
+    result["crew_room_id"] = crew_room_id
     return result
 
 

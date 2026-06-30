@@ -204,6 +204,8 @@
                         <div id="casino-big-win-hof" class="casino-big-win-hof">Loading…</div>
                         <h3 class="casino-subheading">Achievement progress</h3>
                         <div id="casino-home-achievements" class="casino-home-achievements">Loading…</div>
+                        <h3 class="casino-subheading">AI agent spectator</h3>
+                        <div id="casino-agent-spectator" class="casino-agent-spectator" aria-live="polite">Loading agent feed…</div>
                     </article>
                 </div>
             </section>
@@ -240,6 +242,27 @@
                         <div id="crash-reveal" class="casino-fairness-reveal"></div>
                     </div>
                 </details>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-crash-crew-card" data-casino-game="crash-crew" data-casino-label="👥 Crash crew">
+                <h2>👥 Crash crew</h2>
+                <p>Team up with friends — one shared bust point, individual cash-outs. Host creates a lobby; launch when everyone is in.</p>
+                <div id="crash-crew-room-panel" class="casino-crash-crew-panel">
+                    <div id="crash-crew-status" class="casino-crash-status">Browse open lobbies or create your own.</div>
+                    <ul id="crash-crew-lobbies" class="casino-crash-crew-lobbies"></ul>
+                </div>
+                <div class="casino-controls casino-crash-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="crash-crew-bet" type="number" min="5" max="500" value="25" aria-label="Crash crew bet">
+                    </label>
+                    <label class="casino-crash-field">Auto cash-out ×
+                        <input id="crash-crew-auto" type="number" min="1.01" step="0.01" placeholder="optional" aria-label="Crash crew auto cash-out">
+                    </label>
+                    <button id="crash-crew-create" type="button" class="casino-crash-launch">Create lobby</button>
+                    <button id="crash-crew-launch" type="button" class="casino-share-site-btn" disabled>Launch round</button>
+                    <button id="crash-crew-cashout" type="button" class="casino-crash-cashout" disabled>Cash out</button>
+                </div>
+                <div id="crash-crew-result" class="casino-result"></div>
             </article>
 
             <article class="casino-card casino-card-wide casino-plinko-card" data-casino-game="plinko" data-casino-label="🟡 Plinko">
@@ -425,7 +448,7 @@
                 <p>Challenge another player — coin flip, dice, or RPS. Winner takes the pot minus rake.</p>
                 <div class="casino-controls">
                     <input id="duel-bet" type="number" min="5" max="500" value="25" aria-label="Duel bet">
-                    <select id="duel-game" aria-label="Duel game"><option value="coin_flip">Coin flip</option><option value="dice">Dice</option><option value="rps">RPS</option></select>
+                    <select id="duel-game" aria-label="Duel game"><option value="coin_flip">Coin flip</option><option value="dice">Dice</option><option value="rps">RPS</option><option value="plinko_battle">Plinko battle</option></select>
                     <select id="duel-choice" aria-label="Duel choice"><option value="heads">Heads</option><option value="tails">Tails</option></select>
                     <button id="duel-create" type="button">Create duel</button>
                 </div>
@@ -642,12 +665,37 @@
                 </div>
                 <div class="casino-compete-grid">
                     <article class="casino-panel">
+                        <h3>Battle pass</h3>
+                        <div id="casino-battle-pass" class="casino-compete-panel">Loading battle pass…</div>
+                        <h3 class="casino-subheading">Streak shield</h3>
+                        <div id="casino-streak-shield" class="casino-compete-panel">Loading streak shield…</div>
+                        <h3 class="casino-subheading">Lab coupon</h3>
+                        <div id="casino-lab-coupon" class="casino-compete-panel">
+                            <label>Redeem code
+                                <input id="casino-coupon-code" type="text" placeholder="LAB-FREEBET" aria-label="Lab coupon code">
+                            </label>
+                            <button type="button" id="casino-coupon-redeem" class="casino-share-site-btn">Redeem</button>
+                            <div id="casino-coupon-result" class="casino-result"></div>
+                        </div>
+                    </article>
+                    <article class="casino-panel">
                         <h3>Rival board</h3>
                         <div id="casino-rivals" class="casino-compete-panel">Loading rivals…</div>
                         <h3 class="casino-subheading">Achievement races</h3>
                         <div id="casino-achievement-races" class="casino-compete-panel">Loading races…</div>
                         <h3 class="casino-subheading">Crew casino board</h3>
                         <div id="casino-crew-board" class="casino-compete-panel">Loading crew board…</div>
+                        <h3 class="casino-subheading">Mines duel</h3>
+                        <div id="casino-mines-duel" class="casino-compete-panel">
+                            <p>Turn-based shared board — hit a mine and lose the pot.</p>
+                            <label>Bet <input id="mines-duel-bet" type="number" min="5" max="500" value="25" aria-label="Mines duel bet"></label>
+                            <button type="button" id="mines-duel-create" class="casino-share-site-btn">Create mines duel</button>
+                            <div id="mines-duel-open" class="casino-duel-list">Loading open mines duels…</div>
+                            <div id="mines-duel-board" class="casino-mines-duel-board hidden"></div>
+                            <div id="mines-duel-result" class="casino-result"></div>
+                        </div>
+                        <h3 class="casino-subheading">Agent spectator</h3>
+                        <div id="casino-compete-spectator" class="casino-agent-spectator" aria-live="polite">Loading…</div>
                     </article>
                     <article class="casino-panel">
                         <h3>Casino shop</h3>
@@ -678,6 +726,7 @@
                 <div id="casino-social-follow-grid" class="casino-social-follow-grid">Loading social links…</div>
                 <div class="casino-social-share-bar">
                     <button type="button" id="casino-share-win-btn" class="casino-share-win-btn">📣 Share my latest big win</button>
+                    <button type="button" id="casino-share-win-card-btn" class="casino-share-site-btn">🖼️ Big-win clip card</button>
                     <button type="button" id="casino-share-site-btn" class="casino-share-site-btn">🔗 Share casino</button>
                     <button type="button" id="casino-share-whatsapp-btn" class="casino-share-site-btn">💬 WhatsApp</button>
                     <button type="button" id="casino-share-x-thread-btn" class="casino-share-site-btn">𝕏 Thread</button>
@@ -745,7 +794,7 @@
     <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
     <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
     <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
-    <script src="/static/js/casino.js?v=20260625b" defer></script>
+    <script src="/static/js/casino.js?v=20260630d" defer></script>
     <script src="/static/js/casino-cockpit.js?v=20260628" defer></script>
     <script>
     (function () {

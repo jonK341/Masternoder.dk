@@ -18,17 +18,17 @@ Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLA
 | **YouTube API / embed** | **Not built** | Optional: live stream embed on Social tab | — |
 | **Main site casino** | **Done (prod)** — `GET /casino/` → 200 | Deploy mega-expansion slice | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
 | **Global hub sync** | **Code done** — `casino_global_controller`, hub config, UI network tab | Deploy + verify `GET /api/casino/global/leaderboard` | [CASINO_GLOBAL_SYNC.md](CASINO_GLOBAL_SYNC.md) |
-| **Revenue daily reports** | **Code done** — `casino_revenue_report`, cron script | Deploy; schedule `cron/casino_daily_revenue_report.sh` | [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
+| **Revenue daily reports** | **Done (prod)** — cron `/etc/cron.d/masternoder-casino-revenue` | Verify daily dry_run posts | [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
 | **Slot catalog** | **35 machines** (10 original + 25 themed expansion) | Deploy `data/casino_config.json` + `casino.css` | `GET /api/casino/slots` |
 | **Facebook OG tags** | **Done** — `casino/index.html` has `og:*` + Twitter card meta | Generate & deploy `banner-masternoder2-casino.png` | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
 | **Meta Pixel (`META_PIXEL_ID`)** | **Wired** — API returns `pixel_id` when env set; `casino.js` loads `fbq` + `PageView` + `CasinoBigWin` events | Set `META_PIXEL_ID` on server `.env` if not already | [CASINO_DEPLOY_OPS.md § C.4](CASINO_DEPLOY_OPS.md) |
 | **Share big-win API** | **Done** — `POST /api/casino/share/big-win` | Smoke-test from Social tab after a real win | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
 | **Facebook page link** | **Done** — `data/casino_config.json` → `facebook.page_url` | Confirm live page URL | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
-| **Facebook casino webhook bot** | **Not built** — MN2_TODO E3 pending | Defer or implement webhook | [MN2_TODO.md](MN2_TODO.md) |
+| **Facebook casino webhook bot** | **Code shipped** — `GET/POST /api/facebook/casino/webhook`, status at `/api/facebook/casino/status` | Set Meta tokens on server + subscribe webhook | [MN2_TODO.md](MN2_TODO.md) E3 |
 | **Social follow links** | **Wired** — Discord, YouTube, Facebook, X, Instagram, TikTok, Telegram, GitHub, Google Play | Verify each URL is a live account | `data/casino_config.json` |
 | **Social tab UI** | **Done** — follow grid, share bar, WhatsApp, X thread, referral, Discord opt-in | Deploy latest `casino.js` | `static/js/casino.js` |
 | **Share network grid** | **Done** — from `data/social_networks.json` | Redeploy if networks missing on prod | `data/social_networks.json` |
-| **Marketing API** | **Code done; prod missing** — `GET /api/casino/marketing` → 404 on prod | Deploy casino manifest slice | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
+| **Marketing API** | **Done (prod)** — `GET /api/casino/marketing` → **200** | — | [CASINO_MARKETING.md](CASINO_MARKETING.md) |
 | **Google Play registration** | **Tuesday** — $25 fee scheduled; account not yet active | Pay fee → upload AAB → get App Signing SHA | [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) |
 | **Android TWA (Bubblewrap)** | **Code done** — `mobile/casino-twa/` | Build AAB after Play account | [mobile/casino-twa/README.md](../mobile/casino-twa/README.md) |
 | **Android/iOS Capacitor** | **Code done** — `mobile/casino-app/` + `ios/` | `npm run assets` → signed AAB / Xcode archive | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
@@ -39,29 +39,35 @@ Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLA
 | **App Store URL** | **Placeholder** — `id0000000000` | After App Store approval, update `casino_config.json` | [APP_STORE_LISTING.md](../mobile/casino-app/APP_STORE_LISTING.md) |
 | **Capacitor iOS project** | **Done** — Associated Domains in entitlements | Set Xcode Team when account exists | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
 | **Casino AI agent docs** | **Done** | — | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **Casino AI agent routes** | **Code done; prod stub** | Deploy casino manifest + restart uWSGI | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
+| **Casino AI agent routes** | **Done (prod)** — `GET /api/agent/casino/models` **200** (3 models) | Run `run_casino_agent_daemon.cmd`; spectator at `/api/casino/agents/spectate` | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
 | **Agent seed data** | **Done** — `data/casino_agents.json`, `data/casino_agent_models.json` (Kelly, Safe Grinder, Meta Oracle) | Deploy with casino manifest | [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) |
+| **Wave 3 PvP duels** | **Code done** — plinko battle + mines duel escrow | Deploy + smoke-test Compete/Social tabs | [CASINO_IDEAS.md](CASINO_IDEAS.md) |
+| **Wave 3 spectator** | **Code done** — agent JSONL feed + UI panels | Deploy + start agent daemon | [CASINO_TODO.md](CASINO_TODO.md) |
 | **`AGENT_CASINO_SECRET` + LLM keys** | **Server env** — user uploaded `.env` | Verify dry-run `run-all` after deploy | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
 | **feat/casino-mega-expansion deploy** | **Ready to push** | Commit → push → deploy casino + well_known | [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) |
 
 ---
 
-## Production curl results (2026-06-26)
+## Production curl results (2026-06-24)
 
 | Check | Result |
 | ----- | ------ |
 | `GET /casino/` | **200** |
-| `GET /api/casino/social/links` | **200** — follow links, share networks, `pixel_id` when `META_PIXEL_ID` set |
+| `GET /api/casino/social/links` | **200** — follow links, share networks; `pixel_id` null until `META_PIXEL_ID` set |
 | `GET /api/casino/mobile/config` | **200** — `app_store_url` placeholder, Play URL set |
 | `GET /.well-known/assetlinks.json` | **200** — placeholder until Tuesday Play SHA |
 | `GET /.well-known/apple-app-site-association` | **200** — `TEAMID` placeholder (**paused**) |
 | `POST /api/casino/share/big-win` | **200** |
-| `GET /api/casino/marketing` | **404** — not deployed |
-| `GET /api/casino/global/leaderboard` | **Stub** — deploy real route |
-| `GET /api/casino/revenue/daily` | **Stub** — deploy real route |
-| `GET /api/casino/slots` | **200** |
-| `GET /api/agent/casino/models` | **Stub** — deploy agent routes + seed JSON |
-| `GET /api/agents/intelligence/llm-status` | **Stub** — same |
+| `GET /api/casino/marketing` | **200** |
+| `GET /api/casino/global/leaderboard` | **200** |
+| `GET /api/casino/revenue/daily` | **200** |
+| `GET /api/casino/slots` | **200** — 35 machines |
+| `GET /api/agent/casino/models` | **200** — 3 agent models |
+| `POST /api/agent/casino/run-all` dry_run | **200** |
+| `POST /api/discord/casino/fanout` dry_run | **200** |
+| `GET /api/casino/agents/spectate` | **Pending deploy** — Wave 3 spectator feed |
+| `GET /api/casino/duels/plinko-battle?status=open` | **Pending deploy** — Wave 3 |
+| `GET /api/facebook/casino/status` | **200** — tokens not set yet (subscribe after Meta env) |
 
 ---
 
