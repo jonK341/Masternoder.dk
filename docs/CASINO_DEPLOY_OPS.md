@@ -135,7 +135,13 @@ python scripts/deploy.py static_pages --upload-only --ask-pass
 
 3. **Bubblewrap / TWA:** After `bubblewrap build`, use the certificate Play Console shows for the signing key you use in production (`mobile/casino-twa/`).
 
-**Replace locally (PowerShell):**
+**Replace locally (recommended — validates 64 hex chars):**
+
+```powershell
+python scripts/casino_play_assetlinks_update.py "AA:BB:CC:..."
+```
+
+**Replace locally (PowerShell manual):**
 
 ```powershell
 $sha = "AA:BB:CC:..."   # from Play Console

@@ -44,7 +44,18 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 
 ## Ops (actionable)
 
-- [ ] **Tuesday Play ($25)** — Pay fee → upload AAB → paste App Signing SHA into `assetlinks.json` → `python scripts/deploy.py well_known --ask-pass`. See [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md).
+### Ops 2 — Tuesday Play SHA → assetlinks.json
+
+- [ ] Pay **$25** at [Play Console signup](https://play.google.com/console/signup)
+- [ ] Create app **`dk.masternoder.casino`** and upload first AAB (Internal testing)
+- [ ] Play Console → **Release → Setup → App integrity → App signing** → copy **App signing key certificate** SHA-256
+- [ ] Run `python scripts/casino_play_assetlinks_update.py "<SHA-256>"` (colons optional)
+- [ ] Deploy: `python scripts/deploy.py well_known --ask-pass`
+- [ ] Verify: `curl -sS https://masternoder.dk/.well-known/assetlinks.json | jq .`
+- [ ] Optional strict test: `$env:CASINO_ASSETLINKS_STRICT="1"; python -m pytest tests/unit/test_casino_assetlinks.py -q`
+
+Full walkthrough: [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
+
 - [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 5 routes + `casino.js` + config).
 - [ ] **Agent daemon on server** — `scripts/run_casino_agent_daemon.cmd` or cron; set `AGENT_CASINO_SECRET`, `CASINO_AGENT_LLM=1`; dry-run first.
 - [ ] **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
