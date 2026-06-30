@@ -22,22 +22,27 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 - [x] Agent spectator — `/api/casino/agents/spectate` + `run_casino_agent_daemon.cmd`
 - [x] Tests — `tests/unit/test_casino_ideas_wave3.py` (8 tests)
 
-### Wave 4 (backlog)
-- [ ] Keno syndicate (#5)
-- [ ] Roulette side bets (#6)
-- [ ] Blackjack tournaments (#7)
-- [ ] Wheel raid boss (#9)
-- [ ] Friend challenge links (#15)
-- [ ] Podcast portal tie-in (#20)
-- [ ] MN2 rake rebate progress bar (#22)
-- [ ] Global hub affiliate nodes (#24)
+### Wave 4 ✅ (2026-06-30)
+- [x] Keno syndicate — `/api/casino/keno-syndicate/*` + Compete tab
+- [x] Friend challenge links — duel invite tokens + `?duel=TOKEN`
+- [x] Blackjack tournaments — `/api/casino/blackjack-tournaments/*`
+- [x] Wheel raid boss — spin counter + jackpot seed + Compete progress
+- [x] Roulette side bets — hot/cold config on roulette engine
+- [x] MN2 rake rebate progress bar — `/api/casino/trophy-rake-rebate/progress`
+- [x] Podcast portal tie-in — bonus coins during live tournament window
+- [x] Global hub affiliate nodes — `POST /api/casino/global/hub-node`
+- [x] Tests — `tests/unit/test_casino_ideas_wave4.py` (8 tests)
+
+### Wave 5 (backlog)
+- [ ] Video poker ladder (#8)
+- [ ] PayPal deposit bundles (#23)
 
 ---
 
 ## Ops (actionable)
 
 - [ ] **Tuesday Play ($25)** — Pay fee → upload AAB → paste App Signing SHA into `assetlinks.json` → `python scripts/deploy.py well_known --ask-pass`. See [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md).
-- [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 3 routes + `casino.js` + config).
+- [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 4 routes + `casino.js` + config).
 - [ ] **Agent daemon on server** — `scripts/run_casino_agent_daemon.cmd` or cron; set `AGENT_CASINO_SECRET`, `CASINO_AGENT_LLM=1`; dry-run first.
 - [ ] **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
 - [ ] **Apple AASA** — **paused** until Apple Developer account; PWA + `masternoder://` works without it.
@@ -47,15 +52,16 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 
 ## Ideas backlog
 
-Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (Waves 1–3 ✅ · Wave 4 backlog).
+Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (Waves 1–4 ✅ · Wave 5 backlog: #8 video poker ladder, #23 PayPal starter packs).
 
 ---
 
 ## Verify after deploy
 
 ```powershell
-python -m pytest tests/unit/test_casino_ideas_wave3.py -q
-curl -s "https://masternoder.dk/api/casino/agents/spectate?limit=5"
-curl -s "https://masternoder.dk/api/casino/duels/plinko-battle?status=open"
-curl -s "https://masternoder.dk/api/casino/crash-crew/rooms?limit=3"
+python -m pytest tests/unit/test_casino_ideas_wave4.py -q
+curl -s "https://masternoder.dk/api/casino/keno-syndicate?status=open"
+curl -s "https://masternoder.dk/api/casino/wheel-raid/status"
+curl -s "https://masternoder.dk/api/casino/blackjack-tournaments/open"
+curl -s "https://masternoder.dk/api/casino/trophy-rake-rebate/progress?user_id=u1"
 ```

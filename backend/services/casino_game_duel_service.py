@@ -1,8 +1,9 @@
-"""Plinko battle and mines duel — PvP escrow duels (Wave 3)."""
+"""Plinko battle and mines duel — PvP escrow duels (Wave 3). Friend challenge links (Wave 4)."""
 from __future__ import annotations
 
 import json
 import os
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -12,6 +13,87 @@ from backend.services import casino_service as cs
 
 def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _invites_path() -> str:
+    log_dir = cs._log_dir()
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, "casino_duel_invites.json")
+
+
+def _load_invites() -> Dict[str, str]:
+    path = _invites_path()
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_invites(data: Dict[str, str]) -> None:
+    try:
+        with open(_invites_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def create_invite_token(duel_id: str) -> str:
+    token = secrets.token_urlsafe(12)
+    invites = _load_invites()
+    invites[token] = duel_id
+    _save_invites(invites)
+    return token
+
+
+def invite_url(token: str) -> str:
+    base = os.environ.get("BASE_URL", "https://masternoder.dk").rstrip("/")
+    return f"{base}/casino/?duel={token}"
+
+
+def resolve_invite_token(token: str) -> Dict[str, Any]:
+    """Look up duel by invite token — checks game duels then pvp duels."""
+    token = (token or "").strip()
+    if not token:
+        return {"success": False, "error": "Missing token"}
+    invites = _load_invites()
+    duel_id = invites.get(token)
+    if not duel_id:
+        data = _load()
+        for d in data["duels"].values():
+            if isinstance(d, dict) and d.get("invite_token") == token:
+                duel_id = d.get("duel_id")
+                break
+    if not duel_id:
+        pvp = cs._load_duels()
+        for d in pvp.values():
+            if isinstance(d, dict) and d.get("invite_token") == token:
+                duel_id = d.get("duel_id")
+                break
+    if not duel_id:
+        return {"success": False, "error": "Invite not found or expired"}
+
+    data = _load()
+    duel = data["duels"].get(duel_id)
+    if isinstance(duel, dict):
+        pub = {k: v for k, v in duel.items() if k not in ("challenger_choice", "mine_positions", "result")}
+        pub["invite_token"] = token
+        pub["invite_url"] = invite_url(token)
+        pub["duel_source"] = "game"
+        return {"success": True, "duel": pub, "invite_token": token, "invite_url": pub["invite_url"]}
+
+    pvp = cs._load_duels()
+    duel = pvp.get(duel_id)
+    if isinstance(duel, dict):
+        pub = {k: v for k, v in duel.items() if k != "challenger_choice"}
+        pub["invite_token"] = token
+        pub["invite_url"] = invite_url(token)
+        pub["duel_source"] = "pvp"
+        return {"success": True, "duel": pub, "invite_token": token, "invite_url": pub["invite_url"]}
+    return {"success": False, "error": "Duel not found"}
 
 
 def _duels_path() -> str:
@@ -165,7 +247,9 @@ def create_plinko_battle(
     data = _load()
     data["duels"][duel_id] = duel
     _save(data)
-    return {"success": True, "duel": {k: v for k, v in duel.items()}}
+    token = create_invite_token(duel_id)
+    duel["invite_token"] = token
+    return {"success": True, "duel": {k: v for k, v in duel.items()}, "invite_token": token, "invite_url": invite_url(token)}
 
 
 def accept_plinko_battle(user_id: str, duel_id: str) -> Dict[str, Any]:
@@ -285,7 +369,9 @@ def create_mines_duel(user_id: str, bet: float, currency: str = "coins") -> Dict
     data = _load()
     data["duels"][duel_id] = duel
     _save(data)
-    return {"success": True, "duel": duel}
+    token = create_invite_token(duel_id)
+    duel["invite_token"] = token
+    return {"success": True, "duel": duel, "invite_token": token, "invite_url": invite_url(token)}
 
 
 def accept_mines_duel(user_id: str, duel_id: str) -> Dict[str, Any]:

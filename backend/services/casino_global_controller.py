@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -165,10 +166,113 @@ def _merge_peer_leaderboards(
     period: str,
     currency: str,
 ) -> Dict[str, Dict[str, float]]:
-    """Future: fetch peer hub APIs and merge by user_id. Stub returns local only."""
+    """Merge local stats with cached hub_node reports from affiliate sites."""
     merged = {uid: dict(stats) for uid, stats in local.items()}
-    _ = (peers, period, currency)  # reserved for multi-site rollout
+    for node in _load_hub_reports():
+        if not isinstance(node, dict):
+            continue
+        if (node.get("period") or "today") != period:
+            continue
+        if _cs()._normalize_currency(node.get("currency") or "coins") != currency:
+            continue
+        for row in node.get("leaderboard") or []:
+            if not isinstance(row, dict) or not row.get("user_id"):
+                continue
+            uid = str(row["user_id"])
+            merged.setdefault(uid, {"net": 0.0, "bets": 0, "wins": 0, "wagered": 0.0})
+            merged[uid]["net"] += float(row.get("net") or 0)
+            merged[uid]["bets"] += int(row.get("bets") or 0)
+            merged[uid]["wins"] += int(row.get("wins") or 0)
+            merged[uid]["wagered"] += float(row.get("wagered") or 0)
+    _ = peers  # reserved for live peer fetch
     return merged
+
+
+def _hub_reports_path() -> str:
+    log_dir = os.environ.get("MASTERNODER_LOG_DIR") or os.path.join(_ROOT, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, "casino_hub_node_reports.json")
+
+
+def _load_hub_reports() -> List[Dict[str, Any]]:
+    path = _hub_reports_path()
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def _save_hub_reports(rows: List[Dict[str, Any]]) -> None:
+    try:
+        with open(_hub_reports_path(), "w", encoding="utf-8") as fh:
+            json.dump(rows[-100:], fh, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def report_hub_node(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Accept affiliate node leaderboard snapshot for network merge."""
+    cfg = get_hub_config()
+    hub_id = str(cfg.get("hub_id") or "masternoder-main")
+    node_id = str(payload.get("node_id") or payload.get("hub_node") or "").strip()
+    if not node_id:
+        return {"success": False, "error": "node_id required"}
+    if node_id == hub_id:
+        return {"success": False, "error": "Cannot report self as affiliate node"}
+
+    secret = os.environ.get("CASINO_HUB_NODE_SECRET") or cfg.get("hub_node_secret")
+    if secret:
+        provided = str(payload.get("secret") or payload.get("hub_secret") or "").strip()
+        if provided != str(secret):
+            return {"success": False, "error": "Invalid hub node secret", "code": "HUB_AUTH"}
+
+    from backend.services import casino_service
+
+    currency = casino_service._normalize_currency(payload.get("currency") or "coins")
+    period = str(payload.get("period") or "today")
+    board = payload.get("leaderboard") if isinstance(payload.get("leaderboard"), list) else []
+    row = {
+        "node_id": node_id,
+        "label": str(payload.get("label") or node_id),
+        "period": period,
+        "currency": currency,
+        "leaderboard": board,
+        "reported_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "stats": payload.get("stats") if isinstance(payload.get("stats"), dict) else {},
+    }
+    reports = [r for r in _load_hub_reports() if not (isinstance(r, dict) and r.get("node_id") == node_id and r.get("period") == period and r.get("currency") == currency)]
+    reports.append(row)
+    _save_hub_reports(reports)
+    return {"success": True, "node_id": node_id, "entries": len(board), "hub_id": hub_id}
+
+
+def list_hub_nodes() -> Dict[str, Any]:
+    cfg = get_hub_config()
+    nodes = {}
+    for r in _load_hub_reports():
+        if not isinstance(r, dict):
+            continue
+        nid = r.get("node_id")
+        if nid:
+            nodes[str(nid)] = {
+                "node_id": nid,
+                "label": r.get("label"),
+                "reported_at": r.get("reported_at"),
+                "period": r.get("period"),
+                "currency": r.get("currency"),
+                "entry_count": len(r.get("leaderboard") or []),
+            }
+    return {
+        "success": True,
+        "hub_id": cfg.get("hub_id"),
+        "network_label": cfg.get("network_label"),
+        "nodes": list(nodes.values()),
+        "node_count": len(nodes),
+    }
 
 
 def get_global_leaderboard(

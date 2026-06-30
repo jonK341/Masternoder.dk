@@ -425,6 +425,13 @@ def _validate_bet(user_id: str, bet: float, currency: str = "coins") -> Optional
         return "Invalid bet amount"
     if currency in ("mn2", "usd"):
         try:
+            from backend.services import mn2_spork_service as spork
+            ok, reason = spork.casino_real_money_spork_ok()
+            if not ok:
+                return f"Casino real-money bets paused ({reason.replace('_', ' ')})"
+        except Exception:
+            pass
+        try:
             from flask import has_request_context, request
             from backend.services.account_security_service import check_real_money_action
 
@@ -627,6 +634,18 @@ def _finalize_bet(
         trophy_rebate = apply_rebate(user_id, bet, net, currency, game)
     except ImportError:
         pass
+    podcast_bonus = None
+    try:
+        podcast_active = bool(details.get("podcast_active"))
+        if not podcast_active:
+            from flask import has_request_context, request
+            if has_request_context():
+                body = request.get_json(silent=True) or {}
+                podcast_active = bool(body.get("podcast_active"))
+        from backend.services.casino_podcast_bonus_service import maybe_award_podcast_bonus
+        podcast_bonus = maybe_award_podcast_bonus(user_id, podcast_active=podcast_active, currency=currency)
+    except Exception:
+        pass
     result = {
         "success": True,
         "bet_id": row["bet_id"],
@@ -654,6 +673,9 @@ def _finalize_bet(
             pass
     if trophy_rebate:
         result["trophy_rebate"] = trophy_rebate
+        result["balance"] = _user_balance(user_id, currency)
+    if podcast_bonus:
+        result["podcast_bonus"] = podcast_bonus
         result["balance"] = _user_balance(user_id, currency)
     if currency == "coins":
         result["coins_balance"] = _user_coins(user_id)
@@ -3354,7 +3376,7 @@ def play_wheel(user_id: str, bet: float, risk: str = "medium", currency: str = "
     else:
         outcome = "loss"
 
-    return _finalize_bet(
+    result = _finalize_bet(
         user_id,
         "wheel",
         amount,
@@ -3372,6 +3394,20 @@ def play_wheel(user_id: str, bet: float, risk: str = "medium", currency: str = "
         },
         currency=currency,
     )
+    try:
+        from backend.services import casino_wheel_raid_service
+        raid = casino_wheel_raid_service.record_wheel_spin(user_id, currency)
+        if raid:
+            result["wheel_raid"] = raid
+        status = casino_wheel_raid_service.get_status()
+        result["wheel_raid_progress"] = {
+            "spin_count": status.get("spin_count"),
+            "spin_threshold": status.get("spin_threshold"),
+            "progress_pct": status.get("progress_pct"),
+        }
+    except Exception:
+        pass
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -3813,11 +3849,20 @@ def _roulette_config() -> Dict[str, Any]:
     cfg = _load_config()
     game = (cfg.get("games") or {}).get("roulette") if isinstance(cfg.get("games"), dict) else {}
     game = game if isinstance(game, dict) else {}
+    side = cfg.get("roulette_side_bets") if isinstance(cfg.get("roulette_side_bets"), dict) else {}
     return {
         "label": game.get("label") or "Roulette",
         "icon": game.get("icon") or "🎯",
         "pockets": int(game.get("pockets") or 37),
         "rtp_estimate": float(game.get("rtp_estimate") or 97.3),
+        "side_bets": {
+            "enabled": bool(side.get("enabled", True)),
+            "hot_numbers": [int(x) for x in (side.get("hot_numbers") or [7, 17, 23])],
+            "cold_numbers": [int(x) for x in (side.get("cold_numbers") or [0, 13, 26])],
+            "hot_payout": float(side.get("hot_payout") or 8.0),
+            "cold_payout": float(side.get("cold_payout") or 8.0),
+            "max_fraction_of_main": float(side.get("max_fraction_of_main") or 0.5),
+        },
     }
 
 
@@ -3827,6 +3872,8 @@ def play_roulette(
     bet_type: str,
     selection: Any = None,
     currency: str = "coins",
+    *,
+    side_bet: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     from backend.services import casino_rng
     from backend.services.engines import roulette as roulette_engine
@@ -3859,24 +3906,61 @@ def play_roulette(
         return {"success": False, "error": err}
     amount = _parse_bet_amount(bet, currency) or 0
 
+    side_amount = 0.0
+    side_type = None
+    side_conf = conf["side_bets"]
+    if isinstance(side_bet, dict) and side_conf.get("enabled"):
+        side_type = (side_bet.get("type") or side_bet.get("side_bet_type") or "").strip().lower()
+        if side_type in ("hot", "cold"):
+            try:
+                side_amount = float(side_bet.get("amount") or 0)
+            except (TypeError, ValueError):
+                side_amount = 0.0
+            side_amount = _parse_bet_amount(side_amount, currency) or 0
+            max_side = amount * float(side_conf.get("max_fraction_of_main") or 0.5)
+            if side_amount > max_side:
+                return {"success": False, "error": "Side bet exceeds max fraction of main bet"}
+            if side_amount > 0:
+                err_side = _validate_bet(user_id, side_amount, currency)
+                if err_side:
+                    return {"success": False, "error": err_side}
+
     proof = casino_rng.draw(user_id)
     pocket = roulette_engine.spin(proof["float"], conf["pockets"])
     multiplier = roulette_engine.evaluate(pocket, bt, sel)
     payout = _round_payout(amount * multiplier, currency)
-    outcome = "win" if payout > amount else "loss"
+    side_payout = 0.0
+    if side_type and side_amount > 0:
+        hot = side_conf["hot_numbers"]
+        cold = side_conf["cold_numbers"]
+        side_mult = roulette_engine.evaluate_side_bet(pocket, side_type, hot, cold)
+        if side_type == "hot":
+            side_mult = side_conf["hot_payout"] if pocket in hot else 0.0
+        elif side_type == "cold":
+            side_mult = side_conf["cold_payout"] if pocket in cold else 0.0
+        side_payout = _round_payout(side_amount * side_mult, currency)
+    total_payout = _round_payout(payout + side_payout, currency)
+    total_bet = amount + side_amount
+    outcome = "win" if total_payout > total_bet else ("draw" if total_payout == total_bet else "loss")
+
+    if total_bet > 0:
+        _apply_balance_delta(user_id, -total_bet, currency, "roulette", {"phase": "stake", "main": amount, "side": side_amount})
 
     return _finalize_bet(
         user_id,
         "roulette",
-        amount,
+        total_bet,
         outcome,
-        payout,
+        total_payout,
         {
             "pocket": pocket,
             "color": roulette_engine.color(pocket),
             "bet_type": bt,
             "selection": sel,
             "multiplier": multiplier,
+            "main_bet": amount,
+            "main_payout": payout,
+            "side_bet": {"type": side_type, "amount": side_amount, "payout": side_payout} if side_type else None,
             "fairness": {
                 "server_seed_hash": proof["server_seed_hash"],
                 "client_seed": proof["client_seed"],
@@ -3884,6 +3968,7 @@ def play_roulette(
             },
         },
         currency=currency,
+        skip_stake=True,
     )
 
 
@@ -4766,7 +4851,21 @@ def create_pvp_duel(
     duels = _load_duels()
     duels[duel_id] = duel
     _save_duels(duels)
-    return {"success": True, "duel": {**duel, "challenger_choice": None}}
+    try:
+        from backend.services import casino_game_duel_service
+        token = casino_game_duel_service.create_invite_token(duel_id)
+        invite = casino_game_duel_service.invite_url(token)
+    except Exception:
+        token = None
+        invite = None
+    pub = {**duel, "challenger_choice": None}
+    if token:
+        pub["invite_token"] = token
+        pub["invite_url"] = invite
+        duel["invite_token"] = token
+        duels[duel_id] = duel
+        _save_duels(duels)
+    return {"success": True, "duel": pub, "invite_token": token, "invite_url": invite}
 
 
 def accept_pvp_duel(user_id: str, duel_id: str, choice: str = "") -> Dict[str, Any]:

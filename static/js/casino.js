@@ -68,6 +68,9 @@
         if ((activeCurrency === 'mn2' || activeCurrency === 'usd') && securityTokenValid()) {
             body.verification_token = securityToken;
         }
+        if (document.querySelector('.podcast-portal-strip')) {
+            body.podcast_active = true;
+        }
         return body;
     }
 
@@ -1096,14 +1099,18 @@
         }
         if (rankBar) {
             var yr = data.your_rank;
+            var rakeNote = '';
+            var rakePct = rankBar.getAttribute('data-rake-pct');
+            if (rakePct) rakeNote = ' · Trophy rebate ' + rakePct + '%';
             if (!yr) {
-                rankBar.textContent = 'Your rank: unranked — open Leaderboard tab after your first bet.';
+                rankBar.textContent = 'Your rank: unranked — open Leaderboard tab after your first bet.' + rakeNote;
             } else {
                 rankBar.textContent =
                     'Your rank #' + yr.rank + ' · Net ' + yr.net + ' · Win ' + yr.win_rate + '% · ROI ' + yr.roi + '%' +
-                    (yr.gap_to_first > 0 ? ' · ' + yr.gap_to_first + ' behind #1' : ' · Leading!');
+                    (yr.gap_to_first > 0 ? ' · ' + yr.gap_to_first + ' behind #1' : ' · Leading!') + rakeNote;
             }
         }
+        refreshRakeRebateProgress();
     }
 
     async function refreshActivityMonitor() {
@@ -1812,6 +1819,184 @@
         }
         await refreshAgentSpectator('casino-compete-spectator');
         await refreshMinesDuels();
+        await refreshKenoSyndicates();
+        await refreshBjTournament();
+        await refreshWheelRaid();
+        await refreshRakeRebateProgress();
+    }
+
+    var pendingDuelInvite = null;
+
+    async function applyDuelDeepLink() {
+        var params = new URLSearchParams(window.location.search);
+        var token = params.get('duel');
+        if (!token) return;
+        switchMainTab('compete');
+        var data = await api('/api/casino/duels/invite/' + encodeURIComponent(token));
+        var panel = $('casino-duel-invite');
+        var text = $('casino-duel-invite-text');
+        if (!panel || !text) return;
+        panel.classList.remove('hidden');
+        if (!data.success || !data.duel) {
+            text.textContent = data.error || 'Duel invite not found.';
+            return;
+        }
+        pendingDuelInvite = data.duel;
+        text.textContent = (data.duel.game || 'duel') + ' · ' + (data.duel.bet || '?') + ' ' +
+            currencyLabel(data.duel.currency) + ' — accept to play?';
+    }
+
+    async function acceptDuelInvite() {
+        if (!pendingDuelInvite) return;
+        var d = pendingDuelInvite;
+        var path = '/api/casino/duels/accept';
+        var body = { user_id: userId, duel_id: d.duel_id };
+        if (d.game === 'mines_duel') path = '/api/casino/duels/mines/accept';
+        else if (d.game === 'plinko_battle') path = '/api/casino/duels/plinko-battle/accept';
+        else if (d.duel_source === 'pvp') {
+            var choice = ($('duel-choice') || {}).value || 'tails';
+            body.choice = choice;
+        }
+        var data = await api(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        showToast(data.success ? ('Duel resolved — ' + (data.winner_id === userId ? 'you won!' : 'done')) : (data.error || 'Failed'));
+        pendingDuelInvite = null;
+        var panel = $('casino-duel-invite');
+        if (panel) panel.classList.add('hidden');
+        await refreshBalance();
+        refreshCompeteTab();
+    }
+
+    async function refreshKenoSyndicates() {
+        var list = $('keno-syndicate-open');
+        if (!list) return;
+        var data = await api('/api/casino/keno-syndicate?status=open');
+        if (!data.success || !(data.syndicates || []).length) {
+            list.textContent = 'No open syndicates — create one above.';
+            return;
+        }
+        list.innerHTML = (data.syndicates || []).map(function (s) {
+            return '<div class="casino-duel-row">Syndicate · ' + s.member_count + '/' + s.max_players +
+                ' · ' + s.stake_per_player + ' ' + currencyLabel(s.currency) +
+                ' <button type="button" class="keno-syndicate-join-btn" data-id="' + s.syndicate_id + '">Join</button></div>';
+        }).join('');
+        list.querySelectorAll('.keno-syndicate-join-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { joinKenoSyndicate(btn.getAttribute('data-id')); });
+        });
+    }
+
+    function parseKenoSpots() {
+        var raw = (($('keno-syndicate-spots') || {}).value || '').trim();
+        if (!raw) return [];
+        return raw.split(/[,\s]+/).map(function (x) { return parseInt(x, 10); }).filter(function (n) { return !isNaN(n); });
+    }
+
+    async function createKenoSyndicate() {
+        var stake = parseFloat(($('keno-syndicate-stake') || {}).value) || 25;
+        var data = await api('/api/casino/keno-syndicate/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(betPayload({ stake: stake })),
+        });
+        setResult($('keno-syndicate-result'), data);
+        if (data.success && data.syndicate) {
+            var spots = parseKenoSpots();
+            if (spots.length) {
+                await api('/api/casino/keno-syndicate/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, syndicate_id: data.syndicate.syndicate_id, spots: spots }),
+                });
+            }
+            refreshKenoSyndicates();
+        }
+    }
+
+    async function joinKenoSyndicate(sid) {
+        var spots = parseKenoSpots();
+        if (!spots.length) {
+            showToast('Enter spots in the field above first');
+            return;
+        }
+        var data = await api('/api/casino/keno-syndicate/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, syndicate_id: sid, spots: spots }),
+        });
+        setResult($('keno-syndicate-result'), data);
+        if (data.success) {
+            await refreshBalance();
+            refreshKenoSyndicates();
+        }
+    }
+
+    async function refreshBjTournament() {
+        var el = $('casino-bj-tournament');
+        if (!el) return;
+        var data = await api('/api/casino/blackjack-tournaments/open');
+        if (!data.success || !data.tournament) {
+            el.textContent = data.error || 'BJ tournament unavailable';
+            return;
+        }
+        var t = data.tournament;
+        el.innerHTML = '<p><strong>' + (t.status || 'open') + '</strong> · buy-in ' + t.buy_in + ' ' +
+            currencyLabel(t.currency) + ' · pool ' + (t.pool || 0) + ' · ' +
+            (t.entrant_count || 0) + '/' + (t.bracket_size || 8) + ' players</p>' +
+            (t.winner_id ? '<p>Winner: ' + shortUser(t.winner_id) + '</p>' : '') +
+            (t.status === 'open' ? '<button type="button" id="bj-tournament-join" class="casino-share-site-btn">Join bracket</button>' : '');
+        var joinBtn = $('bj-tournament-join');
+        if (joinBtn) {
+            joinBtn.addEventListener('click', async function () {
+                var joined = await api('/api/casino/blackjack-tournaments/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(betPayload({ tournament_id: t.tournament_id })),
+                });
+                showToast(joined.success ? 'Joined BJ tournament!' : (joined.error || 'Join failed'));
+                refreshBjTournament();
+                refreshBalance();
+            });
+        }
+    }
+
+    async function refreshWheelRaid() {
+        var el = $('casino-wheel-raid');
+        if (!el) return;
+        var data = await api('/api/casino/wheel-raid/status');
+        if (!data.success) {
+            el.textContent = 'Wheel raid unavailable';
+            return;
+        }
+        var pct = data.progress_pct || 0;
+        el.innerHTML = '<p>Community spins: ' + (data.spin_count || 0) + ' / ' + (data.spin_threshold || 500) +
+            ' (' + pct + '%)</p>' +
+            '<div class="casino-rake-progress-bar" style="height:8px;background:#333;border-radius:4px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div>' +
+            '<p class="casino-activity-sub">Raid boss seeds bonus jackpots when the bar fills.</p>';
+    }
+
+    async function refreshRakeRebateProgress() {
+        var el = $('casino-rake-rebate-progress');
+        if (!el) return;
+        var data = await api('/api/casino/trophy-rake-rebate/progress?user_id=' + encodeURIComponent(userId));
+        if (!data.enabled) {
+            el.textContent = 'Trophy rake rebate is off.';
+            return;
+        }
+        var pct = data.progress_pct || 0;
+        var cur = Math.round((data.current_rebate_pct || 0) * 1000) / 10;
+        var nxt = data.next_tier_rebate_pct != null ? Math.round(data.next_tier_rebate_pct * 1000) / 10 : null;
+        el.innerHTML = '<p>Trophies: ' + (data.trophies || 0) + ' · rebate ' + cur + '%' +
+            (nxt != null ? ' → next ' + nxt + '% at ' + data.next_tier_min_trophies + ' trophies' : ' (max tier)') + '</p>' +
+            '<div class="casino-rake-progress-bar" style="height:8px;background:#333;border-radius:4px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa)"></div></div>';
+        var rankBar = $('casino-rank-bar');
+        if (rankBar && data.trophies != null) {
+            rankBar.setAttribute('data-rake-pct', String(cur));
+        }
     }
 
     async function refreshAgentSpectator(targetId) {
@@ -3757,6 +3942,11 @@
         if (type === 'straight' || type === 'dozen' || type === 'column') {
             payload.selection = parseInt(($('roulette-selection') || {}).value || 0, 10);
         }
+        var sideType = ($('roulette-side-type') || {}).value || '';
+        var sideAmt = parseFloat(($('roulette-side-bet') || {}).value || 0);
+        if (sideType && sideAmt > 0) {
+            payload.side_bet = { type: sideType, amount: sideAmt };
+        }
         var data = await api('/api/casino/play/roulette', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -4239,6 +4429,8 @@
         bindClick('vp-draw', drawVideoPoker);
         bindClick('duel-create', createDuel);
         bindClick('mines-duel-create', createMinesDuel);
+        bindClick('keno-syndicate-create', createKenoSyndicate);
+        bindClick('casino-duel-invite-accept', acceptDuelInvite);
         bindClick('casino-daily-wheel', spinDailyWheel);
         bindChange('duel-game', function () {
             var g = ($('duel-game') || {}).value;
@@ -4292,6 +4484,7 @@
 
         try { initMainTabNav(); } catch (e) { console.warn('[casino] tab nav failed:', e); }
         try { applyDeepLinks(); } catch (e) { console.warn('[casino] deep links failed:', e); }
+        try { applyDuelDeepLink(); } catch (e) { console.warn('[casino] duel deep link failed:', e); }
         try { registerCasinoReferralFromUrl(); } catch (e) { /* optional */ }
 
         try {
