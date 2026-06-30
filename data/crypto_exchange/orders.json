@@ -167,5 +167,18 @@
     "status": "open",
     "created_at": "2026-06-30T23:34:46.192603Z",
     "lock_ref": "ex-order:15e7349846af"
+  },
+  {
+    "order_id": "6ecb552841e542c5",
+    "user_id": "exchange_agent_casino_liquidity",
+    "symbol": "MN2",
+    "side": "sell",
+    "amount": 1568.59728619,
+    "remaining": 1568.59728619,
+    "limit_price": 101.0,
+    "quote": "COINS",
+    "status": "open",
+    "created_at": "2026-06-30T23:35:39.755999Z",
+    "lock_ref": "ex-order:93b05d54eee8"
   }
 ]

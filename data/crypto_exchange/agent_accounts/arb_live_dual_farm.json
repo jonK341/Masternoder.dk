@@ -5,8 +5,8 @@
   "notional_traded_usd": 0.0,
   "by_venue": {},
   "wallet_label": "arb_live_dual_wallet",
-  "game_time_sec": 79200,
-  "ticks": 22,
+  "game_time_sec": 86400,
+  "ticks": 24,
   "agent_level": 1,
   "last_action": {
     "agent_id": "arb_live_dual_farm",

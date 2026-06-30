@@ -5,14 +5,25 @@
   "notional_traded_usd": 0.0,
   "by_venue": {},
   "wallet_label": "arb_defi_wallet",
-  "game_time_sec": 79200,
-  "ticks": 22,
+  "game_time_sec": 86400,
+  "ticks": 24,
   "agent_level": 1,
   "last_action": {
     "agent_id": "arb_agent_defi",
     "executed": false,
     "reason": "no_profitable_spread",
-    "best": null,
+    "best": {
+      "symbol": "ATOM",
+      "buy_venue": "kucoin",
+      "buy_ask": 1.5082,
+      "sell_venue": "binance",
+      "sell_bid": 1.508,
+      "gross_bps": -1.33,
+      "fee_bps": 40.0,
+      "net_bps": -41.33,
+      "notional_usd": 180.0,
+      "est_profit_usd": -0.7439
+    },
     "mode": "paper"
   },
   "created_at": "2026-06-30T22:16:32.761447Z"

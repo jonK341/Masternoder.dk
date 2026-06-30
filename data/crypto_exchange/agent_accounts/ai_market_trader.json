@@ -8,8 +8,8 @@
     "cryptocom": 250.0
   },
   "wallet_label": "",
-  "game_time_sec": 1710000,
-  "ticks": 475,
+  "game_time_sec": 1713600,
+  "ticks": 476,
   "agent_level": 12,
   "last_action": {
     "agent_id": "ai_market_trader",
@@ -18,7 +18,7 @@
     "best": null,
     "analysis_summary": {
       "source": "cache",
-      "opportunity_count": 1,
+      "opportunity_count": 16,
       "profitable_count": 0,
       "min_margin_bps": 30.0
     }

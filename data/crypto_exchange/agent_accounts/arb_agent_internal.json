@@ -14,21 +14,21 @@
     "executed": false,
     "reason": "no_profitable_spread",
     "best": {
-      "symbol": "BTC",
-      "buy_venue": "internal",
-      "buy_ask": 58542.847555,
+      "symbol": "SOL",
+      "buy_venue": "xeggex",
+      "buy_ask": 73.58,
       "sell_venue": "binance",
-      "sell_bid": 58611.99,
-      "gross_bps": 11.81,
-      "fee_bps": 55.0,
-      "net_bps": -43.19,
+      "sell_bid": 73.67,
+      "gross_bps": 12.23,
+      "fee_bps": 45.0,
+      "net_bps": -32.77,
       "notional_usd": 250.0,
-      "est_profit_usd": -1.0797
+      "est_profit_usd": -0.8192
     },
     "mode": "paper"
   },
   "created_at": "2026-06-27T20:44:47.180255Z",
-  "ticks": 732,
-  "game_time_sec": 2635200,
+  "ticks": 734,
+  "game_time_sec": 2642400,
   "agent_level": 15
 }
