@@ -1192,3 +1192,91 @@ def mn2_withdraw_2fa_disable():
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/releases", methods=["GET"])
+def mn2_releases():
+    """Public catalog of MN2 daemon/Qt wallet downloads for /wallets UI."""
+    try:
+        from backend.services.mn2_release_catalog_service import get_release_catalog
+        return jsonify(get_release_catalog())
+    except Exception as e:
+        _log.exception("mn2_releases failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/network-peers", methods=["GET"])
+def mn2_network_peers():
+    """Canonical P2P bootstrap peers and conf snippets for wallet operators."""
+    try:
+        from backend.services.mn2_network_peers_service import conf_snippet, peer_catalog
+        fmt = (request.args.get("format") or "").strip().lower()
+        if fmt == "conf":
+            net = request.args.get("network") or "mainnet"
+            body = conf_snippet(net)
+            return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
+        return jsonify(peer_catalog())
+    except Exception as e:
+        _log.exception("mn2_network_peers failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/wallet-hub", methods=["GET"])
+def mn2_wallet_hub():
+    """Aggregated wallet overview: balance, network peers, spork gates, tx preview."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    try:
+        from backend.services.mn2_wallet_hub_service import wallet_hub
+        return jsonify(wallet_hub(user_id)), 200
+    except Exception as e:
+        _log.exception("mn2_wallet_hub failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/recent-transactions", methods=["GET"])
+def mn2_recent_transactions():
+    """Unified recent tx feed: custodial ledger + on-chain deposit txs + exchange trades."""
+    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    limit = min(100, max(1, int(request.args.get("limit", 30))))
+    try:
+        from backend.services.mn2_wallet_hub_service import recent_transactions_feed
+        return jsonify(recent_transactions_feed(user_id, limit=limit)), 200
+    except Exception as e:
+        _log.exception("mn2_recent_transactions failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/rental-overview", methods=["GET"])
+def mn2_rental_overview():
+    """Masternode hosting fleet + agent rental listings (+ user rentals when signed in)."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    try:
+        from backend.services.mn2_wallet_hub_service import rental_overview
+        return jsonify(rental_overview(user_id if user_id != "default_user" else None)), 200
+    except Exception as e:
+        _log.exception("mn2_rental_overview failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/network-dashboard", methods=["GET"])
+def mn2_network_dashboard():
+    """Public network + spork + blocks snapshot for explorer and wallets pages."""
+    try:
+        from backend.services.mn2_wallet_hub_service import public_network_dashboard
+        resp = jsonify(public_network_dashboard())
+        resp.headers["Cache-Control"] = "public, max-age=20"
+        return resp, 200
+    except Exception as e:
+        _log.exception("mn2_network_dashboard failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@mn2_bp.route("/api/mn2/spork-gates", methods=["GET"])
+def mn2_spork_gates():
+    """Ops spork gate status for exchange, casino, payout, and maintenance."""
+    try:
+        from backend.services import mn2_spork_service as spork
+        return jsonify({"success": True, **spork.gate_status()}), 200
+    except Exception as e:
+        _log.exception("mn2_spork_gates failed")
+        return jsonify({"success": False, "error": str(e)}), 500

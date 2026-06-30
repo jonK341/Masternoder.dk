@@ -1,7 +1,10 @@
 """
 Virtual-coins casino API with optional MN2 and PayPal USD rails.
 """
+import json
 import os
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
@@ -9,6 +12,12 @@ import backend.services.casino_service as casino_service
 
 
 casino_bp = Blueprint("virtual_casino", __name__)
+
+_MARKETING_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data",
+    "casino_marketing.json",
+)
 
 
 def _resolve_casino_user_id(from_body: bool = False, from_query: bool = True) -> str:
@@ -45,6 +54,25 @@ def _casino_settings_payload():
     return payload
 
 
+def _load_casino_marketing() -> dict:
+    try:
+        with open(_MARKETING_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+@casino_bp.route("/api/casino/health", methods=["GET"])
+def casino_health():
+    return jsonify({
+        "success": True,
+        "service": "casino",
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }), 200
+
+
 @casino_bp.route("/api/casino/settings", methods=["GET"])
 def casino_settings():
     try:
@@ -59,11 +87,50 @@ def casino_config_compat():
     return casino_settings()
 
 
+@casino_bp.route("/api/casino/marketing", methods=["GET"])
+def casino_marketing():
+    """Public marketing copy, tags, and banner URLs for store listings and social."""
+    try:
+        payload = _load_casino_marketing()
+        payload["success"] = True
+        return jsonify(payload), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/balance", methods=["GET"])
 def casino_balance():
     try:
         user_id = _resolve_casino_user_id(from_body=False, from_query=True)
         return jsonify(casino_service.get_balance(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/exchange-bridge", methods=["GET"])
+def casino_exchange_bridge():
+    """Unified wallet strip: casino balance + exchange profit cash-out."""
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        from backend.services.exchange_user_controller_service import hub_state, load_config as ctrl_cfg
+
+        hub = hub_state(user_id)
+        pub = casino_service.get_public_config()
+        rm = (pub.get("real_money") or {}) if isinstance(pub, dict) else {}
+        bridge = rm.get("exchange_bridge") or {}
+        ctrl = ctrl_cfg()
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "bridge": bridge,
+            "mn2_balance": (hub.get("balances") or {}).get("mn2", 0),
+            "shop_coins": (hub.get("balances") or {}).get("coins", 0),
+            "exchange_profit_usd": hub.get("cash_out_available_usd", 0),
+            "rental_count": hub.get("rental_count", 0),
+            "controller_url": bridge.get("exchange_page_url") or "/exchange#cex-control-center",
+            "cross_promo": bridge.get("cross_promo") or ctrl.get("casino_bridge", {}).get("note", ""),
+            "casino_coins_per_usd": (ctrl.get("cash_out") or {}).get("casino_coins_per_usd", 100),
+        }), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -202,6 +269,51 @@ def casino_leaderboard():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/global/leaderboard", methods=["GET"])
+def casino_global_leaderboard():
+    try:
+        from backend.services import casino_global_controller
+        period = request.args.get("period", "today")
+        limit = request.args.get("limit", 25)
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_global_controller.get_global_leaderboard(
+            period=period,
+            limit=limit,
+            user_id=user_id,
+            currency=_currency_from_query(),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/global/stats", methods=["GET"])
+def casino_global_stats():
+    try:
+        from backend.services import casino_global_controller
+        return jsonify(casino_global_controller.get_global_stats()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/daily", methods=["GET"])
+def casino_revenue_daily():
+    try:
+        from backend.services import casino_revenue_report
+        days = request.args.get("days", 7)
+        return jsonify(casino_revenue_report.daily_reports(days=days)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/report/today", methods=["GET"])
+def casino_revenue_today():
+    try:
+        from backend.services import casino_revenue_report
+        return jsonify(casino_revenue_report.today_summary()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/play/free-daily-bet", methods=["POST"])
 def casino_free_daily_bet():
     try:
@@ -241,6 +353,57 @@ def casino_hall_of_fame():
     try:
         limit = request.args.get("limit", 3)
         return jsonify(casino_service.get_hall_of_fame(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/big-wins/hall-of-fame", methods=["GET"])
+def casino_big_win_hall_of_fame():
+    try:
+        days = request.args.get("days", 7, type=int)
+        limit = request.args.get("limit", 15, type=int)
+        currency = request.args.get("currency") or None
+        return jsonify(casino_service.get_big_win_hall_of_fame(
+            days=days, limit=limit, currency=currency,
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/slot-of-the-day", methods=["GET"])
+def casino_slot_of_the_day():
+    try:
+        return jsonify(casino_service.get_slot_of_the_day()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/responsible-gaming/status", methods=["GET"])
+def casino_responsible_gaming_status():
+    try:
+        from backend.services.casino_responsible_gaming import status_for_user
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        currency = _currency_from_query()
+        return jsonify(status_for_user(user_id, currency)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/revenue/reconcile", methods=["GET"])
+def casino_revenue_reconcile():
+    try:
+        from backend.services import casino_revenue_report
+        day = request.args.get("day")
+        return jsonify(casino_revenue_report.reconcile_check(day=day)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/shop/rtp-audit", methods=["GET"])
+def casino_shop_rtp_audit():
+    try:
+        from backend.services import casino_shop_service
+        return jsonify(casino_shop_service.audit_rtp_compliance()), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -518,6 +681,7 @@ def casino_roulette():
             bet_type=(data.get("bet_type") or "").strip(),
             selection=data.get("selection"),
             currency=_currency_from_body(data),
+            side_bet=data.get("side_bet") if isinstance(data.get("side_bet"), dict) else None,
         )
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
@@ -566,6 +730,345 @@ def casino_hilo_cashout():
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/blackjack", methods=["POST"])
+def casino_blackjack_start():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.start_blackjack_round(
+            user_id=user_id,
+            bet=data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/blackjack/hit", methods=["POST"])
+def casino_blackjack_hit():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.blackjack_hit(
+            user_id=user_id,
+            round_id=(data.get("round_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/blackjack/stand", methods=["POST"])
+def casino_blackjack_stand():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.blackjack_stand(
+            user_id=user_id,
+            round_id=(data.get("round_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/blackjack/double", methods=["POST"])
+def casino_blackjack_double():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.blackjack_double(
+            user_id=user_id,
+            round_id=(data.get("round_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/baccarat", methods=["POST"])
+def casino_baccarat():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.play_baccarat(
+            user_id=user_id,
+            bet=data.get("bet"),
+            side=(data.get("side") or data.get("choice") or "").strip(),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/video-poker", methods=["POST"])
+def casino_video_poker_start():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.start_video_poker_round(
+            user_id=user_id,
+            bet=data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/play/video-poker/draw", methods=["POST"])
+def casino_video_poker_draw():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.video_poker_draw(
+            user_id=user_id,
+            round_id=(data.get("round_id") or "").strip(),
+            hold=data.get("hold"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/progression", methods=["GET"])
+def casino_progression():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_progression(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/achievements", methods=["GET"])
+def casino_achievements():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_achievements(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/daily-wheel/spin", methods=["POST"])
+def casino_daily_wheel_spin():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.spin_daily_wheel(user_id)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels", methods=["GET"])
+def casino_duels_list():
+    try:
+        status = request.args.get("status") or "open"
+        return jsonify(casino_service.list_pvp_duels(status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/create", methods=["POST"])
+def casino_duels_create():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.create_pvp_duel(
+            user_id=user_id,
+            bet=data.get("bet"),
+            game=(data.get("game") or "coin_flip").strip(),
+            choice=(data.get("choice") or "").strip(),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/accept", methods=["POST"])
+def casino_duels_accept():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.accept_pvp_duel(
+            user_id=user_id,
+            duel_id=(data.get("duel_id") or "").strip(),
+            choice=(data.get("choice") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/shop/catalog", methods=["GET"])
+def casino_shop_catalog():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_shop_catalog(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/shop/owned", methods=["GET"])
+def casino_shop_owned():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_shop_owned(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/shop/purchase", methods=["POST"])
+def casino_shop_purchase():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_service.purchase_shop_item(
+            user_id=user_id,
+            item_id=(data.get("item_id") or "").strip(),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/trophies", methods=["GET"])
+def casino_trophies():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_casino_trophies(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/rivals", methods=["GET"])
+def casino_rivals():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        period = request.args.get("period", "week")
+        return jsonify(casino_service.get_rival_board(
+            user_id, period=period, currency=_currency_from_query(),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/achievement-races", methods=["GET"])
+def casino_achievement_races():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_achievement_races(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crew-leaderboard", methods=["GET"])
+def casino_crew_leaderboard():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_crew_casino_leaderboard(
+            user_id, currency=_currency_from_query(),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crew/leaderboard", methods=["GET"])
+def casino_crew_leaderboard_v2():
+    """Wave 2 alias — weekly crew net leaderboard with discord guild metadata."""
+    return casino_crew_leaderboard()
+
+
+@casino_bp.route("/api/casino/seasonal/slots", methods=["GET"])
+def casino_seasonal_slots():
+    try:
+        return jsonify(casino_service.get_seasonal_slots()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/vip/lounge", methods=["GET"])
+def casino_vip_lounge():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_vip_lounge(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/fairness/export", methods=["GET"])
+def casino_fairness_export():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        limit = request.args.get("limit", 100, type=int)
+        fmt = (request.args.get("format") or "csv").strip().lower()
+        if fmt == "json":
+            return jsonify(casino_service.export_fairness_audit(user_id, limit=limit)), 200
+        from flask import Response
+        csv_body = casino_service.fairness_audit_csv(user_id, limit=limit)
+        filename = f"casino-fairness-{user_id[:16]}.csv"
+        return Response(
+            csv_body,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/activity-feed/stream", methods=["GET"])
+def casino_activity_feed_stream():
+    """SSE stream of recent casino wins from ledger mirror — poll fallback in JS."""
+    import json
+    import time
+    from flask import Response, request, stream_with_context
+
+    interval = max(3, min(int(request.args.get("interval", 8)), 60))
+    limit = max(3, min(int(request.args.get("limit", 12)), 50))
+    currency = request.args.get("currency")
+    max_ticks = request.args.get("max_ticks", type=int)
+
+    def generate():
+        yield "data: " + json.dumps({
+            "type": "connected",
+            "channel": "casino_wins",
+            "interval_sec": interval,
+        }) + "\n\n"
+        last_sig = None
+        tick = 0
+        while True:
+            try:
+                payload = casino_service.get_activity_feed(limit=limit, currency=currency)
+                feed = payload.get("feed") or []
+                sig = json.dumps(feed[:3], sort_keys=True, default=str)
+                if sig != last_sig:
+                    last_sig = sig
+                    yield "data: " + json.dumps({
+                        "type": "wins",
+                        "feed": feed,
+                        "count": len(feed),
+                        "ts": time.time(),
+                    }) + "\n\n"
+                else:
+                    yield "data: " + json.dumps({"type": "heartbeat", "ts": time.time()}) + "\n\n"
+            except Exception as exc:
+                yield "data: " + json.dumps({"type": "error", "error": str(exc)}) + "\n\n"
+            tick += 1
+            if max_ticks is not None and tick >= max_ticks:
+                break
+            time.sleep(interval)
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @casino_bp.route("/api/casino/tournaments", methods=["GET"])
@@ -679,6 +1182,33 @@ def casino_activity_feed():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/activity-stats", methods=["GET"])
+def casino_activity_stats():
+    try:
+        days = request.args.get("days", 5)
+        currency = request.args.get("currency")
+        return jsonify(casino_service.get_activity_stats(days=days, currency=currency)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/preferences", methods=["GET", "POST"])
+def casino_social_preferences():
+    try:
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        if request.method == "GET":
+            return jsonify(casino_service.get_casino_social_preferences(user_id)), 200
+        data = request.get_json(silent=True) or {}
+        result = casino_service.set_casino_social_preferences(
+            user_id,
+            share_wins=data.get("share_wins"),
+            country_code=data.get("country_code"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/house-stats", methods=["GET"])
 def casino_house_stats():
     try:
@@ -700,6 +1230,480 @@ def casino_social_mini_board():
             limit=limit,
             currency=_currency_from_query(),
         )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def _casino_ops_ok() -> bool:
+    secret = (
+        os.environ.get("DISCORD_OPS_SECRET")
+        or os.environ.get("MN2_OPS_SECRET")
+        or os.environ.get("MN2_SCAN_SECRET")
+        or ""
+    ).strip()
+    if not secret:
+        return False
+    token = (request.headers.get("X-Ops-Secret") or request.headers.get("X-Ops-Token") or "").strip()
+    if token == secret:
+        return True
+    return request.args.get("ops_secret") == secret or request.args.get("token") == secret
+
+
+@casino_bp.route("/api/casino/mobile/config", methods=["GET"])
+def casino_mobile_config():
+    try:
+        from backend.services import casino_social_service
+        return jsonify(casino_social_service.get_mobile_config()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/links", methods=["GET"])
+def casino_social_links():
+    try:
+        from backend.services import casino_social_service
+        return jsonify(casino_social_service.get_social_links()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/share/big-win", methods=["POST"])
+def casino_share_big_win():
+    try:
+        from backend.services import casino_social_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        mult = data.get("multiplier")
+        result = casino_social_service.build_big_win_share(
+            user_id,
+            game=(data.get("game") or "").strip() or None,
+            net=data.get("net"),
+            currency=(data.get("currency") or "").strip() or None,
+            multiplier=float(mult) if mult is not None else None,
+            bet_id=(data.get("bet_id") or "").strip() or None,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/share/big-win/card.svg", methods=["GET"])
+def casino_share_big_win_card_svg():
+    try:
+        from flask import Response
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        mult = request.args.get("mult") or request.args.get("multiplier")
+        svg = casino_social_service.build_big_win_svg(
+            game=(request.args.get("game") or "").strip() or None,
+            net=request.args.get("net", type=float),
+            currency=(request.args.get("currency") or "").strip() or None,
+            multiplier=float(mult) if mult is not None else None,
+            handle=casino_social_service.anonymize_user(user_id) if user_id else "Player",
+        )
+        return Response(svg, mimetype="image/svg+xml")
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/rooms", methods=["GET"])
+def casino_crash_crew_rooms():
+    try:
+        from backend.services import casino_crash_crew_service
+        limit = request.args.get("limit", 12, type=int)
+        return jsonify(casino_crash_crew_service.list_open_rooms(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/create", methods=["POST"])
+def casino_crash_crew_create():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.create_room(
+            user_id,
+            data.get("bet"),
+            currency=_currency_from_body(data),
+            max_players=data.get("max_players"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/join", methods=["POST"])
+def casino_crash_crew_join():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.join_room(
+            user_id,
+            (data.get("room_id") or "").strip(),
+            auto_cashout=data.get("auto_cashout"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/launch", methods=["POST"])
+def casino_crash_crew_launch():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.launch_room(
+            user_id,
+            (data.get("room_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/room/<room_id>", methods=["GET"])
+def casino_crash_crew_room(room_id):
+    try:
+        from backend.services import casino_crash_crew_service
+        return jsonify(casino_crash_crew_service.get_room(room_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/crash-crew/cashout", methods=["POST"])
+def casino_crash_crew_cashout():
+    try:
+        from backend.services import casino_crash_crew_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_crash_crew_service.cashout(
+            user_id,
+            (data.get("room_id") or "").strip(),
+            multiplier=data.get("multiplier"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/streak-shield", methods=["GET"])
+def casino_streak_shield_status():
+    try:
+        from backend.services import casino_streak_shield_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_streak_shield_service.status(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/streak-shield/apply", methods=["POST"])
+def casino_streak_shield_apply():
+    try:
+        from backend.services import casino_streak_shield_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_streak_shield_service.apply_shield(
+            user_id,
+            bet=data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/coupons/redeem-lab", methods=["POST"])
+def casino_coupon_redeem_lab():
+    """Lab quest completion hook — alias for coupon redeem."""
+    try:
+        from backend.services import casino_coupon_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_coupon_service.redeem(
+            user_id,
+            (data.get("code") or data.get("coupon") or "LAB-FREEBET").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/agents/spectate", methods=["GET"])
+def casino_agents_spectate():
+    try:
+        import backend.services.casino_agents_service as agents
+        limit = request.args.get("limit", 20, type=int)
+        return jsonify(agents.get_spectator_feed(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle/create", methods=["POST"])
+def casino_plinko_battle_create():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.create_plinko_battle(
+            user_id,
+            data.get("bet"),
+            risk=(data.get("risk") or "medium").strip(),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle/accept", methods=["POST"])
+def casino_plinko_battle_accept():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.accept_plinko_battle(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/plinko-battle", methods=["GET"])
+def casino_plinko_battle_list():
+    try:
+        from backend.services import casino_game_duel_service
+        status = request.args.get("status", "open")
+        return jsonify(casino_game_duel_service.list_game_duels("plinko_battle", status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/create", methods=["POST"])
+def casino_mines_duel_create():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.create_mines_duel(
+            user_id,
+            data.get("bet"),
+            currency=_currency_from_body(data),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/accept", methods=["POST"])
+def casino_mines_duel_accept():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.accept_mines_duel(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/pick", methods=["POST"])
+def casino_mines_duel_pick():
+    try:
+        from backend.services import casino_game_duel_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_game_duel_service.pick_mines_duel_tile(
+            user_id,
+            (data.get("duel_id") or "").strip(),
+            data.get("tile"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines", methods=["GET"])
+def casino_mines_duel_list():
+    try:
+        from backend.services import casino_game_duel_service
+        status = request.args.get("status", "open")
+        return jsonify(casino_game_duel_service.list_mines_duels(status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/mines/<duel_id>", methods=["GET"])
+def casino_mines_duel_get(duel_id):
+    try:
+        from backend.services import casino_game_duel_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_game_duel_service.get_mines_duel(duel_id, user_id=user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/coupons/redeem", methods=["POST"])
+def casino_coupon_redeem():
+    try:
+        from backend.services import casino_coupon_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_coupon_service.redeem(
+            user_id,
+            (data.get("code") or data.get("coupon") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral", methods=["GET"])
+def casino_social_referral():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_referral_invite(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/register", methods=["POST"])
+def casino_social_referral_register():
+    try:
+        from backend.services import casino_social_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_social_service.register_casino_referral(
+            user_id,
+            data.get("referral_code") or data.get("ref") or "",
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/leaderboard", methods=["GET"])
+def casino_social_referral_leaderboard():
+    try:
+        from backend.services import casino_social_service
+        limit = request.args.get("limit", 10, type=int)
+        return jsonify(casino_social_service.get_referral_leaderboard(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/quests", methods=["GET"])
+def casino_social_referral_quests():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_referral_quests(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/follow", methods=["GET", "POST", "DELETE"])
+def casino_social_follow():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        if request.method == "GET":
+            period = request.args.get("period", "week")
+            limit = request.args.get("limit", 5, type=int)
+            currency = _currency_from_query()
+            return jsonify(casino_social_service.get_top_players_to_follow(
+                user_id, period=period, limit=limit, currency=currency,
+            )), 200
+        data = request.get_json(silent=True) or {}
+        target = (data.get("target_user_id") or request.args.get("target_user_id") or "").strip()
+        if request.method == "DELETE":
+            return jsonify(casino_social_service.unfollow_player(user_id, target)), 200
+        return jsonify(casino_social_service.follow_player(user_id, target)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/follow/list", methods=["GET"])
+def casino_social_follow_list():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_follow_state(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/feed/reactions", methods=["GET", "POST"])
+def casino_social_feed_reactions():
+    try:
+        from backend.services import casino_social_service
+        if request.method == "GET":
+            raw_ids = request.args.get("item_ids") or ""
+            item_ids = [x.strip() for x in raw_ids.split(",") if x.strip()] or None
+            return jsonify(casino_social_service.get_feed_reactions(item_ids)), 200
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_social_service.react_to_feed_item(
+            user_id,
+            data.get("item_id") or data.get("bet_id") or "",
+            data.get("reaction") or "",
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/crew-challenge", methods=["GET"])
+def casino_social_crew_challenge():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_social_service.get_crew_casino_challenge_hook(
+            user_id, currency=_currency_from_query(),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def _fanout_dry_run(data: dict) -> bool:
+    """Default dry_run=True for ops/cron safety unless explicitly disabled."""
+    if "dry_run" not in data:
+        return True
+    if data.get("dry_run") is False:
+        return False
+    return bool(data.get("dry_run"))
+
+
+@casino_bp.route("/api/casino/discord/notify", methods=["POST"])
+def casino_discord_notify():
+    """Internal/cron hook — fan out pending casino events to Discord #casino."""
+    if not _casino_ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    try:
+        from backend.services import casino_discord_fanout
+        data = request.get_json(silent=True) or {}
+        result = casino_discord_fanout.run_fanout(dry_run=_fanout_dry_run(data))
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/news/platform", methods=["GET"])
+def casino_news_platform():
+    try:
+        from backend.routes import platform_news_routes
+        limit = request.args.get("limit", 10, type=int)
+        items = platform_news_routes._load_news()
+        casino_items = [i for i in items if (i.get("channel") or "") == "casino"][:limit]
+        return jsonify({"success": True, "count": len(casino_items), "news": casino_items}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -811,5 +1815,168 @@ def casino_callback_win():
             currency=currency,
         )
         return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+# --- Wave 4: keno syndicate, BJ tournaments, wheel raid, duel invites, rake progress, podcast bonus, hub nodes ---
+
+
+@casino_bp.route("/api/casino/keno-syndicate/create", methods=["POST"])
+def casino_keno_syndicate_create():
+    try:
+        from backend.services import casino_keno_syndicate_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_keno_syndicate_service.create_syndicate(
+            user_id,
+            data.get("stake") or data.get("bet"),
+            currency=_currency_from_body(data),
+            min_players=data.get("min_players"),
+            max_players=data.get("max_players"),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/keno-syndicate/join", methods=["POST"])
+def casino_keno_syndicate_join():
+    try:
+        from backend.services import casino_keno_syndicate_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_keno_syndicate_service.join_syndicate(
+            user_id,
+            (data.get("syndicate_id") or "").strip(),
+            data.get("spots") or [],
+            invite_code=(data.get("invite_code") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/keno-syndicate/draw", methods=["POST"])
+def casino_keno_syndicate_draw():
+    try:
+        from backend.services import casino_keno_syndicate_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_keno_syndicate_service.draw_syndicate(
+            (data.get("syndicate_id") or "").strip(),
+            user_id=user_id,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/keno-syndicate", methods=["GET"])
+def casino_keno_syndicate_list():
+    try:
+        from backend.services import casino_keno_syndicate_service
+        status = request.args.get("status") or "open"
+        return jsonify(casino_keno_syndicate_service.list_syndicates(status=status)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/keno-syndicate/<syndicate_id>", methods=["GET"])
+def casino_keno_syndicate_get(syndicate_id):
+    try:
+        from backend.services import casino_keno_syndicate_service
+        return jsonify(casino_keno_syndicate_service.get_syndicate(syndicate_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/duels/invite/<token>", methods=["GET"])
+def casino_duel_invite_get(token):
+    try:
+        from backend.services import casino_game_duel_service
+        return jsonify(casino_game_duel_service.resolve_invite_token(token)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/blackjack-tournaments", methods=["GET"])
+def casino_bj_tournaments_list():
+    try:
+        from backend.services import casino_blackjack_tournament_service
+        return jsonify(casino_blackjack_tournament_service.list_tournaments()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/blackjack-tournaments/open", methods=["GET"])
+def casino_bj_tournaments_open():
+    try:
+        from backend.services import casino_blackjack_tournament_service
+        return jsonify(casino_blackjack_tournament_service.get_or_create_open()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/blackjack-tournaments/join", methods=["POST"])
+def casino_bj_tournaments_join():
+    try:
+        from backend.services import casino_blackjack_tournament_service
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_blackjack_tournament_service.join(
+            user_id,
+            tournament_id=(data.get("tournament_id") or "").strip() or None,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/wheel-raid/status", methods=["GET"])
+def casino_wheel_raid_status():
+    try:
+        from backend.services import casino_wheel_raid_service
+        return jsonify(casino_wheel_raid_service.get_status()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/trophy-rake-rebate/progress", methods=["GET"])
+def casino_trophy_rake_progress():
+    try:
+        from backend.services.casino_trophy_rake_rebate import get_progress
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(get_progress(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/podcast-bonus/status", methods=["GET"])
+def casino_podcast_bonus_status():
+    try:
+        from backend.services import casino_podcast_bonus_service
+        active = request.args.get("podcast_active", "").lower() in ("1", "true", "yes")
+        return jsonify(casino_podcast_bonus_service.get_status(podcast_active=active)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/global/hub-node", methods=["POST"])
+def casino_global_hub_node():
+    try:
+        from backend.services import casino_global_controller
+        data = request.get_json(silent=True) or {}
+        result = casino_global_controller.report_hub_node(data)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/global/hub-nodes", methods=["GET"])
+def casino_global_hub_nodes_list():
+    try:
+        from backend.services import casino_global_controller
+        return jsonify(casino_global_controller.list_hub_nodes()), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

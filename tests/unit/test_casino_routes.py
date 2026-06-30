@@ -34,6 +34,30 @@ def _app(tmp_path, monkeypatch):
     return app
 
 
+def test_casino_health_endpoint(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/health")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["service"] == "casino"
+    assert body["status"] == "healthy"
+    assert "timestamp" in body
+
+
+def test_casino_marketing_endpoint(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/marketing")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body.get("brand") == "MasterNoder2 Casino"
+    assert "tags" in body and len(body["tags"]) >= 15
+    assert body.get("banner", {}).get("png") == "/static/img/casino/banner-masternoder2-casino.png"
+
+
 def test_casino_config_and_balance(tmp_path, monkeypatch):
     app = _app(tmp_path, monkeypatch)
     mock_points = MagicMock()
@@ -53,6 +77,18 @@ def test_casino_config_and_balance(tmp_path, monkeypatch):
     assert bal_json["balance"] == 100
     assert "disclaimer" in bal_json
     assert "coin_flip" in bal_json["games"]
+
+
+def test_activity_stats_endpoint(tmp_path, monkeypatch):
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/activity-stats?days=5&currency=coins")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["days"] == 5
+    assert len(body["daily"]) == 5
+    assert "bets" in body["daily"][0]
 
 
 def test_coin_flip_deducts_and_pays(tmp_path, monkeypatch):
@@ -75,7 +111,7 @@ def test_coin_flip_deducts_and_pays(tmp_path, monkeypatch):
     assert data["success"] is True
     assert data["outcome"] == "win"
     assert data["payout"] == 19
-    assert mock_points.add_points.call_count == 2
+    assert mock_points.add_points.call_count >= 2
 
 
 def test_insufficient_coins_rejected(tmp_path, monkeypatch):

@@ -1,36 +1,383 @@
 {
   "currency": "coins",
+  "global_sync": {
+    "enabled": true,
+    "hub_id": "masternoder-main",
+    "network_label": "MasterNoder Network"
+  },
+  "slot_of_the_day": {
+    "enabled": true,
+    "rotate_daily": true,
+    "badge_label": "Slot of the Day"
+  },
+  "seasonal_overlays": {
+    "enabled": true,
+    "badge_label": "Seasonal",
+    "windows": [
+      {
+        "id": "summer_neon_2026",
+        "label": "Neon Summer",
+        "starts_at": "2026-06-01",
+        "ends_at": "2026-09-01",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Neon",
+            "icon": "🌴",
+            "theme_color": "#00ffd5",
+            "accent": "#ff00aa",
+            "glow_color": "rgba(0, 255, 213, 0.45)"
+          },
+          "slot_fruit": {
+            "label_suffix": " Tropic",
+            "icon": "🍹",
+            "theme_color": "#ffb347",
+            "accent": "#ff6b6b",
+            "glow_color": "rgba(255, 179, 71, 0.5)"
+          }
+        }
+      },
+      {
+        "id": "halloween_2026",
+        "label": "Spooky Reels",
+        "starts_at": "2026-10-01",
+        "ends_at": "2026-11-02",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Halloween",
+            "icon": "🎃",
+            "theme_color": "#ff6600",
+            "accent": "#1a0a00",
+            "glow_color": "rgba(255, 102, 0, 0.55)"
+          },
+          "slot_magic": {
+            "label_suffix": " Witching",
+            "icon": "🧙",
+            "theme_color": "#7b2cbf",
+            "accent": "#ff6600",
+            "glow_color": "rgba(123, 44, 191, 0.5)"
+          },
+          "slot_dragon": {
+            "label_suffix": " Phantom",
+            "icon": "👻",
+            "theme_color": "#2d1b4e",
+            "accent": "#39ff14",
+            "glow_color": "rgba(57, 255, 20, 0.35)"
+          }
+        }
+      },
+      {
+        "id": "winter_neon_2026",
+        "label": "Frost & Neon",
+        "starts_at": "2026-12-01",
+        "ends_at": "2027-01-15",
+        "overlays": {
+          "slot_classic": {
+            "label_suffix": " Winter",
+            "icon": "❄️",
+            "theme_color": "#a8d8ff",
+            "accent": "#0047ab",
+            "glow_color": "rgba(168, 216, 255, 0.55)"
+          },
+          "slot_diamond": {
+            "label_suffix": " Ice",
+            "icon": "💎",
+            "theme_color": "#e0f7ff",
+            "accent": "#0066cc",
+            "glow_color": "rgba(224, 247, 255, 0.6)"
+          }
+        }
+      },
+      {
+        "id": "mn2_halving_2026",
+        "label": "MN2 Halving",
+        "starts_at": "2026-04-01",
+        "ends_at": "2026-12-31",
+        "overlays": {
+          "slot_crypto": {
+            "label_suffix": " Halving",
+            "icon": "⛏️",
+            "theme_color": "#f7931a",
+            "accent": "#ffd700",
+            "glow_color": "rgba(247, 147, 26, 0.5)"
+          },
+          "slot_mn2": {
+            "label_suffix": " Genesis",
+            "icon": "🪙",
+            "theme_color": "#ffd700",
+            "accent": "#1a1035",
+            "glow_color": "rgba(255, 215, 0, 0.55)"
+          }
+        }
+      }
+    ]
+  },
+  "referral_quests": {
+    "enabled": true,
+    "max_bets_tracked": 10,
+    "milestones": [
+      {"bets": 1, "referrer_coins": 10, "badge": "🌱", "label": "First bet"},
+      {"bets": 3, "referrer_coins": 25, "badge": "🎯", "label": "Warming up"},
+      {"bets": 5, "referrer_coins": 50, "badge": "🔥", "label": "Regular"},
+      {"bets": 10, "referrer_coins": 100, "badge": "👑", "label": "Dedicated"}
+    ],
+    "note": "Referrer coin rewards only — no RTP or house-edge changes for referees."
+  },
+  "vip_lounge": {
+    "enabled": true,
+    "min_xp": 5000,
+    "title": "VIP Lounge",
+    "subtitle": "Cosmetic perks and daily wheel — house edge unchanged.",
+    "frame_previews": [
+      {"id": "frame_gold", "label": "Gold Frame", "icon": "🥇", "preview_color": "#ffd700"},
+      {"id": "frame_platinum", "label": "Platinum Frame", "icon": "💎", "preview_color": "#e5e4e2"},
+      {"id": "frame_neon", "label": "Neon Pulse", "icon": "✨", "preview_color": "#00ffd5"},
+      {"id": "frame_legend", "label": "House Legend", "icon": "👑", "preview_color": "#c084fc"}
+    ],
+    "daily_wheel_href": "/casino/?tab=home#casino-daily-wheel",
+    "shop_frames_href": "/casino/?tab=compete"
+  },
+  "featured_games": [
+    {
+      "id": "crash",
+      "label": "Crash",
+      "icon": "🚀",
+      "tag": "Hot",
+      "blurb": "Ride the multiplier — cash out before the bust."
+    },
+    {
+      "id": "plinko",
+      "label": "Plinko",
+      "icon": "🟡",
+      "tag": "Trending",
+      "blurb": "Drop the ball through pegs for edge multipliers."
+    },
+    {
+      "id": "mines",
+      "label": "Mines",
+      "icon": "💣",
+      "tag": "Classic",
+      "blurb": "Reveal gems, dodge mines, cash out anytime."
+    },
+    {
+      "id": "wheel",
+      "label": "Wheel",
+      "icon": "🎡",
+      "tag": "Spin",
+      "blurb": "Weighted wheel segments — low, medium, or high risk."
+    },
+    {
+      "id": "slots",
+      "label": "Slots",
+      "icon": "🎰",
+      "tag": "Jackpots",
+      "blurb": "35 themed machines with progressive jackpot hits."
+    },
+    {
+      "id": "coin-flip",
+      "label": "Coin flip",
+      "icon": "🪙",
+      "tag": "Quick",
+      "blurb": "Heads or tails — instant 1.9× payout."
+    }
+  ],
+  "social_links": [
+    {
+      "id": "discord",
+      "label": "Discord",
+      "icon": "💬",
+      "url": "https://discord.gg/masternoder",
+      "type": "follow"
+    },
+    {
+      "id": "youtube",
+      "label": "YouTube",
+      "icon": "▶️",
+      "url": "https://youtube.com/@MasterNoder",
+      "type": "follow"
+    },
+    {
+      "id": "facebook",
+      "label": "Facebook",
+      "icon": "f",
+      "url": "https://facebook.com/MasterNoder",
+      "type": "follow"
+    },
+    {
+      "id": "x",
+      "label": "X (Twitter)",
+      "icon": "𝕏",
+      "url": "https://twitter.com/MasterNoder",
+      "type": "follow"
+    },
+    {
+      "id": "instagram",
+      "label": "Instagram",
+      "icon": "📷",
+      "url": "https://instagram.com/masternoder",
+      "type": "follow"
+    },
+    {
+      "id": "tiktok",
+      "label": "TikTok",
+      "icon": "🎵",
+      "url": "https://tiktok.com/@masternoder",
+      "type": "follow"
+    },
+    {
+      "id": "telegram",
+      "label": "Telegram",
+      "icon": "✈️",
+      "url": "https://t.me/masternoder",
+      "type": "follow"
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "icon": "🐙",
+      "url": "https://github.com/MasterNoder",
+      "type": "follow"
+    },
+    {
+      "id": "discord_play",
+      "label": "Discord Casino",
+      "icon": "🎰",
+      "url": "/discord-play/",
+      "type": "play"
+    },
+    {
+      "id": "google_play",
+      "label": "Google Play",
+      "icon": "▶️",
+      "url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino",
+      "type": "mobile"
+    },
+    {
+      "id": "facebook_casino",
+      "label": "Facebook Casino",
+      "icon": "📘",
+      "url": "https://facebook.com/MasterNoder",
+      "type": "follow"
+    }
+  ],
+  "mobile": {
+    "package_id": "dk.masternoder.casino",
+    "play_store_url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino",
+    "start_url": "/casino/?app=casino-twa&tab=lobby",
+    "deep_link_base": "https://masternoder.dk/casino/",
+    "theme_color": "#1A1035",
+    "background_color": "#0A0E14",
+    "orientation": "portrait-primary",
+    "install_prompt_enabled": true
+  },
+  "discord_integration": {
+    "enabled": true,
+    "webhook_env": "DISCORD_CHANNEL_ID_CASINO",
+    "invite_url": "https://discord.gg/masternoder",
+    "activity_invite_url": "https://discord.gg/masternoder",
+    "earn_coins_join": 25,
+    "discord_play_path": "/discord-play/"
+  },
+  "facebook": {
+    "page_url": "https://facebook.com/MasterNoder",
+    "og_title": "MasterNoder2 Casino — Social lounge",
+    "og_description": "Ride the rocket. Hit the jackpot. Crash, slots, plinko, tournaments, and big-win sharing on masternoder.dk.",
+    "og_image": "/static/img/casino/banner-masternoder2-casino.png",
+    "pixel_id_env": "META_PIXEL_ID"
+  },
+  "marketing": {
+    "banner_svg": "/static/img/casino/banner-masternoder2-casino.svg",
+    "banner_png": "/static/img/casino/banner-masternoder2-casino.png",
+    "tagline": "Ride the rocket. Hit the jackpot. Own the lounge.",
+    "short_description": "MasterNoder2 Casino — crash, slots, plinko, tournaments & big wins on MN2.",
+    "data_ref": "data/casino_marketing.json"
+  },
+  "social": {
+    "share_base_url": "https://masternoder.dk",
+    "default_share_text": "Play at MasterNoder2 Casino — crash, slots, plinko, tournaments, and more."
+  },
   "disclaimer": "Play with virtual coins, MN2, or PayPal-funded USD balance.",
   "min_bet": 5,
   "max_bet": 500,
   "max_bets_per_day": 200,
   "bet_tiers": [
-    {"min_xp": 0, "max_bet_mn2": 0.5, "max_bet_usd": 5.0},
-    {"min_xp": 5000, "max_bet_mn2": 2.0, "max_bet_usd": 15.0},
-    {"min_xp": 25000, "max_bet_mn2": 5.0, "max_bet_usd": 25.0}
+    {
+      "min_xp": 0,
+      "max_bet_mn2": 0.5,
+      "max_bet_usd": 5.0
+    },
+    {
+      "min_xp": 5000,
+      "max_bet_mn2": 2.0,
+      "max_bet_usd": 15.0
+    },
+    {
+      "min_xp": 25000,
+      "max_bet_mn2": 5.0,
+      "max_bet_usd": 25.0
+    }
   ],
   "responsible_gaming": {
     "enabled": true,
     "session_window_hours": 24,
     "limits_by_xp": [
-      {"min_xp": 0, "max_loss_coins": 5000, "max_loss_mn2": 0.5, "max_loss_usd": 5.0, "cooldown_minutes": 60},
-      {"min_xp": 5000, "max_loss_coins": 15000, "max_loss_mn2": 2.0, "max_loss_usd": 15.0, "cooldown_minutes": 30},
-      {"min_xp": 25000, "max_loss_coins": 50000, "max_loss_mn2": 5.0, "max_loss_usd": 25.0, "cooldown_minutes": 15}
+      {
+        "min_xp": 0,
+        "max_loss_coins": 5000,
+        "max_loss_mn2": 0.5,
+        "max_loss_usd": 5.0,
+        "cooldown_minutes": 60
+      },
+      {
+        "min_xp": 5000,
+        "max_loss_coins": 15000,
+        "max_loss_mn2": 2.0,
+        "max_loss_usd": 15.0,
+        "cooldown_minutes": 30
+      },
+      {
+        "min_xp": 25000,
+        "max_loss_coins": 50000,
+        "max_loss_mn2": 5.0,
+        "max_loss_usd": 25.0,
+        "cooldown_minutes": 15
+      }
     ]
   },
   "trophy_rake_rebate": {
     "enabled": true,
     "max_rebate_pct": 0.12,
     "tiers": [
-      {"min_trophies": 1, "rebate_pct": 0.02},
-      {"min_trophies": 5, "rebate_pct": 0.05},
-      {"min_trophies": 15, "rebate_pct": 0.08},
-      {"min_trophies": 30, "rebate_pct": 0.12}
+      {
+        "min_trophies": 1,
+        "rebate_pct": 0.02
+      },
+      {
+        "min_trophies": 5,
+        "rebate_pct": 0.05
+      },
+      {
+        "min_trophies": 15,
+        "rebate_pct": 0.08
+      },
+      {
+        "min_trophies": 30,
+        "rebate_pct": 0.12
+      }
     ]
   },
   "real_money": {
     "enabled": true,
-    "rails": ["mn2", "paypal"],
+    "rails": [
+      "mn2",
+      "paypal"
+    ],
+    "exchange_bridge": {
+      "enabled": true,
+      "shared_mn2_wallet": true,
+      "profit_cashout_to_casino_coins": true,
+      "exchange_page_url": "/exchange#cex-control-center",
+      "cross_promo": "Cash exchange bot profit to casino play coins in Agent Control Center."
+    },
     "mn2_min_bet": 0.05,
     "mn2_max_bet": 5.0,
     "paypal_min_bet": 0.5,
@@ -40,16 +387,31 @@
     "disclaimer_mn2": "MN2 bets debit your on-chain wallet balance (mn2_balance). Virtual coin bets stay separate.",
     "disclaimer_paypal": "USD bets use your PayPal-funded casino balance. Deposit via PayPal, then stake in USD. Winnings stay in USD balance.",
     "paypal_deposit_packs": [
-      {"id": "casino_usd_5", "label": "$5 play balance", "amount_usd": 5.0},
-      {"id": "casino_usd_10", "label": "$10 play balance", "amount_usd": 10.0},
-      {"id": "casino_usd_25", "label": "$25 play balance", "amount_usd": 25.0}
+      {
+        "id": "casino_usd_5",
+        "label": "$5 play balance",
+        "amount_usd": 5.0
+      },
+      {
+        "id": "casino_usd_10",
+        "label": "$10 play balance",
+        "amount_usd": 10.0
+      },
+      {
+        "id": "casino_usd_25",
+        "label": "$25 play balance",
+        "amount_usd": 25.0
+      }
     ]
   },
   "games": {
     "coin_flip": {
       "label": "Coin flip",
       "payout_multiplier": 1.9,
-      "choices": ["heads", "tails"]
+      "choices": [
+        "heads",
+        "tails"
+      ]
     },
     "dice": {
       "label": "Lucky dice",
@@ -59,33 +421,58 @@
     "rps_bet": {
       "label": "RPS wager",
       "payout_multiplier": 2.0,
-      "choices": ["rock", "paper", "scissors"]
+      "choices": [
+        "rock",
+        "paper",
+        "scissors"
+      ]
     },
     "rps_distribution": {
       "label": "Battle RPS meta",
       "payout_multiplier": 2.2,
-      "choices": ["rock", "paper", "scissors"]
+      "choices": [
+        "rock",
+        "paper",
+        "scissors"
+      ]
     },
     "rps_counter_pick": {
       "label": "Counter-pick RPS",
       "payout_multiplier": 2.0,
-      "choices": ["rock", "paper", "scissors"]
+      "choices": [
+        "rock",
+        "paper",
+        "scissors"
+      ]
     },
     "mystery_coin_flip": {
       "label": "Mystery multiplier flip",
       "min_multiplier": 1.5,
       "max_multiplier": 3.0,
-      "choices": ["heads", "tails"]
+      "choices": [
+        "heads",
+        "tails"
+      ]
     },
     "scratch_card": {
       "label": "Pick-3 scratch",
-      "symbols": ["7", "star", "gem", "coin", "bell"],
+      "symbols": [
+        "7",
+        "star",
+        "gem",
+        "coin",
+        "bell"
+      ],
       "match_2_multiplier": 1.5,
       "match_3_multiplier": 8.0
     },
     "battle_outcome": {
       "label": "Battle outcome",
-      "choices": ["win", "draw", "loss"],
+      "choices": [
+        "win",
+        "draw",
+        "loss"
+      ],
       "payout_multipliers": {
         "win": 2.0,
         "draw": 3.5,
@@ -107,9 +494,51 @@
       "rows": 12,
       "rtp_estimate": 99.0,
       "risk_tables": {
-        "low": [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10],
-        "medium": [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
-        "high": [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170]
+        "low": [
+          10,
+          3,
+          1.6,
+          1.4,
+          1.1,
+          1,
+          0.5,
+          1,
+          1.1,
+          1.4,
+          1.6,
+          3,
+          10
+        ],
+        "medium": [
+          33,
+          11,
+          4,
+          2,
+          1.1,
+          0.6,
+          0.3,
+          0.6,
+          1.1,
+          2,
+          4,
+          11,
+          33
+        ],
+        "high": [
+          170,
+          24,
+          8.1,
+          2,
+          0.7,
+          0.2,
+          0.2,
+          0.2,
+          0.7,
+          2,
+          8.1,
+          24,
+          170
+        ]
       }
     },
     "mines": {
@@ -129,22 +558,58 @@
       "rtp_estimate": 98.0,
       "risk_tables": {
         "low": [
-          {"multiplier": 0, "weight": 4},
-          {"multiplier": 1.2, "weight": 6},
-          {"multiplier": 1.5, "weight": 3},
-          {"multiplier": 2, "weight": 1}
+          {
+            "multiplier": 0,
+            "weight": 4
+          },
+          {
+            "multiplier": 1.2,
+            "weight": 6
+          },
+          {
+            "multiplier": 1.5,
+            "weight": 3
+          },
+          {
+            "multiplier": 2,
+            "weight": 1
+          }
         ],
         "medium": [
-          {"multiplier": 0, "weight": 8},
-          {"multiplier": 1.7, "weight": 4},
-          {"multiplier": 2, "weight": 2},
-          {"multiplier": 4, "weight": 1}
+          {
+            "multiplier": 0,
+            "weight": 8
+          },
+          {
+            "multiplier": 1.7,
+            "weight": 4
+          },
+          {
+            "multiplier": 2,
+            "weight": 2
+          },
+          {
+            "multiplier": 4,
+            "weight": 1
+          }
         ],
         "high": [
-          {"multiplier": 0, "weight": 62},
-          {"multiplier": 2, "weight": 3},
-          {"multiplier": 9.9, "weight": 1},
-          {"multiplier": 49.5, "weight": 1}
+          {
+            "multiplier": 0,
+            "weight": 62
+          },
+          {
+            "multiplier": 2,
+            "weight": 3
+          },
+          {
+            "multiplier": 9.9,
+            "weight": 1
+          },
+          {
+            "multiplier": 49.5,
+            "weight": 1
+          }
         ]
       }
     },
@@ -156,12 +621,30 @@
       "max_spots": 6,
       "rtp_estimate": 94.0,
       "pay_table": {
-        "1": {"1": 3.8},
-        "2": {"2": 16.5},
-        "3": {"2": 5.5, "3": 16.5},
-        "4": {"3": 20, "4": 60},
-        "5": {"3": 7.5, "4": 30, "5": 120},
-        "6": {"4": 27, "5": 135, "6": 680}
+        "1": {
+          "1": 3.8
+        },
+        "2": {
+          "2": 16.5
+        },
+        "3": {
+          "2": 5.5,
+          "3": 16.5
+        },
+        "4": {
+          "3": 20,
+          "4": 60
+        },
+        "5": {
+          "3": 7.5,
+          "4": 30,
+          "5": 120
+        },
+        "6": {
+          "4": 27,
+          "5": 135,
+          "6": 680
+        }
       }
     },
     "hilo": {
@@ -178,75 +661,239 @@
       "pockets": 37,
       "rtp_estimate": 97.3
     },
+    "blackjack": {
+      "label": "Blackjack",
+      "icon": "🃏",
+      "rtp_estimate": 99.5,
+      "blackjack_payout": 1.5,
+      "hit_soft_17": true,
+      "max_round_seconds": 7200
+    },
+    "baccarat": {
+      "label": "Baccarat",
+      "icon": "🎴",
+      "rtp_estimate": 98.9,
+      "banker_commission": 0.05
+    },
+    "video_poker": {
+      "label": "Jacks or Better",
+      "icon": "🎴",
+      "rtp_estimate": 99.5,
+      "paytable": {
+        "royal_flush": 250,
+        "straight_flush": 50,
+        "four_kind": 25,
+        "full_house": 9,
+        "flush": 6,
+        "straight": 4,
+        "three_kind": 3,
+        "two_pair": 2,
+        "jacks_or_better": 1
+      }
+    },
     "slot_classic": {
       "label": "Classic Reels",
       "icon": "🎰",
+      "theme_color": "#ffd700",
+      "accent": "#c41e3a",
+      "glow_color": "rgba(255, 215, 0, 0.55)",
       "volatility": "medium",
       "rtp_estimate": 96.2,
       "reels": 3,
-      "symbols": ["7", "bar", "cherry", "bell", "lemon", "wild"],
-      "symbol_display": {"7": "7️⃣", "bar": "🎰", "cherry": "🍒", "bell": "🔔", "lemon": "🍋", "wild": "⭐"},
-      "weights": {"7": 1, "bar": 2, "cherry": 3, "bell": 3, "lemon": 4, "wild": 1},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "7",
+        "bar",
+        "cherry",
+        "bell",
+        "lemon",
+        "wild"
+      ],
+      "symbol_display": {
+        "7": "7️⃣",
+        "bar": "🎰",
+        "cherry": "🍒",
+        "bell": "🔔",
+        "lemon": "🍋",
+        "wild": "⭐"
+      },
+      "weights": {
+        "7": 1,
+        "bar": 2,
+        "cherry": 3,
+        "bell": 3,
+        "lemon": 4,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "scatter_symbol": "bell",
       "scatter_min": 3,
       "scatter_multiplier": 2.5,
       "paytable": {
         "default_three": 5.0,
         "default_two": 1.3,
-        "three": {"7": 12.0, "bar": 8.0, "cherry": 5.0, "bell": 4.0, "lemon": 3.0},
-        "two": {"7": 2.5, "bar": 1.8, "cherry": 1.4}
+        "three": {
+          "7": 12.0,
+          "bar": 8.0,
+          "cherry": 5.0,
+          "bell": 4.0,
+          "lemon": 3.0
+        },
+        "two": {
+          "7": 2.5,
+          "bar": 1.8,
+          "cherry": 1.4
+        }
       }
     },
     "slot_diamond": {
       "label": "Diamond Rush",
       "icon": "💎",
+      "theme_color": "#22d3ee",
+      "accent": "#a855f7",
+      "glow_color": "rgba(34, 211, 238, 0.5)",
       "volatility": "high",
       "rtp_estimate": 95.0,
       "reels": 3,
-      "symbols": ["diamond", "7", "star", "gem", "coin", "wild"],
-      "symbol_display": {"diamond": "💎", "7": "7️⃣", "star": "⭐", "gem": "💠", "coin": "🪙", "wild": "🃏"},
-      "weights": {"diamond": 1, "7": 2, "star": 3, "gem": 3, "coin": 4, "wild": 1},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "diamond",
+        "7",
+        "star",
+        "gem",
+        "coin",
+        "wild"
+      ],
+      "symbol_display": {
+        "diamond": "💎",
+        "7": "7️⃣",
+        "star": "⭐",
+        "gem": "💠",
+        "coin": "🪙",
+        "wild": "🃏"
+      },
+      "weights": {
+        "diamond": 1,
+        "7": 2,
+        "star": 3,
+        "gem": 3,
+        "coin": 4,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "jackpot_symbol": "diamond",
       "jackpot_multiplier": 15.0,
       "paytable": {
         "default_three": 6.0,
         "default_two": 1.5,
-        "three": {"diamond": 15.0, "7": 10.0, "star": 6.0, "gem": 5.0, "coin": 4.0},
-        "two": {"diamond": 3.0, "7": 2.0, "star": 1.6}
+        "three": {
+          "diamond": 15.0,
+          "7": 10.0,
+          "star": 6.0,
+          "gem": 5.0,
+          "coin": 4.0
+        },
+        "two": {
+          "diamond": 3.0,
+          "7": 2.0,
+          "star": 1.6
+        }
       }
     },
     "slot_neon": {
       "label": "Neon Pulse",
       "icon": "🌃",
+      "theme_color": "#ff00ff",
+      "accent": "#00f0ff",
+      "glow_color": "rgba(255, 0, 255, 0.5)",
       "volatility": "medium",
       "rtp_estimate": 96.5,
       "reels": 3,
-      "symbols": ["neon", "bolt", "chip", "wave", "dot", "wild"],
-      "symbol_display": {"neon": "🌃", "bolt": "⚡", "chip": "💾", "wave": "〰️", "dot": "🔵", "wild": "✨"},
-      "weights": {"neon": 1, "bolt": 2, "chip": 3, "wave": 3, "dot": 4, "wild": 2},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "neon",
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "wild"
+      ],
+      "symbol_display": {
+        "neon": "🌃",
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "wild": "✨"
+      },
+      "weights": {
+        "neon": 1,
+        "bolt": 2,
+        "chip": 3,
+        "wave": 3,
+        "dot": 4,
+        "wild": 2
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "scatter_symbol": "neon",
       "scatter_min": 3,
       "scatter_multiplier": 3.0,
       "paytable": {
         "default_three": 5.5,
         "default_two": 1.4,
-        "three": {"neon": 14.0, "bolt": 9.0, "chip": 6.0, "wave": 4.5, "dot": 3.5},
-        "two": {"neon": 2.8, "bolt": 2.0, "chip": 1.5}
+        "three": {
+          "neon": 14.0,
+          "bolt": 9.0,
+          "chip": 6.0,
+          "wave": 4.5,
+          "dot": 3.5
+        },
+        "two": {
+          "neon": 2.8,
+          "bolt": 2.0,
+          "chip": 1.5
+        }
       }
     },
     "slot_cosmic": {
       "label": "Cosmic Orbit",
       "icon": "🌌",
+      "theme_color": "#818cf8",
+      "accent": "#fbbf24",
+      "glow_color": "rgba(129, 140, 248, 0.55)",
       "volatility": "high",
       "rtp_estimate": 94.8,
       "reels": 3,
-      "symbols": ["sun", "moon", "comet", "orbit", "void", "wild"],
-      "symbol_display": {"sun": "☀️", "moon": "🌙", "comet": "☄️", "orbit": "🪐", "void": "🕳️", "wild": "🌟"},
-      "weights": {"sun": 1, "moon": 2, "comet": 2, "orbit": 3, "void": 4, "wild": 1},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "sun",
+        "moon",
+        "comet",
+        "orbit",
+        "void",
+        "wild"
+      ],
+      "symbol_display": {
+        "sun": "☀️",
+        "moon": "🌙",
+        "comet": "☄️",
+        "orbit": "🪐",
+        "void": "🕳️",
+        "wild": "🌟"
+      },
+      "weights": {
+        "sun": 1,
+        "moon": 2,
+        "comet": 2,
+        "orbit": 3,
+        "void": 4,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "scatter_symbol": "comet",
       "scatter_min": 3,
       "scatter_multiplier": 4.0,
@@ -255,59 +902,167 @@
       "paytable": {
         "default_three": 6.5,
         "default_two": 1.6,
-        "three": {"sun": 20.0, "moon": 11.0, "comet": 7.0, "orbit": 5.0, "void": 3.5},
-        "two": {"sun": 3.5, "moon": 2.2, "comet": 1.7}
+        "three": {
+          "sun": 20.0,
+          "moon": 11.0,
+          "comet": 7.0,
+          "orbit": 5.0,
+          "void": 3.5
+        },
+        "two": {
+          "sun": 3.5,
+          "moon": 2.2,
+          "comet": 1.7
+        }
       }
     },
     "slot_battle": {
       "label": "Battle Arena",
       "icon": "⚔️",
+      "theme_color": "#ef4444",
+      "accent": "#64748b",
+      "glow_color": "rgba(239, 68, 68, 0.5)",
       "volatility": "medium",
       "rtp_estimate": 96.0,
       "reels": 3,
-      "symbols": ["sword", "shield", "crown", "banner", "skull", "wild"],
-      "symbol_display": {"sword": "⚔️", "shield": "🛡️", "crown": "👑", "banner": "🚩", "skull": "💀", "wild": "🔥"},
-      "weights": {"sword": 2, "shield": 2, "crown": 1, "banner": 3, "skull": 3, "wild": 1},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "sword",
+        "shield",
+        "crown",
+        "banner",
+        "skull",
+        "wild"
+      ],
+      "symbol_display": {
+        "sword": "⚔️",
+        "shield": "🛡️",
+        "crown": "👑",
+        "banner": "🚩",
+        "skull": "💀",
+        "wild": "🔥"
+      },
+      "weights": {
+        "sword": 2,
+        "shield": 2,
+        "crown": 1,
+        "banner": 3,
+        "skull": 3,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "scatter_symbol": "crown",
       "scatter_min": 3,
       "scatter_multiplier": 2.8,
       "paytable": {
         "default_three": 5.0,
         "default_two": 1.35,
-        "three": {"crown": 13.0, "sword": 8.0, "shield": 7.0, "banner": 4.5, "skull": 3.0},
-        "two": {"crown": 2.6, "sword": 1.9, "shield": 1.7}
+        "three": {
+          "crown": 13.0,
+          "sword": 8.0,
+          "shield": 7.0,
+          "banner": 4.5,
+          "skull": 3.0
+        },
+        "two": {
+          "crown": 2.6,
+          "sword": 1.9,
+          "shield": 1.7
+        }
       }
     },
     "slot_treasure": {
       "label": "Treasure Cove",
       "icon": "🏴‍☠️",
+      "theme_color": "#14b8a6",
+      "accent": "#f59e0b",
+      "glow_color": "rgba(20, 184, 166, 0.5)",
       "volatility": "low",
       "rtp_estimate": 97.1,
       "reels": 3,
-      "symbols": ["chest", "map", "anchor", "rum", "parrot", "wild"],
-      "symbol_display": {"chest": "🧰", "map": "🗺️", "anchor": "⚓", "rum": "🍾", "parrot": "🦜", "wild": "🏴‍☠️"},
-      "weights": {"chest": 1, "map": 2, "anchor": 3, "rum": 4, "parrot": 4, "wild": 2},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "chest",
+        "map",
+        "anchor",
+        "rum",
+        "parrot",
+        "wild"
+      ],
+      "symbol_display": {
+        "chest": "🧰",
+        "map": "🗺️",
+        "anchor": "⚓",
+        "rum": "🍾",
+        "parrot": "🦜",
+        "wild": "🏴‍☠️"
+      },
+      "weights": {
+        "chest": 1,
+        "map": 2,
+        "anchor": 3,
+        "rum": 4,
+        "parrot": 4,
+        "wild": 2
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "jackpot_symbol": "chest",
       "jackpot_multiplier": 12.0,
       "paytable": {
         "default_three": 4.5,
         "default_two": 1.25,
-        "three": {"chest": 12.0, "map": 7.0, "anchor": 5.0, "rum": 3.5, "parrot": 3.0},
-        "two": {"chest": 2.2, "map": 1.6, "anchor": 1.3}
+        "three": {
+          "chest": 12.0,
+          "map": 7.0,
+          "anchor": 5.0,
+          "rum": 3.5,
+          "parrot": 3.0
+        },
+        "two": {
+          "chest": 2.2,
+          "map": 1.6,
+          "anchor": 1.3
+        }
       }
     },
     "slot_mega": {
       "label": "Mega 777",
       "icon": "🔥",
+      "theme_color": "#f97316",
+      "accent": "#fcd34d",
+      "glow_color": "rgba(249, 115, 22, 0.6)",
       "volatility": "extreme",
       "rtp_estimate": 93.5,
       "reels": 3,
-      "symbols": ["mega7", "bar", "fire", "gold", "blank", "wild"],
-      "symbol_display": {"mega7": "7️⃣", "bar": "📊", "fire": "🔥", "gold": "🥇", "blank": "⬜", "wild": "💥"},
-      "weights": {"mega7": 1, "bar": 2, "fire": 2, "gold": 3, "blank": 5, "wild": 1},
-      "wild_symbols": ["wild"],
+      "symbols": [
+        "mega7",
+        "bar",
+        "fire",
+        "gold",
+        "blank",
+        "wild"
+      ],
+      "symbol_display": {
+        "mega7": "7️⃣",
+        "bar": "📊",
+        "fire": "🔥",
+        "gold": "🥇",
+        "blank": "⬜",
+        "wild": "💥"
+      },
+      "weights": {
+        "mega7": 1,
+        "bar": 2,
+        "fire": 2,
+        "gold": 3,
+        "blank": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
       "jackpot_symbol": "mega7",
       "jackpot_multiplier": 25.0,
       "scatter_symbol": "fire",
@@ -316,10 +1071,1665 @@
       "paytable": {
         "default_three": 7.0,
         "default_two": 1.5,
-        "three": {"mega7": 25.0, "bar": 10.0, "fire": 8.0, "gold": 5.0, "blank": 2.0},
-        "two": {"mega7": 4.0, "bar": 2.5, "fire": 2.0}
+        "three": {
+          "mega7": 25.0,
+          "bar": 10.0,
+          "fire": 8.0,
+          "gold": 5.0,
+          "blank": 2.0
+        },
+        "two": {
+          "mega7": 4.0,
+          "bar": 2.5,
+          "fire": 2.0
+        }
+      }
+    },
+    "slot_pharaoh": {
+      "label": "Pharaoh's Gold",
+      "icon": "🏺",
+      "theme_color": "#fbbf24",
+      "accent": "#d4a574",
+      "glow_color": "rgba(251, 191, 36, 0.55)",
+      "volatility": "high",
+      "rtp_estimate": 95.5,
+      "reels": 5,
+      "symbols": [
+        "ankh",
+        "scarab",
+        "eye",
+        "pyramid",
+        "sand",
+        "wild"
+      ],
+      "symbol_display": {
+        "ankh": "☥",
+        "scarab": "🪲",
+        "eye": "👁️",
+        "pyramid": "🔺",
+        "sand": "🏜️",
+        "wild": "🃏"
+      },
+      "weights": {
+        "ankh": 1,
+        "scarab": 2,
+        "eye": 2,
+        "pyramid": 3,
+        "sand": 4,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "eye",
+      "scatter_min": 3,
+      "scatter_multiplier": 4.0,
+      "paytable": {
+        "default_five": 12.0,
+        "default_three": 6.0,
+        "five": {
+          "ankh": 40.0,
+          "scarab": 25.0,
+          "eye": 18.0,
+          "pyramid": 12.0,
+          "sand": 8.0
+        },
+        "three": {
+          "ankh": 18.0,
+          "scarab": 12.0,
+          "eye": 9.0
+        }
+      }
+    },
+    "slot_ocean": {
+      "label": "Ocean Depths",
+      "icon": "🐚",
+      "theme_color": "#06b6d4",
+      "accent": "#1e40af",
+      "glow_color": "rgba(6, 182, 212, 0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.8,
+      "reels": 5,
+      "symbols": [
+        "pearl",
+        "whale",
+        "coral",
+        "fish",
+        "shell",
+        "wild"
+      ],
+      "symbol_display": {
+        "pearl": "🔮",
+        "whale": "🐋",
+        "coral": "🪸",
+        "fish": "🐠",
+        "shell": "🐚",
+        "wild": "🌊"
+      },
+      "weights": {
+        "pearl": 1,
+        "whale": 2,
+        "coral": 3,
+        "fish": 4,
+        "shell": 4,
+        "wild": 2
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "pearl",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "pearl": 30.0,
+          "whale": 20.0,
+          "coral": 14.0,
+          "fish": 9.0,
+          "shell": 7.0
+        },
+        "three": {
+          "pearl": 15.0,
+          "whale": 10.0,
+          "coral": 7.0
+        }
+      }
+    },
+    "slot_forest": {
+      "label": "Enchanted Forest",
+      "icon": "🌲",
+      "theme_color": "#4ade80",
+      "accent": "#166534",
+      "glow_color": "rgba(74, 222, 128, 0.5)",
+      "volatility": "low",
+      "rtp_estimate": 97.2,
+      "reels": 5,
+      "symbols": [
+        "fairy",
+        "mushroom",
+        "owl",
+        "leaf",
+        "acorn",
+        "wild"
+      ],
+      "symbol_display": {
+        "fairy": "🧚",
+        "mushroom": "🍄",
+        "owl": "🦉",
+        "leaf": "🍃",
+        "acorn": "🌰",
+        "wild": "✨"
+      },
+      "weights": {
+        "fairy": 1,
+        "mushroom": 2,
+        "owl": 3,
+        "leaf": 4,
+        "acorn": 5,
+        "wild": 2
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "jackpot_symbol": "fairy",
+      "jackpot_multiplier": 18.0,
+      "paytable": {
+        "default_five": 9.0,
+        "default_three": 4.8,
+        "five": {
+          "fairy": 28.0,
+          "mushroom": 16.0,
+          "owl": 11.0,
+          "leaf": 7.0,
+          "acorn": 5.0
+        },
+        "three": {
+          "fairy": 14.0,
+          "mushroom": 8.0,
+          "owl": 6.0
+        }
+      }
+    },
+    "slot_viking": {
+      "label": "Viking Fury",
+      "icon": "🪓",
+      "theme_color": "#64748b",
+      "accent": "#f59e0b",
+      "glow_color": "rgba(100,116,139,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 94.5,
+      "reels": 3,
+      "symbols": [
+        "crown",
+        "gem",
+        "star",
+        "coin",
+        "leaf",
+        "wild"
+      ],
+      "symbol_display": {
+        "crown": "👑",
+        "gem": "💎",
+        "star": "⭐",
+        "coin": "🪙",
+        "leaf": "🍃",
+        "wild": "✨"
+      },
+      "weights": {
+        "crown": 1,
+        "gem": 2,
+        "star": 3,
+        "coin": 4,
+        "leaf": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "crown": 14.0,
+          "gem": 9.0,
+          "star": 6.0,
+          "coin": 4.0,
+          "leaf": 3.0
+        },
+        "two": {
+          "crown": 2.8,
+          "gem": 2.0,
+          "star": 1.5
+        }
+      }
+    },
+    "slot_cyberpunk": {
+      "label": "Cyber Neon",
+      "icon": "🤖",
+      "theme_color": "#00ff9f",
+      "accent": "#ff0080",
+      "glow_color": "rgba(0,255,159,0.5)",
+      "volatility": "high",
+      "rtp_estimate": 94.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_candy": {
+      "label": "Candy Crush Spin",
+      "icon": "🍬",
+      "theme_color": "#f472b6",
+      "accent": "#fde047",
+      "glow_color": "rgba(244,114,182,0.55)",
+      "volatility": "low",
+      "rtp_estimate": 97.0,
+      "reels": 3,
+      "symbols": [
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "neon",
+        "wild"
+      ],
+      "symbol_display": {
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "neon": "🌃",
+        "wild": "✨"
+      },
+      "weights": {
+        "bolt": 1,
+        "chip": 2,
+        "wave": 3,
+        "dot": 4,
+        "neon": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "bolt",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "bolt": 14.0,
+          "chip": 9.0,
+          "wave": 6.0,
+          "dot": 4.0,
+          "neon": 3.0
+        },
+        "two": {
+          "bolt": 2.8,
+          "chip": 2.0,
+          "wave": 1.5
+        }
+      }
+    },
+    "slot_space": {
+      "label": "Galaxy Quest",
+      "icon": "🚀",
+      "theme_color": "#6366f1",
+      "accent": "#22d3ee",
+      "glow_color": "rgba(99,102,241,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 96.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_dragon": {
+      "label": "Dragon Hoard",
+      "icon": "🐉",
+      "theme_color": "#dc2626",
+      "accent": "#fbbf24",
+      "glow_color": "rgba(220,38,38,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 94.8,
+      "reels": 3,
+      "symbols": [
+        "axe",
+        "helm",
+        "rune",
+        "ship",
+        "horn",
+        "wild"
+      ],
+      "symbol_display": {
+        "axe": "🪓",
+        "helm": "⛑️",
+        "rune": "ᚱ",
+        "ship": "⛵",
+        "horn": "📯",
+        "wild": "✨"
+      },
+      "weights": {
+        "axe": 1,
+        "helm": 2,
+        "rune": 3,
+        "ship": 4,
+        "horn": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "axe",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "axe": 14.0,
+          "helm": 9.0,
+          "rune": 6.0,
+          "ship": 4.0,
+          "horn": 3.0
+        },
+        "two": {
+          "axe": 2.8,
+          "helm": 2.0,
+          "rune": 1.5
+        }
+      },
+      "jackpot_symbol": "axe",
+      "jackpot_multiplier": 18.0
+    },
+    "slot_jungle": {
+      "label": "Jungle Temple",
+      "icon": "🦜",
+      "theme_color": "#16a34a",
+      "accent": "#ca8a04",
+      "glow_color": "rgba(22,163,74,0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.2,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_pirate_king": {
+      "label": "Pirate King",
+      "icon": "☠️",
+      "theme_color": "#1e3a5f",
+      "accent": "#eab308",
+      "glow_color": "rgba(30,58,95,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 95.8,
+      "reels": 3,
+      "symbols": [
+        "crown",
+        "gem",
+        "star",
+        "coin",
+        "leaf",
+        "wild"
+      ],
+      "symbol_display": {
+        "crown": "👑",
+        "gem": "💎",
+        "star": "⭐",
+        "coin": "🪙",
+        "leaf": "🍃",
+        "wild": "✨"
+      },
+      "weights": {
+        "crown": 1,
+        "gem": 2,
+        "star": 3,
+        "coin": 4,
+        "leaf": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "crown": 14.0,
+          "gem": 9.0,
+          "star": 6.0,
+          "coin": 4.0,
+          "leaf": 3.0
+        },
+        "two": {
+          "crown": 2.8,
+          "gem": 2.0,
+          "star": 1.5
+        }
+      }
+    },
+    "slot_ice": {
+      "label": "Frozen Fortune",
+      "icon": "❄️",
+      "theme_color": "#bae6fd",
+      "accent": "#60a5fa",
+      "glow_color": "rgba(186,230,253,0.6)",
+      "volatility": "low",
+      "rtp_estimate": 97.3,
+      "reels": 3,
+      "symbols": [
+        "axe",
+        "helm",
+        "rune",
+        "ship",
+        "horn",
+        "wild"
+      ],
+      "symbol_display": {
+        "axe": "🪓",
+        "helm": "⛑️",
+        "rune": "ᚱ",
+        "ship": "⛵",
+        "horn": "📯",
+        "wild": "✨"
+      },
+      "weights": {
+        "axe": 1,
+        "helm": 2,
+        "rune": 3,
+        "ship": 4,
+        "horn": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "axe",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "axe": 14.0,
+          "helm": 9.0,
+          "rune": 6.0,
+          "ship": 4.0,
+          "horn": 3.0
+        },
+        "two": {
+          "axe": 2.8,
+          "helm": 2.0,
+          "rune": 1.5
+        }
+      }
+    },
+    "slot_lava": {
+      "label": "Lava Forge",
+      "icon": "🌋",
+      "theme_color": "#ea580c",
+      "accent": "#fef08a",
+      "glow_color": "rgba(234,88,12,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 94.2,
+      "reels": 3,
+      "symbols": [
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "neon",
+        "wild"
+      ],
+      "symbol_display": {
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "neon": "🌃",
+        "wild": "✨"
+      },
+      "weights": {
+        "bolt": 1,
+        "chip": 2,
+        "wave": 3,
+        "dot": 4,
+        "neon": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "bolt",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "bolt": 14.0,
+          "chip": 9.0,
+          "wave": 6.0,
+          "dot": 4.0,
+          "neon": 3.0
+        },
+        "two": {
+          "bolt": 2.8,
+          "chip": 2.0,
+          "wave": 1.5
+        }
+      },
+      "jackpot_symbol": "bolt",
+      "jackpot_multiplier": 18.0
+    },
+    "slot_steampunk": {
+      "label": "Steampunk Gears",
+      "icon": "⚙️",
+      "theme_color": "#a16207",
+      "accent": "#78716c",
+      "glow_color": "rgba(161,98,7,0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.1,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_anime": {
+      "label": "Anime Star",
+      "icon": "⭐",
+      "theme_color": "#ec4899",
+      "accent": "#8b5cf6",
+      "glow_color": "rgba(236,72,153,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 95.9,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_western": {
+      "label": "Wild West",
+      "icon": "🤠",
+      "theme_color": "#d97706",
+      "accent": "#78350f",
+      "glow_color": "rgba(217,119,6,0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.0,
+      "reels": 3,
+      "symbols": [
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "neon",
+        "wild"
+      ],
+      "symbol_display": {
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "neon": "🌃",
+        "wild": "✨"
+      },
+      "weights": {
+        "bolt": 1,
+        "chip": 2,
+        "wave": 3,
+        "dot": 4,
+        "neon": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "bolt",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "bolt": 14.0,
+          "chip": 9.0,
+          "wave": 6.0,
+          "dot": 4.0,
+          "neon": 3.0
+        },
+        "two": {
+          "bolt": 2.8,
+          "chip": 2.0,
+          "wave": 1.5
+        }
+      }
+    },
+    "slot_sphinx": {
+      "label": "Sphinx Secrets",
+      "icon": "🐫",
+      "theme_color": "#d4a574",
+      "accent": "#854d0e",
+      "glow_color": "rgba(212,165,116,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 95.2,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_sports": {
+      "label": "Stadium Rush",
+      "icon": "⚽",
+      "theme_color": "#22c55e",
+      "accent": "#ffffff",
+      "glow_color": "rgba(34,197,94,0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.4,
+      "reels": 3,
+      "symbols": [
+        "axe",
+        "helm",
+        "rune",
+        "ship",
+        "horn",
+        "wild"
+      ],
+      "symbol_display": {
+        "axe": "🪓",
+        "helm": "⛑️",
+        "rune": "ᚱ",
+        "ship": "⛵",
+        "horn": "📯",
+        "wild": "✨"
+      },
+      "weights": {
+        "axe": 1,
+        "helm": 2,
+        "rune": 3,
+        "ship": 4,
+        "horn": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "axe",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "axe": 14.0,
+          "helm": 9.0,
+          "rune": 6.0,
+          "ship": 4.0,
+          "horn": 3.0
+        },
+        "two": {
+          "axe": 2.8,
+          "helm": 2.0,
+          "rune": 1.5
+        }
+      }
+    },
+    "slot_music": {
+      "label": "Rock Stage",
+      "icon": "🎸",
+      "theme_color": "#a855f7",
+      "accent": "#f43f5e",
+      "glow_color": "rgba(168,85,247,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 96.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_horror": {
+      "label": "Haunted Manor",
+      "icon": "👻",
+      "theme_color": "#4c1d95",
+      "accent": "#1f2937",
+      "glow_color": "rgba(76,29,149,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 94.0,
+      "reels": 3,
+      "symbols": [
+        "crown",
+        "gem",
+        "star",
+        "coin",
+        "leaf",
+        "wild"
+      ],
+      "symbol_display": {
+        "crown": "👑",
+        "gem": "💎",
+        "star": "⭐",
+        "coin": "🪙",
+        "leaf": "🍃",
+        "wild": "✨"
+      },
+      "weights": {
+        "crown": 1,
+        "gem": 2,
+        "star": 3,
+        "coin": 4,
+        "leaf": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "crown": 14.0,
+          "gem": 9.0,
+          "star": 6.0,
+          "coin": 4.0,
+          "leaf": 3.0
+        },
+        "two": {
+          "crown": 2.8,
+          "gem": 2.0,
+          "star": 1.5
+        }
+      }
+    },
+    "slot_fairy_ring": {
+      "label": "Fairy Ring",
+      "icon": "🧚",
+      "theme_color": "#c084fc",
+      "accent": "#86efac",
+      "glow_color": "rgba(192,132,252,0.5)",
+      "volatility": "low",
+      "rtp_estimate": 97.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_robot": {
+      "label": "Robot Factory",
+      "icon": "🔩",
+      "theme_color": "#94a3b8",
+      "accent": "#38bdf8",
+      "glow_color": "rgba(148,163,184,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 95.7,
+      "reels": 3,
+      "symbols": [
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "neon",
+        "wild"
+      ],
+      "symbol_display": {
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "neon": "🌃",
+        "wild": "✨"
+      },
+      "weights": {
+        "bolt": 1,
+        "chip": 2,
+        "wave": 3,
+        "dot": 4,
+        "neon": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "bolt",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "bolt": 14.0,
+          "chip": 9.0,
+          "wave": 6.0,
+          "dot": 4.0,
+          "neon": 3.0
+        },
+        "two": {
+          "bolt": 2.8,
+          "chip": 2.0,
+          "wave": 1.5
+        }
+      }
+    },
+    "slot_abyss": {
+      "label": "Abyss Diver",
+      "icon": "🦑",
+      "theme_color": "#0e7490",
+      "accent": "#164e63",
+      "glow_color": "rgba(14,116,144,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 95.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_desert": {
+      "label": "Desert Mirage",
+      "icon": "🏜️",
+      "theme_color": "#fbbf24",
+      "accent": "#b45309",
+      "glow_color": "rgba(251,191,36,0.5)",
+      "volatility": "medium",
+      "rtp_estimate": 96.3,
+      "reels": 3,
+      "symbols": [
+        "axe",
+        "helm",
+        "rune",
+        "ship",
+        "horn",
+        "wild"
+      ],
+      "symbol_display": {
+        "axe": "🪓",
+        "helm": "⛑️",
+        "rune": "ᚱ",
+        "ship": "⛵",
+        "horn": "📯",
+        "wild": "✨"
+      },
+      "weights": {
+        "axe": 1,
+        "helm": 2,
+        "rune": 3,
+        "ship": 4,
+        "horn": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "axe",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "axe": 14.0,
+          "helm": 9.0,
+          "rune": 6.0,
+          "ship": 4.0,
+          "horn": 3.0
+        },
+        "two": {
+          "axe": 2.8,
+          "helm": 2.0,
+          "rune": 1.5
+        }
+      }
+    },
+    "slot_city": {
+      "label": "Neon City",
+      "icon": "🏙️",
+      "theme_color": "#3b82f6",
+      "accent": "#f97316",
+      "glow_color": "rgba(59,130,246,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 95.8,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_farm": {
+      "label": "Harvest Moon",
+      "icon": "🌾",
+      "theme_color": "#84cc16",
+      "accent": "#a3e635",
+      "glow_color": "rgba(132,204,22,0.5)",
+      "volatility": "low",
+      "rtp_estimate": 97.1,
+      "reels": 3,
+      "symbols": [
+        "crown",
+        "gem",
+        "star",
+        "coin",
+        "leaf",
+        "wild"
+      ],
+      "symbol_display": {
+        "crown": "👑",
+        "gem": "💎",
+        "star": "⭐",
+        "coin": "🪙",
+        "leaf": "🍃",
+        "wild": "✨"
+      },
+      "weights": {
+        "crown": 1,
+        "gem": 2,
+        "star": 3,
+        "coin": 4,
+        "leaf": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "crown": 14.0,
+          "gem": 9.0,
+          "star": 6.0,
+          "coin": 4.0,
+          "leaf": 3.0
+        },
+        "two": {
+          "crown": 2.8,
+          "gem": 2.0,
+          "star": 1.5
+        }
+      }
+    },
+    "slot_circus": {
+      "label": "Big Top Circus",
+      "icon": "🎪",
+      "theme_color": "#ef4444",
+      "accent": "#fde047",
+      "glow_color": "rgba(239,68,68,0.55)",
+      "volatility": "medium",
+      "rtp_estimate": 96.0,
+      "reels": 5,
+      "symbols": [
+        "top",
+        "mid",
+        "low",
+        "base",
+        "fill",
+        "wild"
+      ],
+      "symbol_display": {
+        "top": "🏆",
+        "mid": "💫",
+        "low": "🔷",
+        "base": "🔹",
+        "fill": "⬜",
+        "wild": "🌟"
+      },
+      "weights": {
+        "top": 1,
+        "mid": 2,
+        "low": 3,
+        "base": 4,
+        "fill": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "top",
+      "scatter_min": 3,
+      "scatter_multiplier": 3.5,
+      "paytable": {
+        "default_five": 10.0,
+        "default_three": 5.5,
+        "five": {
+          "top": 32.0,
+          "mid": 18.0,
+          "low": 12.0,
+          "base": 8.0,
+          "fill": 5.0
+        },
+        "three": {
+          "top": 15.0,
+          "mid": 9.0,
+          "low": 6.0
+        }
+      }
+    },
+    "slot_magic": {
+      "label": "Wizard's Spell",
+      "icon": "🪄",
+      "theme_color": "#7c3aed",
+      "accent": "#2dd4bf",
+      "glow_color": "rgba(124,58,237,0.55)",
+      "volatility": "high",
+      "rtp_estimate": 94.9,
+      "reels": 3,
+      "symbols": [
+        "bolt",
+        "chip",
+        "wave",
+        "dot",
+        "neon",
+        "wild"
+      ],
+      "symbol_display": {
+        "bolt": "⚡",
+        "chip": "💾",
+        "wave": "〰️",
+        "dot": "🔵",
+        "neon": "🌃",
+        "wild": "✨"
+      },
+      "weights": {
+        "bolt": 1,
+        "chip": 2,
+        "wave": 3,
+        "dot": 4,
+        "neon": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "bolt",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "bolt": 14.0,
+          "chip": 9.0,
+          "wave": 6.0,
+          "dot": 4.0,
+          "neon": 3.0
+        },
+        "two": {
+          "bolt": 2.8,
+          "chip": 2.0,
+          "wave": 1.5
+        }
+      },
+      "jackpot_symbol": "bolt",
+      "jackpot_multiplier": 18.0
+    },
+    "slot_ninja": {
+      "label": "Shadow Ninja",
+      "icon": "🥷",
+      "theme_color": "#1f2937",
+      "accent": "#ef4444",
+      "glow_color": "rgba(31,41,55,0.6)",
+      "volatility": "high",
+      "rtp_estimate": 94.6,
+      "reels": 3,
+      "symbols": [
+        "crown",
+        "gem",
+        "star",
+        "coin",
+        "leaf",
+        "wild"
+      ],
+      "symbol_display": {
+        "crown": "👑",
+        "gem": "💎",
+        "star": "⭐",
+        "coin": "🪙",
+        "leaf": "🍃",
+        "wild": "✨"
+      },
+      "weights": {
+        "crown": 1,
+        "gem": 2,
+        "star": 3,
+        "coin": 4,
+        "leaf": 5,
+        "wild": 1
+      },
+      "wild_symbols": [
+        "wild"
+      ],
+      "scatter_symbol": "crown",
+      "scatter_min": 3,
+      "scatter_multiplier": 2.5,
+      "paytable": {
+        "default_three": 5.5,
+        "default_two": 1.4,
+        "three": {
+          "crown": 14.0,
+          "gem": 9.0,
+          "star": 6.0,
+          "coin": 4.0,
+          "leaf": 3.0
+        },
+        "two": {
+          "crown": 2.8,
+          "gem": 2.0,
+          "star": 1.5
+        }
       }
     }
+  },
+  "progression": {
+    "xp_per_coin_wagered": 1.0,
+    "mn2_xp_per_unit": 100,
+    "usd_xp_per_unit": 50,
+    "levels": [
+      {
+        "level": 1,
+        "title": "Rookie",
+        "xp_required": 0,
+        "reward_coins": 0
+      },
+      {
+        "level": 2,
+        "title": "Regular",
+        "xp_required": 500,
+        "reward_coins": 50
+      },
+      {
+        "level": 3,
+        "title": "High Roller",
+        "xp_required": 2000,
+        "reward_coins": 150
+      },
+      {
+        "level": 4,
+        "title": "VIP Guest",
+        "xp_required": 5000,
+        "reward_coins": 300
+      },
+      {
+        "level": 5,
+        "title": "House Legend",
+        "xp_required": 15000,
+        "reward_coins": 750
+      }
+    ],
+    "vip_tiers": [
+      {
+        "id": "bronze",
+        "label": "Bronze",
+        "badge": "🥉",
+        "min_wager": 0
+      },
+      {
+        "id": "silver",
+        "label": "Silver",
+        "badge": "🥈",
+        "min_wager": 5000
+      },
+      {
+        "id": "gold",
+        "label": "Gold",
+        "badge": "🥇",
+        "min_wager": 25000
+      },
+      {
+        "id": "platinum",
+        "label": "Platinum",
+        "badge": "💎",
+        "min_wager": 100000
+      },
+      {
+        "id": "diamond",
+        "label": "Diamond",
+        "badge": "👑",
+        "min_wager": 500000
+      }
+    ]
+  },
+  "pvp": {
+    "rake_percent": 5.0
   },
   "daily_quests": [
     {
@@ -357,81 +2767,95 @@
   ],
   "rotating_daily_quests": [
     {
-      "quests": [{
-        "id": "rot_mon_coin_flips",
-        "title": "Flip fanatic",
-        "description": "Play 5 coin flips today",
-        "metric": "coin_flip_bets",
-        "target": 5,
-        "reward_coins": 12,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_mon_coin_flips",
+          "title": "Flip fanatic",
+          "description": "Play 5 coin flips today",
+          "metric": "coin_flip_bets",
+          "target": 5,
+          "reward_coins": 12,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_tue_dice_wins",
-        "title": "Dice master",
-        "description": "Win 2 dice rolls today",
-        "metric": "dice_wins",
-        "target": 2,
-        "reward_coins": 18,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_tue_dice_wins",
+          "title": "Dice master",
+          "description": "Win 2 dice rolls today",
+          "metric": "dice_wins",
+          "target": 2,
+          "reward_coins": 18,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_wed_scratch",
-        "title": "Scratcher",
-        "description": "Try 3 scratch cards today",
-        "metric": "scratch_bets",
-        "target": 3,
-        "reward_coins": 15,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_wed_scratch",
+          "title": "Scratcher",
+          "description": "Try 3 scratch cards today",
+          "metric": "scratch_bets",
+          "target": 3,
+          "reward_coins": 15,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_thu_counter",
-        "title": "Counter strategist",
-        "description": "Try 2 counter-pick RPS bets today",
-        "metric": "rps_counter_bets",
-        "target": 2,
-        "reward_coins": 14,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_thu_counter",
+          "title": "Counter strategist",
+          "description": "Try 2 counter-pick RPS bets today",
+          "metric": "rps_counter_bets",
+          "target": 2,
+          "reward_coins": 14,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_fri_coin_flips",
-        "title": "Friday flips",
-        "description": "Play 3 coin flips today",
-        "metric": "coin_flip_bets",
-        "target": 3,
-        "reward_coins": 10,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_fri_coin_flips",
+          "title": "Friday flips",
+          "description": "Play 3 coin flips today",
+          "metric": "coin_flip_bets",
+          "target": 3,
+          "reward_coins": 10,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_sat_dice_wins",
-        "title": "Saturday rolls",
-        "description": "Win 1 dice roll today",
-        "metric": "dice_wins",
-        "target": 1,
-        "reward_coins": 12,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_sat_dice_wins",
+          "title": "Saturday rolls",
+          "description": "Win 1 dice roll today",
+          "metric": "dice_wins",
+          "target": 1,
+          "reward_coins": 12,
+          "rotating": true
+        }
+      ]
     },
     {
-      "quests": [{
-        "id": "rot_sun_scratch",
-        "title": "Sunday scratch",
-        "description": "Try 2 scratch cards today",
-        "metric": "scratch_bets",
-        "target": 2,
-        "reward_coins": 12,
-        "rotating": true
-      }]
+      "quests": [
+        {
+          "id": "rot_sun_scratch",
+          "title": "Sunday scratch",
+          "description": "Try 2 scratch cards today",
+          "metric": "scratch_bets",
+          "target": 2,
+          "reward_coins": 12,
+          "rotating": true
+        }
+      ]
     }
   ],
   "battle_meta": {
@@ -440,7 +2864,11 @@
     "rarity_base_multiplier": 2.0,
     "rarity_min_multiplier": 1.8,
     "rarity_max_multiplier": 3.5,
-    "difficulty_lanes": ["easy", "balanced", "hard"]
+    "difficulty_lanes": [
+      "easy",
+      "balanced",
+      "hard"
+    ]
   },
   "quest_streaks": {
     "daily_all_claimed_bonus": 10,
@@ -467,15 +2895,34 @@
     "enabled": true,
     "slot_jackpot_symbol_awards": true,
     "rails": {
-      "coins": {"seed": 1000, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 1000},
-      "mn2": {"seed": 5.0, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 5.0},
-      "usd": {"seed": 25.0, "contribution_rate": 0.01, "win_chance": 0.0008, "reseed": 25.0}
+      "coins": {
+        "seed": 1000,
+        "contribution_rate": 0.01,
+        "win_chance": 0.0008,
+        "reseed": 1000
+      },
+      "mn2": {
+        "seed": 5.0,
+        "contribution_rate": 0.01,
+        "win_chance": 0.0008,
+        "reseed": 5.0
+      },
+      "usd": {
+        "seed": 25.0,
+        "contribution_rate": 0.01,
+        "win_chance": 0.0008,
+        "reseed": 25.0
+      }
     }
   },
   "tournaments": {
     "enabled": true,
     "scoring": "net",
-    "prize_split": [0.5, 0.3, 0.2],
+    "prize_split": [
+      0.5,
+      0.3,
+      0.2
+    ],
     "rake": 0.0,
     "auto_recreate": true,
     "templates": [
@@ -502,7 +2949,114 @@
         "buy_in": 2.0,
         "house_seed": 25.0,
         "duration_hours": 24
+      },
+      {
+        "id": "weekly_coins_sprint",
+        "name": "Weekly Coin Sprint",
+        "currency": "coins",
+        "buy_in": 100,
+        "house_seed": 5000,
+        "duration_hours": 168,
+        "rivalry_callout": true
+      },
+      {
+        "id": "weekly_mn2_high_roller",
+        "name": "MN2 High Roller Cup",
+        "currency": "mn2",
+        "buy_in": 1.0,
+        "house_seed": 20.0,
+        "duration_hours": 168,
+        "rivalry_callout": true
+      },
+      {
+        "id": "monthly_coins_grand",
+        "name": "Monthly Grand Prix",
+        "currency": "coins",
+        "buy_in": 250,
+        "house_seed": 15000,
+        "duration_hours": 720,
+        "rivalry_callout": true
       }
     ]
+  },
+  "competition": {
+    "rival_board_enabled": true,
+    "achievement_races_enabled": true,
+    "crew_leaderboard_enabled": true
+  },
+  "crash_crew": {
+    "enabled": true,
+    "lobby_seconds": 30,
+    "min_players": 2,
+    "max_players": 6
+  },
+  "mines_duel": {
+    "enabled": true,
+    "tiles": 25,
+    "mines": 3
+  },
+  "casino_battle_pass": {
+    "enabled": true,
+    "season_id": "casino-s1",
+    "xp_per_bet_coin": 1,
+    "xp_per_tier": 100,
+    "tiers": [
+      {"tier": 1, "reward_coins": 25, "badge": "casino-rookie", "cosmetic_only": true},
+      {"tier": 3, "reward_coins": 50, "badge": "high-roller-frame", "cosmetic_only": true},
+      {"tier": 5, "reward_coins": 100, "badge": "vip-chrome", "cosmetic_only": true}
+    ]
+  },
+  "streak_shield": {
+    "enabled": true,
+    "shields_per_week": 1,
+    "refund_pct": 50,
+    "currency": "coins"
+  },
+  "lab_coupons": {
+    "enabled": true,
+    "codes": {
+      "LAB-FREEBET": {"type": "free_daily_bet", "uses": 1, "label": "Lab quest free bet"},
+      "LAB-CRASH-CREW": {"type": "crew_invite_boost", "uses": 1, "label": "Lab crew invite token"}
+    }
+  },
+  "keno_syndicate": {
+    "enabled": true,
+    "min_players": 2,
+    "max_players": 6,
+    "default_stake": 25
+  },
+  "roulette_side_bets": {
+    "enabled": true,
+    "hot_numbers": [7, 17, 23],
+    "cold_numbers": [0, 13, 26],
+    "hot_payout": 8.0,
+    "cold_payout": 8.0,
+    "max_fraction_of_main": 0.5
+  },
+  "blackjack_tournaments": {
+    "enabled": true,
+    "buy_in": 50,
+    "house_seed": 1000,
+    "bracket_size": 8,
+    "currency": "coins"
+  },
+  "wheel_raid": {
+    "enabled": true,
+    "spin_threshold": 500,
+    "bonus_seed_coins": 2500,
+    "bonus_seed_mn2": 0.5,
+    "bonus_seed_usd": 5.0,
+    "award_last_spinner_pct": 0.1
+  },
+  "podcast_tournament_bonus": {
+    "enabled": true,
+    "bonus_coins_per_bet": 5,
+    "coins_only": true
+  },
+  "hub_node_secret": "",
+  "Jon vinder igen!": {
+    "Løn er enabled": true,
+    "Start_coins": 10000,
+    "Slut_coins": 12500
   }
 }

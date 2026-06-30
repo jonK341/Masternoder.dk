@@ -3,25 +3,61 @@
 <head>
     <script>window._pageLoadStart = performance.now();</script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casino — MasterNoder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>MasterNoder2 Casino — masternoder.dk</title>
+    <meta name="description" content="MasterNoder2 Casino — crash, slots, plinko, mines, tournaments, and social big-win sharing. Virtual coins first.">
+    <meta name="keywords" content="MasterNoder2 Casino, MN2 casino, social casino, crash game, plinko, slots, mines, provably fair, progressive jackpot, casino tournaments, virtual coins, masternoder.dk">
+    <meta name="theme-color" content="#1A1035">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MN Casino">
+    <meta name="application-name" content="MasterNoder Casino Social">
+    <link rel="manifest" href="/casino/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/static/img/casino/icon-192.svg">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MasterNoder">
+    <meta property="og:title" content="MasterNoder2 Casino — Social lounge">
+    <meta property="og:description" content="Ride the rocket. Hit the jackpot. Crash, slots, plinko, tournaments, and big-win sharing on masternoder.dk.">
+    <meta property="og:url" content="https://masternoder.dk/casino/">
+    <meta property="og:image" content="https://masternoder.dk/static/img/casino/banner-masternoder2-casino.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MasterNoder2 Casino">
+    <meta name="twitter:description" content="Social casino lounge — virtual coins, tournaments, big wins.">
+    <meta name="twitter:image" content="https://masternoder.dk/static/img/casino/banner-masternoder2-casino.png">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/casino.css?v=20260616a">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20260625b">
+    <link rel="stylesheet" href="/static/css/casino-mobile.css?v=20260625b">
+    <link rel="stylesheet" href="/static/css/casino-twa-shell.css?v=20260625b">
 </head>
 <body>
     <div class="casino-page">
         <header class="casino-header">
-            <h1>🎰 Casino</h1>
-            <p>Play with virtual coins, MN2 wallet balance, or PayPal-funded USD stakes.</p>
+            <div class="casino-hero-banner" aria-hidden="false">
+                <picture>
+                    <source srcset="/static/img/casino/banner-masternoder2-casino.svg" type="image/svg+xml">
+                    <img src="/static/img/casino/banner-masternoder2-casino.png" width="1200" height="630" alt="MasterNoder2 Casino — neon lounge with crash, slots, plinko, and jackpots" loading="eager" decoding="async">
+                </picture>
+            </div>
+            <h1>🎰 MasterNoder2 Casino</h1>
+            <p class="casino-tagline">Ride the rocket. Hit the jackpot. Own the lounge.</p>
+            <p class="casino-header-sub">Play with virtual coins, MN2 wallet balance, or PayPal-funded USD stakes.</p>
         </header>
 
         <div id="casino-ticker" class="casino-ticker" aria-live="polite" aria-label="Recent winners">
             <span class="casino-ticker-label">🏆 Live wins</span>
             <div class="casino-ticker-track" id="casino-ticker-track"><span class="casino-ticker-item">Waiting for the next big win…</span></div>
+        </div>
+
+        <div id="casino-news-ticker" class="casino-news-ticker hidden" aria-live="polite" aria-label="Casino news">
+            <span class="casino-news-ticker-label">📰 News</span>
+            <div class="casino-news-ticker-track" id="casino-news-ticker-track"></div>
         </div>
 
         <div id="casino-jackpot-bar" class="casino-jackpot-bar hidden" aria-live="polite" aria-label="Progressive jackpots">
@@ -30,6 +66,75 @@
         </div>
 
         <div id="casino-disclaimer-text" class="casino-disclaimer">Loading…</div>
+        <div id="casino-exchange-bridge" class="casino-exchange-bridge" aria-live="polite">
+            <div class="casino-exchange-bridge-inner">
+                <span class="casino-exchange-bridge-label">💱 Exchange wallet</span>
+                <span id="casino-bridge-mn2">MN2 …</span>
+                <span id="casino-bridge-profit">Profit …</span>
+                <span id="casino-bridge-rentals">Rentals …</span>
+                <a id="casino-bridge-cta" href="/exchange#cex-control-center" class="casino-exchange-bridge-cta">Rent bots · cash out → casino</a>
+                <span id="casino-bridge-leaderboard" class="casino-bridge-lb muted"></span>
+            </div>
+        </div>
+        <section class="casino-cockpit" id="casino-cockpit" aria-labelledby="casino-cockpit-title">
+            <div class="casino-cockpit-head">
+                <div>
+                    <h2 id="casino-cockpit-title">Casino Exchange Cockpit</h2>
+                    <p>Table of contents, MN2 funding, socials, camgirls lounge, income monitors, and casino-evolution agents.</p>
+                </div>
+                <a href="/command-center" class="casino-cockpit-command">Open Command Center</a>
+            </div>
+            <nav class="casino-toc" aria-label="Casino table of contents">
+                <a href="#casino-tab-home">Games</a>
+                <a href="#casino-tab-leaderboard">Contests</a>
+                <a href="#casino-tab-social">Socials</a>
+                <a href="/exchange#cex-control-center">Agent control</a>
+                <a href="/exchange?tab=onramp">Buy MN2</a>
+                <a href="/camgirls">Camgirls lounge</a>
+                <a href="/profile">Profile</a>
+            </nav>
+            <div class="casino-cockpit-grid">
+                <article class="casino-cockpit-card casino-cockpit-card--money">
+                    <h3>Agent control center</h3>
+                    <p>Rent exchange bots, add skills, and cash paper profit to MN2, shop coins, or casino play coins — MN2, coins, or PayPal.</p>
+                    <a href="/exchange#cex-control-center">Open agent control</a>
+                </article>
+                <article class="casino-cockpit-card casino-cockpit-card--money">
+                    <h3>PayPal -> MN2 -> Casino</h3>
+                    <p>Buy MasterNoder2 coin through PayPal on the exchange, then play MN2 tables or tip performers from the same wallet.</p>
+                    <a href="/exchange?tab=onramp">Buy MN2 with PayPal</a>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Player profile &amp; social proof</h3>
+                    <p>Profiles, friends, crews, referrals, and public wins help users trust the lounge before they buy in.</p>
+                    <a href="/profile">Profile</a>
+                    <a href="/social">Social hub</a>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Camgirls retention lane</h3>
+                    <p>Age-gated performers, MN2 unlocks, tips, fan clubs, and studio agents keep premium users active between games.</p>
+                    <a href="/camgirls">Enter lounge</a>
+                    <span id="casino-cockpit-camgirls">Checking performers...</span>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Income monitor</h3>
+                    <p id="casino-cockpit-income">Loading house and exchange monitor...</p>
+                    <div class="casino-cockpit-meter"><span id="casino-cockpit-income-fill"></span></div>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Casino evolution agents</h3>
+                    <p>Specialized agents handle odds explainers, responsible-play nudges, VIP retention, tournament ops, and performer pairing.</p>
+                    <div class="casino-agent-skill-pills">
+                        <span>Risk Sentinel</span><span>VIP Host</span><span>Tournament Ops</span><span>Camgirl Concierge</span>
+                    </div>
+                </article>
+                <article class="casino-cockpit-card">
+                    <h3>Contest table</h3>
+                    <p>Leaderboards, tournaments, streak quests, and camgirls fan goals form the contest backbone.</p>
+                    <a href="#casino-tab-leaderboard">View leaderboard</a>
+                </article>
+            </div>
+        </section>
         <div id="casino-rg-banner" class="casino-rg-banner hidden" role="status" aria-live="polite"></div>
         <div id="casino-currency-bar" class="casino-currency-bar">
             <span class="casino-currency-label">Stake with:</span>
@@ -62,36 +167,50 @@
         <div id="casino-double-bar" class="casino-double-bar hidden" aria-live="polite"></div>
         <div id="casino-personal-bests" class="casino-personal-bests">Loading records…</div>
 
-        <section class="casino-side-panels" aria-label="Quests and leaderboard">
-            <article class="casino-panel">
-                <h2>Daily & weekly</h2>
-                <ul id="casino-quests-list" class="casino-quests-list"></ul>
-                <ul id="casino-weekly-list" class="casino-quests-list casino-weekly-list"></ul>
-                <ul id="casino-bonus-list" class="casino-quests-list casino-bonus-list"></ul>
-            </article>
-            <article class="casino-panel">
-                <h2>Leaderboard</h2>
-                <div class="casino-leaderboard-tabs">
-                    <button type="button" class="casino-tab active" data-period="today">Today</button>
-                    <button type="button" class="casino-tab" data-period="week">Week</button>
-                    <button type="button" class="casino-tab" data-period="all">All</button>
+        <nav id="casino-main-tabs" class="casino-main-tabs" aria-label="Casino navigation" role="tablist"></nav>
+
+        <div id="casino-tab-panels" class="casino-tab-panels">
+            <section id="casino-tab-home" class="casino-tab-panel active" role="tabpanel" aria-labelledby="casino-tab-btn-home">
+                <div class="casino-featured-hero">
+                    <div class="casino-featured-banner" aria-hidden="true">
+                        <img src="/static/img/casino/banner-masternoder2-casino.svg" width="1200" height="630" alt="" loading="lazy" decoding="async">
+                    </div>
+                    <div id="casino-slot-of-day" class="casino-slot-of-day hidden" aria-live="polite"></div>
+                    <div id="casino-seasonal-badge" class="casino-seasonal-badge hidden" aria-live="polite"></div>
+                    <h2 class="casino-featured-title">Featured games</h2>
+                    <p class="casino-featured-sub">Quick-play the hottest tables and arcade hits — full roster in the tabs above.</p>
                 </div>
-                <table class="casino-leaderboard-table">
-                    <thead>
-                        <tr><th>#</th><th>Player</th><th>Net</th><th>Win%</th><th>ROI</th></tr>
-                    </thead>
-                    <tbody id="casino-leaderboard-body"></tbody>
-                </table>
-                <h3 class="casino-subheading">Friends & crew</h3>
-                <div id="casino-social-board" class="casino-social-board">Loading…</div>
-                <h3 class="casino-subheading">Hall of fame</h3>
-                <div id="casino-hall-of-fame" class="casino-hall-of-fame">Loading…</div>
-            </article>
-        </section>
+                <div id="casino-featured-grid" class="casino-featured-grid" aria-live="polite">Loading featured games…</div>
+                <div class="casino-home-grid">
+                    <article class="casino-panel">
+                        <h2>Daily &amp; weekly</h2>
+                        <ul id="casino-quests-list" class="casino-quests-list"></ul>
+                        <ul id="casino-weekly-list" class="casino-quests-list casino-weekly-list"></ul>
+                        <ul id="casino-bonus-list" class="casino-quests-list casino-bonus-list"></ul>
+                    </article>
+                    <article class="casino-panel">
+                        <h2>Your stats</h2>
+                        <div id="casino-progression" class="casino-progression">Loading…</div>
+                        <button type="button" id="casino-daily-wheel" class="casino-daily-wheel-btn">🎡 Daily lucky wheel</button>
+                        <div id="casino-vip-lounge" class="casino-vip-lounge hidden">
+                            <h3 class="casino-subheading">VIP Lounge</h3>
+                            <div id="casino-vip-lounge-body">Loading…</div>
+                        </div>
+                        <h3 class="casino-subheading">Friends &amp; crew</h3>
+                        <div id="casino-social-board" class="casino-social-board">Loading…</div>
+                        <h3 class="casino-subheading">Hall of fame</h3>
+                        <div id="casino-hall-of-fame" class="casino-hall-of-fame">Loading…</div>
+                        <h3 class="casino-subheading">Big-win hall of fame (7d)</h3>
+                        <div id="casino-big-win-hof" class="casino-big-win-hof">Loading…</div>
+                        <h3 class="casino-subheading">Achievement progress</h3>
+                        <div id="casino-home-achievements" class="casino-home-achievements">Loading…</div>
+                        <h3 class="casino-subheading">AI agent spectator</h3>
+                        <div id="casino-agent-spectator" class="casino-agent-spectator" aria-live="polite">Loading agent feed…</div>
+                    </article>
+                </div>
+            </section>
 
-        <nav class="casino-games-nav" id="casino-games-nav" aria-label="Casino games" role="tablist"></nav>
-
-        <section class="casino-grid casino-games-tabbed" id="casino-games-grid" aria-label="Casino games">
+            <div id="casino-games-grid" class="casino-grid casino-games-tabbed" aria-label="Casino games">
             <article class="casino-card casino-card-wide casino-crash-card" data-casino-game="crash" data-casino-label="🚀 Crash">
                 <h2>🚀 Crash</h2>
                 <p>Place a bet, watch the rocket climb, and cash out before it crashes. Win pays your stake × the cash-out multiplier. Provably fair.</p>
@@ -123,6 +242,27 @@
                         <div id="crash-reveal" class="casino-fairness-reveal"></div>
                     </div>
                 </details>
+            </article>
+
+            <article class="casino-card casino-card-wide casino-crash-crew-card" data-casino-game="crash-crew" data-casino-label="👥 Crash crew">
+                <h2>👥 Crash crew</h2>
+                <p>Team up with friends — one shared bust point, individual cash-outs. Host creates a lobby; launch when everyone is in.</p>
+                <div id="crash-crew-room-panel" class="casino-crash-crew-panel">
+                    <div id="crash-crew-status" class="casino-crash-status">Browse open lobbies or create your own.</div>
+                    <ul id="crash-crew-lobbies" class="casino-crash-crew-lobbies"></ul>
+                </div>
+                <div class="casino-controls casino-crash-controls">
+                    <label class="casino-crash-field">Bet
+                        <input id="crash-crew-bet" type="number" min="5" max="500" value="25" aria-label="Crash crew bet">
+                    </label>
+                    <label class="casino-crash-field">Auto cash-out ×
+                        <input id="crash-crew-auto" type="number" min="1.01" step="0.01" placeholder="optional" aria-label="Crash crew auto cash-out">
+                    </label>
+                    <button id="crash-crew-create" type="button" class="casino-crash-launch">Create lobby</button>
+                    <button id="crash-crew-launch" type="button" class="casino-share-site-btn" disabled>Launch round</button>
+                    <button id="crash-crew-cashout" type="button" class="casino-crash-cashout" disabled>Cash out</button>
+                </div>
+                <div id="crash-crew-result" class="casino-result"></div>
             </article>
 
             <article class="casino-card casino-card-wide casino-plinko-card" data-casino-game="plinko" data-casino-label="🟡 Plinko">
@@ -236,6 +376,14 @@
                     <label class="casino-crash-field" id="roulette-selection-field" style="display:none;">Pick
                         <input id="roulette-selection" type="number" min="0" max="36" value="17" aria-label="Roulette number">
                     </label>
+                    <label class="casino-crash-field">Side bet (hot/cold)
+                        <select id="roulette-side-type" aria-label="Roulette side bet type">
+                            <option value="">None</option>
+                            <option value="hot">Hot numbers</option>
+                            <option value="cold">Cold numbers</option>
+                        </select>
+                        <input id="roulette-side-bet" type="number" min="0" max="250" value="0" aria-label="Side bet amount">
+                    </label>
                     <button id="roulette-spin" type="button" class="casino-roulette-spin">Spin 🎯</button>
                 </div>
                 <div id="roulette-result" class="casino-result"></div>
@@ -260,7 +408,63 @@
                 <div id="hilo-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card casino-card-wide casino-tournaments-card" data-casino-game="tournaments" data-casino-label="🏆 Tournaments">
+            <article class="casino-card casino-card-wide casino-blackjack-card" data-casino-game="blackjack" data-casino-lobby="tables" data-casino-label="🃏 Blackjack">
+                <h2>🃏 Blackjack</h2>
+                <p>Beat the dealer to 21. Hit, stand, or double down. Natural blackjack pays 3:2.</p>
+                <div id="bj-player" class="casino-bj-hand">—</div>
+                <div id="bj-dealer" class="casino-bj-hand">Dealer: —</div>
+                <div class="casino-controls">
+                    <input id="bj-bet" type="number" min="5" max="500" value="25" aria-label="Blackjack bet">
+                    <button id="bj-deal" type="button">Deal</button>
+                    <button id="bj-hit" type="button" disabled>Hit</button>
+                    <button id="bj-stand" type="button" disabled>Stand</button>
+                    <button id="bj-double" type="button" disabled>Double</button>
+                </div>
+                <div id="bj-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card" data-casino-game="baccarat" data-casino-lobby="tables" data-casino-label="🎴 Baccarat">
+                <h2>🎴 Baccarat</h2>
+                <p>Bet Player, Banker, or Tie. Fast punto banco with standard third-card rules.</p>
+                <div class="casino-controls">
+                    <input id="baccarat-bet" type="number" min="5" max="500" value="25" aria-label="Baccarat bet">
+                    <select id="baccarat-side" aria-label="Baccarat side">
+                        <option value="player">Player</option>
+                        <option value="banker">Banker</option>
+                        <option value="tie">Tie</option>
+                    </select>
+                    <button id="baccarat-play" type="button">Deal</button>
+                </div>
+                <div id="baccarat-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-card-wide" data-casino-game="video-poker" data-casino-lobby="tables" data-casino-label="🎴 Video Poker">
+                <h2>🎴 Video Poker</h2>
+                <p>Jacks or Better — hold the cards you want, then draw. Max paytable on a royal flush.</p>
+                <div id="vp-hand" class="casino-vp-hand">—</div>
+                <div class="casino-controls">
+                    <input id="vp-bet" type="number" min="5" max="500" value="25" aria-label="Video poker bet">
+                    <button id="vp-deal" type="button">Deal</button>
+                    <button id="vp-draw" type="button" disabled>Draw</button>
+                </div>
+                <div id="vp-hold" class="casino-vp-hold"></div>
+                <div id="vp-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card" data-casino-game="pvp-duel" data-casino-lobby="arcade" data-casino-label="⚔️ PvP Duel">
+                <h2>⚔️ PvP Duel</h2>
+                <p>Challenge another player — coin flip, dice, or RPS. Winner takes the pot minus rake.</p>
+                <div class="casino-controls">
+                    <input id="duel-bet" type="number" min="5" max="500" value="25" aria-label="Duel bet">
+                    <select id="duel-game" aria-label="Duel game"><option value="coin_flip">Coin flip</option><option value="dice">Dice</option><option value="rps">RPS</option><option value="plinko_battle">Plinko battle</option></select>
+                    <select id="duel-choice" aria-label="Duel choice"><option value="heads">Heads</option><option value="tails">Tails</option></select>
+                    <button id="duel-create" type="button">Create duel</button>
+                </div>
+                <div id="duel-open-list" class="casino-duel-list">Loading open duels…</div>
+                <div id="duel-result" class="casino-result"></div>
+            </article>
+
+            <article class="casino-card casino-tournaments-card" data-casino-game="tournaments" data-casino-lobby="live" data-casino-label="🏆 Tournaments">
                 <h2>🏆 Tournaments</h2>
                 <p>Buy in, then your net result across this currency's games becomes your score. When the clock runs out, the top finishers split the house-seeded prize pool.</p>
                 <div id="casino-tournaments" class="casino-tournaments">Loading tournaments…</div>
@@ -336,7 +540,7 @@
 
             <article class="casino-card casino-card-wide casino-slots-section" data-casino-game="slots" data-casino-label="🎰 Slots">
                 <h2>🎰 Slot machines</h2>
-                <p>Seven machines — wilds, scatters, jackpots, and staggered reel stops. RTP and volatility shown per machine.</p>
+                <p>Premium slot lineup — wilds, scatters, jackpots, staggered reel stops, and themed cabinets. RTP and volatility shown per machine.</p>
                 <div id="casino-slots-grid" class="casino-slots-grid" aria-live="polite">Loading slot machines…</div>
             </article>
 
@@ -426,10 +630,178 @@
                 </div>
                 <div id="outcome-result" class="casino-result"></div>
             </article>
-        </section>
+            </div>
+
+            <section id="casino-tab-leaderboard" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-leaderboard" hidden>
+                <div class="casino-lb-header">
+                    <h2>Top 25 leaderboard</h2>
+                    <p class="casino-lb-sub">Ranked by net wins for the selected period and currency.</p>
+                    <span id="casino-lb-network-badge" class="casino-lb-network-badge hidden" aria-live="polite">MasterNoder Network</span>
+                </div>
+                <div class="casino-leaderboard-tabs casino-lb-scope-tabs" role="tablist" aria-label="Leaderboard scope">
+                    <button type="button" class="casino-tab active" data-lb-scope="local">This site</button>
+                    <button type="button" class="casino-tab" data-lb-scope="global">🌐 MasterNoder Network</button>
+                </div>
+                <div class="casino-leaderboard-tabs casino-lb-period-tabs">
+                    <button type="button" class="casino-tab active" data-period="today">Today</button>
+                    <button type="button" class="casino-tab" data-period="week">Week</button>
+                    <button type="button" class="casino-tab" data-period="all">All time</button>
+                </div>
+                <div id="casino-lb-podium" class="casino-lb-podium" aria-label="Top 3 players"></div>
+                <ol id="casino-lb-list" class="casino-lb-list" aria-label="Ranks 1 through 25"></ol>
+                <div id="casino-lb-you" class="casino-lb-you" aria-live="polite"></div>
+            </section>
+
+            <section id="casino-tab-activity" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-activity" hidden>
+                <div class="casino-activity-header">
+                    <h2>5-day activity monitor</h2>
+                    <p class="casino-activity-sub">Daily trends — bets, wins, unique players, and jackpot hits.</p>
+                </div>
+                <div id="casino-activity-charts" class="casino-activity-charts">Loading activity…</div>
+                <div id="casino-activity-feed-list" class="casino-activity-feed-list" aria-label="Recent wins"></div>
+                <article class="casino-panel casino-revenue-panel">
+                    <h3>Today's revenue dashboard</h3>
+                    <p class="casino-activity-sub">Operator-facing house edge, big wins, jackpots, and ledger reconcile (virtual coins first).</p>
+                    <div id="casino-revenue-dashboard" class="casino-revenue-dashboard">Loading revenue…</div>
+                </article>
+            </section>
+
+            <section id="casino-tab-compete" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-compete" hidden>
+                <div class="casino-compete-header">
+                    <h2>Compete &amp; collect</h2>
+                    <p class="casino-compete-sub">Rival boards, achievement races, shop cosmetics, trophies, and badges.</p>
+                </div>
+                <div class="casino-compete-grid">
+                    <article class="casino-panel">
+                        <h3>Battle pass</h3>
+                        <div id="casino-battle-pass" class="casino-compete-panel">Loading battle pass…</div>
+                        <h3 class="casino-subheading">Streak shield</h3>
+                        <div id="casino-streak-shield" class="casino-compete-panel">Loading streak shield…</div>
+                        <h3 class="casino-subheading">Lab coupon</h3>
+                        <div id="casino-lab-coupon" class="casino-compete-panel">
+                            <label>Redeem code
+                                <input id="casino-coupon-code" type="text" placeholder="LAB-FREEBET" aria-label="Lab coupon code">
+                            </label>
+                            <button type="button" id="casino-coupon-redeem" class="casino-share-site-btn">Redeem</button>
+                            <div id="casino-coupon-result" class="casino-result"></div>
+                        </div>
+                    </article>
+                    <article class="casino-panel">
+                        <h3>Rival board</h3>
+                        <div id="casino-rivals" class="casino-compete-panel">Loading rivals…</div>
+                        <h3 class="casino-subheading">Achievement races</h3>
+                        <div id="casino-achievement-races" class="casino-compete-panel">Loading races…</div>
+                        <h3 class="casino-subheading">Crew casino board</h3>
+                        <div id="casino-crew-board" class="casino-compete-panel">Loading crew board…</div>
+                        <h3 class="casino-subheading">Keno syndicate</h3>
+                        <div id="casino-keno-syndicate" class="casino-compete-panel">
+                            <p>Group ticket — pick spots, escrow stakes, split wins by share.</p>
+                            <label>Stake <input id="keno-syndicate-stake" type="number" min="5" max="500" value="25" aria-label="Syndicate stake"></label>
+                            <label>Your spots (comma-separated) <input id="keno-syndicate-spots" type="text" placeholder="3,7,12,19" aria-label="Keno spots"></label>
+                            <button type="button" id="keno-syndicate-create" class="casino-share-site-btn">Create syndicate</button>
+                            <div id="keno-syndicate-open" class="casino-duel-list">Loading open syndicates…</div>
+                            <div id="keno-syndicate-result" class="casino-result"></div>
+                        </div>
+                        <h3 class="casino-subheading">Blackjack tournament</h3>
+                        <div id="casino-bj-tournament" class="casino-compete-panel">Loading BJ bracket…</div>
+                        <h3 class="casino-subheading">Wheel raid boss</h3>
+                        <div id="casino-wheel-raid" class="casino-compete-panel">Loading raid progress…</div>
+                        <h3 class="casino-subheading">Trophy rake rebate</h3>
+                        <div id="casino-rake-rebate-progress" class="casino-compete-panel">Loading rebate tier…</div>
+                        <h3 class="casino-subheading">Friend duel invite</h3>
+                        <div id="casino-duel-invite" class="casino-compete-panel hidden">
+                            <p id="casino-duel-invite-text">Loading invite…</p>
+                            <button type="button" id="casino-duel-invite-accept" class="casino-share-site-btn">Accept duel</button>
+                        </div>
+                        <h3 class="casino-subheading">Mines duel</h3>
+                        <div id="casino-mines-duel" class="casino-compete-panel">
+                            <p>Turn-based shared board — hit a mine and lose the pot.</p>
+                            <label>Bet <input id="mines-duel-bet" type="number" min="5" max="500" value="25" aria-label="Mines duel bet"></label>
+                            <button type="button" id="mines-duel-create" class="casino-share-site-btn">Create mines duel</button>
+                            <div id="mines-duel-open" class="casino-duel-list">Loading open mines duels…</div>
+                            <div id="mines-duel-board" class="casino-mines-duel-board hidden"></div>
+                            <div id="mines-duel-result" class="casino-result"></div>
+                        </div>
+                        <h3 class="casino-subheading">Agent spectator</h3>
+                        <div id="casino-compete-spectator" class="casino-agent-spectator" aria-live="polite">Loading…</div>
+                    </article>
+                    <article class="casino-panel">
+                        <h3>Casino shop</h3>
+                        <div id="casino-shop" class="casino-shop-grid">Loading shop…</div>
+                    </article>
+                    <article class="casino-panel">
+                        <h3>Trophies</h3>
+                        <div id="casino-trophies" class="casino-trophy-grid">Loading trophies…</div>
+                        <h3 class="casino-subheading">Achievements</h3>
+                        <div id="casino-achievements" class="casino-achievement-grid">Loading achievements…</div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="casino-tab-social" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-social" hidden>
+                <div class="casino-social-header">
+                    <h2>Social &amp; community</h2>
+                    <p class="casino-social-sub">Follow MasterNoder, share big wins, get the Android app, and earn on Discord.</p>
+                </div>
+                <div id="casino-play-install" class="casino-play-install hidden" aria-live="polite">
+                    <div>
+                        <strong>Get the Android app</strong>
+                        <p style="margin:0.25rem 0 0;font-size:0.88rem;opacity:0.85;">Install MasterNoder Casino from Google Play or add to your home screen.</p>
+                    </div>
+                    <a id="casino-play-store-badge" class="casino-play-badge" href="https://play.google.com/store/apps/details?id=dk.masternoder.casino" target="_blank" rel="noopener noreferrer">▶ Google Play</a>
+                    <button type="button" id="casino-pwa-install-btn" class="casino-share-site-btn hidden">📲 Install app</button>
+                </div>
+                <div id="casino-social-follow-grid" class="casino-social-follow-grid">Loading social links…</div>
+                <div class="casino-social-share-bar">
+                    <button type="button" id="casino-share-win-btn" class="casino-share-win-btn">📣 Share my latest big win</button>
+                    <button type="button" id="casino-share-win-card-btn" class="casino-share-site-btn">🖼️ Big-win clip card</button>
+                    <button type="button" id="casino-share-site-btn" class="casino-share-site-btn">🔗 Share casino</button>
+                    <button type="button" id="casino-share-whatsapp-btn" class="casino-share-site-btn">💬 WhatsApp</button>
+                    <button type="button" id="casino-share-x-thread-btn" class="casino-share-site-btn">𝕏 Thread</button>
+                </div>
+                <div id="casino-referral-invite" class="casino-referral-invite">
+                    <h3>Invite friends</h3>
+                    <p class="casino-social-sub">Share your casino referral link — trophy tracking only, no RTP perks.</p>
+                    <div class="casino-referral-row">
+                        <code id="casino-referral-code">Loading…</code>
+                        <button type="button" id="casino-copy-referral-code" class="casino-share-site-btn">Copy code</button>
+                        <button type="button" id="casino-copy-referral-link" class="casino-share-site-btn">Copy link</button>
+                    </div>
+                    <h3 class="casino-subheading">Top referrers</h3>
+                    <ol id="casino-referral-leaderboard" class="casino-referral-leaderboard">Loading…</ol>
+                    <h3 class="casino-subheading">Referral quests</h3>
+                    <div id="casino-referral-quests" class="casino-referral-quests">Loading…</div>
+                </div>
+                <div id="casino-follow-leaders" class="casino-follow-leaders">
+                    <h3>Follow top players</h3>
+                    <div id="casino-follow-leaders-list" class="casino-follow-leaders-list">Loading…</div>
+                </div>
+                <div id="casino-crew-challenge-hook" class="casino-crew-challenge-hook">
+                    <h3>Crew casino challenges</h3>
+                    <div id="casino-crew-challenge-body">Loading…</div>
+                </div>
+                <div id="casino-social-activity-feed" class="casino-social-activity-feed">
+                    <h3>Live wins — react</h3>
+                    <div id="casino-social-feed-list" class="casino-social-feed-list">Loading…</div>
+                </div>
+                <div id="casino-discord-earn" class="casino-discord-earn">
+                    <h3>Discord earn strip</h3>
+                    <p>Opt in to mirror big wins to Discord and play the full casino in-server.</p>
+                    <label class="casino-discord-optin">
+                        <input type="checkbox" id="casino-share-wins-toggle"> Share wins to Discord (opt-in)
+                    </label>
+                    <a id="casino-discord-play-link" class="casino-discord-play-link" href="/discord-play/">Open Discord casino →</a>
+                    <a id="casino-discord-activity-link" class="casino-discord-activity-link hidden" href="https://discord.gg/masternoder" target="_blank" rel="noopener noreferrer">Join Discord Activity →</a>
+                </div>
+                <div id="casino-social-share-grid" class="casino-social-share-grid" aria-label="Share to social networks"></div>
+            </section>
+        </div>
 
         <section class="casino-history" aria-label="Recent bets">
             <h2>Recent bets</h2>
+            <p class="casino-fairness-export-row">
+                <a id="casino-fairness-export-link" href="#" class="casino-fairness-export-link">📥 Export provably-fair audit (CSV)</a>
+            </p>
             <table>
                 <thead>
                     <tr><th>Game</th><th>Bet</th><th>Outcome</th><th>Net</th><th>Time</th></tr>
@@ -448,7 +820,10 @@
     </div>
 
     <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
-    <script src="/static/js/casino.js?v=20260616a" defer></script>
+    <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
+    <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
+    <script src="/static/js/casino.js?v=20260630e" defer></script>
+    <script src="/static/js/casino-cockpit.js?v=20260628" defer></script>
     <script>
     (function () {
         if (window.__casinoBootstrapped) return;

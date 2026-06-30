@@ -75,6 +75,24 @@ def evaluate(pocket: int, bet_type: str, selection: Optional[int] = None) -> flo
     return 0.0
 
 
+def evaluate_side_bet(pocket: int, side_type: str, hot_numbers: List[int], cold_numbers: List[int]) -> float:
+    """Total-return multiplier for hot/cold side bet (8× published estimate)."""
+    p = int(pocket)
+    st = (side_type or "").strip().lower()
+    if st == "hot":
+        return 8.0 if p in hot_numbers else 0.0
+    if st == "cold":
+        return 8.0 if p in cold_numbers else 0.0
+    return 0.0
+
+
+def side_bet_rtp(side_type: str, hot_numbers: List[int], cold_numbers: List[int], pockets: int = POCKETS) -> float:
+    n = int(pockets)
+    return sum(
+        evaluate_side_bet(p, side_type, hot_numbers, cold_numbers) for p in range(n)
+    ) / n
+
+
 def rtp(bet_type: str, selection: Optional[int] = None, pockets: int = POCKETS) -> float:
     """Exact return-to-player for a bet, averaged over every pocket."""
     n = int(pockets)

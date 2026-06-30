@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "updated": "2026-06-30",
+  "networks": {
+    "mainnet": {
+      "p2p_port": 17646,
+      "rpc_port": 9332,
+      "dns_seeds": [
+        "seed.masternoder.dk",
+        "nodes.masternoder.dk",
+        "explorer.masternoder.dk",
+        "seed01.urcoin.cc",
+        "seed02.urcoin.cc"
+      ],
+      "addnodes": [
+        "explorer.masternoder.dk:17646",
+        "192.46.237.230:17646",
+        "213.136.90.158:17646",
+        "85.10.148.5:17646",
+        "144.91.75.27:17646",
+        "140.82.39.124:17646",
+        "34.42.67.197:17646",
+        "34.44.119.78:17646",
+        "34.172.145.22:17646",
+        "167.86.110.23:17646",
+        "34.71.177.102:17646",
+        "35.224.183.152:17646",
+        "35.238.207.237:17646",
+        "35.226.7.2:17646",
+        "149.50.102.187:17646",
+        "149.50.217.176:17646"
+      ],
+      "notes": "Use addnode= (not connect=) so DNS seeding and peer relay stay enabled. P2P port 17646; RPC 9332."
+    },
+    "testnet": {
+      "p2p_port": 27646,
+      "rpc_port": 19332,
+      "dns_seeds": [
+        "testseed.masternoder.dk"
+      ],
+      "addnodes": [
+        "testseed.masternoder.dk:27646"
+      ],
+      "notes": "Testnet P2P 27646; RPC 19332. Add testnet=1 to masternoder2.conf."
+    }
+  }
+}

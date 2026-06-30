@@ -235,6 +235,63 @@ def casino_page():
     return 'Casino page not found', 404
 
 
+@all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
+def casino_manifest():
+    """PWA manifest for casino (Play TWA + installable web app)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino')
+        if os.path.isfile(os.path.join(page_dir, 'manifest.webmanifest')):
+            resp = send_from_directory(
+                page_dir,
+                'manifest.webmanifest',
+                mimetype='application/manifest+json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            return resp
+    except Exception:
+        pass
+    return 'Manifest not found', 404
+
+
+@all_page_bp.route('/.well-known/assetlinks.json', methods=['GET'])
+def well_known_assetlinks():
+    """Android Digital Asset Links for TWA / App Links."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'assetlinks.json')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'assetlinks.json',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
+@all_page_bp.route('/.well-known/apple-app-site-association', methods=['GET'])
+def well_known_aasa():
+    """Apple Universal Links association file (no file extension)."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'apple-app-site-association')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'apple-app-site-association',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
 @all_page_bp.route('/debugger/flask', methods=['GET'], endpoint='debugger_flask_template')
 @all_page_bp.route('/debugger/flask/', methods=['GET'], endpoint='debugger_flask_template_slash')
 def debugger_from_flask_template():

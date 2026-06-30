@@ -1,10 +1,11 @@
 /**
- * Profile MN2 wallet — independent section loading, deposit request, wallet sub-tabs.
+ * Profile MN2 wallet — lazy tab loading, wallet-hub aggregator, deposit/withdraw.
  */
 (function (global) {
   'use strict';
 
   var TIMEOUT_MS = 12000;
+  var tabsLoaded = {};
 
   function uid() {
     return (
@@ -120,6 +121,24 @@
     }
   }
 
+  function renderNetworkStatus(hub) {
+    var strip = document.getElementById('profile-mn2-network-status');
+    if (!strip || !hub) return;
+    var net = hub.network || {};
+    var peers = net.connections != null ? net.connections : net.peer_catalog_count;
+    var height = net.block_height != null ? net.block_height : '—';
+    var health = net.peer_health || {};
+    var sp = hub.spork_gates || {};
+    var maint = sp.maintenance_mode ? 'Maintenance ON' : 'Network live';
+    var exGate = sp.exchange_live && sp.exchange_live.allowed === false ? ' · Exchange gated' : '';
+    strip.innerHTML =
+      '<span class="mn2-net-pill">Height <strong>' + height + '</strong></span>' +
+      '<span class="mn2-net-pill">Peers <strong>' + (peers != null ? peers : '—') + '</strong></span>' +
+      '<span class="mn2-net-pill">' + maint + exGate + '</span>' +
+      (health.message ? '<span class="mn2-net-pill mn2-net-pill--' + (health.status || 'unknown') + '">' + health.message + '</span>' : '') +
+      ' <a href="/api/mn2/network-peers" style="color:#00d4ff;font-size:0.78rem;">Bootstrap peers</a>';
+  }
+
   function renderDeposit(addrData) {
     var addrEl = document.getElementById('profile-mn2-deposit-address');
     var qrEl = document.getElementById('profile-mn2-qr');
@@ -176,6 +195,7 @@
       '<ul style="margin:0;padding-left:1.2rem;">' +
       txs
         .map(function (t) {
+          var src = t.source ? '[' + t.source + '] ' : '';
           var type = t.type || '—';
           var amt = t.amount != null ? Number(t.amount).toFixed(4) : '—';
           var txLink = t.explorer_tx_url
@@ -185,7 +205,7 @@
             ? ' <a href="' + t.explorer_address_url + '" target="_blank" rel="noopener" style="color:#88ccff;">Explorer address</a>'
             : '';
           var date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-          return '<li>' + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
+          return '<li>' + src + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
         })
         .join('') +
       '</ul>';
@@ -222,6 +242,33 @@
     } else {
       chartEl.innerHTML =
         '<span style="opacity:0.75;font-size:0.85rem;">No ledger activity in the last 5 UTC days.</span>';
+    }
+  }
+
+  function loadTabData(tab) {
+    if (tabsLoaded[tab]) return;
+    var user = uid();
+    var q = encodeURIComponent(user);
+    if (tab === 'deposit') {
+      tabsLoaded.deposit = true;
+      fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (res) {
+        renderDeposit(res.data);
+      });
+    } else if (tab === 'transactions') {
+      tabsLoaded.transactions = true;
+      fetchJson(base() + '/api/mn2/recent-transactions?limit=25').then(function (res) {
+        renderTransactions(res.data);
+      });
+      if (typeof global.profileMn2LoadStatement === 'function') {
+        global.profileMn2LoadStatement();
+      }
+    } else if (tab === 'overview') {
+      tabsLoaded.overview = true;
+      fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5', { timeout: 15000 }).then(function (res) {
+        renderActivity(res.data);
+      });
+    } else if (tab === 'desktop') {
+      loadWalletDownloads();
     }
   }
 
@@ -326,6 +373,7 @@
               if (typeof toast !== 'undefined') toast.success('Withdrawal sent');
               document.getElementById('profile-mn2-withdraw-address').value = '';
               document.getElementById('profile-mn2-withdraw-amount').value = '';
+              tabsLoaded.transactions = false;
               load();
             } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
           })
@@ -353,40 +401,91 @@
       panels.forEach(function (p) {
         p.style.display = p.getAttribute('data-wallet-panel') === tab ? 'block' : 'none';
       });
+      loadTabData(tab);
+    });
+  }
+
+  var downloadsLoaded = false;
+  function loadWalletDownloads() {
+    if (downloadsLoaded) return;
+    var grid = document.getElementById('profile-wallet-downloads');
+    if (!grid) return;
+    fetchJson(base() + '/api/mn2/releases', { timeout: 15000 }).then(function (res) {
+      downloadsLoaded = true;
+      var d = res.data || {};
+      if (!d.success || !(d.downloads && d.downloads.length)) {
+        grid.innerHTML = '<p style="opacity:0.8;margin:0;">Downloads unavailable. <a href="/wallets" style="color:#00d4ff;">Try wallets page</a></p>';
+        return;
+      }
+      grid.innerHTML = d.downloads
+        .map(function (item, i) {
+          return (
+            '<article class="mn2-wallet-dl-card' +
+            (i === 0 ? ' mn2-wallet-dl-card--featured' : '') +
+            '">' +
+            '<div class="mn2-wallet-dl-head"><span class="mn2-wallet-dl-icon">' +
+            (item.icon || '💠') +
+            '</span><div><h3 class="mn2-wallet-dl-title">' +
+            item.name +
+            '</h3><p class="mn2-wallet-dl-platform">' +
+            item.platform +
+            (item.release_tag ? ' · ' + item.release_tag : '') +
+            '</p></div></div>' +
+            '<p class="mn2-wallet-dl-desc">' +
+            (item.description || '') +
+            '</p>' +
+            '<div class="mn2-wallet-dl-actions"><a class="mn2-wallet-dl-btn" href="' +
+            item.url +
+            '" download><i class="fas fa-download"></i> ' +
+            item.filename +
+            '</a></div>' +
+            (item.sha256
+              ? '<div class="mn2-wallet-dl-checksum">SHA256 ' + item.sha256.slice(0, 16) + '…</div>'
+              : '') +
+            '</article>'
+          );
+        })
+        .join('');
+    }).catch(function () {
+      grid.innerHTML = '<p style="opacity:0.8;margin:0;">Could not load downloads.</p>';
     });
   }
 
   function load() {
-    var user = uid();
-    var q = encodeURIComponent(user);
-    var chartEl = document.getElementById('profile-mn2-5d-chart');
     var balanceEl = document.getElementById('profile-mn2-balance');
-    var txList = document.getElementById('profile-mn2-transactions');
+    var chartEl = document.getElementById('profile-mn2-5d-chart');
     if (balanceEl && balanceEl.textContent === '--') balanceEl.textContent = '…';
     if (chartEl && chartEl.textContent.indexOf('Loading') >= 0) {
       chartEl.innerHTML = '<span style="opacity:0.6;font-size:0.85rem;">Loading activity…</span>';
-    }
-    if (txList && txList.textContent.indexOf('Loading') >= 0) {
-      txList.innerHTML = '<p style="margin:0;opacity:0.7;">Loading…</p>';
     }
 
     wireControls();
     wireFiatToggle();
     initWalletSubTabs();
 
-    fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
-      renderBalance(res.data);
+    fetchJson(base() + '/api/mn2/wallet-hub?user_id=' + encodeURIComponent(uid()), { timeout: 15000 }).then(function (res) {
+      var hub = res.data || {};
+      if (hub.success) {
+        var bal = hub.balance || {};
+        if (hub.mn2_usd_price != null) bal.mn2_usd_price = hub.mn2_usd_price;
+        renderBalance(bal);
+        renderNetworkStatus(hub);
+        var txPrev = hub.recent_transactions_preview;
+        if (txPrev && txPrev.length && !tabsLoaded.transactions) {
+          var txList = document.getElementById('profile-mn2-transactions');
+          if (txList && txList.textContent.indexOf('Loading') >= 0) {
+            renderTransactions({ success: true, transactions: txPrev });
+          }
+        }
+      } else {
+        fetchJson(base() + '/api/mn2/balance?user_id=' + encodeURIComponent(uid())).then(function (r2) {
+          renderBalance(r2.data);
+        });
+      }
     });
-    fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (res) {
-      renderDeposit(res.data);
-    });
-    fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
-      renderTransactions(res.data);
-    });
-    fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
-      renderActivity(res.data);
-    });
+
+    loadTabData('overview');
   }
 
-  global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };
+  global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress, loadTabData: loadTabData };
 })(window);

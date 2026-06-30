@@ -415,12 +415,73 @@
     });
   }
 
+  function loadNetworkDashboard() {
+    fetch('/api/mn2/network-dashboard', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.success) return;
+        var sp = d.spork_gates || {};
+        var pill = function (on) { return on ? '✓ ON' : '✗ OFF'; };
+        var elM = q('t-sp-maint'); if (elM) elM.textContent = sp.maintenance_mode ? 'ON' : 'OFF';
+        var elE = q('t-sp-ex'); if (elE) elE.textContent = pill(sp.exchange_live && sp.exchange_live.allowed);
+        var elC = q('t-sp-cas'); if (elC) elC.textContent = pill(sp.casino_real_money && sp.casino_real_money.allowed);
+        var elP = q('t-sp-pay'); if (elP) elP.textContent = pill(sp.payout_live && sp.payout_live.allowed);
+        var meta = q('ex-spork-meta');
+        if (meta) meta.textContent = sp.gates_enabled === false ? '— gates bypassed (dev)' : '— live from daemon';
+        var ptx = d.platform_transactions || [];
+        var body = q('ex-platform-tx');
+        var pmeta = q('ex-platform-tx-meta');
+        if (pmeta) pmeta.textContent = ptx.length ? ('— ' + ptx.length + ' recent') : '';
+        if (body) {
+          if (!ptx.length) {
+            body.innerHTML = '<tr><td colspan="4">No recent exchange activity.</td></tr>';
+          } else {
+            body.innerHTML = ptx.map(function (t) {
+              var when = t.created_at ? new Date(t.created_at).toLocaleString() : '—';
+              return '<tr><td>' + (t.source || '—') + '</td><td>' + (t.type || '—') + '</td><td>' +
+                (t.amount != null ? fmtNum(t.amount, 4) : '—') + '</td><td>' + when + '</td></tr>';
+            }).join('');
+          }
+        }
+      })
+      .catch(function () {});
+    fetch('/api/mn2/network-peers', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var pre = q('ex-peer-snippet');
+        var pmeta = q('ex-peer-meta');
+        if (!pre || !d || !d.success) return;
+        var peers = (d.mainnet && d.mainnet.addnodes) ? d.mainnet.addnodes.length : 0;
+        if (pmeta) pmeta.textContent = peers ? ('— ' + peers + ' addnodes') : '';
+        pre.textContent = d.conf_snippet_mainnet || 'Peer snippet unavailable.';
+      })
+      .catch(function () {});
+  }
+
+  function loadRentalStrip() {
+    fetch('/api/mn2/rental-overview', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.success) return;
+        var host = d.masternode_hosting || {};
+        var agent = d.agent_rental || {};
+        var sum = q('mn-summary');
+        if (sum && host.enabled_count != null) {
+          var extra = agent.listing_count ? (' · ' + agent.listing_count + ' agent rentals') : '';
+          sum.textContent = '— ' + (host.enabled_count || 0) + ' enabled / slots ' + (host.slots_available != null ? host.slots_available : '—') + extra;
+        }
+      })
+      .catch(function () {});
+  }
+
   initSearch();
   refresh();
   loadSparklines();
   loadBlocks();
   loadMasternodes();
   loadMonitor();
+  loadNetworkDashboard();
+  loadRentalStrip();
   if (!startExplorerStream()) {
     setInterval(refresh, 30000);
   }
