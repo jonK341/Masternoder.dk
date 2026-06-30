@@ -236,6 +236,20 @@ def masternode_checkout_pay_onchain():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/my-orders", methods=["GET"])
+def masternode_my_orders():
+    """Signed-in user's masternode hosting order history."""
+    try:
+        user_id = resolve_user_id(from_body=False, from_query=True)
+        if not user_id or user_id == "default_user":
+            return jsonify({"success": False, "error": "auth_required", "orders": []}), 401
+        limit = int(request.args.get("limit") or 20)
+        orders = mn_hosting.list_user_orders(user_id, limit=limit)
+        return jsonify({"success": True, "user_id": user_id, "orders": orders}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "orders": []}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/webhook", methods=["POST"])
 def masternode_paypal_webhook():
     """PayPal webhook — auto-capture and provision slots without browser return."""

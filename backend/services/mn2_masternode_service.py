@@ -1487,6 +1487,55 @@ def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
     return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
 
 
+def _maybe_capacity_discord_alert(slots_available: int, max_nodes: int, hosted: int) -> None:
+    """Push Discord #market alert when hosting slots drop below configured threshold."""
+    cfg = get_config()
+    ops = cfg.get("ops") if isinstance(cfg.get("ops"), dict) else {}
+    threshold = int(ops.get("capacity_alert_threshold") or 5)
+    if slots_available >= threshold:
+        return
+    cooldown_h = max(1, int(ops.get("capacity_alert_cooldown_hours") or 6))
+    cursor_path = os.path.join(_base(), "logs", "hosting_capacity_alert.json")
+    now = time.time()
+    last_slots = None
+    last_ts = 0.0
+    if os.path.isfile(cursor_path):
+        try:
+            with open(cursor_path, "r", encoding="utf-8") as f:
+                cur = json.load(f) or {}
+            last_ts = float(cur.get("ts") or 0)
+            last_slots = cur.get("slots_available")
+        except Exception:
+            pass
+    if last_ts and (now - last_ts) < cooldown_h * 3600 and last_slots is not None and slots_available >= int(last_slots):
+        return
+    try:
+        from backend.services.discord_service import post_message
+        base_url = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+        post_message(
+            "market",
+            {
+                "embeds": [{
+                    "title": "Masternode hosting capacity low",
+                    "description": (
+                        f"Only **{slots_available}** slot(s) left "
+                        f"({hosted}/{max_nodes} used).\n\n"
+                        f"[Open hosting tab]({base_url}/explorer?tab=masternodes)"
+                    ),
+                    "color": 0xFEE75C,
+                }],
+            },
+            message_id=f"hosting-capacity:{slots_available}",
+        )
+        os.makedirs(os.path.dirname(cursor_path), exist_ok=True)
+        tmp = cursor_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"ts": now, "slots_available": slots_available}, f)
+        os.replace(tmp, cursor_path)
+    except Exception as exc:
+        _LOGGER.debug("capacity discord alert skipped: %s", exc)
+
+
 def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     """Public + ops snapshot for hosting service."""
     cfg = get_config()
@@ -1574,6 +1623,14 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         from backend.services import mn2_masternode_hosting_service as hosting
         out["paypal"] = hosting.get_paypal_config()
         out["hosting_stats"] = hosting.hosting_stats()
+    except Exception:
+        pass
+    try:
+        _maybe_capacity_discord_alert(
+            int(out.get("slots_available") or 0),
+            int(out.get("max_hosted_nodes") or 0),
+            int(out.get("hosted_count") or 0),
+        )
     except Exception:
         pass
     return out
