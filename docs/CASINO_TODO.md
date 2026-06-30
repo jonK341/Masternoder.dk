@@ -41,6 +41,13 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 - [ ] **Agent daemon on server** — `scripts/run_casino_agent_daemon.cmd` or cron; set `AGENT_CASINO_SECRET`, `CASINO_AGENT_LLM=1`; dry-run first.
 - [ ] **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
 - [ ] **Apple AASA** — **paused** until Apple Developer account; PWA + `masternoder://` works without it.
+- [ ] **Discord fanout live** — keep `dry_run=true` until verified; set `CASINO_FANOUT_LIVE=1` on server when ready for public big-win posts.
+
+---
+
+## Ideas backlog
+
+Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (Waves 1–3 ✅ · Wave 4 backlog).
 
 ---
 
