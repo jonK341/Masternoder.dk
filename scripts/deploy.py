@@ -401,6 +401,8 @@ MANIFESTS = {
         "backend/services/casino_responsible_gaming.py",
         "backend/services/casino_trophy_rake_rebate.py",
         "backend/services/casino_global_controller.py",
+        "backend/services/casino_video_poker_ladder_service.py",
+        "backend/services/casino_deposit_packs_service.py",
         "backend/services/casino_revenue_report.py",
         "backend/services/engines/__init__.py",
         "backend/services/engines/crash.py",

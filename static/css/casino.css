@@ -276,6 +276,62 @@
     gap: var(--spacing-sm);
 }
 
+.casino-deposit-pack-card {
+    flex: 1 1 160px;
+    max-width: 220px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    background: rgba(255, 255, 255, 0.04);
+    position: relative;
+}
+
+.casino-deposit-pack-card h4 {
+    margin: 0 0 0.35rem;
+    font-size: var(--font-size-md);
+}
+
+.casino-deposit-pack-badge {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(255, 193, 7, 0.18);
+    color: #ffc107;
+}
+
+.casino-deposit-pack-price {
+    margin: 0;
+    font-weight: 700;
+}
+
+.casino-deposit-pack-bonus,
+.casino-deposit-pack-starter,
+.casino-deposit-strip-note {
+    margin: 0.25rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.casino-vp-ladder {
+    margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-primary);
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.casino-vp-ladder.hidden {
+    display: none;
+}
+
+.casino-vp-ladder-next {
+    opacity: 0.9;
+}
+
 .casino-deposit-pack-btn {
     padding: 0.55rem 0.9rem;
     border-radius: var(--radius-md);
@@ -1379,6 +1435,17 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.casino-crash-crew-panel { margin: 12px 0; }
+.casino-crash-crew-lobbies {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.casino-crash-crew-lobbies li { margin: 0; }
 
 /* ---- Plinko ---- */
 .casino-plinko-card {

@@ -3053,6 +3053,40 @@
     "bonus_coins_per_bet": 5,
     "coins_only": true
   },
+  "video_poker_ladder": {
+    "enabled": true,
+    "rank_by": "daily_rank",
+    "rtp_published": 99.5,
+    "tiers": [
+      {"tier_id": "champion", "label": "Champion table", "min_rank": 1, "max_rank": 1, "paytable_boost": 1.2},
+      {"tier_id": "elite", "label": "Elite table", "min_rank": 2, "max_rank": 5, "paytable_boost": 1.12},
+      {"tier_id": "contender", "label": "Contender table", "min_rank": 6, "max_rank": 20, "paytable_boost": 1.06},
+      {"tier_id": "grinder", "label": "Grinder table", "min_rank": 21, "max_rank": 50, "paytable_boost": 1.03},
+      {"tier_id": "base", "label": "Base table", "default": true, "min_rank": 51, "max_rank": 9999, "paytable_boost": 1.0}
+    ]
+  },
+  "deposit_packs": {
+    "enabled": true,
+    "packs": [
+      {
+        "id": "starter_welcome_10",
+        "label": "Welcome Starter Pack",
+        "amount_usd": 10.0,
+        "bonus_usd": 2.0,
+        "bonus_coins": 250,
+        "starter_only": true,
+        "badge": "Limited time",
+        "max_per_user": 1
+      },
+      {
+        "id": "weekend_boost_25",
+        "label": "Weekend Boost",
+        "amount_usd": 25.0,
+        "bonus_usd": 5.0,
+        "badge": "Bonus +$5"
+      }
+    ]
+  },
   "hub_node_secret": "",
   "Jon vinder igen!": {
     "Løn er enabled": true,

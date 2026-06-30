@@ -835,6 +835,17 @@ def casino_video_poker_draw():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/video-poker/ladder", methods=["GET"])
+def casino_video_poker_ladder():
+    try:
+        from backend.services import casino_video_poker_ladder_service
+
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_video_poker_ladder_service.get_ladder_status(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/progression", methods=["GET"])
 def casino_progression():
     try:
@@ -1709,30 +1720,37 @@ def casino_news_platform():
 
 
 @casino_bp.route("/api/casino/paypal/deposit-packs", methods=["GET"])
+@casino_bp.route("/api/casino/deposit/packs", methods=["GET"])
 def casino_paypal_deposit_packs():
     try:
-        return jsonify(casino_service.get_paypal_deposit_packs()), 200
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_deposit_packs(user_id)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+def _casino_paypal_deposit_create():
+    data = request.get_json(silent=True) or {}
+    user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+    if user_id.strip().lower() == "default_user":
+        return jsonify({
+            "success": False,
+            "error": "Create an account first",
+            "code": "ACCOUNT_REQUIRED",
+        }), 400
+    result = casino_service.create_paypal_deposit_order(
+        user_id=user_id,
+        pack_id=(data.get("pack_id") or "").strip(),
+        base_url=_casino_base_url(),
+    )
+    return jsonify(result), 200 if result.get("success") else 400
+
+
 @casino_bp.route("/api/casino/paypal/deposit", methods=["POST"])
+@casino_bp.route("/api/casino/deposit/paypal/create", methods=["POST"])
 def casino_paypal_deposit():
     try:
-        data = request.get_json(silent=True) or {}
-        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
-        if user_id.strip().lower() == "default_user":
-            return jsonify({
-                "success": False,
-                "error": "Create an account first",
-                "code": "ACCOUNT_REQUIRED",
-            }), 400
-        result = casino_service.create_paypal_deposit_order(
-            user_id=user_id,
-            pack_id=(data.get("pack_id") or "").strip(),
-            base_url=_casino_base_url(),
-        )
-        return jsonify(result), 200 if result.get("success") else 400
+        return _casino_paypal_deposit_create()
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

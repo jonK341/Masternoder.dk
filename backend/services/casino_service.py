@@ -2941,23 +2941,32 @@ def _save_paypal_deposits(data: Dict[str, Any]) -> None:
         pass
 
 
-def get_paypal_deposit_packs() -> Dict[str, Any]:
-    pay = _payment_config()
-    packs = []
-    for row in pay.get("paypal_deposit_packs") or []:
-        if not isinstance(row, dict) or not row.get("id"):
-            continue
-        packs.append({
-            "id": str(row["id"]),
-            "label": row.get("label") or row["id"],
-            "amount_usd": float(row.get("amount_usd") or 0),
-        })
-    return {
-        "success": True,
-        "enabled": _paypal_enabled(),
-        "currency": pay["paypal_currency"],
-        "packs": packs,
-    }
+def get_paypal_deposit_packs(user_id: str = "") -> Dict[str, Any]:
+    try:
+        from backend.services import casino_deposit_packs_service
+
+        return casino_deposit_packs_service.list_deposit_packs(user_id)
+    except Exception:
+        pay = _payment_config()
+        packs = []
+        for row in pay.get("paypal_deposit_packs") or []:
+            if not isinstance(row, dict) or not row.get("id"):
+                continue
+            packs.append({
+                "id": str(row["id"]),
+                "label": row.get("label") or row["id"],
+                "amount_usd": float(row.get("amount_usd") or 0),
+            })
+        return {
+            "success": True,
+            "enabled": _paypal_enabled(),
+            "currency": pay["paypal_currency"],
+            "packs": packs,
+        }
+
+
+def get_deposit_packs(user_id: str = "") -> Dict[str, Any]:
+    return get_paypal_deposit_packs(user_id)
 
 
 def get_mn2_buyin_packs() -> Dict[str, Any]:
@@ -3020,6 +3029,12 @@ def purchase_mn2_buyin_pack(user_id: str, pack_id: str) -> Dict[str, Any]:
 
 
 def _deposit_pack(pack_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        from backend.services import casino_deposit_packs_service
+
+        return casino_deposit_packs_service.resolve_pack(pack_id)
+    except Exception:
+        pass
     for row in get_paypal_deposit_packs().get("packs") or []:
         if row.get("id") == pack_id:
             return row
@@ -3032,9 +3047,35 @@ def create_paypal_deposit_order(user_id: str, pack_id: str, base_url: str) -> Di
     pack = _deposit_pack((pack_id or "").strip())
     if not pack:
         return {"success": False, "error": "Unknown deposit pack"}
+    try:
+        from backend.services import casino_deposit_packs_service
+
+        listed = casino_deposit_packs_service.list_deposit_packs(user_id)
+        match = next((p for p in listed.get("packs") or [] if p.get("id") == pack.get("id")), None)
+        if match and not match.get("available", True):
+            return {
+                "success": False,
+                "error": match.get("unavailable_reason") or "Pack not available",
+                "code": "PACK_UNAVAILABLE",
+            }
+    except Exception:
+        pass
     amount = float(pack.get("amount_usd") or 0)
     if amount <= 0:
         return {"success": False, "error": "Invalid pack amount"}
+    try:
+        from flask import has_request_context, request
+        from backend.services.account_security_service import check_purchase_action
+
+        token = None
+        if has_request_context():
+            data = request.get_json(silent=True) or {}
+            token = data.get("verification_token") or data.get("security_token")
+        sec_err = check_purchase_action(user_id, verification_token=token, price_usd=amount)
+        if sec_err:
+            return {"success": False, "error": sec_err, "code": "SECURITY_VERIFICATION_REQUIRED"}
+    except Exception:
+        pass
     try:
         from backend.services.paypal_service import create_order
         import urllib.parse
@@ -3119,11 +3160,21 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
             "pack_id": pack["id"],
         },
     )
+    bonus_meta: Dict[str, Any] = {}
+    try:
+        from backend.services import casino_deposit_packs_service
+
+        bonus_meta = casino_deposit_packs_service.apply_pack_bonuses(user_id, pack)
+        casino_deposit_packs_service.record_pack_purchase(user_id, str(pack["id"]))
+    except Exception:
+        pass
     deposits.setdefault("pending", {}).pop(order_id, None)
     deposits.setdefault("captured", {})[order_id] = {
         "user_id": user_id,
         "pack_id": pack["id"],
         "amount_usd": amount,
+        "bonus_usd": bonus_meta.get("bonus_usd") or 0,
+        "bonus_coins": bonus_meta.get("bonus_coins") or 0,
         "capture_id": result.get("capture_id"),
         "captured_at": _iso(),
     }
@@ -3149,6 +3200,8 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
         "success": True,
         "order_id": order_id,
         "amount_usd": amount,
+        "bonus_usd": bonus_meta.get("bonus_usd") or 0,
+        "bonus_coins": bonus_meta.get("bonus_coins") or 0,
         "fiat_balance": _user_fiat_balance(user_id),
         "capture_id": result.get("capture_id"),
     }
@@ -4724,7 +4777,22 @@ def video_poker_draw(user_id: str, round_id: str, hold: Optional[List[int]] = No
     hold_idx = [int(i) for i in (hold or []) if 0 <= int(i) < 5]
     proof = casino_rng.draw(user_id)
     final_hand = cards_engine.video_poker_draw(state.get("hand") or [], hold_idx, proof["float"])
-    hand_name, mult = cards_engine.evaluate_video_poker(final_hand, conf.get("paytable"))
+    base_paytable = conf.get("paytable") or {}
+    ladder_info: Dict[str, Any] = {}
+    try:
+        from backend.services import casino_video_poker_ladder_service
+
+        ladder_info = casino_video_poker_ladder_service.apply_ladder_on_draw(
+            user_id, final_hand, base_paytable
+        )
+        hand_name = ladder_info.get("hand_name") or "none"
+        mult = float(ladder_info.get("payout_multiplier") or 0)
+        display_mult = float(ladder_info.get("display_multiplier") or mult)
+        display_hand_name = ladder_info.get("display_hand_name") or hand_name
+    except Exception:
+        hand_name, mult = cards_engine.evaluate_video_poker(final_hand, base_paytable)
+        display_mult = mult
+        display_hand_name = hand_name
     currency = _normalize_currency(state.get("currency"))
     bet = _parse_bet_amount(state.get("bet"), currency) or 0
     payout = _round_payout(bet * mult, currency) if mult > 0 else 0
@@ -4735,7 +4803,11 @@ def video_poker_draw(user_id: str, round_id: str, hold: Optional[List[int]] = No
         "hand": _bj_cards_public(final_hand),
         "hold": hold_idx,
         "hand_name": hand_name,
+        "display_hand_name": display_hand_name,
         "multiplier": mult,
+        "display_multiplier": display_mult,
+        "ladder_tier": ladder_info.get("tier_label") if ladder_info else None,
+        "ladder_tier_id": ladder_info.get("tier_id") if ladder_info else None,
         "fairness": {**state.get("fairness", {}), "draw_nonce": proof["nonce"]},
     }
     row = {
@@ -4767,7 +4839,10 @@ def video_poker_draw(user_id: str, round_id: str, hold: Optional[List[int]] = No
         "payout": payout,
         "net": row["net"],
         "hand_name": hand_name,
+        "display_hand_name": display_hand_name,
         "multiplier": mult,
+        "display_multiplier": display_mult,
+        "ladder_tier": details.get("ladder_tier"),
         "hand": details["hand"],
         "balance": _user_balance(user_id, currency),
         "details": details,

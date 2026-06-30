@@ -33,16 +33,19 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 - [x] Global hub affiliate nodes — `POST /api/casino/global/hub-node`
 - [x] Tests — `tests/unit/test_casino_ideas_wave4.py` (8 tests)
 
-### Wave 5 (backlog)
-- [ ] Video poker ladder (#8)
-- [ ] PayPal deposit bundles (#23)
+### Wave 5 ✅ (2026-06-30)
+- [x] Video poker ladder — `/api/casino/video-poker/ladder` + cosmetic tier on draw
+- [x] PayPal deposit bundles — `deposit_packs` starter offers + `/api/casino/deposit/packs`
+- [x] Tests — `tests/unit/test_casino_ideas_wave5.py` (6 tests)
+
+**All 25 casino feature ideas complete.** Ops-only items remain below.
 
 ---
 
 ## Ops (actionable)
 
 - [ ] **Tuesday Play ($25)** — Pay fee → upload AAB → paste App Signing SHA into `assetlinks.json` → `python scripts/deploy.py well_known --ask-pass`. See [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md).
-- [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 4 routes + `casino.js` + config).
+- [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 5 routes + `casino.js` + config).
 - [ ] **Agent daemon on server** — `scripts/run_casino_agent_daemon.cmd` or cron; set `AGENT_CASINO_SECRET`, `CASINO_AGENT_LLM=1`; dry-run first.
 - [ ] **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
 - [ ] **Apple AASA** — **paused** until Apple Developer account; PWA + `masternoder://` works without it.
@@ -52,16 +55,14 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 
 ## Ideas backlog
 
-Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (Waves 1–4 ✅ · Wave 5 backlog: #8 video poker ladder, #23 PayPal starter packs).
+Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (**Waves 1–5 ✅ — all 25 ideas complete**).
 
 ---
 
 ## Verify after deploy
 
 ```powershell
-python -m pytest tests/unit/test_casino_ideas_wave4.py -q
-curl -s "https://masternoder.dk/api/casino/keno-syndicate?status=open"
-curl -s "https://masternoder.dk/api/casino/wheel-raid/status"
-curl -s "https://masternoder.dk/api/casino/blackjack-tournaments/open"
-curl -s "https://masternoder.dk/api/casino/trophy-rake-rebate/progress?user_id=u1"
+python -m pytest tests/unit/test_casino_ideas_wave5.py -q
+curl -s "https://masternoder.dk/api/casino/video-poker/ladder?user_id=u1"
+curl -s "https://masternoder.dk/api/casino/deposit/packs?user_id=u1"
 ```

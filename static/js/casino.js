@@ -665,28 +665,53 @@
     async function refreshDepositPacks() {
         const el = $('casino-deposit-packs');
         if (!el) return;
-        const data = await api('/api/casino/paypal/deposit-packs');
+        const data = await api('/api/casino/deposit/packs?user_id=' + encodeURIComponent(userId));
         if (!data.success || !(data.packs || []).length) {
             el.textContent = 'PayPal deposits unavailable';
             return;
         }
         el.innerHTML = '';
         (data.packs || []).forEach(function (pack) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'casino-deposit-pack-btn';
-            btn.textContent = pack.label + ' ($' + Number(pack.amount_usd).toFixed(2) + ')';
-            btn.addEventListener('click', function () { startPayPalDeposit(pack.id); });
-            el.appendChild(btn);
+            if (pack.available === false) return;
+            const card = document.createElement('article');
+            card.className = 'casino-deposit-pack-card';
+            const badge = pack.badge ? '<span class="casino-deposit-pack-badge">' + pack.badge + '</span>' : '';
+            const bonusUsd = Number(pack.bonus_usd || 0);
+            const bonusCoins = Number(pack.bonus_coins || 0);
+            let bonusTxt = '';
+            if (bonusUsd > 0) bonusTxt += '+$' + bonusUsd.toFixed(2) + ' bonus';
+            if (bonusCoins > 0) bonusTxt += (bonusTxt ? ' · ' : '') + '+' + bonusCoins + ' coins';
+            card.innerHTML =
+                badge +
+                '<h4>' + (pack.label || pack.id) + '</h4>' +
+                '<p class="casino-deposit-pack-price">$' + Number(pack.amount_usd).toFixed(2) + ' USD</p>' +
+                (bonusTxt ? '<p class="casino-deposit-pack-bonus">' + bonusTxt + '</p>' : '') +
+                (pack.starter_only ? '<p class="casino-deposit-pack-starter">One-time starter offer</p>' : '') +
+                '<button type="button" class="casino-deposit-pack-btn">Deposit with PayPal</button>';
+            card.querySelector('.casino-deposit-pack-btn').addEventListener('click', function () {
+                startPayPalDeposit(pack.id);
+            });
+            el.appendChild(card);
         });
+        if (!el.children.length) {
+            el.textContent = 'No deposit packs available right now.';
+        }
     }
 
     async function startPayPalDeposit(packId) {
-        const data = await api('/api/casino/paypal/deposit', {
+        const body = { user_id: userId, pack_id: packId };
+        if (securityTokenValid()) body.verification_token = securityToken;
+        const data = await api('/api/casino/deposit/paypal/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, pack_id: packId }),
+            body: JSON.stringify(body),
         });
+        if (data.code === 'SECURITY_VERIFICATION_REQUIRED') {
+            const secBar = $('casino-security-bar');
+            if (secBar) secBar.classList.remove('hidden');
+            alert(data.error || 'Verify your password before depositing.');
+            return;
+        }
         if (data.success && data.approve_url) {
             window.location.href = data.approve_url;
         } else {
@@ -4157,6 +4182,30 @@
         }).join(' ');
     }
 
+    async function refreshVideoPokerLadder() {
+        var el = $('vp-ladder');
+        if (!el) return;
+        var data = await api('/api/casino/video-poker/ladder?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !data.enabled) {
+            el.textContent = '';
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden');
+        var cur = data.current_tier || {};
+        var nxt = data.next_tier;
+        var rankTxt = data.daily_rank ? ('Daily rank #' + data.daily_rank) : ('XP ' + (data.xp || 0));
+        var html = '<strong>' + (cur.label || 'Base table') + '</strong> — ' + rankTxt +
+            ' · cosmetic pay table (RTP ' + Number(data.rtp_published || 99.5).toFixed(1) + '%)';
+        if (nxt && nxt.label) {
+            html += '<br><span class="casino-vp-ladder-next">Next: ' + nxt.label;
+            if (nxt.min_rank != null) html += ' (rank #' + nxt.min_rank + (nxt.max_rank ? '–' + nxt.max_rank : '') + ')';
+            else if (nxt.min_xp != null) html += ' (' + nxt.min_xp + '+ XP)';
+            html += '</span>';
+        }
+        el.innerHTML = html;
+    }
+
     async function dealVideoPoker() {
         var bet = parseFloat(($('vp-bet') || {}).value || 25);
         var data = await api('/api/casino/play/video-poker', {
@@ -4186,7 +4235,15 @@
         vp.roundId = null;
         var dr = $('vp-draw'); if (dr) dr.disabled = true;
         var de = $('vp-deal'); if (de) de.disabled = false;
-        if (data.success) { try { maybeCelebrate(data); } catch (e) { /* optional */ } await afterPlay(); }
+        if (data.success) {
+            if (data.display_hand_name && data.display_multiplier != null && $('vp-result')) {
+                $('vp-result').textContent = (data.outcome || '').toUpperCase() + ': ' +
+                    data.display_hand_name + ' @ ' + data.display_multiplier + '× (tier: ' +
+                    (data.ladder_tier || 'Base') + ') — net ' + data.net;
+            }
+            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            await afterPlay();
+        }
     }
 
     async function refreshDuels() {
@@ -4514,6 +4571,7 @@
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);
+        safeRefresh('vpLadder', refreshVideoPokerLadder);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);

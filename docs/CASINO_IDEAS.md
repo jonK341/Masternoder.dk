@@ -68,6 +68,17 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 
 ---
 
+## Wave 5 status (feat/casino-mega-expansion — 2026-06-30)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Video poker ladder (#8) | ✅ | `video_poker_ladder` config + `/api/casino/video-poker/ladder`; cosmetic tier on draw |
+| PayPal deposit bundles (#23) | ✅ | `deposit_packs` starter bundles + `/api/casino/deposit/packs` + PayPal create alias |
+
+**All 25 feature ideas complete.**
+
+---
+
 ## 25 feature ideas (feasible next waves)
 
 ### Games & mechanics
@@ -78,7 +89,7 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 5. **Keno syndicate** — group ticket: N players pick spots together, split wins by stake share. *(✅ `/api/casino/keno-syndicate/*`)*
 6. **Roulette side bets** — config-only add-ons (hot/cold numbers) on existing roulette engine. *(✅ `roulette_side_bets` config + play API)*
 7. **Blackjack tournaments** — bracketed single-elimination using existing BJ engine + ledger. *(✅ `/api/casino/blackjack-tournaments/*`)*
-8. **Video poker ladder** — daily escalating pay tables for ranked players.
+8. **Video poker ladder** — daily escalating pay tables for ranked players. *(✅ `/api/casino/video-poker/ladder` + cosmetic tier on draw)*
 9. **Wheel raid boss** — community jackpot triggered when aggregate spins hit a threshold. *(✅ `wheel_raid` + `/api/casino/wheel-raid/status`)*
 10. **Provably-fair audit export** — one-click CSV of seeds/nonces for transparency-minded players. *(✅ `/api/casino/fairness/export`)*
 
@@ -97,7 +108,7 @@ Creative backlog for the MasterNoder entertainment platform — **social casino 
 ### Monetization & platform
 21. **Battle pass (casino track)** — parallel to shop battle pass; cosmetic badges + coin bundles. *(✅ Compete tab + `/api/shop/battle-pass`)*
 22. **MN2 rake rebate tiers** — extend trophy rake rebate with visible progress bar in rank tab. *(✅ `/api/casino/trophy-rake-rebate/progress`)*
-23. **PayPal deposit bundles** — limited-time “starter packs” in `casino_config` deposit packs.
+23. **PayPal deposit bundles** — limited-time “starter packs” in `casino_config` deposit packs. *(✅ `deposit_packs` + `/api/casino/deposit/packs`)*
 24. **Global hub affiliate nodes** — other MasterNoder sites report into `casino_global_controller` for network leaderboard. *(✅ `POST /api/casino/global/hub-node`)*
 25. **Revenue digest email** — optional weekly operator summary from `casino_revenue_report` (ops-only, no PII). *(✅ cron email stub via `CASINO_REVENUE_EMAIL`)*
 
