@@ -73,8 +73,14 @@ def _tune_connectors() -> None:
     cfg["paper_trade_usd"] = micro
     binance_quote = (os.environ.get("BINANCE_QUOTE") or "USDC").strip().upper()
     for v in cfg.get("venues") or []:
-        if isinstance(v, dict) and str(v.get("id") or "") == "binance":
+        if not isinstance(v, dict):
+            continue
+        vid = str(v.get("id") or "")
+        if vid == "binance":
             v["quote"] = binance_quote
+        elif vid == "xeggex":
+            v["live_trading"] = False
+            v["note"] = "Excluded from live arb until API 401 resolved (invalid keys or IP whitelist)."
     for agent in cfg.get("arbitrage_agents") or []:
         if not isinstance(agent, dict):
             continue

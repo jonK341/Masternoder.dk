@@ -463,3 +463,95 @@ def process_auto_renewals(user_id: Optional[str] = None) -> Dict[str, Any]:
 
     return {"success": True, "renewed": len(renewed), "failed": len(failed),
             "renewed_agents": renewed, "failures": failed}
+
+
+def convert_rental_to_purchase(user_id: str, agent_id: str) -> Dict[str, Any]:
+    """Convert an active rental into a permanently owned bot (pay template price minus rental credit)."""
+    user_id = (user_id or "").strip()
+    agent_id = (agent_id or "").strip()
+    if not user_id or not agent_id:
+        return {"success": False, "error": "user_id_and_agent_id_required"}
+
+    data = mkt._read_user_agents(user_id)
+    agent = data.get("agents", {}).get(agent_id)
+    if not agent or not agent.get("rented"):
+        return {"success": False, "error": "not_a_rental"}
+    if _is_expired(agent):
+        return {"success": False, "error": "rental_expired"}
+
+    cfg = load_config()
+    rental_tmpl = _rental_map(cfg).get(str(agent.get("rental_id") or ""), {})
+    template_id = str(agent.get("template_id") or rental_tmpl.get("template_id") or "").strip()
+    if not template_id:
+        return {"success": False, "error": "missing_template"}
+
+    mkt_cfg = mkt.load_config()
+    buy_tmpl = mkt._template_map(mkt_cfg).get(template_id)
+    if not buy_tmpl:
+        return {"success": False, "error": "unknown_template", "template_id": template_id}
+
+    full_price = float(buy_tmpl.get("price_mn2") or 0)
+    rental_credit = float(rental_tmpl.get("price_mn2") or agent.get("rental_price_mn2") or 0)
+    due_mn2 = round(max(0.0, full_price - rental_credit), 8)
+    if due_mn2 > 0 and ex._get_quote_balance(user_id, "MN2") < due_mn2:
+        return {
+            "success": False,
+            "error": "insufficient_mn2",
+            "needed_mn2": due_mn2,
+            "full_price_mn2": full_price,
+            "rental_credit_mn2": rental_credit,
+        }
+
+    if due_mn2 > 0:
+        ex._adjust_quote_balance(
+            user_id,
+            "MN2",
+            -due_mn2,
+            "exchange_rental_convert",
+            {"agent_id": agent_id, "template_id": template_id, "rental_id": agent.get("rental_id")},
+        )
+        try:
+            ex._collect_fee(due_mn2)
+        except Exception:
+            pass
+
+    agent["rented"] = False
+    agent.pop("expires_at", None)
+    agent.pop("rental_days", None)
+    agent.pop("auto_renew", None)
+    agent.pop("auto_renew_count", None)
+    agent.pop("last_auto_renew_at", None)
+    agent["tier"] = buy_tmpl.get("tier") or agent.get("tier")
+    agent["template_id"] = template_id
+    agent["converted_from_rental"] = True
+    agent["converted_at"] = _iso()
+    data["agents"][agent_id] = agent
+    mkt._write_user_agents(user_id, data)
+
+    ex._append_jsonl(_RENTALS_PATH, {
+        "ts": _iso(),
+        "event": "convert_to_purchase",
+        "user_id": user_id,
+        "agent_id": agent_id,
+        "template_id": template_id,
+        "rental_id": agent.get("rental_id"),
+        "due_mn2": due_mn2,
+        "full_price_mn2": full_price,
+        "rental_credit_mn2": rental_credit,
+    })
+    ex._audit(
+        "exchange_rental_convert",
+        user_id=user_id,
+        agent_id=agent_id,
+        template_id=template_id,
+        amount_mn2=due_mn2,
+    )
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "template_id": template_id,
+        "spent_mn2": due_mn2,
+        "full_price_mn2": full_price,
+        "rental_credit_mn2": rental_credit,
+        "owned": True,
+    }

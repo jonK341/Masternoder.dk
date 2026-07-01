@@ -78,6 +78,21 @@ def test_shop_reward_chest(rs_env):
     assert rs_env["bal"]["u1"] > before - 30  # spent 30, got 5 back
 
 
+def test_convert_rental_to_purchase(rs_env):
+    rent = rs_env["rent"]
+    mkt = rs_env["mkt"]
+    r = rent.rent_agent("u1", "rent_starter_7d")
+    aid = r["agent"]["agent_id"]
+    before = rs_env["bal"]["u1"]
+    conv = rent.convert_rental_to_purchase("u1", aid)
+    assert conv["success"] is True
+    assert conv["spent_mn2"] == pytest.approx(205.0)  # 250 buy - 45 rental
+    assert rs_env["bal"]["u1"] == pytest.approx(before - 205.0)
+    agent = mkt._read_user_agents("u1")["agents"][aid]
+    assert agent.get("rented") is False
+    assert "expires_at" not in agent
+
+
 def test_shop_profit_boost_multiplier(rs_env):
     shop = rs_env["shop"]
     shop.purchase_item("u1", "ex_profit_boost_24h")

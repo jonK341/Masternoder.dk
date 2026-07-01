@@ -117,6 +117,21 @@ Manual PayPal later: set `EXCHANGE_AUTO_PAYPAL_SWEEP=1` only when you want to ta
 
 ---
 
+## Platform treasury (MN2 stash + liquidity pipeline)
+
+Live arb profit stashes to **`platform_treasury`** as MN2 via `stash_profit_usd`. The liquidity pipeline (`exchange_treasury_liquidity_service.run_liquidity_tick`) moves **5%** of treasury MN2 to `exchange_agent_casino_liquidity` when balance × 5% ≥ **500 MN2** (see `data/exchange_treasury_config.json`).
+
+**Ops test credit (internal, no on-chain deposit):**
+
+```bash
+# On prod via SSH — idempotent reference prevents double-credit
+TREASURY_TEST_CREDIT_MN2=10000 python3 /tmp/mn2_treasury_probe_once.py
+```
+
+Uses `game_mn2_rewards.credit_mn2("platform_treasury", …)` — same ledger path as game rewards. Production MN2 normally arrives from live arb stash or on-chain deposit to the agent treasury address (`GET /api/agents/treasury/address`).
+
+---
+
 ## TODO / follow-ups
 
 - [x] Confirm NonKYC **server outbound IP** whitelisted + `EXCHANGE_FORCE_IPV4=1`

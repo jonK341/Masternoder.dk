@@ -754,6 +754,17 @@ def exchange_rental_auto_renew():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/rental/convert-to-purchase", methods=["POST"])
+def exchange_rental_convert_to_purchase():
+    from backend.services.exchange_rental_service import convert_rental_to_purchase
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(convert_rental_to_purchase(
+        _uid(from_body=True),
+        (data.get("agent_id") or "").strip(),
+    ))
+
+
 @crypto_exchange_bp.route("/api/exchange/controller/hub", methods=["GET"])
 def exchange_controller_hub():
     from backend.services.exchange_user_controller_service import hub_state

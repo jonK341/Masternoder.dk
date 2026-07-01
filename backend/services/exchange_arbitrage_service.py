@@ -428,6 +428,16 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
             move_usd=move_usd,
             ratio=round(ratio, 4),
         )
+        if not live_enabled() and "internal" in {rich["venue_id"], poor["venue_id"]}:
+            try:
+                from backend.services.exchange_live_execution_service import _internal_swap
+                sym = "USDC" if rich["quote_asset"] in ("USDC", "USDT") else rich["quote_asset"]
+                qty = round(move_usd / max(1.0, avg), 8)
+                swap = _internal_swap("platform_treasury", sym, "sell" if rich["venue_id"] == "internal" else "buy", qty)
+                result["internal_swap"] = swap
+                result["swap_attempted"] = True
+            except Exception as exc:
+                result["internal_swap"] = {"success": False, "error": str(exc)}
     return result
 
 
