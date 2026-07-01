@@ -70,10 +70,13 @@ def _extended_once(profile: str) -> Dict[str, Any]:
     return run_extended_profit_tick(profile=profile)
 
 
+def _casino_dry_run(cli_dry_run: bool) -> bool:
+    if cli_dry_run:
+        return True
+    return os.environ.get("CASINO_AGENT_DRY_RUN", "1").strip().lower() in ("1", "true", "yes", "on")
+
+
 def _casino_once(*, dry_run: bool) -> Dict[str, Any]:
-    if not dry_run:
-        from backend.services import casino_agents_service as casino_svc
-        casino_svc.ensure_agent_bankrolls()
     from scripts.casino_agent_daemon import run_once
 
     return run_once(dry_run=dry_run)
@@ -236,8 +239,9 @@ def main() -> int:
     os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
     iv = _resolve_intervals(profile, PROFILE_INTERVALS.get(profile, PROFILE_INTERVALS["standard"]))
     ex_iv = args.exchange_interval or args.interval or iv["exchange"]
-    cas_iv = args.casino_interval or args.interval or iv["casino"]
+    cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
     fast_iv = iv.get("fast") or 0
+    casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
 
@@ -250,7 +254,7 @@ def main() -> int:
         if not args.skip_exchange:
             out["exchange"] = _exchange_once(auto_sweep, profile)
         if not skip_casino and not args.skip_exchange:
-            out["casino"] = _casino_once(dry_run=args.casino_dry_run)
+            out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
             print(json.dumps(out, indent=2, default=str))
         else:
@@ -276,7 +280,7 @@ def main() -> int:
         if fast_iv:
             print(f"    fast rescan interval={fast_iv}s")
     if not skip_casino and not args.skip_exchange:
-        dr = "dry_run" if args.casino_dry_run else "live"
+        dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino: Nova/Luna/Sage/Ember/Iris ({cas_iv}s, {dr})")
     print("=" * 72)
 
@@ -290,7 +294,7 @@ def main() -> int:
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
-            target=_casino_loop, args=(cas_iv, args.casino_dry_run, stop), name="casino", daemon=True,
+            target=_casino_loop, args=(cas_iv, casino_dry_run, stop), name="casino", daemon=True,
         ))
 
     if not threads:

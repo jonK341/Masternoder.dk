@@ -46,6 +46,8 @@ Heuristic fallback (no API key or `CASINO_AGENT_LLM=0`) uses `bet_fraction` and 
 |----------|---------|---------|
 | `CASINO_AGENT_LLM` | `0` | `1` = use LLM for bet planning; `0` = heuristics only |
 | `AGENT_CASINO_SECRET` | *(empty)* | Auth for `POST /api/agent/casino/*` via header `X-Agent-Casino-Key` |
+| `CASINO_AGENT_DRY_RUN` | `1` | `1` = daemon simulates bets (safe default); `0` = place real bets |
+| `CASINO_AGENT_INTERVAL` | `300` | Seconds between daemon ticks (`run_casino_agent_daemon.cmd`, `all_profit_daemons`) |
 | `LLM_TIMEOUT_SECONDS` | `10` | LLM request timeout (shared with all agents) |
 | `LLM_PREFER_FREE` | off | When `1`, `task_type=default` routes to free-tier chain |
 
@@ -160,12 +162,66 @@ Sign up at official sites only. Rate limits change — check each dashboard afte
 
 ---
 
+## Local / server daemon setup
+
+The casino agent loop does **not** require Flask when run via `scripts/casino_agent_daemon.py` (direct service import). Use the HTTP API on production cron instead.
+
+### Windows (local dev)
+
+```cmd
+REM Safe default — dry_run is ON unless you override
+scripts\run_casino_agent_daemon.cmd
+
+REM One tick test
+scripts\run_casino_once.cmd
+
+REM All profit (exchange + casino) — casino respects CASINO_AGENT_DRY_RUN
+scripts\run_daemons.cmd
+```
+
+`run_casino_agent_daemon.cmd` sets `CASINO_AGENT_DRY_RUN=1` and `CASINO_AGENT_INTERVAL=300` when unset. For live local bets: `set CASINO_AGENT_DRY_RUN=0` then re-run, or pass `--live`.
+
+### Linux server (cron alternative)
+
+```bash
+# /etc/cron.d/masternoder-casino-agents (example)
+*/5 * * * * www-data cd /var/www/html && \
+  CASINO_AGENT_DRY_RUN=1 CASINO_AGENT_INTERVAL=300 \
+  /var/www/html/.venv/bin/python scripts/casino_agent_daemon.py --once --dry-run \
+  >> /var/log/masternoder/casino_agent.log 2>&1
+```
+
+Or POST to the API (needs `AGENT_CASINO_SECRET` in uWSGI env):
+
+```bash
+curl -sS -X POST http://127.0.0.1:5000/api/agent/casino/run-all \
+  -H "X-Agent-Casino-Key: $AGENT_CASINO_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"dry_run": true}'
+```
+
+### Daemon env checklist
+
+| Variable | Required | Default | Notes |
+|----------|----------|---------|-------|
+| `CASINO_AGENT_DRY_RUN` | No | `1` | Keep `1` until bankrolls + LLM smoke pass |
+| `CASINO_AGENT_INTERVAL` | No | `300` | Min 30s in daemon loop |
+| `CASINO_AGENT_LLM` | No | `0` | Set `1` on server for AI bet plans |
+| `AGENT_CASINO_SECRET` | For API cron | — | Header `X-Agent-Casino-Key`; not needed for direct daemon |
+| `GROQ_API_KEY` / `DEEPSEEK_API_KEY` / … | If `CASINO_AGENT_LLM=1` | — | At least one LLM key |
+
+Logs: `logs/casino_agent_spectator.jsonl` (spectator feed), `logs/casino_agent_brain.jsonl` (LLM plans when enabled).
+
+---
+
 ## Server `.env` example (placeholders only)
 
 ```bash
 # --- Casino agents ---
 AGENT_CASINO_SECRET=REPLACE_WITH_LONG_RANDOM_SECRET
 CASINO_AGENT_LLM=1
+CASINO_AGENT_DRY_RUN=1
+CASINO_AGENT_INTERVAL=300
 LLM_TIMEOUT_SECONDS=12
 
 # At least one LLM key (add more for fallback)

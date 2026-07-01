@@ -12,7 +12,7 @@ Status table for deploy, mobile, agents, and integrations. Feature waves (1–5)
 |-----|------|-------------|------------------------|
 | **1** | Deploy casino slice | **READY** — manifest 68 files (`agent_casino_routes.py`, seed JSON, `casino.js`, cron fanout) | User: `python scripts/deploy.py casino --ask-pass` |
 | **2** | Play Store / assetlinks | **SAVED / READY** — scripts + docs + listing drafts | User: $25 Play Console → upload AAB → paste SHA → `casino_play_assetlinks_update.py` → `deploy.py well_known` |
-| **3** | Agent daemon | **READY** — `run_casino_agent_daemon.cmd`, wired in `all_profit_daemons.py` + `run_daemons.cmd` | User: `AGENT_CASINO_SECRET`, optional `CASINO_AGENT_LLM=1`; dry-run first |
+| **3** | Agent daemon | **READY** — dry_run default `CASINO_AGENT_DRY_RUN=1`, interval `CASINO_AGENT_INTERVAL`, wired in `all_profit_daemons.py` + `run_daemons.cmd` | User: deploy casino slice; set `AGENT_CASINO_SECRET` + optional `CASINO_AGENT_LLM=1` on server |
 | **4** | PR #43 | **OPEN** — [Casino mega expansion](https://github.com/jonK341/Masternoder.dk/pull/43) | Review + merge after deploy smoke |
 | **5** | Apple AASA | **PAUSED** — placeholder `TEAMID` in AASA | Apple Developer account required |
 | **6** | Discord fanout live | **READY** — cron defaults `dry_run=true` | User: verify dry-run, then `CASINO_FANOUT_LIVE=1` on server |
@@ -57,9 +57,23 @@ curl -sS https://masternoder.dk/api/agent/casino/models | jq .
 | All profit (exchange + casino) | `scripts\run_daemons.cmd` → **a** or `run_all_profit_daemons.cmd` |
 | Casino one tick | `run_daemons.cmd` → **5** or `run_casino_agent_daemon.cmd --once` |
 | Casino-only loop window | `run_daemons.cmd` → **8** |
-| Dry-run | `set CASINO_AGENT_DRY_RUN=1` then `run_casino_agent_daemon.cmd` |
+| Dry-run (default) | `run_casino_agent_daemon.cmd` — sets `CASINO_AGENT_DRY_RUN=1` when unset |
+| Live bets | `set CASINO_AGENT_DRY_RUN=0` then `run_casino_agent_daemon.cmd --live` |
 
-Env (`.env` / server): `AGENT_CASINO_SECRET`, optional `CASINO_AGENT_LLM=1`, `CASINO_AGENT_DRY_RUN=1` for simulation.
+Env (`.env` / server):
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CASINO_AGENT_DRY_RUN` | `1` | Safe default — simulate bets |
+| `CASINO_AGENT_INTERVAL` | `300` | Daemon tick interval (seconds) |
+| `AGENT_CASINO_SECRET` | — | API auth for `POST /api/agent/casino/run-all` |
+| `CASINO_AGENT_LLM` | `0` | `1` = LLM bet planning |
+
+Unit tests (agent stack):
+
+```powershell
+python -m pytest tests/unit/test_casino_agents.py tests/unit/test_casino_agent_llm.py -q
+```
 
 ---
 

@@ -74,12 +74,13 @@ Repo prep complete. SHA update blocked on Play Console until $25 payment + first
 
 ### Ops 3 — Agent daemon
 
-- [x] `scripts/run_casino_agent_daemon.cmd` + `scripts/casino_agent_daemon.py`
-- [x] Wired into `scripts/all_profit_daemons.py` (casino loop, `--casino-dry-run`, `--skip-casino`)
+- [x] `scripts/run_casino_agent_daemon.cmd` + `scripts/casino_agent_daemon.py` — dry_run default via `CASINO_AGENT_DRY_RUN=1`, interval via `CASINO_AGENT_INTERVAL`
+- [x] Wired into `scripts/all_profit_daemons.py` (casino loop, env dry_run, `--casino-dry-run`, `--skip-casino`)
 - [x] `scripts/run_daemons.cmd` — options **a** (all profit), **5** (one tick), **7**/**8** (separate windows)
 - [x] Seed data in deploy manifest — `data/casino_agents.json`, `data/casino_agent_models.json`
+- [x] Local agent tests — `test_casino_agents.py`, `test_casino_agent_llm.py` (see CASINO_OPS_PROGRESS)
 - [ ] **USER:** Set `AGENT_CASINO_SECRET`, optional `CASINO_AGENT_LLM=1` on server
-- [ ] **USER:** Dry-run first (`CASINO_AGENT_DRY_RUN=1` or `--dry-run`); then enable live bets
+- [ ] **USER:** Dry-run first (`CASINO_AGENT_DRY_RUN=1` default); set `CASINO_AGENT_DRY_RUN=0` for live bets
 
 Setup: [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md)
 
