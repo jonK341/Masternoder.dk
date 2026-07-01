@@ -104,25 +104,23 @@ def collect() -> dict:
 
     # --- Python daemon scripts (local runners) ---
     out["daemon_scripts"] = [
-        {"id": "exchange_master", "script": "scripts/exchange_master_daemon.py",
-         "role": "All exchange bots + user marketplace ticks + auto-renewals (+ optional sweep)",
+        {"id": "all_profit", "script": "scripts/all_profit_daemons.py",
+         "role": "Unified exchange + casino profit loops (recommended)",
          "needs_flask": False, "default_interval_sec": 300},
-        {"id": "exchange_arbitrage", "script": "scripts/exchange_arbitrage_daemon.py",
-         "role": "Cross-venue arbitrage paper agents only", "needs_flask": False, "default_interval_sec": 120},
-        {"id": "crypto_exchange_agent", "script": "scripts/crypto_exchange_agent_daemon.py",
-         "role": "Internal cross-trade agents only", "needs_flask": False, "default_interval_sec": 300},
-        {"id": "ai_trading", "script": "(inside exchange_master via run_all_bots)",
-         "role": "AI multi-venue trader", "needs_flask": False},
+        {"id": "exchange_master", "script": "scripts/exchange_master_daemon.py",
+         "role": "Exchange-only tick (used by server cron + all_profit import)",
+         "needs_flask": False, "default_interval_sec": 300},
         {"id": "casino_agent", "script": "scripts/casino_agent_daemon.py",
-         "role": "Autonomous casino betting agents (Nova, Luna, ...)", "needs_flask": False, "default_interval_sec": 300},
+         "role": "Casino-only loop (also called from all_profit)",
+         "needs_flask": False, "default_interval_sec": 300},
+        {"id": "daemon_preflight", "script": "scripts/daemon_preflight.py",
+         "role": "Health check before starting profit daemons", "needs_flask": False},
         {"id": "site_agent", "script": "scripts/agent_daemon.py",
          "role": "POST /api/agents/daemon/tick (site automation)", "needs_flask": True, "default_interval_sec": 60},
         {"id": "mn2_blockchain", "script": "scripts/run_masternoder2d.sh (Linux) / .ps1 (Windows->bash)",
          "role": "MN2 wallet RPC — deposits, staking, masternode", "needs_flask": False, "server_only": True},
         {"id": "production_agents", "script": "scripts/production_agent_runner.py",
          "role": "Legacy DB player-behavior sim (20 agents) — dev/staging only", "needs_flask": True},
-        {"id": "keep_agents_alive", "script": "scripts/keep_agents_alive.py",
-         "role": "Legacy behavior loop — dev/staging only", "needs_flask": True},
     ]
 
     return out
@@ -132,7 +130,20 @@ def main() -> int:
     import argparse
     p = argparse.ArgumentParser(description="List daemons, bots, and agent fleets")
     p.add_argument("--json", action="store_true", help="Print JSON only")
+    p.add_argument("--health", action="store_true", help="Run preflight + show last heartbeat")
     args = p.parse_args()
+
+    if args.health:
+        from scripts.daemon_preflight import format_preflight, run_preflight
+        pf = run_preflight()
+        print(format_preflight(pf))
+        hb_path = os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
+        if os.path.isfile(hb_path):
+            with open(hb_path, "r", encoding="utf-8") as f:
+                hb = json.load(f)
+            print(f"\n[last heartbeat] {hb.get('updated_at')} loop={hb.get('loop')} {hb.get('summary')}")
+        return 0 if pf.get("success") else 1
+
     data = collect()
     if args.json:
         print(json.dumps(data, indent=2))

@@ -34,6 +34,12 @@ def _venue_map(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]
     return out
 
 
+def venue_quote(venue_id: str, cfg: Optional[Dict[str, Any]] = None) -> str:
+    """Spot quote asset for a venue (e.g. USDC on EEA Binance, USDT on NonKYC)."""
+    venue = _venue_map(cfg).get(venue_id) or {}
+    return str(venue.get("quote") or "USDT").upper()
+
+
 def build_pair(venue: Dict[str, Any], base: str) -> str:
     base = str(base).upper()
     base = (venue.get("base_overrides") or {}).get(base, base)

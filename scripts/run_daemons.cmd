@@ -9,57 +9,50 @@ echo  MasterNoder — daemons, bots and agents (local Windows cmd)
 echo  Repo: %CD%
 echo ========================================================================
 echo.
-echo  INVENTORY
-echo    i  Show all bots/agents status
-echo.
-echo  ALL PROFIT (recommended — one window, everything)
+echo  ALL PROFIT (recommended — one process, exchange + casino)
 echo    a  ALL profit daemons         profile=max (default)
 echo    b  ALL profit FAST profile    120s ticks, aggressive scans
-echo    c  ALL profit LIVE only       exchange live farm, no casino
+echo    d  ALL profit LIVE only       exchange live farm, no casino
 echo.
-echo  EXCHANGE (legacy — redirect to ALL profit)
-echo    1  Exchange MASTER daemon     same as (a) exchange side
-echo    2  Exchange arbitrage only    redirects to ALL profit
-echo    3  Cross-trade agents only    redirects to ALL profit
-echo    4  One tick (test)            exchange bots once (fast)
-echo    c  Casino one tick            casino agents only (slow)
+echo  UTILITIES
+echo    i  Inventory — bots/agents status
+echo    h  Health — preflight + last heartbeat
+echo    s  Status report — full live profit snapshot
+echo    4  One tick — all profit engines (quick test)
+echo    5  One tick — casino agents only
 echo.
-echo  CASINO
-echo    5  Casino agent daemon        Nova, Luna, Sage, Ember, Iris
+echo  SEPARATE WINDOWS
+echo    7  Open ALL profit window
+echo    8  Open casino-only loop window
 echo.
 echo  SITE (needs Flask: start_server.bat first)
 echo    6  Site agent daemon          POST /api/agents/daemon/tick
 echo.
-echo  START ALL (separate cmd windows)
-echo    7  Open ALL profit window      exchange + casino unified
-echo    8  Open casino only window
-echo    9  Open ALL profit + legacy    same as 7 (unified)
+echo  LIVE SETUP
+echo    l  Live trading readiness + vault key import
+echo    m  Configure LIVE profit MAX (tune + vault + faster scans)
+echo    e  Enable LIVE daemon mode (real cash transfer)
 echo.
 echo  LEGACY / DEV ONLY (real DB writes — staging)
 echo    p  Production agent runner    20 simulated players
-echo.
-echo    l  Live trading readiness + vault key import
-    e  Enable LIVE daemon mode (real cash transfer)
 echo.
 set "CHOICE="
 set /p CHOICE="Pick: "
 
 if /i "%CHOICE%"=="a" goto mall
 if /i "%CHOICE%"=="b" goto mfast
-if /i "%CHOICE%"=="c" goto mlive
+if /i "%CHOICE%"=="d" goto mlive
 if /i "%CHOICE%"=="i" goto inv
-if "%CHOICE%"=="1" goto m1
-if "%CHOICE%"=="2" goto m2
-if "%CHOICE%"=="3" goto m3
+if /i "%CHOICE%"=="h" goto health
+if /i "%CHOICE%"=="s" goto status
 if "%CHOICE%"=="4" goto m4
-if /i "%CHOICE%"=="c" goto mc
-if "%CHOICE%"=="5" goto m5
+if "%CHOICE%"=="5" goto mc
 if "%CHOICE%"=="6" goto m6
 if "%CHOICE%"=="7" goto m7
 if "%CHOICE%"=="8" goto m8
-if "%CHOICE%"=="9" goto m9
 if /i "%CHOICE%"=="p" goto leg
 if /i "%CHOICE%"=="l" goto live
+if /i "%CHOICE%"=="m" goto livemax
 if /i "%CHOICE%"=="e" goto enablelive
 if "%CHOICE%"=="0" exit /b 0
 echo Invalid choice.
@@ -83,16 +76,17 @@ call "%~dp0daemon_inventory.cmd"
 pause
 goto menu
 
-:m1
-call "%~dp0run_exchange_master_daemon.cmd"
+:health
+python scripts\daemon_preflight.py
+if exist "logs\daemon_all_profit_heartbeat.json" (
+  echo.
+  type logs\daemon_all_profit_heartbeat.json
+)
+pause
 goto menu
 
-:m2
-call "%~dp0run_exchange_arbitrage_daemon.cmd"
-goto menu
-
-:m3
-call "%~dp0run_crypto_exchange_agent_daemon.cmd"
+:status
+call "%~dp0profit_status_report.cmd"
 goto menu
 
 :m4
@@ -103,10 +97,6 @@ goto menu
 :mc
 call "%~dp0run_casino_once.cmd"
 pause
-goto menu
-
-:m5
-call "%~dp0run_casino_agent_daemon.cmd"
 goto menu
 
 :m6
@@ -125,15 +115,13 @@ echo Started casino agents only in new window.
 pause
 goto menu
 
-:m9
-start "ALL Profit Daemons" cmd /k "%~dp0run_all_profit_daemons.cmd"
-echo Started ALL profit daemons in new window.
-pause
-goto menu
-
 :live
 call "%~dp0configure_live_trading.cmd" --import-keys
 pause
+goto menu
+
+:livemax
+call "%~dp0configure_live_profit_max.cmd"
 goto menu
 
 :enablelive

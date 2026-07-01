@@ -144,6 +144,27 @@ checkout_source() {
   PATCHED=1
 }
 
+COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+
+apply_compat_patches() {
+  local f
+  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
+    return 0
+  fi
+  cd "${SRC_DIR}"
+  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
+    [[ -f "${f}" ]] || continue
+    echo "=== Applying compat patch $(basename "${f}") ==="
+    if ! patch -p1 --forward < "${f}"; then
+      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+    fi
+  done
+  if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
+    sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
+    echo "Applied sed fallback: #include <deque> in httpserver.cpp"
+  fi
+}
+
 ensure_build_deps
 
 echo "=== MN2 release build ${VERSION} ==="
@@ -160,6 +181,7 @@ else
 fi
 
 checkout_source
+apply_compat_patches
 GIT_SHA=$(git rev-parse HEAD)
 GIT_SUBJECT=$(git log -1 --format=%s)
 echo "Source: ${GIT_SHA:0:12} — ${GIT_SUBJECT}"

@@ -74,7 +74,7 @@ def main() -> int:
 
     if os.environ.get("EXCHANGE_VAULT_KEY"):
         from backend.services import exchange_secrets_vault_service as vault
-        venues = ["binance", "okx", "bybit", "nonkyc", "kucoin"]
+        venues = ["binance", "okx", "bybit", "nonkyc", "kucoin", "xeggex"]
         imported = []
         for vid in venues:
             key = os.environ.get(f"{vid.upper()}_API_KEY") or os.environ.get(f"{vid}_api_key")

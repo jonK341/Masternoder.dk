@@ -171,7 +171,9 @@ def venue_api_request(
     timeout = float((conn.load_connectors_config().get("request_timeout_sec") or 8))
 
     if auth == "binance_hmac":
-        params.setdefault("timestamp", int(time.time() * 1000))
+        from backend.services.exchange_binance_time_service import binance_timestamp_ms, recv_window_ms
+        params.setdefault("timestamp", binance_timestamp_ms())
+        params.setdefault("recvWindow", recv_window_ms())
         params["signature"] = _sign_binance(params, api_secret)
         query = urllib.parse.urlencode(params)
         url = f"{api_base}{path}?{query}"
@@ -336,6 +338,105 @@ def get_account_balance(venue_id: str, asset: str = "", *, dry_run: Optional[boo
     res = venue_api_request(venue_id, "account", params, dry_run=dry_run)
     res.setdefault("venue_id", venue_id)
     return res
+
+
+def venue_quote_asset(venue_id: str) -> str:
+    return conn.venue_quote(venue_id)
+
+
+def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
+    """Return asset -> free spot balance for a credentialed venue."""
+    if not venue_has_credentials(venue_id):
+        return {}
+    res = get_account_balance(venue_id, dry_run=dry_run)
+    if not res.get("success"):
+        return {}
+    body = res.get("body")
+    out: Dict[str, float] = {}
+    if venue_id == "binance" and isinstance(body, dict):
+        for row in body.get("balances") or []:
+            if not isinstance(row, dict):
+                continue
+            sym = str(row.get("asset") or "").upper()
+            try:
+                free = float(row.get("free") or 0)
+            except (TypeError, ValueError):
+                free = 0.0
+            if sym and free > 0:
+                out[sym] = free
+        return out
+    items: List[Any] = []
+    if isinstance(body, list):
+        items = body
+    elif isinstance(body, dict):
+        for key in ("balances", "data", "result", "assets"):
+            if isinstance(body.get(key), list):
+                items = body[key]
+                break
+    for row in items:
+        if not isinstance(row, dict):
+            continue
+        sym = str(row.get("symbol") or row.get("asset") or row.get("currency") or "").upper()
+        try:
+            free = float(row.get("available") or row.get("free") or row.get("balance") or 0)
+        except (TypeError, ValueError):
+            free = 0.0
+        if sym and free > 0:
+            out[sym] = free
+    return out
+
+
+def can_fund_arb_leg(
+    venue_id: str,
+    symbol: str,
+    side: str,
+    *,
+    qty: float,
+    notional_usd: float,
+    buffer_pct: float = 0.03,
+) -> Dict[str, Any]:
+    """Check live spot balance for one arb leg (buy needs quote, sell needs base coin)."""
+    if venue_id == "internal":
+        return {"ok": True, "venue_id": venue_id, "side": side}
+    side_l = str(side or "").lower()
+    bals = parse_spot_balances(venue_id, dry_run=False)
+    if side_l == "buy":
+        quote = venue_quote_asset(venue_id)
+        need = round(float(notional_usd) * (1.0 + buffer_pct), 4)
+        free = float(bals.get(quote) or 0)
+        return {
+            "ok": free >= need,
+            "venue_id": venue_id,
+            "side": "buy",
+            "asset": quote,
+            "free": round(free, 8),
+            "need": need,
+        }
+    sym = str(symbol or "").upper()
+    need = round(float(qty), 8)
+    free = float(bals.get(sym) or 0)
+    return {
+        "ok": free >= need * (1.0 - buffer_pct),
+        "venue_id": venue_id,
+        "side": "sell",
+        "asset": sym,
+        "free": round(free, 8),
+        "need": need,
+    }
+
+
+def opportunity_funded(opp: Dict[str, Any], *, buffer_pct: float = 0.03) -> Dict[str, Any]:
+    """True when both external legs have enough spot inventory for a live arb."""
+    symbol = str(opp.get("symbol") or "").upper()
+    notional = float(opp.get("notional_usd") or 0)
+    buy_price = float(opp.get("buy_ask") or 0)
+    qty = round(notional / buy_price, 8) if buy_price > 0 else 0.0
+    buy_v = str(opp.get("buy_venue") or "")
+    sell_v = str(opp.get("sell_venue") or "")
+    buy_chk = can_fund_arb_leg(buy_v, symbol, "buy", qty=qty, notional_usd=notional, buffer_pct=buffer_pct)
+    sell_chk = can_fund_arb_leg(sell_v, symbol, "sell", qty=qty, notional_usd=notional, buffer_pct=buffer_pct)
+    ok = bool(buy_chk.get("ok")) and bool(sell_chk.get("ok"))
+    return {"ok": ok, "qty": qty, "buy": buy_chk, "sell": sell_chk}
 
 
 def probe_all_venues() -> Dict[str, Any]:

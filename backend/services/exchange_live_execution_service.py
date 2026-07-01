@@ -128,6 +128,25 @@ def execute_spatial_arbitrage(
     qty = round(notional / buy_price, 8)
     global_live = arb.live_enabled() and dry_run is not False
 
+    if global_live and dry_run is not False:
+        funding = vapi.opportunity_funded(
+            {"symbol": symbol, "buy_venue": buy_venue, "sell_venue": sell_venue,
+             "buy_ask": buy_price, "notional_usd": notional},
+        )
+        if not funding.get("ok"):
+            return {
+                "success": False,
+                "error": "insufficient_venue_balance",
+                "mode": "live",
+                "symbol": symbol,
+                "quantity": qty,
+                "notional_usd": notional,
+                "buy_venue": buy_venue,
+                "sell_venue": sell_venue,
+                "funding": funding,
+                "executed_at": _iso(),
+            }
+
     def _leg(venue: str, side: str) -> Dict[str, Any]:
         if venue == "internal":
             if global_live and not dry_run:

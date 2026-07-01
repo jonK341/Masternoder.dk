@@ -19,6 +19,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+os.environ.setdefault("DAEMON_QUIET", "1")
+os.environ.setdefault("LITE_APP", "1")
+
 from scripts.daemon_env import load_dotenv, daemon_mode_label, is_arbitrage_live, is_paypal_payout_live
 
 

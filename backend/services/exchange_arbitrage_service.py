@@ -141,7 +141,12 @@ def scan_opportunities(
     min_margin_bps = float(cfg.get("min_margin_bps") or 30)
     notional = float(notional_usd or cfg.get("paper_trade_usd") or 250)
 
-    fetched = conn.fetch_prices(symbols, [v for v in venue_ids if v != "internal"], injected=injected)
+    fetched = conn.fetch_prices(
+        symbols,
+        [v for v in venue_ids if v != "internal"],
+        injected=injected,
+        use_cache=not live_enabled() if injected is None else False,
+    )
     prices = fetched.get("prices") or {}
 
     opportunities: List[Dict[str, Any]] = []
@@ -174,7 +179,10 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
     min_margin_bps = float(cfg.get("min_margin_bps") or 30)
     default_notional = float(cfg.get("paper_trade_usd") or 250)
 
-    fetched = conn.fetch_prices(injected=injected)
+    fetched = conn.fetch_prices(
+        injected=injected,
+        use_cache=not live_enabled() if injected is None else False,
+    )
     prices = fetched.get("prices") or {}
 
     try:
@@ -209,6 +217,22 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 50
         if best and best["net_bps"] >= min_margin_bps and best["est_profit_usd"] > 0:
             from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
+            from backend.services import exchange_venue_api_service as vapi
+            if live_enabled():
+                funding = vapi.opportunity_funded(best)
+                if not funding.get("ok"):
+                    action = {
+                        "agent_id": agent_id,
+                        "executed": False,
+                        "reason": "insufficient_venue_balance",
+                        "best": best,
+                        "funding": funding,
+                        "mode": "live",
+                    }
+                    acct["last_action"] = action
+                    write_account(acct)
+                    actions.append(action)
+                    continue
             exec_res = execute_spatial_arbitrage(best, agent_id=agent_id)
             acct = book_agent_profit(agent_id, best, exec_res)
             action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}

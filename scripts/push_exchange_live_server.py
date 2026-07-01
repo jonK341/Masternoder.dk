@@ -24,6 +24,8 @@ UPLOAD_FILES = [
     "data/exchange_sales_pool_config.json",
     "data/crypto_exchange/payout_config.json",
     "data/exchange_treasury_config.json",
+    "backend/services/exchange_binance_withdraw_service.py",
+    "backend/services/exchange_binance_time_service.py",
     "backend/services/exchange_live_execution_service.py",
     "backend/services/exchange_secrets_vault_service.py",
     "backend/services/exchange_arbitrage_service.py",
@@ -39,11 +41,16 @@ UPLOAD_FILES = [
     "backend/services/exchange_extended_profit_service.py",
     "data/exchange_extended_profit_config.json",
     "scripts/exchange_master_daemon.py",
-    "scripts/exchange_arbitrage_daemon.py",
+    "scripts/configure_live_profit_max.py",
+    "scripts/all_profit_daemons.py",
+    "scripts/daemon_preflight.py",
     "scripts/daemon_env.py",
     "data/exchange_venue_api_config.json",
     "cron/exchange_master_tick.sh",
     "cron/masternoder-exchange-master.cron.d",
+    "scripts/configure_live_profit_max.py",
+    "scripts/profit_status_report.py",
+    "scripts/_server_live_check_once.py",
 ]
 
 KEYS = [
@@ -64,6 +71,10 @@ KEYS = [
     "KUCOIN_API_SECRET",
     "XEGGEX_API_KEY",
     "XEGGEX_API_SECRET",
+    "EXCHANGE_PROFIT_PROFILE",
+    "EXCHANGE_LIVE_PROFIT_MAX",
+    "EXCHANGE_LIVE_MICRO_USD",
+    "BINANCE_QUOTE",
 ]
 
 
@@ -156,14 +167,18 @@ def main() -> int:
 
         remote_cmd = (
             f"cd {REMOTE_ROOT} && "
+            "export DAEMON_QUIET=1 LITE_APP=1 && "
             "python3 scripts/remote_vault_import.py && "
+            "python3 scripts/configure_live_profit_max.py && "
             "python3 scripts/configure_paypal_payout.py 2>/dev/null || true && "
+            "python3 scripts/profit_status_report.py --save 2>/dev/null | tail -40 && "
             "chmod +x cron/exchange_master_tick.sh 2>/dev/null || true && "
             "sed -i 's/\\r$//' cron/exchange_master_tick.sh 2>/dev/null || true && "
             "cp cron/masternoder-exchange-master.cron.d /etc/cron.d/masternoder-exchange-master "
             "&& chmod 644 /etc/cron.d/masternoder-exchange-master && "
             "chmod 640 .env && chown root:www-data .env && "
-            "systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001"
+            "systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001 && "
+            "bash cron/exchange_master_tick.sh 2>&1 | tail -5"
         )
         print("Importing keys into server vault...")
         _, stdout, stderr = ssh.exec_command(remote_cmd, timeout=180)

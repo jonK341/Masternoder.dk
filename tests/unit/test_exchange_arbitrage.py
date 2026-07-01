@@ -34,7 +34,8 @@ def test_list_venues_has_major_connections(arb_env):
 def test_build_pair_applies_overrides_and_templates(arb_env):
     conn = arb_env["conn"]
     vmap = conn._venue_map()
-    assert conn.build_pair(vmap["binance"], "BTC") == "BTCUSDT"
+    assert conn.build_pair(vmap["binance"], "BTC") == "BTCUSDC"
+    assert conn.build_pair(vmap["binance"], "DOGE") == "DOGEUSDC"
     assert conn.build_pair(vmap["coinbase"], "BTC") == "BTC-USD"
     assert conn.build_pair(vmap["nonkyc"], "BTC") == "BTC_USDT"
     assert conn.build_pair(vmap["bitstamp"], "BTC") == "btcusd"  # lowercase

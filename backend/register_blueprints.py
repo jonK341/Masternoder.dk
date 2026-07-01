@@ -14,6 +14,11 @@ import os
 from flask import Flask
 
 
+def _daemon_quiet() -> bool:
+    """Suppress blueprint registration spam when local/server daemons run headless."""
+    return os.environ.get("DAEMON_QUIET", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def register_lite_blueprints(app):
     """Register only critical + core blueprints (LITE_APP=1). Same file capabilities, faster startup."""
     n = 0
@@ -498,6 +503,17 @@ def register_lite_blueprints(app):
 
 def register_all_blueprints(app):
     """Register all blueprints automatically. Critical blueprints first. Runs once per app."""
+    if _daemon_quiet():
+        import contextlib
+        import io
+
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return _register_all_blueprints_impl(app)
+    return _register_all_blueprints_impl(app)
+
+
+def _register_all_blueprints_impl(app):
+    """Inner implementation — stdout may be redirected in daemon quiet mode."""
     # Avoid duplicate registration if this app was already fully registered (e.g. same app passed twice)
     if getattr(app, "_blueprints_full_registration_done", False):
         n = len(app.blueprints)

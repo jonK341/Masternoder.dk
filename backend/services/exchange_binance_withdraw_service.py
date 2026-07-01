@@ -173,7 +173,9 @@ def _signed_sapi_request(method: str, path: str, params: Optional[Dict[str, Any]
 
     api_key = creds["api_key"] or ""
     api_secret = creds["api_secret"] or ""
-    params.setdefault("timestamp", int(time.time() * 1000))
+    from backend.services.exchange_binance_time_service import binance_timestamp_ms, recv_window_ms
+    params.setdefault("timestamp", binance_timestamp_ms())
+    params.setdefault("recvWindow", recv_window_ms())
     params["signature"] = _sign_binance(params, api_secret)
     query = urllib.parse.urlencode(params)
     url = f"{_BINANCE_API_BASE}{path}?{query}"
@@ -191,29 +193,57 @@ def get_capital_config(*, dry_run: Optional[bool] = None,
     )
 
 
-def get_spot_usdt_free(*, dry_run: Optional[bool] = None,
-                       skip_live_gate: bool = True) -> Dict[str, Any]:
-    """GET /api/v3/account — USDT free balance on Binance spot."""
+def get_spot_asset_free(asset: str, *, dry_run: Optional[bool] = None,
+                        skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /api/v3/account — free balance for one asset on Binance spot."""
+    sym = str(asset or "USDT").upper()
     res = _signed_sapi_request(
         "GET", "/api/v3/account", {}, dry_run=dry_run, skip_live_gate=skip_live_gate,
     )
     if res.get("simulated"):
         res["free"] = 0.0
+        res["asset"] = sym
         return res
     if not res.get("success"):
+        res["asset"] = sym
         return res
     body = res.get("body")
     free = 0.0
     if isinstance(body, dict):
         for bal in body.get("balances") or []:
-            if str(bal.get("asset") or "").upper() == "USDT":
+            if str(bal.get("asset") or "").upper() == sym:
                 try:
                     free = float(bal.get("free") or 0)
                 except (TypeError, ValueError):
                     free = 0.0
                 break
     res["free"] = round(free, 8)
+    res["asset"] = sym
     return res
+
+
+def get_spot_usdt_free(*, dry_run: Optional[bool] = None,
+                       skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /api/v3/account — USDT free balance on Binance spot."""
+    return get_spot_asset_free("USDT", dry_run=dry_run, skip_live_gate=skip_live_gate)
+
+
+def get_spot_usdc_free(*, dry_run: Optional[bool] = None,
+                       skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /api/v3/account — USDC free balance on Binance spot (EEA default quote)."""
+    return get_spot_asset_free("USDC", dry_run=dry_run, skip_live_gate=skip_live_gate)
+
+
+def get_binance_buy_quote_asset() -> str:
+    """Quote used for Binance spot buys (USDC for EEA; override via BINANCE_QUOTE env)."""
+    env_q = (os.environ.get("BINANCE_QUOTE") or "").strip().upper()
+    if env_q:
+        return env_q
+    try:
+        from backend.services.external_exchange_connector_service import venue_quote
+        return venue_quote("binance")
+    except Exception:
+        return "USDC"
 
 
 def get_withdraw_address_list(coin: str = "USDT", *, dry_run: Optional[bool] = None,

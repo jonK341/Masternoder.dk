@@ -131,12 +131,62 @@ def run_all(*, dry_run: bool = False) -> Dict[str, Any]:
     agents = _load_json(_AGENTS_FILE)
     results: List[Dict[str, Any]] = []
     ran = 0
+    skipped: Dict[str, int] = {}
     for agent_id in agents:
         out = run_agent(agent_id, dry_run=dry_run)
         results.append(out)
         if out.get("success") and not dry_run:
             ran += 1
-    return {"success": True, "ran": ran, "dry_run": dry_run, "results": results}
+        elif not out.get("success"):
+            reason = str(
+                (out.get("result") or {}).get("error")
+                or out.get("error")
+                or "unknown"
+            )
+            skipped[reason] = skipped.get(reason, 0) + 1
+    return {
+        "success": True,
+        "ran": ran,
+        "agent_count": len(agents),
+        "dry_run": dry_run,
+        "skipped": skipped,
+        "results": results,
+    }
+
+
+def ensure_agent_bankrolls(*, min_coins: float | None = None) -> Dict[str, Any]:
+    """Top up autonomous agent wallets so they can place minimum bets."""
+    target = float(min_coins if min_coins is not None else os.environ.get("CASINO_AGENT_MIN_COINS", "500"))
+    agents = _load_json(_AGENTS_FILE)
+    from backend.services.unified_points_database import unified_points_db
+
+    topped = 0
+    low = 0
+    for aid, row in agents.items():
+        if not isinstance(row, dict):
+            continue
+        pol = row.get("policy") if isinstance(row.get("policy"), dict) else {}
+        if not pol.get("enabled", True):
+            continue
+        uid = str(row.get("user_id") or aid)
+        need_min = float(pol.get("min_bet") or casino.get_public_config().get("min_bet") or 5)
+        balance = float(casino._user_balance(uid, "coins"))
+        floor = max(target, need_min * 10)
+        if balance >= floor:
+            continue
+        low += 1
+        delta = floor - balance
+        if delta <= 0:
+            continue
+        unified_points_db.add_points(uid, "coins", delta, source="casino_agent_bankroll")
+        topped += 1
+    return {
+        "success": True,
+        "agent_count": len(agents),
+        "min_coins": target,
+        "low_balance_agents": low,
+        "topped_up": topped,
+    }
 
 
 def _spectator_log_path() -> str:

@@ -225,11 +225,13 @@ if [ "$DO_START" = "1" ]; then
   fi
 
   echo ""
-  echo "== start local-first (mn2_start_masternode.py --all-from-conf) =="
-  if [ -f "$WEB/scripts/mn2_start_masternode.py" ]; then
+  echo "== start fleet (multi-ping or legacy) =="
+  if [ -f "$WEB/scripts/mn2_fleet_autostart.sh" ]; then
+    bash "$WEB/scripts/mn2_fleet_autostart.sh"
+  elif [ -f "$WEB/scripts/mn2_start_masternode.py" ]; then
     cd "$WEB" && python3 scripts/mn2_start_masternode.py --all-from-conf
   else
-    log "WARN mn2_start_masternode.py missing — fallback: local then aliases"
+    log "WARN start scripts missing — fallback: local then aliases"
     $CLI startmasternode local false 2>/dev/null || true
     for a in $($CLI listmasternodeconf 2>/dev/null | python3 -c "
 import json,sys

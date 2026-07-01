@@ -14,6 +14,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+os.environ.setdefault("DAEMON_QUIET", "1")
+os.environ.setdefault("LITE_APP", "1")
+
 
 def run_once(*, dry_run: bool = False) -> dict:
     from backend.services import casino_agents_service as casino

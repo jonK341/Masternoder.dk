@@ -28,7 +28,7 @@ except Exception:
     pass
 
 import paramiko
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 from mn2_release_config import BASE_TAG, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
 
 BUILD_ROOT = "/tmp/mn2-build"
@@ -130,10 +130,11 @@ def main() -> int:
     if args.auto_fast:
         args.fast = False
 
-    pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
+    pw = None
+    if args.ask_pass:
+        pw = require_deploy_pass(force_prompt=True)
+    ssh, auth_method, _ = connect_deploy_ssh(password=pw)
+    print(f"Connected to {deploy_user()}@{deploy_host()} via {auth_method}")
 
     remote_build = upload_script(ssh, "mn2_build_release.sh", "mn2_build_release.sh")
     upload_script(ssh, "mn2_build_smoke.sh", "mn2_build_smoke.sh")
@@ -141,7 +142,7 @@ def main() -> int:
     patch_file = ""
     if not args.no_patch and not args.branch:
         patch_file = upload_patch(ssh)
-        print(f"Uploaded patch → {patch_file}")
+        print(f"Uploaded patch -> {patch_file}")
 
     def run_remote_build(use_fast: bool) -> tuple[int, str, str]:
         use_dep = "0" if use_fast else "1"
