@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/account-password-setup.css?v=20260625">
     <style>
         body {
             min-height: 100vh;
@@ -189,7 +190,7 @@
                 <ul class="next-list">
                     <li>Add display name, avatar, and bio in <strong>Edit Profile</strong>.</li>
                     <li>Connect GitHub or Google from the profile account tab when providers are available.</li>
-                    <li>Set password protection after earning the required game points or Star Map progress.</li>
+                    <li>Set your account password in the guided setup (Security on profile, or below on this page).</li>
                     <li>Set geo reference only if location-based profile features are useful to you.</li>
                 </ul>
                 <div class="user-row">
@@ -255,25 +256,14 @@
         </section>
 
         <section class="user-card" style="margin-top:18px;" aria-labelledby="password-title">
-            <h2 id="password-title">Password protection</h2>
-            <p class="user-muted">Unlock by earning game points or completing Star Map investigations. Once set, entering a new password changes it.</p>
-            <div id="user-password-status" class="user-status">Loading password status...</div>
-            <div class="user-row">
-                <input id="user-password-input" class="user-input" type="password" placeholder="New password (min 6 chars)">
-                <button id="user-password-save-btn" class="user-btn" type="button">Save password</button>
-                <button id="user-password-unlock-btn" class="user-btn secondary" type="button">Check unlock</button>
-            </div>
-            <div class="user-row" style="margin-top:10px;">
-                <button id="user-password-recovery-request-btn" class="user-btn secondary" type="button">Request recovery token</button>
-                <input id="user-password-recovery-token" class="user-input" type="text" placeholder="Recovery token">
-                <input id="user-password-recovery-new" class="user-input" type="password" placeholder="Reset password (min 6 chars)">
-                <button id="user-password-recovery-reset-btn" class="user-btn secondary" type="button">Reset with token</button>
-            </div>
-            <p id="user-password-policy" class="user-muted" style="font-size:0.82rem;">Recovery policy: loading...</p>
+            <h2 id="password-title">Account password</h2>
+            <p class="user-muted">Guided setup with unlock progress, confirmation, and recovery. Fast track when you have email, social login, or a real-money balance.</p>
+            <div id="account-password-setup" aria-live="polite">Loading password setup…</div>
         </section>
     </main>
 
     <script src="/static/js/navigation-toolbar.js?v=20260429a"></script>
+    <script src="/static/js/account-password-setup.js?v=20260625"></script>
     <script>
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, function(ch) {
@@ -455,132 +445,15 @@
             }
         }
 
-        async function loadPasswordStatus() {
-            const status = document.getElementById('user-password-status');
-            const input = document.getElementById('user-password-input');
-            const saveBtn = document.getElementById('user-password-save-btn');
-            const unlockBtn = document.getElementById('user-password-unlock-btn');
-            const policy = document.getElementById('user-password-policy');
-            if (!status) return;
-            try {
-                const res = await fetch('/api/auth/password/status?user_id=' + encodeURIComponent(currentUserId()));
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || 'Password status unavailable');
-                const rule = data.unlock_rule || {};
-                const recovery = data.recovery || {};
-                if (policy) {
-                    const methods = [];
-                    if (recovery.has_email) methods.push('email ' + (recovery.email_masked || 'available'));
-                    if (recovery.provider) methods.push(recovery.provider + ' provider');
-                    policy.textContent = 'Recovery: ' + (methods.length ? methods.join(' and ') : 'no verified recovery method yet') + '. ' + (recovery.email_delivery_configured ? 'Email delivery is configured.' : 'Token is shown locally until email delivery is configured.');
-                }
-                if (data.has_password) {
-                    status.textContent = 'Account protected. Enter a new password to change it.';
-                    if (input) input.style.display = '';
-                    if (saveBtn) { saveBtn.style.display = ''; saveBtn.textContent = 'Change password'; }
-                    if (unlockBtn) unlockBtn.style.display = 'none';
-                } else if (data.has_unlocked || data.can_unlock) {
-                    status.textContent = 'Password protection is unlocked. Reward on first set: +' + ((data.reward_on_set || {}).game_points || 0) + ' game_points.';
-                    if (input) input.style.display = '';
-                    if (saveBtn) { saveBtn.style.display = ''; saveBtn.textContent = 'Set password'; }
-                    if (unlockBtn) unlockBtn.style.display = 'none';
-                } else {
-                    status.textContent = 'Unlock by earning ' + (rule.min_game_points || 50) + ' game_points or completing ' + (rule.min_investigations || 1) + ' Star Map investigation.';
-                    if (input) input.style.display = 'none';
-                    if (saveBtn) saveBtn.style.display = 'none';
-                    if (unlockBtn) unlockBtn.style.display = '';
-                }
-            } catch (err) {
-                status.textContent = err.message || 'Password status unavailable.';
-            }
-        }
-
-        async function requestPasswordRecovery() {
-            const status = document.getElementById('user-password-status');
-            if (status) status.textContent = 'Creating recovery request...';
-            try {
-                const res = await fetch('/api/auth/password/recovery/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId() })
+        function mountPasswordSetup() {
+            if (!window.AccountPasswordSetup) return;
+            if (!window._userPagePasswordSetup) {
+                window._userPagePasswordSetup = AccountPasswordSetup.mount('account-password-setup', {
+                    userId: currentUserId()
                 });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || 'Recovery request failed');
-                const tokenInput = document.getElementById('user-password-recovery-token');
-                if (data.reset_token && tokenInput) tokenInput.value = data.reset_token;
-                if (status) status.textContent = data.message || 'Recovery request created.';
-            } catch (err) {
-                if (status) status.textContent = err.message || 'Recovery request failed.';
-            }
-        }
-
-        async function resetPasswordWithRecovery() {
-            const status = document.getElementById('user-password-status');
-            const token = (document.getElementById('user-password-recovery-token') || {}).value || '';
-            const password = (document.getElementById('user-password-recovery-new') || {}).value || '';
-            if (!token.trim()) {
-                if (status) status.textContent = 'Recovery token is required.';
-                return;
-            }
-            if (password.length < 6) {
-                if (status) status.textContent = 'Password must be at least 6 characters.';
-                return;
-            }
-            if (status) status.textContent = 'Resetting password...';
-            try {
-                const res = await fetch('/api/auth/password/recovery/reset', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId(), token: token, password: password })
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || 'Password reset failed');
-                if (status) status.textContent = 'Password reset.';
-                await loadPasswordStatus();
-            } catch (err) {
-                if (status) status.textContent = err.message || 'Password reset failed.';
-            }
-        }
-
-        async function savePassword() {
-            const status = document.getElementById('user-password-status');
-            const input = document.getElementById('user-password-input');
-            const password = (input && input.value) || '';
-            if (password.length < 6) {
-                if (status) status.textContent = 'Password must be at least 6 characters.';
-                return;
-            }
-            if (status) status.textContent = 'Saving password...';
-            try {
-                const res = await fetch('/api/auth/password/set', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId(), password: password })
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || 'Password save failed');
-                if (input) input.value = '';
-                if (status) status.textContent = 'Password saved.' + (data.points_awarded ? ' +' + data.points_awarded + ' game_points reward.' : '');
-                await loadPasswordStatus();
-            } catch (err) {
-                if (status) status.textContent = err.message || 'Password save failed.';
-            }
-        }
-
-        async function unlockPassword() {
-            const status = document.getElementById('user-password-status');
-            if (status) status.textContent = 'Checking unlock...';
-            try {
-                const res = await fetch('/api/auth/password/unlock', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId() })
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error || 'Unlock requirement not met');
-                await loadPasswordStatus();
-            } catch (err) {
-                if (status) status.textContent = err.message || 'Unlock requirement not met.';
+            } else {
+                window._userPagePasswordSetup.options.userId = currentUserId();
+                window._userPagePasswordSetup.refresh();
             }
         }
 
@@ -602,10 +475,12 @@
                 if (status) status.textContent = 'Session synced. This browser now uses ' + uid + '.';
                 await loadIdentity();
                 await loadPrivacyControls();
+                mountPasswordSetup();
             } catch (err) {
                 if (status) status.textContent = err.message || 'Sync failed.';
                 await loadIdentity();
                 await loadPrivacyControls();
+                mountPasswordSetup();
             }
         }
 
@@ -615,20 +490,12 @@
             const saveBtn = document.getElementById('save-privacy-btn');
             const exportBtn = document.getElementById('export-data-btn');
             const deleteBtn = document.getElementById('delete-account-btn');
-            const passwordSaveBtn = document.getElementById('user-password-save-btn');
-            const passwordUnlockBtn = document.getElementById('user-password-unlock-btn');
-            const passwordRecoveryRequestBtn = document.getElementById('user-password-recovery-request-btn');
-            const passwordRecoveryResetBtn = document.getElementById('user-password-recovery-reset-btn');
             if (saveBtn) saveBtn.addEventListener('click', savePrivacyControls);
             if (exportBtn) exportBtn.addEventListener('click', exportData);
             if (deleteBtn) deleteBtn.addEventListener('click', softDeleteAccount);
-            if (passwordSaveBtn) passwordSaveBtn.addEventListener('click', savePassword);
-            if (passwordUnlockBtn) passwordUnlockBtn.addEventListener('click', unlockPassword);
-            if (passwordRecoveryRequestBtn) passwordRecoveryRequestBtn.addEventListener('click', requestPasswordRecovery);
-            if (passwordRecoveryResetBtn) passwordRecoveryResetBtn.addEventListener('click', resetPasswordWithRecovery);
             loadIdentity();
             loadPrivacyControls();
-            loadPasswordStatus();
+            mountPasswordSetup();
         });
     </script>
 </body>

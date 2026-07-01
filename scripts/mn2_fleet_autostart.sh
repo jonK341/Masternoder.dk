@@ -89,6 +89,30 @@ for r in rows:
   done <<< "$aliases"
 }
 
+daemon_supports_multi_ping() {
+  "$CLI" $D getinfo 2>/dev/null | python3 -c "
+import json,sys
+def parse(v):
+    parts=[]
+    for p in str(v or '0').split('-')[0].split('.'):
+        try: parts.append(int(p))
+        except: break
+    while len(parts)<4: parts.append(0)
+    return tuple(parts[:4])
+try:
+    d=json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+ver=parse(d.get('version'))
+sys.exit(0 if ver>=(1,3,0,0) else 1)
+" 2>/dev/null
+}
+
+start_multi_ping_fleet() {
+  log "startmasternode all false (v1.3+ multi-ping fleet register)"
+  "$CLI" $D startmasternode all false || true
+}
+
 start_local_ping() {
   local conf="${DATADIR}/masternoder2.conf"
   if [[ ! -f "$conf" ]] || ! grep -q '^masternode=1' "$conf"; then
@@ -107,8 +131,12 @@ main() {
   wait_rpc
   wait_mnsync
   unlock_conf_collateral
-  start_aliases
-  start_local_ping
+  if daemon_supports_multi_ping; then
+    start_multi_ping_fleet
+  else
+    start_aliases
+    start_local_ping
+  fi
   log "done — check: $CLI $D listmasternodes"
 }
 

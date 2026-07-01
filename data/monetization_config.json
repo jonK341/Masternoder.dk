@@ -75,6 +75,46 @@
       "tag": "overage"
     }
   ],
+  "mn2_packs": [
+    {
+      "id": "mn2-pack-s",
+      "name": "1 MN2",
+      "description": "1 MN2 credited to your in-wallet balance instantly — spend in catalog or withdraw on-chain.",
+      "price_usd": 0.99,
+      "price_coins": 100,
+      "mn2_granted": 1,
+      "icon": "🪙"
+    },
+    {
+      "id": "mn2-pack-m",
+      "name": "5 MN2",
+      "description": "5 MN2 credited instantly — best value for shop spend and staking.",
+      "price_usd": 4.99,
+      "price_coins": 500,
+      "mn2_granted": 5,
+      "icon": "🪙",
+      "featured": true
+    },
+    {
+      "id": "mn2-pack-l",
+      "name": "20 MN2",
+      "description": "20 MN2 credited instantly — for hosting collateral and whale balances.",
+      "price_usd": 14.99,
+      "price_coins": 2000,
+      "mn2_granted": 20,
+      "icon": "💰"
+    },
+    {
+      "id": "mn2-pack-xl",
+      "name": "50 MN2",
+      "description": "50 MN2 credited instantly — bulk top-up at the best per-MN2 rate.",
+      "price_usd": 34.99,
+      "price_coins": 5000,
+      "mn2_granted": 50,
+      "icon": "💎",
+      "tag": "best_value"
+    }
+  ],
   "overage_policy": {
     "comment": "Subscription overage — offer PayPal top-ups when allowance is high (see monetization_overage_service).",
     "show_offers_from_percent": 80,
@@ -176,6 +216,7 @@
     "rails": ["paypal", "mn2", "credits"],
     "defaults": {
       "coin_pack": ["paypal", "credits"],
+      "mn2_pack": ["paypal", "credits"],
       "digital_good": ["paypal", "mn2", "credits"],
       "subscription": ["paypal"],
       "b2b_studio": ["invoice", "paypal"]
@@ -912,7 +953,9 @@
         {"id": "bp-shop-1", "label": "Buy any shop item", "action": "shop_purchase", "xp": 75},
         {"id": "bp-gen-1", "label": "Complete a generator job", "action": "generator_complete", "xp": 100},
         {"id": "bp-host-1", "label": "Reserve masternode hosting", "action": "hosting_purchase", "xp": 150},
-        {"id": "bp-casino-1", "label": "Place a casino bet", "action": "casino_bet", "xp": 50}
+        {"id": "bp-casino-1", "label": "Place a casino bet", "action": "casino_bet", "xp": 50},
+        {"id": "bp-exchange-rent", "label": "Rent an exchange bot", "action": "exchange_rent", "xp": 90},
+        {"id": "bp-casino-mn2-win", "label": "Win a casino hand with MN2", "action": "casino_mn2_win", "xp": 65}
       ],
       "rewards": [
         {"tier": 1, "free": {"coins": 25}, "premium": {"coins": 100}},

@@ -46,6 +46,8 @@ body.layout-standard .battle-arena,
 body.layout-standard .social-page,
 body.layout-standard .unified-dashboard,
 body.layout-standard .lab-page,
+body.layout-standard .mn2-hub-wrap,
+body.layout-standard .host-page,
 [data-page-layout="standard"] {
     padding-top: var(--page-top-padding) !important;
     padding-bottom: var(--page-bottom-padding) !important;

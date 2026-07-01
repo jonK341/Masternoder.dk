@@ -1,0 +1,111 @@
+{
+  "enabled": true,
+  "name": "MasterNoder Exchange",
+  "jurisdiction": "EU-DK",
+  "legal_notice": "Custodial simulated trading for platform credits. Not a licensed MiCA CASP. Tax records are informational — consult your tax advisor. Promotional bonuses require terms acceptance.",
+  "quote_currencies": ["MN2", "COINS", "USDC", "USDT"],
+  "default_quote": "MN2",
+  "platform_fees": {
+    "taker_fee_bps": 25,
+    "maker_fee_bps": 10,
+    "swap_spread_bps": 50,
+    "withdrawal_fee_bps": 15,
+    "min_fee_mn2": 0.0001
+  },
+  "paypal_crypto_buy": {
+    "enabled": true,
+    "min_usd": 5.0,
+    "max_usd": 500.0,
+    "fee_bps": 75,
+    "settlement_note": "PayPal checkout settles to the configured PayPal business account; the selected asset is credited to the custodial exchange wallet after capture."
+  },
+  "risk_limits": {
+    "enabled": true,
+    "daily_fiat_buy_usd_cap": 2000.0,
+    "monthly_fiat_buy_usd_cap": 10000.0,
+    "max_open_orders_per_user": 50,
+    "velocity_max_buys_per_hour": 12,
+    "blocked_countries": ["US", "KP", "IR", "SY", "CU"],
+    "review_threshold_usd": 1000.0,
+    "note": "Velocity and cap checks apply to fiat (PayPal) on-ramps. Country blocking is advisory unless geo is provided."
+  },
+  "audit": {
+    "enabled": true,
+    "hash_chained": true,
+    "note": "Append-only hash-chained audit log for trades, fiat captures, agent actions, and risk denials."
+  },
+  "agent_trading": {
+    "enabled": true,
+    "daemon_interval_sec": 300,
+    "max_trade_mn2_per_tick": 2.5,
+    "seed_mn2_per_agent": 25.0,
+    "agents": [
+      {"id": "exchange_agent_stable_router", "name": "Stable Router", "strategy": "stable_rebalance", "assets": ["USDC", "USDT"], "enabled": true},
+      {"id": "exchange_agent_layer1_scout", "name": "Layer-1 Scout", "strategy": "layer1_rotation", "assets": ["BTC", "ETH", "SOL", "ADA", "AVAX"], "enabled": true},
+      {"id": "exchange_agent_casino_liquidity", "name": "Casino Liquidity Bot", "strategy": "casino_liquidity", "assets": ["MN2", "USDC", "DASH"], "enabled": true},
+      {"id": "exchange_agent_meme_hunter", "name": "Meme Hunter", "strategy": "meme_momentum", "assets": ["DOGE", "SHIB"], "enabled": true},
+      {"id": "exchange_agent_defi_router", "name": "DeFi Router", "strategy": "defi_rotation", "assets": ["LINK", "UNI", "ATOM", "ARB", "OP", "NEAR"], "enabled": true},
+      {"id": "exchange_agent_payments_hub", "name": "Payments Hub", "strategy": "payments_routing", "assets": ["XRP", "LTC", "XLM", "TRX", "DASH"], "enabled": true},
+      {"id": "exchange_agent_mn2_yield", "name": "MN2 Yield Farmer", "strategy": "native_yield", "assets": ["MN2", "BNB", "DOT"], "enabled": true}
+    ]
+  },
+  "tax": {
+    "enabled": true,
+    "jurisdiction_label": "Denmark (EU DAC8 reporting helper)",
+    "capital_gains_rate_bps": 4200,
+    "withholding_on_sell_bps": 0,
+    "record_all_trades": true,
+    "disclaimer": "Platform generates trade logs for your records. We do not remit tax on your behalf."
+  },
+  "lawful_bonus": {
+    "enabled": true,
+    "id": "welcome_2026",
+    "title": "Welcome trading bonus",
+    "mn2_amount": 0.05,
+    "usdc_equivalent_usd": 2.5,
+    "max_claims_per_user": 1,
+    "requires_terms_acceptance": true,
+    "terms_version": "2026-06-v1",
+    "terms_summary": "One-time promotional credit. Not withdrawable for 7 days. No guaranteed returns. 18+ only.",
+    "hold_days_before_withdraw": 7,
+    "eligible_countries": ["DK", "EU", "EEA"]
+  },
+  "rewards": {
+    "volume_tiers": [
+      {"min_volume_usd": 0, "fee_rebate_bps": 0, "label": "Bronze"},
+      {"min_volume_usd": 500, "fee_rebate_bps": 5, "label": "Silver"},
+      {"min_volume_usd": 2500, "fee_rebate_bps": 10, "label": "Gold"},
+      {"min_volume_usd": 10000, "fee_rebate_bps": 20, "label": "Platinum"}
+    ],
+    "maker_rebate_bps": 5,
+    "daily_staking_claim": true,
+    "trade_activity_points_per_usd": 0.5
+  },
+  "assets": [
+    {"symbol": "MN2", "name": "MasterNoder2", "type": "native", "decimals": 8, "base_price_usd": 0.05, "min_trade": 0.001, "staking_apy_bps": 800, "category": "native"},
+    {"symbol": "BTC", "name": "Bitcoin", "type": "crypto", "decimals": 8, "base_price_usd": 98500, "min_trade": 0.00001, "staking_apy_bps": 0, "category": "layer1"},
+    {"symbol": "ETH", "name": "Ethereum", "type": "crypto", "decimals": 8, "base_price_usd": 3450, "min_trade": 0.0001, "staking_apy_bps": 350, "category": "layer1"},
+    {"symbol": "USDT", "name": "Tether", "type": "stablecoin", "decimals": 6, "base_price_usd": 1.0, "min_trade": 1, "staking_apy_bps": 450, "category": "stable"},
+    {"symbol": "USDC", "name": "USD Coin", "type": "stablecoin", "decimals": 6, "base_price_usd": 1.0, "min_trade": 1, "staking_apy_bps": 480, "category": "stable"},
+    {"symbol": "BNB", "name": "BNB", "type": "crypto", "decimals": 8, "base_price_usd": 685, "min_trade": 0.001, "staking_apy_bps": 200, "category": "exchange"},
+    {"symbol": "SOL", "name": "Solana", "type": "crypto", "decimals": 8, "base_price_usd": 195, "min_trade": 0.01, "staking_apy_bps": 650, "category": "layer1"},
+    {"symbol": "XRP", "name": "XRP", "type": "crypto", "decimals": 6, "base_price_usd": 2.45, "min_trade": 1, "staking_apy_bps": 0, "category": "payments"},
+    {"symbol": "ADA", "name": "Cardano", "type": "crypto", "decimals": 6, "base_price_usd": 0.72, "min_trade": 1, "staking_apy_bps": 420, "category": "layer1"},
+    {"symbol": "DOGE", "name": "Dogecoin", "type": "crypto", "decimals": 8, "base_price_usd": 0.18, "min_trade": 10, "staking_apy_bps": 0, "category": "meme"},
+    {"symbol": "DOT", "name": "Polkadot", "type": "crypto", "decimals": 8, "base_price_usd": 6.8, "min_trade": 0.1, "staking_apy_bps": 1200, "category": "layer1"},
+    {"symbol": "POL", "name": "Polygon", "type": "crypto", "decimals": 8, "base_price_usd": 0.42, "min_trade": 1, "staking_apy_bps": 380, "category": "layer2"},
+    {"symbol": "LTC", "name": "Litecoin", "type": "crypto", "decimals": 8, "base_price_usd": 98, "min_trade": 0.01, "staking_apy_bps": 0, "category": "layer1"},
+    {"symbol": "AVAX", "name": "Avalanche", "type": "crypto", "decimals": 8, "base_price_usd": 38, "min_trade": 0.05, "staking_apy_bps": 720, "category": "layer1"},
+    {"symbol": "LINK", "name": "Chainlink", "type": "crypto", "decimals": 8, "base_price_usd": 18.5, "min_trade": 0.1, "staking_apy_bps": 0, "category": "defi"},
+    {"symbol": "UNI", "name": "Uniswap", "type": "crypto", "decimals": 8, "base_price_usd": 9.2, "min_trade": 0.1, "staking_apy_bps": 0, "category": "defi"},
+    {"symbol": "ATOM", "name": "Cosmos", "type": "crypto", "decimals": 6, "base_price_usd": 7.4, "min_trade": 0.1, "staking_apy_bps": 1500, "category": "layer1"},
+    {"symbol": "XLM", "name": "Stellar", "type": "crypto", "decimals": 7, "base_price_usd": 0.38, "min_trade": 5, "staking_apy_bps": 0, "category": "payments"},
+    {"symbol": "ALGO", "name": "Algorand", "type": "crypto", "decimals": 6, "base_price_usd": 0.28, "min_trade": 5, "staking_apy_bps": 550, "category": "layer1"},
+    {"symbol": "TRX", "name": "TRON", "type": "crypto", "decimals": 6, "base_price_usd": 0.24, "min_trade": 10, "staking_apy_bps": 480, "category": "layer1"},
+    {"symbol": "NEAR", "name": "NEAR Protocol", "type": "crypto", "decimals": 8, "base_price_usd": 4.6, "min_trade": 0.5, "staking_apy_bps": 900, "category": "layer1"},
+    {"symbol": "ARB", "name": "Arbitrum", "type": "crypto", "decimals": 8, "base_price_usd": 0.85, "min_trade": 1, "staking_apy_bps": 0, "category": "layer2"},
+    {"symbol": "OP", "name": "Optimism", "type": "crypto", "decimals": 8, "base_price_usd": 1.65, "min_trade": 1, "staking_apy_bps": 0, "category": "layer2"},
+    {"symbol": "SHIB", "name": "Shiba Inu", "type": "crypto", "decimals": 8, "base_price_usd": 0.000018, "min_trade": 100000, "staking_apy_bps": 0, "category": "meme"},
+    {"symbol": "DASH", "name": "Dash", "type": "crypto", "decimals": 8, "base_price_usd": 28, "min_trade": 0.01, "staking_apy_bps": 580, "category": "payments"}
+  ]
+}

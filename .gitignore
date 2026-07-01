@@ -32,6 +32,8 @@ logs/
 # Local scrape/cache artifacts
 .firecrawl/
 .pytest_cache/
+.pytest-tmp-local/
+.pytest-tmp/
 
 # Backup/runtime artifacts
 *.backup

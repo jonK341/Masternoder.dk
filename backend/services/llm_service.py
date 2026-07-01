@@ -10,6 +10,9 @@ Providers (OpenAI-compatible unless noted):
   deepseek   : DeepSeek V3 / R1       — 5M free tokens, then $0.14/M
   mistral    : Codestral / Large      — FREE 1B tok/month, best for code
   together   : Llama 3.3 70B / Llama 4 — optional, OpenAI-compatible
+  fireworks  : Llama 3.3 70B         — optional, fast hosted inference
+  huggingface: HF Inference router   — optional (HF_TOKEN / HUGGINGFACE_HUB_TOKEN)
+  ollama     : Local models          — optional (OLLAMA_BASE_URL, OpenAI-compatible)
   anthropic  : Claude 3.5 Sonnet     — optional, native API
   azure      : Azure OpenAI          — optional, same client (AZURE_OPENAI_ENDPOINT + key)
   cohere     : Command R+            — optional, OpenAI-compatible compatibility API
@@ -143,16 +146,44 @@ PROVIDERS: Dict[str, Dict[str, Any]] = {
         "cost_tier": "paid",
         "label": "Cohere (Command R+)",
     },
+    "fireworks": {
+        "base_url": "https://api.fireworks.ai/inference/v1",
+        "api_key_env": "FIREWORKS_API_KEY",
+        "default_model": "accounts/fireworks/models/llama-v3p3-70b-instruct",
+        "best_model": "accounts/fireworks/models/llama-v3p3-70b-instruct",
+        "embed_model": None,
+        "cost_tier": "paid",
+        "label": "Fireworks AI (Llama 3.3 70B)",
+    },
+    "huggingface": {
+        "base_url": "https://router.huggingface.co/v1",
+        "api_key_env": "HF_TOKEN",
+        "default_model": os.environ.get("HF_INFERENCE_MODEL", "meta-llama/Meta-Llama-3-8B-Instruct"),
+        "best_model": os.environ.get("HF_INFERENCE_MODEL", "meta-llama/Meta-Llama-3-8B-Instruct"),
+        "embed_model": None,
+        "cost_tier": "paid",
+        "label": "Hugging Face Inference",
+    },
+    "ollama": {
+        "base_url": os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1").strip() or None,
+        "api_key_env": "OLLAMA_API_KEY",
+        "default_model": os.environ.get("OLLAMA_MODEL", "llama3.3"),
+        "best_model": os.environ.get("OLLAMA_MODEL", "llama3.3"),
+        "embed_model": None,
+        "cost_tier": "free",
+        "label": "Ollama (local)",
+        "optional_key": True,
+    },
 }
 
 # Task-type → ordered provider preference list (first available + not tripped wins)
 TASK_ROUTES: Dict[str, List[str]] = {
-    "speed":   ["groq", "cerebras", "together", "openai", "gemini"],
-    "code":    ["mistral", "groq", "openai", "anthropic", "deepseek"],
-    "reason":  ["deepseek", "openrouter", "anthropic", "openai", "groq", "cohere"],
-    "context": ["gemini", "openai", "anthropic", "openrouter", "cohere"],
-    "free":    ["groq", "cerebras", "gemini", "openrouter", "deepseek", "mistral", "together", "cohere"],
-    "default": ["openai", "groq", "gemini", "openrouter", "together", "anthropic", "cohere", "azure"],
+    "speed":   ["groq", "cerebras", "fireworks", "together", "openai", "gemini"],
+    "code":    ["mistral", "groq", "fireworks", "openai", "anthropic", "deepseek"],
+    "reason":  ["deepseek", "openrouter", "fireworks", "anthropic", "openai", "groq", "cohere", "huggingface"],
+    "context": ["gemini", "openai", "anthropic", "openrouter", "cohere", "huggingface"],
+    "free":    ["groq", "cerebras", "gemini", "openrouter", "deepseek", "mistral", "together", "ollama", "cohere"],
+    "default": ["openai", "groq", "gemini", "openrouter", "together", "fireworks", "anthropic", "cohere", "azure", "huggingface", "ollama"],
 }
 
 # Per-provider circuit breakers: provider_name -> monotonic time until retry allowed
@@ -170,16 +201,30 @@ def _get_api_key(provider_name: str) -> str:
     # Gemini: prefer GOOGLE_GEMINI_API_KEY (script/data), then GOOGLE_AI_API_KEY
     if provider_name == "gemini":
         key = os.environ.get("GOOGLE_GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_AI_API_KEY", "").strip()
+    elif provider_name == "huggingface":
+        key = (
+            os.environ.get("HF_TOKEN", "").strip()
+            or os.environ.get("HUGGINGFACE_HUB_TOKEN", "").strip()
+            or os.environ.get("HUGGINGFACE_API_KEY", "").strip()
+        )
+    elif provider_name == "ollama":
+        key = os.environ.get(key_env, "").strip() or "ollama"
     else:
         key = os.environ.get(key_env, "").strip()
     return key
 
 
 def _is_provider_configured(provider_name: str) -> bool:
+    cfg = PROVIDERS.get(provider_name) or {}
+    if provider_name == "azure":
+        return bool(_get_api_key(provider_name)) and bool(cfg.get("base_url"))
+    if provider_name == "ollama":
+        enabled = os.environ.get("OLLAMA_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
+        return enabled and bool(cfg.get("base_url"))
+    if cfg.get("optional_key"):
+        return bool(_get_api_key(provider_name)) and bool(cfg.get("base_url"))
     if not _get_api_key(provider_name):
         return False
-    if provider_name == "azure":
-        return bool(PROVIDERS["azure"].get("base_url"))
     return True
 
 
@@ -349,9 +394,11 @@ def _call_provider(
     cfg = PROVIDERS[provider_name]
     api_key = _get_api_key(provider_name)
 
-    if not api_key:
+    if not api_key and not cfg.get("optional_key"):
         return LLMResponse(success=False, provider=provider_name,
                            error=f"{provider_name}: API key not configured ({cfg['api_key_env']})")
+    if not api_key:
+        api_key = "ollama"
 
     if _is_circuit_open(provider_name):
         remaining = int(_circuit_breakers[provider_name] - time.monotonic())

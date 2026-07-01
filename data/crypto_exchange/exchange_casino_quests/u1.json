@@ -1,0 +1,25 @@
+{
+  "week": "2026-W27",
+  "quests": {
+    "xcq-rent-bot": {
+      "progress": 1,
+      "target": 1,
+      "updated_at": "2026-06-30T01:49:05.811442Z"
+    },
+    "xcq-skill-addon": {
+      "progress": 1,
+      "target": 1,
+      "updated_at": "2026-06-30T01:49:05.969874Z"
+    },
+    "xcq-bridge-complete": {
+      "progress": 1,
+      "target": 1,
+      "updated_at": "2026-06-30T01:49:06.889119Z"
+    }
+  },
+  "completed": {
+    "xcq-rent-bot": "2026-06-30T01:49:05.811442Z",
+    "xcq-skill-addon": "2026-06-30T01:49:05.969874Z",
+    "xcq-bridge-complete": "2026-06-30T01:49:06.889119Z"
+  }
+}

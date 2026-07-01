@@ -18,12 +18,10 @@ import argparse
 import os
 import sys
 
-import paramiko
-
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 WEB = "/var/www/html"
 
@@ -227,11 +225,13 @@ if [ "$DO_START" = "1" ]; then
   fi
 
   echo ""
-  echo "== start local-first (mn2_start_masternode.py --all-from-conf) =="
-  if [ -f "$WEB/scripts/mn2_start_masternode.py" ]; then
+  echo "== start fleet (multi-ping or legacy) =="
+  if [ -f "$WEB/scripts/mn2_fleet_autostart.sh" ]; then
+    bash "$WEB/scripts/mn2_fleet_autostart.sh"
+  elif [ -f "$WEB/scripts/mn2_start_masternode.py" ]; then
     cd "$WEB" && python3 scripts/mn2_start_masternode.py --all-from-conf
   else
-    log "WARN mn2_start_masternode.py missing — fallback: local then aliases"
+    log "WARN start scripts missing — fallback: local then aliases"
     $CLI startmasternode local false 2>/dev/null || true
     for a in $($CLI listmasternodeconf 2>/dev/null | python3 -c "
 import json,sys
@@ -330,10 +330,8 @@ def main() -> int:
         return 0
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
-    print(f"== Connected {deploy_user()}@{deploy_host()} ==\n")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"== Connected {deploy_user()}@{deploy_host()} ({auth_method}) ==\n")
     timeout = 900 if watch else 300
     out = sh(ssh, remote, timeout=timeout)
     print(out)

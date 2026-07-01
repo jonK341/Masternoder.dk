@@ -26,14 +26,22 @@
       "encode_text": false
     },
     {
-      "id": "mastodon",
-      "name": "Mastodon",
-      "icon": "M",
-      "color": "#6364ff",
-      "share_url": "https://mastodonshare.com/?text={text}&url={url}",
+      "id": "whatsapp",
+      "name": "WhatsApp",
+      "icon": "💬",
+      "color": "#25d366",
+      "share_url": "https://wa.me/?text={text}%20{url}",
       "encode_text": true
-    }
+    },
+    {
+      "id": "x_thread",
+      "name": "X thread",
+      "icon": "𝕏",
+      "color": "#000000",
+      "share_url": "https://twitter.com/intent/tweet?text={text}&url={url}&hashtags=MasterNoder,Casino",
+      "encode_text": true
+    },
   ],
-  "default_share_text": "MasterNoder — AI video generation + Hunters Game",
+  "default_share_text": "MasterNoder — AI video generation + casino lounge",
   "default_share_hashtags": "MasterNoder,HuntersGame"
 }

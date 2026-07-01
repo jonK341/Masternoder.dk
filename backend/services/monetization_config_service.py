@@ -235,6 +235,42 @@ def get_coin_pack_map() -> Dict[str, Dict[str, Any]]:
     return {p["id"]: p for p in get_coin_packs_with_payment_rails() if p.get("id")}
 
 
+def get_mn2_packs() -> List[Dict[str, Any]]:
+    """Fixed-price MN2 packs (PayPal or shop coins → in-wallet MN2)."""
+    raw = _load_raw()
+    packs = raw.get("mn2_packs")
+    if isinstance(packs, list) and len(packs) > 0:
+        return list(packs)
+    return []
+
+
+def get_mn2_packs_with_payment_rails() -> List[Dict[str, Any]]:
+    """MN2 packs plus merged payment_rails per payment_rails_catalog."""
+    packs = get_mn2_packs()
+    cat = get_payment_rails_catalog()
+    defaults = cat.get("defaults") if isinstance(cat, dict) else None
+    overrides = cat.get("sku_overrides") if isinstance(cat, dict) else None
+    default_rails = None
+    if isinstance(defaults, dict):
+        default_rails = defaults.get("mn2_pack")
+    if not isinstance(default_rails, list):
+        default_rails = ["paypal", "credits"]
+    out: List[Dict[str, Any]] = []
+    for p in packs:
+        if not isinstance(p, dict):
+            continue
+        pid = p.get("id")
+        row = dict(p)
+        orails = overrides.get(pid) if isinstance(overrides, dict) else None
+        row["payment_rails"] = list(orails) if isinstance(orails, list) else list(default_rails)
+        out.append(row)
+    return out
+
+
+def get_mn2_pack_map() -> Dict[str, Dict[str, Any]]:
+    return {p["id"]: p for p in get_mn2_packs_with_payment_rails() if p.get("id")}
+
+
 def get_tier_caps(tier_id: str) -> Dict[str, Any]:
     raw = _load_raw()
     tiers = raw.get("tiers") or {}
@@ -435,6 +471,7 @@ def get_public_config() -> Dict[str, Any]:
         "reference_job_id": raw.get("reference_job_id"),
         "credit_definition": raw.get("credit_definition"),
         "coin_packs": get_coin_packs_with_payment_rails(),
+        "mn2_packs": get_mn2_packs_with_payment_rails(),
         "payment_rails_catalog": public_prc,
         "digital_goods": get_public_digital_goods(),
         "content_bundles": get_public_content_bundles(),

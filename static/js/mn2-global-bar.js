@@ -10,6 +10,7 @@
 
     function inject() {
         if (global.document.querySelector('.mn2-page-strip')) return;
+        if (global.document.querySelector('.mn2-hub-wrap')) return;
         if (global.document.getElementById('mn2-global-bar')) return;
 
         var bar = global.document.createElement('div');

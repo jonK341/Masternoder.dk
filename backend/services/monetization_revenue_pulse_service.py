@@ -106,6 +106,69 @@ def _camgirls_tips_pulse(since) -> Dict[str, Any]:
     }
 
 
+def _casino_pulse(since) -> Dict[str, Any]:
+    """Summarize casino betting and PayPal deposit activity for revenue tracks."""
+    from backend.services import casino_service
+    from backend.services.monetization_scr_blend_service import _in_time_window, read_jsonl
+
+    bet_count = 0
+    wager_total = 0.0
+    player_net = 0.0
+    by_currency: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"bet_count": 0, "wager_total": 0.0, "player_net": 0.0})
+    for row in read_jsonl(casino_service._ledger_path()):
+        if not _in_time_window(row.get("created_at") or row.get("ts"), since):
+            continue
+        bet = float(row.get("bet") or row.get("wager") or 0)
+        net = float(row.get("net") or 0)
+        currency = str(row.get("currency") or "coins").lower()
+        bet_count += 1
+        wager_total += bet
+        player_net += net
+        by_currency[currency]["bet_count"] += 1
+        by_currency[currency]["wager_total"] += bet
+        by_currency[currency]["player_net"] += net
+
+    deposits = {"pending": {}, "captured": {}}
+    try:
+        path = casino_service._paypal_deposits_path()
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                deposits = loaded
+    except Exception:
+        deposits = {"pending": {}, "captured": {}}
+
+    paypal_count = 0
+    paypal_usd = 0.0
+    for row in (deposits.get("captured") or {}).values():
+        if not isinstance(row, dict):
+            continue
+        if not _in_time_window(row.get("captured_at") or row.get("created_at"), since):
+            continue
+        paypal_count += 1
+        paypal_usd += float(row.get("amount_usd") or 0)
+
+    currency_summary = {}
+    for currency, stats in by_currency.items():
+        currency_summary[currency] = {
+            "bet_count": stats["bet_count"],
+            "wager_total": round(stats["wager_total"], 8 if currency == "mn2" else 2),
+            "player_net": round(stats["player_net"], 8 if currency == "mn2" else 2),
+            "house_net_est": round(-stats["player_net"], 8 if currency == "mn2" else 2),
+        }
+
+    return {
+        "bet_count": bet_count,
+        "wager_total": round(wager_total, 4),
+        "player_net": round(player_net, 4),
+        "house_net_est": round(-player_net, 4),
+        "paypal_deposit_count": paypal_count,
+        "paypal_deposit_usd": round(paypal_usd, 2),
+        "by_currency": currency_summary,
+    }
+
+
 def build_revenue_pulse(*, since_days: float = 7) -> Dict[str, Any]:
     from backend.services.monetization_scr_blend_service import (
         _in_time_window,

@@ -1,0 +1,107 @@
+{
+  "enabled": true,
+  "secret_key_pattern": "{venue_id}_api_key",
+  "secret_secret_pattern": "{venue_id}_api_secret",
+  "secret_passphrase_pattern": "{venue_id}_api_passphrase",
+  "venues": {
+    "binance": {
+      "auth": "binance_hmac",
+      "api_base": "https://api.binance.com",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/api/v3/account"},
+        "order_market": {"method": "POST", "path": "/api/v3/order"}
+      }
+    },
+    "okx": {
+      "auth": "okx_hmac",
+      "api_base": "https://www.okx.com",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/api/v5/account/balance"},
+        "order_market": {"method": "POST", "path": "/api/v5/trade/order"}
+      }
+    },
+    "bybit": {
+      "auth": "bybit_hmac",
+      "api_base": "https://api.bybit.com",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/v5/account/wallet-balance"},
+        "order_market": {"method": "POST", "path": "/v5/order/create"}
+      }
+    },
+    "nonkyc": {
+      "auth": "nonkyc_hmac",
+      "api_base": "https://api.nonkyc.io/api/v2",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/balances"},
+        "order_market": {"method": "POST", "path": "/createorder"}
+      }
+    },
+    "kucoin": {
+      "auth": "kucoin_hmac",
+      "api_base": "https://api.kucoin.com",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/api/v1/accounts"},
+        "order_market": {"method": "POST", "path": "/api/v1/orders"}
+      }
+    },
+    "coinbase": {
+      "auth": "coinbase_jwt_stub",
+      "api_base": "https://api.coinbase.com",
+      "live_supported": false,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/api/v3/brokerage/accounts"},
+        "order_market": {"method": "POST", "path": "/api/v3/brokerage/orders"}
+      }
+    },
+    "bitfinex": {
+      "auth": "bitfinex_hmac_stub",
+      "api_base": "https://api.bitfinex.com",
+      "live_supported": false,
+      "endpoints": {
+        "account": {"method": "POST", "path": "/v2/auth/r/wallets"},
+        "order_market": {"method": "POST", "path": "/v2/auth/w/order/submit"}
+      }
+    },
+    "gateio": {
+      "auth": "gateio_hmac_stub",
+      "api_base": "https://api.gateio.ws",
+      "live_supported": false,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/api/v4/spot/accounts"},
+        "order_market": {"method": "POST", "path": "/api/v4/spot/orders"}
+      }
+    },
+    "bitstamp": {
+      "auth": "bitstamp_hmac_stub",
+      "api_base": "https://www.bitstamp.net",
+      "live_supported": false,
+      "endpoints": {
+        "account": {"method": "POST", "path": "/api/v2/account_balances/"},
+        "order_market": {"method": "POST", "path": "/api/v2/buy/market/{pair}/"}
+      }
+    },
+    "cryptocom": {
+      "auth": "cryptocom_hmac_stub",
+      "api_base": "https://api.crypto.com",
+      "live_supported": false,
+      "endpoints": {
+        "account": {"method": "POST", "path": "/exchange/v1/private/get-account-summary"},
+        "order_market": {"method": "POST", "path": "/exchange/v1/private/create-order"}
+      }
+    },
+    "xeggex": {
+      "auth": "nonkyc_hmac",
+      "api_base": "https://api.xeggex.com/api/v2",
+      "live_supported": true,
+      "endpoints": {
+        "account": {"method": "GET", "path": "/balances"},
+        "order_market": {"method": "POST", "path": "/createorder"}
+      }
+    }
+  }
+}

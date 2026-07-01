@@ -74,15 +74,72 @@ def verify_tarball(tarball: str, manifest_path: str | None) -> int:
     return 0
 
 
+def _qt_assets_from_dist(dist_dir: str) -> list[str]:
+    names = ("MasterNoder2-qt-linux.tar.gz", "MasterNoder2-qt-win.zip")
+    out = []
+    for name in names:
+        path = os.path.join(dist_dir, name)
+        if os.path.isfile(path):
+            out.append(path)
+            sha = path + ".sha256"
+            if os.path.isfile(sha):
+                out.append(sha)
+    manifest = os.path.join(dist_dir, "QT_RELEASE_MANIFEST.json")
+    if os.path.isfile(manifest):
+        out.append(manifest)
+    return out
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=f"Publish MN2 {TARGET_VERSION} GitHub release")
-    p.add_argument("--tarball", required=True, help="Path to masternoder2d.tar.gz from mn2_build_release.sh")
+    p.add_argument("--tarball", help="Path to masternoder2d.tar.gz from mn2_build_release.sh")
     p.add_argument("--manifest", help="RELEASE_MANIFEST.json (default: alongside tarball)")
+    p.add_argument("--qt-assets", action="store_true", help="Upload Qt packages from dist/ (no daemon tarball required)")
     p.add_argument("--skip-tag", action="store_true", help="Release only (tag already exists)")
     p.add_argument("--draft", action="store_true", help="Create as draft release")
     p.add_argument("--promote", action="store_true", help="Publish existing draft release (no upload)")
     p.add_argument("--verify", action="store_true", help="Verify tarball + manifest only; do not publish")
     args = p.parse_args()
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dist_dir = os.path.join(root, "dist")
+
+    if args.qt_assets and not args.tarball:
+        qt_only = _qt_assets_from_dist(dist_dir)
+        if not qt_only:
+            print(f"No Qt assets in {dist_dir}", file=sys.stderr)
+            return 1
+        rel_exists = subprocess.run(
+            ["gh", "release", "view", TARGET_VERSION, "--repo", REPO],
+            capture_output=True,
+        ).returncode == 0
+        if not rel_exists:
+            cmd = [
+                "gh",
+                "release",
+                "create",
+                TARGET_VERSION,
+                *qt_only,
+                "--repo",
+                REPO,
+                "--title",
+                TARGET_VERSION,
+                "--notes",
+                RELEASE_NOTES + "\n\n**Qt wallet builds** attached to this release.",
+            ]
+            if args.draft:
+                cmd.append("--draft")
+            _run(cmd)
+        else:
+            _run(["gh", "release", "upload", TARGET_VERSION, *qt_only, "--repo", REPO, "--clobber"])
+        print(f"\nUploaded Qt assets to {TARGET_VERSION}")
+        for path in qt_only:
+            if path.endswith(".json") or path.endswith((".tar.gz", ".zip")):
+                print(f"  {os.path.basename(path)} ({os.path.getsize(path):,} bytes)")
+        return 0
+
+    if not args.tarball:
+        p.error("--tarball is required unless --qt-assets is set")
 
     tarball = os.path.abspath(args.tarball)
     if not os.path.isfile(tarball):
@@ -108,6 +165,8 @@ def main() -> int:
         assets.append(sha_path)
     if manifest and os.path.isfile(manifest):
         assets.append(manifest)
+    if args.qt_assets:
+        assets.extend(_qt_assets_from_dist(os.path.dirname(tarball)))
 
     if args.promote:
         _run(["gh", "release", "edit", TARGET_VERSION, "--repo", REPO, "--draft=false"])

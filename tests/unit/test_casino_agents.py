@@ -105,6 +105,9 @@ def test_casino_ai_router_task_kinds():
 
 
 def test_agent_skillset_casino_models(tmp_path, monkeypatch):
+    monkeypatch.setenv('AGENT_SKILLSET_LITE_INIT', '1')
+    import sys
+    sys.modules.pop('backend.services.agent_skillset', None)
     models_path = tmp_path / "data" / "casino_agent_models.json"
     models_path.parent.mkdir(parents=True)
     models_path.write_text(

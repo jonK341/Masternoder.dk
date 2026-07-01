@@ -314,3 +314,54 @@ def yield_report(force: bool = False) -> Dict[str, Any]:
         _CACHE["yield"] = out
         _CACHE["yield_ts"] = time.time()
     return out
+
+
+def reserves_overview(force: bool = False) -> Dict[str, Any]:
+    """Public aggregator: PoR + yield + exchange treasury + fee treasury + network ops."""
+    por = proof_of_reserves(force=force)
+    yield_r = yield_report(force=force)
+
+    exchange_treasury: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+        exchange_treasury = treasury_status()
+    except Exception as exc:
+        exchange_treasury = {"success": False, "error": str(exc)}
+
+    fee_treasury: Dict[str, Any] = {}
+    try:
+        from backend.services import crypto_exchange_service as ex
+        tre = ex._read_json(ex._TREASURY_PATH, {"total_fees_mn2": 0, "updated_at": None})
+        mn2_usd = ex._mn2_usd()
+        fee_treasury = {
+            "success": True,
+            "total_fees_mn2": round(float(tre.get("total_fees_mn2") or 0), 8),
+            "updated_at": tre.get("updated_at"),
+            "total_fees_usd_est": round(float(tre.get("total_fees_mn2") or 0) * mn2_usd, 2),
+        }
+    except Exception as exc:
+        fee_treasury = {"success": False, "error": str(exc)}
+
+    network_ops: Dict[str, Any] = {}
+    try:
+        from backend.services.mn2_rpc_client import staking_health
+        from backend.services import mn2_staking_service as _stk
+        network_ops = {
+            "staking_health": staking_health(),
+            "pool": {
+                "total_staked_mn2": _stk.total_staked(),
+                "dynamic_apr_percent": _stk.dynamic_apr(),
+            },
+        }
+    except Exception as exc:
+        network_ops = {"error": str(exc)}
+
+    return {
+        "success": True,
+        "generated_at": _now_iso(),
+        "proof_of_reserves": por,
+        "yield_report": yield_r,
+        "exchange_treasury": exchange_treasury,
+        "fee_treasury": fee_treasury,
+        "network_ops": network_ops,
+    }

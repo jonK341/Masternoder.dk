@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "room_id": "unified_social",
+  "tagline": "One monitor — cross-post to every network",
+  "networks": [
+    {"id": "site", "label": "MasterNoder", "icon": "🌐", "color": "#00ff88", "cross_post": true},
+    {"id": "x", "label": "X", "icon": "𝕏", "color": "#e7e9ea", "cross_post": true},
+    {"id": "facebook", "label": "Facebook", "icon": "f", "color": "#1877f2", "cross_post": true},
+    {"id": "linkedin", "label": "LinkedIn", "icon": "in", "color": "#0a66c2", "cross_post": true},
+    {"id": "mastodon", "label": "Mastodon", "icon": "M", "color": "#6364ff", "cross_post": true},
+    {"id": "discord", "label": "Discord", "icon": "🕷️", "color": "#5865f2", "cross_post": true},
+    {"id": "facebook_bot", "label": "FB Messenger", "icon": "📘", "color": "#1877f2", "cross_post": true},
+    {"id": "casino", "label": "Casino floor", "icon": "🎰", "color": "#a78bfa", "cross_post": true},
+    {"id": "lab", "label": "Lab roundtable", "icon": "🔬", "color": "#7fdbff", "cross_post": true}
+  ],
+  "fx_effects": [
+    {"id": "none", "label": "Plain", "class": ""},
+    {"id": "neon_glow", "label": "Neon glow", "class": "scp-fx-neon"},
+    {"id": "gold_casino", "label": "Casino gold", "class": "scp-fx-gold"},
+    {"id": "confetti", "label": "Confetti burst", "class": "scp-fx-confetti"},
+    {"id": "ripple", "label": "Ripple wave", "class": "scp-fx-ripple"},
+    {"id": "hologram", "label": "Hologram", "class": "scp-fx-holo"},
+    {"id": "fire", "label": "Fire trail", "class": "scp-fx-fire"},
+    {"id": "ice", "label": "Ice shard", "class": "scp-fx-ice"}
+  ],
+  "max_messages": 1000,
+  "default_cross_networks": ["site", "x", "facebook", "linkedin", "mastodon", "discord", "casino"]
+}

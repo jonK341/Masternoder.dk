@@ -1,0 +1,50 @@
+{
+  "channel": "lab",
+  "items": [
+    {
+      "id": "lab-v21-hub",
+      "title": "Lab V2.1 hub upgrade live",
+      "summary": "News, systems audit, idea board, AI copilot, crypto rewards, and Chapter V research nodes are on /lab.",
+      "date": "2026-06-24",
+      "category": "lab",
+      "href": "/lab/?tab=v2",
+      "featured": true
+    },
+    {
+      "id": "lab-chapter-v",
+      "title": "Chapter V: Star Map bridge, shop boosters, agent-safe tools",
+      "summary": "25 new catalog nodes unlock after Chapter IV — bridges to Star Map, shop, agents, rulebooks, and the Google Play TWA project.",
+      "date": "2026-06-24",
+      "category": "research",
+      "href": "/lab/?tab=chapter",
+      "featured": true
+    },
+    {
+      "id": "lab-google-play-project",
+      "title": "Google Play Store app — lab research project",
+      "summary": "Agents brainstorm, research, and scaffold a Trusted Web Activity wrapper for masternoder.dk. Join the project for MN2 join rewards.",
+      "date": "2026-06-24",
+      "category": "project",
+      "href": "/lab/?tab=agents",
+      "featured": true
+    },
+    {
+      "id": "lab-social-roundtable",
+      "title": "Social roundtable for masternoder.dk",
+      "summary": "Pin ideas, join community rooms, and link Discord, shop, trophies, and explorers from the new Social tab.",
+      "date": "2026-06-24",
+      "category": "social",
+      "href": "/lab/?tab=social",
+      "featured": false
+    },
+    {
+      "id": "lab-agent-knowledge-filter",
+      "title": "Lab agent knowledge filter",
+      "summary": "GET /api/rulebooks/agent-knowledge?domain=lab returns Lab-grounded entries for copilots and research agents.",
+      "date": "2026-06-24",
+      "category": "agents",
+      "href": "/lab/?tab=ai",
+      "featured": false
+    }
+  ]
+}

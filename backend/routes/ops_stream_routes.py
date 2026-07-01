@@ -108,3 +108,39 @@ def ops_snapshot():
     if not _ops_authorized():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
     return jsonify({"success": True, **_snapshot()}), 200
+
+
+@ops_stream_bp.route("/api/ops/health", methods=["GET"])
+def ops_health():
+    """Unified ops health: daemons, treasury, masternode hosting, payout."""
+    from flask import jsonify
+    from datetime import datetime, timezone
+
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    out: dict = {
+        "success": True,
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    try:
+        from scripts.daemon_inventory import collect
+        out["daemon_inventory"] = collect()
+    except Exception as exc:
+        out["daemon_inventory"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+        out["treasury"] = treasury_status()
+    except Exception as exc:
+        out["treasury"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.mn2_masternode_service import get_service_status
+        out["masternode_hosting"] = get_service_status()
+    except Exception as exc:
+        out["masternode_hosting"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.exchange_payout_service import payout_status
+        out["payout"] = payout_status()
+    except Exception as exc:
+        out["payout"] = {"success": False, "error": str(exc)}
+    return jsonify(out), 200

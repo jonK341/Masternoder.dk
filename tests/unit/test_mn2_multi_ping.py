@@ -42,6 +42,7 @@ def test_start_masternode_multi_ping_skips_missing(monkeypatch):
         return {"result": "ok", "error": None}
 
     monkeypatch.setattr(mn, "multi_ping_enabled", lambda: True)
+    monkeypatch.setattr(mn, "_register_fleet_ping_targets", lambda: None)
     monkeypatch.setattr(rpc, "startmasternode", fake_start)
     monkeypatch.setattr(mn, "_unlock_wallet", lambda: True)
     monkeypatch.setattr(mn, "_unlock_collateral_utxos", lambda: 0)
@@ -76,3 +77,44 @@ def test_count_enabled_with_activetime():
         {"status": "ACTIVE", "activetime": 0},
     ]
     assert mn._count_enabled_with_activetime(rows) == 1
+
+
+def test_current_ping_metric_fleet_when_multi_ping(monkeypatch):
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: True)
+    monkeypatch.setattr(
+        mn,
+        "network_masternodes",
+        lambda limit=100: {
+            "list": [
+                {"status": "ENABLED", "activetime": 10},
+                {"status": "ENABLED", "activetime": 20},
+            ]
+        },
+    )
+    assert mn._current_ping_metric() == 2
+
+
+def test_maintain_ping_multi_ping_registers_fleet(monkeypatch):
+    calls = {"all": 0, "start": 0}
+
+    def fake_register():
+        calls["all"] += 1
+        return None
+
+    def fake_start(alias, privkey=None, *, conf_changed=False, skip_privkey_sync=False):
+        calls["start"] += 1
+        return None
+
+    monkeypatch.setattr(mn, "_ping_loop_healthy", lambda: False)
+    monkeypatch.setattr(mn, "_primary_ping_alias", lambda: "platformmn2")
+    monkeypatch.setattr(mn, "_primary_ping_privkey", lambda: "testpk")
+    monkeypatch.setattr(mn, "_unlock_wallet", lambda: True)
+    monkeypatch.setattr(mn, "_unlock_collateral_utxos", lambda: 0)
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: True)
+    monkeypatch.setattr(mn, "_register_fleet_ping_targets", fake_register)
+    monkeypatch.setattr(mn, "_start_masternode", fake_start)
+
+    out = mn.maintain_ping_loop()
+    assert out.get("success") is True
+    assert calls["all"] == 1
+    assert calls["start"] == 1

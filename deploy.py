@@ -341,6 +341,10 @@ FILES_TO_DEPLOY = [
     "static/js/mn2-p2p.js",
     # MN2 ecosystem buildout (site UI, market, security, callbacks, casino/aggregator)
     "data/mn2_config.json",
+    "data/exchange_treasury_config.json",
+    "backend/services/exchange_treasury_liquidity_service.py",
+    "backend/services/exchange_treasury_service.py",
+    "scripts/exchange_master_daemon.py",
     "backend/routes/chat_routes.py",
     "backend/routes/gallery_routes.py",
     "backend/routes/quest_routes.py",

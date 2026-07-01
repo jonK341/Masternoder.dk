@@ -30,6 +30,8 @@ def treasury_address():
             return jsonify({"success": True, **saved}), 200
         err = (r.get("error") if isinstance(r, dict) else None) or "getnewaddress returned no address"
         return jsonify({"success": False, "error": str(err), "treasury": treasury}), 503
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "treasury": treasury}), 503
 
 
 @agent_treasury_bp.route("/api/agents/treasury/distribute", methods=["POST"])

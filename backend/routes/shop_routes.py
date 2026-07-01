@@ -44,12 +44,38 @@ def _apply_booster_sku(unified_points_db, user_id: str, sku_id: str, sku: dict, 
             unified_points_db.add_booster(user_id, sku_id, minutes, name=name)
 
 
-def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int) -> None:
+def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int, *, purchase_ref: str = None) -> None:
     """Apply boosters and game time to user when they purchase relevant shop items."""
     import re
     try:
+        from backend.services.shop_mn2_fulfillment_service import apply_mn2_grants_for_purchase
+
+        ref = (purchase_ref or "").strip() or None
+        apply_mn2_grants_for_purchase(
+            user_id,
+            item_id,
+            item,
+            quantity,
+            source="shop_purchase",
+            reference=ref or f"shop_purchase:{item_id}:{max(1, int(quantity or 1))}",
+            extra_metadata={"item_name": (item or {}).get("name"), "purchase_ref": ref},
+        )
+    except Exception:
+        pass
+    try:
         from backend.services.unified_points_database import unified_points_db
     except Exception:
+        return
+    if (item or {}).get("delivery") == "exchange_shop":
+        try:
+            from backend.services.exchange_shop_service import fulfill_item
+
+            ex_id = (item or {}).get("exchange_item_id") or item_id
+            if (item or {}).get("requires_agent_id"):
+                return
+            fulfill_item(user_id, ex_id, record_purchase=True, price_mn2=float((item or {}).get("price_mn2") or 0))
+        except Exception:
+            pass
         return
     try:
         name = (item.get("name") or item_id or "").lower()
@@ -221,6 +247,23 @@ def get_coin_pack_map():
     return {p["id"]: p for p in get_paypal_coin_packs()}
 
 
+def get_mn2_packs():
+    """MN2 packs from monetization_config.json (buy MN2 with PayPal or shop coins)."""
+    try:
+        from backend.services.monetization_config_service import get_mn2_packs_with_payment_rails
+
+        packs = get_mn2_packs_with_payment_rails()
+        if packs:
+            return packs
+    except Exception:
+        pass
+    return []
+
+
+def get_mn2_pack_map():
+    return {p["id"]: p for p in get_mn2_packs() if p.get("id")}
+
+
 # Module-level aliases refreshed at import (tests expect PAYPAL_COIN_PACKS / COIN_PACK_MAP)
 PAYPAL_COIN_PACKS = get_paypal_coin_packs()
 COIN_PACK_MAP = get_coin_pack_map()
@@ -232,7 +275,7 @@ def _get_paypal_shop_items():
     result = {}
     for item in items or []:
         iid = item.get("id")
-        if not iid or iid in get_coin_pack_map():
+        if not iid or iid in get_coin_pack_map() or iid in get_mn2_pack_map():
             continue
         price = item.get("price")
         if isinstance(price, (int, float)) and price > 0:
@@ -351,11 +394,46 @@ def _content_bundle_shop_items():
             "bundle_items": bundle.get("items") or [],
             "coins_granted": int(bundle.get("coins_granted") or 0),
             "generation_credits_granted": float(bundle.get("generation_credits_granted") or 0),
+            "mn2_granted": float(bundle.get("mn2_granted") or 0),
             "attribution": bundle.get("attribution") or {},
         }
         if row["id"]:
             items.append(row)
     return items
+
+
+def _mn2_pack_shop_items():
+    """Expose MN2 packs in the shop catalog (coins or PayPal → in-wallet MN2)."""
+    items = []
+    for pack in get_mn2_packs():
+        price_coins = int(pack.get("price_coins") or 0)
+        row = {
+            "id": pack.get("id"),
+            "name": pack.get("name") or pack.get("id"),
+            "description": pack.get("description") or "",
+            "category": "mn2_crypto",
+            "price": price_coins,
+            "price_usd": float(pack.get("price_usd") or 0),
+            "icon": pack.get("icon") or "🪙",
+            "rarity": "legendary" if price_coins >= 2000 else "epic",
+            "tags": ["mn2_pack", "crypto", "mn2"],
+            "payment_rails": pack.get("payment_rails") or ["paypal", "credits"],
+            "mn2_granted": float(pack.get("mn2_granted") or 0),
+            "featured": bool(pack.get("featured")),
+        }
+        if row["id"]:
+            items.append(row)
+    return items
+
+
+def _exchange_shop_items():
+    """Expose exchange shop SKUs in the main /shop catalog."""
+    try:
+        from backend.services.exchange_shop_service import shop_items_for_catalog
+
+        return shop_items_for_catalog()
+    except Exception:
+        return []
 
 
 def _ptc_advertiser_package_shop_items():
@@ -1334,6 +1412,12 @@ def get_coin_packs():
     return jsonify({'success': True, 'coin_packs': get_paypal_coin_packs()}), 200
 
 
+@shop_bp.route('/api/shop/mn2-packs', methods=['GET'])
+def get_mn2_packs_route():
+    """Get MN2 packs for buying in-wallet MN2 with PayPal or shop coins."""
+    return jsonify({'success': True, 'mn2_packs': get_mn2_packs()}), 200
+
+
 @shop_bp.route('/api/shop/paypal-items', methods=['GET'])
 def get_paypal_shop_items():
     """Get shop items that can be purchased directly with PayPal (price_usd)."""
@@ -1441,13 +1525,21 @@ def _get_shop_items():
         if bundle_item.get("id") not in existing_ids:
             items.append(bundle_item)
             existing_ids.add(bundle_item.get("id"))
+    for mn2_pack_item in _mn2_pack_shop_items():
+        if mn2_pack_item.get("id") not in existing_ids:
+            items.append(mn2_pack_item)
+            existing_ids.add(mn2_pack_item.get("id"))
     for package_item in _ptc_advertiser_package_shop_items():
         if package_item.get("id") not in existing_ids:
             items.append(package_item)
             existing_ids.add(package_item.get("id"))
+    for exchange_item in _exchange_shop_items():
+        if exchange_item.get("id") not in existing_ids:
+            items.append(exchange_item)
+            existing_ids.add(exchange_item.get("id"))
     # Add price_usd for items with coin price (enables direct PayPal purchase)
     for item in items or []:
-        if item.get("id") in get_coin_pack_map():
+        if item.get("id") in get_coin_pack_map() or item.get("id") in get_mn2_pack_map():
             continue
         price = item.get("price")
         if isinstance(price, (int, float)) and price > 0:
@@ -1686,7 +1778,7 @@ def shop_purchase():
                         'error': 'Shop fulfillment failed; point deductions were refunded',
                         'details': str(ex),
                     }), 500
-                _apply_shop_item_effects(user_id, item_id, item, quantity)
+                _apply_shop_item_effects(user_id, item_id, item, quantity, purchase_ref=str(purchase_id) if purchase_id else None)
                 
                 # Record agent activity for the shop purchase
                 try:
@@ -1803,7 +1895,7 @@ def shop_purchase():
                         'error': 'Shop fulfillment failed; coins were refunded',
                         'details': str(ex),
                     }), 500
-                _apply_shop_item_effects(user_id, item_id, item, quantity)
+                _apply_shop_item_effects(user_id, item_id, item, quantity, purchase_ref=str(purchase_id) if purchase_id else None)
 
                 # Shop V9.2: award loyalty/cashback for coin spend on the whole catalog.
                 loyalty_earned = 0

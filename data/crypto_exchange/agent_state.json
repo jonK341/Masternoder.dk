@@ -1,0 +1,181 @@
+{
+  "tick_count": 520,
+  "agents": {
+    "exchange_agent_stable_router": {
+      "last_action": {
+        "agent_id": "exchange_agent_stable_router",
+        "agent_name": "Stable Router",
+        "strategy": "stable_rebalance",
+        "symbol": "USDC",
+        "side": "buy",
+        "amount": 11.972694594,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:37:14.446499Z",
+          "trade_id": "ex-swap:c4f0e699257b48a3:4b7a56c7",
+          "user_id": "exchange_agent_stable_router",
+          "type": "swap",
+          "symbol": "USDC",
+          "side": "buy",
+          "amount": 11.972694594,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 70
+        }
+      },
+      "last_tick": "2026-06-30T23:37:25.821538Z"
+    },
+    "exchange_agent_layer1_scout": {
+      "last_action": {
+        "agent_id": "exchange_agent_layer1_scout",
+        "agent_name": "Layer-1 Scout",
+        "strategy": "layer1_rotation",
+        "symbol": "BTC",
+        "side": "buy",
+        "amount": 0.000204326656,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:37:33.914056Z",
+          "trade_id": "ex-swap:67050baf79914945:7751a7c2",
+          "user_id": "exchange_agent_layer1_scout",
+          "type": "swap",
+          "symbol": "BTC",
+          "side": "buy",
+          "amount": 0.000204326656,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 70
+        }
+      },
+      "last_tick": "2026-06-30T23:37:39.652037Z"
+    },
+    "exchange_agent_casino_liquidity": {
+      "last_action": {
+        "agent_id": "exchange_agent_casino_liquidity",
+        "agent_name": "Casino Liquidity Bot",
+        "strategy": "casino_liquidity",
+        "symbol": "USDC",
+        "side": "buy",
+        "amount": 11.972694594,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:37:45.253444Z",
+          "trade_id": "ex-swap:46b35fde1cff4f3b:f16463ad",
+          "user_id": "exchange_agent_casino_liquidity",
+          "type": "swap",
+          "symbol": "USDC",
+          "side": "buy",
+          "amount": 11.972694594,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 70
+        }
+      },
+      "last_tick": "2026-06-30T23:37:49.636793Z"
+    },
+    "exchange_agent_meme_hunter": {
+      "last_action": {
+        "agent_id": "exchange_agent_meme_hunter",
+        "agent_name": "Meme Hunter",
+        "strategy": "meme_momentum",
+        "symbol": "DOGE",
+        "side": "buy",
+        "amount": 166.504926139059,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:37:55.170613Z",
+          "trade_id": "ex-swap:2ccbb4900b174dd8:61417e78",
+          "user_id": "exchange_agent_meme_hunter",
+          "type": "swap",
+          "symbol": "DOGE",
+          "side": "buy",
+          "amount": 166.504926139059,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 75
+        }
+      },
+      "last_tick": "2026-06-30T23:38:00.824830Z"
+    },
+    "exchange_agent_defi_router": {
+      "last_action": {
+        "agent_id": "exchange_agent_defi_router",
+        "agent_name": "DeFi Router",
+        "strategy": "defi_rotation",
+        "symbol": "OP",
+        "side": "buy",
+        "amount": 7.256178541818,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:38:05.963317Z",
+          "trade_id": "ex-swap:af4a00a1d0764405:e37d282c",
+          "user_id": "exchange_agent_defi_router",
+          "type": "swap",
+          "symbol": "OP",
+          "side": "buy",
+          "amount": 7.256178541818,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 75
+        }
+      },
+      "last_tick": "2026-06-30T23:38:10.495461Z"
+    },
+    "exchange_agent_payments_hub": {
+      "last_action": {
+        "agent_id": "exchange_agent_payments_hub",
+        "agent_name": "Payments Hub",
+        "strategy": "payments_routing",
+        "symbol": "XRP",
+        "side": "buy",
+        "amount": 11.522424110327,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:38:15.869959Z",
+          "trade_id": "ex-swap:b6de3a9832c94481:8f0eef9c",
+          "user_id": "exchange_agent_payments_hub",
+          "type": "swap",
+          "symbol": "XRP",
+          "side": "buy",
+          "amount": 11.522424110327,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 75
+        }
+      },
+      "last_tick": "2026-06-30T23:38:20.400058Z"
+    },
+    "exchange_agent_mn2_yield": {
+      "last_action": {
+        "agent_id": "exchange_agent_mn2_yield",
+        "agent_name": "MN2 Yield Farmer",
+        "strategy": "native_yield",
+        "symbol": "BNB",
+        "side": "buy",
+        "amount": 0.021950818028,
+        "success": true,
+        "error": null,
+        "trade": {
+          "ts": "2026-06-30T23:38:26.594627Z",
+          "trade_id": "ex-swap:bac98c65395b48cd:4dcb6f3a",
+          "user_id": "exchange_agent_mn2_yield",
+          "type": "swap",
+          "symbol": "BNB",
+          "side": "buy",
+          "amount": 0.021950818028,
+          "quote": "MN2",
+          "usd_value": 11.9727,
+          "fee_bps": 75
+        }
+      },
+      "last_tick": "2026-06-30T23:38:32.257508Z"
+    }
+  },
+  "last_tick": "2026-06-30T23:38:32.257508Z"
+}

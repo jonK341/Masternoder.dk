@@ -12,10 +12,11 @@
 
 set -euo pipefail
 
-VERSION="${VERSION:-v1.3.0.0}"
+VERSION="${VERSION:-v1.3.1.0}"
 BASE_TAG="${BASE_TAG:-v1.2.3.0}"
 CHECKOUT_BRANCH="${CHECKOUT_BRANCH:-}"
 PATCH_FILE="${PATCH_FILE:-}"
+EXTRA_PATCH_FILE="${EXTRA_PATCH_FILE:-}"
 REPO_URL="${REPO_URL:-https://github.com/jonK341/MasterNoder2.git}"
 BUILD_ROOT="${BUILD_ROOT:-/tmp/mn2-build}"
 SRC_DIR="${BUILD_ROOT}/MasterNoder2"
@@ -142,13 +143,41 @@ checkout_source() {
   git clean -fdx
   patch -p1 --forward < "${PATCH_FILE}"
   PATCHED=1
+  if [[ -n "${EXTRA_PATCH_FILE}" ]] && [[ -f "${EXTRA_PATCH_FILE}" ]]; then
+    echo "=== Applying extra patch $(basename "${EXTRA_PATCH_FILE}") ==="
+    patch -p1 --forward < "${EXTRA_PATCH_FILE}" || {
+      echo "Extra patch failed" >&2
+      exit 1
+    }
+  fi
+}
+
+COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+
+apply_compat_patches() {
+  local f
+  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
+    return 0
+  fi
+  cd "${SRC_DIR}"
+  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
+    [[ -f "${f}" ]] || continue
+    echo "=== Applying compat patch $(basename "${f}") ==="
+    if ! patch -p1 --forward < "${f}"; then
+      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+    fi
+  done
+  if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
+    sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
+    echo "Applied sed fallback: #include <deque> in httpserver.cpp"
+  fi
 }
 
 ensure_build_deps
 
 echo "=== MN2 release build ${VERSION} ==="
 echo "BUILD_ROOT=${BUILD_ROOT}  JOBS=${JOBS}  USE_DEPENDS=${USE_DEPENDS}"
-echo "BASE_TAG=${BASE_TAG}  PATCH_FILE=${PATCH_FILE:-none}  CHECKOUT_BRANCH=${CHECKOUT_BRANCH:-none}"
+echo "BASE_TAG=${BASE_TAG}  PATCH_FILE=${PATCH_FILE:-none}  EXTRA_PATCH_FILE=${EXTRA_PATCH_FILE:-none}  CHECKOUT_BRANCH=${CHECKOUT_BRANCH:-none}"
 
 mkdir -p "${BUILD_ROOT}"
 if [[ -d "${SRC_DIR}/.git" ]]; then
@@ -160,6 +189,7 @@ else
 fi
 
 checkout_source
+apply_compat_patches
 GIT_SHA=$(git rev-parse HEAD)
 GIT_SUBJECT=$(git log -1 --format=%s)
 echo "Source: ${GIT_SHA:0:12} — ${GIT_SUBJECT}"

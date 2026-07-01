@@ -233,6 +233,28 @@ def _available_rails() -> List[str]:
     return out
 
 
+def seed_bonus(currency: str, amount: float, *, reason: str = "bonus") -> Dict[str, Any]:
+    """Add house bonus to a jackpot pool (e.g. wheel raid boss)."""
+    currency = (currency or "coins").lower()
+    conf = _config()
+    if not conf.get("enabled") or amount <= 0:
+        return {"success": False, "error": "Jackpot disabled or invalid amount"}
+    rail = conf["rails"].get(currency)
+    if not rail:
+        return {"success": False, "error": f"No jackpot rail for {currency}"}
+    with _LOCK:
+        state = _load_state()
+        cur = _ensure_rail(state, currency, rail)
+        cur["pool"] = float(cur["pool"]) + amount
+        cur["total_seeded"] = float(cur["total_seeded"]) + amount
+        _append_jledger({
+            "type": "seed", "currency": currency, "amount": amount,
+            "pool_after": cur["pool"], "reason": reason, "at": _iso(),
+        })
+        _save_state(state)
+    return {"success": True, "currency": currency, "amount": amount, "pool": cur["pool"]}
+
+
 def public_pools() -> Dict[str, Any]:
     """Current pool sizes per available rail, for the live jackpot meter."""
     conf = _config()

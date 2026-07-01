@@ -48,7 +48,7 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
             "binary",
             "/opt/masternoder2d/masternoder2d -version 2>/dev/null || masternoder2-cli -version 2>/dev/null || echo no-version",
         ),
-        ("mnsync", "masternoder2-cli mnsync 2>/dev/null | head -c 200 || echo no-mnsync"),
+        ("mnsync", "masternoder2-cli -datadir=/var/www/html/config mnsync status 2>/dev/null | head -c 200 || echo no-mnsync"),
         (
             "getstakinginfo",
             "masternoder2-cli getstakinginfo 2>/dev/null | head -c 400 || echo no-getstakinginfo",
@@ -69,13 +69,13 @@ def post_verify_checks(web: str) -> list[tuple[str, str, str]]:
     return [
         ("systemd-active", "systemctl is-active masternoder2d", "contains:active"),
         ("daemon-version", "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1", "contains:1.3"),
-        ("mnsync", "masternoder2-cli mnsync 2>&1 | head -c 200", "no_error"),
+        ("mnsync", "masternoder2-cli -datadir=/var/www/html/config mnsync status 2>&1 | head -c 200", "no_error"),
         ("getstakinginfo", "masternoder2-cli getstakinginfo 2>&1 | head -c 400", "no_error"),
         ("getnewaddress", "masternoder2-cli getnewaddress 2>&1 | head -1", "no_error"),
-        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"ok"'),
+        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"healthy"'),
         (
             "staking-rpc",
-            f"cd {web} && ./venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
+            f"cd {web} && PYTHONPATH={web} /var/www/html/.venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
             "contains:ok",
         ),
     ]
@@ -148,10 +148,11 @@ def main() -> int:
         return 1
 
     host, user = deploy_host(), deploy_user()
-    pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=user, password=pw, timeout=30)
+    from deploy_ssh_env import connect_deploy_ssh
+
+    if args.ask_pass:
+        require_deploy_pass(force_prompt=True)
+    ssh = connect_deploy_ssh()[0]
     print(f"Connected {user}@{host}\n")
 
     web = "/var/www/html"
@@ -162,14 +163,14 @@ def main() -> int:
             print(sh(ssh, cmd, timeout=120))
             print()
 
-    if args.verify_post:
+    if args.verify_post and not args.apply:
         ok = run_post_verify(ssh, web)
         ssh.close()
         return 0 if ok else 1
 
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
-        print(f"=== upgrade {TARGET_VERSION} (stop → backup wallet → fetch → verify → install → start) ===")
+        print(f"=== upgrade {TARGET_VERSION} (stop -> backup wallet -> fetch -> verify -> install -> start) ===")
         script = f"""
 set -e
 MANIFEST_URL='{manifest_url}'
@@ -207,8 +208,9 @@ test -n "$DAEMON" || {{ echo 'masternoder2d binary not in tarball'; exit 1; }}
 cp "$DAEMON" /opt/masternoder2d/masternoder2d
 chmod +x /opt/masternoder2d/masternoder2d
 if [[ -n "$CLI" ]]; then
-  cp "$CLI" /usr/local/bin/masternoder2-cli 2>/dev/null || cp "$CLI" /opt/masternoder2d/masternoder2-cli
-  chmod +x /usr/local/bin/masternoder2-cli 2>/dev/null || chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /opt/masternoder2d/masternoder2-cli
+  chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /usr/local/bin/masternoder2-cli 2>/dev/null || true
 fi
 if [[ -n "$TX" ]]; then
   cp "$TX" /usr/local/bin/masternoder2-tx 2>/dev/null || true
@@ -227,7 +229,7 @@ fi
 
 systemctl start masternoder2d
 sleep 15
-masternoder2-cli -datadir=/var/www/html/config startmasternode local false 2>/dev/null || true
+/opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config startmasternode local false 2>/dev/null || true
 """
         print(sh(ssh, script, timeout=600))
         ok = run_post_verify(ssh, web)

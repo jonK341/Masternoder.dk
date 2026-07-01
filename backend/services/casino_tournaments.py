@@ -192,6 +192,17 @@ def _create_from_template(tpl: Dict[str, Any], conf: Dict[str, Any], state: Dict
     }
     _append_tledger({"type": "seed", "tournament_id": tid, "currency": currency,
                      "amount": house_seed, "pool_after": house_seed, "at": _iso()})
+    try:
+        from backend.services.casino_social_service import on_tournament_start
+        on_tournament_start(
+            tournament_id=tid,
+            title=t.get("name") or "Casino tournament",
+            currency=currency,
+            pool=house_seed,
+            end_at=t.get("end_at") or "",
+        )
+    except Exception:
+        pass
     return t
 
 
@@ -281,6 +292,14 @@ def _finalize(t: Dict[str, Any]) -> None:
                     prize=float(r.get("prize") or 0),
                     currency=currency,
                 )
+    except Exception:
+        pass
+    try:
+        from backend.services import casino_competition_service
+        for r in results:
+            uid = r.get("user_id")
+            if uid:
+                casino_competition_service.on_tournament_close(str(uid), int(r.get("rank") or 999))
     except Exception:
         pass
     fair = t.get("fairness") or {}

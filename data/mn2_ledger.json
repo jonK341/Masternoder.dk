@@ -1,0 +1,685 @@
+{
+  "entries": [
+    {
+      "user_id": "prog_claim_user",
+      "type": "trophy_reward",
+      "amount": 0.00135,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:24:21.323887Z",
+      "metadata": {
+        "source": "progression_quest",
+        "level": 1
+      }
+    },
+    {
+      "user_id": "streak_user",
+      "type": "trophy_reward",
+      "amount": 0.007,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:26:41.959475Z",
+      "metadata": {
+        "source": "quest_claim_streak",
+        "streak_days": 7
+      }
+    },
+    {
+      "user_id": "prog_claim_user",
+      "type": "trophy_reward",
+      "amount": 0.00135,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:27:08.469154Z",
+      "metadata": {
+        "source": "progression_quest",
+        "level": 1
+      }
+    },
+    {
+      "user_id": "streak_user",
+      "type": "trophy_reward",
+      "amount": 0.007,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:29:46.382447Z",
+      "metadata": {
+        "source": "quest_claim_streak",
+        "streak_days": 7
+      }
+    },
+    {
+      "user_id": "prog_claim_user",
+      "type": "trophy_reward",
+      "amount": 0.00135,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:31:47.904134Z",
+      "metadata": {
+        "source": "progression_quest",
+        "level": 1
+      }
+    },
+    {
+      "user_id": "streak_user",
+      "type": "trophy_reward",
+      "amount": 0.007,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-24T03:33:23.202401Z",
+      "metadata": {
+        "source": "quest_claim_streak",
+        "streak_days": 7
+      }
+    },
+    {
+      "user_id": "unit_test_user_999",
+      "type": "generator_mn2_earn",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-25T17:00:16.524536Z",
+      "metadata": {
+        "doc_id": "unit-test-doc-999",
+        "tier": "standard",
+        "source": "generator_finish_bonus",
+        "reference": "gen-earn:unit-test-doc-999"
+      }
+    },
+    {
+      "user_id": "unit_test_user_998",
+      "type": "generator_mn2_earn",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-25T17:01:51.420465Z",
+      "metadata": {
+        "doc_id": "unit-test-doc-998",
+        "tier": "standard",
+        "source": "generator_finish_bonus",
+        "reference": "gen-earn:unit-test-doc-998"
+      }
+    },
+    {
+      "user_id": "unit_test_user_997",
+      "type": "generator_mn2_earn",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-25T17:05:26.587817Z",
+      "metadata": {
+        "doc_id": "unit-test-doc-997",
+        "tier": "standard",
+        "source": "generator_finish_bonus",
+        "reference": "gen-earn:unit-test-doc-997"
+      }
+    },
+    {
+      "user_id": "u_pp",
+      "type": "paypal_mn2_pack",
+      "amount": 5.0,
+      "txid": "paypal_mn2_pack:c:mn2-pack-m",
+      "address": null,
+      "created_at": "2026-06-25T17:18:27.246329Z",
+      "metadata": {
+        "order_id": "o",
+        "capture_id": "c",
+        "item_id": "mn2-pack-m",
+        "item_name": "5 MN2",
+        "amount_usd": 4.99,
+        "quantity": 1,
+        "purchase_source": "paypal_mn2_pack",
+        "reference": "paypal_mn2_pack:c:mn2-pack-m",
+        "source": "paypal_mn2_pack"
+      }
+    },
+    {
+      "user_id": "streak_user",
+      "type": "trophy_reward",
+      "amount": 0.007,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-25T17:34:38.625418Z",
+      "metadata": {
+        "source": "quest_claim_streak",
+        "streak_days": 7
+      }
+    },
+    {
+      "user_id": "user_gate_b",
+      "type": "test_reward",
+      "amount": 0.01,
+      "txid": "gateb-ref-1",
+      "address": null,
+      "created_at": "2026-06-25T17:34:48.706317Z",
+      "metadata": {
+        "reference": "gateb-ref-1",
+        "source": "test_reward"
+      }
+    },
+    {
+      "user_id": "streak_user",
+      "type": "trophy_reward",
+      "amount": 0.007,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-06-26T11:46:27.110378Z",
+      "metadata": {
+        "source": "quest_claim_streak",
+        "streak_days": 7
+      }
+    },
+    {
+      "user_id": "user_gate_b",
+      "type": "test_reward",
+      "amount": 0.01,
+      "txid": "gateb-ref-1",
+      "address": null,
+      "created_at": "2026-06-26T11:46:32.751043Z",
+      "metadata": {
+        "reference": "gateb-ref-1",
+        "source": "test_reward"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-26T21:08:16.084989Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-26T21:10:54.811588Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-26T21:11:16.304954Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T18:34:26.588892Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T18:35:19.801291Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T18:35:55.882620Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T18:37:14.885072Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T18:39:53.045610Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T19:44:26.070622Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T19:46:40.719097Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T19:54:47.871324Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T19:55:09.127341Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T19:57:03.272673Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:03:04.033345Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:03:36.068505Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:17:22.656143Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:18:23.139870Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:24:07.226559Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:30:50.042401Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:37:18.659456Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:42:38.199012Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T20:57:07.955713Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T21:06:38.042691Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-27T21:30:57.421831Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-06-30T17:19:36.548254Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    }
+  ]
+}

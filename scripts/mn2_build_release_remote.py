@@ -28,15 +28,16 @@ except Exception:
     pass
 
 import paramiko
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
-from mn2_release_config import BASE_TAG, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
+from mn2_release_config import BASE_TAG, EXTRA_PATCH_REL, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
 
-BUILD_ROOT = "/tmp/mn2-build"
+BUILD_ROOT = "/var/mn2-build"
 LOCAL_DIST = os.path.join(ROOT, "dist")
 REMOTE_DIST = f"{BUILD_ROOT}/dist"
 REMOTE_TAR = f"{REMOTE_DIST}/masternoder2d.tar.gz"
 REMOTE_MANIFEST = f"{REMOTE_DIST}/{MANIFEST_NAME}"
 REMOTE_PATCH = "/tmp/mn2-daemon-v1.3.0-multi-ping.patch"
+REMOTE_EXTRA_PATCH = "/tmp/mn2-daemon-v1.3.1-exchange-sporks.patch"
 
 BOOST_DEPENDS_RE = re.compile(
     r"Failed to build Boost\.Build engine|boost.*stamp_configured|funcs\.mk:.*boost",
@@ -91,16 +92,25 @@ def upload_script(ssh, local_name: str, remote_name: str) -> str:
     return remote_path
 
 
-def upload_patch(ssh) -> str:
-    local_path = os.path.join(ROOT, PATCH_REL)
+def upload_patch(ssh, rel_path: str, remote_path: str) -> str:
+    import base64
+
+    local_path = os.path.join(ROOT, rel_path)
     if not os.path.isfile(local_path):
         raise SystemExit(f"Patch not found: {local_path}")
-    sftp = ssh.open_sftp()
-    with sftp.file(REMOTE_PATCH, "w") as rf:
-        with open(local_path, "rb") as lf:
-            rf.write(lf.read())
-    sftp.close()
-    return REMOTE_PATCH
+    data = open(local_path, "rb").read()
+    b64 = base64.b64encode(data).decode("ascii")
+    cmd = (
+        f"python3 -c \"import base64, pathlib; "
+        f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+    )
+    _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+    err = stderr.read().decode(errors="replace").strip()
+    out = stdout.read().decode(errors="replace").strip()
+    code = stdout.channel.recv_exit_status()
+    if code != 0:
+        raise SystemExit(f"upload_patch failed for {rel_path}: {err or out}")
+    return remote_path
 
 
 def main() -> int:
@@ -130,27 +140,33 @@ def main() -> int:
     if args.auto_fast:
         args.fast = False
 
-    pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
+    pw = None
+    if args.ask_pass:
+        pw = require_deploy_pass(force_prompt=True)
+    ssh, auth_method, _ = connect_deploy_ssh(password=pw)
+    print(f"Connected to {deploy_user()}@{deploy_host()} via {auth_method}")
 
     remote_build = upload_script(ssh, "mn2_build_release.sh", "mn2_build_release.sh")
     upload_script(ssh, "mn2_build_smoke.sh", "mn2_build_smoke.sh")
 
     patch_file = ""
+    extra_patch_file = ""
     if not args.no_patch and not args.branch:
-        patch_file = upload_patch(ssh)
-        print(f"Uploaded patch → {patch_file}")
+        patch_file = upload_patch(ssh, PATCH_REL, REMOTE_PATCH)
+        print(f"Uploaded patch -> {patch_file}")
+        extra_patch_file = upload_patch(ssh, EXTRA_PATCH_REL, REMOTE_EXTRA_PATCH)
+        print(f"Uploaded extra patch -> {extra_patch_file}")
 
     def run_remote_build(use_fast: bool) -> tuple[int, str, str]:
         use_dep = "0" if use_fast else "1"
         install_deps = "0" if args.skip_deps else "1"
         branch = args.branch.replace("'", "")
         cmd = (
+            f"mkdir -p {BUILD_ROOT} && "
             f"export BUILD_ROOT={BUILD_ROOT} JOBS={args.jobs} USE_DEPENDS={use_dep} "
             f"INSTALL_BUILD_DEPS={install_deps} VERSION={TARGET_VERSION} BASE_TAG={BASE_TAG} "
-            f"PATCH_FILE='{patch_file}' CHECKOUT_BRANCH='{branch}'; "
+            f"PATCH_FILE='{patch_file}' EXTRA_PATCH_FILE='{extra_patch_file}' "
+            f"CHECKOUT_BRANCH='{branch}'; "
             f"bash {remote_build}"
         )
         print(
@@ -162,9 +178,15 @@ def main() -> int:
         exit_code = stdout.channel.recv_exit_status()
         out = stdout.read().decode(errors="replace")
         err = stderr.read().decode(errors="replace")
-        print(out)
+        try:
+            print(out)
+        except UnicodeEncodeError:
+            print(out.encode("ascii", errors="replace").decode("ascii"))
         if err.strip():
-            print(err, file=sys.stderr)
+            try:
+                print(err, file=sys.stderr)
+            except UnicodeEncodeError:
+                print(err.encode("ascii", errors="replace").decode("ascii"), file=sys.stderr)
         return exit_code, out, err
 
     exit_code, out, err = run_remote_build(args.fast)

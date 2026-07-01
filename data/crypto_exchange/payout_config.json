@@ -1,0 +1,33 @@
+{
+  "destination": "paypal",
+  "paypal": {
+    "email": "paypal@sharpobject-world.com",
+    "share_pct": 0.5,
+    "connected": true
+  },
+  "binance": {
+    "connected": false,
+    "account_label": "",
+    "deposit_addresses": {},
+    "withdraw_address": "TMEhcbbBrMjN6R946HwkyMrqq8WkWnRjrE",
+    "withdraw_network": "TRC20",
+    "withdraw_enabled": true,
+    "max_withdraw_per_day_usdt": 10000.0,
+    "withdrawn_today_usdt": 0.0,
+    "withdraw_day": ""
+  },
+  "stash_asset": "USDT",
+  "min_sweep_usd": 50.0,
+  "auto_sweep": true,
+  "swept_total_usd": 446464.2053,
+  "updated_at": "2026-06-30T23:04:10.027294Z",
+  "last_sweep": {
+    "ts": "2026-06-30T15:19:08.969963Z",
+    "destination": "paypal",
+    "receiver_email": "paypal@sharpobject-world.com",
+    "amount_usd": 72.5974,
+    "share_pct": 50.0,
+    "mode": "paper",
+    "payout_batch_id": null
+  }
+}
