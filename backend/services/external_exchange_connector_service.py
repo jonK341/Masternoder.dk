@@ -286,6 +286,9 @@ def fetch_ticker(venue_id: str, base: str, *, timeout: float = 6.0) -> Optional[
         import requests
     except Exception:
         return None
+    from backend.services.exchange_http_util import force_ipv4_outbound_if_configured
+
+    force_ipv4_outbound_if_configured()
     pair = build_pair(venue, base)
     url = str(venue.get("ticker_url") or "").format(pair=pair)
     if not url:

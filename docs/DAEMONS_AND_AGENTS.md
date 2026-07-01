@@ -161,4 +161,4 @@ Exchange master is **not yet** shipped as a systemd unit — copy the agent-daem
 - Live crypto: `EXCHANGE_ARBITRAGE_LIVE=1` + vault API keys.
 - Kill-switch: control board or `trading_bots_control.json`.
 
-See also: `docs/EXCHANGE_CROSS_VENUE_ARBITRAGE.md`, `docs/MN2_DAEMON_SETUP.md`
+See also: `docs/EXCHANGE_CROSS_VENUE_ARBITRAGE.md`, `docs/LIVE_PROFIT_TRADING.md`, `docs/MN2_DAEMON_SETUP.md`

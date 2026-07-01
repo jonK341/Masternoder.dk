@@ -189,6 +189,27 @@ Expect `Live-ready venues: 2` with both `binance` and `nonkyc` showing `live_rea
 
 API docs: [https://nonkyc.io](https://nonkyc.io) → API section · base URL `https://api.nonkyc.io/api/v2`
 
+### 5. IP whitelist (required for server cron)
+
+NonKYC returns **401** if the caller IP is not whitelisted. Add:
+
+- Your **home IP** (local profit daemon)
+- The VPS **outbound IP** (not always the same as the hosting panel IP)
+
+Verify:
+
+```cmd
+python scripts\_run_server_live_check.py
+```
+
+Look for `server_outbound_ip=` and `nonkyc api_ok=True`.
+
+---
+
+## Live operator guide (Path B, referrals, TODO)
+
+Full runbook: **[LIVE_PROFIT_TRADING.md](LIVE_PROFIT_TRADING.md)** — USDC Binance + USDT NonKYC, referral links, inventory setup, and open follow-ups.
+
 ---
 
 ## Phased rollout

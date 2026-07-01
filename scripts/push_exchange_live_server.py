@@ -34,8 +34,14 @@ UPLOAD_FILES = [
     "backend/services/crypto_exchange_service.py",
     "backend/services/external_exchange_connector_service.py",
     "backend/services/exchange_venue_api_service.py",
+    "backend/services/exchange_http_util.py",
     "backend/services/exchange_ai_trading_service.py",
     "backend/services/exchange_treasury_service.py",
+    "backend/services/exchange_treasury_liquidity_service.py",
+    "backend/routes/crypto_exchange_routes.py",
+    "data/mn2_masternode_config.json",
+    "backend/services/mn2_masternode_service.py",
+    "dashboard/agents_control/index.html",
     "backend/services/agent_marketplace_service.py",
     "backend/services/trading_bots_control_service.py",
     "backend/services/exchange_extended_profit_service.py",
@@ -51,6 +57,7 @@ UPLOAD_FILES = [
     "scripts/configure_live_profit_max.py",
     "scripts/profit_status_report.py",
     "scripts/_server_live_check_once.py",
+    "docs/LIVE_PROFIT_TRADING.md",
 ]
 
 KEYS = [
@@ -75,6 +82,8 @@ KEYS = [
     "EXCHANGE_LIVE_PROFIT_MAX",
     "EXCHANGE_LIVE_MICRO_USD",
     "BINANCE_QUOTE",
+    "EXCHANGE_AUTO_PAYPAL_SWEEP",
+    "EXCHANGE_FORCE_IPV4",
 ]
 
 

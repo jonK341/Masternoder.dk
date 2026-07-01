@@ -26,6 +26,8 @@ def main() -> int:
             "cd /var/www/html && "
             "export DAEMON_QUIET=1 LITE_APP=1 EXCHANGE_ARBITRAGE_LIVE=1 "
             "EXCHANGE_LIVE_PROFIT_MAX=1 BINANCE_QUOTE=USDC && "
+            "echo server_outbound_ipv4=$(curl -4 -s --max-time 8 ifconfig.me || curl -4 -s --max-time 8 api.ipify.org) && "
+            "echo server_outbound_ipv6=$(curl -6 -s --max-time 8 ifconfig.me 2>/dev/null || echo none) && "
             "python3 scripts/remote_vault_import.py 2>&1 | tail -3 && "
             "python3 scripts/_server_live_check_once.py && "
             "grep BINANCE_QUOTE /var/www/html/.env && "

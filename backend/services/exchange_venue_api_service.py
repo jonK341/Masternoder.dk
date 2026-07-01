@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
 from backend.services import external_exchange_connector_service as conn
+from backend.services.exchange_http_util import force_ipv4_outbound_if_configured
 
 _API_CFG_PATH = ex._BASE + "/data/exchange_venue_api_config.json"
 
@@ -76,6 +77,7 @@ def _http_request(method: str, url: str, *, headers: Optional[Dict[str, str]] = 
         import requests
     except Exception:
         return {"success": False, "error": "requests_unavailable"}
+    force_ipv4_outbound_if_configured()
     try:
         resp = requests.request(method.upper(), url, headers=headers or {}, data=data, timeout=timeout)
         body: Any
@@ -423,6 +425,33 @@ def can_fund_arb_leg(
         "free": round(free, 8),
         "need": need,
     }
+
+
+def max_funded_notional_usd(
+    symbol: str,
+    buy_venue: str,
+    sell_venue: str,
+    buy_ask: float,
+    *,
+    configured_usd: float,
+    buffer_pct: float = 0.03,
+) -> float:
+    """Max USD notional both arb legs can fund at ``buy_ask`` (live spot balances)."""
+    if buy_ask <= 0 or configured_usd <= 0:
+        return 0.0
+    if buy_venue == "internal" and sell_venue == "internal":
+        return configured_usd
+    buy_cap = configured_usd
+    if buy_venue != "internal":
+        quote = venue_quote_asset(buy_venue)
+        free_quote = float(parse_spot_balances(buy_venue, dry_run=False).get(quote) or 0)
+        buy_cap = free_quote / (1.0 + buffer_pct)
+    sell_cap = configured_usd
+    if sell_venue != "internal":
+        sym = str(symbol or "").upper()
+        free_coin = float(parse_spot_balances(sell_venue, dry_run=False).get(sym) or 0)
+        sell_cap = free_coin * buy_ask * (1.0 - buffer_pct)
+    return max(0.0, min(float(configured_usd), buy_cap, sell_cap))
 
 
 def opportunity_funded(opp: Dict[str, Any], *, buffer_pct: float = 0.03) -> Dict[str, Any]:

@@ -7,4 +7,5 @@ export DAEMON_QUIET=1
 export EXCHANGE_PROFIT_PROFILE=max
 export EXCHANGE_LIVE_PROFIT_MAX=1
 export BINANCE_QUOTE=USDC
-python3 scripts/exchange_master_daemon.py --once --auto-sweep
+export EXCHANGE_AUTO_PAYPAL_SWEEP=0
+python3 scripts/exchange_master_daemon.py --once

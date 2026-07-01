@@ -29,6 +29,8 @@ def _auto_sweep_default(cli_flag: bool) -> bool:
     if cli_flag:
         return True
     load_dotenv()
+    if os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "0").strip().lower() in ("0", "false", "no", "off"):
+        return False
     return is_arbitrage_live() or is_paypal_payout_live()
 
 

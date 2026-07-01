@@ -68,6 +68,7 @@ def _tune_connectors() -> None:
     cfg["mode"] = "live"
     cfg["min_margin_bps"] = 18
     cfg["transfer_cost_bps"] = 14
+    cfg["prefunded_transfer_cost_bps"] = 6
     cfg["price_cache_ttl_sec"] = 15
     cfg["paper_trade_usd"] = micro
     binance_quote = (os.environ.get("BINANCE_QUOTE") or "USDC").strip().upper()
@@ -79,9 +80,9 @@ def _tune_connectors() -> None:
             continue
         aid = str(agent.get("id") or "")
         if aid == "arb_live_dual_farm":
-            agent["venues"] = ["binance", "nonkyc", "xeggex"]
+            agent["venues"] = ["binance", "nonkyc"]
             agent["paper_trade_usd"] = max(micro, 75.0)
-            agent["symbols"] = ["BTC", "ETH", "SOL", "XRP", "DOGE", "LTC", "AVAX", "LINK"]
+            agent["symbols"] = ["DOGE", "XRP", "LTC", "SOL", "ETH", "BTC", "AVAX", "LINK"]
         elif aid == "arb_agent_internal":
             agent["venues"] = ["binance", "nonkyc", "xeggex", "internal"]
             agent["paper_trade_usd"] = 400.0
@@ -103,8 +104,8 @@ def _tune_extended_profit() -> None:
     dual = strategies.setdefault("live_dual_venue", {})
     dual.update({
         "enabled": True,
-        "venues": ["binance", "nonkyc", "xeggex"],
-        "symbols": ["BTC", "ETH", "SOL", "XRP", "DOGE", "LTC", "AVAX", "LINK", "TRX"],
+        "venues": ["binance", "nonkyc"],
+        "symbols": ["DOGE", "XRP", "LTC", "SOL", "ETH", "BTC", "AVAX", "LINK", "TRX"],
         "min_net_bps": 12,
         "notional_usd": max(micro, 75.0),
         "max_executions_per_tick": 2,
@@ -168,9 +169,16 @@ def _tune_treasury_and_payout() -> None:
     if os.path.isfile(ppath):
         with open(ppath, encoding="utf-8") as fh:
             payout = json.load(fh)
-    payout["auto_sweep"] = True
-    payout["min_sweep_usd"] = 35.0
+    payout["auto_sweep"] = False
+    payout["min_sweep_usd"] = 500.0
     _write_json(ppath, payout)
+
+    tpath = os.path.join(ROOT, "data", "exchange_treasury_config.json")
+    if os.path.isfile(tpath):
+        with open(tpath, encoding="utf-8") as fh:
+            treasury = json.load(fh)
+        treasury["auto_paypal_sweep"] = False
+        _write_json(tpath, treasury)
 
 
 def main() -> int:
@@ -182,6 +190,8 @@ def main() -> int:
     _ensure_env_flag("EXCHANGE_LIVE_PROFIT_MAX", "1")
     _ensure_env_flag("EXCHANGE_LIVE_MICRO_USD", os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75"))
     _ensure_env_flag("BINANCE_QUOTE", os.environ.get("BINANCE_QUOTE", "USDC"))
+    _ensure_env_flag("EXCHANGE_AUTO_PAYPAL_SWEEP", os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "0"))
+    _ensure_env_flag("EXCHANGE_FORCE_IPV4", os.environ.get("EXCHANGE_FORCE_IPV4", "1"))
 
     imported = _import_vault_keys()
     _tune_connectors()

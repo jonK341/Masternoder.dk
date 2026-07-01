@@ -187,6 +187,18 @@ def _best_opportunity(
     }
 
 
+def _scale_opportunity_notional(opp: Dict[str, Any], notional_usd: float) -> Dict[str, Any]:
+    old = float(opp.get("notional_usd") or 0)
+    if old <= 0 or abs(old - notional_usd) < 0.01:
+        return opp
+    ratio = notional_usd / old
+    scaled = dict(opp)
+    scaled["notional_usd"] = round(notional_usd, 2)
+    scaled["sized_notional_usd"] = round(notional_usd, 2)
+    scaled["est_profit_usd"] = round(float(opp.get("est_profit_usd") or 0) * ratio, 4)
+    return scaled
+
+
 def scan_opportunities(
     symbols: Optional[List[str]] = None,
     venues: Optional[List[str]] = None,
@@ -283,6 +295,29 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
             from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
             from backend.services import exchange_venue_api_service as vapi
             if live_enabled():
+                cap = vapi.max_funded_notional_usd(
+                    best["symbol"],
+                    best["buy_venue"],
+                    best["sell_venue"],
+                    float(best["buy_ask"]),
+                    configured_usd=notional,
+                )
+                min_live_usd = 10.0
+                if cap >= min_live_usd:
+                    best = _scale_opportunity_notional(best, min(notional, cap))
+                else:
+                    action = {
+                        "agent_id": agent_id,
+                        "executed": False,
+                        "reason": "insufficient_venue_balance",
+                        "best": best,
+                        "max_funded_usd": round(cap, 2),
+                        "mode": "live",
+                    }
+                    acct["last_action"] = action
+                    write_account(acct)
+                    actions.append(action)
+                    continue
                 funding = vapi.opportunity_funded(best)
                 if not funding.get("ok"):
                     action = {
