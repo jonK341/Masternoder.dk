@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Masternode fleet: install boot autostart, run local-first start, poll ENABLED / activetime.
+Masternode fleet: install boot autostart, run local-first start, poll activetime health.
 
-Run after deploy (while waiting for masternodes to go ENABLED):
+Run after deploy (while waiting for hosted nodes to show rising activetime):
 
   python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass
-  python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --watch --interval 30
+  python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --watch --target-all --interval 30
+  python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --watch --target 3
   python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --status-only
   python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --install-autostart --no-start
 
@@ -46,8 +47,44 @@ DO_START="__START__"
 DO_WATCH="__WATCH__"
 WATCH_SEC="__INTERVAL__"
 WATCH_MAX="__MAX_LOOPS__"
+WATCH_TARGET="__WATCH_TARGET__"
+WATCH_TARGET_MODE="__WATCH_TARGET_MODE__"
 
 log() { echo "[fleet-ops] $*"; }
+
+read_ops_secret() {
+  # shellcheck source=/dev/null
+  source "$WEB/cron/mn2_read_ops_secret.sh" 2>/dev/null || true
+  mn2_read_ops_secret 2>/dev/null || grep -E '^(MN2_OPS_SECRET|MN2_SCAN_SECRET)=' "$WEB/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r"'
+}
+
+sync_ping_targets() {
+  SECRET=$(read_ops_secret)
+  if [ -z "${SECRET:-}" ]; then
+    log "WARN: no ops secret — skip sync-ping-targets"
+    return 0
+  fi
+  echo ""
+  echo "== sync-ping-targets (multi-ping register) =="
+  OUT=$(curl -sS -m 90 -X POST -H "X-Ops-Secret: ${SECRET}" \
+    http://127.0.0.1:5000/api/mn2/masternode/sync-ping-targets 2>&1 || true)
+  echo "$OUT" | head -c 600
+  echo ""
+}
+
+read_service_counts() {
+  curl -sS -m 30 "http://127.0.0.1:5000/api/mn2/masternode/service?fresh=1" 2>/dev/null | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print('0 0'); sys.exit(0)
+if not d.get('success', True):
+    print('0 0'); sys.exit(0)
+daemon = d.get('daemon') or {}
+print(int(daemon.get('enabled_with_activetime') or 0), int(d.get('hosted_count') or 0))
+" 2>/dev/null || echo "0 0"
+}
 
 wait_rpc() {
   local i max sec="${MN2_RPC_WAIT_SEC:-180}"
@@ -247,6 +284,7 @@ for r in rows:
       $CLI startmasternode alias false "$a" 2>/dev/null || true
     done
   fi
+  sync_ping_targets
 fi
 
 show_status
@@ -255,33 +293,52 @@ if [ "$DO_WATCH" = "1" ]; then
   loops=0
   while [ "$loops" -lt "$WATCH_MAX" ]; do
     loops=$((loops + 1))
-    enabled=$($CLI listmasternodes 2>/dev/null | python3 -c "
-import json,sys
-try:
-    rows=json.load(sys.stdin)
-except Exception:
-    print(0); sys.exit(0)
-if not isinstance(rows, list):
-    rows=[rows]
-print(sum(1 for r in rows if isinstance(r,dict) and 'ENABLE' in str(r.get('status','')).upper()))
-" 2>/dev/null || echo 0)
+    counts=$(read_service_counts)
+    rising=$(echo "$counts" | awk '{print $1}')
+    hosted=$(echo "$counts" | awk '{print $2}')
+    if [ "$WATCH_TARGET_MODE" = "hosted" ]; then
+      target="$hosted"
+      [ -z "$target" ] || [ "$target" -lt 1 ] 2>/dev/null && target=1
+    else
+      target="$WATCH_TARGET"
+      [ -z "$target" ] || [ "$target" -lt 1 ] 2>/dev/null && target=1
+    fi
     echo ""
-    log "watch $loops/$WATCH_MAX — ENABLED count=$enabled (sleep ${WATCH_SEC}s)"
-    if [ "$enabled" -ge 1 ] 2>/dev/null; then
-      log "At least one ENABLED — showing final status"
+    log "watch $loops/$WATCH_MAX — enabled_with_activetime=$rising / target=$target (hosted=$hosted, sleep ${WATCH_SEC}s)"
+    if [ "$rising" -ge "$target" ] 2>/dev/null; then
+      log "Activetime target met ($rising >= $target) — showing final status"
       show_status
       exit 0
     fi
     sleep "$WATCH_SEC"
   done
-  log "Watch ended without ENABLED — check hairpin masternodeaddr=127.0.0.1:17646"
+  log "Watch ended without activetime target — check multi-ping / masternodeaddr=127.0.0.1:17646"
   show_status
 fi
 ENDSCRIPT
 '''
 
 
-def build_remote(*, install: bool, start: bool, watch: bool, interval: int, max_loops: int, fix_privkey: bool) -> str:
+def resolve_watch_target(*, target: int | None, target_all: bool) -> tuple[int, str]:
+    """Return (fixed_target, mode) where mode is 'hosted' or 'fixed'."""
+    if target_all:
+        return 1, "hosted"
+    if target is not None:
+        return max(1, target), "fixed"
+    return 1, "fixed"
+
+
+def build_remote(
+    *,
+    install: bool,
+    start: bool,
+    watch: bool,
+    interval: int,
+    max_loops: int,
+    fix_privkey: bool,
+    watch_target: int,
+    watch_target_mode: str,
+) -> str:
     return (
         REMOTE.replace("__INSTALL__", "1" if install else "0")
         .replace("__FIX_PRIVKEY__", "1" if fix_privkey else "0")
@@ -289,6 +346,8 @@ def build_remote(*, install: bool, start: bool, watch: bool, interval: int, max_
         .replace("__WATCH__", "1" if watch else "0")
         .replace("__INTERVAL__", str(max(10, interval)))
         .replace("__MAX_LOOPS__", str(max(1, max_loops)))
+        .replace("__WATCH_TARGET__", str(max(1, watch_target)))
+        .replace("__WATCH_TARGET_MODE__", watch_target_mode)
     )
 
 
@@ -302,10 +361,30 @@ def main() -> int:
     p.add_argument("--no-start", action="store_true", help="Skip mn2_start_masternode.py")
     p.add_argument("--fix-privkey", action="store_true", help="Verify/fix masternoder2.conf privkey (default: on unless --no-fix-privkey)")
     p.add_argument("--no-fix-privkey", action="store_true", help="Skip masternoder2.conf privkey verify/fix")
-    p.add_argument("--watch", action="store_true", help="Poll until at least one ENABLED")
+    p.add_argument(
+        "--watch",
+        action="store_true",
+        help="Poll GET /api/mn2/masternode/service until enabled_with_activetime meets target",
+    )
+    p.add_argument(
+        "--target-all",
+        action="store_true",
+        help="Watch until enabled_with_activetime >= hosted_count (all hosted nodes healthy)",
+    )
+    p.add_argument(
+        "--target",
+        type=int,
+        metavar="N",
+        help="Watch until enabled_with_activetime >= N (default 1 with --watch only)",
+    )
     p.add_argument("--interval", type=int, default=30, help="Watch poll seconds (default 30)")
     p.add_argument("--max-loops", type=int, default=40, help="Max watch iterations (~20 min at 30s)")
     args = p.parse_args()
+
+    if args.target is not None and args.target_all:
+        p.error("--target and --target-all are mutually exclusive")
+    if args.target is not None and args.target < 1:
+        p.error("--target must be >= 1")
 
     install = not args.no_install and not args.status_only
     if args.install_autostart:
@@ -316,6 +395,11 @@ def main() -> int:
     if args.fix_privkey:
         fix_privkey = True
 
+    watch_target, watch_target_mode = resolve_watch_target(
+        target=args.target,
+        target_all=args.target_all,
+    )
+
     remote = build_remote(
         install=install,
         start=start,
@@ -323,6 +407,8 @@ def main() -> int:
         interval=args.interval,
         max_loops=args.max_loops,
         fix_privkey=fix_privkey,
+        watch_target=watch_target,
+        watch_target_mode=watch_target_mode,
     )
 
     if args.dry_run:
@@ -340,7 +426,9 @@ def main() -> int:
     ssh.close()
     ok = "RPC ready" in out or "listmasternodeconf" in out.lower()
     if watch:
-        ok = ok and ("At least one ENABLED" in out or "ENABLED count=" in out)
+        ok = ok and (
+            "Activetime target met" in out or "enabled_with_activetime=" in out
+        )
     return 0 if ok else 1
 
 
