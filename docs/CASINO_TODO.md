@@ -1,6 +1,8 @@
 # Casino master TODO — Masternoder.dk
 
-Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
+Branch: `feat/casino-mega-expansion` · Updated: **2026-07-01**
+
+Progress table: [CASINO_OPS_PROGRESS.md](CASINO_OPS_PROGRESS.md)
 
 ---
 
@@ -44,23 +46,63 @@ Branch: `feat/casino-mega-expansion` · Updated: **2026-06-30**
 
 ## Ops (actionable)
 
-### Ops 2 — Tuesday Play SHA → assetlinks.json
+### Ops 1 — Deploy casino slice
 
-- [ ] Pay **$25** at [Play Console signup](https://play.google.com/console/signup)
-- [ ] Create app **`dk.masternoder.casino`** and upload first AAB (Internal testing)
-- [ ] Play Console → **Release → Setup → App integrity → App signing** → copy **App signing key certificate** SHA-256
-- [ ] Run `python scripts/casino_play_assetlinks_update.py "<SHA-256>"` (colons optional)
-- [ ] Deploy: `python scripts/deploy.py well_known --ask-pass`
-- [ ] Verify: `curl -sS https://masternoder.dk/.well-known/assetlinks.json | jq .`
-- [ ] Optional strict test: `$env:CASINO_ASSETLINKS_STRICT="1"; python -m pytest tests/unit/test_casino_assetlinks.py -q`
+- [x] Deploy manifest complete — **68 files** (`agent_casino_routes.py`, seed JSON, UI, cron fanout); `python scripts/deploy.py casino --list-files`
+- [x] Casino test suite — **111 passed**, 2 skipped (2026-07-01)
+- [ ] **USER:** `python scripts/deploy.py casino --ask-pass` (Wave 5 routes + `casino.js` + config)
+- [ ] **USER:** Verify `curl -sS https://masternoder.dk/api/agent/casino/models | jq .`
 
-Full walkthrough: [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
+Walkthrough: [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md)
 
-- [ ] **Deploy casino slice** — `python scripts/deploy.py casino --ask-pass` (Wave 5 routes + `casino.js` + config).
-- [ ] **Agent daemon on server** — `scripts/run_casino_agent_daemon.cmd` or cron; set `AGENT_CASINO_SECRET`, `CASINO_AGENT_LLM=1`; dry-run first.
-- [ ] **Merge PR #43** — critical infrastructure review (broadcast, fanout, revenue).
-- [ ] **Apple AASA** — **paused** until Apple Developer account; PWA + `masternoder://` works without it.
-- [ ] **Discord fanout live** — keep `dry_run=true` until verified; set `CASINO_FANOUT_LIVE=1` on server when ready for public big-win posts.
+---
+
+### Ops 2 — Play Store / assetlinks — **SAVED / READY** ✅
+
+Repo prep complete. SHA update blocked on Play Console until $25 payment + first AAB upload.
+
+- [x] `scripts/casino_play_assetlinks_update.py` — validates 64-char SHA, rejects placeholders
+- [x] `static/.well-known/assetlinks.json` — placeholder `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`
+- [x] Walkthrough — [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
+- [x] Listing drafts — [mobile/casino-twa/PLAY_STORE_LISTING.md](../mobile/casino-twa/PLAY_STORE_LISTING.md), [mobile/casino-app/PLAY_STORE_LISTING.md](../mobile/casino-app/PLAY_STORE_LISTING.md)
+- [ ] **USER:** Pay **$25** at [Play Console signup](https://play.google.com/console/signup)
+- [ ] **USER:** Create app **`dk.masternoder.casino`** and upload first AAB (Internal testing)
+- [ ] **USER:** Copy **App signing key certificate** SHA-256 → `python scripts/casino_play_assetlinks_update.py "<SHA>"`
+- [ ] **USER:** `python scripts/deploy.py well_known --ask-pass` and verify assetlinks
+
+---
+
+### Ops 3 — Agent daemon
+
+- [x] `scripts/run_casino_agent_daemon.cmd` + `scripts/casino_agent_daemon.py`
+- [x] Wired into `scripts/all_profit_daemons.py` (casino loop, `--casino-dry-run`, `--skip-casino`)
+- [x] `scripts/run_daemons.cmd` — options **a** (all profit), **5** (one tick), **7**/**8** (separate windows)
+- [x] Seed data in deploy manifest — `data/casino_agents.json`, `data/casino_agent_models.json`
+- [ ] **USER:** Set `AGENT_CASINO_SECRET`, optional `CASINO_AGENT_LLM=1` on server
+- [ ] **USER:** Dry-run first (`CASINO_AGENT_DRY_RUN=1` or `--dry-run`); then enable live bets
+
+Setup: [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md)
+
+---
+
+### Ops 4 — Merge PR #43
+
+- [ ] Review and merge — [PR #43](https://github.com/jonK341/Masternoder.dk/pull/43) (Casino mega expansion) — **OPEN**
+
+---
+
+### Ops 5 — Apple AASA — **PAUSED**
+
+- [x] Placeholder `TEAMID` in `static/.well-known/apple-app-site-association` documented
+- [ ] **BLOCKED:** Apple Developer account; PWA + `masternoder://` works without it
+
+---
+
+### Ops 6 — Discord fanout live
+
+- [x] Cron `cron/discord_casino_fanout.sh` defaults `dry_run=true`
+- [x] `CASINO_FANOUT_LIVE=1` documented — see [CASINO_OPS_PROGRESS.md § CASINO_FANOUT_LIVE](CASINO_OPS_PROGRESS.md#casino_fanout_live-discord-big-win-posts)
+- [ ] **USER:** Verify dry-run fanout on server; then set `CASINO_FANOUT_LIVE=1` in cron env for live `#casino` posts
 
 ---
 
@@ -70,10 +112,19 @@ Full wave roadmap: [CASINO_IDEAS.md](CASINO_IDEAS.md) (**Waves 1–5 ✅ — all
 
 ---
 
+## Next 3 actions (user)
+
+1. **Deploy casino** — `python scripts/deploy.py casino --ask-pass`; confirm `/api/agent/casino/models` on production.
+2. **Play Store ($25)** — upload Internal AAB, paste App Signing SHA, deploy `well_known`.
+3. **Agents + Discord** — dry-run casino agents; set server secrets; enable `CASINO_FANOUT_LIVE=1` when fanout verified.
+
+---
+
 ## Verify after deploy
 
 ```powershell
 python -m pytest tests/unit/test_casino_ideas_wave5.py -q
 curl -s "https://masternoder.dk/api/casino/video-poker/ladder?user_id=u1"
 curl -s "https://masternoder.dk/api/casino/deposit/packs?user_id=u1"
+curl -sS "https://masternoder.dk/api/agent/casino/models" | jq .
 ```

@@ -251,6 +251,14 @@ crontab -l 2>/dev/null | grep -v discord_casino_fanout; echo '*/5 * * * * /var/w
 
 Script reads `DISCORD_OPS_SECRET` or `MN2_OPS_SECRET` from the environment — export in crontab or extend the script to source `/var/www/html/.env` (see `docs/MN2_OPS.md` for `mn2_read_ops_secret.sh` pattern on other fan-out scripts).
 
+**Go live on Discord** — cron defaults to `dry_run=true`. After dry-run smoke passes, set on the server cron line or in the environment:
+
+```bash
+export CASINO_FANOUT_LIVE=1   # cron/discord_casino_fanout.sh posts {"dry_run":false}
+```
+
+Unset or any value other than `1` keeps dry-run mode. See [CASINO_OPS_PROGRESS.md](CASINO_OPS_PROGRESS.md) for manual curl tests.
+
 ---
 
 ### C.4 Facebook / Meta Pixel (optional)

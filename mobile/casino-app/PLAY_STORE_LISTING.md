@@ -1,52 +1,56 @@
-# Google Play — MasterNoder2 Casino
+# Google Play listing draft — MasterNoder2 Casino
 
-Package: **`dk.masternoder.casino`**
+Package: **`dk.masternoder.casino`** · Shell: **Capacitor** — `mobile/casino-app/`  
+Alt shell: [TWA listing](../casino-twa/PLAY_STORE_LISTING.md)
 
-Marketing source: `docs/CASINO_MARKETING.md` · `data/casino_marketing.json` · `GET /api/casino/marketing`
+Marketing: `docs/CASINO_MARKETING.md` · `data/casino_marketing.json` · `GET /api/casino/marketing`  
+Ops: [CASINO_PLAY_STORE_TUESDAY.md](../../docs/CASINO_PLAY_STORE_TUESDAY.md) · [CASINO_DEPLOY_OPS.md](../../docs/CASINO_DEPLOY_OPS.md)
 
-## Listing copy (draft)
+---
 
-**Title:** MasterNoder2 Casino  
-**Short description:** MasterNoder2 Casino — crash, slots, plinko, tournaments & big wins on MN2.  
-**Tagline:** Ride the rocket. Hit the jackpot. Own the lounge.
+## Store listing
 
-**Full description:**
+| Field | Draft |
+|-------|-------|
+| **Title** | MasterNoder2 Casino |
+| **Short description** | MasterNoder2 Casino — crash, slots, plinko, tournaments & big wins on MN2. |
+| **Tagline** | Ride the rocket. Hit the jackpot. Own the lounge. |
+| **Full description** | MasterNoder2 Casino is the social gaming lounge on masternoder.dk — crash rockets, slots, plinko, mines, wheel, and classic instant games with friends, crews, and live leaderboards. Play with virtual coins first; MN2 and PayPal USD rails remain on the website with full policy disclosure. Daily wheel, tournaments, hall of fame, Discord big-win sharing. Same account as masternoder.dk. Play responsibly. 18+ where online gambling is licensed. |
+| **Category** | Game → Casino (simulated) / Entertainment |
+| **Feature graphic** | `/static/img/casino/banner-masternoder2-casino.png` (crop to 1024×500) |
+| **Content rating** | Simulated gambling — complete IARC questionnaire honestly |
+| **Contact** | https://masternoder.dk |
+| **Privacy policy** | https://masternoder.dk (site privacy page) |
 
-> MasterNoder2 Casino is the social gaming lounge on masternoder.dk — crash, slots, plinko, mines, wheel, and more with virtual coins first.
->
-> • Provably fair crash and instant arcade games  
-> • Seven slot machines with progressive jackpots  
-> • Daily wheel, tournaments, and hall of fame  
-> • Friends, crews, and social big-win sharing  
-> • Same account as masternoder.dk  
->
-> Real-money MN2/USD stakes are available on the website with age and region checks. This app focuses on the social virtual-coin experience.
-
-**Category:** Game → Casino  
-**Content rating:** Simulated gambling — complete IARC questionnaire honestly.
+---
 
 ## Graphics checklist
 
-- [ ] Hi-res icon 512×512 PNG (run `npm run assets` in `mobile/casino-app/`)
+- [ ] Hi-res icon 512×512 PNG (`npm run assets` in `mobile/casino-app/`)
 - [ ] Feature graphic 1024×500 — `/static/img/casino/banner-masternoder2-casino.png`
 - [ ] Phone screenshots (portrait): lobby with banner, crash, social tab
 - [ ] 7″ and 10″ tablet screenshots (optional)
+
+---
 
 ## Technical checklist
 
 - [ ] Upload AAB from Capacitor (`android/app/build/outputs/...`) **or** Bubblewrap TWA build
 - [ ] Play App Signing enabled
-- [ ] Copy **SHA-256** cert fingerprint into `static/.well-known/assetlinks.json` and deploy
+- [ ] Copy **SHA-256** via `python scripts/casino_play_assetlinks_update.py "<SHA>"` and deploy `well_known`
 - [ ] Verify: `https://masternoder.dk/.well-known/assetlinks.json`
-- [ ] Start URL resolves: `https://masternoder.dk/casino/?app=casino-twa&tab=lobby` (TWA) or `?app=casino-capacitor` (Capacitor)
-- [ ] Privacy policy URL on masternoder.dk
+- [ ] Start URL: `https://masternoder.dk/casino/?app=casino-capacitor` or `?app=casino-twa&tab=lobby`
 - [ ] Data safety form (account IDs in localStorage, no extra PII in shell)
+
+---
 
 ## Policy notes
 
 - Disclose simulated gambling / virtual currency
 - Do not market real-money play inside the Play listing if policy requires web-only RMG
 - Target countries: match `casino_config.json` geo rules
+
+---
 
 ## Internal testing
 
