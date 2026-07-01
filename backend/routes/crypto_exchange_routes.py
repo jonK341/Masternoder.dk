@@ -344,6 +344,39 @@ def exchange_treasury_status():
     return jsonify(treasury_status(mode=mode))
 
 
+@crypto_exchange_bp.route("/api/exchange/treasury/liquidity/run", methods=["POST"])
+def exchange_treasury_liquidity_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_treasury_liquidity_service import run_liquidity_tick
+
+    return jsonify(run_liquidity_tick())
+
+
+@crypto_exchange_bp.route("/api/exchange/venues/credentials", methods=["POST"])
+def exchange_venues_credentials_onboard():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services import exchange_venue_api_service as vapi
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(vapi.onboard_venue_credentials(
+        str(data.get("venue_id") or ""),
+        api_key=data.get("api_key"),
+        api_secret=data.get("api_secret"),
+        passphrase=data.get("passphrase"),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/arbitrage/rebalance/run", methods=["POST"])
+def exchange_arbitrage_rebalance_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_arbitrage_service import run_rebalance_tick
+
+    return jsonify(run_rebalance_tick())
+
+
 @crypto_exchange_bp.route("/api/exchange/sales-pool/status", methods=["GET"])
 def exchange_sales_pool_status():
     from backend.services.exchange_sales_pool_service import sales_pool_status

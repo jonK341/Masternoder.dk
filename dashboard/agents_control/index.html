@@ -8,21 +8,49 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <style>
-        body { background: #0a0a12; color: #eee; min-height: 100vh; padding: 90px 20px; max-width: 900px; margin: 0 auto; }
+        body { background: #0a0a12; color: #eee; min-height: 100vh; padding: 90px 20px; max-width: 960px; margin: 0 auto; }
         button { margin: 6px; padding: 10px 16px; border-radius: 8px; border: 1px solid #a0f; background: rgba(170,0,255,0.15); color: #c8f; cursor: pointer; }
         pre { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; overflow: auto; font-size: 12px; }
+        section { margin: 24px 0; padding: 16px; border: 1px solid rgba(170,0,255,0.25); border-radius: 10px; }
+        label { display: block; margin: 8px 0 4px; font-size: 13px; color: #bbb; }
+        input, select { width: 100%; max-width: 420px; padding: 8px; border-radius: 6px; border: 1px solid #444; background: #111; color: #eee; }
+        .venue-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; font-size: 13px; }
+        .ok { color: #6f6; }
+        .bad { color: #f88; }
     </style>
 </head>
 <body>
     <h1>Agents Control Board</h1>
-    <p>Treasury pool, trader wallets, kill switch.</p>
+    <p>Treasury pool, trader wallets, kill switch, and live venue credential onboarding.</p>
     <div>
         <button type="button" id="btn-fund">Fund agents</button>
         <button type="button" id="btn-trader">Run traders</button>
         <button type="button" id="btn-halt">Global halt</button>
         <button type="button" id="btn-resume">Resume</button>
         <button type="button" id="btn-refresh">Refresh status</button>
+        <button type="button" id="btn-treasury-liq">Treasury liquidity tick</button>
+        <button type="button" id="btn-arb-rebalance">Arb rebalance scan</button>
     </div>
+    <section>
+        <h2>Live venue credentials</h2>
+        <p style="font-size:13px;color:#aaa;">Keys are stored in the encrypted vault. Requires <code>EXCHANGE_VAULT_KEY</code> on the server.</p>
+        <div id="venue-list">Loading venues…</div>
+        <form id="venue-form">
+            <label for="venue-id">Venue</label>
+            <select id="venue-id" required></select>
+            <label for="api-key">API key</label>
+            <input id="api-key" type="password" autocomplete="off" required>
+            <label for="api-secret">API secret</label>
+            <input id="api-secret" type="password" autocomplete="off" required>
+            <label for="api-pass">Passphrase (OKX / KuCoin only)</label>
+            <input id="api-pass" type="password" autocomplete="off">
+            <div style="margin-top:12px;">
+                <button type="submit">Save credentials</button>
+                <button type="button" id="btn-probe-venues">Probe all venues</button>
+            </div>
+        </form>
+        <pre id="venue-out"></pre>
+    </section>
     <pre id="out">Loading…</pre>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script>
@@ -32,12 +60,62 @@
         const r = await fetch('/api/agents/control/status', {headers: hdr});
         document.getElementById('out').textContent = JSON.stringify(await r.json(), null, 2);
     }
-    document.getElementById('btn-refresh').onclick = load;
+    async function loadVenues() {
+        const r = await fetch('/api/exchange/ai-trading/venues');
+        const data = await r.json();
+        const list = document.getElementById('venue-list');
+        const sel = document.getElementById('venue-id');
+        list.innerHTML = '';
+        sel.innerHTML = '';
+        for (const v of (data.venues || [])) {
+            const row = document.createElement('div');
+            row.className = 'venue-row';
+            const ok = v.credentials_configured;
+            row.innerHTML = `<strong>${v.venue_id}</strong> — live_supported=${v.live_supported} ` +
+                `<span class="${ok ? 'ok' : 'bad'}">${ok ? 'credentials OK' : 'no credentials'}</span>`;
+            list.appendChild(row);
+            const opt = document.createElement('option');
+            opt.value = v.venue_id;
+            opt.textContent = v.venue_id;
+            sel.appendChild(opt);
+        }
+    }
+    document.getElementById('btn-refresh').onclick = () => { load(); loadVenues(); };
     document.getElementById('btn-fund').onclick = () => fetch('/api/agents/control/fund', {method:'POST', headers: hdr}).then(load);
     document.getElementById('btn-trader').onclick = () => fetch('/api/agents/control/trader/run', {method:'POST', headers: hdr}).then(load);
     document.getElementById('btn-halt').onclick = () => fetch('/api/agents/control/halt', {method:'POST', headers: hdr, body:'{}'}).then(load);
     document.getElementById('btn-resume').onclick = () => fetch('/api/agents/control/resume', {method:'POST', headers: hdr, body:'{}'}).then(load);
+    document.getElementById('btn-treasury-liq').onclick = async () => {
+        const r = await fetch('/api/exchange/treasury/liquidity/run', {method:'POST', headers: hdr});
+        document.getElementById('out').textContent = JSON.stringify(await r.json(), null, 2);
+    };
+    document.getElementById('btn-arb-rebalance').onclick = async () => {
+        const r = await fetch('/api/exchange/arbitrage/rebalance/run', {method:'POST', headers: hdr});
+        document.getElementById('out').textContent = JSON.stringify(await r.json(), null, 2);
+    };
+    document.getElementById('btn-probe-venues').onclick = async () => {
+        const r = await fetch('/api/exchange/ai-trading/probe', {method:'POST', headers: hdr});
+        document.getElementById('venue-out').textContent = JSON.stringify(await r.json(), null, 2);
+        loadVenues();
+    };
+    document.getElementById('venue-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const body = {
+            venue_id: document.getElementById('venue-id').value,
+            api_key: document.getElementById('api-key').value,
+            api_secret: document.getElementById('api-secret').value,
+        };
+        const pass = document.getElementById('api-pass').value;
+        if (pass) body.passphrase = pass;
+        const r = await fetch('/api/exchange/venues/credentials', {method:'POST', headers: hdr, body: JSON.stringify(body)});
+        document.getElementById('venue-out').textContent = JSON.stringify(await r.json(), null, 2);
+        document.getElementById('api-key').value = '';
+        document.getElementById('api-secret').value = '';
+        document.getElementById('api-pass').value = '';
+        loadVenues();
+    };
     load();
+    loadVenues();
     </script>
 </body>
 </html>

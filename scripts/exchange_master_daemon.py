@@ -97,6 +97,12 @@ def run_once(auto_sweep: bool = False) -> dict:
     except Exception as exc:
         out["treasury_liquidity"] = {"success": False, "error": str(exc)}
 
+    try:
+        from backend.services.exchange_arbitrage_service import run_rebalance_tick
+        out["arb_rebalance"] = run_rebalance_tick()
+    except Exception as exc:
+        out["arb_rebalance"] = {"success": False, "error": str(exc)}
+
     return out
 
 

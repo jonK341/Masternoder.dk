@@ -118,3 +118,11 @@ def test_secret_roundtrip_with_key(arb_env, monkeypatch):
     assert vault.set_secret("binance_api_key", "supersecret")["success"] is True
     assert vault.get_secret("binance_api_key") == "supersecret"
     assert "binance_api_key" in vault.list_secret_names()
+
+
+def test_rebalance_tick_skips_without_two_venues(arb_env):
+    arb = arb_env["arb"]
+    r = arb.run_rebalance_tick()
+    assert r["success"] is True
+    assert r.get("skipped") is True
+    assert r.get("reason") == "need_two_credentialed_venues"

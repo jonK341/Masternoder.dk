@@ -38,6 +38,67 @@ def live_enabled() -> bool:
         return True
 
 
+def _effective_transfer_cost_bps(cfg: Dict[str, Any]) -> float:
+    """Pre-funded inventory arb skips per-trade on-chain transfer — use lower cost in live mode."""
+    if live_enabled():
+        return float(cfg.get("prefunded_transfer_cost_bps") or cfg.get("transfer_cost_bps") or 20)
+    return float(cfg.get("transfer_cost_bps") or 20)
+
+
+def _live_api_ready_venues(venue_ids: List[str]) -> List[str]:
+    """Drop venues whose private API fails (401, missing keys) during live scans."""
+    if not live_enabled():
+        return venue_ids
+    from backend.services import exchange_venue_api_service as vapi
+    ready: List[str] = []
+    for vid in venue_ids:
+        if vid == "internal":
+            ready.append(vid)
+            continue
+        if not vapi.venue_has_credentials(vid):
+            continue
+        bal = vapi.get_account_balance(vid, dry_run=False)
+        if bal.get("success"):
+            ready.append(vid)
+    return ready if len(ready) >= 2 or "internal" in ready else venue_ids
+
+
+def _inventory_tradeable_symbols(
+    venue_ids: List[str],
+    symbols: List[str],
+    *,
+    min_quote_usd: float = 20.0,
+    min_coin_usd: float = 12.0,
+) -> List[str]:
+    """Symbols where at least one venue can buy (quote) and one can sell (base coin)."""
+    if not live_enabled():
+        return symbols
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services.external_exchange_connector_service import fetch_ticker
+
+    tradeable: List[str] = []
+    external = [v for v in venue_ids if v != "internal"]
+    for sym in symbols:
+        can_buy = can_sell = False
+        for vid in external:
+            bals = vapi.parse_spot_balances(vid, dry_run=False)
+            quote = vapi.venue_quote_asset(vid)
+            if float(bals.get(quote) or 0) >= min_quote_usd:
+                can_buy = True
+            tick = fetch_ticker(vid, sym)
+            mid = 0.0
+            if tick and tick.get("bid"):
+                mid = float(tick["bid"])
+            coin = float(bals.get(sym) or 0)
+            if mid > 0 and coin * mid >= min_coin_usd:
+                can_sell = True
+            elif coin >= 100 and sym in ("DOGE", "SHIB", "PEPE"):
+                can_sell = True
+        if can_buy and can_sell:
+            tradeable.append(sym)
+    return tradeable or symbols
+
+
 def _internal_fee_bps() -> float:
     fees = (ex.load_config().get("fees") or {})
     return float(fees.get("taker_bps") or fees.get("taker") or 25)
@@ -137,7 +198,8 @@ def scan_opportunities(
     symbols = [str(s).upper() for s in (symbols or cfg.get("supported_symbols") or [])]
     vmap = conn._venue_map(cfg)
     venue_ids = venues or ([vid for vid, v in vmap.items() if v.get("enabled", True)] + ["internal"])
-    transfer_cost_bps = float(cfg.get("transfer_cost_bps") or 20)
+    venue_ids = _live_api_ready_venues(venue_ids)
+    transfer_cost_bps = _effective_transfer_cost_bps(cfg)
     min_margin_bps = float(cfg.get("min_margin_bps") or 30)
     notional = float(notional_usd or cfg.get("paper_trade_usd") or 250)
 
@@ -175,7 +237,7 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
     if not cfg.get("enabled", True):
         return {"success": False, "error": "connectors_disabled"}
     vmap = conn._venue_map(cfg)
-    transfer_cost_bps = float(cfg.get("transfer_cost_bps") or 20)
+    transfer_cost_bps = _effective_transfer_cost_bps(cfg)
     min_margin_bps = float(cfg.get("min_margin_bps") or 30)
     default_notional = float(cfg.get("paper_trade_usd") or 250)
 
@@ -200,7 +262,9 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         if not agent_id:
             continue
         a_symbols = [str(s).upper() for s in (agent.get("symbols") or cfg.get("supported_symbols") or [])]
-        a_venues = list(agent.get("venues") or list(vmap.keys()))
+        a_venues = _live_api_ready_venues(list(agent.get("venues") or list(vmap.keys())))
+        if live_enabled() and agent_id in ("arb_live_dual_farm", "arb_agent_meme"):
+            a_symbols = _inventory_tradeable_symbols(a_venues, a_symbols)
         notional = float(agent.get("paper_trade_usd") or default_notional)
 
         best: Optional[Dict[str, Any]] = None
@@ -271,6 +335,65 @@ def agent_accounts() -> Dict[str, Any]:
         "total_realized_profit_usd": round(total_profit, 6),
         "accounts": accounts,
     }
+
+
+def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
+    """Scan credentialed venue quote balances and flag cross-venue rebalance needs."""
+    from backend.services import exchange_venue_api_service as vapi
+
+    cfg = conn.load_connectors_config()
+    venue_ids = [
+        str(v["id"]) for v in (cfg.get("venues") or [])
+        if isinstance(v, dict) and v.get("id") and v["id"] != "internal"
+    ]
+    quotes: List[Dict[str, Any]] = []
+    for vid in venue_ids:
+        if not vapi.venue_has_credentials(vid):
+            continue
+        bals = vapi.parse_spot_balances(vid, dry_run=False)
+        quote = vapi.venue_quote_asset(vid)
+        free = float(bals.get(quote) or 0)
+        quotes.append({"venue_id": vid, "quote_asset": quote, "free_quote": round(free, 4)})
+
+    if len(quotes) < 2:
+        return {
+            "success": True,
+            "skipped": True,
+            "reason": "need_two_credentialed_venues",
+            "venues": quotes,
+        }
+
+    amounts = [q["free_quote"] for q in quotes if q["free_quote"] > 0]
+    if not amounts:
+        return {"success": True, "skipped": True, "reason": "no_quote_inventory", "venues": quotes}
+
+    avg = sum(amounts) / len(amounts)
+    rich = max(quotes, key=lambda q: q["free_quote"])
+    poor = min(quotes, key=lambda q: q["free_quote"])
+    ratio = (rich["free_quote"] / poor["free_quote"]) if poor["free_quote"] > 0 else float("inf")
+    move_usd = round(max(0.0, rich["free_quote"] - avg), 4)
+    rebalance_needed = ratio >= imbalance_ratio and move_usd >= 10.0
+    result = {
+        "success": True,
+        "live": live_enabled(),
+        "rebalance_needed": rebalance_needed,
+        "imbalance_ratio": round(ratio, 4) if ratio != float("inf") else None,
+        "target_quote_per_venue": round(avg, 4),
+        "suggested_move_usd": move_usd if rebalance_needed else 0.0,
+        "from_venue": rich if rebalance_needed else None,
+        "to_venue": poor if rebalance_needed else None,
+        "venues": quotes,
+        "ticked_at": _iso(),
+    }
+    if rebalance_needed:
+        ex._audit(
+            "arb_rebalance_tick",
+            from_venue=rich["venue_id"],
+            to_venue=poor["venue_id"],
+            move_usd=move_usd,
+            ratio=round(ratio, 4),
+        )
+    return result
 
 
 def arbitrage_overview() -> Dict[str, Any]:

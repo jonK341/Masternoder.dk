@@ -468,6 +468,45 @@ def probe_all_venues() -> Dict[str, Any]:
     }
 
 
+def onboard_venue_credentials(
+    venue_id: str,
+    *,
+    api_key: Optional[str] = None,
+    api_secret: Optional[str] = None,
+    passphrase: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Store per-venue API credentials in the encrypted vault (admin onboarding)."""
+    from backend.services import exchange_secrets_vault_service as vault
+
+    vid = str(venue_id or "").strip().lower()
+    if not vid:
+        return {"success": False, "error": "missing_venue_id"}
+    vcfg = _venue_api_cfg(vid)
+    if not vcfg:
+        return {"success": False, "error": "unknown_venue", "venue_id": vid}
+    key_name, sec_name, pass_name = _secret_names(vid)
+    results: Dict[str, Any] = {}
+    if api_key is not None and str(api_key).strip():
+        results["api_key"] = vault.set_secret(key_name, str(api_key).strip())
+    if api_secret is not None and str(api_secret).strip():
+        results["api_secret"] = vault.set_secret(sec_name, str(api_secret).strip())
+    if passphrase is not None and str(passphrase).strip():
+        results["passphrase"] = vault.set_secret(pass_name, str(passphrase).strip())
+    if not results:
+        return {"success": False, "error": "no_credentials_provided", "venue_id": vid}
+    failed = [k for k, v in results.items() if not v.get("success")]
+    probe = probe_all_venues()
+    row = next((r for r in (probe.get("venues") or []) if r.get("venue_id") == vid), {})
+    return {
+        "success": not failed,
+        "venue_id": vid,
+        "stored": list(results.keys()),
+        "failed": failed,
+        "credentials_configured": bool(row.get("credentials_configured")),
+        "private_ok": bool(row.get("private_ok")),
+    }
+
+
 def list_venue_capabilities() -> Dict[str, Any]:
     api_cfg = load_api_config()
     venues = []

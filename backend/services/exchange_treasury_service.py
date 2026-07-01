@@ -156,4 +156,5 @@ def treasury_status(mode: Optional[str] = None) -> Dict[str, Any]:
         "ledger_stashed_usd_live": round(stashed_live_usd, 4),
         "mode_filter": mode_filter,
         "fee_allocation": cfg.get("fee_allocation") if isinstance(cfg.get("fee_allocation"), dict) else {},
+        "liquidity_pipeline": cfg.get("liquidity_pipeline") if isinstance(cfg.get("liquidity_pipeline"), dict) else {},
     }
