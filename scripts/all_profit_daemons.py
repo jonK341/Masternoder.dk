@@ -100,10 +100,20 @@ def _heartbeat_path() -> str:
 def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = None) -> None:
     path = _heartbeat_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    existing: Dict[str, Any] = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            existing = {}
+    loops = existing.get("loops") if isinstance(existing.get("loops"), dict) else {}
+    loops[loop] = {"updated_at": _iso(), "summary": summary}
     payload = {
         "updated_at": _iso(),
         "loop": loop,
         "summary": summary,
+        "loops": loops,
         "profile": os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"),
         "mode": daemon_mode_label(),
     }
@@ -296,7 +306,9 @@ def main() -> int:
     parser.add_argument("--casino-interval", type=int, default=0, help="Override casino interval")
     parser.add_argument("--skip-casino", action="store_true", help="Exchange engines only")
     parser.add_argument("--skip-exchange", action="store_true", help="Casino agents only")
-    parser.add_argument("--auto-sweep", action="store_true", help="Force PayPal sweep when ready")
+    parser.add_argument("--auto-sweep", action="store_true",
+                        help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
+                             "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
     parser.add_argument("--casino-dry-run", action="store_true", help="Casino bets simulated only")
     parser.add_argument("--skip-preflight", action="store_true", help="Skip startup health checks")
     parser.add_argument("--json", action="store_true", help="With --once, dump full JSON instead of one-line summary")

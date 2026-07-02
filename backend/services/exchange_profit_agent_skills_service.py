@@ -116,6 +116,46 @@ def _agent_bucket(reg: Dict[str, Any], agent_id: str) -> Dict[str, Any]:
     return bucket
 
 
+def _close_void(reg: Dict[str, Any], agent_id: str, void_skill: str, *, reason: str = "") -> bool:
+    """Mark a void skill closed after a successful fill/baseline."""
+    void_reg = reg.setdefault("voids", {})
+    void_key = f"{agent_id}:{void_skill}"
+    entry = void_reg.get(void_key) or {"agent_id": agent_id, "void_skill": void_skill}
+    if entry.get("closed"):
+        return False
+    entry.update({"closed": True, "closed_at": _iso(), "close_reason": reason or "fill_success"})
+    void_reg[void_key] = entry
+    return True
+
+
+def _close_voids_for_success(reg: Dict[str, Any], agent_id: str, row: Dict[str, Any]) -> List[str]:
+    """Close matching open voids when a route succeeds."""
+    closed: List[str] = []
+    bucket = _agent_bucket(reg, agent_id)
+    open_voids = list(bucket.get("voids") or [])
+    if not open_voids:
+        return closed
+    sym = _slug(row.get("symbol") or "any", max_len=12)
+    for void_skill in open_voids:
+        void_reg = reg.get("voids") or {}
+        void_key = f"{agent_id}:{void_skill}"
+        if void_reg.get(void_key, {}).get("closed"):
+            continue
+        if sym in void_skill or void_skill.endswith(f"_{sym}"):
+            if _close_void(reg, agent_id, void_skill, reason="route_fill"):
+                closed.append(void_skill)
+    return closed
+
+
+def _sync_agent_level_from_stack(bucket: Dict[str, Any]) -> None:
+    """Level tracks stacked profit (live + paper) via PPP ledger."""
+    stacked = float(bucket.get("stacked_profit_usd") or 0)
+    xp = int(bucket.get("experience") or 0)
+    stack_xp = int(stacked * _XP_PER_PROFIT_USD)
+    bucket["experience"] = max(xp, stack_xp)
+    bucket["level"] = max(1, int(bucket["experience"] // 500) + 1)
+
+
 def _apply_skill_to_agent_skillset(agent_id: str, skill: str, *, xp: int = 0) -> None:
     try:
         from backend.services.agent_skillset import agent_skillset
@@ -199,6 +239,8 @@ def on_ledger_profit_event(row: Dict[str, Any]) -> Dict[str, Any]:
     if path_id:
         processed.add(path_id)
         reg.setdefault("ledger_sync", {})["processed_path_ids"] = list(processed)
+    closed_voids = _close_voids_for_success(reg, agent_id, row)
+    _sync_agent_level_from_stack(bucket)
     reg.setdefault("ledger_sync", {})["last_profit_event_at"] = _iso()
     _save_registry(reg)
 
@@ -210,6 +252,7 @@ def on_ledger_profit_event(row: Dict[str, Any]) -> Dict[str, Any]:
         "stack_count": bucket.get("stack_count"),
         "added_skills": added_skills,
         "added_voids": added_voids,
+        "closed_voids": closed_voids,
         "level": bucket.get("level"),
     }
 
@@ -238,14 +281,16 @@ def on_baseline_trade_event(row: Dict[str, Any]) -> Dict[str, Any]:
         _apply_skill_to_agent_skillset(agent_id, skill, xp=_XP_PER_PROFIT_USD)
 
     fill_usd = float(exec_block.get("fill_usd") or 0)
+    mode = str((row.get("route") or {}).get("mode") or row.get("mode") or "paper").lower()
     if fill_usd > 0:
         prev_stack = float(bucket.get("stacked_profit_usd") or 0)
-        increment = round(fill_usd * 0.001, 4)
+        increment = round(fill_usd * (0.002 if mode == "live" else 0.001), 4)
         bucket["stacked_profit_usd"] = round(prev_stack + increment, 4)
         bucket["stack_count"] = int(bucket.get("stack_count") or 0) + 1
 
     bucket["experience"] = int(bucket.get("experience") or 0) + max(5, _XP_PER_VOID_CLOSED)
-    bucket["level"] = max(1, int(bucket["experience"] // 500) + 1)
+    _sync_agent_level_from_stack(bucket)
+    closed_voids = _close_voids_for_success(reg, agent_id, row.get("route") or row)
     bucket["last_skill_at"] = _iso()
 
     if baseline_id:
@@ -254,7 +299,7 @@ def on_baseline_trade_event(row: Dict[str, Any]) -> Dict[str, Any]:
     reg.setdefault("ledger_sync", {})["last_baseline_at"] = _iso()
     _save_registry(reg)
 
-    return {"success": True, "agent_id": agent_id, "added_skills": added, "baseline_id": baseline_id}
+    return {"success": True, "agent_id": agent_id, "added_skills": added, "closed_voids": closed_voids, "baseline_id": baseline_id}
 
 
 def sync_from_baselines(*, hours: float = 168, limit: int = 500) -> Dict[str, Any]:
@@ -280,6 +325,7 @@ def sync_from_ledger_research(*, hours: float = 168, limit: int = 2000) -> Dict[
     voids = 0
     agents_touched: set[str] = set()
 
+    voids_closed = 0
     for row in reversed(rows):
         phase = str(row.get("phase") or "")
         agent_id = str(row.get("agent_id") or "")
@@ -290,6 +336,7 @@ def sync_from_ledger_research(*, hours: float = 168, limit: int = 2000) -> Dict[
             if res.get("success") and not res.get("duplicate"):
                 fills += 1
                 agents_touched.add(agent_id)
+                voids_closed += len(res.get("closed_voids") or [])
         elif row.get("skip_reason"):
             void_skill = _void_skill_name(str(row.get("skip_reason")), row)
             reg = _load_registry()
@@ -307,9 +354,89 @@ def sync_from_ledger_research(*, hours: float = 168, limit: int = 2000) -> Dict[
         "rows_scanned": len(rows),
         "fills_processed": fills,
         "voids_encoded": voids,
+        "voids_closed": voids_closed,
         "agents_touched": sorted(agents_touched),
         **sync_from_baselines(hours=hours, limit=min(limit, 500)),
     }
+
+
+def hit_rate_by_route(*, days: float = 7) -> Dict[str, Any]:
+    """Aggregate PPP hit rate per route for research review."""
+    from backend.services.exchange_profit_path_service import profit_path_summary
+
+    hours = max(1.0, float(days)) * 24.0
+    summary = profit_path_summary(hours=hours)
+    routes = summary.get("best_routes_24h") or []
+    low_hit = [r for r in routes if int(r.get("attempts") or 0) >= 3 and float(r.get("hit_rate_pct") or 0) < 25]
+    return {
+        "success": True,
+        "days": days,
+        "window_hours": hours,
+        "hit_rate_pct": summary.get("hit_rate_pct"),
+        "attempt_count": summary.get("attempt_count"),
+        "fill_count": summary.get("fill_count"),
+        "routes": routes,
+        "low_hit_routes": low_hit[:12],
+        "reviewed_at": _iso(),
+    }
+
+
+def _infer_auto_checks() -> Dict[str, str]:
+    """Return problem_id -> note for items resolved by daemon/state signals."""
+    resolved: Dict[str, str] = {}
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    hb_path = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
+    hb = _read_json(hb_path, {})
+    loops = hb.get("loops") if isinstance(hb.get("loops"), dict) else {}
+
+    casino = loops.get("casino") or {}
+    casino_sum = str(casino.get("summary") or hb.get("summary") or "")
+    if "ran=3/3" in casino_sum or "success=True ran=3" in casino_sum:
+        resolved["casino_agents_idle"] = f"daemon casino {today}: ran=3/3"
+
+    fast = loops.get("fast") or {}
+    fast_sum = str(fast.get("summary") or "")
+    if "ext_exec=" in fast_sum:
+        try:
+            part = next(p for p in fast_sum.split() if p.startswith("ext_exec="))
+            if int(part.split("=", 1)[1]) > 0:
+                resolved["ext_profit_zero"] = f"fast rescan {today}: {part} on threshold"
+        except (StopIteration, ValueError):
+            pass
+
+    ext_tick = _read_json(os.path.join(ex._DATA_DIR, "extended_defi_tick.json"), {})
+    if int(ext_tick.get("n") or 0) > 0 and "ext_profit_zero" not in resolved:
+        resolved["ext_profit_zero"] = f"extended tick counter n={ext_tick.get('n')} ({today})"
+
+    return resolved
+
+
+def sync_critical_reality() -> Dict[str, Any]:
+    """Merge auto-resolved checks + notes, then refresh markdown/json."""
+    store = _read_json(_CRITICAL_PATH, {})
+    checks = store.get("checks") if isinstance(store.get("checks"), dict) else {}
+    notes = store.get("notes") if isinstance(store.get("notes"), dict) else {}
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    for pid, note in _infer_auto_checks().items():
+        checks[pid] = True
+        notes[pid] = note
+    for pid, note in {
+        "status_report_heavy": f"profit_status_report.py --light + profit_status_light.py ({today})",
+        "hit_rate_tracking": f"GET /api/exchange/profit-path/hit-rate?days=7 ({today})",
+        "void_skills_open": f"sync_from_ledger closes voids on fill/baseline ({today})",
+        "agent_level_lag": f"agent level from stacked PPP profit USD ({today})",
+        "ai_trader_idle": f"execute on profitable spread when net_bps>=min_net ({today})",
+    }.items():
+        checks[pid] = True
+        notes[pid] = note
+    notes.setdefault(
+        "auto_sweep_off",
+        "enable: --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1; threshold: EXCHANGE_AUTO_SWEEP_MIN_USD",
+    )
+    store["checks"] = checks
+    store["notes"] = notes
+    _write_json(_CRITICAL_PATH, store)
+    return critical_problems_top25(refresh=True)
 
 
 def get_agent_profit_skills(agent_id: Optional[str] = None) -> Dict[str, Any]:
@@ -414,6 +541,8 @@ def critical_problems_top25(*, refresh: bool = True) -> Dict[str, Any]:
         items.append({**p, "checked": checked, "status": "done" if checked else "open"})
 
     if refresh:
+        hit = hit_rate_by_route(days=7)
+        store["last_hit_rate_review_at"] = hit.get("reviewed_at")
         store["checks"] = checks
         store["problems"] = items
         store["updated_at"] = _iso()
@@ -424,10 +553,11 @@ def critical_problems_top25(*, refresh: bool = True) -> Dict[str, Any]:
     return {
         "success": True,
         "updated_at": store.get("updated_at") or _iso(),
+        "last_hit_rate_review_at": store.get("last_hit_rate_review_at"),
         "open_count": open_count,
         "done_count": len(items) - open_count,
         "problems": items,
-        "markdown": render_critical_markdown(items),
+        "markdown": render_critical_markdown(items, notes=store.get("notes") if isinstance(store.get("notes"), dict) else {}),
     }
 
 
@@ -440,7 +570,8 @@ def update_critical_checkbox(problem_id: str, checked: bool) -> Dict[str, Any]:
     return critical_problems_top25(refresh=True)
 
 
-def render_critical_markdown(items: List[Dict[str, Any]]) -> str:
+def render_critical_markdown(items: List[Dict[str, Any]], *, notes: Optional[Dict[str, str]] = None) -> str:
+    notes = notes or {}
     lines = [
         "# Profit Critical Top 25",
         "",
@@ -449,15 +580,23 @@ def render_critical_markdown(items: List[Dict[str, Any]]) -> str:
     ]
     for p in items:
         box = "x" if p.get("checked") else " "
-        lines.append(f"- [{box}] **#{p.get('priority')}** [{p.get('category')}] {p.get('title')} (`{p.get('id')}`)")
+        pid = str(p.get("id") or "")
+        note = notes.get(pid) or p.get("note") or ""
+        suffix = f" — _{note}_" if note else ""
+        lines.append(
+            f"- [{box}] **#{p.get('priority')}** [{p.get('category')}] {p.get('title')} (`{pid}`){suffix}"
+        )
     lines.append("")
     return "\n".join(lines)
 
 
 def write_critical_markdown_doc() -> str:
+    sync_critical_reality()
+    store = _read_json(_CRITICAL_PATH, {})
     data = critical_problems_top25(refresh=True)
+    notes = store.get("notes") if isinstance(store.get("notes"), dict) else {}
     path = os.path.join(ex._BASE, "docs", "PROFIT_CRITICAL_TOP25.md")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(data.get("markdown") or "")
+        f.write(render_critical_markdown(data.get("problems") or [], notes=notes))
         f.write("\n")
     return path

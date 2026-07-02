@@ -31,6 +31,126 @@ def _section(title: str, lines: List[str]) -> str:
     return f"\n## {title}\n" + "\n".join(lines)
 
 
+def collect_light() -> Dict[str, Any]:
+    """Fast status from heartbeat + JSON state only (no Flask create_app)."""
+    from scripts.daemon_env import daemon_mode_label, load_dotenv
+
+    load_dotenv()
+    hb_path = os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
+    heartbeat = None
+    if os.path.isfile(hb_path):
+        try:
+            with open(hb_path, encoding="utf-8") as f:
+                heartbeat = json.load(f)
+        except Exception:
+            pass
+
+    def _read(rel: str, default: Any = None) -> Any:
+        path = os.path.join(ROOT, rel.replace("/", os.sep))
+        if not os.path.isfile(path):
+            return default
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return default
+
+    payout_cfg = _read("data/crypto_exchange/payout_config.json", {})
+    treasury_cfg = _read("data/exchange_treasury_config.json", {})
+    top25 = _read("data/crypto_exchange/profit_critical_top25.json", {})
+    arb_state = _read("data/crypto_exchange/arb_threshold_state.json", {})
+    ext_tick = _read("data/crypto_exchange/extended_defi_tick.json", {})
+
+    daemon_running = False
+    try:
+        import subprocess
+        out = subprocess.check_output(
+            ['powershell', '-NoProfile', '-Command',
+             "Get-CimInstance Win32_Process -Filter \"name='python.exe'\" | "
+             "Where-Object { $_.CommandLine -match 'all_profit_daemons' } | Measure-Object | "
+             "Select-Object -ExpandProperty Count"],
+            text=True, timeout=8, cwd=ROOT,
+        ).strip()
+        daemon_running = out not in ("", "0")
+    except Exception:
+        pass
+
+    loops = heartbeat.get("loops") if isinstance(heartbeat, dict) and isinstance(heartbeat.get("loops"), dict) else {}
+
+    return {
+        "generated_at": _iso(),
+        "light": True,
+        "mode_label": daemon_mode_label(),
+        "env_profile": os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"),
+        "live_profit_max": os.environ.get("EXCHANGE_LIVE_PROFIT_MAX", "0"),
+        "auto_sweep_env": os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "0"),
+        "auto_sweep_min_usd": os.environ.get("EXCHANGE_AUTO_SWEEP_MIN_USD") or payout_cfg.get("min_sweep_usd"),
+        "daemon_running": daemon_running,
+        "heartbeat": heartbeat,
+        "loop_summaries": loops,
+        "payout": {
+            "mode": payout_cfg.get("mode"),
+            "auto_sweep": payout_cfg.get("auto_sweep"),
+            "min_sweep_usd": payout_cfg.get("min_sweep_usd"),
+            "last_sweep": payout_cfg.get("last_sweep"),
+        },
+        "treasury": {
+            "auto_stash_on_trade": treasury_cfg.get("auto_stash_on_trade"),
+            "auto_paypal_sweep": treasury_cfg.get("auto_paypal_sweep"),
+        },
+        "critical_top25": {
+            "open_count": top25.get("open_count"),
+            "done_count": top25.get("done_count"),
+            "updated_at": top25.get("updated_at"),
+            "last_hit_rate_review_at": top25.get("last_hit_rate_review_at"),
+        },
+        "arb_threshold": arb_state,
+        "extended_tick_n": ext_tick.get("n"),
+    }
+
+
+def format_light_report(data: Dict[str, Any]) -> str:
+    lines: List[str] = [
+        "=" * 72,
+        "MasterNoder — PROFIT STATUS (light)",
+        f"Generated: {data.get('generated_at')}",
+        "=" * 72,
+        _section("Daemon", [
+            _line("Process running", "yes" if data.get("daemon_running") else "NO"),
+            _line("Profile", data.get("env_profile")),
+            _line("Mode", data.get("mode_label")),
+            _line("Last heartbeat", (data.get("heartbeat") or {}).get("updated_at")),
+        ]),
+    ]
+    loop_lines = []
+    for name, block in (data.get("loop_summaries") or {}).items():
+        if isinstance(block, dict):
+            loop_lines.append(_line(name, block.get("summary")))
+    if loop_lines:
+        lines.append(_section("Loop summaries", loop_lines))
+    pay = data.get("payout") or {}
+    lines.append(_section("Payout (config file)", [
+        _line("Auto sweep", pay.get("auto_sweep")),
+        _line("Min sweep USD", data.get("auto_sweep_min_usd")),
+        _line("EXCHANGE_AUTO_PAYPAL_SWEEP", data.get("auto_sweep_env")),
+    ]))
+    top = data.get("critical_top25") or {}
+    lines.append(_section("Critical Top25", [
+        _line("Open", top.get("open_count")),
+        _line("Done", top.get("done_count")),
+        _line("Hit rate review", top.get("last_hit_rate_review_at")),
+    ]))
+    arb = data.get("arb_threshold") or {}
+    lines.append(_section("Arb threshold state", [
+        _line("Best bps", arb.get("best_net_bps")),
+        _line("Ready", arb.get("ready")),
+        _line("Updated", arb.get("updated_at")),
+    ]))
+    lines.append("\nFull report: python scripts/profit_status_report.py")
+    lines.append("=" * 72)
+    return "\n".join(lines)
+
+
 def collect() -> Dict[str, Any]:
     from scripts.daemon_env import live_status, daemon_mode_label
     from backend.services.exchange_treasury_service import treasury_status
@@ -306,18 +426,20 @@ def format_report(data: Dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Live profit system status report")
+    parser.add_argument("--light", action="store_true",
+                        help="Read heartbeat + JSON state only (no Flask app — safe during active ticks)")
     parser.add_argument("--json", action="store_true", help="Print JSON instead of text")
     parser.add_argument("--save", action="store_true", help="Write to logs/profit_status_report.txt")
     args = parser.parse_args()
 
     from scripts.daemon_env import load_dotenv
     load_dotenv()
-    data = collect()
+    data = collect_light() if args.light else collect()
 
     if args.json:
         print(json.dumps(data, indent=2, default=str))
     else:
-        text = format_report(data)
+        text = format_light_report(data) if args.light else format_report(data)
         print(text)
         if args.save:
             os.makedirs(os.path.join(ROOT, "logs"), exist_ok=True)

@@ -172,13 +172,16 @@ def analyze_market(
         "skill_proficiency": {s: 0.35 for s in skill_ids},
     }
 
+    min_score = float(cfg.get("min_ai_score") or 42)
+    min_net = float(cfg.get("min_net_bps") or 14)
+
     ranked: List[Dict[str, Any]] = []
     for opp in opportunities:
         scored = score_opportunity(opp, skill_ids, volatility=volatility, agent=agent)
         scored["actionable"] = (
             scored.get("profitable")
-            and scored["ai_score"] >= float(cfg.get("min_ai_score") or 52)
-            and float(scored.get("net_bps") or 0) >= float(cfg.get("min_net_bps") or 25)
+            and scored["ai_score"] >= min_score
+            and float(scored.get("net_bps") or 0) >= min_net
         )
         ranked.append(scored)
     ranked.sort(key=lambda o: o.get("ai_score", 0), reverse=True)
@@ -234,13 +237,18 @@ def run_ai_tick(
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
     analysis = analyze_market(injected=injected, probe_venues=False)
     ranked = analysis.get("ranked_opportunities") or []
-    min_score = float(cfg.get("min_ai_score") or 52)
-    min_net = float(cfg.get("min_net_bps") or 25)
+    min_score = float(cfg.get("min_ai_score") or 42)
+    min_net = float(cfg.get("min_net_bps") or 14)
 
     best = next(
         (o for o in ranked if o.get("actionable") and float(o.get("net_bps") or 0) >= min_net),
         None,
     )
+    if not best:
+        best = next(
+            (o for o in ranked if o.get("profitable") and float(o.get("net_bps") or 0) >= min_net),
+            None,
+        )
     if not best and ranked and force_execute:
         best = ranked[0]
 
@@ -252,7 +260,9 @@ def run_ai_tick(
     acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 40
     acct["skills"] = list(cfg.get("default_skills") or [])
 
-    if not best or float(best.get("ai_score") or 0) < min_score:
+    score_ok = float(best.get("ai_score") or 0) >= min_score if best else False
+    spread_ok = bool(best and best.get("profitable") and float(best.get("net_bps") or 0) >= min_net)
+    if not best or (not score_ok and not spread_ok):
         action = {
             "agent_id": agent_id,
             "executed": False,

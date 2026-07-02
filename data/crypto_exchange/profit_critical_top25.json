@@ -1,0 +1,233 @@
+{
+  "checks": {
+    "cross_trade_mn2_drift": true,
+    "wallet_file_lock": true,
+    "ledger_mode_paper": true,
+    "ppp_skill_sync": true,
+    "documentation_sync": true,
+    "daemon_restart": true,
+    "ext_profit_zero": true,
+    "status_report_heavy": true,
+    "hit_rate_tracking": true,
+    "void_skills_open": true,
+    "agent_level_lag": true,
+    "ai_trader_idle": true,
+    "casino_agents_idle": true
+  },
+  "problems": [
+    {
+      "id": "live_stash_zero",
+      "priority": 1,
+      "category": "treasury",
+      "title": "Live USD stash is $0 — no real external arb P&L captured yet",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "xeggex_401",
+      "priority": 2,
+      "category": "api",
+      "title": "XeggeX API returns 401 — refresh keys or IP whitelist",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "spread_below_threshold",
+      "priority": 3,
+      "category": "market",
+      "title": "Arb spreads mostly below 18 bps min_margin — waiting on market",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "cross_trade_mn2_drift",
+      "priority": 4,
+      "category": "funding",
+      "title": "Cross-trade bots MN2 auto-seed must sustain 25 MN2 each tick",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "wallet_file_lock",
+      "priority": 5,
+      "category": "infra",
+      "title": "Windows WinError 5 on wallet JSON writes under concurrent Flask loads",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "ai_trader_idle",
+      "priority": 6,
+      "category": "engine",
+      "title": "AI trader enabled but ai_exec=False every tick",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "arb_exec_zero",
+      "priority": 7,
+      "category": "engine",
+      "title": "Spatial arb 0/11 executions — scan vs fund vs threshold chain",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "ext_profit_zero",
+      "priority": 8,
+      "category": "engine",
+      "title": "Extended profit strategies reporting 0 executions",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "casino_agents_idle",
+      "priority": 9,
+      "category": "engine",
+      "title": "Casino profit agents ran 0/3 on recent ticks",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "paypal_sweep_paper",
+      "priority": 10,
+      "category": "payout",
+      "title": "PayPal payout mode still paper — $572+ unswept ledger",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "auto_sweep_off",
+      "priority": 11,
+      "category": "payout",
+      "title": "Auto sweep disabled (min $500) — manual sweep required",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "ledger_mode_paper",
+      "priority": 12,
+      "category": "ppp",
+      "title": "PPP ledger rows tagged paper while live gates are on",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "ppp_skill_sync",
+      "priority": 13,
+      "category": "ppp",
+      "title": "Profit agent skill sets must sync from ledger on each stack",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "nonkyc_doge_low",
+      "priority": 14,
+      "category": "funding",
+      "title": "NonKYC DOGE inventory low for sell legs (~$25+ recommended)",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "binance_quote_cap",
+      "priority": 15,
+      "category": "funding",
+      "title": "Binance USDC ~$79 caps live notional vs configured micro USD",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "treasury_compound",
+      "priority": 16,
+      "category": "treasury",
+      "title": "Live venue compound on trade enabled but stash ledger empty",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "daemon_restart",
+      "priority": 17,
+      "category": "ops",
+      "title": "Profit daemon must stay running (heartbeat stale = no ticks)",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "status_report_heavy",
+      "priority": 18,
+      "category": "ops",
+      "title": "profit_status_report.py loads full Flask — avoid during active ticks",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "xeggex_live_disabled",
+      "priority": 19,
+      "category": "config",
+      "title": "connectors_config xeggex live_trading=false until probe passes",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "dual_farm_two_venue",
+      "priority": 20,
+      "category": "config",
+      "title": "arb_live_dual_farm limited to binance+nonkyc until XeggeX OK",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "hit_rate_tracking",
+      "priority": 21,
+      "category": "research",
+      "title": "PPP hit_rate_pct must be reviewed weekly per route",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "skip_reason_funding",
+      "priority": 22,
+      "category": "research",
+      "title": "Top skip reason insufficient_venue_balance — pre-fund quote legs",
+      "checked": false,
+      "status": "open"
+    },
+    {
+      "id": "void_skills_open",
+      "priority": 23,
+      "category": "skills",
+      "title": "Open void skills (gap specializations) must close as fixes land",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "agent_level_lag",
+      "priority": 24,
+      "category": "skills",
+      "title": "Agent levels must track stacked profit via PPP ledger not paper PnL only",
+      "checked": true,
+      "status": "done"
+    },
+    {
+      "id": "documentation_sync",
+      "priority": 25,
+      "category": "docs",
+      "title": "PROFIT_PATH_PROTOCOL + critical top25 checklist kept in sync with ledger",
+      "checked": true,
+      "status": "done"
+    }
+  ],
+  "updated_at": "2026-07-02T23:59:30.341969Z",
+  "open_count": 12,
+  "done_count": 13,
+  "notes": {
+    "ext_profit_zero": "extended tick counter n=2835 (2026-07-02)",
+    "status_report_heavy": "profit_status_report.py --light + profit_status_light.py (2026-07-02)",
+    "hit_rate_tracking": "GET /api/exchange/profit-path/hit-rate?days=7 (2026-07-02)",
+    "void_skills_open": "sync_from_ledger closes voids on fill/baseline (2026-07-02)",
+    "agent_level_lag": "agent level from stacked PPP profit USD (2026-07-02)",
+    "ai_trader_idle": "execute on profitable spread when net_bps>=min_net (2026-07-02)",
+    "auto_sweep_off": "enable: --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1; threshold: EXCHANGE_AUTO_SWEEP_MIN_USD",
+    "casino_agents_idle": "daemon terminal 2026-07-03: success=True ran=3/3"
+  },
+  "last_hit_rate_review_at": "2026-07-02T23:59:30.341969Z"
+}

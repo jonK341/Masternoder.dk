@@ -761,6 +761,15 @@ def exchange_swap_rotation_execute():
     return jsonify(execute_rotation(action, dry_run=bool(dry_run)))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-path/hit-rate", methods=["GET"])
+def exchange_profit_path_hit_rate():
+    from backend.services.exchange_profit_agent_skills_service import hit_rate_by_route
+
+    days_raw = request.args.get("days")
+    days = float(days_raw) if days_raw not in (None, "") else 7.0
+    return jsonify(hit_rate_by_route(days=days))
+
+
 @crypto_exchange_bp.route("/api/exchange/profit-path/critical-top25/check", methods=["POST"])
 def exchange_profit_path_critical_check():
     data = request.get_json(silent=True) or {}

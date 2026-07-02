@@ -220,6 +220,7 @@ Profitable **execute** rows trigger `exchange_profit_agent_skills_service.on_led
 GET  /api/exchange/profit-path/skills?agent=
 POST /api/exchange/profit-path/skills/sync   (admin)
 GET  /api/exchange/profit-path/critical-top25
+GET  /api/exchange/profit-path/hit-rate?days=7
 POST /api/exchange/profit-path/critical-top25/check  {"id":"xeggex_401","checked":true}
 ```
 

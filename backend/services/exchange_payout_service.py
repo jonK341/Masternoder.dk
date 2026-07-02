@@ -98,7 +98,16 @@ def _binance_withdraw_network(cfg: Optional[Dict[str, Any]] = None) -> str:
     return str((cfg.get("binance") or {}).get("withdraw_network") or "TRC20").upper()
 
 
-def _load() -> Dict[str, Any]:
+def _min_sweep_usd(cfg: Optional[Dict[str, Any]] = None) -> float:
+    env_min = os.environ.get("EXCHANGE_AUTO_SWEEP_MIN_USD", "").strip()
+    if env_min:
+        try:
+            return max(0.0, float(env_min))
+        except (TypeError, ValueError):
+            pass
+    cfg = cfg or _load()
+    return float(cfg.get("min_sweep_usd") or 5.0)
+
     cfg = ex._read_json(_PAYOUT_PATH, None)
     if not isinstance(cfg, dict):
         cfg = {
@@ -309,7 +318,7 @@ def payout_status() -> Dict[str, Any]:
     share = _paypal_share_pct(cfg)
     sweepable = round(net * share, 4) if paypal_email else net
     dest = str(cfg.get("destination") or ("paypal" if paypal_email else "binance"))
-    min_usd = float(cfg.get("min_sweep_usd") or 5.0)
+    min_usd = _min_sweep_usd(cfg)
     paypal_ready = bool(paypal_email and sweepable >= min_usd)
     waddr = _binance_withdraw_address(cfg)
     wnet = _binance_withdraw_network(cfg)
@@ -379,7 +388,7 @@ def plan_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
     realized = _profit_pool_usd()
     swept = float(cfg.get("swept_total_usd") or 0)
     net = round(max(0.0, realized - swept), 4)
-    threshold = float(min_sweep_usd if min_sweep_usd is not None else cfg.get("min_sweep_usd") or 5.0)
+    threshold = float(min_sweep_usd if min_sweep_usd is not None else _min_sweep_usd(cfg))
     dest = str(cfg.get("destination") or "paypal")
     paypal_email = _owner_paypal_email(cfg)
     share = _paypal_share_pct(cfg)
@@ -583,7 +592,7 @@ def withdraw_binance(amount_usdt: Optional[float] = None, *,
 
     pool_assets = (ex.get_wallet(pool_uid).get("assets") or {})
     pool_usdt = round(float(pool_assets.get("USDT") or 0), 8)
-    threshold = float(min_amount if min_amount is not None else cfg.get("min_sweep_usd") or 5.0)
+    threshold = float(min_amount if min_amount is not None else _min_sweep_usd(cfg))
 
     if amount_usdt is None:
         amount = pool_usdt

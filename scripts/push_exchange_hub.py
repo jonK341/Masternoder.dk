@@ -34,6 +34,8 @@ UPLOAD_FILES = [
     "backend/services/exchange_swap_rotation_service.py",
     "backend/services/exchange_profit_baseline_service.py",
     "backend/services/exchange_profit_agent_skills_service.py",
+    "backend/services/exchange_ai_trading_service.py",
+    "backend/services/exchange_payout_service.py",
     "backend/services/exchange_arbitrage_service.py",
     "backend/services/exchange_live_execution_service.py",
     "backend/services/crypto_exchange_agent_service.py",
