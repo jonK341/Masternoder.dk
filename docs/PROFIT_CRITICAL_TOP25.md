@@ -9,7 +9,7 @@ _Updated: 2026-07-02T19:03:42.674785Z_
 - [x] **#5** [infra] Windows WinError 5 on wallet JSON writes under concurrent Flask loads (`wallet_file_lock`)
 - [ ] **#6** [engine] AI trader enabled but ai_exec=False every tick (`ai_trader_idle`)
 - [ ] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _rotation analyzes fund chain after zero-fill ticks_
-- [ ] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`)
+- [ ] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _fast_arb_rescan executes on threshold when `ready=yes`; fast loop logs `best_bps` vs `threshold`_
 - [ ] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`)
 - [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`)
 - [ ] **#11** [payout] Auto sweep disabled (min $500) — manual sweep required (`auto_sweep_off`)

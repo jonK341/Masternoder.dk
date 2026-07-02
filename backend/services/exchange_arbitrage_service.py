@@ -377,6 +377,23 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         write_account(acct)
         actions.append(action)
 
+    global_best: Optional[Dict[str, Any]] = None
+    for action in actions:
+        row = action.get("best")
+        if not isinstance(row, dict):
+            continue
+        nb = float(row.get("net_bps") or 0)
+        if global_best is None or nb > float(global_best.get("net_bps") or 0):
+            global_best = row
+    try:
+        from backend.services.exchange_extended_profit_service import write_arb_threshold_state
+
+        write_arb_threshold_state(
+            best=global_best, threshold_bps=min_margin_bps, source="exchange_arb_tick",
+        )
+    except Exception:
+        pass
+
     return {
         "success": True,
         "ticked_at": _iso(),

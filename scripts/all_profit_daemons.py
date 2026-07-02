@@ -164,6 +164,35 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     return " ".join(parts)
 
 
+def _summarize_fast(res: Dict[str, Any]) -> str:
+    far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+    ready = far.get("ready")
+    best_bps = far.get("top_net_bps")
+    threshold = far.get("threshold_bps")
+    if ready is None or best_bps is None or threshold is None:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state()
+            if ready is None:
+                ready = state.get("ready")
+            if best_bps is None:
+                best_bps = state.get("best_net_bps")
+            if threshold is None:
+                threshold = state.get("threshold_bps")
+        except Exception:
+            pass
+    parts = [f"ext_exec={res.get('executed_count', 0)}"]
+    if ready is not None:
+        parts.append(f"ready={'yes' if ready else 'no'}")
+    if best_bps is not None:
+        parts.append(f"best_bps={float(best_bps):.1f}")
+    if threshold is not None:
+        parts.append(f"threshold={float(threshold):.0f}")
+    parts.append(f"strategies={res.get('strategy_count', 0)}")
+    return " ".join(parts)
+
+
 def _summarize_casino(res: Dict[str, Any]) -> str:
     skipped = res.get("skipped") or {}
     skip_bits = [f"{k}={v}" for k, v in list(skipped.items())[:2]]
@@ -218,9 +247,7 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
     while not stop.is_set():
         try:
             res = _extended_once(profile)
-            summary = (
-                f"ext_exec={res.get('executed_count', 0)} strategies={res.get('strategy_count', 0)}"
-            )
+            summary = _summarize_fast(res)
             print(f"[all-profit] fast {summary}", flush=True)
             _write_heartbeat("fast", summary)
         except Exception as exc:

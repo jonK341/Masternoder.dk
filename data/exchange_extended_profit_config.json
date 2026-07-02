@@ -2,33 +2,57 @@
   "enabled": true,
   "profiles": {
     "standard": {
-      "strategies": ["live_dual_venue", "stablecoin_peg", "triangular_paper"]
+      "strategies": [
+        "live_dual_venue",
+        "stablecoin_peg",
+        "triangular_paper"
+      ]
     },
     "max": {
       "strategies": [
         "live_dual_venue",
+        "fast_arb_rescan",
         "stablecoin_peg",
-        "triangular_paper",
         "meme_momentum",
-        "defi_rotation",
         "payments_spread",
-        "fast_arb_rescan"
+        "triangular_paper",
+        "defi_rotation"
       ]
     },
     "fast": {
-      "strategies": ["live_dual_venue", "fast_arb_rescan", "meme_momentum"]
+      "strategies": [
+        "live_dual_venue",
+        "fast_arb_rescan",
+        "meme_momentum"
+      ]
     },
     "live-only": {
-      "strategies": ["live_dual_venue", "fast_arb_rescan"]
+      "strategies": [
+        "live_dual_venue",
+        "fast_arb_rescan"
+      ]
     }
   },
   "strategies": {
     "live_dual_venue": {
       "enabled": true,
-      "venues": ["binance", "nonkyc"],
-      "symbols": ["BTC", "ETH", "SOL", "XRP", "DOGE", "LTC", "AVAX", "LINK"],
-      "min_net_bps": 15,
-      "notional_usd": 350,
+      "venues": [
+        "binance",
+        "nonkyc"
+      ],
+      "symbols": [
+        "DOGE",
+        "XRP",
+        "LTC",
+        "SOL",
+        "ETH",
+        "BTC",
+        "AVAX",
+        "LINK",
+        "TRX"
+      ],
+      "min_net_bps": 12,
+      "notional_usd": 75.0,
       "max_executions_per_tick": 2,
       "agent_id": "arb_live_dual_farm"
     },
@@ -40,11 +64,26 @@
     },
     "triangular_paper": {
       "enabled": true,
-      "venues": ["binance", "nonkyc"],
+      "venues": [
+        "binance",
+        "nonkyc"
+      ],
       "loops": [
-        ["BTC", "ETH", "SOL"],
-        ["ETH", "SOL", "XRP"],
-        ["BTC", "XRP", "LTC"]
+        [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        [
+          "ETH",
+          "SOL",
+          "XRP"
+        ],
+        [
+          "BTC",
+          "XRP",
+          "LTC"
+        ]
       ],
       "min_edge_bps": 12,
       "notional_usd": 150,
@@ -52,31 +91,65 @@
     },
     "meme_momentum": {
       "enabled": true,
-      "symbols": ["DOGE", "SHIB"],
-      "venues": ["binance", "nonkyc", "xeggex", "mexc"],
-      "min_net_bps": 20,
-      "notional_usd": 120,
+      "symbols": [
+        "DOGE",
+        "SHIB"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "xeggex"
+      ],
+      "min_net_bps": 16,
+      "notional_usd": 200,
       "agent_id": "arb_agent_meme"
     },
     "defi_rotation": {
       "enabled": true,
-      "assets": ["LINK", "UNI", "ATOM", "ARB", "OP", "NEAR"],
+      "assets": [
+        "LINK",
+        "UNI",
+        "ATOM",
+        "ARB",
+        "OP",
+        "NEAR"
+      ],
       "trade_mn2": 1.5,
       "treasury_user_id": "platform_treasury"
     },
     "payments_spread": {
       "enabled": true,
-      "symbols": ["XRP", "LTC", "XLM", "TRX", "DASH"],
-      "venues": ["binance", "nonkyc", "bitstamp", "whitebit"],
+      "symbols": [
+        "XRP",
+        "LTC",
+        "XLM",
+        "TRX",
+        "DASH"
+      ],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "bitstamp",
+        "whitebit"
+      ],
       "min_net_bps": 18,
       "notional_usd": 100,
       "agent_id": "arb_agent_payments_plus"
     },
     "fast_arb_rescan": {
       "enabled": true,
-      "min_net_bps": 10,
-      "notional_usd": 250,
-      "venues": ["binance", "nonkyc", "okx", "bybit", "kucoin"]
+      "min_net_bps": 12,
+      "notional_usd": 75.0,
+      "execute_on_threshold": true,
+      "agent_id": "arb_live_dual_farm",
+      "max_executions_per_tick": 1,
+      "venues": [
+        "binance",
+        "nonkyc",
+        "xeggex",
+        "okx",
+        "bybit"
+      ]
     }
   }
 }
