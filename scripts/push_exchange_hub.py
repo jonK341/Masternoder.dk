@@ -29,8 +29,15 @@ UPLOAD_FILES = [
     "backend/services/exchange_agent_learning_service.py",
     "backend/services/agent_marketplace_service.py",
     "backend/services/crypto_exchange_service.py",
+    # Profit Path Protocol (research ledger + suggestions)
+    "backend/services/exchange_profit_path_service.py",
+    "backend/services/exchange_arbitrage_service.py",
+    "backend/services/exchange_live_execution_service.py",
+    "backend/services/crypto_exchange_agent_service.py",
+    "backend/services/exchange_payout_service.py",
     # Config (safe defaults; does not overwrite runtime state dirs)
     "data/exchange_trust_config.json",
+    "data/crypto_exchange/profit_path_protocol.json",
 ]
 
 
