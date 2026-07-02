@@ -299,6 +299,23 @@
     }).join('');
   }
 
+  function renderSwapRotation(data) {
+    var el = q('cex-swap-rotation');
+    if (!el) return;
+    var list = (data && data.actions) || [];
+    if (!list.length) {
+      el.innerHTML = '<p class="cex-muted">No rotation actions — funding looks OK or run more arb ticks.</p>';
+      return;
+    }
+    var live = data.rotation_live_enabled ? 'live on' : 'dry-run only';
+    el.innerHTML = '<p class="cex-muted" style="margin:0 0 6px">' + list.length + ' action(s) · ' + live + '</p>' +
+      list.map(function (a) {
+        var pri = a.priority || 'medium';
+        return '<div class="cex-ppp-suggestion cex-ppp-suggestion--' + pri + '">' +
+          '<span class="cex-badge">' + (a.type || 'action') + '</span> ' + (a.label || a.reason || '') + '</div>';
+      }).join('');
+  }
+
   function renderProfitPathSuggestions(data) {
     var el = q('cex-ppp-suggestions');
     if (!el) return;
@@ -329,6 +346,7 @@
       fetchJson('/api/exchange/profit-path/summary' + qs.replace(/&limit=\d+/, ''), { timeout: 10000 }).then(renderProfitPathSummary),
       fetchJson('/api/exchange/profit-path/search' + qs, { timeout: 10000 }).then(renderProfitPathTable),
       fetchJson('/api/exchange/profit-path/suggestions', { timeout: 10000 }).then(renderProfitPathSuggestions),
+      fetchJson('/api/exchange/swap-rotation/suggestions?hours=24&limit=8', { timeout: 10000 }).then(renderSwapRotation),
     ]);
   }
 

@@ -677,6 +677,81 @@ def exchange_profit_path_export():
     return jsonify(export_rows(limit=int(request.args.get("limit") or 200)))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-path/skills", methods=["GET"])
+def exchange_profit_path_skills():
+    from backend.services.exchange_profit_agent_skills_service import get_agent_profit_skills
+
+    agent_id = (request.args.get("agent") or "").strip() or None
+    return jsonify(get_agent_profit_skills(agent_id))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/skills/sync", methods=["POST"])
+def exchange_profit_path_skills_sync():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_agent_skills_service import sync_from_ledger_research
+
+    data = request.get_json(silent=True) or {}
+    hours = float(data.get("hours") or request.args.get("hours") or 168)
+    return jsonify(sync_from_ledger_research(hours=hours))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/critical-top25", methods=["GET"])
+def exchange_profit_path_critical_top25():
+    from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
+
+    return jsonify(critical_problems_top25(refresh=True))
+
+
+@crypto_exchange_bp.route("/api/exchange/swap-rotation/analyze", methods=["GET"])
+def exchange_swap_rotation_analyze():
+    from backend.services.exchange_swap_rotation_service import analyze_funding_gaps
+
+    agent_id = (request.args.get("agent") or request.args.get("agent_id") or "").strip()
+    symbol = (request.args.get("symbol") or "").strip().upper()
+    notional_raw = request.args.get("notional_usd") or request.args.get("notional")
+    notional = float(notional_raw) if notional_raw not in (None, "") else 0.0
+    if not agent_id:
+        return jsonify({"success": False, "error": "agent required"}), 400
+    return jsonify(analyze_funding_gaps(agent_id, symbol, notional))
+
+
+@crypto_exchange_bp.route("/api/exchange/swap-rotation/suggestions", methods=["GET"])
+def exchange_swap_rotation_suggestions():
+    from backend.services.exchange_swap_rotation_service import suggest_swap_actions
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else None
+    agent_id = (request.args.get("agent") or request.args.get("agent_id") or "").strip() or None
+    limit = int(request.args.get("limit") or 12)
+    return jsonify(suggest_swap_actions(hours=hours, limit=limit, agent_id=agent_id))
+
+
+@crypto_exchange_bp.route("/api/exchange/swap-rotation/execute", methods=["POST"])
+def exchange_swap_rotation_execute():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_swap_rotation_service import execute_rotation
+
+    data = request.get_json(silent=True) or {}
+    action = data.get("action") if isinstance(data.get("action"), dict) else data
+    dry_run = data.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.strip().lower() not in ("0", "false", "no", "off")
+    return jsonify(execute_rotation(action, dry_run=bool(dry_run)))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/critical-top25/check", methods=["POST"])
+def exchange_profit_path_critical_check():
+    data = request.get_json(silent=True) or {}
+    problem_id = str(data.get("id") or data.get("problem_id") or "").strip()
+    if not problem_id:
+        return jsonify({"success": False, "error": "id required"}), 400
+    from backend.services.exchange_profit_agent_skills_service import update_critical_checkbox
+
+    return jsonify(update_critical_checkbox(problem_id, bool(data.get("checked"))))
+
+
 @crypto_exchange_bp.route("/api/exchange/premium/features", methods=["GET"])
 def exchange_premium_features():
     from backend.services.exchange_premium_service import premium_features

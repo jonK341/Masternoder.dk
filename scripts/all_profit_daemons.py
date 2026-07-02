@@ -73,7 +73,14 @@ def _extended_once(profile: str) -> Dict[str, Any]:
 def _casino_dry_run(cli_dry_run: bool) -> bool:
     if cli_dry_run:
         return True
-    return os.environ.get("CASINO_AGENT_DRY_RUN", "1").strip().lower() in ("1", "true", "yes", "on")
+    env = os.environ.get("CASINO_AGENT_DRY_RUN", "").strip().lower()
+    if env in ("1", "true", "yes", "on"):
+        return True
+    if env in ("0", "false", "no", "off"):
+        return False
+    # Default: dry-run in paper mode, live bets when profit daemons are live
+    from scripts.daemon_env import daemon_mode_label
+    return daemon_mode_label() != "live"
 
 
 def _casino_once(*, dry_run: bool) -> Dict[str, Any]:
@@ -167,6 +174,31 @@ def _summarize_casino(res: Dict[str, Any]) -> str:
     )
 
 
+def _maybe_log_rotation(res: Dict[str, Any]) -> None:
+    """After arb_exec=0 ticks, log ranked swap suggestions to PPP rotation phase."""
+    try:
+        plat = res.get("platform") or {}
+        results = plat.get("results") or {}
+        arb = results.get("arbitrage") or {}
+        executed = int(arb.get("executed_count") or 0)
+        if executed > 0:
+            return
+        from backend.services.exchange_swap_rotation_service import (
+            log_rotation_to_ppp,
+            suggest_swap_actions,
+        )
+
+        rot = suggest_swap_actions(hours=6, limit=5)
+        actions = rot.get("actions") or []
+        if not actions:
+            return
+        log_rotation_to_ppp(actions, arb_executed=0)
+        top = actions[0].get("label") or actions[0].get("type")
+        print(f"[all-profit] rotation suggest: {top} (+{len(actions) - 1} more)", flush=True)
+    except Exception:
+        pass
+
+
 def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threading.Event) -> None:
     print(f"[all-profit] exchange loop interval={interval}s profile={profile} mode={daemon_mode_label()}", flush=True)
     while not stop.is_set():
@@ -174,6 +206,7 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             res = _exchange_once(auto_sweep, profile)
             summary = _summarize_exchange(res)
             print(f"[all-profit] exchange {summary}", flush=True)
+            _maybe_log_rotation(res)
             _write_heartbeat("exchange", summary)
         except Exception as exc:
             print(f"[all-profit] exchange error: {exc}", flush=True)

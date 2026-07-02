@@ -45,11 +45,41 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("max_ledger_rows", 50000)
     cfg.setdefault("retention_days", 90)
     cfg.setdefault("default_threshold_bps", 30)
+    cfg.setdefault("default_ledger_mode", "auto")
+    cfg.setdefault("skill_evolution_on_profit", True)
     cfg.setdefault("mask_balances", True)
     cfg.setdefault("balance_summary_venues", ["binance", "nonkyc", "coinbase", "bingx", "xeggex"])
     cfg.setdefault("suggestion_lookback_hours", 168)
     cfg.setdefault("export_default_limit", 200)
+    cfg.setdefault("rotation_lookback_hours", 24)
+    cfg.setdefault("rotation_live_enabled", False)
     return cfg
+
+
+def ledger_mode(explicit: Optional[str] = None) -> str:
+    """Resolve PPP row mode: live when arb live gate is on (unless forced in config)."""
+    if explicit in ("live", "paper"):
+        return explicit
+    cfg = load_config()
+    forced = str(cfg.get("default_ledger_mode") or "auto").lower()
+    if forced in ("live", "paper"):
+        return forced
+    try:
+        from backend.services.exchange_arbitrage_service import live_enabled
+        return "live" if live_enabled() else "paper"
+    except Exception:
+        return "paper"
+
+
+def _maybe_evolve_skills(row: Dict[str, Any]) -> None:
+    cfg = load_config()
+    if not cfg.get("skill_evolution_on_profit", True):
+        return
+    try:
+        from backend.services.exchange_profit_agent_skills_service import on_ledger_profit_event
+        on_ledger_profit_event(row)
+    except Exception:
+        pass
 
 
 def _read_ledger(*, limit: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -76,7 +106,13 @@ def _append_row(row: Dict[str, Any]) -> None:
     cfg = load_config()
     if not cfg.get("enabled", True):
         return
+    if "mode" not in row or row.get("mode") in (None, "", "auto"):
+        row["mode"] = ledger_mode(str(row.get("mode") or ""))
     ex._append_jsonl(_LEDGER_PATH, row)
+    exec_block = row.get("execution") or {}
+    if row.get("phase") == "execute" and exec_block.get("success"):
+        if float(exec_block.get("realized_pnl_usd") or 0) > 0 or float(row.get("notional_usd") or 0) > 0:
+            _maybe_evolve_skills(row)
     max_rows = int(cfg.get("max_ledger_rows") or 50000)
     if max_rows <= 0:
         return
@@ -183,7 +219,7 @@ def record_scan(
     strategy: str = "spatial_arb",
     best: Optional[Dict[str, Any]] = None,
     threshold_bps: Optional[float] = None,
-    mode: str = "paper",
+    mode: str = "",
     decision: str = "skip",
     skip_reason: Optional[str] = None,
     notional_usd: Optional[float] = None,
@@ -291,7 +327,7 @@ def record_event(
     agent_id: str = "",
     strategy: str = "",
     symbol: str = "",
-    mode: str = "paper",
+    mode: str = "",
     decision: str = "attempt",
     skip_reason: str = "",
     notional_usd: float = 0,
@@ -550,6 +586,25 @@ def suggest_improvements(*, hours: Optional[float] = None) -> Dict[str, Any]:
                     "evidence": {"notional_usd": notion, "balance_key": k, "band": band},
                 })
                 break
+
+    # Swap rotation hints from funding gaps
+    try:
+        from backend.services.exchange_swap_rotation_service import suggest_swap_actions
+
+        rot = suggest_swap_actions(hours=min(lookback, 48), limit=5)
+        for act in (rot.get("actions") or [])[:5]:
+            suggestions.append({
+                "priority": act.get("priority") or "high",
+                "category": "rotation",
+                "message": act.get("label") or act.get("reason") or "Swap rotation action",
+                "evidence": {
+                    "type": act.get("type"),
+                    "reason": act.get("reason"),
+                    "top25_items": act.get("top25_items"),
+                },
+            })
+    except Exception:
+        pass
 
     # Route performance
     summary = profit_path_summary(hours=min(lookback, 168))

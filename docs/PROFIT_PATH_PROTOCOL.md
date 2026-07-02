@@ -108,6 +108,24 @@ Exchange hub → **Bots** tab → **Profit Path research** panel:
 6. **Apply suggestions** — adjust `min_margin_bps`, notional, or venue list in connector config.
 7. **Re-run and compare** summary hit rate and avg net bps week over week.
 
+## Swap rotation (funding unlock)
+
+When live arb scans find spreads but `arb_exec=0` due to venue inventory, the **swap rotation service** analyzes funding gaps and ranks capital moves.
+
+| Function | Purpose |
+|----------|---------|
+| `analyze_funding_gaps(agent_id, symbol, notional_usd)` | Which leg is short (buy quote vs sell base) via `can_fund_arb_leg` |
+| `suggest_swap_actions()` | Ranked list: external quote buy, internal USDC↔USDT, lower notional |
+| `execute_rotation(action, dry_run=True)` | Internal stable swap or external market order (live only when `rotation_live_enabled`) |
+
+**API:** `GET /api/exchange/swap-rotation/analyze`, `GET .../suggestions`, `POST .../execute` (admin key, dry_run default true).
+
+**Daemon:** After each exchange tick with zero arb fills, `all_profit_daemons` logs top rotation suggestion and appends a PPP `rotation` phase row.
+
+**Config:** `profit_path_protocol.json` → `rotation_live_enabled` (default false) or env `EXCHANGE_ROTATION_LIVE=1`.
+
+**Top25 items addressed:** #7 arb_exec_zero, #14 nonkyc_doge_low, #15 binance_quote_cap, #22 skip_reason_funding (partial #1/#16 when stash fills after funded arbs).
+
 ## Python usage
 
 ```python
@@ -134,4 +152,38 @@ hints = suggest_improvements()
 
 ```bash
 pytest tests/unit/test_exchange_profit_path.py -q
+pytest tests/unit/test_exchange_profit_agent_skills.py -q
+```
+
+## Live ledger mode
+
+When `EXCHANGE_ARBITRAGE_LIVE=1`, PPP rows default to `mode: live` (`default_ledger_mode: auto` in config). Force with `default_ledger_mode: live` or `paper`.
+
+## Skill evolution (profit agent skill sets)
+
+Profitable **execute** rows trigger `exchange_profit_agent_skills_service.on_ledger_profit_event`:
+
+- **Profit skills** — specialized per strategy/symbol/route/mode (e.g. `ppp_spatial_arb_btc_binance_to_nonkyc_live`)
+- **Void skills** — gap specializations from skip reasons (e.g. `void_mn2_liquidity`, `void_spread_gate`)
+- **Level up** — XP from stacked profit (`skill_stack_usd_step` default $0.25)
+
+### API
+
+```
+GET  /api/exchange/profit-path/skills?agent=
+POST /api/exchange/profit-path/skills/sync   (admin)
+GET  /api/exchange/profit-path/critical-top25
+POST /api/exchange/profit-path/critical-top25/check  {"id":"xeggex_401","checked":true}
+```
+
+### Ops checklist
+
+See [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) — auto-generated checkbox list synced from PPP + live readiness.
+
+```python
+from backend.services.exchange_profit_agent_skills_service import (
+    sync_from_ledger_research, critical_problems_top25, write_critical_markdown_doc,
+)
+sync_from_ledger_research(hours=168)
+write_critical_markdown_doc()
 ```
