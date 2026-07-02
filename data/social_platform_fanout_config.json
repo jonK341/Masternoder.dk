@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "description": "Cross-platform discovery fan-out — casino, market, camgirls, aggregator",
+  "platforms": {
+    "discord": {
+      "enabled": true,
+      "channel_map": {
+        "casino": "casino",
+        "market": "market",
+        "game": "game"
+      }
+    },
+    "facebook": {
+      "enabled": true,
+      "min_mn2_highlight": 5,
+      "discovery_rotator": [
+        {"id": "casino", "title": "MasterNoder Casino", "path": "/casino/", "cta": "Play with coins, MN2, or PayPal"},
+        {"id": "camgirls", "title": "Camgirls studio", "path": "/camgirls/", "cta": "5 AI hosts — tips & fan club"},
+        {"id": "market", "title": "MN2 trader market", "path": "/explorer?tab=market", "cta": "Trade MN2 for coins"},
+        {"id": "hosting", "title": "Masternode hosting", "path": "/hosting/", "cta": "$4.99/slot — VIP Discord"},
+        {"id": "shop", "title": "Game shop", "path": "/shop/", "cta": "Coins, battle pass, MN2 packs"},
+        {"id": "podcast", "title": "Podcast hub", "path": "/podcast/", "cta": "Episodes + MN2 rewards"}
+      ]
+    },
+    "youtube": {
+      "enabled": true,
+      "channel_url": "https://www.youtube.com/@masternoder",
+      "discovery_rotator": [
+        {"id": "casino_clip", "title": "Casino highlights", "path": "/casino/?tab=social", "cta": "Big wins & tournaments"},
+        {"id": "podcast_ep", "title": "Latest podcast", "path": "/podcast/", "cta": "Watch + earn MN2"},
+        {"id": "generator", "title": "AI video drops", "path": "/generator/", "cta": "Generator intelligence clips"},
+        {"id": "camgirls", "title": "Studio spotlight", "path": "/camgirls/", "cta": "Nova–Iris live AI"}
+      ]
+    }
+  },
+  "event_types": {
+    "casino": [
+      "casino_jackpot_win",
+      "casino_big_win",
+      "casino_tournament_end",
+      "casino_mn2_promo"
+    ],
+    "market": [
+      "p2p_market_fill",
+      "trader_market_tick"
+    ],
+    "game": [
+      "battle_win",
+      "compendium_complete",
+      "game_mn2_reward"
+    ],
+    "discovery": [
+      "platform_news",
+      "camgirl_unlock",
+      "partner_spotlight"
+    ]
+  },
+  "referral_rewards": {
+    "discord_link_mn2": 50,
+    "facebook_link_mn2": 25,
+    "youtube_subscribe_mn2": 0.01
+  }
+}

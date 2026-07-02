@@ -4,6 +4,42 @@
   "user_crews": {},
   "activity_feed": [
     {
+      "id": "29ae7a19",
+      "user_id": "player1",
+      "action_type": "casino_discord_earn",
+      "label": "Discord play-earn +10 coins",
+      "ts": "2026-06-24T05:52:13.296023Z",
+      "extra": {
+        "discord_id": "discord_42",
+        "game": "crash",
+        "channel": "casino"
+      }
+    },
+    {
+      "id": "d3863762",
+      "user_id": "player_welcome",
+      "action_type": "casino_discord_welcome_reward",
+      "label": "Discord welcome bonus +50.0 MN2",
+      "ts": "2026-06-24T05:52:13.000111Z",
+      "extra": {
+        "discord_id": "discord_welcome_1",
+        "granted_coins": 0,
+        "channel": "casino"
+      }
+    },
+    {
+      "id": "22c7a09a",
+      "user_id": "site_user_1",
+      "action_type": "casino_discord_welcome_reward",
+      "label": "Discord welcome bonus +50.0 MN2",
+      "ts": "2026-06-24T05:52:10.905699Z",
+      "extra": {
+        "discord_id": "discord_999",
+        "granted_coins": 0,
+        "channel": "casino"
+      }
+    },
+    {
       "id": "75cd922a",
       "user_id": "user_b4984c3befca47a7",
       "action_type": "battle",
@@ -73,5 +109,23 @@
   "challenges": [],
   "max_activity_items": 500,
   "max_friends_per_user": 100,
-  "max_crew_members": 50
+  "max_crew_members": 50,
+  "crew_invites": [],
+  "referrals": {
+    "codes": {},
+    "signups": []
+  },
+  "crypto": {
+    "claims": {},
+    "total_mn2_earned": 0
+  },
+  "chat_messages": [],
+  "moderation": {
+    "blocks": {},
+    "reports": [],
+    "hidden_activity": {}
+  },
+  "privacy": {},
+  "schema_version": 2,
+  "max_chat_messages": 500
 }
