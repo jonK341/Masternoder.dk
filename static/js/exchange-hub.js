@@ -262,10 +262,94 @@
     return fetchJson('/api/exchange/health', { timeout: 6000 }).then(renderHealth);
   }
 
+  function renderProfitPathSummary(data) {
+    var el = q('cex-ppp-summary');
+    if (!el) return;
+    if (!data || !data.success) { el.textContent = 'Profit path summary unavailable.'; return; }
+    var topSkip = (data.top_skip_reasons && data.top_skip_reasons[0]) ? data.top_skip_reasons[0].reason : '—';
+    el.innerHTML =
+      '<span class="cex-mon-kpi">Scans <b>' + (data.scan_count || 0) + '</b></span>' +
+      '<span class="cex-mon-kpi">Attempts <b>' + (data.attempt_count || 0) + '</b></span>' +
+      '<span class="cex-mon-kpi">Fills <b>' + (data.fill_count || 0) + '</b></span>' +
+      '<span class="cex-mon-kpi">Avg net <b>' + Number(data.avg_net_bps || 0).toFixed(1) + '</b> bps</span>' +
+      '<span class="cex-mon-kpi">Hit rate <b>' + Number(data.hit_rate_pct || 0).toFixed(0) + '%</b></span>' +
+      '<span class="cex-mon-kpi">Top skip <b>' + topSkip + '</b></span>';
+  }
+
+  function renderProfitPathTable(data) {
+    var body = q('cex-ppp-table-body');
+    if (!body) return;
+    var rows = (data && data.paths) || [];
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="6" class="cex-muted">No matching paths.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function (r) {
+      var v = r.venues || {};
+      var route = (r.symbol || '') + ' ' + (v.buy || '?') + '→' + (v.sell || '?');
+      var ts = (r.ts || '').replace('T', ' ').replace('Z', '');
+      var note = r.skip_reason || ((r.execution && r.execution.realized_pnl_usd) ? ('$' + Number(r.execution.realized_pnl_usd).toFixed(2)) : '');
+      return '<tr>' +
+        '<td>' + ts.slice(0, 19) + '</td>' +
+        '<td>' + (r.phase || '') + '</td>' +
+        '<td>' + route + '</td>' +
+        '<td>' + Number(r.net_bps || 0).toFixed(1) + '</td>' +
+        '<td>' + (r.decision || '') + '</td>' +
+        '<td class="cex-muted">' + (note || '—') + '</td></tr>';
+    }).join('');
+  }
+
+  function renderProfitPathSuggestions(data) {
+    var el = q('cex-ppp-suggestions');
+    if (!el) return;
+    var list = (data && data.suggestions) || [];
+    if (!list.length) { el.innerHTML = '<p class="cex-muted">No suggestions yet — run more arb ticks.</p>'; return; }
+    el.innerHTML = list.map(function (s) {
+      var pri = s.priority || 'medium';
+      return '<div class="cex-ppp-suggestion cex-ppp-suggestion--' + pri + '">' +
+        '<span class="cex-badge">' + pri + '</span> ' + (s.message || '') + '</div>';
+    }).join('');
+  }
+
+  function profitPathQuery() {
+    var agent = (q('cex-ppp-filter-agent') && q('cex-ppp-filter-agent').value || '').trim();
+    var symbol = (q('cex-ppp-filter-symbol') && q('cex-ppp-filter-symbol').value || '').trim();
+    var hours = (q('cex-ppp-filter-hours') && q('cex-ppp-filter-hours').value) || '24';
+    var decision = (q('cex-ppp-filter-decision') && q('cex-ppp-filter-decision').value || '').trim();
+    var qs = '?hours=' + encodeURIComponent(hours) + '&limit=50';
+    if (agent) qs += '&agent=' + encodeURIComponent(agent);
+    if (symbol) qs += '&symbol=' + encodeURIComponent(symbol);
+    if (decision) qs += '&decision=' + encodeURIComponent(decision);
+    return qs;
+  }
+
+  function loadProfitPathResearch() {
+    var qs = profitPathQuery();
+    return Promise.all([
+      fetchJson('/api/exchange/profit-path/summary' + qs.replace(/&limit=\d+/, ''), { timeout: 10000 }).then(renderProfitPathSummary),
+      fetchJson('/api/exchange/profit-path/search' + qs, { timeout: 10000 }).then(renderProfitPathTable),
+      fetchJson('/api/exchange/profit-path/suggestions', { timeout: 10000 }).then(renderProfitPathSuggestions),
+    ]);
+  }
+
+  function initProfitPathFilters() {
+    var btn = q('cex-ppp-search-btn');
+    if (!btn || btn._pppBound) return;
+    btn._pppBound = true;
+    btn.addEventListener('click', function () {
+      loaded.bots = false;
+      loadTab('bots', true);
+    });
+  }
+
   onTab('overview', loadOverviewHealth);
   onTab('liquidity', loadLiquidityTab);
   onTab('treasury', loadTreasuryTab);
   onTab('venues', loadVenuesTab);
+  onTab('bots', function () {
+    initProfitPathFilters();
+    return loadProfitPathResearch();
+  });
 
   window.ExchangeHub = {
     onTab: onTab,

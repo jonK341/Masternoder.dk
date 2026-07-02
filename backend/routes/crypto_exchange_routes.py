@@ -631,6 +631,52 @@ def exchange_profit_tools_simulate():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-path/search", methods=["GET"])
+def exchange_profit_path_search():
+    from backend.services.exchange_profit_path_service import search_paths
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else 24.0
+    min_bps_raw = request.args.get("min_net_bps")
+    return jsonify(search_paths(
+        agent_id=(request.args.get("agent") or "").strip() or None,
+        symbol=(request.args.get("symbol") or "").strip() or None,
+        hours=hours,
+        min_net_bps=float(min_bps_raw) if min_bps_raw not in (None, "") else None,
+        decision=(request.args.get("decision") or "").strip() or None,
+        venue=(request.args.get("venue") or "").strip() or None,
+        phase=(request.args.get("phase") or "").strip() or None,
+        limit=int(request.args.get("limit") or 50),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/summary", methods=["GET"])
+def exchange_profit_path_summary():
+    from backend.services.exchange_profit_path_service import profit_path_summary
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else None
+    return jsonify(profit_path_summary(hours=hours))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/suggestions", methods=["GET"])
+def exchange_profit_path_suggestions():
+    from backend.services.exchange_profit_path_service import suggest_improvements
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else None
+    return jsonify(suggest_improvements(hours=hours))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/export", methods=["GET"])
+def exchange_profit_path_export():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_path_service import export_rows
+
+    return jsonify(export_rows(limit=int(request.args.get("limit") or 200)))
+
+
 @crypto_exchange_bp.route("/api/exchange/premium/features", methods=["GET"])
 def exchange_premium_features():
     from backend.services.exchange_premium_service import premium_features

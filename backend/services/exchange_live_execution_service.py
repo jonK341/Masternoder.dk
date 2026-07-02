@@ -181,6 +181,21 @@ def execute_spatial_arbitrage(
             mode=mode,
             meta={"symbol": symbol, "buy_venue": buy_venue, "sell_venue": sell_venue, "net_bps": opp.get("net_bps")},
         )
+        if stash and stash.get("success") and not stash.get("skipped"):
+            try:
+                from backend.services.exchange_profit_path_service import record_event
+                record_event(
+                    phase="stash",
+                    agent_id=agent_id,
+                    strategy="spatial_arb",
+                    symbol=symbol,
+                    mode=mode,
+                    decision="fill",
+                    notional_usd=profit,
+                    execution={"amount_usd": profit, "source": stash.get("source")},
+                )
+            except Exception:
+                pass
 
     return {
         "success": ok,
@@ -258,7 +273,18 @@ def try_farm_execution_for_agent(
         return None
 
     best = opps[0]
+    from backend.services.exchange_profit_path_service import record_scan, record_execution
+    path_id = record_scan(
+        agent_id=agent_id, strategy=str(agent.get("strategy") or "farm"), best=best,
+        threshold_bps=float((scan.get("min_margin_bps") or 30)), mode="live", decision="attempt",
+        notional_usd=float(best.get("notional_usd") or fp.get("notional_usd") or 0),
+        venues=fp.get("venues"),
+    )
     exec_res = execute_spatial_arbitrage(best, agent_id=agent_id)
+    record_execution(
+        path_id=path_id, agent_id=agent_id, opp=best, exec_res=exec_res,
+        strategy=str(agent.get("strategy") or "farm"), venues=fp.get("venues"),
+    )
     if not exec_res.get("success"):
         return None
 

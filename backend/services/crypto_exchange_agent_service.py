@@ -56,18 +56,24 @@ def list_agents() -> Dict[str, Any]:
     }
 
 
-def _seed_agent_mn2(agent_id: str, target_mn2: float) -> None:
+def _seed_agent_mn2(agent_id: str, target_mn2: float, *, tick_count: int = 0) -> None:
+    """Top up agent MN2 before each trade. Reference includes tick_count so idempotency
+    does not block recurring seeds (static refs only fire once per process lifetime)."""
     from backend.services.unified_points_database import unified_points_db
 
     bal = ex._get_quote_balance(agent_id, "MN2")
-    if bal >= target_mn2:
+    gap = round(float(target_mn2) - float(bal), 8)
+    if gap <= 0:
         return
     unified_points_db.add_points(
         agent_id,
         "mn2_balance",
-        target_mn2 - bal,
+        gap,
         source="exchange_agent_seed",
-        metadata={"reference": f"exchange-agent-seed:{agent_id}", "non_withdrawable": True},
+        metadata={
+            "reference": f"exchange-agent-seed:{agent_id}:t{int(tick_count)}",
+            "non_withdrawable": True,
+        },
     )
 
 
@@ -105,6 +111,21 @@ def _trade_agent(agent: Dict[str, Any], tick_count: int, max_trade_mn2: float) -
         amount,
         "MN2",
     )
+    try:
+        from backend.services.exchange_profit_path_service import record_event
+        record_event(
+            phase="execute",
+            agent_id=agent_id,
+            strategy=str(agent.get("strategy") or "rotation"),
+            symbol=symbol,
+            mode="paper",
+            decision="fill" if result.get("success") else "attempt",
+            skip_reason=str(result.get("error") or ""),
+            notional_usd=float(amount) * ex._price_usd(symbol),
+            execution={"trade_id": str((result.get("trade") or {}).get("id") or ""), "side": side},
+        )
+    except Exception:
+        pass
     return {
         "agent_id": agent_id,
         "agent_name": agent.get("name") or agent_id,
@@ -136,7 +157,7 @@ def tick(*, force: bool = False) -> Dict[str, Any]:
         if not agent_id:
             continue
         try:
-            _seed_agent_mn2(agent_id, seed_mn2)
+            _seed_agent_mn2(agent_id, seed_mn2, tick_count=tick_count)
             action = _trade_agent(agent, tick_count, max_trade_mn2)
         except Exception as exc:
             action = {

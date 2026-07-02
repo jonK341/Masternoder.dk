@@ -527,3 +527,16 @@
 .cex-daemon-badge-daemon { background: rgba(167,139,250,0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; margin-left: 6px; }
 .cex-my-rentals { margin-top: 16px; }
 .cex-shop-active { font-size: 0.76rem; margin: 8px 0; color: rgba(255,255,255,0.65); }
+
+/* Profit Path Protocol (PPP) research */
+.cex-profit-path-card { border: 1px solid rgba(0,255,136,0.18); margin-top: 16px; }
+.cex-ppp-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: end; margin: 12px 0; }
+.cex-ppp-table-wrap { max-height: 320px; overflow: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 12px; }
+.cex-ppp-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.cex-ppp-table th, .cex-ppp-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cex-ppp-table th { color: rgba(255,255,255,0.55); font-weight: 600; position: sticky; top: 0; background: rgba(8,12,24,0.95); }
+.cex-ppp-suggestions { display: flex; flex-direction: column; gap: 8px; }
+.cex-ppp-suggestion { font-size: 0.8rem; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); }
+.cex-ppp-suggestion--high { border-color: rgba(255,100,100,0.35); }
+.cex-ppp-suggestion--medium { border-color: rgba(255,200,80,0.25); }
+.cex-ppp-suggestion--low { border-color: rgba(255,255,255,0.1); }

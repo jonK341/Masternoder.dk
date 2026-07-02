@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "version": 1,
+  "max_ledger_rows": 50000,
+  "retention_days": 90,
+  "default_threshold_bps": 30,
+  "mask_balances": true,
+  "balance_summary_venues": ["binance", "nonkyc", "coinbase", "bingx", "xeggex"],
+  "suggestion_lookback_hours": 168,
+  "export_default_limit": 200
+}

@@ -496,6 +496,19 @@ def execute_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
         }
 
     ex._append_jsonl(_SWEEPS_PATH, record)
+    try:
+        from backend.services.exchange_profit_path_service import record_event
+        record_event(
+            phase="sweep",
+            agent_id="platform_treasury",
+            strategy="payout",
+            mode=str(record.get("mode") or "paper"),
+            decision="fill",
+            notional_usd=amount,
+            execution={"destination": dest, "amount_usd": amount},
+        )
+    except Exception:
+        pass
     cfg["swept_total_usd"] = round(float(cfg.get("swept_total_usd") or 0) + amount, 4)
     cfg["last_sweep"] = record
     _save(cfg)

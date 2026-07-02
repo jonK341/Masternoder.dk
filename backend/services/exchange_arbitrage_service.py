@@ -291,6 +291,10 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         acct["ticks"] = int(acct.get("ticks") or 0) + 1
         acct["game_time_sec"] = int(acct.get("game_time_sec") or 0) + 3600
         acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 50
+        from backend.services.exchange_profit_path_service import record_scan, record_execution
+        strategy = str(agent.get("strategy") or "spatial_arb")
+        tick_mode = "live" if live_enabled() else "paper"
+        path_id = ""
         if best and best["net_bps"] >= min_margin_bps and best["est_profit_usd"] > 0:
             from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
             from backend.services import exchange_venue_api_service as vapi
@@ -306,6 +310,11 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                 if cap >= min_live_usd:
                     best = _scale_opportunity_notional(best, min(notional, cap))
                 else:
+                    path_id = record_scan(
+                        agent_id=agent_id, strategy=strategy, best=best,
+                        threshold_bps=min_margin_bps, mode=tick_mode, decision="skip",
+                        skip_reason="insufficient_venue_balance", notional_usd=notional, venues=a_venues,
+                    )
                     action = {
                         "agent_id": agent_id,
                         "executed": False,
@@ -313,6 +322,7 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                         "best": best,
                         "max_funded_usd": round(cap, 2),
                         "mode": "live",
+                        "profit_path_id": path_id,
                     }
                     acct["last_action"] = action
                     write_account(acct)
@@ -320,6 +330,11 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                     continue
                 funding = vapi.opportunity_funded(best)
                 if not funding.get("ok"):
+                    path_id = record_scan(
+                        agent_id=agent_id, strategy=strategy, best=best,
+                        threshold_bps=min_margin_bps, mode=tick_mode, decision="skip",
+                        skip_reason="insufficient_venue_balance", notional_usd=notional, venues=a_venues,
+                    )
                     action = {
                         "agent_id": agent_id,
                         "executed": False,
@@ -327,17 +342,37 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                         "best": best,
                         "funding": funding,
                         "mode": "live",
+                        "profit_path_id": path_id,
                     }
                     acct["last_action"] = action
                     write_account(acct)
                     actions.append(action)
                     continue
+            path_id = record_scan(
+                agent_id=agent_id, strategy=strategy, best=best,
+                threshold_bps=min_margin_bps, mode=tick_mode, decision="attempt",
+                notional_usd=float(best.get("notional_usd") or notional), venues=a_venues,
+            )
             exec_res = execute_spatial_arbitrage(best, agent_id=agent_id)
+            record_execution(
+                path_id=path_id, agent_id=agent_id, opp=best, exec_res=exec_res,
+                strategy=strategy, threshold_bps=min_margin_bps, venues=a_venues,
+            )
             acct = book_agent_profit(agent_id, best, exec_res)
             action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}
+            if isinstance(action, dict):
+                action["profit_path_id"] = path_id
         else:
-            action = {"agent_id": agent_id, "executed": False, "reason": "no_profitable_spread",
-                      "best": best, "mode": "paper"}
+            skip_reason = "no_profitable_spread"
+            if best and best["net_bps"] < min_margin_bps:
+                skip_reason = "below_threshold"
+            path_id = record_scan(
+                agent_id=agent_id, strategy=strategy, best=best,
+                threshold_bps=min_margin_bps, mode=tick_mode, decision="skip",
+                skip_reason=skip_reason, notional_usd=notional, venues=a_venues,
+            )
+            action = {"agent_id": agent_id, "executed": False, "reason": skip_reason,
+                      "best": best, "mode": tick_mode, "profit_path_id": path_id}
             acct["last_action"] = action
         write_account(acct)
         actions.append(action)

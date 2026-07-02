@@ -264,6 +264,51 @@
                     <div id="cex-ai-top-pick" class="cex-ai-pick muted"></div>
                     <button type="button" id="cex-ai-analyze-btn" class="cex-btn cex-btn--ghost">Analyze market</button>
                 </div>
+                <div class="cex-profile-card cex-profit-path-card" id="cex-profit-path-research">
+                    <h3>Profit Path research <span class="cex-badge">PPP</span></h3>
+                    <p class="cex-market-sub" style="margin:0 0 10px">Searchable arb/trade paths — scans, attempts, fills, and skip reasons for route re-engineering.</p>
+                    <div id="cex-ppp-summary" class="cex-monitor-totals">Open Bots tab to load…</div>
+                    <div class="cex-ppp-filters">
+                        <label class="cex-calc-row">Agent
+                            <input type="text" id="cex-ppp-filter-agent" class="cex-input" placeholder="arb_agent_btc_eth" />
+                        </label>
+                        <label class="cex-calc-row">Symbol
+                            <input type="text" id="cex-ppp-filter-symbol" class="cex-input" placeholder="BTC" />
+                        </label>
+                        <label class="cex-calc-row">Hours
+                            <input type="number" id="cex-ppp-filter-hours" class="cex-input" min="1" max="720" value="24" />
+                        </label>
+                        <label class="cex-calc-row">Decision
+                            <select id="cex-ppp-filter-decision" class="cex-input">
+                                <option value="">Any</option>
+                                <option value="skip">skip</option>
+                                <option value="attempt">attempt</option>
+                                <option value="paper">paper</option>
+                                <option value="live">live</option>
+                            </select>
+                        </label>
+                        <button type="button" id="cex-ppp-search-btn" class="cex-btn cex-btn--ghost">Search</button>
+                    </div>
+                    <div id="cex-ppp-table-wrap" class="cex-ppp-table-wrap">
+                        <table class="cex-ppp-table" id="cex-ppp-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Phase</th>
+                                    <th>Route</th>
+                                    <th>Net bps</th>
+                                    <th>Decision</th>
+                                    <th>Skip / note</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cex-ppp-table-body">
+                                <tr><td colspan="6" class="cex-muted">No paths loaded.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h4 class="cex-monitor-h4">Suggestions</h4>
+                    <div id="cex-ppp-suggestions" class="cex-ppp-suggestions muted">—</div>
+                </div>
             </section>
         </div>
 
@@ -452,7 +497,7 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20260702a"></script>
+    <script src="/static/js/exchange-hub.js?v=20260702b"></script>
     <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702a"></script>
 </body>
