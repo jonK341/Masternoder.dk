@@ -1,0 +1,463 @@
+"""Profit Path Protocol → agent skill evolution.
+
+Reads PPP ledger research rows, stacks specialized profit skills + voids (gap skills),
+levels agents up, and maintains a critical top-25 problem checklist with checkboxes.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from backend.services import crypto_exchange_service as ex
+
+_REGISTRY_PATH = os.path.join(ex._BASE, "logs", "profit_agent_skills", "registry.json")
+_CRITICAL_PATH = os.path.join(ex._DATA_DIR, "profit_critical_top25.json")
+_LEDGER_PATH = os.path.join(ex._DATA_DIR, "profit_path_ledger.jsonl")
+
+_STACK_USD_STEP = 0.25
+_XP_PER_PROFIT_USD = 40
+_XP_PER_VOID_CLOSED = 25
+
+
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _read_json(path: str, default: Any) -> Any:
+    if not os.path.isfile(path):
+        return default
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _write_json(path: str, data: Any) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def _slug(text: str, *, max_len: int = 48) -> str:
+    s = re.sub(r"[^a-z0-9]+", "_", str(text or "").lower()).strip("_")
+    return (s[:max_len] or "unknown")
+
+
+def _load_registry() -> Dict[str, Any]:
+    reg = _read_json(_REGISTRY_PATH, {})
+    if not isinstance(reg, dict):
+        reg = {}
+    reg.setdefault("agents", {})
+    reg.setdefault("voids", {})
+    reg.setdefault("ledger_sync", {})
+    reg["ledger_sync"].setdefault("processed_path_ids", [])
+    reg["ledger_sync"].setdefault("processed_baseline_ids", [])
+    return reg
+
+
+def _save_registry(reg: Dict[str, Any]) -> None:
+    processed = reg.get("ledger_sync", {}).get("processed_path_ids") or []
+    if len(processed) > 8000:
+        reg["ledger_sync"]["processed_path_ids"] = processed[-8000:]
+    reg["updated_at"] = _iso()
+    _write_json(_REGISTRY_PATH, reg)
+
+
+def _profit_skill_name(row: Dict[str, Any]) -> str:
+    strategy = _slug(row.get("strategy") or "profit")
+    symbol = _slug(row.get("symbol") or "any")
+    venues = row.get("venues") or {}
+    buy = _slug(venues.get("buy") or "buy", max_len=16)
+    sell = _slug(venues.get("sell") or "sell", max_len=16)
+    mode = _slug(row.get("mode") or "live", max_len=8)
+    return f"ppp_{strategy}_{symbol}_{buy}_to_{sell}_{mode}"
+
+
+def _void_skill_name(skip_reason: str, row: Optional[Dict[str, Any]] = None) -> str:
+    reason = _slug(skip_reason, max_len=32)
+    sym = _slug((row or {}).get("symbol") or "any", max_len=12)
+    mapping = {
+        "insufficient_mn2": "void_mn2_liquidity",
+        "insufficient_venue_balance": "void_venue_inventory",
+        "insufficient_balance": "void_venue_inventory",
+        "below_threshold": "void_spread_gate",
+        "no_profitable_spread": "void_spread_gate",
+        "http_401": "void_api_auth",
+    }
+    for key, void in mapping.items():
+        if key in reason:
+            return f"{void}_{sym}"
+    if "401" in skip_reason:
+        return f"void_api_auth_{sym}"
+    return f"void_{reason}_{sym}"
+
+
+def _agent_bucket(reg: Dict[str, Any], agent_id: str) -> Dict[str, Any]:
+    agents = reg.setdefault("agents", {})
+    bucket = agents.setdefault(
+        agent_id,
+        {
+            "agent_id": agent_id,
+            "profit_skills": [],
+            "voids": [],
+            "stacked_profit_usd": 0.0,
+            "stack_count": 0,
+            "level": 1,
+            "experience": 0,
+            "last_skill_at": None,
+            "research_notes": [],
+        },
+    )
+    return bucket
+
+
+def _apply_skill_to_agent_skillset(agent_id: str, skill: str, *, xp: int = 0) -> None:
+    try:
+        from backend.services.agent_skillset import agent_skillset
+
+        agent_skillset.add_skill(agent_id, skill, agent_type="agents")
+        if xp > 0:
+            agent_skillset.level_up(agent_id, agent_type="agents", experience=xp)
+    except Exception:
+        pass
+
+
+def on_ledger_profit_event(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Called when PPP ledger records a profitable fill — stack skills + level up."""
+    exec_block = row.get("execution") or {}
+    if not exec_block.get("success"):
+        return {"success": False, "skipped": True, "reason": "not_successful"}
+    profit = float(exec_block.get("realized_pnl_usd") or 0)
+    if profit <= 0:
+        usd = float(row.get("notional_usd") or exec_block.get("fill_usd") or 0)
+        if usd <= 0:
+            return {"success": False, "skipped": True, "reason": "zero_profit"}
+        profit = round(usd * 0.001, 4)
+
+    agent_id = str(row.get("agent_id") or "").strip()
+    if not agent_id:
+        return {"success": False, "error": "missing_agent_id"}
+
+    path_id = str(row.get("path_id") or "")
+    reg = _load_registry()
+    processed = set(reg.get("ledger_sync", {}).get("processed_path_ids") or [])
+    if path_id and path_id in processed:
+        return {"success": True, "duplicate": True, "path_id": path_id}
+
+    bucket = _agent_bucket(reg, agent_id)
+    prev_stack = float(bucket.get("stacked_profit_usd") or 0)
+    bucket["stacked_profit_usd"] = round(prev_stack + profit, 4)
+    new_stack = int(bucket["stacked_profit_usd"] / _STACK_USD_STEP)
+    old_stack = int(prev_stack / _STACK_USD_STEP)
+
+    added_skills: List[str] = []
+    added_voids: List[str] = []
+
+    if new_stack > old_stack:
+        skill = _profit_skill_name(row)
+        profit_skills = bucket.setdefault("profit_skills", [])
+        if skill not in profit_skills:
+            profit_skills.append(skill)
+            added_skills.append(skill)
+            _apply_skill_to_agent_skillset(agent_id, skill, xp=_XP_PER_PROFIT_USD)
+        bucket["stack_count"] = int(bucket.get("stack_count") or 0) + 1
+        bucket["last_skill_at"] = _iso()
+        note = (
+            f"Stack #{bucket['stack_count']}: +${profit:.4f} "
+            f"({row.get('strategy')}/{row.get('symbol')} mode={row.get('mode')})"
+        )
+        notes = bucket.setdefault("research_notes", [])
+        notes.append({"ts": _iso(), "note": note, "skill": skill})
+        bucket["research_notes"] = notes[-40:]
+
+    skip = str(row.get("skip_reason") or "").strip()
+    if skip:
+        void_skill = _void_skill_name(skip, row)
+        voids = bucket.setdefault("voids", [])
+        void_reg = reg.setdefault("voids", {})
+        void_key = f"{agent_id}:{void_skill}"
+        if void_skill not in voids:
+            voids.append(void_skill)
+            added_voids.append(void_skill)
+            _apply_skill_to_agent_skillset(agent_id, void_skill, xp=_XP_PER_VOID_CLOSED)
+        void_reg[void_key] = {
+            "agent_id": agent_id,
+            "void_skill": void_skill,
+            "skip_reason": skip,
+            "last_seen": _iso(),
+            "closed": bool(void_reg.get(void_key, {}).get("closed")),
+        }
+
+    bucket["experience"] = int(bucket.get("experience") or 0) + max(1, int(profit * _XP_PER_PROFIT_USD))
+    bucket["level"] = max(1, int(bucket["experience"] // 500) + 1)
+
+    if path_id:
+        processed.add(path_id)
+        reg.setdefault("ledger_sync", {})["processed_path_ids"] = list(processed)
+    reg.setdefault("ledger_sync", {})["last_profit_event_at"] = _iso()
+    _save_registry(reg)
+
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "profit_usd": profit,
+        "stacked_profit_usd": bucket["stacked_profit_usd"],
+        "stack_count": bucket.get("stack_count"),
+        "added_skills": added_skills,
+        "added_voids": added_voids,
+        "level": bucket.get("level"),
+    }
+
+
+def on_baseline_trade_event(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Stack skills/XP when a predicted baseline trade executes successfully."""
+    exec_block = row.get("executed") or {}
+    if not exec_block.get("success"):
+        return {"success": False, "skipped": True, "reason": "not_successful"}
+
+    baseline_id = str(row.get("baseline_id") or "")
+    reg = _load_registry()
+    processed = set(reg.get("ledger_sync", {}).get("processed_baseline_ids") or [])
+    if baseline_id and baseline_id in processed:
+        return {"success": True, "duplicate": True, "baseline_id": baseline_id}
+
+    agent_id = str((row.get("route") or {}).get("agent_id") or "profit_baseline")
+    bucket = _agent_bucket(reg, agent_id)
+    source = str(row.get("source") or "baseline")
+    skill = f"baseline_{_slug(source)}_{_slug((row.get('route') or {}).get('symbol') or 'any')}"
+    profit_skills = bucket.setdefault("profit_skills", [])
+    added: List[str] = []
+    if skill not in profit_skills:
+        profit_skills.append(skill)
+        added.append(skill)
+        _apply_skill_to_agent_skillset(agent_id, skill, xp=_XP_PER_PROFIT_USD)
+
+    fill_usd = float(exec_block.get("fill_usd") or 0)
+    if fill_usd > 0:
+        prev_stack = float(bucket.get("stacked_profit_usd") or 0)
+        increment = round(fill_usd * 0.001, 4)
+        bucket["stacked_profit_usd"] = round(prev_stack + increment, 4)
+        bucket["stack_count"] = int(bucket.get("stack_count") or 0) + 1
+
+    bucket["experience"] = int(bucket.get("experience") or 0) + max(5, _XP_PER_VOID_CLOSED)
+    bucket["level"] = max(1, int(bucket["experience"] // 500) + 1)
+    bucket["last_skill_at"] = _iso()
+
+    if baseline_id:
+        processed.add(baseline_id)
+        reg.setdefault("ledger_sync", {})["processed_baseline_ids"] = list(processed)[-8000:]
+    reg.setdefault("ledger_sync", {})["last_baseline_at"] = _iso()
+    _save_registry(reg)
+
+    return {"success": True, "agent_id": agent_id, "added_skills": added, "baseline_id": baseline_id}
+
+
+def sync_from_baselines(*, hours: float = 168, limit: int = 500) -> Dict[str, Any]:
+    """Replay baseline rows for skill stacking."""
+    from backend.services.exchange_profit_baseline_service import list_baselines
+
+    data = list_baselines(hours=hours, limit=limit)
+    rows = data.get("baselines") or []
+    processed = 0
+    for row in rows:
+        res = on_baseline_trade_event(row)
+        if res.get("success") and not res.get("duplicate"):
+            processed += 1
+    return {"success": True, "rows_scanned": len(rows), "baselines_processed": processed}
+
+
+def sync_from_ledger_research(*, hours: float = 168, limit: int = 2000) -> Dict[str, Any]:
+    """Replay ledger research log — encode skills/voids for fills and recurring skips."""
+    from backend.services.exchange_profit_path_service import search_paths
+
+    rows = search_paths(hours=hours, limit=limit).get("paths") or []
+    fills = 0
+    voids = 0
+    agents_touched: set[str] = set()
+
+    for row in reversed(rows):
+        phase = str(row.get("phase") or "")
+        agent_id = str(row.get("agent_id") or "")
+        if not agent_id:
+            continue
+        if phase == "execute" and (row.get("execution") or {}).get("success"):
+            res = on_ledger_profit_event(row)
+            if res.get("success") and not res.get("duplicate"):
+                fills += 1
+                agents_touched.add(agent_id)
+        elif row.get("skip_reason"):
+            void_skill = _void_skill_name(str(row.get("skip_reason")), row)
+            reg = _load_registry()
+            bucket = _agent_bucket(reg, agent_id)
+            if void_skill not in bucket.setdefault("voids", []):
+                bucket["voids"].append(void_skill)
+                _apply_skill_to_agent_skillset(agent_id, void_skill, xp=5)
+                voids += 1
+                agents_touched.add(agent_id)
+            _save_registry(reg)
+
+    return {
+        "success": True,
+        "hours": hours,
+        "rows_scanned": len(rows),
+        "fills_processed": fills,
+        "voids_encoded": voids,
+        "agents_touched": sorted(agents_touched),
+        **sync_from_baselines(hours=hours, limit=min(limit, 500)),
+    }
+
+
+def get_agent_profit_skills(agent_id: Optional[str] = None) -> Dict[str, Any]:
+    reg = _load_registry()
+    agents = reg.get("agents") or {}
+    if agent_id:
+        bucket = agents.get(agent_id)
+        return {"success": True, "agent_id": agent_id, "profile": bucket or {}}
+    return {"success": True, "agents": agents, "voids_global": reg.get("voids") or {}}
+
+
+def _base_critical_problems() -> List[Dict[str, Any]]:
+    """Seed top-25 critical problems — merged with live PPP / readiness signals."""
+    return [
+        {"id": "live_stash_zero", "priority": 1, "category": "treasury", "title": "Live USD stash is $0 — no real external arb P&L captured yet"},
+        {"id": "xeggex_401", "priority": 2, "category": "api", "title": "XeggeX API returns 401 — refresh keys or IP whitelist"},
+        {"id": "spread_below_threshold", "priority": 3, "category": "market", "title": "Arb spreads mostly below 18 bps min_margin — waiting on market"},
+        {"id": "cross_trade_mn2_drift", "priority": 4, "category": "funding", "title": "Cross-trade bots MN2 auto-seed must sustain 25 MN2 each tick"},
+        {"id": "wallet_file_lock", "priority": 5, "category": "infra", "title": "Windows WinError 5 on wallet JSON writes under concurrent Flask loads"},
+        {"id": "ai_trader_idle", "priority": 6, "category": "engine", "title": "AI trader enabled but ai_exec=False every tick"},
+        {"id": "arb_exec_zero", "priority": 7, "category": "engine", "title": "Spatial arb 0/11 executions — scan vs fund vs threshold chain"},
+        {"id": "ext_profit_zero", "priority": 8, "category": "engine", "title": "Extended profit strategies reporting 0 executions"},
+        {"id": "casino_agents_idle", "priority": 9, "category": "engine", "title": "Casino profit agents ran 0/3 on recent ticks"},
+        {"id": "paypal_sweep_paper", "priority": 10, "category": "payout", "title": "PayPal payout mode still paper — $572+ unswept ledger"},
+        {"id": "auto_sweep_off", "priority": 11, "category": "payout", "title": "Auto sweep disabled (min $500) — manual sweep required"},
+        {"id": "ledger_mode_paper", "priority": 12, "category": "ppp", "title": "PPP ledger rows tagged paper while live gates are on"},
+        {"id": "ppp_skill_sync", "priority": 13, "category": "ppp", "title": "Profit agent skill sets must sync from ledger on each stack"},
+        {"id": "nonkyc_doge_low", "priority": 14, "category": "funding", "title": "NonKYC DOGE inventory low for sell legs (~$25+ recommended)"},
+        {"id": "binance_quote_cap", "priority": 15, "category": "funding", "title": "Binance USDC ~$79 caps live notional vs configured micro USD"},
+        {"id": "treasury_compound", "priority": 16, "category": "treasury", "title": "Live venue compound on trade enabled but stash ledger empty"},
+        {"id": "daemon_restart", "priority": 17, "category": "ops", "title": "Profit daemon must stay running (heartbeat stale = no ticks)"},
+        {"id": "status_report_heavy", "priority": 18, "category": "ops", "title": "profit_status_report.py loads full Flask — avoid during active ticks"},
+        {"id": "xeggex_live_disabled", "priority": 19, "category": "config", "title": "connectors_config xeggex live_trading=false until probe passes"},
+        {"id": "dual_farm_two_venue", "priority": 20, "category": "config", "title": "arb_live_dual_farm limited to binance+nonkyc until XeggeX OK"},
+        {"id": "hit_rate_tracking", "priority": 21, "category": "research", "title": "PPP hit_rate_pct must be reviewed weekly per route"},
+        {"id": "skip_reason_funding", "priority": 22, "category": "research", "title": "Top skip reason insufficient_venue_balance — pre-fund quote legs"},
+        {"id": "void_skills_open", "priority": 23, "category": "skills", "title": "Open void skills (gap specializations) must close as fixes land"},
+        {"id": "agent_level_lag", "priority": 24, "category": "skills", "title": "Agent levels must track stacked profit via PPP ledger not paper PnL only"},
+        {"id": "documentation_sync", "priority": 25, "category": "docs", "title": "PROFIT_PATH_PROTOCOL + critical top25 checklist kept in sync with ledger"},
+    ]
+
+
+def _dynamic_critical_from_ppp() -> List[Dict[str, Any]]:
+    hints: List[Dict[str, Any]] = []
+    try:
+        from backend.services.exchange_profit_path_service import profit_path_summary, suggest_improvements
+
+        summary = profit_path_summary(hours=24)
+        if summary.get("fill_count", 0) == 0 and summary.get("scan_count", 0) > 10:
+            hints.append({
+                "id": "ppp_zero_fills_24h",
+                "priority": 3,
+                "category": "research",
+                "title": f"0 fills in 24h despite {summary.get('scan_count')} scans",
+            })
+        top_skip = (summary.get("top_skip_reasons") or [{}])[0]
+        if top_skip.get("reason"):
+            hints.append({
+                "id": f"ppp_skip_{_slug(top_skip.get('reason'), max_len=24)}",
+                "priority": 4,
+                "category": "research",
+                "title": f"Top skip: {top_skip.get('reason')} ({top_skip.get('count')}x)",
+            })
+        for s in (suggest_improvements().get("suggestions") or [])[:5]:
+            if s.get("priority") != "high":
+                continue
+            msg = str(s.get("message") or "")[:120]
+            hints.append({
+                "id": f"ppp_hint_{_slug(msg, max_len=20)}",
+                "priority": 5,
+                "category": str(s.get("category") or "research"),
+                "title": msg,
+            })
+    except Exception:
+        pass
+    return hints
+
+
+def critical_problems_top25(*, refresh: bool = True) -> Dict[str, Any]:
+    """Critical problem list with checkbox state for ops tracking."""
+    store = _read_json(_CRITICAL_PATH, {})
+    if not isinstance(store, dict):
+        store = {}
+    checks: Dict[str, bool] = store.get("checks") if isinstance(store.get("checks"), dict) else {}
+
+    problems = _base_critical_problems()
+    seen_ids = {p["id"] for p in problems}
+    for dyn in _dynamic_critical_from_ppp():
+        if dyn["id"] not in seen_ids and len(problems) < 25:
+            problems.append(dyn)
+            seen_ids.add(dyn["id"])
+    problems.sort(key=lambda p: int(p.get("priority") or 99))
+    problems = problems[:25]
+
+    items: List[Dict[str, Any]] = []
+    open_count = 0
+    for p in problems:
+        pid = str(p["id"])
+        checked = bool(checks.get(pid, False))
+        if not checked:
+            open_count += 1
+        items.append({**p, "checked": checked, "status": "done" if checked else "open"})
+
+    if refresh:
+        store["checks"] = checks
+        store["problems"] = items
+        store["updated_at"] = _iso()
+        store["open_count"] = open_count
+        store["done_count"] = len(items) - open_count
+        _write_json(_CRITICAL_PATH, store)
+
+    return {
+        "success": True,
+        "updated_at": store.get("updated_at") or _iso(),
+        "open_count": open_count,
+        "done_count": len(items) - open_count,
+        "problems": items,
+        "markdown": render_critical_markdown(items),
+    }
+
+
+def update_critical_checkbox(problem_id: str, checked: bool) -> Dict[str, Any]:
+    store = _read_json(_CRITICAL_PATH, {})
+    checks = store.get("checks") if isinstance(store.get("checks"), dict) else {}
+    checks[str(problem_id)] = bool(checked)
+    store["checks"] = checks
+    _write_json(_CRITICAL_PATH, store)
+    return critical_problems_top25(refresh=True)
+
+
+def render_critical_markdown(items: List[Dict[str, Any]]) -> str:
+    lines = [
+        "# Profit Critical Top 25",
+        "",
+        f"_Updated: {_iso()}_",
+        "",
+    ]
+    for p in items:
+        box = "x" if p.get("checked") else " "
+        lines.append(f"- [{box}] **#{p.get('priority')}** [{p.get('category')}] {p.get('title')} (`{p.get('id')}`)")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_critical_markdown_doc() -> str:
+    data = critical_problems_top25(refresh=True)
+    path = os.path.join(ex._BASE, "docs", "PROFIT_CRITICAL_TOP25.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(data.get("markdown") or "")
+        f.write("\n")
+    return path

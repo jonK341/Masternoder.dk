@@ -284,6 +284,13 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
                 threshold_bps=min_bps,
                 venues=venues,
             )
+            if exec_res.get("success"):
+                try:
+                    from backend.services.exchange_profit_baseline_service import record_arb_baseline
+
+                    record_arb_baseline(opp, exec_res, source="fast_ext", agent_id=agent_id)
+                except Exception:
+                    pass
             book_agent_profit(agent_id, opp, exec_res)
             result["executed"] = bool(exec_res.get("success"))
             result["mode"] = exec_res.get("mode")

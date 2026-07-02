@@ -2,13 +2,15 @@
 
 Reuses ``can_fund_arb_leg`` / ``max_funded_notional_usd`` and internal USDC↔USDT swaps.
 External venue orders require ``rotation_live_enabled`` (config or EXCHANGE_ROTATION_LIVE=1).
+Auto-execute when ``rotation_auto_execute`` or ``EXCHANGE_ROTATION_AUTO=1``.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
@@ -20,11 +22,324 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+_STATE_PATH = os.path.join(ex._DATA_DIR, "rotation_auto_state.json")
+_CONNECTORS_PATH = os.path.join(ex._BASE, "data", "exchange_connectors_config.json")
+_EXTENDED_PROFIT_PATH = os.path.join(ex._BASE, "data", "exchange_extended_profit_config.json")
+_DEDUPE_MINUTES = 30
+_TYPE_ORDER = {
+    "internal_stable_swap": 0,
+    "reduce_notional": 1,
+    "external_market_buy": 2,
+    "external_market_sell": 2,
+}
+
+
 def rotation_live_enabled() -> bool:
     cfg = load_config()
     if cfg.get("rotation_live_enabled") is True:
         return True
     return os.environ.get("EXCHANGE_ROTATION_LIVE", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def rotation_auto_execute_enabled() -> bool:
+    cfg = load_config()
+    if cfg.get("rotation_auto_execute") is True:
+        return True
+    return os.environ.get("EXCHANGE_ROTATION_AUTO", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _load_rotation_state() -> Dict[str, Any]:
+    state = ex._read_json(_STATE_PATH, {})
+    return state if isinstance(state, dict) else {}
+
+
+def _save_rotation_state(state: Dict[str, Any]) -> None:
+    state["updated_at"] = _iso()
+    ex._write_json(_STATE_PATH, state)
+
+
+def _action_fingerprint(action: Dict[str, Any]) -> str:
+    atype = str(action.get("type") or "")
+    if atype == "internal_stable_swap":
+        parts = [
+            atype,
+            str(action.get("wallet_user_id") or ""),
+            str(action.get("symbol") or ""),
+            str(action.get("quote") or ""),
+            str(action.get("side") or ""),
+        ]
+    elif atype == "reduce_notional":
+        parts = [atype, str(action.get("venue_id") or ""), str(action.get("suggested_notional_usd") or "")]
+    else:
+        parts = [
+            atype,
+            str(action.get("venue_id") or ""),
+            str(action.get("symbol") or ""),
+            str(action.get("side") or ""),
+        ]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
+def _venue_asset_key(action: Dict[str, Any]) -> str:
+    atype = str(action.get("type") or "")
+    venue = str(action.get("venue_id") or action.get("wallet_user_id") or "")
+    sym = str(action.get("symbol") or action.get("quote") or "")
+    side = str(action.get("side") or atype)
+    return f"{venue}|{sym}|{side}"
+
+
+def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
+    """Return skip reason when action should not re-run yet."""
+    now = datetime.now(timezone.utc)
+    fp = _action_fingerprint(action)
+    fail_hash = str(state.get("last_failure_hash") or "")
+    fail_at = _parse_ts(str(state.get("last_failure_at") or ""))
+    if fail_hash == fp and fail_at and (now - fail_at) < timedelta(minutes=_DEDUPE_MINUTES):
+        return "recent_failure_dedupe"
+
+    amount = float(action.get("amount_usd") or action.get("amount") or action.get("suggested_notional_usd") or 0)
+    asset_key = _venue_asset_key(action)
+    for entry in reversed(state.get("recent") or []):
+        if not isinstance(entry, dict):
+            continue
+        entry_at = _parse_ts(str(entry.get("ts") or ""))
+        if not entry_at or (now - entry_at) >= timedelta(minutes=_DEDUPE_MINUTES):
+            continue
+        if str(entry.get("asset_key") or "") != asset_key:
+            continue
+        prev_amt = float(entry.get("amount_usd") or 0)
+        if prev_amt > 0 and amount > 0:
+            diff_pct = abs(amount - prev_amt) / max(prev_amt, amount)
+            if diff_pct <= 0.20:
+                return "venue_asset_cooldown"
+    return None
+
+
+def _parse_ts(ts: str) -> Optional[datetime]:
+    if not ts:
+        return None
+    try:
+        if ts.endswith("Z"):
+            ts = ts[:-1] + "+00:00"
+        return datetime.fromisoformat(ts)
+    except Exception:
+        return None
+
+
+def _record_rotation_attempt(action: Dict[str, Any], state: Dict[str, Any], *, success: bool, skip_reason: str = "") -> None:
+    fp = _action_fingerprint(action)
+    amount = float(action.get("amount_usd") or action.get("amount") or action.get("suggested_notional_usd") or 0)
+    entry = {
+        "hash": fp,
+        "ts": _iso(),
+        "asset_key": _venue_asset_key(action),
+        "amount_usd": round(amount, 2),
+        "type": str(action.get("type") or ""),
+        "success": success,
+        "skip_reason": skip_reason,
+    }
+    recent = [e for e in (state.get("recent") or []) if isinstance(e, dict)][-40:]
+    recent.append(entry)
+    state["recent"] = recent
+    state["last_executed_hash"] = fp
+    state["last_executed_at"] = _iso()
+    if success:
+        state.pop("last_failure_hash", None)
+        state.pop("last_failure_at", None)
+    else:
+        state["last_failure_hash"] = fp
+        state["last_failure_at"] = _iso()
+    _save_rotation_state(state)
+
+
+def _cap_action_amount(action: Dict[str, Any], max_usd: float) -> Dict[str, Any]:
+    capped = dict(action)
+    for key in ("amount_usd", "amount"):
+        if key in capped and capped[key]:
+            capped[key] = round(min(float(capped[key]), float(max_usd)), 2)
+    return capped
+
+
+def _apply_reduce_notional(action: Dict[str, Any]) -> Dict[str, Any]:
+    """Lower configured notional to fit venue quote balance."""
+    cap = round(float(action.get("suggested_notional_usd") or 0), 2)
+    venue = str(action.get("venue_id") or "")
+    if cap <= 0:
+        return {"success": False, "error": "invalid_cap"}
+
+    updated: List[str] = []
+    cfg = ex._read_json(_CONNECTORS_PATH, {})
+    if isinstance(cfg, dict):
+        prev = float(cfg.get("paper_trade_usd") or 0)
+        if prev > cap:
+            cfg["paper_trade_usd"] = cap
+            updated.append("connectors.paper_trade_usd")
+        for agent in cfg.get("arbitrage_agents") or []:
+            if not isinstance(agent, dict):
+                continue
+            venues = list(agent.get("venues") or [])
+            if venue and venue not in venues and venue != "internal":
+                continue
+            agent_notion = float(agent.get("paper_trade_usd") or prev or cap)
+            if agent_notion > cap:
+                agent["paper_trade_usd"] = cap
+                updated.append(f"agent.{agent.get('id')}")
+        ex._write_json(_CONNECTORS_PATH, cfg)
+
+    ext = ex._read_json(_EXTENDED_PROFIT_PATH, {})
+    if isinstance(ext, dict):
+        for name, scfg in (ext.get("strategies") or {}).items():
+            if not isinstance(scfg, dict):
+                continue
+            notion = float(scfg.get("notional_usd") or 0)
+            venues = list(scfg.get("venues") or [])
+            if notion > cap and (not venue or venue in venues or not venues):
+                scfg["notional_usd"] = cap
+                updated.append(f"extended.{name}")
+        ex._write_json(_EXTENDED_PROFIT_PATH, ext)
+
+    return {
+        "success": bool(updated),
+        "mode": "config",
+        "cap_usd": cap,
+        "updated": updated,
+        "venue_id": venue,
+    }
+
+
+def _current_net_bps() -> Optional[float]:
+    try:
+        from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+        state = read_arb_threshold_state()
+        best = state.get("best_net_bps")
+        if best is not None:
+            return float(best)
+    except Exception:
+        pass
+    return None
+
+
+def _record_rotation_baseline(action: Dict[str, Any], exec_res: Dict[str, Any]) -> Optional[str]:
+    try:
+        from backend.services.exchange_profit_baseline_service import record_baseline_trade
+
+        order = (exec_res.get("order") or exec_res.get("result") or {})
+        return record_baseline_trade(
+            predicted={
+                "action_label": action.get("label"),
+                "amount_usd": action.get("amount_usd") or action.get("amount") or action.get("suggested_notional_usd"),
+                "expected_unlock_bps": action.get("priority_score"),
+                "top25_items": action.get("top25_items") or [],
+            },
+            executed={
+                "success": exec_res.get("success"),
+                "mode": exec_res.get("mode"),
+                "fill_usd": exec_res.get("cap_usd") or action.get("amount_usd") or action.get("suggested_notional_usd"),
+                "order_id": str(order.get("order_id") or order.get("id") or ""),
+                "trade_id": str(order.get("trade_id") or order.get("quote_id") or ""),
+            },
+            source="rotation",
+            route={
+                "agent_id": str(action.get("agent_id") or ""),
+                "symbol": str(action.get("symbol") or ""),
+                "buy_venue": str(action.get("venue_id") or action.get("wallet_user_id") or ""),
+                "sell_venue": "",
+            },
+            net_bps_at_exec=_current_net_bps(),
+        )
+    except Exception:
+        return None
+
+
+def _pick_auto_action(actions: List[Dict[str, Any]], allowed_types: List[str]) -> Optional[Dict[str, Any]]:
+    live = rotation_live_enabled()
+    candidates = [a for a in actions if str(a.get("type") or "") in allowed_types]
+    if not live:
+        candidates = [a for a in candidates if str(a.get("type") or "") != "external_market_buy"
+                        and str(a.get("type") or "") != "external_market_sell"]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda a: (_TYPE_ORDER.get(str(a.get("type") or ""), 9), -_action_score(a)))
+    return candidates[0]
+
+
+def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
+    """After exchange tick: suggest and optionally auto-execute top rotation action."""
+    plat = exchange_res.get("platform") or {}
+    results = plat.get("results") or {}
+    arb = results.get("arbitrage") or {}
+    executed = int(arb.get("executed_count") or 0)
+
+    rot = suggest_swap_actions(hours=6, limit=3)
+    actions = rot.get("actions") or []
+    if not actions:
+        return {"skipped": True, "reason": "no_actions"}
+
+    top = actions[0]
+    high_priority = str(top.get("priority") or "") in ("critical", "high")
+    if executed > 0 and not high_priority:
+        return {"skipped": True, "reason": "arb_executed"}
+
+    if not rotation_auto_execute_enabled():
+        log_rotation_to_ppp(actions, arb_executed=executed)
+        return {"skipped": True, "reason": "auto_disabled", "suggested": top.get("label")}
+
+    cfg = load_config()
+    allowed = list(cfg.get("rotation_auto_types") or [
+        "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
+    ])
+    max_usd = float(cfg.get("rotation_auto_max_usd_per_tick") or 100)
+    action = _pick_auto_action(actions, allowed)
+    if not action:
+        log_rotation_to_ppp(actions, arb_executed=executed)
+        return {"skipped": True, "reason": "no_eligible_action"}
+
+    state = _load_rotation_state()
+    skip = _dedupe_skip(action, state)
+    if skip:
+        return {"skipped": True, "reason": skip, "action": action.get("label")}
+
+    capped = _cap_action_amount(action, max_usd)
+    dry_run = False
+    exec_res = execute_rotation(capped, dry_run=dry_run)
+    success = bool(exec_res.get("success"))
+    _record_rotation_attempt(capped, state, success=success, skip_reason=str(exec_res.get("error") or exec_res.get("reason") or ""))
+
+    baseline_id = exec_res.get("baseline_id") if success else None
+
+    log_rotation_to_ppp(actions, arb_executed=executed)
+    if baseline_id:
+        try:
+            from backend.services.exchange_profit_path_service import record_event
+
+            record_event(
+                phase="rotation",
+                agent_id="swap_rotation",
+                strategy="funding_rotation",
+                decision="fill" if success else "attempt",
+                notional_usd=float(capped.get("amount_usd") or capped.get("suggested_notional_usd") or 0),
+                execution={
+                    "action_count": len(actions),
+                    "top_action": capped.get("label"),
+                    "top_type": capped.get("type"),
+                    "rotation_live_enabled": rotation_live_enabled(),
+                    "auto_executed": True,
+                    "success": success,
+                    "baseline_id": baseline_id,
+                },
+            )
+        except Exception:
+            pass
+
+    return {
+        "auto_executed": True,
+        "success": success,
+        "action": capped.get("label"),
+        "mode": exec_res.get("mode"),
+        "baseline_id": baseline_id,
+        "skip_reason": None if success else str(exec_res.get("error") or exec_res.get("reason") or "failed"),
+    }
 
 
 def _agent_config(agent_id: str) -> Optional[Dict[str, Any]]:
@@ -430,14 +745,20 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
 
     atype = str(action["type"])
     if atype == "reduce_notional":
-        return {
-            "success": True,
-            "dry_run": True,
-            "skipped": True,
-            "reason": "advisory_only",
-            "action": action,
-            "hint": "Lower paper_trade_usd in connectors config or agent override.",
-        }
+        if dry_run:
+            return {
+                "success": True,
+                "dry_run": True,
+                "skipped": True,
+                "reason": "advisory_only",
+                "action": action,
+                "hint": "Lower paper_trade_usd in connectors config or agent override.",
+            }
+        applied = _apply_reduce_notional(action)
+        exec_res = {"success": bool(applied.get("success")), "dry_run": False, "mode": "config", "action": action, **applied}
+        if applied.get("success"):
+            exec_res["baseline_id"] = _record_rotation_baseline(action, exec_res)
+        return exec_res
 
     if atype == "internal_stable_swap":
         wallet = str(action.get("wallet_user_id") or "exchange_sales_pool")
@@ -461,7 +782,10 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         if not q.get("success"):
             return {"success": False, "dry_run": False, "error": q.get("error"), "quote": q, "action": action}
         res = ex.execute_swap(wallet, qid, sym, side, amt, quote)
-        return {"success": bool(res.get("success")), "dry_run": False, "mode": "internal", "result": res, "action": action}
+        exec_res = {"success": bool(res.get("success")), "dry_run": False, "mode": "internal", "result": res, "action": action}
+        if exec_res.get("success"):
+            exec_res["baseline_id"] = _record_rotation_baseline(action, exec_res)
+        return exec_res
 
     if atype in ("external_market_buy", "external_market_sell"):
         venue = str(action.get("venue_id") or "")
@@ -489,13 +813,16 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
                 "hint": "Set rotation_live_enabled or EXCHANGE_ROTATION_LIVE=1 to execute live.",
             }
         res = vapi.place_market_order(venue, sym, side, qty, dry_run=False)
-        return {
+        exec_res = {
             "success": bool(res.get("success")),
             "dry_run": False,
             "mode": "live",
             "order": res,
             "action": action,
         }
+        if exec_res.get("success"):
+            exec_res["baseline_id"] = _record_rotation_baseline(action, exec_res)
+        return exec_res
 
     return {"success": False, "error": "unknown_action_type", "action": action}
 

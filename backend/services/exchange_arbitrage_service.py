@@ -358,6 +358,13 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                 path_id=path_id, agent_id=agent_id, opp=best, exec_res=exec_res,
                 strategy=strategy, threshold_bps=min_margin_bps, venues=a_venues,
             )
+            if exec_res.get("success"):
+                try:
+                    from backend.services.exchange_profit_baseline_service import record_arb_baseline
+
+                    record_arb_baseline(best, exec_res, source="arb", agent_id=agent_id)
+                except Exception:
+                    pass
             acct = book_agent_profit(agent_id, best, exec_res)
             action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}
             if isinstance(action, dict):

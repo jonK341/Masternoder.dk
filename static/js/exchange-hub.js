@@ -262,6 +262,34 @@
     return fetchJson('/api/exchange/health', { timeout: 6000 }).then(renderHealth);
   }
 
+  function renderProfitPathBaselines(data) {
+    var el = q('cex-ppp-baselines');
+    if (!el) return;
+    if (!data || !data.success) { el.textContent = ''; return; }
+    var total = data.total || 0;
+    var rate = Number(data.success_rate_pct || 0).toFixed(0);
+    el.innerHTML = 'Trade baselines: <b>' + total + '</b> (' + rate + '% success) · ' +
+      '<a href="#" class="cex-mini-link" id="cex-ppp-baselines-link">view recent</a>';
+    var link = q('cex-ppp-baselines-link');
+    if (link) {
+      link.onclick = function (e) {
+        e.preventDefault();
+        fetchJson('/api/exchange/profit-path/baselines?hours=168&limit=10', { timeout: 10000 })
+          .then(function (d) {
+            var rows = (d && d.baselines) || [];
+            if (!rows.length) { alert('No baselines yet.'); return; }
+            var lines = rows.map(function (b) {
+              var p = b.predicted || {};
+              var x = b.executed || {};
+              return (b.ts || '').slice(0, 16) + ' ' + (b.source || '') + ' ' +
+                (p.action_label || '') + ' → ' + (x.success ? 'OK' : 'fail') + ' (' + (x.mode || '') + ')';
+            });
+            alert('Recent baselines:\n' + lines.join('\n'));
+          });
+      };
+    }
+  }
+
   function renderProfitPathSummary(data) {
     var el = q('cex-ppp-summary');
     if (!el) return;
@@ -346,6 +374,7 @@
       fetchJson('/api/exchange/profit-path/summary' + qs.replace(/&limit=\d+/, ''), { timeout: 10000 }).then(renderProfitPathSummary),
       fetchJson('/api/exchange/profit-path/search' + qs, { timeout: 10000 }).then(renderProfitPathTable),
       fetchJson('/api/exchange/profit-path/suggestions', { timeout: 10000 }).then(renderProfitPathSuggestions),
+      fetchJson('/api/exchange/profit-path/baselines/summary?hours=168', { timeout: 10000 }).then(renderProfitPathBaselines),
       fetchJson('/api/exchange/swap-rotation/suggestions?hours=24&limit=8', { timeout: 10000 }).then(renderSwapRotation),
     ]);
   }

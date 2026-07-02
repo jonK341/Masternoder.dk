@@ -16,14 +16,14 @@ _Updated: 2026-07-02T19:03:42.674785Z_
 - [x] **#12** [ppp] PPP ledger rows tagged paper while live gates are on (`ledger_mode_paper`)
 - [x] **#13** [ppp] Profit agent skill sets must sync from ledger on each stack (`ppp_skill_sync`)
 - [ ] **#14** [funding] NonKYC DOGE inventory low for sell legs (~$25+ recommended) (`nonkyc_doge_low`) — _rotation service suggests DOGE buy_
-- [ ] **#15** [funding] Binance USDC ~$79 caps live notional vs configured micro USD (`binance_quote_cap`) — _rotation suggests lower notional or quote top-up_
+- [ ] **#15** [funding] Binance USDC ~$79 caps live notional vs configured micro USD (`binance_quote_cap`) — _auto-rotation executes quote top-up or lowers notional_
 - [ ] **#16** [treasury] Live venue compound on trade enabled but stash ledger empty (`treasury_compound`)
 - [x] **#17** [ops] Profit daemon must stay running (heartbeat stale = no ticks) (`daemon_restart`)
 - [ ] **#18** [ops] profit_status_report.py loads full Flask — avoid during active ticks (`status_report_heavy`)
 - [ ] **#19** [config] connectors_config xeggex live_trading=false until probe passes (`xeggex_live_disabled`)
 - [ ] **#20** [config] arb_live_dual_farm limited to binance+nonkyc until XeggeX OK (`dual_farm_two_venue`)
 - [ ] **#21** [research] PPP hit_rate_pct must be reviewed weekly per route (`hit_rate_tracking`)
-- [ ] **#22** [research] Top skip reason insufficient_venue_balance — pre-fund quote legs (`skip_reason_funding`) — _swap rotation service + PPP rotation phase_
+- [ ] **#22** [research] Top skip reason insufficient_venue_balance — pre-fund quote legs (`skip_reason_funding`) — _auto-rotation executes Buy USDT/DOGE on short venue; baselines track predicted vs fill_
 - [ ] **#23** [skills] Open void skills (gap specializations) must close as fixes land (`void_skills_open`)
 - [ ] **#24** [skills] Agent levels must track stacked profit via PPP ledger not paper PnL only (`agent_level_lag`)
 - [x] **#25** [docs] PROFIT_PATH_PROTOCOL + critical top25 checklist kept in sync with ledger (`documentation_sync`)

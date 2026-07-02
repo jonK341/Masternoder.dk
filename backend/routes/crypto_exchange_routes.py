@@ -703,6 +703,26 @@ def exchange_profit_path_critical_top25():
     return jsonify(critical_problems_top25(refresh=True))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-path/baselines", methods=["GET"])
+def exchange_profit_path_baselines():
+    from backend.services.exchange_profit_baseline_service import list_baselines
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else 168.0
+    source = (request.args.get("source") or "").strip() or None
+    limit = int(request.args.get("limit") or 50)
+    return jsonify(list_baselines(hours=hours, source=source, limit=limit))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-path/baselines/summary", methods=["GET"])
+def exchange_profit_path_baselines_summary():
+    from backend.services.exchange_profit_baseline_service import baseline_summary
+
+    hours_raw = request.args.get("hours")
+    hours = float(hours_raw) if hours_raw not in (None, "") else 168.0
+    return jsonify(baseline_summary(hours=hours))
+
+
 @crypto_exchange_bp.route("/api/exchange/swap-rotation/analyze", methods=["GET"])
 def exchange_swap_rotation_analyze():
     from backend.services.exchange_swap_rotation_service import analyze_funding_gaps

@@ -1,4 +1,6 @@
 """Swap rotation service — funding gap analysis, suggestions, dry-run execute."""
+import json
+
 import pytest
 
 
@@ -18,7 +20,12 @@ def rotation_env(tmp_path, monkeypatch):
     monkeypatch.setattr(ex, "_DATA_DIR", str(data))
     monkeypatch.setattr(rot, "load_config", ppp.load_config)
 
-    return {"ppp": ppp, "rot": rot, "ledger_path": ledger_path}
+    (data / "profit_path_protocol.json").write_text(
+        json.dumps({"enabled": True, "rotation_live_enabled": False}),
+        encoding="utf-8",
+    )
+
+    return {"ppp": ppp, "rot": rot, "ledger_path": ledger_path, "data": data}
 
 
 def test_analyze_funding_gaps_short_buy_leg(rotation_env, monkeypatch):
@@ -170,3 +177,74 @@ def test_execute_rotation_advisory_reduce_notional(rotation_env):
     res = rot.execute_rotation(action, dry_run=True)
     assert res["success"] is True
     assert res["skipped"] is True
+
+
+def test_rotation_auto_execute_dedupe(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    ppp = rotation_env["ppp"]
+    data = rotation_env["data"]
+    cfg_path = data / "profit_path_protocol.json"
+    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    cfg.update({
+        "rotation_auto_execute": True,
+        "rotation_live_enabled": True,
+        "rotation_auto_max_usd_per_tick": 100,
+        "rotation_auto_types": ["external_market_buy"],
+    })
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+    state_path = str(data / "rotation_auto_state.json")
+    monkeypatch.setattr(rot, "_STATE_PATH", state_path)
+
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "USDT",
+        "side": "buy",
+        "amount_usd": 98,
+        "label": "Buy USDT on nonkyc ~$98",
+        "priority": "high",
+        "priority_score": 5,
+    }
+
+    monkeypatch.setattr(rot, "suggest_swap_actions", lambda **kw: {"actions": [action]})
+    monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        rot,
+        "execute_rotation",
+        lambda act, dry_run=True: {"success": False, "error": "sim_fail", "mode": "live"},
+    )
+    monkeypatch.setattr(rot, "log_rotation_to_ppp", lambda *a, **k: None)
+
+    res1 = rot.maybe_auto_rotation({"platform": {"results": {"arbitrage": {"executed_count": 0}}}})
+    assert res1.get("auto_executed") is True
+    assert res1.get("success") is False
+
+    res2 = rot.maybe_auto_rotation({"platform": {"results": {"arbitrage": {"executed_count": 0}}}})
+    assert res2.get("skipped") is True
+    assert res2.get("reason") == "recent_failure_dedupe"
+
+
+def test_dedupe_venue_asset_cooldown(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "USDT",
+        "side": "buy",
+        "amount_usd": 98,
+    }
+    state = {
+        "recent": [{
+            "ts": rot._iso(),
+            "asset_key": rot._venue_asset_key(action),
+            "amount_usd": 97,
+        }],
+    }
+    assert rot._dedupe_skip(action, state) == "venue_asset_cooldown"
+
+    action2 = dict(action)
+    action2["amount_usd"] = 150
+    assert rot._dedupe_skip(action2, state) is None
+

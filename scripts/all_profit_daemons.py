@@ -203,27 +203,35 @@ def _summarize_casino(res: Dict[str, Any]) -> str:
     )
 
 
-def _maybe_log_rotation(res: Dict[str, Any]) -> None:
-    """After arb_exec=0 ticks, log ranked swap suggestions to PPP rotation phase."""
+def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
+    """After arb_exec=0 ticks, auto-execute top rotation suggestion when enabled."""
     try:
-        plat = res.get("platform") or {}
-        results = plat.get("results") or {}
-        arb = results.get("arbitrage") or {}
-        executed = int(arb.get("executed_count") or 0)
-        if executed > 0:
-            return
-        from backend.services.exchange_swap_rotation_service import (
-            log_rotation_to_ppp,
-            suggest_swap_actions,
-        )
+        from backend.services.exchange_swap_rotation_service import maybe_auto_rotation
 
-        rot = suggest_swap_actions(hours=6, limit=5)
-        actions = rot.get("actions") or []
-        if not actions:
-            return
-        log_rotation_to_ppp(actions, arb_executed=0)
-        top = actions[0].get("label") or actions[0].get("type")
-        print(f"[all-profit] rotation suggest: {top} (+{len(actions) - 1} more)", flush=True)
+        outcome = maybe_auto_rotation(res)
+        if outcome.get("auto_executed"):
+            label = outcome.get("action") or "?"
+            mode = outcome.get("mode") or "?"
+            success = outcome.get("success")
+            skip = outcome.get("skip_reason")
+            if success:
+                print(
+                    f"[all-profit] rotation executed: {label} mode={mode} success=True",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[all-profit] rotation skip: {label} reason={skip or 'failed'}",
+                    flush=True,
+                )
+        elif outcome.get("skipped") and outcome.get("reason") == "auto_disabled":
+            top = outcome.get("suggested") or "?"
+            from backend.services.exchange_swap_rotation_service import suggest_swap_actions
+
+            rot = suggest_swap_actions(hours=6, limit=5)
+            actions = rot.get("actions") or []
+            extra = f" (+{len(actions) - 1} more)" if len(actions) > 1 else ""
+            print(f"[all-profit] rotation suggest: {top}{extra}", flush=True)
     except Exception:
         pass
 
@@ -235,7 +243,7 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             res = _exchange_once(auto_sweep, profile)
             summary = _summarize_exchange(res)
             print(f"[all-profit] exchange {summary}", flush=True)
-            _maybe_log_rotation(res)
+            _maybe_auto_rotation(res)
             _write_heartbeat("exchange", summary)
         except Exception as exc:
             print(f"[all-profit] exchange error: {exc}", flush=True)

@@ -32,6 +32,7 @@ UPLOAD_FILES = [
     # Profit Path Protocol (research ledger + suggestions)
     "backend/services/exchange_profit_path_service.py",
     "backend/services/exchange_swap_rotation_service.py",
+    "backend/services/exchange_profit_baseline_service.py",
     "backend/services/exchange_profit_agent_skills_service.py",
     "backend/services/exchange_arbitrage_service.py",
     "backend/services/exchange_live_execution_service.py",

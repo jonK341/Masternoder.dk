@@ -14,8 +14,10 @@ Every scan, quote evaluation, execution attempt, stash, and sweep can be recorde
 
 | File | Role |
 |------|------|
-| `data/crypto_exchange/profit_path_protocol.json` | Config (enabled, retention, balance venues) |
+| `data/crypto_exchange/profit_path_protocol.json` | Config (enabled, retention, balance venues, rotation auto) |
 | `data/crypto_exchange/profit_path_ledger.jsonl` | Append-only event ledger |
+| `data/crypto_exchange/profit_trade_baselines.jsonl` | Predicted vs executed baseline trades |
+| `data/crypto_exchange/rotation_auto_state.json` | Auto-rotation dedupe state |
 
 ## Ledger row schema
 
@@ -43,7 +45,7 @@ Every scan, quote evaluation, execution attempt, stash, and sweep can be recorde
 }
 ```
 
-**Phases:** `scan` | `quote` | `preflight` | `execute` | `stash` | `sweep` | `fail`
+**Phases:** `scan` | `quote` | `preflight` | `execute` | `stash` | `sweep` | `fail` | `rotation` | `baseline`
 
 **Decisions:** `skip` | `attempt` | `fill` | `paper` | `live`
 
@@ -120,11 +122,54 @@ When live arb scans find spreads but `arb_exec=0` due to venue inventory, the **
 
 **API:** `GET /api/exchange/swap-rotation/analyze`, `GET .../suggestions`, `POST .../execute` (admin key, dry_run default true).
 
-**Daemon:** After each exchange tick with zero arb fills, `all_profit_daemons` logs top rotation suggestion and appends a PPP `rotation` phase row.
+**Daemon:** After each exchange tick with zero arb fills (or high-priority rotation), `all_profit_daemons` **auto-executes** the top rotation action when enabled and logs:
 
-**Config:** `profit_path_protocol.json` → `rotation_live_enabled` (default false) or env `EXCHANGE_ROTATION_LIVE=1`.
+```
+[all-profit] rotation executed: Buy USDT on nonkyc ~$98 mode=live success=True
+```
 
-**Top25 items addressed:** #7 arb_exec_zero, #14 nonkyc_doge_low, #15 binance_quote_cap, #22 skip_reason_funding (partial #1/#16 when stash fills after funded arbs).
+**Config** (`profit_path_protocol.json`):
+
+| Key | Default (local max) | Prod recommendation |
+|-----|---------------------|---------------------|
+| `rotation_auto_execute` | `true` | `false` unless opted in |
+| `rotation_live_enabled` | `true` | `false` unless opted in |
+| `rotation_auto_max_usd_per_tick` | `100` | cap spend per tick |
+| `rotation_auto_types` | internal + external + reduce_notional | subset as needed |
+
+Env overrides: `EXCHANGE_ROTATION_AUTO=1`, `EXCHANGE_ROTATION_LIVE=1`.
+
+**Dedupe:** Same venue+asset within 30 min skipped unless amount differs >20%. Failed actions deduped via `rotation_auto_state.json`.
+
+**Top25 items addressed:** #7 arb_exec_zero, #14 nonkyc_doge_low, #15 binance_quote_cap, #22 skip_reason_funding (auto-fund unlocks fills).
+
+## Trade baselines
+
+Append-only `profit_trade_baselines.jsonl` links **predicted** rotation/arb actions to **executed** outcomes.
+
+```json
+{
+  "ts": "...",
+  "baseline_id": "a1b2c3d4",
+  "source": "rotation",
+  "predicted": {"action_label": "Buy USDT on nonkyc ~$98", "amount_usd": 98, "expected_unlock_bps": 25},
+  "executed": {"success": true, "mode": "live", "fill_usd": 98, "order_id": "..."},
+  "route": {"agent_id": "", "symbol": "USDT", "buy_venue": "nonkyc", "sell_venue": ""},
+  "net_bps_at_exec": 22.5,
+  "realized_pnl_usd": null
+}
+```
+
+**Sources:** `rotation` | `arb` | `fast_ext`
+
+### API
+
+```
+GET /api/exchange/profit-path/baselines?hours=168&source=rotation&limit=50
+GET /api/exchange/profit-path/baselines/summary?hours=168
+```
+
+PPP rows with `phase=baseline` include `execution.baseline_id`. Skill sync processes baseline rows via `sync_from_ledger_research` → `sync_from_baselines`.
 
 ## Python usage
 
@@ -153,6 +198,8 @@ hints = suggest_improvements()
 ```bash
 pytest tests/unit/test_exchange_profit_path.py -q
 pytest tests/unit/test_exchange_profit_agent_skills.py -q
+pytest tests/unit/test_exchange_profit_baseline.py -q
+pytest tests/unit/test_exchange_swap_rotation.py -q
 ```
 
 ## Live ledger mode
