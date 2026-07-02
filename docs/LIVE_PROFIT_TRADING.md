@@ -132,12 +132,72 @@ Uses `game_mn2_rewards.credit_mn2("platform_treasury", …)` — same ledger pat
 
 ---
 
+## Prefund checklist (operator)
+
+Run before expecting live arb fills. **No script moves real money** — deposits are manual.
+
+| Step | Target | Status command |
+|------|--------|----------------|
+| 1 | Restart **one** local profit daemon (kill duplicates first) | `Get-CimInstance Win32_Process -Filter "Name='python.exe'"` → only one `all_profit_daemons.py` |
+| 2 | Binance **USDC ≥ $110** (or lower `notional_usd` to **$70** in arb config) | `python scripts\_check_live_balances_once.py` |
+| 3 | NonKYC **USDT** for buy leg + **XRP** for `payments_plus` (+21 bps route) | same script — `NonKYC USDT` line |
+| 4 | **DOGE** on both venues for sell legs | same script — coin inventory section |
+| 5 | XeggeX API **200** (optional 3rd venue) | `venue_has_credentials('xeggex')` + balance probe; if 200 → `configure_live_profit_max.py` |
+| 6 | Server cron healthy | `cron/exchange_master_tick.sh` on prod (see fleet plan below) |
+
+**Current targets (2026-07-02):** Binance USDC ~$79 (below $110 — either prefund +$31 or set notional to $70). NonKYC USDT ~$87 OK. XeggeX still **401** — keep `live_trading` off until keys/IP fixed.
+
+---
+
+## Fleet plan — prod fast loop
+
+| Component | Local | Production |
+|-----------|-------|------------|
+| Primary executor | `scripts\run_all_profit_daemons.cmd` (single instance) | Backup: `cron/exchange_master_tick.sh` every minute |
+| Sales pool sweep | Included in `all_profit_daemons.py` tick | Deploy `exchange_sales_pool_service.py` + push wallets |
+| Multiping / MN2 watch | `data/mn2_ping_watch.json` | Same data dir on prod after deploy |
+| Casino live | **dry_run** unless treasury + spork gates pass | Enable: set `CASINO_AGENT_DRY_RUN=0` only after ops review |
+
+**systemd example (prod backup loop):**
+
+```ini
+[Unit]
+Description=MasterNoder exchange master tick (backup)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/masternoder.dk
+Environment=EXCHANGE_DAEMON_MODE=live
+Environment=EXCHANGE_FORCE_IPV4=1
+ExecStart=/bin/bash cron/exchange_master_tick.sh
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Pair with a timer: `OnCalendar=*:0/1` (every minute). Local Windows machine remains the **primary** live arb executor when home IP is whitelisted.
+
+**Casino enable steps (do not flip live without review):**
+
+1. Confirm `platform_treasury` MN2 ≥ liquidity pipeline minimum (`exchange_treasury_config.json`).
+2. Keep `CASINO_AGENT_DRY_RUN=1` until first `LIVE stashed > 0`.
+3. Run `python scripts\profit_status_report.py` — casino section shows dry_run status.
+4. Only then set `CASINO_AGENT_DRY_RUN=0` in `.env` and restart daemons.
+
+---
+
 ## TODO / follow-ups
 
 - [x] Confirm NonKYC **server outbound IP** whitelisted + `EXCHANGE_FORCE_IPV4=1`
+- [x] Fund both venues: quote + DOGE on NonKYC sell leg (~362 DOGE)
+- [x] Prefund checklist documented (this section)
+- [x] Kill duplicate local `all_profit_daemons.py` instances (2026-07-02)
+- [ ] Prefund Binance to **≥ $110 USDC** OR lower notional to $70
+- [ ] Prefund NonKYC **XRP** for payments_plus route
 - [ ] First live arb: `LIVE stashed > 0` in `profit_status_report.py`
 - [ ] Enable real PayPal sweep after live stash ≥ $35
-- [ ] Fix XeggeX API keys (optional 3rd venue)
+- [ ] Fix XeggeX API keys (still **401** as of 2026-07-02 — optional 3rd venue)
 - [ ] Push config after changes: `push_exchange_live_server.py`
 - [ ] Alert hook when `profitable_count ≥ 1` (Discord/webhook — not wired yet)
 

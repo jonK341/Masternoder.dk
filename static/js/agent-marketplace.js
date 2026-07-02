@@ -27,6 +27,11 @@
 
   function api(path, opts) {
     opts = opts || {};
+    if (!opts.method || opts.method === "GET") {
+      if (window.ExchangeHub && window.ExchangeHub.fetchJson) {
+        return window.ExchangeHub.fetchJson(path, { timeout: 8000 }).catch(function () { return {}; });
+      }
+    }
     var headers = {};
     if (opts.body) headers["Content-Type"] = "application/json";
     return fetch(path, {
@@ -912,12 +917,51 @@
     });
   }
 
+  function loadBotsTab() {
+    return Promise.all([
+      loadMonitor(),
+      loadWatch(),
+      loadAiTrading(),
+      loadDaemonConfig(),
+    ]);
+  }
+
+  function loadMarketplaceTab() {
+    return Promise.all([
+      loadCatalog(),
+      loadSkillSets(),
+      loadPortfolio(),
+      loadRadar(),
+      loadLevel(),
+      loadTrust(),
+      loadRentalCatalog(),
+      loadMyRentals(),
+      loadShop(),
+      loadController(),
+      loadBridgeProduct(),
+    ]).then(function () {
+      api("/api/exchange/leveling/daily", { method: "POST", body: {} }).then(loadLevel);
+      calculate();
+    });
+  }
+
+  function pollBots() {
+    loadMonitor();
+    loadWatch();
+    loadAiTrading();
+  }
+
+  window.CexMarketplace = {
+    loadBotsTab: loadBotsTab,
+    loadMarketplaceTab: loadMarketplaceTab,
+    pollBots: pollBots,
+  };
+
   function initDaemonControl() {
     if (!$("cex-daemon-control")) return;
     var save = $("cex-daemon-save"); if (save) save.addEventListener("click", saveDaemonConfig);
     var scan = $("cex-daemon-preview-btn"); if (scan) scan.addEventListener("click", previewDaemon);
     var run = $("cex-daemon-run"); if (run) run.addEventListener("click", runDaemonNow);
-    loadDaemonConfig();
   }
 
   function initController() {
@@ -929,35 +973,22 @@
     });
     var cb = $("cex-ctrl-cash-btn"); if (cb) cb.addEventListener("click", ctrlCashOut);
     handleControllerPayPalReturn();
-    loadController();
-    loadBridgeProduct();
   }
 
   function init() {
-    if (!$("cex-agent-marketplace")) return;
-    loadCatalog();
-    loadSkillSets();
-    loadPortfolio();
-    loadRadar();
-    loadLevel();
-    loadMonitor();
-    loadWatch();
-    loadAiTrading();
-    loadTrust();
-    loadRentalCatalog();
-    loadMyRentals();
-    loadShop();
+    if (!$("cex-agent-marketplace") && !$("cex-daemon-control")) return;
     initController();
     initDaemonControl();
-    api("/api/exchange/leveling/daily", { method: "POST", body: {} }).then(loadLevel);
+    if (window.ExchangeHub) {
+      window.ExchangeHub.onTab("bots", loadBotsTab);
+      window.ExchangeHub.onTab("marketplace", loadMarketplaceTab);
+    }
     var runBtn = $("cex-market-run-all"); if (runBtn) runBtn.addEventListener("click", runAll);
     var aiBtn = $("cex-ai-analyze-btn"); if (aiBtn) aiBtn.addEventListener("click", function () { runAiAnalyze(aiBtn); });
     var calcBtn = $("cex-calc-run"); if (calcBtn) calcBtn.addEventListener("click", calculate);
     var claimBtn = $("cex-level-claim"); if (claimBtn) claimBtn.addEventListener("click", claimLevel);
     var ta = $("cex-trust-auto"); if (ta) ta.addEventListener("change", saveTrustControls);
     var tl = $("cex-trust-alerts"); if (tl) tl.addEventListener("change", saveTrustControls);
-    calculate();
-    if ($("cex-live-monitor")) setInterval(function () { loadMonitor(); loadWatch(); loadAiTrading(); }, 15000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

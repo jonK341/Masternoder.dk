@@ -26,6 +26,9 @@
   }
 
   function getJson(path) {
+    if (window.ExchangeHub && window.ExchangeHub.fetchJson) {
+      return window.ExchangeHub.fetchJson(path, { timeout: 8000 });
+    }
     return fetch(path, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
   }
 
@@ -267,19 +270,13 @@
       '</div>';
   }
 
-  function refresh() {
+  function refreshCore() {
     var u = encodeURIComponent(uid());
     return Promise.all([
       getJson('/api/exchange/catalog'),
       getJson('/api/exchange/wallet?user_id=' + u),
       getJson('/api/exchange/rewards?user_id=' + u),
       getJson('/api/exchange/trades?limit=10'),
-      getJson('/api/exchange/orders?limit=20'),
-      getJson('/api/exchange/paypal/mn2-packs'),
-      getJson('/api/exchange/agents'),
-      getJson('/api/exchange/user-progress?user_id=' + u),
-      getJson('/api/exchange/profit-agent?user_id=' + u),
-      getJson('/api/exchange/gateway/status'),
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
@@ -298,13 +295,41 @@
       renderWallet(res[1]);
       renderRewards(res[2]);
       renderTrades(res[3]);
-      renderOrders(res[4]);
-      renderPayPalMn2Packs(res[5]);
-      renderAgents(res[6]);
-      renderProgress(res[7]);
-      renderProfitAgent(res[8]);
-      renderGatewayStatus(res[9]);
     }).catch(function () { msg('Could not load exchange data.'); });
+  }
+
+  function refreshTradeExtras() {
+    var u = encodeURIComponent(uid());
+    return Promise.all([
+      getJson('/api/exchange/orders?limit=20'),
+      getJson('/api/exchange/paypal/mn2-packs'),
+    ]).then(function (res) {
+      renderOrders(res[0]);
+      renderPayPalMn2Packs(res[1]);
+    });
+  }
+
+  function refreshOverview() {
+    var u = encodeURIComponent(uid());
+    return Promise.all([
+      getJson('/api/exchange/user-progress?user_id=' + u),
+      getJson('/api/exchange/profit-agent?user_id=' + u),
+      getJson('/api/exchange/gateway/status'),
+    ]).then(function (res) {
+      renderProgress(res[0]);
+      renderProfitAgent(res[1]);
+      renderGatewayStatus(res[2]);
+    });
+  }
+
+  function refreshBots() {
+    return getJson('/api/exchange/agents').then(renderAgents);
+  }
+
+  function refresh() {
+    return refreshCore().then(function () {
+      return refreshTradeExtras();
+    });
   }
 
   function doQuote() {
@@ -536,10 +561,21 @@
     q('cex-asset-search').addEventListener('input', function () {
       if (catalog && catalog.assets) renderAssets(catalog.assets);
     });
-    refresh();
+    if (window.ExchangeHub) {
+      window.ExchangeHub.onTab('trade', function () {
+        return refreshCore().then(refreshTradeExtras);
+      });
+      window.ExchangeHub.onTab('overview', refreshOverview);
+      window.ExchangeHub.onTab('bots', refreshBots);
+    } else {
+      refresh();
+    }
     handlePayPalReturn();
     handleCryptoPayPalReturn();
-    setInterval(refresh, 60000);
+    setInterval(function () {
+      var tradeShell = document.querySelector('.cex-tab-shell[data-cex-tab="trade"]');
+      if (tradeShell && !tradeShell.hidden) refreshCore();
+    }, 60000);
   }
 
   if (document.readyState === 'loading') {
