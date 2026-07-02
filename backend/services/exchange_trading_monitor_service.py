@@ -72,8 +72,13 @@ def live_monitor(user_id: str, *, feed_limit: int = 40) -> Dict[str, Any]:
     intel_vals = []
     trust_vals = []
     for a in agents:
-        snap = learn.learning_snapshot(a) if learn else {}
-        tp = trust_svc.agent_trust_profile(user_id, a, user_trust=ut_score) if trust_svc else {}
+        if not isinstance(a, dict):
+            continue
+        try:
+            snap = learn.learning_snapshot(a) if learn else {}
+            tp = trust_svc.agent_trust_profile(user_id, a, user_trust=ut_score) if trust_svc else {}
+        except Exception:
+            snap, tp = {}, {}
         total_game_time += int(a.get("game_time_sec") or 0)
         iq = tp.get("composite_iq") or a.get("intelligence") or snap.get("intelligence") or 100
         intel_vals.append(float(iq))

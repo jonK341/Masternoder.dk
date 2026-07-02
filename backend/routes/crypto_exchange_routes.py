@@ -701,16 +701,22 @@ def exchange_profit_tools_boost():
 
 @crypto_exchange_bp.route("/api/exchange/monitor/live", methods=["GET"])
 def exchange_monitor_live():
-    from backend.services.exchange_trading_monitor_service import live_monitor
+    try:
+        from backend.services.exchange_trading_monitor_service import live_monitor
 
-    return jsonify(live_monitor(_uid(), feed_limit=int(request.args.get("limit") or 40)))
+        return jsonify(live_monitor(_uid(), feed_limit=int(request.args.get("limit") or 40)))
+    except Exception as exc:
+        return jsonify({"success": False, "error": "monitor_unavailable", "message": str(exc)[:200]}), 500
 
 
 @crypto_exchange_bp.route("/api/exchange/trust/me", methods=["GET"])
 def exchange_trust_me():
-    from backend.services.exchange_trust_service import user_trust_profile
+    try:
+        from backend.services.exchange_trust_service import user_trust_profile
 
-    return jsonify(user_trust_profile(_uid()))
+        return jsonify(user_trust_profile(_uid()))
+    except Exception as exc:
+        return jsonify({"success": False, "error": "trust_unavailable", "message": str(exc)[:200]}), 500
 
 
 @crypto_exchange_bp.route("/api/exchange/trust/controls", methods=["POST"])
@@ -737,9 +743,12 @@ def exchange_trust_agent_activate():
 
 @crypto_exchange_bp.route("/api/exchange/live-watch", methods=["GET"])
 def exchange_live_watch_user():
-    from backend.services.exchange_live_watch_service import user_live_watch
+    try:
+        from backend.services.exchange_live_watch_service import user_live_watch
 
-    return jsonify(user_live_watch(_uid(), feed_limit=int(request.args.get("limit") or 50)))
+        return jsonify(user_live_watch(_uid(), feed_limit=int(request.args.get("limit") or 50)))
+    except Exception as exc:
+        return jsonify({"success": False, "error": "live_watch_unavailable", "message": str(exc)[:200]}), 500
 
 
 @crypto_exchange_bp.route("/api/exchange/rental/catalog", methods=["GET"])

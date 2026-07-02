@@ -22,8 +22,13 @@ def user_live_watch(user_id: str, *, feed_limit: int = 50) -> Dict[str, Any]:
     agents_raw = mkt.list_user_agents(user_id).get("agents") or []
     agents: List[Dict[str, Any]] = []
     for a in agents_raw:
-        tp = trust.agent_trust_profile(user_id, a, user_trust=profile["trust_score"])
-        agents.append({**a, **tp})
+        if not isinstance(a, dict):
+            continue
+        try:
+            tp = trust.agent_trust_profile(user_id, a, user_trust=profile["trust_score"])
+            agents.append({**a, **tp})
+        except Exception:
+            continue
 
     active = sum(1 for a in agents if a.get("activation") == "active")
     pending = sum(1 for a in agents if a.get("activation") == "pending")

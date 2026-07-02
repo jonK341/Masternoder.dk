@@ -129,7 +129,7 @@
     if (ach) {
       ach.innerHTML = (d.achievements || []).map(function (a) {
         return '<div class="cex-ach-item ' + (a.unlocked ? "on" : "off") + '" title="' +
-          (a.desc || "").replace(/"/g, "") + " (" + a.progress + "/" + a.target + ")">' +
+          (a.desc || "").replace(/"/g, "") + ' (' + a.progress + '/' + a.target + ')">' +
           '<span class="cex-ach-icon">' + (a.icon || "🏅") + "</span>" +
           '<span class="cex-ach-name">' + a.name + "</span></div>";
       }).join("");

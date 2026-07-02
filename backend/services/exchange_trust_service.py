@@ -38,7 +38,10 @@ def _policy() -> Dict[str, Any]:
             "suspended_users": [],
             "updated_at": _iso(),
         }
-        ex._write_json(_POLICY_PATH, p)
+        try:
+            ex._write_json(_POLICY_PATH, p)
+        except Exception:
+            pass
     return p
 
 
