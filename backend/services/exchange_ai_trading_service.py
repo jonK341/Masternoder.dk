@@ -9,6 +9,7 @@ Paper mode is default; live requires ``EXCHANGE_ARBITRAGE_LIVE=1`` + vault API k
 from __future__ import annotations
 
 import hashlib
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -239,6 +240,7 @@ def run_ai_tick(
     ranked = analysis.get("ranked_opportunities") or []
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
+    hot_bps = float(cfg.get("hot_spread_bps") or os.environ.get("EXCHANGE_AI_HOT_BPS") or 20)
 
     best = next(
         (o for o in ranked if o.get("actionable") and float(o.get("net_bps") or 0) >= min_net),
@@ -247,6 +249,11 @@ def run_ai_tick(
     if not best:
         best = next(
             (o for o in ranked if o.get("profitable") and float(o.get("net_bps") or 0) >= min_net),
+            None,
+        )
+    if not best:
+        best = next(
+            (o for o in ranked if float(o.get("net_bps") or 0) >= hot_bps),
             None,
         )
     if not best and ranked and force_execute:
@@ -260,8 +267,14 @@ def run_ai_tick(
     acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 40
     acct["skills"] = list(cfg.get("default_skills") or [])
 
-    score_ok = float(best.get("ai_score") or 0) >= min_score if best else False
-    spread_ok = bool(best and best.get("profitable") and float(best.get("net_bps") or 0) >= min_net)
+    hot_spread = bool(best and float(best.get("net_bps") or 0) >= hot_bps)
+    effective_min_score = min(min_score, 28.0) if hot_spread else min_score
+    score_ok = float(best.get("ai_score") or 0) >= effective_min_score if best else False
+    spread_ok = bool(
+        best
+        and float(best.get("net_bps") or 0) >= min_net
+        and (best.get("profitable") or hot_spread)
+    )
     if not best or (not score_ok and not spread_ok):
         action = {
             "agent_id": agent_id,

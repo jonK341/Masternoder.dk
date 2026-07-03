@@ -513,6 +513,31 @@ def _infer_rotation_notes() -> Dict[str, str]:
         "paypal_sweep_paper",
         "check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1",
     )
+    try:
+        from backend.services import crypto_exchange_service as cx
+        payout_cfg = _read_json(os.path.join(cx._BASE, "data", "crypto_exchange", "payout_config.json"), {})
+        unswept = float(payout_cfg.get("net_unswept_usd") or 0)
+        if unswept > 0:
+            notes["paypal_sweep_paper"] = (
+                f"paper mode; net_unswept=${unswept:.2f} ({today}) — "
+                f"live: EXCHANGE_PAYOUT_PAYPAL_LIVE=1"
+            )
+            notes["auto_sweep_off"] = (
+                f"auto_sweep={payout_cfg.get('auto_sweep_enabled', False)} "
+                f"min=${float(payout_cfg.get('min_sweep_usd') or 500):.0f} "
+                f"unswept=${unswept:.2f} ({today})"
+            )
+    except Exception:
+        pass
+
+    notes["casino_agents_idle"] = (
+        f"profit_agent_overrides: max_loss_coins=50000 max_bets/day=500 ({today}) — "
+        f"restart daemon to pick up; session RG may need reset if still capped"
+    )
+    notes["skip_reason_funding"] = notes.get(
+        "skip_reason_funding",
+        f"batch5: normalize_order_qty + max_funded cap + insufficient-balance dedupe bypass ({today})",
+    )
 
     return notes
 
@@ -537,7 +562,7 @@ def sync_critical_reality() -> Dict[str, Any]:
         "hit_rate_tracking": f"GET /api/exchange/profit-path/hit-rate?days=7 ({today})",
         "void_skills_open": f"sync_from_ledger closes voids on fill/baseline ({today})",
         "agent_level_lag": f"agent level from stacked PPP profit USD ({today})",
-        "ai_trader_idle": f"execute on profitable spread when net_bps>=min_net ({today})",
+        "ai_trader_idle": f"hot_spread_bps>=20 bypasses min_ai_score; execute when net_bps>=min_net ({today})",
     }.items():
         checks[pid] = True
         notes[pid] = note

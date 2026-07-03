@@ -21,6 +21,24 @@ def _config() -> Dict[str, Any]:
         return {}
 
 
+def _profit_agent_override(user_id: str) -> Dict[str, Any]:
+    cfg = _config()
+    po = cfg.get("profit_agent_overrides") or {}
+    if not isinstance(po, dict):
+        return {}
+    ids = po.get("user_ids") or []
+    if str(user_id) not in [str(x) for x in ids]:
+        return {}
+    return po
+
+
+def profit_agent_daily_cap(user_id: str) -> Optional[int]:
+    """Higher daily bet cap for autonomous profit agents (config-driven)."""
+    override = _profit_agent_override(user_id)
+    cap = override.get("max_bets_per_day")
+    return int(cap) if cap is not None else None
+
+
 def _tier_for_user(user_id: str) -> Dict[str, Any]:
     tiers = _config().get("limits_by_xp") or []
     if not isinstance(tiers, list) or not tiers:
@@ -73,6 +91,7 @@ def check_before_bet(user_id: str, bet: float, currency: str) -> Optional[str]:
     tier = _tier_for_user(user_id)
     if not tier:
         return None
+    override = _profit_agent_override(user_id)
     window_h = float(cfg.get("session_window_hours") or 24)
     cooldown_m = int(tier.get("cooldown_minutes") or 0)
     cap_key = {
@@ -80,7 +99,7 @@ def check_before_bet(user_id: str, bet: float, currency: str) -> Optional[str]:
         "mn2": "max_loss_mn2",
         "usd": "max_loss_usd",
     }.get(currency, "max_loss_coins")
-    cap = tier.get(cap_key)
+    cap = override.get(cap_key) if override.get(cap_key) is not None else tier.get(cap_key)
     if cap is None:
         return None
 

@@ -319,6 +319,16 @@
   "responsible_gaming": {
     "enabled": true,
     "session_window_hours": 24,
+    "profit_agent_overrides": {
+      "user_ids": [
+        "casino_kelly_user",
+        "casino_safe_grinder_user",
+        "casino_meta_oracle_user"
+      ],
+      "max_loss_coins": 50000,
+      "max_bets_per_day": 500,
+      "session_reset_on_daemon": false
+    },
     "limits_by_xp": [
       {
         "min_xp": 0,

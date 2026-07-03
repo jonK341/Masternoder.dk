@@ -318,7 +318,7 @@ def test_rotation_auto_execute_dedupe(rotation_env, monkeypatch):
     monkeypatch.setattr(
         rot,
         "execute_rotation",
-        lambda act, dry_run=True: {"success": False, "error": "sim_fail", "mode": "live"},
+        lambda act, dry_run=True: {"success": False, "error": "pair_not_supported:USDT on nonkyc", "mode": "live"},
     )
     monkeypatch.setattr(rot, "log_rotation_to_ppp", lambda *a, **k: None)
 
@@ -345,6 +345,7 @@ def test_dedupe_venue_asset_cooldown(rotation_env, monkeypatch):
             "ts": rot._iso(),
             "asset_key": rot._venue_asset_key(action),
             "amount_usd": 97,
+            "success": True,
         }],
     }
     assert rot._dedupe_skip(action, state) == "venue_asset_cooldown"
@@ -352,6 +353,24 @@ def test_dedupe_venue_asset_cooldown(rotation_env, monkeypatch):
     action2 = dict(action)
     action2["amount_usd"] = 150
     assert rot._dedupe_skip(action2, state) is None
+
+
+def test_dedupe_allows_insufficient_balance_retry(rotation_env):
+    rot = rotation_env["rot"]
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "binance",
+        "symbol": "LINK",
+        "side": "buy",
+        "amount_usd": 83,
+        "market": "LINKUSDC",
+    }
+    state = {
+        "last_failure_hash": rot._action_fingerprint(action),
+        "last_failure_at": rot._iso(),
+        "last_failure_reason": "Account has insufficient balance for requested action.",
+    }
+    assert rot._dedupe_skip(action, state) is None
 
 
 def test_suggest_doge_sell_leg_resolves_market(rotation_env, monkeypatch):

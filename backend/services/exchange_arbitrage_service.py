@@ -337,7 +337,22 @@ def _attempt_global_best_live(
         if float(o.get("net_bps") or 0) >= force_floor and float(o.get("est_profit_usd") or 0) > 0
     ]
     if not opps:
-        return None
+        seen: set = set()
+        for action in actions:
+            row = action.get("best")
+            if not isinstance(row, dict):
+                continue
+            nb = float(row.get("net_bps") or 0)
+            if nb < force_floor or float(row.get("est_profit_usd") or 0) <= 0:
+                continue
+            key = (row.get("symbol"), row.get("buy_venue"), row.get("sell_venue"))
+            if key in seen:
+                continue
+            seen.add(key)
+            opps.append(dict(row))
+        opps.sort(key=lambda o: float(o.get("net_bps") or 0), reverse=True)
+    if not opps:
+        return {"executed": False, "forced_global": True, "reason": "no_qualifying_opps", "force_floor_bps": force_floor}
 
     from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
     from backend.services.exchange_profit_path_service import record_execution, record_scan
@@ -386,7 +401,13 @@ def _attempt_global_best_live(
             actions.append(action)
         if exec_res.get("success"):
             return action
-    return None
+    return {
+        "executed": False,
+        "forced_global": True,
+        "reason": "force_attempt_exhausted",
+        "force_floor_bps": force_floor,
+        "opp_count": len(opps),
+    }
 
 
 def _scale_opportunity_notional(opp: Dict[str, Any], notional_usd: float) -> Dict[str, Any]:
@@ -569,12 +590,15 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         actions.append(action)
 
     executed_count = sum(1 for a in actions if a.get("executed"))
+    force_meta: Optional[Dict[str, Any]] = None
     if executed_count == 0:
         forced = _attempt_global_best_live(
             actions, cfg=cfg, min_margin_bps=min_margin_bps, default_notional=default_notional,
         )
-        if forced and forced.get("executed"):
-            executed_count = sum(1 for a in actions if a.get("executed"))
+        if forced:
+            force_meta = forced if isinstance(forced, dict) else None
+            if forced.get("executed"):
+                executed_count = sum(1 for a in actions if a.get("executed"))
 
     best_qualifying = _summarize_best_qualifying(actions, min_margin_bps)
 
@@ -605,6 +629,7 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         "agent_count": len(actions),
         "executed_count": executed_count,
         "actions": actions,
+        "force_attempt": force_meta,
     }
 
 

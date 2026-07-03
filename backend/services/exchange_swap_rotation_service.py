@@ -142,19 +142,39 @@ def _venue_asset_key(action: Dict[str, Any]) -> str:
     return f"{venue}|{sym}|{side}|{market}"
 
 
+def _is_insufficient_balance_reason(reason: str) -> bool:
+    r = str(reason or "").lower()
+    return "insufficient balance" in r or "insufficient_balance" in r or "insufficient funds" in r
+
+
+def _is_permanent_rotation_failure(reason: str) -> bool:
+    """Failures that should block retries for the dedupe window."""
+    r = str(reason or "").lower()
+    return "pair_not_supported" in r
+
+
 def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
     """Return skip reason when action should not re-run yet."""
     now = datetime.now(timezone.utc)
     fp = _action_fingerprint(action)
     fail_hash = str(state.get("last_failure_hash") or "")
     fail_at = _parse_ts(str(state.get("last_failure_at") or ""))
-    if fail_hash == fp and fail_at and (now - fail_at) < timedelta(minutes=_DEDUPE_MINUTES):
+    fail_reason = str(state.get("last_failure_reason") or "")
+    if (
+        fail_hash == fp
+        and fail_at
+        and (now - fail_at) < timedelta(minutes=_DEDUPE_MINUTES)
+        and _is_permanent_rotation_failure(fail_reason)
+        and not _is_insufficient_balance_reason(fail_reason)
+    ):
         return "recent_failure_dedupe"
 
     amount = float(action.get("amount_usd") or action.get("amount") or action.get("suggested_notional_usd") or 0)
     asset_key = _venue_asset_key(action)
     for entry in reversed(state.get("recent") or []):
         if not isinstance(entry, dict):
+            continue
+        if not entry.get("success"):
             continue
         entry_at = _parse_ts(str(entry.get("ts") or ""))
         if not entry_at or (now - entry_at) >= timedelta(minutes=_DEDUPE_MINUTES):
@@ -200,9 +220,21 @@ def _record_rotation_attempt(action: Dict[str, Any], state: Dict[str, Any], *, s
     if success:
         state.pop("last_failure_hash", None)
         state.pop("last_failure_at", None)
+        state.pop("last_failure_reason", None)
     else:
-        state["last_failure_hash"] = fp
-        state["last_failure_at"] = _iso()
+        reason_l = str(skip_reason or "").lower()
+        if _is_permanent_rotation_failure(reason_l):
+            state["last_failure_hash"] = fp
+            state["last_failure_at"] = _iso()
+            state["last_failure_reason"] = skip_reason
+        elif _is_insufficient_balance_reason(reason_l):
+            state.pop("last_failure_hash", None)
+            state.pop("last_failure_at", None)
+            state.pop("last_failure_reason", None)
+        else:
+            state.pop("last_failure_hash", None)
+            state.pop("last_failure_at", None)
+            state.pop("last_failure_reason", None)
     _save_rotation_state(state)
 
 
@@ -211,6 +243,57 @@ def _cap_action_amount(action: Dict[str, Any], max_usd: float) -> Dict[str, Any]
     for key in ("amount_usd", "amount"):
         if key in capped and capped[key]:
             capped[key] = round(min(float(capped[key]), float(max_usd)), 2)
+    return capped
+
+
+def _quote_free_usd(venue_id: str, quote: Optional[str] = None) -> float:
+    quote_asset = str(quote or vapi.venue_quote_asset(venue_id)).upper()
+    return float(vapi.parse_spot_balances(venue_id, dry_run=False).get(quote_asset) or 0)
+
+
+def _fit_external_action_to_balance(action: Dict[str, Any], max_usd: float) -> Dict[str, Any]:
+    """Cap external buy/sell notional to quote balance and normalize qty."""
+    venue = str(action.get("venue_id") or "")
+    sym = str(action.get("symbol") or "")
+    side = str(action.get("side") or "buy")
+    usd = float(action.get("amount_usd") or 0)
+    quote = action.get("quote")
+    qty = float(action.get("quantity") or 0)
+
+    fund_cap = usd
+    if side == "buy":
+        free_q = _quote_free_usd(venue, quote)
+        if free_q > 0:
+            fund_cap = min(fund_cap, round(free_q * 0.95, 2))
+        try:
+            rows = search_paths(hours=6, limit=30).get("paths") or []
+            for row in reversed(rows):
+                if row.get("skip_reason") not in ("insufficient_venue_balance", "insufficient_balance"):
+                    continue
+                v = row.get("venues") or {}
+                if str(v.get("buy") or "").lower() != venue.lower():
+                    continue
+                if sym and str(row.get("symbol") or "").upper() != sym:
+                    continue
+                aid = str(row.get("agent_id") or "")
+                notion = float(row.get("notional_usd") or usd or 0)
+                if aid and notion > 0:
+                    gaps = analyze_funding_gaps(aid, sym or str(row.get("symbol") or ""), notion)
+                    max_f = float(gaps.get("max_funded_usd") or 0)
+                    if max_f > 10:
+                        fund_cap = min(fund_cap, round(max_f * 0.97, 2))
+                    break
+        except Exception:
+            pass
+
+    capped = _cap_action_amount(action, min(max_usd, fund_cap))
+    spec = vapi.market_order_for_leg(
+        venue, side, sym, float(capped.get("amount_usd") or 0),
+        quote=capped.get("quote"),
+        quantity=qty if qty > 0 else None,
+    )
+    if spec.get("ok"):
+        capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity", "notional_usd") if k in spec}}
     return capped
 
 
@@ -367,26 +450,26 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
 
     capped = _cap_action_amount(action, max_usd)
     if str(capped.get("type") or "") in ("external_market_buy", "external_market_sell"):
+        capped = _fit_external_action_to_balance(capped, max_usd)
         venue = str(capped.get("venue_id") or "")
         sym = str(capped.get("symbol") or "")
         side = str(capped.get("side") or "buy")
-        usd = float(capped.get("amount_usd") or 0)
-        qty = float(capped.get("quantity") or 0)
-        spec = vapi.market_order_for_leg(
-            venue, side, sym, usd,
-            quote=capped.get("quote"),
-            quantity=qty if qty > 0 else None,
-        )
-        if not spec.get("ok"):
-            reason = str(spec.get("error") or "pair_not_supported")
-            log_fields = _rotation_log_fields(capped)
-            return {
-                "skipped": True,
-                "reason": reason,
-                "action": capped.get("label"),
-                **log_fields,
-            }
-        capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity") if k in spec}}
+        if not capped.get("market") and sym and venue:
+            spec = vapi.market_order_for_leg(
+                venue, side, sym, float(capped.get("amount_usd") or 0),
+                quote=capped.get("quote"),
+                quantity=float(capped.get("quantity") or 0) or None,
+            )
+            if not spec.get("ok"):
+                reason = str(spec.get("error") or "pair_not_supported")
+                log_fields = _rotation_log_fields(capped)
+                return {
+                    "skipped": True,
+                    "reason": reason,
+                    "action": capped.get("label"),
+                    **log_fields,
+                }
+            capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity", "notional_usd") if k in spec}}
 
     state = _load_rotation_state()
     skip = _dedupe_skip(capped, state)
@@ -399,9 +482,45 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     dry_run = False
     exec_res = execute_rotation(capped, dry_run=dry_run)
     success = bool(exec_res.get("success"))
+    err_msg = str(exec_res.get("error") or exec_res.get("reason") or "")
+
+    if (
+        not success
+        and _is_insufficient_balance_reason(err_msg)
+        and str(capped.get("type") or "") in ("external_market_buy", "external_market_sell")
+        and "reduce_notional" in allowed
+    ):
+        venue = str(capped.get("venue_id") or "")
+        quote = str(capped.get("quote") or vapi.venue_quote_asset(venue)).upper()
+        free_q = _quote_free_usd(venue, quote)
+        try:
+            from backend.services import external_exchange_connector_service as conn
+            configured = float(conn.load_connectors_config().get("paper_trade_usd") or capped.get("amount_usd") or 75)
+        except Exception:
+            configured = float(capped.get("amount_usd") or 75)
+        reduce_act = _reduce_notional_action(venue, quote, free_q, configured, score=10.0)
+        reduce_res = execute_rotation(reduce_act, dry_run=False)
+        if reduce_res.get("success") or reduce_res.get("already_applied"):
+            capped = reduce_act
+            exec_res = reduce_res
+            success = True
+            err_msg = ""
+        else:
+            smaller = _fit_external_action_to_balance(
+                {**capped, "amount_usd": round(free_q * 0.90, 2)},
+                max_usd,
+            )
+            if float(smaller.get("amount_usd") or 0) >= 10:
+                retry_res = execute_rotation(smaller, dry_run=False)
+                if retry_res.get("success"):
+                    capped = smaller
+                    exec_res = retry_res
+                    success = True
+                    err_msg = ""
+
     if exec_res.get("already_applied"):
         success = True
-    _record_rotation_attempt(capped, state, success=success, skip_reason=str(exec_res.get("error") or exec_res.get("reason") or ""))
+    _record_rotation_attempt(capped, state, success=success, skip_reason=err_msg)
 
     baseline_id = exec_res.get("baseline_id") if success else None
 

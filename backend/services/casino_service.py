@@ -480,7 +480,15 @@ def _validate_bet(user_id: str, bet: float, currency: str = "coins") -> Optional
             return f"Minimum bet is {cfg['min_bet']} coins"
         if amount > cfg["max_bet"]:
             return f"Maximum bet is {cfg['max_bet']} coins"
-    if _count_bets_today(user_id) >= cfg["max_bets_per_day"]:
+    daily_cap = int(cfg["max_bets_per_day"])
+    try:
+        from backend.services.casino_responsible_gaming import profit_agent_daily_cap
+        agent_cap = profit_agent_daily_cap(user_id)
+        if agent_cap is not None:
+            daily_cap = agent_cap
+    except Exception:
+        pass
+    if _count_bets_today(user_id) >= daily_cap:
         return "Daily bet limit reached"
     if _user_balance(user_id, currency) < amount:
         return f"Insufficient {_currency_label(currency)}"
