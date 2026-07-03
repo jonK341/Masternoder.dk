@@ -324,6 +324,102 @@ def base64_encode(raw: bytes) -> str:
     return base64.b64encode(raw).decode("utf-8")
 
 
+_STABLE_QUOTES = frozenset({"USDT", "USDC", "BUSD", "DAI", "TUSD", "USDD", "USD", "EUR"})
+
+
+def resolve_market(venue_id: str, base: str, quote: Optional[str] = None) -> Dict[str, Any]:
+    """Resolve venue-specific market id / pair string for base vs quote."""
+    base_u = str(base or "").upper()
+    if not base_u:
+        return {"ok": False, "error": "missing_base", "venue_id": venue_id}
+    vmap = conn._venue_map()
+    venue = vmap.get(venue_id)
+    if not venue:
+        return {"ok": False, "error": "unknown_venue", "venue_id": venue_id}
+    quote_u = str(quote or venue_quote_asset(venue_id)).upper()
+    venue_cfg = dict(venue)
+    venue_cfg["quote"] = quote_u
+    market = conn.build_pair(venue_cfg, base_u)
+    return {
+        "ok": True,
+        "venue_id": venue_id,
+        "base": base_u,
+        "quote": quote_u,
+        "market": market,
+    }
+
+
+def venue_supports_symbol(venue_id: str, symbol: str, *, quote: Optional[str] = None) -> bool:
+    """True when venue lists a tradable market for base/quote."""
+    sym = str(symbol or "").upper()
+    if not sym:
+        return False
+    if sym in _STABLE_QUOTES:
+        return True
+    resolved = resolve_market(venue_id, sym, quote)
+    if not resolved.get("ok"):
+        return False
+    cfg = conn.load_connectors_config()
+    supported = [str(s).upper() for s in (cfg.get("supported_symbols") or [])]
+    if supported and sym not in supported:
+        return False
+    tick = conn.fetch_ticker(venue_id, sym, timeout=4.0)
+    return tick is not None
+
+
+def market_order_for_leg(
+    venue_id: str,
+    leg: str,
+    symbol: str,
+    notional_usd: float,
+    *,
+    quote: Optional[str] = None,
+    quantity: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Build side, qty, and market for one spot leg with pair validation."""
+    base = str(symbol or "").upper()
+    side = str(leg or "").lower()
+    if side not in ("buy", "sell"):
+        return {"ok": False, "error": "invalid_leg", "venue_id": venue_id}
+    resolved = resolve_market(venue_id, base, quote)
+    if not resolved.get("ok"):
+        return {"ok": False, **resolved}
+    if not venue_supports_symbol(venue_id, base, quote=resolved.get("quote")):
+        return {
+            "ok": False,
+            "error": f"pair_not_supported:{base} on {venue_id}",
+            "venue_id": venue_id,
+            "base": base,
+            "quote": resolved.get("quote"),
+            "market": resolved.get("market"),
+        }
+    px = 0.0
+    if quantity is not None and float(quantity) > 0:
+        qty = round(float(quantity), 8)
+    else:
+        tick = conn.fetch_ticker(venue_id, base, timeout=4.0)
+        if tick:
+            px = float(tick.get("ask") if side == "buy" else tick.get("bid") or tick.get("last") or 0)
+        if px <= 0:
+            px = float(ex._price_usd(base) or 0)
+        if px <= 0:
+            return {"ok": False, "error": "no_price", "symbol": base, "venue_id": venue_id}
+        qty = round(float(notional_usd) / px, 8)
+    if qty <= 0:
+        return {"ok": False, "error": "invalid_quantity", "venue_id": venue_id}
+    return {
+        "ok": True,
+        "venue_id": venue_id,
+        "base": base,
+        "quote": resolved["quote"],
+        "market": resolved["market"],
+        "side": side,
+        "quantity": qty,
+        "notional_usd": round(float(notional_usd), 2),
+        "price_usd": round(px, 8) if px > 0 else None,
+    }
+
+
 def place_market_order(
     venue_id: str,
     symbol: str,
@@ -332,11 +428,18 @@ def place_market_order(
     *,
     dry_run: Optional[bool] = None,
     rotation: bool = False,
+    quote: Optional[str] = None,
+    market: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Place a spot market order on a venue (paper-simulated unless live + credentialed)."""
-    vmap = conn._venue_map()
-    venue = vmap.get(venue_id) or {}
-    pair = conn.build_pair(venue, symbol.upper())
+    resolved = resolve_market(venue_id, symbol.upper(), quote)
+    if not resolved.get("ok"):
+        return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
+    pair = str(market or resolved.get("market") or "")
+    if not pair:
+        vmap = conn._venue_map()
+        venue = vmap.get(venue_id) or {}
+        pair = conn.build_pair(venue, symbol.upper())
     side_u = str(side or "buy").upper()
     qty = round(max(0.0, float(quantity or 0)), 8)
     if qty <= 0:
@@ -381,6 +484,9 @@ def place_market_order(
     res.setdefault("side", side_u.lower())
     res.setdefault("quantity", qty)
     res.setdefault("pair", pair)
+    res.setdefault("market", pair)
+    if resolved.get("quote"):
+        res.setdefault("quote", resolved["quote"])
     if not res.get("success") and not res.get("error"):
         err = extract_order_error(res)
         if err:

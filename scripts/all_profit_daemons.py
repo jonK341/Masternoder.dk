@@ -222,18 +222,32 @@ def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
         if outcome.get("auto_executed"):
             label = outcome.get("action") or "?"
             mode = outcome.get("mode") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            pair_info = f" venue={venue} pair={sym} market={market}"
             success = outcome.get("success")
             skip = outcome.get("skip_reason")
             if success:
+                applied = " already_applied" if outcome.get("already_applied") else ""
                 print(
-                    f"[all-profit] rotation executed: {label} mode={mode} success=True",
+                    f"[all-profit] rotation executed: {label}{pair_info} mode={mode} success=True{applied}",
                     flush=True,
                 )
             else:
                 print(
-                    f"[all-profit] rotation skip: {label} reason={skip or 'failed'}",
+                    f"[all-profit] rotation skip: {label}{pair_info} reason={skip or 'failed'}",
                     flush=True,
                 )
+        elif outcome.get("skipped") and outcome.get("reason") not in ("auto_disabled", "arb_executed", "no_actions"):
+            label = outcome.get("action") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            print(
+                f"[all-profit] rotation skip: {label} venue={venue} pair={sym} market={market} reason={outcome.get('reason')}",
+                flush=True,
+            )
         elif outcome.get("skipped") and outcome.get("reason") == "auto_disabled":
             top = outcome.get("suggested") or "?"
             from backend.services.exchange_swap_rotation_service import suggest_swap_actions

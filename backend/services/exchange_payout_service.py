@@ -108,6 +108,8 @@ def _min_sweep_usd(cfg: Optional[Dict[str, Any]] = None) -> float:
     cfg = cfg or _load()
     return float(cfg.get("min_sweep_usd") or 5.0)
 
+
+def _load() -> Dict[str, Any]:
     cfg = ex._read_json(_PAYOUT_PATH, None)
     if not isinstance(cfg, dict):
         cfg = {

@@ -150,7 +150,7 @@ def test_execute_rotation_external_requires_live_flag(rotation_env, monkeypatch)
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: False)
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
-        lambda venue, sym, side, qty, dry_run=None: {"success": True, "mode": "paper", "simulated": True},
+        lambda venue, sym, side, qty, dry_run=None, **kw: {"success": True, "mode": "paper", "simulated": True},
     )
 
     action = {
@@ -226,6 +226,18 @@ def test_suggest_quote_shortfall_sells_base_not_arb_symbol(rotation_env, monkeyp
         "backend.services.exchange_swap_rotation_service.ex._price_usd",
         lambda sym: {"DOGE": 0.15, "LINK": 7.5}.get(str(sym).upper(), 1.0),
     )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, leg, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": sym,
+            "quote": "USDT",
+            "market": f"{sym}_USDT",
+            "side": leg,
+            "quantity": kw.get("quantity") or round(usd / 0.15, 8),
+        },
+    )
 
     out = rot.suggest_swap_actions(hours=24, limit=5)
     top = (out.get("actions") or [{}])[0]
@@ -239,10 +251,22 @@ def test_execute_rotation_propagates_venue_error(rotation_env, monkeypatch):
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
-        lambda venue, sym, side, qty, dry_run=None, rotation=False: {
+        lambda venue, sym, side, qty, dry_run=None, rotation=False, **kw: {
             "success": False,
             "status_code": 400,
             "body": {"error": {"description": "Insufficient funds for order creation"}},
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, leg, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": sym,
+            "quote": "USDT",
+            "market": f"{sym}_USDT",
+            "side": leg,
+            "quantity": kw.get("quantity") or 100.0,
         },
     )
 
@@ -291,6 +315,18 @@ def test_rotation_auto_execute_dedupe(rotation_env, monkeypatch):
     monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
     monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, leg, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": sym,
+            "quote": "USDT",
+            "market": f"{sym}_USDT",
+            "side": leg,
+            "quantity": 100.0,
+        },
+    )
+    monkeypatch.setattr(
         rot,
         "execute_rotation",
         lambda act, dry_run=True: {"success": False, "error": "sim_fail", "mode": "live"},
@@ -327,4 +363,103 @@ def test_dedupe_venue_asset_cooldown(rotation_env, monkeypatch):
     action2 = dict(action)
     action2["amount_usd"] = 150
     assert rot._dedupe_skip(action2, state) is None
+
+
+def test_suggest_doge_sell_leg_resolves_market(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    ppp = rotation_env["ppp"]
+
+    ppp.record_scan(
+        agent_id="arb_agent_meme",
+        best={"symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc", "net_bps": 25},
+        decision="skip",
+        skip_reason="insufficient_venue_balance",
+        notional_usd=75.0,
+        venues=["binance", "nonkyc"],
+    )
+
+    monkeypatch.setattr(
+        rot,
+        "analyze_funding_gaps",
+        lambda aid, sym, notion: {
+            "success": True,
+            "notional_usd": notion,
+            "short_legs": [{
+                "leg": "sell",
+                "venue_id": "nonkyc",
+                "asset": "DOGE",
+                "free": 0.0,
+                "need": 500.0,
+            }],
+            "quantity": 500.0,
+            "buy_ask": 0.15,
+            "max_funded_usd": 0,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_has_credentials",
+        lambda vid: vid == "nonkyc",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"USDT": 100.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, leg, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": "DOGE",
+            "quote": "USDT",
+            "market": "DOGE_USDT",
+            "side": "buy",
+            "quantity": 200.0,
+        },
+    )
+
+    out = rot.suggest_swap_actions(hours=24, limit=5)
+    top = (out.get("actions") or [{}])[0]
+    assert top.get("symbol") == "DOGE"
+    assert top.get("side") == "buy"
+    assert "DOGE" in top.get("label", "")
+    assert "DOGE_USDT" in top.get("label", "")
+    assert "Buy USDT" not in top.get("label", "")
+
+
+def test_execute_rotation_skips_unsupported_pair(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **kw: {"ok": False, "error": "pair_not_supported:DOGE on bitstamp"},
+    )
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "bitstamp",
+        "symbol": "DOGE",
+        "side": "buy",
+        "amount_usd": 25,
+    }
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res["success"] is False
+    assert "pair_not_supported:DOGE" in str(res.get("error") or "")
+
+
+def test_reduce_notional_already_applied(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    data = rotation_env["data"]
+    conn_path = data.parent / "exchange_connectors_config.json"
+    conn_path.write_text(
+        '{"paper_trade_usd": 50, "arbitrage_agents": [{"id": "a1", "venues": ["binance"], "paper_trade_usd": 50}]}',
+        encoding="utf-8",
+    )
+    ext_path = data.parent / "exchange_extended_profit_config.json"
+    ext_path.write_text('{"strategies": {}}', encoding="utf-8")
+    monkeypatch.setattr(rot, "_CONNECTORS_PATH", str(conn_path))
+    monkeypatch.setattr(rot, "_EXTENDED_PROFIT_PATH", str(ext_path))
+
+    action = {"type": "reduce_notional", "venue_id": "binance", "suggested_notional_usd": 75}
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res["success"] is True
+    assert res.get("already_applied") is True
+    assert res.get("updated") == []
 

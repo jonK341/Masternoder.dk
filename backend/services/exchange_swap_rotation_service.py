@@ -76,6 +76,8 @@ def _action_fingerprint(action: Dict[str, Any]) -> str:
             str(action.get("venue_id") or ""),
             str(action.get("symbol") or ""),
             str(action.get("side") or ""),
+            str(action.get("market") or ""),
+            str(action.get("quote") or ""),
         ]
     return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
 
@@ -85,7 +87,8 @@ def _venue_asset_key(action: Dict[str, Any]) -> str:
     venue = str(action.get("venue_id") or action.get("wallet_user_id") or "")
     sym = str(action.get("symbol") or action.get("quote") or "")
     side = str(action.get("side") or atype)
-    return f"{venue}|{sym}|{side}"
+    market = str(action.get("market") or "")
+    return f"{venue}|{sym}|{side}|{market}"
 
 
 def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
@@ -199,7 +202,8 @@ def _apply_reduce_notional(action: Dict[str, Any]) -> Dict[str, Any]:
         ex._write_json(_EXTENDED_PROFIT_PATH, ext)
 
     return {
-        "success": bool(updated),
+        "success": bool(updated) or cap > 0,
+        "already_applied": not bool(updated),
         "mode": "config",
         "cap_usd": cap,
         "updated": updated,
@@ -264,6 +268,21 @@ def _pick_auto_action(actions: List[Dict[str, Any]], allowed_types: List[str]) -
     return candidates[0]
 
 
+def _rotation_log_fields(action: Dict[str, Any]) -> Dict[str, str]:
+    """Pair/venue/market fields for daemon logging."""
+    venue = str(action.get("venue_id") or action.get("wallet_user_id") or "")
+    sym = str(action.get("symbol") or "")
+    market = str(action.get("market") or "")
+    if not market and sym and venue:
+        try:
+            resolved = vapi.resolve_market(venue, sym, action.get("quote"))
+            if resolved.get("ok"):
+                market = str(resolved.get("market") or "")
+        except Exception:
+            pass
+    return {"venue_id": venue, "symbol": sym, "market": market}
+
+
 def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     """After exchange tick: suggest and optionally auto-execute top rotation action."""
     plat = exchange_res.get("platform") or {}
@@ -295,15 +314,42 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
         log_rotation_to_ppp(actions, arb_executed=executed)
         return {"skipped": True, "reason": "no_eligible_action"}
 
-    state = _load_rotation_state()
-    skip = _dedupe_skip(action, state)
-    if skip:
-        return {"skipped": True, "reason": skip, "action": action.get("label")}
-
     capped = _cap_action_amount(action, max_usd)
+    if str(capped.get("type") or "") in ("external_market_buy", "external_market_sell"):
+        venue = str(capped.get("venue_id") or "")
+        sym = str(capped.get("symbol") or "")
+        side = str(capped.get("side") or "buy")
+        usd = float(capped.get("amount_usd") or 0)
+        qty = float(capped.get("quantity") or 0)
+        spec = vapi.market_order_for_leg(
+            venue, side, sym, usd,
+            quote=capped.get("quote"),
+            quantity=qty if qty > 0 else None,
+        )
+        if not spec.get("ok"):
+            reason = str(spec.get("error") or "pair_not_supported")
+            log_fields = _rotation_log_fields(capped)
+            return {
+                "skipped": True,
+                "reason": reason,
+                "action": capped.get("label"),
+                **log_fields,
+            }
+        capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity") if k in spec}}
+
+    state = _load_rotation_state()
+    skip = _dedupe_skip(capped, state)
+    if skip:
+        log_fields = _rotation_log_fields(capped)
+        return {"skipped": True, "reason": skip, "action": capped.get("label"), **log_fields}
+
+    log_fields = _rotation_log_fields(capped)
+
     dry_run = False
     exec_res = execute_rotation(capped, dry_run=dry_run)
     success = bool(exec_res.get("success"))
+    if exec_res.get("already_applied"):
+        success = True
     _record_rotation_attempt(capped, state, success=success, skip_reason=str(exec_res.get("error") or exec_res.get("reason") or ""))
 
     baseline_id = exec_res.get("baseline_id") if success else None
@@ -338,7 +384,9 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
         "action": capped.get("label"),
         "mode": exec_res.get("mode"),
         "baseline_id": baseline_id,
+        "already_applied": bool(exec_res.get("already_applied")),
         "skip_reason": None if success else str(exec_res.get("error") or exec_res.get("reason") or "failed"),
+        **log_fields,
     }
 
 
@@ -531,16 +579,23 @@ def _quote_shortfall_action(
         sell_qty = round(min(qty * 0.92, sell_usd / px), 8)
         if sell_qty <= 0:
             continue
+        spec = vapi.market_order_for_leg(
+            venue_id, "sell", asset, sell_usd, quote=quote, quantity=sell_qty,
+        )
+        if not spec.get("ok"):
+            continue
         act = _external_buy_action(
             venue_id, asset, "sell",
             amount_usd=sell_usd,
-            qty=sell_qty,
+            qty=spec["quantity"],
             reason=f"Sell {asset}→{quote}: {reason}",
             priority=priority,
             score=score,
             top25=top25,
+            market=spec.get("market"),
+            quote=quote,
         )
-        act["label"] = f"Sell {asset} on {venue_id} for {quote} ~${sell_usd:.0f}"
+        act["label"] = f"Sell {asset} on {venue_id} ({spec.get('market')}) for {quote} ~${sell_usd:.0f}"
         act["funding_target"] = quote
         return act
 
@@ -596,18 +651,26 @@ def _external_buy_action(
     priority: str = "high",
     score: float = 0,
     top25: Optional[List[str]] = None,
+    market: Optional[str] = None,
+    quote: Optional[str] = None,
 ) -> Dict[str, Any]:
     sym = str(symbol).upper()
     side_l = str(side).lower()
     trade_asset = sym
+    resolved = vapi.resolve_market(venue_id, sym, quote)
+    mkt = market or (resolved.get("market") if resolved.get("ok") else "")
+    quote_asset = quote or (resolved.get("quote") if resolved.get("ok") else vapi.venue_quote_asset(venue_id))
+    mkt_suffix = f" ({mkt})" if mkt else ""
     return {
         "type": "external_market_buy" if side_l == "buy" else "external_market_sell",
         "priority": priority,
         "priority_score": score,
-        "label": f"{'Buy' if side_l == 'buy' else 'Sell'} {trade_asset} on {venue_id} ~${amount_usd:.0f}",
+        "label": f"{'Buy' if side_l == 'buy' else 'Sell'} {trade_asset} on {venue_id}{mkt_suffix} ~${amount_usd:.0f}",
         "venue_id": venue_id,
         "symbol": sym,
         "side": side_l,
+        "quote": str(quote_asset or "").upper(),
+        "market": mkt,
         "amount_usd": round(amount_usd, 2),
         "quantity": round(qty, 8) if qty > 0 else 0,
         "reason": reason,
@@ -708,13 +771,18 @@ def suggest_swap_actions(
                     configured_usd=float(gaps.get("notional_usd") or notion),
                 )
             elif side == "sell" and venue != "internal":
+                spec = vapi.market_order_for_leg(venue, "buy", sym, short_usd)
+                if not spec.get("ok"):
+                    continue
                 act = _external_buy_action(
                     venue, sym, "buy",
                     amount_usd=short_usd,
-                    qty=0,
+                    qty=spec["quantity"],
                     reason=f"{count} recent funding skips on sell leg ({asset})",
                     score=float(count),
                     top25=["skip_reason_funding", "nonkyc_doge_low" if asset == "DOGE" else "arb_exec_zero"],
+                    market=spec.get("market"),
+                    quote=spec.get("quote"),
                 )
             else:
                 continue
@@ -753,19 +821,23 @@ def suggest_swap_actions(
         if vid == "nonkyc":
             doge = float(bals.get("DOGE") or 0)
             doge_usd = doge * float(ex._price_usd("DOGE") or 0)
-            if doge_usd < 25:
-                act = _external_buy_action(
-                    "nonkyc", "DOGE", "buy",
-                    amount_usd=max(25.0 - doge_usd, 10.0),
-                    qty=0,
-                    reason="NonKYC DOGE inventory below $25 sell-leg minimum",
-                    priority="high",
-                    score=5.0,
-                    top25=["nonkyc_doge_low", "skip_reason_funding"],
-                )
-                if act["label"] not in seen_labels:
-                    seen_labels.add(act["label"])
-                    actions.append(act)
+            if doge_usd < 25 and vapi.venue_supports_symbol("nonkyc", "DOGE"):
+                spec = vapi.market_order_for_leg("nonkyc", "buy", "DOGE", max(25.0 - doge_usd, 10.0))
+                if spec.get("ok"):
+                    act = _external_buy_action(
+                        "nonkyc", "DOGE", "buy",
+                        amount_usd=max(25.0 - doge_usd, 10.0),
+                        qty=spec["quantity"],
+                        reason="NonKYC DOGE inventory below $25 sell-leg minimum",
+                        priority="high",
+                        score=5.0,
+                        top25=["nonkyc_doge_low", "skip_reason_funding"],
+                        market=spec.get("market"),
+                        quote=spec.get("quote"),
+                    )
+                    if act["label"] not in seen_labels:
+                        seen_labels.add(act["label"])
+                        actions.append(act)
 
     quotes: List[Dict[str, Any]] = []
     for vid in venue_ids:
@@ -833,8 +905,16 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
                 "hint": "Lower paper_trade_usd in connectors config or agent override.",
             }
         applied = _apply_reduce_notional(action)
-        exec_res = {"success": bool(applied.get("success")), "dry_run": False, "mode": "config", "action": action, **applied}
-        if applied.get("success"):
+        ok = bool(applied.get("success"))
+        exec_res = {
+            "success": ok,
+            "dry_run": False,
+            "mode": "config",
+            "action": action,
+            "already_applied": bool(applied.get("already_applied")),
+            **applied,
+        }
+        if ok:
             exec_res["baseline_id"] = _record_rotation_baseline(action, exec_res)
         return exec_res
 
@@ -870,17 +950,32 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         sym = str(action.get("symbol") or "BTC").upper()
         side = str(action.get("side") or "buy").lower()
         qty = float(action.get("quantity") or 0)
-        if qty <= 0:
-            px = float(ex._price_usd(sym) or 0)
-            usd = float(action.get("amount_usd") or 0)
-            if side == "buy" and px > 0 and usd > 0:
-                qty = round(usd / px, 8)
-            elif side == "sell" and usd > 0 and px > 0:
-                qty = round(usd / px, 8)
-        if qty <= 0:
-            return {"success": False, "error": "invalid_quantity", "action": action}
+        usd = float(action.get("amount_usd") or 0)
+        quote = action.get("quote")
+        market = action.get("market")
+        spec = vapi.market_order_for_leg(
+            venue, side, sym, usd,
+            quote=quote,
+            quantity=qty if qty > 0 else None,
+        )
+        if not spec.get("ok"):
+            return {
+                "success": False,
+                "error": spec.get("error"),
+                "reason": spec.get("error"),
+                "action": action,
+                "venue_id": venue,
+                "symbol": sym,
+                "market": market,
+            }
+        qty = float(spec["quantity"])
+        sym = str(spec["base"])
+        market = str(spec.get("market") or market or "")
+        quote = spec.get("quote")
         if dry_run or not rotation_live_enabled():
-            res = vapi.place_market_order(venue, sym, side, qty, dry_run=True)
+            res = vapi.place_market_order(
+                venue, sym, side, qty, dry_run=True, quote=quote, market=market,
+            )
             return {
                 "success": bool(res.get("success")),
                 "dry_run": True,
@@ -888,9 +983,14 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
                 "rotation_live_enabled": rotation_live_enabled(),
                 "order": res,
                 "action": action,
+                "venue_id": venue,
+                "symbol": sym,
+                "market": market,
                 "hint": "Set rotation_live_enabled or EXCHANGE_ROTATION_LIVE=1 to execute live.",
             }
-        res = vapi.place_market_order(venue, sym, side, qty, dry_run=False, rotation=True)
+        res = vapi.place_market_order(
+            venue, sym, side, qty, dry_run=False, rotation=True, quote=quote, market=market,
+        )
         err = _order_error(res)
         exec_res = {
             "success": bool(res.get("success")),
@@ -898,6 +998,9 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
             "mode": "live",
             "order": res,
             "action": action,
+            "venue_id": venue,
+            "symbol": sym,
+            "market": market,
             "error": err or None,
         }
         if exec_res.get("success"):
