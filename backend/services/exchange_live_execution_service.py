@@ -125,27 +125,56 @@ def execute_spatial_arbitrage(
     if buy_price <= 0 or not buy_venue or not sell_venue:
         return {"success": False, "error": "invalid_opportunity"}
 
-    qty = round(notional / buy_price, 8)
     global_live = arb.live_enabled() and dry_run is not False
+    qty = round(notional / buy_price, 8)
+    norm = vapi.normalize_order_qty(
+        buy_venue if buy_venue != "internal" else sell_venue,
+        symbol,
+        "buy",
+        qty,
+        price=buy_price,
+    )
+    if buy_venue != "internal" and norm.get("ok"):
+        qty = float(norm["quantity"])
+    elif buy_venue != "internal" and not norm.get("ok"):
+        return {
+            "success": False,
+            "error": norm.get("error") or "invalid_quantity",
+            "mode": "live" if global_live else "paper",
+            "symbol": symbol,
+            "quantity": qty,
+            "notional_usd": notional,
+            "buy_venue": buy_venue,
+            "sell_venue": sell_venue,
+            "normalize": norm,
+            "executed_at": _iso(),
+        }
 
     if global_live and dry_run is not False:
-        funding = vapi.opportunity_funded(
+        from backend.services.exchange_arbitrage_service import prepare_live_opportunity
+
+        prepared = prepare_live_opportunity(
             {"symbol": symbol, "buy_venue": buy_venue, "sell_venue": sell_venue,
-             "buy_ask": buy_price, "notional_usd": notional},
+             "buy_ask": buy_price, "notional_usd": notional, **{k: opp[k] for k in opp if k not in ("symbol", "buy_venue", "sell_venue", "buy_ask", "notional_usd")}},
+            configured_usd=notional,
         )
-        if not funding.get("ok"):
+        if not prepared.get("ok"):
             return {
                 "success": False,
-                "error": "insufficient_venue_balance",
+                "error": prepared.get("reason") or "insufficient_venue_balance",
                 "mode": "live",
                 "symbol": symbol,
                 "quantity": qty,
                 "notional_usd": notional,
                 "buy_venue": buy_venue,
                 "sell_venue": sell_venue,
-                "funding": funding,
+                "funding": prepared.get("funding"),
+                "max_funded_usd": prepared.get("max_funded_usd"),
                 "executed_at": _iso(),
             }
+        opp = prepared["opportunity"]
+        notional = float(opp.get("notional_usd") or notional)
+        qty = round(notional / buy_price, 8) if buy_price > 0 else qty
 
     def _leg(venue: str, side: str) -> Dict[str, Any]:
         if venue == "internal":
@@ -153,7 +182,13 @@ def execute_spatial_arbitrage(
                 return _internal_swap(agent_id, symbol, side, qty)
             return {"success": True, "mode": "paper", "simulated": True, "venue": "internal", "side": side, "quantity": qty}
         use_live = global_live and venue_live_ready(venue) and dry_run is not False
-        return vapi.place_market_order(venue, symbol, side, qty, dry_run=not use_live)
+        leg_qty = qty
+        if use_live:
+            n = vapi.normalize_order_qty(venue, symbol, side, qty, price=buy_price if side == "buy" else None)
+            if not n.get("ok"):
+                return {"success": False, "error": n.get("error"), "venue": venue, "side": side, "normalize": n}
+            leg_qty = float(n["quantity"])
+        return vapi.place_market_order(venue, symbol, side, leg_qty, dry_run=not use_live)
 
     buy_res = _leg(buy_venue, "buy")
     sell_res = _leg(sell_venue, "sell")

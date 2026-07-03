@@ -452,3 +452,41 @@ def test_reduce_notional_already_applied(rotation_env, monkeypatch):
     assert res.get("already_applied") is True
     assert res.get("updated") == []
 
+
+def test_execute_rotation_blocks_sell_below_min_leg_reserve(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **kw: {
+            "ok": True,
+            "base": "DOGE",
+            "quantity": 40.0,
+            "market": "DOGE_USDT",
+            "quote": "USDT",
+            "notional_usd": 6.0,
+            "price_usd": 0.15,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"DOGE": 200.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.ex._price_usd",
+        lambda sym: 0.15 if sym == "DOGE" else 0,
+    )
+    monkeypatch.setattr(rot, "load_config", lambda: {"min_sell_leg_usd": 25})
+
+    action = {
+        "type": "external_market_sell",
+        "venue_id": "nonkyc",
+        "symbol": "DOGE",
+        "side": "sell",
+        "amount_usd": 6.0,
+        "quantity": 40.0,
+    }
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res.get("skipped") is True
+    assert res.get("error") == "sell_would_breach_min_leg_reserve"
+

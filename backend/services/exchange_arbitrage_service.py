@@ -45,6 +45,65 @@ def _effective_transfer_cost_bps(cfg: Dict[str, Any]) -> float:
     return float(cfg.get("transfer_cost_bps") or 20)
 
 
+def effective_min_margin_bps(cfg: Optional[Dict[str, Any]] = None) -> float:
+    """Spatial arb threshold — env override aligns with fast rescan (EXCHANGE_FAST_MIN_BPS)."""
+    cfg = cfg or conn.load_connectors_config()
+    for key in ("EXCHANGE_ARB_MIN_BPS", "EXCHANGE_FAST_MIN_BPS"):
+        env = os.environ.get(key, "").strip()
+        if env:
+            try:
+                return float(env)
+            except ValueError:
+                pass
+    return float(cfg.get("min_margin_bps") or 12)
+
+
+def prepare_live_opportunity(
+    opp: Dict[str, Any],
+    *,
+    configured_usd: float,
+    buffer_pct: float = 0.03,
+    min_live_usd: float = 10.0,
+) -> Dict[str, Any]:
+    """Scale notional to live balances and verify both arb legs can fund."""
+    from backend.services import exchange_venue_api_service as vapi
+
+    symbol = str(opp.get("symbol") or "").upper()
+    buy_v = str(opp.get("buy_venue") or "")
+    sell_v = str(opp.get("sell_venue") or "")
+    buy_ask = float(opp.get("buy_ask") or 0)
+    if buy_ask <= 0 or not symbol or not buy_v or not sell_v:
+        return {"ok": False, "reason": "invalid_opportunity"}
+
+    cap = vapi.max_funded_notional_usd(
+        symbol, buy_v, sell_v, buy_ask, configured_usd=float(configured_usd), buffer_pct=buffer_pct,
+    )
+    if cap < min_live_usd:
+        return {
+            "ok": False,
+            "reason": "insufficient_venue_balance",
+            "max_funded_usd": round(cap, 2),
+            "best": opp,
+        }
+
+    scaled = _scale_opportunity_notional(opp, min(float(configured_usd), cap))
+    funding = vapi.opportunity_funded(scaled, buffer_pct=buffer_pct)
+    if not funding.get("ok"):
+        return {
+            "ok": False,
+            "reason": "insufficient_venue_balance",
+            "max_funded_usd": round(cap, 2),
+            "funding": funding,
+            "best": scaled,
+        }
+    return {
+        "ok": True,
+        "opportunity": scaled,
+        "max_funded_usd": round(cap, 2),
+        "funding": funding,
+    }
+
+
 def _live_api_ready_venues(venue_ids: List[str]) -> List[str]:
     """Drop venues whose private API fails (401, missing keys) during live scans."""
     if not live_enabled():
@@ -212,7 +271,7 @@ def scan_opportunities(
     venue_ids = venues or ([vid for vid, v in vmap.items() if v.get("enabled", True)] + ["internal"])
     venue_ids = _live_api_ready_venues(venue_ids)
     transfer_cost_bps = _effective_transfer_cost_bps(cfg)
-    min_margin_bps = float(cfg.get("min_margin_bps") or 30)
+    min_margin_bps = effective_min_margin_bps(cfg)
     notional = float(notional_usd or cfg.get("paper_trade_usd") or 250)
 
     fetched = conn.fetch_prices(
@@ -250,7 +309,7 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         return {"success": False, "error": "connectors_disabled"}
     vmap = conn._venue_map(cfg)
     transfer_cost_bps = _effective_transfer_cost_bps(cfg)
-    min_margin_bps = float(cfg.get("min_margin_bps") or 30)
+    min_margin_bps = effective_min_margin_bps(cfg)
     default_notional = float(cfg.get("paper_trade_usd") or 250)
 
     fetched = conn.fetch_prices(
@@ -297,30 +356,25 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         path_id = ""
         if best and best["net_bps"] >= min_margin_bps and best["est_profit_usd"] > 0:
             from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
-            from backend.services import exchange_venue_api_service as vapi
+            trade_opp = best
             if live_enabled():
-                cap = vapi.max_funded_notional_usd(
-                    best["symbol"],
-                    best["buy_venue"],
-                    best["sell_venue"],
-                    float(best["buy_ask"]),
-                    configured_usd=notional,
+                prepared = prepare_live_opportunity(
+                    best, configured_usd=notional, buffer_pct=0.03, min_live_usd=10.0,
                 )
-                min_live_usd = 10.0
-                if cap >= min_live_usd:
-                    best = _scale_opportunity_notional(best, min(notional, cap))
-                else:
+                if not prepared.get("ok"):
+                    skip_reason = str(prepared.get("reason") or "insufficient_venue_balance")
                     path_id = record_scan(
-                        agent_id=agent_id, strategy=strategy, best=best,
+                        agent_id=agent_id, strategy=strategy, best=prepared.get("best") or best,
                         threshold_bps=min_margin_bps, mode=tick_mode, decision="skip",
-                        skip_reason="insufficient_venue_balance", notional_usd=notional, venues=a_venues,
+                        skip_reason=skip_reason, notional_usd=notional, venues=a_venues,
                     )
                     action = {
                         "agent_id": agent_id,
                         "executed": False,
-                        "reason": "insufficient_venue_balance",
-                        "best": best,
-                        "max_funded_usd": round(cap, 2),
+                        "reason": skip_reason,
+                        "best": prepared.get("best") or best,
+                        "max_funded_usd": prepared.get("max_funded_usd"),
+                        "funding": prepared.get("funding"),
                         "mode": "live",
                         "profit_path_id": path_id,
                     }
@@ -328,44 +382,25 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
                     write_account(acct)
                     actions.append(action)
                     continue
-                funding = vapi.opportunity_funded(best)
-                if not funding.get("ok"):
-                    path_id = record_scan(
-                        agent_id=agent_id, strategy=strategy, best=best,
-                        threshold_bps=min_margin_bps, mode=tick_mode, decision="skip",
-                        skip_reason="insufficient_venue_balance", notional_usd=notional, venues=a_venues,
-                    )
-                    action = {
-                        "agent_id": agent_id,
-                        "executed": False,
-                        "reason": "insufficient_venue_balance",
-                        "best": best,
-                        "funding": funding,
-                        "mode": "live",
-                        "profit_path_id": path_id,
-                    }
-                    acct["last_action"] = action
-                    write_account(acct)
-                    actions.append(action)
-                    continue
+                trade_opp = prepared["opportunity"]
             path_id = record_scan(
-                agent_id=agent_id, strategy=strategy, best=best,
+                agent_id=agent_id, strategy=strategy, best=trade_opp,
                 threshold_bps=min_margin_bps, mode=tick_mode, decision="attempt",
-                notional_usd=float(best.get("notional_usd") or notional), venues=a_venues,
+                notional_usd=float(trade_opp.get("notional_usd") or notional), venues=a_venues,
             )
-            exec_res = execute_spatial_arbitrage(best, agent_id=agent_id)
+            exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
             record_execution(
-                path_id=path_id, agent_id=agent_id, opp=best, exec_res=exec_res,
+                path_id=path_id, agent_id=agent_id, opp=trade_opp, exec_res=exec_res,
                 strategy=strategy, threshold_bps=min_margin_bps, venues=a_venues,
             )
             if exec_res.get("success"):
                 try:
                     from backend.services.exchange_profit_baseline_service import record_arb_baseline
 
-                    record_arb_baseline(best, exec_res, source="arb", agent_id=agent_id)
+                    record_arb_baseline(trade_opp, exec_res, source="arb", agent_id=agent_id)
                 except Exception:
                     pass
-            acct = book_agent_profit(agent_id, best, exec_res)
+            acct = book_agent_profit(agent_id, trade_opp, exec_res)
             action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}
             if isinstance(action, dict):
                 action["profit_path_id"] = path_id

@@ -632,7 +632,11 @@ def _quote_shortfall_action(
     for usd_val, asset, qty, px in _sellable_base_on_venue(venue_id, min_usd=2.0):
         if str(asset or "").upper() in protected:
             continue
-        sell_usd = round(min(gap * 1.08, usd_val * 0.92), 2)
+        min_reserve = _min_sell_leg_usd()
+        max_sell_usd = round(usd_val - min_reserve, 2)
+        if max_sell_usd < 5:
+            continue
+        sell_usd = round(min(gap * 1.08, usd_val * 0.92, max_sell_usd), 2)
         if sell_usd < 5:
             continue
         sell_qty = round(min(qty * 0.92, sell_usd / px), 8)
@@ -1034,6 +1038,24 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         sym = str(spec["base"])
         market = str(spec.get("market") or market or "")
         quote = spec.get("quote")
+        usd = float(spec.get("notional_usd") or usd)
+        if side == "sell" and usd > 0:
+            min_reserve = _min_sell_leg_usd()
+            bals = vapi.parse_spot_balances(venue, dry_run=False)
+            coin_free = float(bals.get(sym) or 0)
+            px = float(spec.get("price_usd") or ex._price_usd(sym) or 0)
+            if px > 0 and coin_free > 0:
+                inv_usd = coin_free * px
+                if inv_usd - usd < min_reserve:
+                    return {
+                        "success": False,
+                        "skipped": True,
+                        "error": "sell_would_breach_min_leg_reserve",
+                        "reason": f"post-sell {sym} inventory would be ${inv_usd - usd:.2f} < ${min_reserve:.0f}",
+                        "action": action,
+                        "venue_id": venue,
+                        "symbol": sym,
+                    }
         if dry_run or not rotation_live_enabled():
             res = vapi.place_market_order(
                 venue, sym, side, qty, dry_run=True, quote=quote, market=market,

@@ -8,7 +8,7 @@ _Updated: 2026-07-03T11:47:33.507426Z_
 - [x] **#4** [funding] Cross-trade bots MN2 auto-seed must sustain 25 MN2 each tick (`cross_trade_mn2_drift`)
 - [x] **#5** [infra] Windows WinError 5 on wallet JSON writes under concurrent Flask loads (`wallet_file_lock`)
 - [x] **#6** [engine] AI trader enabled but ai_exec=False every tick (`ai_trader_idle`) — _execute on profitable spread when net_bps>=min_net (2026-07-03)_
-- [ ] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _preflight ok; arb_exec=0/11 best_bps=-10.4 ai_exec=False cross_actions=7 ext_exec=0 user_agent (2026-07-03)_
+- [ ] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _fixed: net_bps threshold + prepare_live_opportunity funding gate; arb_exec blocked when sell-leg inventory missing (LINK on binance=0) — prefund sell legs; LOT_SIZE normalize for rotation buys (2026-07-03)_
 - [x] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _extended tick counter n=3552 (2026-07-03)_
 - [x] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`) — _daemon casino 2026-07-03: ran=3/3_
 - [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1_

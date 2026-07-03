@@ -252,15 +252,18 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
         return result
 
     from backend.services.exchange_live_execution_service import book_agent_profit, execute_spatial_arbitrage
-    from backend.services import exchange_venue_api_service as vapi
 
     skip_reason: Optional[str] = None
     for opp in opps[:max_exec]:
+        trade_opp = opp
         if arb.live_enabled():
-            funding = vapi.opportunity_funded(opp)
-            if not funding.get("ok"):
-                skip_reason = "insufficient_venue_balance"
+            prepared = arb.prepare_live_opportunity(
+                opp, configured_usd=float(opp.get("notional_usd") or notional),
+            )
+            if not prepared.get("ok"):
+                skip_reason = str(prepared.get("reason") or "insufficient_venue_balance")
                 continue
+            trade_opp = prepared["opportunity"]
         try:
             from backend.services.exchange_profit_path_service import record_execution, record_scan
 
@@ -268,18 +271,18 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
             path_id = record_scan(
                 agent_id=agent_id,
                 strategy="fast_arb_rescan",
-                best=opp,
+                best=trade_opp,
                 threshold_bps=min_bps,
                 mode=tick_mode,
                 decision="attempt",
-                notional_usd=float(opp.get("notional_usd") or notional),
+                notional_usd=float(trade_opp.get("notional_usd") or notional),
                 venues=venues,
             )
-            exec_res = execute_spatial_arbitrage(opp, agent_id=agent_id)
+            exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
             record_execution(
                 path_id=path_id,
                 agent_id=agent_id,
-                opp=opp,
+                opp=trade_opp,
                 exec_res=exec_res,
                 strategy="fast_arb_rescan",
                 threshold_bps=min_bps,
@@ -289,10 +292,10 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
                 try:
                     from backend.services.exchange_profit_baseline_service import record_arb_baseline
 
-                    record_arb_baseline(opp, exec_res, source="fast_ext", agent_id=agent_id)
+                    record_arb_baseline(trade_opp, exec_res, source="fast_ext", agent_id=agent_id)
                 except Exception:
                     pass
-            book_agent_profit(agent_id, opp, exec_res)
+            book_agent_profit(agent_id, trade_opp, exec_res)
             result["executed"] = bool(exec_res.get("success"))
             result["mode"] = exec_res.get("mode")
             result["profit_path_id"] = path_id

@@ -94,6 +94,74 @@ def test_run_paper_tick_credits_agent_account(arb_env):
     assert accounts["total_realized_profit_usd"] > 0
 
 
+def test_run_paper_tick_attempts_when_net_bps_above_threshold(arb_env, monkeypatch):
+    """Live-mode mock: funded opportunity with net_bps >= min_margin must attempt execution."""
+    arb = arb_env["arb"]
+    conn = arb_env["conn"]
+
+    cfg = conn.load_connectors_config()
+    cfg = dict(cfg)
+    cfg["min_margin_bps"] = 12
+    monkeypatch.setattr(conn, "load_connectors_config", lambda: cfg)
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+
+    sample_opp = {
+        "symbol": "LINK",
+        "buy_venue": "nonkyc",
+        "buy_ask": 7.81,
+        "sell_venue": "binance",
+        "sell_bid": 7.86,
+        "gross_bps": 64.0,
+        "fee_bps": 30.0,
+        "net_bps": 34.0,
+        "notional_usd": 75.0,
+        "est_profit_usd": 0.25,
+        "profitable": True,
+    }
+
+    monkeypatch.setattr(
+        arb,
+        "prepare_live_opportunity",
+        lambda opp, **kw: {"ok": True, "opportunity": sample_opp, "max_funded_usd": 75.0},
+    )
+    exec_calls = []
+
+    def fake_execute(opp, *, agent_id, dry_run=None):
+        exec_calls.append({"agent_id": agent_id, "opp": opp})
+        return {"success": True, "mode": "paper", "est_profit_usd": opp.get("est_profit_usd", 0.1)}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.execute_spatial_arbitrage",
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.book_agent_profit",
+        lambda agent_id, opp, exec_res: {
+            "agent_id": agent_id,
+            "last_action": {"agent_id": agent_id, "executed": exec_res.get("success"), "best": opp},
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_scan",
+        lambda **kw: "path-test",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_execution",
+        lambda **kw: None,
+    )
+
+    res = arb.run_paper_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed_count"] >= 1
+    assert len(exec_calls) >= 1
+    assert exec_calls[0]["opp"]["net_bps"] >= 12
+
+
 def test_wallet_registry_stores_public_addresses(arb_env):
     vault = arb_env["vault"]
     r = vault.register_wallet("arb_btc_eth_wallet", "bc1qexampleaddress", venue="binance", asset="BTC")

@@ -16,6 +16,7 @@ import json
 import time
 import urllib.parse
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_DOWN, ROUND_UP
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
@@ -367,6 +368,166 @@ def venue_supports_symbol(venue_id: str, symbol: str, *, quote: Optional[str] = 
     return tick is not None
 
 
+_BINANCE_FILTER_CACHE: Dict[str, Dict[str, Any]] = {}
+_BINANCE_FILTER_CACHE_TS: Dict[str, float] = {}
+_BINANCE_FILTER_TTL_SEC = 3600.0
+
+
+def _quantize_down(value: float, step: float) -> float:
+    if step <= 0:
+        return float(value)
+    d_val = Decimal(str(value))
+    d_step = Decimal(str(step))
+    return float((d_val / d_step).to_integral_value(rounding=ROUND_DOWN) * d_step)
+
+
+def _quantize_up(value: float, step: float) -> float:
+    if step <= 0:
+        return float(value)
+    d_val = Decimal(str(value))
+    d_step = Decimal(str(step))
+    return float((d_val / d_step).to_integral_value(rounding=ROUND_UP) * d_step)
+
+
+def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) -> Dict[str, Any]:
+    """Return LOT_SIZE / MIN_NOTIONAL filters for a Binance spot symbol (cached)."""
+    pair = str(market or "").upper()
+    if not pair:
+        return {"ok": False, "error": "missing_market"}
+    now = time.time()
+    cached = _BINANCE_FILTER_CACHE.get(pair)
+    if cached and not force_refresh and (now - _BINANCE_FILTER_CACHE_TS.get(pair, 0)) < _BINANCE_FILTER_TTL_SEC:
+        return cached
+
+    vcfg = _venue_api_cfg("binance") or {}
+    api_base = str(vcfg.get("api_base") or "https://api.binance.com").rstrip("/")
+    url = f"{api_base}/api/v3/exchangeInfo?symbol={pair}"
+    res = _http_request("GET", url, timeout=6.0)
+    if not res.get("success"):
+        if cached:
+            return cached
+        return {"ok": False, "error": extract_order_error(res) or "exchange_info_failed", "market": pair}
+
+    body = res.get("body")
+    symbols = (body or {}).get("symbols") if isinstance(body, dict) else None
+    row = symbols[0] if isinstance(symbols, list) and symbols else None
+    if not isinstance(row, dict):
+        if cached:
+            return cached
+        return {"ok": False, "error": "symbol_not_found", "market": pair}
+
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
+    for filt in row.get("filters") or []:
+        if not isinstance(filt, dict):
+            continue
+        ftype = str(filt.get("filterType") or "")
+        if ftype == "LOT_SIZE":
+            filters["step_size"] = float(filt.get("stepSize") or 0)
+            filters["min_qty"] = float(filt.get("minQty") or 0)
+            filters["max_qty"] = float(filt.get("maxQty") or 0)
+        elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
+            filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
+
+    out = {"ok": True, "market": pair, **filters}
+    _BINANCE_FILTER_CACHE[pair] = out
+    _BINANCE_FILTER_CACHE_TS[pair] = now
+    return out
+
+
+def normalize_order_qty(
+    venue_id: str,
+    symbol: str,
+    side: str,
+    qty: float,
+    *,
+    price: Optional[float] = None,
+    market: Optional[str] = None,
+    quote: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Round quantity to venue filters; bump to min notional when affordable."""
+    venue = str(venue_id or "").lower()
+    side_l = str(side or "buy").lower()
+    raw_qty = max(0.0, float(qty or 0))
+    if raw_qty <= 0:
+        return {"ok": False, "error": "invalid_quantity", "venue_id": venue, "quantity": 0.0}
+
+    if venue != "binance":
+        return {"ok": True, "venue_id": venue, "quantity": round(raw_qty, 8), "adjusted": False}
+
+    resolved = resolve_market(venue, str(symbol or "").upper(), quote)
+    pair = str(market or (resolved.get("market") if resolved.get("ok") else "") or "").upper()
+    if not pair:
+        return {"ok": False, "error": "missing_market", "venue_id": venue}
+
+    filt = fetch_binance_symbol_filters(pair)
+    if not filt.get("ok"):
+        return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
+
+    step = float(filt.get("step_size") or 0)
+    min_qty = float(filt.get("min_qty") or 0)
+    max_qty = float(filt.get("max_qty") or 0)
+    min_notional = float(filt.get("min_notional") or 0)
+
+    px = float(price or 0)
+    if px <= 0:
+        base = str(symbol or "").upper()
+        tick = conn.fetch_ticker(venue, base, timeout=4.0)
+        if tick:
+            px = float(tick.get("ask") if side_l == "buy" else tick.get("bid") or tick.get("last") or 0)
+        if px <= 0:
+            px = float(ex._price_usd(base) or 0)
+
+    norm_qty = _quantize_down(raw_qty, step) if step > 0 else round(raw_qty, 8)
+    if min_qty > 0 and norm_qty < min_qty:
+        norm_qty = min_qty
+    if max_qty > 0 and norm_qty > max_qty:
+        norm_qty = _quantize_down(max_qty, step) if step > 0 else max_qty
+
+    adjusted = abs(norm_qty - raw_qty) > 1e-12
+    if px > 0 and min_notional > 0 and norm_qty * px < min_notional:
+        needed_qty = min_notional / px
+        bumped = _quantize_up(needed_qty, step) if step > 0 else needed_qty
+        if max_qty > 0 and bumped > max_qty:
+            return {
+                "ok": False,
+                "error": "below_min_notional",
+                "venue_id": venue,
+                "market": pair,
+                "quantity": norm_qty,
+                "price": round(px, 8),
+                "min_notional": min_notional,
+                "notional_usd": round(norm_qty * px, 4),
+            }
+        if bumped * px >= min_notional:
+            norm_qty = bumped
+            adjusted = True
+        else:
+            return {
+                "ok": False,
+                "error": "below_min_notional",
+                "venue_id": venue,
+                "market": pair,
+                "quantity": norm_qty,
+                "price": round(px, 8),
+                "min_notional": min_notional,
+                "notional_usd": round(norm_qty * px, 4),
+            }
+
+    if norm_qty <= 0:
+        return {"ok": False, "error": "quantity_zero_after_filters", "venue_id": venue, "market": pair}
+
+    return {
+        "ok": True,
+        "venue_id": venue,
+        "market": pair,
+        "quantity": norm_qty,
+        "price": round(px, 8) if px > 0 else None,
+        "notional_usd": round(norm_qty * px, 4) if px > 0 else None,
+        "adjusted": adjusted,
+        "filters": filt,
+    }
+
+
 def market_order_for_leg(
     venue_id: str,
     leg: str,
@@ -396,6 +557,12 @@ def market_order_for_leg(
     px = 0.0
     if quantity is not None and float(quantity) > 0:
         qty = round(float(quantity), 8)
+        if px <= 0:
+            tick = conn.fetch_ticker(venue_id, base, timeout=4.0)
+            if tick:
+                px = float(tick.get("ask") if side == "buy" else tick.get("bid") or tick.get("last") or 0)
+            if px <= 0:
+                px = float(ex._price_usd(base) or 0)
     else:
         tick = conn.fetch_ticker(venue_id, base, timeout=4.0)
         if tick:
@@ -407,6 +574,14 @@ def market_order_for_leg(
         qty = round(float(notional_usd) / px, 8)
     if qty <= 0:
         return {"ok": False, "error": "invalid_quantity", "venue_id": venue_id}
+    norm = normalize_order_qty(
+        venue_id, base, side, qty,
+        price=px, market=resolved.get("market"), quote=resolved.get("quote"),
+    )
+    if not norm.get("ok"):
+        return {"ok": False, **norm, "venue_id": venue_id, "base": base}
+    qty = float(norm["quantity"])
+    eff_notional = float(norm.get("notional_usd") or (qty * px if px > 0 else notional_usd))
     return {
         "ok": True,
         "venue_id": venue_id,
@@ -415,8 +590,9 @@ def market_order_for_leg(
         "market": resolved["market"],
         "side": side,
         "quantity": qty,
-        "notional_usd": round(float(notional_usd), 2),
+        "notional_usd": round(eff_notional, 2),
         "price_usd": round(px, 8) if px > 0 else None,
+        "qty_normalized": bool(norm.get("adjusted")),
     }
 
 
@@ -441,9 +617,26 @@ def place_market_order(
         venue = vmap.get(venue_id) or {}
         pair = conn.build_pair(venue, symbol.upper())
     side_u = str(side or "buy").upper()
+    side_l = side_u.lower()
     qty = round(max(0.0, float(quantity or 0)), 8)
     if qty <= 0:
         return {"success": False, "error": "invalid_quantity"}
+
+    norm = normalize_order_qty(
+        venue_id, symbol.upper(), side_l, qty,
+        market=pair, quote=resolved.get("quote"),
+    )
+    if not norm.get("ok"):
+        return {
+            "success": False,
+            "error": norm.get("error"),
+            "venue_id": venue_id,
+            "symbol": symbol.upper(),
+            "pair": pair,
+            "quantity": qty,
+            "normalize": norm,
+        }
+    qty = float(norm["quantity"])
 
     params: Dict[str, Any]
     if venue_id == "binance":

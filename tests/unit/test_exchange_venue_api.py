@@ -58,6 +58,11 @@ def test_market_order_for_leg_buy(monkeypatch):
         "backend.services.exchange_venue_api_service.conn.fetch_ticker",
         lambda vid, sym, timeout=6.0: {"bid": 0.14, "ask": 0.15, "last": 0.15},
     )
+    monkeypatch.setattr(
+        vapi,
+        "normalize_order_qty",
+        lambda *a, **k: {"ok": True, "quantity": 200.0, "notional_usd": 30.0, "adjusted": False},
+    )
     spec = vapi.market_order_for_leg("nonkyc", "buy", "DOGE", 30.0)
     assert spec["ok"] is True
     assert spec["side"] == "buy"
@@ -72,3 +77,87 @@ def test_market_order_for_leg_unsupported_pair(monkeypatch):
     spec = vapi.market_order_for_leg("bitstamp", "buy", "DOGE", 25.0)
     assert spec["ok"] is False
     assert "pair_not_supported:DOGE" in spec["error"]
+
+
+def test_normalize_order_qty_binance_lot_size(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    monkeypatch.setattr(
+        vapi,
+        "fetch_binance_symbol_filters",
+        lambda market, force_refresh=False: {
+            "ok": True,
+            "market": "LINKUSDC",
+            "step_size": 0.01,
+            "min_qty": 0.01,
+            "max_qty": 9000000.0,
+            "min_notional": 5.0,
+        },
+    )
+    out = vapi.normalize_order_qty("binance", "LINK", "buy", 10.63829787, price=7.82, market="LINKUSDC")
+    assert out["ok"] is True
+    assert out["quantity"] == 10.63
+    assert out["adjusted"] is True
+    assert out["notional_usd"] >= 5.0
+
+
+def test_normalize_order_qty_bumps_to_min_notional(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    monkeypatch.setattr(
+        vapi,
+        "fetch_binance_symbol_filters",
+        lambda market, force_refresh=False: {
+            "ok": True,
+            "market": "BTCUSDC",
+            "step_size": 0.00001,
+            "min_qty": 0.00001,
+            "max_qty": 9000.0,
+            "min_notional": 10.0,
+        },
+    )
+    out = vapi.normalize_order_qty("binance", "BTC", "buy", 0.00001, price=50000.0, market="BTCUSDC")
+    assert out["ok"] is True
+    assert out["quantity"] == 0.0002
+    assert out["notional_usd"] >= 10.0
+
+
+def test_normalize_order_qty_below_min_notional_when_capped(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    monkeypatch.setattr(
+        vapi,
+        "fetch_binance_symbol_filters",
+        lambda market, force_refresh=False: {
+            "ok": True,
+            "market": "BTCUSDC",
+            "step_size": 0.00001,
+            "min_qty": 0.00001,
+            "max_qty": 0.00005,
+            "min_notional": 10.0,
+        },
+    )
+    out = vapi.normalize_order_qty("binance", "BTC", "buy", 0.00001, price=50000.0, market="BTCUSDC")
+    assert out["ok"] is False
+    assert out["error"] == "below_min_notional"
+
+
+def test_place_market_order_applies_binance_filters(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    captured = {}
+
+    def fake_request(venue_id, endpoint_key, params, dry_run=None, rotation=False):
+        captured["quantity"] = params.get("quantity")
+        return {"success": True, "body": {"orderId": 1}}
+
+    monkeypatch.setattr(vapi, "normalize_order_qty", lambda *a, **k: {
+        "ok": True, "quantity": 10.63, "adjusted": True,
+    })
+    monkeypatch.setattr(vapi, "venue_api_request", fake_request)
+    monkeypatch.setattr(vapi, "live_gate_ok", lambda rotation=False: True)
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda vid: True)
+
+    res = vapi.place_market_order("binance", "LINK", "buy", 10.63829787, dry_run=False)
+    assert res["success"] is True
+    assert captured["quantity"] == 10.63
