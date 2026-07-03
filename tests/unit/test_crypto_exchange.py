@@ -485,3 +485,55 @@ def test_market_routes_ticker_and_orders():
     ticker = client.get("/api/market/ticker")
     assert ticker.status_code == 200
     assert ticker.get_json().get("success") is True
+
+
+def test_write_json_retries_on_replace_failure(ex_env, monkeypatch, tmp_path):
+    target = tmp_path / "wallet.json"
+    calls = {"n": 0}
+    real_replace = os.replace
+
+    def flaky_replace(src, dst):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise PermissionError(13, "Access denied", str(dst))
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", flaky_replace)
+    ex_env._write_json(str(target), {"assets": {"BTC": 1.0}})
+    assert target.is_file()
+    assert json.loads(target.read_text(encoding="utf-8"))["assets"]["BTC"] == 1.0
+    assert calls["n"] == 3
+
+
+def test_agent_seed_repeats_each_tick(ex_env, points_db, monkeypatch):
+    from backend.services import crypto_exchange_agent_service as agents
+
+    monkeypatch.setattr(
+        agents,
+        "_trade_agent",
+        lambda agent, tick_count, max_trade_mn2: {
+            "agent_id": agent.get("id"),
+            "success": True,
+            "trade": None,
+        },
+    )
+    monkeypatch.setattr(
+        agents,
+        "_agent_config",
+        lambda: {
+            "enabled": True,
+            "max_trade_mn2_per_tick": 2.5,
+            "seed_mn2_per_agent": 25.0,
+            "agents": [{"id": "exchange_agent_test", "name": "Test", "enabled": True, "assets": ["USDC"]}],
+        },
+    )
+    monkeypatch.setattr(agents, "_read_state", lambda: {"tick_count": 0, "agents": {}})
+    monkeypatch.setattr(agents, "_write_state", lambda state: None)
+
+    agents.tick(force=True)
+    bal1 = ex_env._get_quote_balance("exchange_agent_test", "MN2")
+    assert bal1 == pytest.approx(25.0)
+
+    agents.tick(force=True)
+    bal2 = ex_env._get_quote_balance("exchange_agent_test", "MN2")
+    assert bal2 == pytest.approx(25.0)

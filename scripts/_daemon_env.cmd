@@ -29,3 +29,6 @@ if "%EXCHANGE_ARBITRAGE_LIVE%"=="1" set "EXCHANGE_DAEMON_MODE=live"
 
 if "%EXCHANGE_PAYOUT_PAYPAL_LIVE%"=="1" set "EXCHANGE_DAEMON_MODE=live"
 
+REM Live profit mode: casino agents place real bets unless explicitly dry-run
+if "%EXCHANGE_DAEMON_MODE%"=="live" if not defined CASINO_AGENT_DRY_RUN set "CASINO_AGENT_DRY_RUN=0"
+

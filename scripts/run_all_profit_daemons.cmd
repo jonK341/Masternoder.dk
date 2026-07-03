@@ -2,8 +2,10 @@
 
 title MasterNoder — ALL profit daemons
 
-REM Optional: --auto-sweep  (needs EXCHANGE_AUTO_PAYPAL_SWEEP=1 + EXCHANGE_PAYOUT_PAYPAL_LIVE=1 for real PayPal)
+REM Optional: --auto-sweep when unswept ledger exceeds min (default $500; check: python scripts/payout_sweep_status.py)
+REM   Requires EXCHANGE_AUTO_PAYPAL_SWEEP=1; live PayPal also needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1
 REM Optional: EXCHANGE_AUTO_SWEEP_MIN_USD=500  overrides payout_config min_sweep_usd threshold
+REM Optional: EXCHANGE_FAST_MIN_BPS=10  lowers fast_arb_rescan threshold when best_bps is within ~2 bps (ops only)
 
 call "%~dp0_daemon_env.cmd"
 

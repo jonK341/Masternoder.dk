@@ -155,6 +155,25 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     ]
     if best_bps is not None:
         parts.append(f"best_bps={best_bps:.1f}")
+    arb_actions = arb.get("actions") or []
+    if arb_actions and int(arb.get("executed_count") or 0) == 0:
+        reasons: Dict[str, int] = {}
+        for a in arb_actions:
+            if a.get("executed"):
+                continue
+            r = str(a.get("reason") or "unknown")
+            reasons[r] = reasons.get(r, 0) + 1
+        if reasons:
+            top_reason = max(reasons, key=reasons.get)
+            parts.append(f"arb_skip={top_reason}x{reasons[top_reason]}")
+            if top_reason == "insufficient_venue_balance":
+                caps = [
+                    float(a.get("max_funded_usd") or 0)
+                    for a in arb_actions
+                    if a.get("reason") == "insufficient_venue_balance" and a.get("max_funded_usd")
+                ]
+                if caps:
+                    parts.append(f"max_funded=${min(caps):.0f}")
     live_trades = sum(
         1 for a in (arb.get("actions") or [])
         if a.get("executed") and ((a.get("execution") or {}).get("mode") or a.get("mode")) == "live"
@@ -199,6 +218,10 @@ def _summarize_fast(res: Dict[str, Any]) -> str:
         parts.append(f"best_bps={float(best_bps):.1f}")
     if threshold is not None:
         parts.append(f"threshold={float(threshold):.0f}")
+        if best_bps is not None and float(threshold) - float(best_bps) <= 2.0:
+            parts.append("near_threshold=yes")
+            if not os.environ.get("EXCHANGE_FAST_MIN_BPS"):
+                parts.append("hint=EXCHANGE_FAST_MIN_BPS")
     parts.append(f"strategies={res.get('strategy_count', 0)}")
     return " ".join(parts)
 

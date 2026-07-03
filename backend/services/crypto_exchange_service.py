@@ -6,6 +6,7 @@ import json
 import math
 import os
 import threading
+import time
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -44,12 +45,32 @@ def _read_json(path: str, default: Any) -> Any:
         return default
 
 
-def _write_json(path: str, data: Any) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+def _write_json(path: str, data: Any, *, retries: int = 8) -> None:
+    """Atomic JSON write with retry — avoids WinError 5 when multiple processes touch wallets."""
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    payload = json.dumps(data, indent=2)
     tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    os.replace(tmp, path)
+    last_err: Optional[BaseException] = None
+    for attempt in range(max(1, retries)):
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(payload)
+            os.replace(tmp, path)
+            return
+        except OSError as exc:
+            last_err = exc
+            if attempt + 1 >= retries:
+                break
+            time.sleep(min(0.25, 0.02 * (2 ** attempt)))
+            try:
+                if os.path.isfile(tmp):
+                    os.remove(tmp)
+            except OSError:
+                pass
+    if last_err is not None:
+        raise last_err
 
 
 def _append_jsonl(path: str, row: dict) -> None:
@@ -145,11 +166,12 @@ def _get_balance(user_id: str, symbol: str) -> float:
 
 
 def _set_balance(user_id: str, symbol: str, amount: float) -> None:
-    path = _wallet_path(user_id)
-    data = _read_json(path, {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
-    assets = data.setdefault("assets", {})
-    assets[symbol] = round(float(amount), 12)
-    _save_wallet(user_id, data)
+    with _LOCK:
+        path = _wallet_path(user_id)
+        data = _read_json(path, {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
+        assets = data.setdefault("assets", {})
+        assets[symbol] = round(float(amount), 12)
+        _write_json(path, data)
 
 
 def _adjust_balance(user_id: str, symbol: str, delta: float) -> float:

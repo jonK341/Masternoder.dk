@@ -211,7 +211,7 @@ if [[ "${USE_DEPENDS}" == "1" ]]; then
 else
   echo "=== system libs (faster; binary may not be portable) ==="
   ./autogen.sh
-  CONFIGURE_FLAGS=(--without-gui --disable-tests --disable-bench --with-unsupported-ssl)
+  CONFIGURE_FLAGS=(--without-gui --disable-tests --disable-bench --with-unsupported-ssl --without-miniupnpc)
 fi
 
 ./configure "${CONFIGURE_FLAGS[@]}"

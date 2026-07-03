@@ -112,17 +112,25 @@ def _trade_agent(agent: Dict[str, Any], tick_count: int, max_trade_mn2: float) -
         "MN2",
     )
     try:
-        from backend.services.exchange_profit_path_service import record_event
+        from backend.services.exchange_profit_path_service import record_event, ledger_mode
+        trade = result.get("trade") or {}
+        usd = float(trade.get("usd_value") or 0) if trade else float(amount) * ex._price_usd(symbol)
         record_event(
             phase="execute",
             agent_id=agent_id,
             strategy=str(agent.get("strategy") or "rotation"),
             symbol=symbol,
-            mode="paper",
+            mode=ledger_mode(),
             decision="fill" if result.get("success") else "attempt",
             skip_reason=str(result.get("error") or ""),
-            notional_usd=float(amount) * ex._price_usd(symbol),
-            execution={"trade_id": str((result.get("trade") or {}).get("id") or ""), "side": side},
+            notional_usd=usd,
+            execution={
+                "trade_id": str(trade.get("trade_id") or ""),
+                "side": side,
+                "success": bool(result.get("success")),
+                "realized_pnl_usd": round(usd * 0.001, 4) if result.get("success") else 0.0,
+                "fill_usd": round(usd, 4),
+            },
         )
     except Exception:
         pass

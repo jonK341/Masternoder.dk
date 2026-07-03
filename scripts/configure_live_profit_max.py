@@ -10,6 +10,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+os.environ.setdefault("DAEMON_QUIET", "1")
+os.environ.setdefault("LITE_APP", "1")
+
 from scripts.daemon_env import load_dotenv, live_status
 
 
@@ -60,13 +63,37 @@ def _import_vault_keys() -> list[str]:
     return imported
 
 
-def _tune_connectors() -> None:
+def _probe_xeggex() -> tuple[bool, str]:
+    """Balance probe after vault import — confirms keys work (not 401)."""
+    from backend.services.exchange_venue_api_service import get_account_balance, venue_has_credentials
+
+    if not venue_has_credentials("xeggex"):
+        return False, "no_credentials_in_vault"
+    try:
+        res = get_account_balance("xeggex", dry_run=False)
+    except Exception as exc:
+        return False, str(exc)
+    code = int(res.get("status_code") or 0)
+    if res.get("success") and code == 200:
+        return True, "ok"
+    err = res.get("error") or res.get("body") or "probe_failed"
+    return False, f"http_{code}:{err}"
+
+
+def _live_dual_venues(xeggex_ok: bool) -> list[str]:
+    venues = ["binance", "nonkyc"]
+    if xeggex_ok:
+        venues.append("xeggex")
+    return venues
+
+
+def _tune_connectors(*, xeggex_ok: bool = False, xeggex_reason: str = "") -> None:
     path = os.path.join(ROOT, "data", "exchange_connectors_config.json")
     micro = float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75"))
     with open(path, encoding="utf-8") as fh:
         cfg = json.load(fh)
     cfg["mode"] = "live"
-    cfg["min_margin_bps"] = 18
+    cfg["min_margin_bps"] = 14
     cfg["transfer_cost_bps"] = 14
     cfg["prefunded_transfer_cost_bps"] = 6
     cfg["price_cache_ttl_sec"] = 15
@@ -79,14 +106,19 @@ def _tune_connectors() -> None:
         if vid == "binance":
             v["quote"] = binance_quote
         elif vid == "xeggex":
-            v["live_trading"] = False
-            v["note"] = "Excluded from live arb until API 401 resolved (invalid keys or IP whitelist)."
+            if xeggex_ok:
+                v["live_trading"] = True
+                v["note"] = "Live trading enabled — balance API probe returned 200."
+            else:
+                v["live_trading"] = False
+                v["note"] = f"Excluded from live arb ({xeggex_reason or 'API probe failed'})."
+    dual_venues = _live_dual_venues(xeggex_ok)
     for agent in cfg.get("arbitrage_agents") or []:
         if not isinstance(agent, dict):
             continue
         aid = str(agent.get("id") or "")
         if aid == "arb_live_dual_farm":
-            agent["venues"] = ["binance", "nonkyc"]
+            agent["venues"] = list(dual_venues)
             agent["paper_trade_usd"] = max(micro, 75.0)
             agent["symbols"] = ["DOGE", "XRP", "LTC", "SOL", "ETH", "BTC", "AVAX", "LINK"]
         elif aid == "arb_agent_internal":
@@ -101,7 +133,7 @@ def _tune_connectors() -> None:
     _write_json(path, cfg)
 
 
-def _tune_extended_profit() -> None:
+def _tune_extended_profit(*, xeggex_ok: bool = False) -> None:
     path = os.path.join(ROOT, "data", "exchange_extended_profit_config.json")
     micro = float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75"))
     with open(path, encoding="utf-8") as fh:
@@ -110,7 +142,7 @@ def _tune_extended_profit() -> None:
     dual = strategies.setdefault("live_dual_venue", {})
     dual.update({
         "enabled": True,
-        "venues": ["binance", "nonkyc"],
+        "venues": _live_dual_venues(xeggex_ok),
         "symbols": ["DOGE", "XRP", "LTC", "SOL", "ETH", "BTC", "AVAX", "LINK", "TRX"],
         "min_net_bps": 12,
         "notional_usd": max(micro, 75.0),
@@ -122,6 +154,7 @@ def _tune_extended_profit() -> None:
         "min_net_bps": 12,
         "notional_usd": max(micro, 75.0),
         "venues": ["binance", "nonkyc", "xeggex", "okx", "bybit"],
+        "note": "Ops may lower threshold via EXCHANGE_FAST_MIN_BPS env (not written to config).",
     })
     meme = strategies.setdefault("meme_momentum", {})
     meme.update({
@@ -200,8 +233,9 @@ def main() -> int:
     _ensure_env_flag("EXCHANGE_FORCE_IPV4", os.environ.get("EXCHANGE_FORCE_IPV4", "1"))
 
     imported = _import_vault_keys()
-    _tune_connectors()
-    _tune_extended_profit()
+    xeggex_ok, xeggex_reason = _probe_xeggex()
+    _tune_connectors(xeggex_ok=xeggex_ok, xeggex_reason=xeggex_reason)
+    _tune_extended_profit(xeggex_ok=xeggex_ok)
     _tune_ai_trader()
     _tune_treasury_and_payout()
 
@@ -215,11 +249,12 @@ def main() -> int:
         from backend.services.exchange_treasury_service import treasury_status
         treasury = treasury_status()
     except Exception as exc:
-        treasury = {"error": str(exc)}
+        treasury = {"error": str(exc), "ledger_stashed_usd": 0}
 
     st = live_status()
     print("=== Live profit MAX configured ===")
     print(f"Vault keys imported: {imported or '(none — add API keys to .env)'}")
+    print(f"XeggeX API probe: ok={xeggex_ok} reason={xeggex_reason}")
     print(f"Binance clock: {clock}")
     print(f"Live readiness: venues={st.get('live_venue_count')} external_arb={st.get('can_trade_external')}")
     print(f"Treasury stash (USD): {treasury.get('ledger_stashed_usd', treasury.get('error', '?'))}")

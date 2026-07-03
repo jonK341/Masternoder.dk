@@ -5,6 +5,7 @@ Usage:
   python scripts/prefund_arb_legs.py              # dry-run top action
   python scripts/prefund_arb_legs.py --live       # live execute (requires EXCHANGE_ROTATION_LIVE=1)
   python scripts/prefund_arb_legs.py --list       # show top 3 suggestions only
+  python scripts/prefund_arb_legs.py --live --symbol DOGE   # one-shot NonKYC DOGE prefund
 """
 from __future__ import annotations
 
@@ -41,6 +42,7 @@ def main() -> int:
     parser.add_argument("--list", action="store_true", help="List suggestions only, no execute")
     parser.add_argument("--hours", type=float, default=6, help="PPP lookback hours for suggestions")
     parser.add_argument("--index", type=int, default=0, help="Action index to execute (0=top)")
+    parser.add_argument("--symbol", type=str, default="", help="Filter to actions matching symbol (e.g. DOGE)")
     parser.add_argument("--json", action="store_true", help="Emit JSON result")
     args = parser.parse_args()
 
@@ -56,6 +58,13 @@ def main() -> int:
 
     rot = suggest_swap_actions(hours=args.hours, limit=5)
     actions = rot.get("actions") or []
+    sym_filter = str(args.symbol or "").strip().upper()
+    if sym_filter:
+        actions = [
+            a for a in actions
+            if sym_filter in str(a.get("symbol") or "").upper()
+            or sym_filter in str(a.get("label") or "").upper()
+        ]
     if not actions:
         out = {"success": False, "error": "no_actions", "funding_skip_count": rot.get("funding_skip_count")}
         if args.json:

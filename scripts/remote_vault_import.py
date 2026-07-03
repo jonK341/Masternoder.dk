@@ -8,6 +8,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+os.environ.setdefault("DAEMON_QUIET", "1")
+os.environ.setdefault("LITE_APP", "1")
+
 env_path = os.path.join(ROOT, ".env")
 if os.path.isfile(env_path):
     for line in open(env_path, encoding="utf-8", errors="replace"):

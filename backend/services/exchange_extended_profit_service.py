@@ -212,7 +212,8 @@ def tick_defi_rotation(scfg: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
-    min_bps = float(scfg.get("min_net_bps") or 10)
+    env_min = os.environ.get("EXCHANGE_FAST_MIN_BPS", "").strip()
+    min_bps = float(env_min) if env_min else float(scfg.get("min_net_bps") or 10)
     venues = list(scfg.get("venues") or ["binance", "nonkyc"])
     notional = float(scfg.get("notional_usd") or 250)
     execute_on_threshold = bool(scfg.get("execute_on_threshold", False))

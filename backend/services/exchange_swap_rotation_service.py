@@ -822,15 +822,18 @@ def suggest_swap_actions(
             doge = float(bals.get("DOGE") or 0)
             doge_usd = doge * float(ex._price_usd("DOGE") or 0)
             if doge_usd < 25 and vapi.venue_supports_symbol("nonkyc", "DOGE"):
-                spec = vapi.market_order_for_leg("nonkyc", "buy", "DOGE", max(25.0 - doge_usd, 10.0))
+                need_usd = max(25.0 - doge_usd, 10.0)
+                # Stronger priority when inventory is far below sell-leg minimum.
+                doge_score = 8.0 if doge_usd < 15 else 6.5 if doge_usd < 20 else 5.0
+                spec = vapi.market_order_for_leg("nonkyc", "buy", "DOGE", need_usd)
                 if spec.get("ok"):
                     act = _external_buy_action(
                         "nonkyc", "DOGE", "buy",
-                        amount_usd=max(25.0 - doge_usd, 10.0),
+                        amount_usd=need_usd,
                         qty=spec["quantity"],
-                        reason="NonKYC DOGE inventory below $25 sell-leg minimum",
-                        priority="high",
-                        score=5.0,
+                        reason=f"NonKYC DOGE ${doge_usd:.2f} below $25 sell-leg minimum (prefund: prefund_arb_legs.py --live --symbol DOGE)",
+                        priority="critical" if doge_usd < 15 else "high",
+                        score=doge_score,
                         top25=["nonkyc_doge_low", "skip_reason_funding"],
                         market=spec.get("market"),
                         quote=spec.get("quote"),

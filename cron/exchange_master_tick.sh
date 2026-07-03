@@ -8,4 +8,5 @@ export EXCHANGE_PROFIT_PROFILE=max
 export EXCHANGE_LIVE_PROFIT_MAX=1
 export BINANCE_QUOTE=USDC
 export EXCHANGE_AUTO_PAYPAL_SWEEP=0
+export EXCHANGE_FORCE_IPV4=1
 python3 scripts/exchange_master_daemon.py --once

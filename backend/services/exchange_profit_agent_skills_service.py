@@ -426,6 +426,25 @@ def _infer_auto_checks() -> Dict[str, str]:
     return resolved
 
 
+def _verify_nonkyc_doge() -> tuple[bool, str]:
+    """Live NonKYC DOGE inventory vs $25 sell-leg minimum."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+
+        bals = vapi.parse_spot_balances("nonkyc", dry_run=False)
+        doge = float(bals.get("DOGE") or 0)
+        doge_usd = doge * float(ex._price_usd("DOGE") or 0)
+        if doge_usd >= 25.0:
+            return True, f"nonkyc DOGE ${doge_usd:.2f} ({doge:.2f} DOGE) ≥ $25 ({today})"
+        return False, (
+            f"nonkyc DOGE ${doge_usd:.2f} ({doge:.2f} DOGE) < $25 ({today}) — "
+            f"one-shot: python scripts/prefund_arb_legs.py --live --symbol DOGE"
+        )
+    except Exception as exc:
+        return False, f"nonkyc DOGE check failed ({today}): {exc}"
+
+
 def _infer_rotation_notes() -> Dict[str, str]:
     """Evidence notes from rotation auto-execute — partial progress, not full resolution."""
     notes: Dict[str, str] = {}
@@ -448,11 +467,16 @@ def _infer_rotation_notes() -> Dict[str, str]:
         r for r in recent
         if r.get("success") and "DOGE" in str(r.get("asset_key") or "")
     ]
-    if doge_ok:
+    resolved_doge, doge_note = _verify_nonkyc_doge()
+    if resolved_doge:
+        notes["nonkyc_doge_low"] = doge_note
+    elif doge_ok:
         d = doge_ok[-1]
         notes["nonkyc_doge_low"] = (
-            f"rotation prefunded DOGE ${d.get('amount_usd')} ({today}) — verify sell-leg inventory"
+            f"{doge_note}; last rotation ${d.get('amount_usd')} ({today})"
         )
+    else:
+        notes["nonkyc_doge_low"] = doge_note
 
     hb = _read_json(os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json"), {})
     loops = hb.get("loops") if isinstance(hb.get("loops"), dict) else {}
@@ -493,6 +517,10 @@ def sync_critical_reality() -> Dict[str, Any]:
         notes[pid] = note
     for pid, note in _infer_rotation_notes().items():
         notes[pid] = note
+    doge_ok, doge_note = _verify_nonkyc_doge()
+    if doge_ok:
+        checks["nonkyc_doge_low"] = True
+        notes["nonkyc_doge_low"] = doge_note
     for pid, note in {
         "status_report_heavy": f"profit_status_report.py --light + profit_status_light.py ({today})",
         "hit_rate_tracking": f"GET /api/exchange/profit-path/hit-rate?days=7 ({today})",
@@ -659,7 +687,34 @@ def render_critical_markdown(items: List[Dict[str, Any]], *, notes: Optional[Dic
         lines.append(
             f"- [{box}] **#{p.get('priority')}** [{p.get('category')}] {p.get('title')} (`{pid}`){suffix}"
         )
-    lines.append("")
+    lines.extend([
+        "",
+        "## Runbooks",
+        "",
+        "### XeggeX 401 / dual-venue blocked (#2, #20)",
+        "",
+        "1. `python scripts/refresh_xeggex_server.py --probe-only` — expect `ok=True status=200`.",
+        "2. Confirm `XEGGEX_API_KEY` + `XEGGEX_API_SECRET` in `.env`; run `python scripts/remote_vault_import.py`.",
+        "3. **IP whitelist:** XeggeX dashboard → API → add server egress IP (and local dev IP if probing locally).",
+        "4. Regenerate API key if 401 persists after whitelist.",
+        "5. `python scripts/configure_live_profit_max.py` — enables `live_trading` + adds xeggex to `arb_live_dual_farm`.",
+        "",
+        "### NonKYC DOGE sell-leg (#14)",
+        "",
+        "- Check: probe shows `nonkyc DOGE` USD ≥ $25 on sell venue.",
+        "- One-shot: `python scripts/prefund_arb_legs.py --live --symbol DOGE`",
+        "",
+        "### Fast arb near threshold (#7)",
+        "",
+        "- When daemon shows `near_threshold=yes` and `best_bps` within ~2 bps of `threshold=12`:",
+        "- Optional ops override: `set EXCHANGE_FAST_MIN_BPS=10` before restart (not persisted in config).",
+        "",
+        "### PayPal sweep (#10, #11)",
+        "",
+        "- Status: `python scripts/payout_sweep_status.py`",
+        "- Enable: `run_all_profit_daemons.cmd --auto-sweep` + `EXCHANGE_AUTO_PAYPAL_SWEEP=1` (+ live PayPal gate).",
+        "",
+    ])
     return "\n".join(lines)
 
 
