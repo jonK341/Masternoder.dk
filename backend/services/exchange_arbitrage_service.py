@@ -246,6 +246,149 @@ def _best_opportunity(
     }
 
 
+_FORCE_ATTEMPT_MIN_BPS = 18.0
+
+
+def _summarize_best_qualifying(
+    actions: List[Dict[str, Any]],
+    min_margin_bps: float,
+) -> Dict[str, Any]:
+    """Top agent by net_bps with threshold/funding context for ops logging."""
+    best_action: Optional[Dict[str, Any]] = None
+    best_nb = -999.0
+    for action in actions:
+        row = action.get("best") if isinstance(action.get("best"), dict) else {}
+        nb = float(row.get("net_bps") or -999)
+        if nb > best_nb:
+            best_nb = nb
+            best_action = action
+    if not best_action or best_nb < -900:
+        return {
+            "agent_id": None,
+            "net_bps": None,
+            "min_margin_bps": min_margin_bps,
+            "funded": False,
+            "qualifies": False,
+            "reason": "no_scan",
+        }
+    row = best_action.get("best") or {}
+    nb = float(row.get("net_bps") or 0)
+    qualifies = nb >= min_margin_bps and float(row.get("est_profit_usd") or 0) > 0
+    reason = str(
+        best_action.get("reason")
+        or (best_action.get("execution") or {}).get("error")
+        or ""
+    ).strip()
+    funded = False
+    if best_action.get("executed"):
+        funded = True
+    elif qualifies:
+        if reason in ("insufficient_venue_balance", "insufficient_balance"):
+            funded = False
+        elif reason in ("below_threshold", "no_profitable_spread"):
+            funded = False
+        else:
+            mf = best_action.get("max_funded_usd")
+            funded = mf is None or float(mf or 0) >= 10.0
+    return {
+        "agent_id": best_action.get("agent_id"),
+        "net_bps": round(nb, 2),
+        "min_margin_bps": min_margin_bps,
+        "funded": funded,
+        "qualifies": qualifies,
+        "reason": reason or None,
+    }
+
+
+def _attempt_global_best_live(
+    actions: List[Dict[str, Any]],
+    *,
+    cfg: Dict[str, Any],
+    min_margin_bps: float,
+    default_notional: float,
+    agent_id: str = "arb_live_dual_farm",
+) -> Optional[Dict[str, Any]]:
+    """Global scan + prepare_live_opportunity — same path as fast_arb_rescan."""
+    if any(a.get("executed") for a in actions):
+        return None
+    force_floor = max(min_margin_bps, _FORCE_ATTEMPT_MIN_BPS)
+    env_force = os.environ.get("EXCHANGE_ARB_FORCE_MIN_BPS", "").strip()
+    if env_force:
+        try:
+            force_floor = max(min_margin_bps, float(env_force))
+        except ValueError:
+            pass
+
+    summary = _summarize_best_qualifying(actions, min_margin_bps)
+    top_nb = float(summary.get("net_bps") or 0)
+    if top_nb < force_floor:
+        return None
+
+    agent_cfg = next(
+        (a for a in (cfg.get("arbitrage_agents") or []) if isinstance(a, dict) and a.get("id") == agent_id),
+        {},
+    )
+    venues = list(agent_cfg.get("venues") or ["binance", "nonkyc"])
+    notional = float(agent_cfg.get("paper_trade_usd") or default_notional)
+
+    scan = scan_opportunities(venues=venues, notional_usd=notional)
+    opps = [
+        o for o in (scan.get("opportunities") or [])
+        if float(o.get("net_bps") or 0) >= force_floor and float(o.get("est_profit_usd") or 0) > 0
+    ]
+    if not opps:
+        return None
+
+    from backend.services.exchange_live_execution_service import execute_spatial_arbitrage, book_agent_profit
+    from backend.services.exchange_profit_path_service import record_execution, record_scan
+
+    strategy = str(agent_cfg.get("strategy") or "spatial_arb")
+    tick_mode = "live" if live_enabled() else "paper"
+
+    for opp in opps[:3]:
+        trade_opp = opp
+        if live_enabled():
+            prepared = prepare_live_opportunity(
+                opp, configured_usd=notional, buffer_pct=0.03, min_live_usd=10.0,
+            )
+            if not prepared.get("ok"):
+                continue
+            trade_opp = prepared["opportunity"]
+        path_id = record_scan(
+            agent_id=agent_id, strategy=strategy, best=trade_opp,
+            threshold_bps=min_margin_bps, mode=tick_mode, decision="attempt",
+            notional_usd=float(trade_opp.get("notional_usd") or notional), venues=venues,
+        )
+        exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
+        record_execution(
+            path_id=path_id, agent_id=agent_id, opp=trade_opp, exec_res=exec_res,
+            strategy=strategy, threshold_bps=min_margin_bps, venues=venues,
+        )
+        if exec_res.get("success"):
+            try:
+                from backend.services.exchange_profit_baseline_service import record_arb_baseline
+
+                record_arb_baseline(trade_opp, exec_res, source="arb_force", agent_id=agent_id)
+            except Exception:
+                pass
+        acct = book_agent_profit(agent_id, trade_opp, exec_res)
+        action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}
+        if isinstance(action, dict):
+            action["profit_path_id"] = path_id
+            action["forced_global"] = True
+            if not action.get("executed"):
+                action["reason"] = str(exec_res.get("error") or "execution_failed")
+        for i, existing in enumerate(actions):
+            if existing.get("agent_id") == agent_id:
+                actions[i] = action
+                break
+        else:
+            actions.append(action)
+        if exec_res.get("success"):
+            return action
+    return None
+
+
 def _scale_opportunity_notional(opp: Dict[str, Any], notional_usd: float) -> Dict[str, Any]:
     old = float(opp.get("notional_usd") or 0)
     if old <= 0 or abs(old - notional_usd) < 0.01:
@@ -404,6 +547,12 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
             action = acct.get("last_action") or {"agent_id": agent_id, "executed": exec_res.get("success")}
             if isinstance(action, dict):
                 action["profit_path_id"] = path_id
+                if not action.get("executed"):
+                    action["reason"] = str(
+                        action.get("reason")
+                        or (action.get("execution") or {}).get("error")
+                        or "execution_failed"
+                    )
         else:
             skip_reason = "no_profitable_spread"
             if best and best["net_bps"] < min_margin_bps:
@@ -418,6 +567,16 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
             acct["last_action"] = action
         write_account(acct)
         actions.append(action)
+
+    executed_count = sum(1 for a in actions if a.get("executed"))
+    if executed_count == 0:
+        forced = _attempt_global_best_live(
+            actions, cfg=cfg, min_margin_bps=min_margin_bps, default_notional=default_notional,
+        )
+        if forced and forced.get("executed"):
+            executed_count = sum(1 for a in actions if a.get("executed"))
+
+    best_qualifying = _summarize_best_qualifying(actions, min_margin_bps)
 
     global_best: Optional[Dict[str, Any]] = None
     for action in actions:
@@ -441,8 +600,10 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         "ticked_at": _iso(),
         "live": live_enabled(),
         "source": fetched.get("source"),
+        "min_margin_bps": min_margin_bps,
+        "best_qualifying": best_qualifying,
         "agent_count": len(actions),
-        "executed_count": sum(1 for a in actions if a.get("executed")),
+        "executed_count": executed_count,
         "actions": actions,
     }
 

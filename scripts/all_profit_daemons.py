@@ -145,6 +145,36 @@ def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     """When spatial arb executes 0 fills, classify dominant blocker for ops."""
     if int(arb.get("executed_count") or 0) > 0:
         return None
+    min_margin = float(arb.get("min_margin_bps") or 14)
+    qualifying: List[Dict[str, Any]] = []
+    for action in arb.get("actions") or []:
+        if not isinstance(action, dict) or action.get("executed"):
+            continue
+        row = action.get("best") if isinstance(action.get("best"), dict) else {}
+        nb = float(row.get("net_bps") or -999)
+        if nb >= min_margin and float(row.get("est_profit_usd") or 0) > 0:
+            qualifying.append(action)
+    if qualifying:
+        top = max(
+            qualifying,
+            key=lambda a: float((a.get("best") or {}).get("net_bps") or 0),
+        )
+        r = str(
+            top.get("reason")
+            or (top.get("execution") or {}).get("error")
+            or "unknown"
+        )
+        if r in ("insufficient_venue_balance", "insufficient_balance"):
+            return "funding"
+        if r in ("below_threshold", "no_profitable_spread"):
+            return "threshold"
+        if "balance" in r or "fund" in r:
+            return "funding"
+        if r in ("execution_failed", "unknown") and top.get("max_funded_usd") is not None:
+            return "funding"
+        if "threshold" in r or "margin" in r:
+            return "threshold"
+        return "spread"
     reasons: Dict[str, int] = {}
     for action in arb.get("actions") or []:
         if not isinstance(action, dict) or action.get("executed"):
@@ -181,6 +211,14 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     ]
     if best_bps is not None:
         parts.append(f"best_bps={best_bps:.1f}")
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("agent_id") is not None and bq.get("net_bps") is not None:
+        parts.append(f"best_agent={bq.get('agent_id')}")
+        parts.append(f"best_net={float(bq['net_bps']):.1f}")
+        parts.append(f"min_margin={bq.get('min_margin_bps', arb.get('min_margin_bps', '?'))}")
+        parts.append(f"funded={'yes' if bq.get('funded') else 'no'}")
+    elif arb.get("min_margin_bps") is not None:
+        parts.append(f"min_margin={arb.get('min_margin_bps')}")
     arb_actions = arb.get("actions") or []
     if arb_actions and int(arb.get("executed_count") or 0) == 0:
         arb_block = _classify_arb_block(arb)

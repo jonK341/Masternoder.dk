@@ -8,7 +8,7 @@ _Updated: 2026-07-03T12:07:03.949246Z_
 - [x] **#4** [funding] Cross-trade bots MN2 auto-seed must sustain 25 MN2 each tick (`cross_trade_mn2_drift`) — _daemon cross_actions=7; preflight casino_agents=3 (2026-07-03)_
 - [x] **#5** [infra] Windows WinError 5 on wallet JSON writes under concurrent Flask loads (`wallet_file_lock`) — _WinError5 fix in tree; no new lock errors this session (2026-07-03)_
 - [ ] **#6** [engine] AI trader enabled but ai_exec=False every tick (`ai_trader_idle`) — _heartbeat ai_exec=False; no AI fill while spreads below min_net (2026-07-03)_
-- [ ] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _arb_exec=0/11 best_bps=24.1 arb_block=threshold (not inventory); fixes 21cceb5/d9d6239 (2026-07-03)_
+- [~] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _root cause: best_bps=max across agents but per-agent below_threshold majority mislabeled arb_block; fix adds best_agent/best_net/min_margin/funded logging + global force attempt >=18bps via arb_live_dual_farm (2026-07-03)_
 - [x] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _fast+exchange ext_exec=1; near_threshold=yes best_bps=38-43 (2026-07-03)_
 - [x] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`) — _heartbeat casino ran=3/3 (2026-07-03)_
 - [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _payout_sweep_status: mode=paper net_unswept_usd=493013.05 (2026-07-03)_
@@ -47,6 +47,9 @@ _Updated: 2026-07-03T12:07:03.949246Z_
 
 - When daemon shows `near_threshold=yes` and `best_bps` within ~2 bps of `threshold=12`:
 - Optional ops override: `set EXCHANGE_FAST_MIN_BPS=10` before restart (not persisted in config).
+- Exchange tick now logs `best_agent=X best_net=Y min_margin=Z funded=yes|no` — if `best_net >= min_margin` but `funded=no`, blocker is inventory not threshold.
+- When `best_bps >= 18` and `arb_exec=0/N`, exchange loop force-attempts global scan on `arb_live_dual_farm` (same path as fast rescan).
+- Expected line on success: `arb_exec=1/11 best_bps=38.2 best_agent=arb_live_dual_farm best_net=38.2 min_margin=14 funded=yes live_trades=1`
 
 ### PayPal sweep (#10, #11)
 
