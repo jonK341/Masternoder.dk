@@ -678,6 +678,8 @@ def place_market_order(
     res.setdefault("quantity", qty)
     res.setdefault("pair", pair)
     res.setdefault("market", pair)
+    if res.get("success") and not res.get("simulated"):
+        res.setdefault("mode", "live")
     if resolved.get("quote"):
         res.setdefault("quote", resolved["quote"])
     if not res.get("success") and not res.get("error"):

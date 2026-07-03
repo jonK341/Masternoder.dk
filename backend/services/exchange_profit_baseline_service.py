@@ -158,6 +158,41 @@ def record_arb_baseline(
     net_bps = float(opp.get("net_bps") or 0)
     buy_o = exec_res.get("buy_order") or {}
     sell_o = exec_res.get("sell_order") or {}
+    mode = str(exec_res.get("mode") or "")
+    profit = float(exec_res.get("est_profit_usd") or 0)
+    if profit <= 0 and net_bps > 0:
+        notional = float(exec_res.get("notional_usd") or opp.get("notional_usd") or 0)
+        if notional > 0:
+            profit = round(notional * net_bps / 10000.0, 6)
+    stash = exec_res.get("stash") or {}
+    if mode == "live" and profit > 0 and not (stash.get("success") and not stash.get("skipped")):
+        try:
+            from backend.services.exchange_treasury_service import load_config, stash_profit_usd
+
+            if load_config().get("auto_stash_on_trade", True):
+                trade_id = ":".join(
+                    i for i in (
+                        str(buy_o.get("order_id") or ""),
+                        str(sell_o.get("order_id") or ""),
+                    ) if i
+                )
+                stash_profit_usd(
+                    profit,
+                    source="live_arbitrage",
+                    agent_id=agent_id,
+                    mode="live",
+                    meta={
+                        "symbol": opp.get("symbol"),
+                        "buy_venue": opp.get("buy_venue"),
+                        "sell_venue": opp.get("sell_venue"),
+                        "net_bps": net_bps,
+                        "trade_id": trade_id,
+                        "baseline_backfill": True,
+                        "source_tick": source,
+                    },
+                )
+        except Exception:
+            pass
     return record_baseline_trade(
         predicted={
             "action_label": f"{opp.get('symbol')} {opp.get('buy_venue')}→{opp.get('sell_venue')}",

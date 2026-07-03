@@ -344,6 +344,21 @@ def exchange_treasury_status():
     return jsonify(treasury_status(mode=mode))
 
 
+@crypto_exchange_bp.route("/api/exchange/treasury/stash", methods=["GET"])
+def exchange_treasury_stash():
+    from backend.services.exchange_treasury_service import treasury_status
+    st = treasury_status()
+    return jsonify({
+        "success": True,
+        "live_stash_usd": st.get("live_stash_usd", st.get("ledger_stashed_usd_live")),
+        "paper_stash_usd": st.get("ledger_stashed_usd_paper"),
+        "total_stash_usd": st.get("ledger_stashed_usd"),
+        "ledger_entries": st.get("ledger_entries"),
+        "treasury_user_id": st.get("treasury_user_id"),
+        "mn2_balance": st.get("mn2_balance"),
+    })
+
+
 @crypto_exchange_bp.route("/api/exchange/treasury/liquidity/run", methods=["POST"])
 def exchange_treasury_liquidity_run():
     if not _admin_authorized():

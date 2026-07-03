@@ -417,6 +417,17 @@ def _infer_auto_checks() -> Dict[str, str]:
         capped = next(v for v in micro_vals if 80.0 <= v <= 85.0)
         resolved["binance_quote_cap"] = f"paper_trade_usd={capped} capped (~$83) ({today})"
 
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+
+        tre = treasury_status()
+        live_stash = float(tre.get("ledger_stashed_usd_live") or tre.get("live_stash_usd") or 0)
+        if live_stash > 0:
+            resolved["live_stash_zero"] = f"live stash USD={live_stash:.4f} ({today})"
+            resolved["treasury_compound"] = f"live external stash credited USD={live_stash:.4f} ({today})"
+    except Exception:
+        pass
+
     for v in conn.get("venues") or []:
         if isinstance(v, dict) and str(v.get("id") or "") == "xeggex":
             if v.get("live_trading") is False:

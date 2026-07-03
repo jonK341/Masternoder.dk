@@ -23,6 +23,62 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _order_is_live(leg_res: Dict[str, Any]) -> bool:
+    """True when a venue leg succeeded without paper simulation."""
+    if not leg_res.get("success"):
+        return False
+    if leg_res.get("simulated"):
+        return False
+    return str(leg_res.get("mode") or "").lower() != "paper"
+
+
+def _leg_uses_live(dry_run: Optional[bool], venue: str) -> bool:
+    """Whether a leg should hit the venue API (not paper-sim)."""
+    if dry_run is True:
+        return False
+    if not arb.live_enabled():
+        return False
+    if venue == "internal":
+        return True
+    return venue_live_ready(venue)
+
+
+def _estimate_profit_usd(opp: Dict[str, Any], notional: float) -> float:
+    est = float(opp.get("est_profit_usd") or 0)
+    if est > 0:
+        return est
+    net_bps = float(opp.get("net_bps") or 0)
+    if net_bps > 0 and notional > 0:
+        return round(notional * net_bps / 10000.0, 6)
+    return 0.0
+
+
+def _execution_mode(
+    buy_res: Dict[str, Any],
+    sell_res: Dict[str, Any],
+    *,
+    buy_venue: str,
+    sell_venue: str,
+) -> str:
+    """Derive mode from actual fill responses, not credential pre-checks."""
+    buy_live = buy_venue != "internal" and _order_is_live(buy_res)
+    sell_live = sell_venue != "internal" and _order_is_live(sell_res)
+    ext_live = int(buy_live) + int(sell_live)
+    if ext_live >= 2:
+        return "live"
+    if ext_live == 1:
+        return "hybrid"
+    return "paper"
+
+
+def _trade_ids(buy_res: Dict[str, Any], sell_res: Dict[str, Any]) -> str:
+    ids = [
+        str(buy_res.get("order_id") or buy_res.get("id") or ""),
+        str(sell_res.get("order_id") or sell_res.get("id") or ""),
+    ]
+    return ":".join(i for i in ids if i)
+
+
 def venue_live_ready(venue_id: str) -> bool:
     if venue_id == "internal":
         return True
@@ -125,7 +181,7 @@ def execute_spatial_arbitrage(
     if buy_price <= 0 or not buy_venue or not sell_venue:
         return {"success": False, "error": "invalid_opportunity"}
 
-    global_live = arb.live_enabled() and dry_run is not False
+    global_live = arb.live_enabled() and dry_run is not True
     qty = round(notional / buy_price, 8)
     norm = vapi.normalize_order_qty(
         buy_venue if buy_venue != "internal" else sell_venue,
@@ -150,7 +206,7 @@ def execute_spatial_arbitrage(
             "executed_at": _iso(),
         }
 
-    if global_live and dry_run is not False:
+    if global_live:
         from backend.services.exchange_arbitrage_service import prepare_live_opportunity
 
         prepared = prepare_live_opportunity(
@@ -178,10 +234,13 @@ def execute_spatial_arbitrage(
 
     def _leg(venue: str, side: str) -> Dict[str, Any]:
         if venue == "internal":
-            if global_live and not dry_run:
-                return _internal_swap(agent_id, symbol, side, qty)
+            if _leg_uses_live(dry_run, venue):
+                res = _internal_swap(agent_id, symbol, side, qty)
+                if res.get("success"):
+                    res.setdefault("mode", "live")
+                return res
             return {"success": True, "mode": "paper", "simulated": True, "venue": "internal", "side": side, "quantity": qty}
-        use_live = global_live and venue_live_ready(venue) and dry_run is not False
+        use_live = _leg_uses_live(dry_run, venue)
         leg_qty = qty
         if use_live:
             n = vapi.normalize_order_qty(venue, symbol, side, qty, price=buy_price if side == "buy" else None)
@@ -194,27 +253,27 @@ def execute_spatial_arbitrage(
     sell_res = _leg(sell_venue, "sell")
     ok = bool(buy_res.get("success")) and bool(sell_res.get("success"))
 
-    live_legs = sum(
-        1 for v in (buy_venue, sell_venue)
-        if v != "internal" and venue_live_ready(v)
-    )
-    if live_legs >= 2:
-        mode = "live"
-    elif live_legs == 1:
-        mode = "hybrid"
-    else:
-        mode = "paper"
+    mode = _execution_mode(buy_res, sell_res, buy_venue=buy_venue, sell_venue=sell_venue)
 
-    profit = float(opp.get("est_profit_usd") or 0) if ok else 0.0
+    profit = _estimate_profit_usd(opp, notional) if ok else 0.0
     stash = None
     tc = treasury_cfg()
     if ok and profit > 0 and tc.get("auto_stash_on_trade", True):
+        trade_id = _trade_ids(buy_res, sell_res)
         stash = stash_profit_usd(
             profit,
             source="live_arbitrage" if mode == "live" else "paper_arbitrage",
             agent_id=agent_id,
             mode=mode,
-            meta={"symbol": symbol, "buy_venue": buy_venue, "sell_venue": sell_venue, "net_bps": opp.get("net_bps")},
+            meta={
+                "symbol": symbol,
+                "buy_venue": buy_venue,
+                "sell_venue": sell_venue,
+                "net_bps": opp.get("net_bps"),
+                "trade_id": trade_id,
+                "buy_order_id": buy_res.get("order_id"),
+                "sell_order_id": sell_res.get("order_id"),
+            },
         )
         if stash and stash.get("success") and not stash.get("skipped"):
             try:

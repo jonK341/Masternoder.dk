@@ -64,3 +64,63 @@ def test_execute_spatial_paper_stashes(live_env):
     assert res["success"] is True
     assert res["mode"] == "paper"
     assert res.get("stash", {}).get("success") is True
+
+
+def test_execute_spatial_live_stashes(live_env, monkeypatch):
+    """Mock live venue fills → stash ledger row with mode=live."""
+    live = live_env["live"]
+    tre = live_env["tre"]
+    arb = live_env["arb"]
+    monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+
+    def _live_order(venue_id, symbol, side, quantity, *, dry_run=None, **kwargs):
+        if dry_run:
+            return {
+                "success": True,
+                "mode": "paper",
+                "simulated": True,
+                "venue_id": venue_id,
+                "order_id": f"paper-{venue_id}",
+            }
+        return {
+            "success": True,
+            "mode": "live",
+            "venue_id": venue_id,
+            "order_id": f"live-{venue_id}-123",
+            "quantity": quantity,
+        }
+
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.place_market_order",
+        _live_order,
+    )
+    monkeypatch.setattr(live, "venue_live_ready", lambda vid: vid in ("binance", "nonkyc"))
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.normalize_order_qty",
+        lambda *a, **k: {"ok": True, "quantity": a[3] if len(a) > 3 else k.get("quantity", 1)},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_arbitrage_service.prepare_live_opportunity",
+        lambda opp, **kw: {"ok": True, "opportunity": opp},
+    )
+
+    opp = {
+        "symbol": "BTC",
+        "buy_venue": "binance",
+        "sell_venue": "nonkyc",
+        "buy_ask": 100.0,
+        "sell_bid": 101.0,
+        "notional_usd": 200,
+        "net_bps": 50,
+    }
+    res = live.execute_spatial_arbitrage(opp, agent_id="test_agent")
+    assert res["success"] is True
+    assert res["mode"] == "live"
+    assert res.get("est_profit_usd", 0) > 0
+    stash = res.get("stash") or {}
+    assert stash.get("success") is True
+    assert stash.get("mode") == "live"
+    assert stash.get("amount_usd", 0) > 0
+    st = tre.treasury_status(mode="live")
+    assert st["ledger_stashed_usd_live"] >= stash["amount_usd"]
