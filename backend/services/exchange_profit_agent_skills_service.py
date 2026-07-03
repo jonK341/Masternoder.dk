@@ -408,7 +408,78 @@ def _infer_auto_checks() -> Dict[str, str]:
     if int(ext_tick.get("n") or 0) > 0 and "ext_profit_zero" not in resolved:
         resolved["ext_profit_zero"] = f"extended tick counter n={ext_tick.get('n')} ({today})"
 
+    conn = _read_json(os.path.join(ex._BASE, "data", "exchange_connectors_config.json"), {})
+    micro_vals = [float(conn.get("paper_trade_usd") or 0)]
+    for agent in conn.get("arbitrage_agents") or []:
+        if isinstance(agent, dict):
+            micro_vals.append(float(agent.get("paper_trade_usd") or 0))
+    if any(80.0 <= v <= 85.0 for v in micro_vals if v > 0):
+        capped = next(v for v in micro_vals if 80.0 <= v <= 85.0)
+        resolved["binance_quote_cap"] = f"paper_trade_usd={capped} capped (~$83) ({today})"
+
+    for v in conn.get("venues") or []:
+        if isinstance(v, dict) and str(v.get("id") or "") == "xeggex":
+            if v.get("live_trading") is False:
+                resolved["xeggex_live_disabled"] = f"live_trading=false guard active ({today})"
+            break
+
     return resolved
+
+
+def _infer_rotation_notes() -> Dict[str, str]:
+    """Evidence notes from rotation auto-execute — partial progress, not full resolution."""
+    notes: Dict[str, str] = {}
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    rot_state = _read_json(os.path.join(ex._DATA_DIR, "rotation_auto_state.json"), {})
+    recent = rot_state.get("recent") or []
+    if not isinstance(recent, list):
+        return notes
+
+    ok_types = {"external_market_buy", "external_market_sell", "internal_stable_swap", "reduce_notional"}
+    successes = [r for r in recent if r.get("success") and str(r.get("type") or "") in ok_types]
+    if successes:
+        last = successes[-1]
+        notes["skip_reason_funding"] = (
+            f"partial: {len(successes)} rotation fills; last={last.get('type')} "
+            f"${last.get('amount_usd')} ({today}) — prefund: scripts/prefund_arb_legs.py"
+        )
+
+    doge_ok = [
+        r for r in recent
+        if r.get("success") and "DOGE" in str(r.get("asset_key") or "")
+    ]
+    if doge_ok:
+        d = doge_ok[-1]
+        notes["nonkyc_doge_low"] = (
+            f"rotation prefunded DOGE ${d.get('amount_usd')} ({today}) — verify sell-leg inventory"
+        )
+
+    hb = _read_json(os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json"), {})
+    loops = hb.get("loops") if isinstance(hb.get("loops"), dict) else {}
+    exchange_sum = str((loops.get("exchange") or {}).get("summary") or "")
+    if "platform_ok=True" in exchange_sum:
+        notes["arb_exec_zero"] = f"preflight ok; {exchange_sum.split('platform_ok=True')[1].strip()[:80]} ({today})"
+
+    try:
+        from scripts.refresh_xeggex_server import probe_xeggex_local
+
+        ok, reason, code = probe_xeggex_local()
+        if not ok:
+            notes["xeggex_401"] = f"probe {code or 'fail'}: {reason} ({today}) — refresh_xeggex_server.py --probe-only"
+    except Exception:
+        pass
+
+    notes.setdefault(
+        "auto_sweep_off",
+        "safe enable: run_all_profit_daemons.cmd --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
+        "status: scripts/payout_sweep_status.py",
+    )
+    notes.setdefault(
+        "paypal_sweep_paper",
+        "check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1",
+    )
+
+    return notes
 
 
 def sync_critical_reality() -> Dict[str, Any]:
@@ -419,6 +490,8 @@ def sync_critical_reality() -> Dict[str, Any]:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     for pid, note in _infer_auto_checks().items():
         checks[pid] = True
+        notes[pid] = note
+    for pid, note in _infer_rotation_notes().items():
         notes[pid] = note
     for pid, note in {
         "status_report_heavy": f"profit_status_report.py --light + profit_status_light.py ({today})",
