@@ -141,6 +141,32 @@ def _best_arb_bps(arb: Dict[str, Any]) -> Optional[float]:
     return best
 
 
+def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
+    """When spatial arb executes 0 fills, classify dominant blocker for ops."""
+    if int(arb.get("executed_count") or 0) > 0:
+        return None
+    reasons: Dict[str, int] = {}
+    for action in arb.get("actions") or []:
+        if not isinstance(action, dict) or action.get("executed"):
+            continue
+        r = str(action.get("reason") or "unknown")
+        reasons[r] = reasons.get(r, 0) + 1
+    if not reasons:
+        return None
+    top = max(reasons, key=reasons.get)
+    if top in ("insufficient_venue_balance", "insufficient_balance"):
+        return "funding"
+    if top == "below_threshold":
+        return "threshold"
+    if top == "no_profitable_spread":
+        return "spread"
+    if "balance" in top or "fund" in top:
+        return "funding"
+    if "threshold" in top or "margin" in top:
+        return "threshold"
+    return "spread"
+
+
 def _summarize_exchange(res: Dict[str, Any]) -> str:
     plat = res.get("platform") or {}
     results = plat.get("results") or {}
@@ -157,6 +183,9 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         parts.append(f"best_bps={best_bps:.1f}")
     arb_actions = arb.get("actions") or []
     if arb_actions and int(arb.get("executed_count") or 0) == 0:
+        arb_block = _classify_arb_block(arb)
+        if arb_block:
+            parts.append(f"arb_block={arb_block}")
         reasons: Dict[str, int] = {}
         for a in arb_actions:
             if a.get("executed"):

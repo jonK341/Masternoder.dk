@@ -3,7 +3,7 @@
 
 Usage:
   python scripts/prefund_arb_legs.py              # dry-run top action
-  python scripts/prefund_arb_legs.py --live       # live execute (requires EXCHANGE_ROTATION_LIVE=1)
+  python scripts/prefund_arb_legs.py --live       # live buy-leg prefund only (default --leg buy)
   python scripts/prefund_arb_legs.py --list       # show top 3 suggestions only
   python scripts/prefund_arb_legs.py --live --symbol DOGE --leg buy   # NonKYC DOGE sell-leg prefund
 """
@@ -101,7 +101,7 @@ def main() -> int:
         type=str,
         default="",
         choices=["", "buy", "sell"],
-        help="Leg filter: buy=sell-leg prefund (external_market_buy on sell venue); default buy when --symbol set",
+        help="Leg filter: buy=sell-leg prefund (default buy on --live); use --leg sell explicitly to sell",
     )
     parser.add_argument(
         "--buy-sell-leg",
@@ -110,6 +110,8 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON result")
     args = parser.parse_args()
+    if args.live and not args.leg:
+        args.leg = "buy"
 
     from scripts.daemon_env import load_dotenv
 

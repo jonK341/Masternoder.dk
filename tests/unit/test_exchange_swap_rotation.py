@@ -179,7 +179,8 @@ def test_execute_rotation_advisory_reduce_notional(rotation_env):
     assert res["skipped"] is True
 
 
-def test_suggest_quote_shortfall_sells_base_not_arb_symbol(rotation_env, monkeypatch):
+def test_suggest_quote_shortfall_prefers_reduce_notional_over_doge(rotation_env, monkeypatch):
+    """Quote shortfall must not sell protected DOGE sell-leg inventory — prefer reduce_notional."""
     rot = rotation_env["rot"]
     ppp = rotation_env["ppp"]
 
@@ -226,24 +227,12 @@ def test_suggest_quote_shortfall_sells_base_not_arb_symbol(rotation_env, monkeyp
         "backend.services.exchange_swap_rotation_service.ex._price_usd",
         lambda sym: {"DOGE": 0.15, "LINK": 7.5}.get(str(sym).upper(), 1.0),
     )
-    monkeypatch.setattr(
-        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
-        lambda venue, leg, sym, usd, **kw: {
-            "ok": True,
-            "venue_id": venue,
-            "base": sym,
-            "quote": "USDT",
-            "market": f"{sym}_USDT",
-            "side": leg,
-            "quantity": kw.get("quantity") or round(usd / 0.15, 8),
-        },
-    )
+    monkeypatch.setattr(rot, "_active_sell_leg_symbols", lambda vid: frozenset({"DOGE"}))
 
     out = rot.suggest_swap_actions(hours=24, limit=5)
     top = (out.get("actions") or [{}])[0]
-    assert top.get("side") == "sell"
-    assert top.get("symbol") == "DOGE"
-    assert "for USDT" in top.get("label", "")
+    assert top.get("type") == "reduce_notional"
+    assert "DOGE" not in top.get("label", "")
 
 
 def test_execute_rotation_propagates_venue_error(rotation_env, monkeypatch):

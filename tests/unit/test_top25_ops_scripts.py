@@ -64,6 +64,54 @@ def test_prefund_dry_run_top_action(script_env, monkeypatch, capsys):
     assert "external_market_buy" in out
 
 
+def test_prefund_live_defaults_to_buy_leg(script_env, monkeypatch, capsys):
+    """--live without --leg must never execute external_market_sell."""
+    buy = {
+        "label": "Buy DOGE on nonkyc ~$23",
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "DOGE",
+        "side": "buy",
+        "amount_usd": 23.0,
+        "priority": "high",
+    }
+    sell = {
+        "label": "Sell DOGE on nonkyc for USDT ~$79",
+        "type": "external_market_sell",
+        "venue_id": "nonkyc",
+        "symbol": "DOGE",
+        "side": "sell",
+        "amount_usd": 79.0,
+        "priority": "critical",
+    }
+    captured = {}
+
+    def _exec(act, dry_run=True):
+        captured["type"] = act.get("type")
+        return {"success": True, "dry_run": dry_run, "mode": "live"}
+
+    from scripts import prefund_arb_legs as pf
+
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.suggest_swap_actions",
+        lambda **kw: {"actions": [sell, buy], "funding_skip_count": 3},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.execute_rotation",
+        _exec,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.rotation_live_enabled",
+        lambda: True,
+    )
+
+    import sys
+
+    monkeypatch.setattr(sys, "argv", ["prefund_arb_legs.py", "--live"])
+    assert pf.main() == 0
+    assert captured["type"] == "external_market_buy"
+
+
 def test_prefund_symbol_filter_skips_sell(script_env, monkeypatch, capsys):
     """--symbol DOGE --leg buy must not execute external_market_sell (sell-leg inventory)."""
     buy = {

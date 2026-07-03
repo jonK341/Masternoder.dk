@@ -48,6 +48,57 @@ def rotation_auto_execute_enabled() -> bool:
     return os.environ.get("EXCHANGE_ROTATION_AUTO", "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def _min_sell_leg_usd() -> float:
+    return float(load_config().get("min_sell_leg_usd") or 25)
+
+
+def _active_sell_leg_symbols(venue_id: str) -> frozenset[str]:
+    """Symbols currently used as sell-leg base on this venue (live scan + recent PPP skips)."""
+    venue = str(venue_id or "").lower()
+    symbols: set[str] = set()
+    try:
+        from backend.services import exchange_arbitrage_service as arb
+
+        scan = arb.scan_opportunities(
+            symbols=["DOGE", "XRP", "BTC", "ETH", "SOL", "LINK", "LTC", "AVAX"],
+            venues=["binance", "nonkyc"],
+            notional_usd=25,
+        )
+        for opp in scan.get("opportunities") or []:
+            if str(opp.get("sell_venue") or "").lower() == venue:
+                sym = str(opp.get("symbol") or "").upper()
+                if sym:
+                    symbols.add(sym)
+    except Exception:
+        pass
+    try:
+        rows = search_paths(hours=6, limit=200).get("paths") or []
+        for row in rows:
+            if row.get("skip_reason") not in ("insufficient_venue_balance", "insufficient_balance"):
+                continue
+            v = row.get("venues") or {}
+            if str(v.get("sell") or "").lower() != venue:
+                continue
+            sym = str(row.get("symbol") or "").upper()
+            if sym:
+                symbols.add(sym)
+    except Exception:
+        pass
+    return frozenset(symbols)
+
+
+def _protected_sell_assets(venue_id: str) -> frozenset[str]:
+    """Base coins that must not be sold for quote shortfall (sell-leg inventory reserve)."""
+    min_usd = _min_sell_leg_usd()
+    active = _active_sell_leg_symbols(venue_id)
+    protected: set[str] = set(active)
+    for usd_val, asset, _qty, _px in _sellable_base_on_venue(venue_id, min_usd=0):
+        sym = str(asset or "").upper()
+        if usd_val < min_usd or sym in active:
+            protected.add(sym)
+    return frozenset(protected)
+
+
 def _load_rotation_state() -> Dict[str, Any]:
     state = ex._read_json(_STATE_PATH, {})
     return state if isinstance(state, dict) else {}
@@ -567,12 +618,20 @@ def _quote_shortfall_action(
     top25: Optional[List[str]] = None,
     configured_usd: float = 0,
 ) -> Optional[Dict[str, Any]]:
-    """Acquire quote on a venue — sell an existing base coin, or lower notional."""
+    """Acquire quote on a venue — prefer lower notional; never sell protected sell-leg inventory."""
     quote = str(quote_asset or vapi.venue_quote_asset(venue_id)).upper()
     gap = round(max(5.0, float(short_usd)), 2)
     free_quote = float(vapi.parse_spot_balances(venue_id, dry_run=False).get(quote) or 0)
+    protected = _protected_sell_assets(venue_id)
+
+    if free_quote >= 10 and configured_usd > free_quote:
+        return _reduce_notional_action(
+            venue_id, quote, free_quote, configured_usd, score=score * 0.85,
+        )
 
     for usd_val, asset, qty, px in _sellable_base_on_venue(venue_id, min_usd=2.0):
+        if str(asset or "").upper() in protected:
+            continue
         sell_usd = round(min(gap * 1.08, usd_val * 0.92), 2)
         if sell_usd < 5:
             continue
