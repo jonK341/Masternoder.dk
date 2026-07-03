@@ -39,6 +39,48 @@ def live_allowed() -> bool:
     return live_enabled()
 
 
+def rotation_live_allowed() -> bool:
+    try:
+        from backend.services.exchange_swap_rotation_service import rotation_live_enabled
+        return rotation_live_enabled()
+    except Exception:
+        return False
+
+
+def live_gate_ok(*, rotation: bool = False) -> bool:
+    """Arb live gate, or rotation-only live when ``rotation=True``."""
+    if live_allowed():
+        return True
+    return bool(rotation and rotation_live_allowed())
+
+
+def extract_order_error(res: Dict[str, Any]) -> str:
+    """Human-readable error from a venue order/account response."""
+    if not isinstance(res, dict):
+        return ""
+    if res.get("error"):
+        return str(res["error"])
+    body = res.get("body")
+    if isinstance(body, dict):
+        err = body.get("error")
+        if isinstance(err, dict):
+            return str(
+                err.get("description")
+                or err.get("message")
+                or err.get("errorType")
+                or err.get("code")
+                or ""
+            )
+        if isinstance(err, str):
+            return err
+        for key in ("message", "msg", "description"):
+            if body.get(key):
+                return str(body[key])
+    if res.get("status_code") and not res.get("success"):
+        return f"http_{res.get('status_code')}"
+    return ""
+
+
 def _venue_api_cfg(venue_id: str) -> Optional[Dict[str, Any]]:
     return (load_api_config().get("venues") or {}).get(venue_id)
 
@@ -114,6 +156,12 @@ def _sign_nonkyc(api_key: str, request_url: str, body: str, nonce: str, secret: 
     return hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
+def _sign_xeggex(api_key: str, request_url: str, body: str, nonce: str, secret: str) -> str:
+    """XeggeX official: HMAC-SHA256(secret, access_key + url + [body] + nonce)."""
+    payload = f"{api_key}{request_url}{nonce}" if not body else f"{api_key}{request_url}{body}{nonce}"
+    return hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
 def _sign_kraken(path: str, postdata: str, secret: str) -> str:
     import base64
     sha = hashlib.sha256(postdata.encode("utf-8")).digest()
@@ -140,6 +188,7 @@ def venue_api_request(
     params: Optional[Dict[str, Any]] = None,
     *,
     dry_run: Optional[bool] = None,
+    rotation: bool = False,
 ) -> Dict[str, Any]:
     """Signed private API call for a venue endpoint (account, order_market, …)."""
     params = dict(params or {})
@@ -153,13 +202,15 @@ def venue_api_request(
 
     creds = venue_credentials(venue_id)
     has_creds = bool(creds.get("api_key") and creds.get("api_secret"))
-    use_paper = dry_run if dry_run is not None else (not live_allowed() or not has_creds)
+    gate_ok = live_gate_ok(rotation=rotation)
+    use_paper = dry_run if dry_run is not None else (not gate_ok or not has_creds)
 
     if use_paper or not vcfg.get("live_supported", True):
         return _simulate_response(venue_id, endpoint_key, params)
 
-    if not live_allowed():
-        return {"success": False, "error": "live_gated", "hint": "Set EXCHANGE_ARBITRAGE_LIVE=1"}
+    if not gate_ok:
+        hint = "Set EXCHANGE_ROTATION_LIVE=1" if rotation else "Set EXCHANGE_ARBITRAGE_LIVE=1"
+        return {"success": False, "error": "live_gated", "hint": hint}
 
     auth = str(vcfg.get("auth") or "")
     api_base = str(vcfg.get("api_base") or "").rstrip("/")
@@ -213,13 +264,14 @@ def venue_api_request(
         }
         return _http_request(method, f"{api_base}{path}", headers=headers, data=body, timeout=timeout)
 
-    if auth == "nonkyc_hmac":
+    if auth in ("nonkyc_hmac", "xeggex_hmac"):
+        sign_fn = _sign_xeggex if auth == "xeggex_hmac" else _sign_nonkyc
         nonce = str(int(time.time() * 1000))
         if method == "GET":
             query = ("?" + urllib.parse.urlencode(params)) if params else ""
             path_with_query = path + query
             full_url = f"{api_base}{path_with_query}"
-            sig = _sign_nonkyc(api_key, full_url, "", nonce, api_secret)
+            sig = sign_fn(api_key, full_url, "", nonce, api_secret)
             headers = {
                 "X-API-KEY": api_key,
                 "X-API-NONCE": nonce,
@@ -229,7 +281,7 @@ def venue_api_request(
             return _http_request("GET", full_url, headers=headers, timeout=timeout)
         body = json.dumps(params, separators=(",", ":"))
         full_url = f"{api_base}{path}"
-        sig = _sign_nonkyc(api_key, full_url, body, nonce, api_secret)
+        sig = sign_fn(api_key, full_url, body, nonce, api_secret)
         headers = {
             "X-API-KEY": api_key,
             "X-API-NONCE": nonce,
@@ -279,6 +331,7 @@ def place_market_order(
     quantity: float,
     *,
     dry_run: Optional[bool] = None,
+    rotation: bool = False,
 ) -> Dict[str, Any]:
     """Place a spot market order on a venue (paper-simulated unless live + credentialed)."""
     vmap = conn._venue_map()
@@ -323,11 +376,15 @@ def place_market_order(
     else:
         params = {"symbol": pair, "side": side_u, "quantity": qty, "type": "market"}
 
-    res = venue_api_request(venue_id, "order_market", params, dry_run=dry_run)
+    res = venue_api_request(venue_id, "order_market", params, dry_run=dry_run, rotation=rotation)
     res.setdefault("symbol", symbol.upper())
     res.setdefault("side", side_u.lower())
     res.setdefault("quantity", qty)
     res.setdefault("pair", pair)
+    if not res.get("success") and not res.get("error"):
+        err = extract_order_error(res)
+        if err:
+            res["error"] = err
     return res
 
 

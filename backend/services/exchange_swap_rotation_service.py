@@ -478,6 +478,79 @@ def analyze_funding_gaps(
     }
 
 
+_STABLES = frozenset({"USDT", "USDC", "BUSD", "DAI", "TUSD", "USDD"})
+
+
+def _order_error(res: Dict[str, Any]) -> str:
+    try:
+        from backend.services.exchange_venue_api_service import extract_order_error
+        return extract_order_error(res)
+    except Exception:
+        return str(res.get("error") or "")
+
+
+def _sellable_base_on_venue(venue_id: str, *, min_usd: float = 5.0) -> List[Tuple[float, str, float, float]]:
+    """Return [(usd_value, asset, qty, px), …] sorted by USD value desc."""
+    bals = vapi.parse_spot_balances(venue_id, dry_run=False)
+    out: List[Tuple[float, str, float, float]] = []
+    for asset, bal in (bals or {}).items():
+        sym = str(asset or "").upper()
+        qty = float(bal or 0)
+        if qty <= 0 or sym in _STABLES:
+            continue
+        px = float(ex._price_usd(sym) or 0)
+        if px <= 0:
+            continue
+        usd = qty * px
+        if usd >= min_usd:
+            out.append((usd, sym, qty, px))
+    out.sort(key=lambda row: row[0], reverse=True)
+    return out
+
+
+def _quote_shortfall_action(
+    venue_id: str,
+    quote_asset: str,
+    short_usd: float,
+    *,
+    reason: str,
+    priority: str = "high",
+    score: float = 0,
+    top25: Optional[List[str]] = None,
+    configured_usd: float = 0,
+) -> Optional[Dict[str, Any]]:
+    """Acquire quote on a venue — sell an existing base coin, or lower notional."""
+    quote = str(quote_asset or vapi.venue_quote_asset(venue_id)).upper()
+    gap = round(max(5.0, float(short_usd)), 2)
+    free_quote = float(vapi.parse_spot_balances(venue_id, dry_run=False).get(quote) or 0)
+
+    for usd_val, asset, qty, px in _sellable_base_on_venue(venue_id, min_usd=2.0):
+        sell_usd = round(min(gap * 1.08, usd_val * 0.92), 2)
+        if sell_usd < 5:
+            continue
+        sell_qty = round(min(qty * 0.92, sell_usd / px), 8)
+        if sell_qty <= 0:
+            continue
+        act = _external_buy_action(
+            venue_id, asset, "sell",
+            amount_usd=sell_usd,
+            qty=sell_qty,
+            reason=f"Sell {asset}→{quote}: {reason}",
+            priority=priority,
+            score=score,
+            top25=top25,
+        )
+        act["label"] = f"Sell {asset} on {venue_id} for {quote} ~${sell_usd:.0f}"
+        act["funding_target"] = quote
+        return act
+
+    if free_quote >= 10 and configured_usd > free_quote:
+        return _reduce_notional_action(
+            venue_id, quote, free_quote, configured_usd, score=score * 0.85,
+        )
+    return None
+
+
 def _action_score(action: Dict[str, Any]) -> float:
     base = float(action.get("priority_score") or 0)
     pri = {"critical": 100, "high": 50, "medium": 20, "low": 5}.get(str(action.get("priority") or ""), 10)
@@ -526,12 +599,12 @@ def _external_buy_action(
 ) -> Dict[str, Any]:
     sym = str(symbol).upper()
     side_l = str(side).lower()
-    label_asset = vapi.venue_quote_asset(venue_id) if side_l == "buy" else sym
+    trade_asset = sym
     return {
         "type": "external_market_buy" if side_l == "buy" else "external_market_sell",
         "priority": priority,
         "priority_score": score,
-        "label": f"{'Buy' if side_l == 'buy' else 'Sell'} {label_asset} on {venue_id} ~${amount_usd:.0f}",
+        "label": f"{'Buy' if side_l == 'buy' else 'Sell'} {trade_asset} on {venue_id} ~${amount_usd:.0f}",
         "venue_id": venue_id,
         "symbol": sym,
         "side": side_l,
@@ -619,28 +692,33 @@ def suggest_swap_actions(
             need = float(leg.get("need") or 0)
             free = float(leg.get("free") or 0)
             short_usd = max(0.0, need - free) if side == "buy" else max(0.0, (need - free) * float(gaps.get("buy_ask") or ex._price_usd(sym) or 1))
-            if short_usd < 5:
-                short_usd = max(5.0, need * 0.5)
+            if short_usd < 5 and side == "buy":
+                short_usd = max(5.0, need - free)
+            elif short_usd < 5:
+                short_usd = 5.0
             qty = float(gaps.get("quantity") or 0)
+            act: Optional[Dict[str, Any]] = None
             if side == "buy" and venue != "internal":
+                quote = asset or vapi.venue_quote_asset(venue)
+                act = _quote_shortfall_action(
+                    venue, quote, short_usd,
+                    reason=f"{count} recent funding skips on buy leg ({quote})",
+                    score=float(count),
+                    top25=["skip_reason_funding", "arb_exec_zero"],
+                    configured_usd=float(gaps.get("notional_usd") or notion),
+                )
+            elif side == "sell" and venue != "internal":
                 act = _external_buy_action(
                     venue, sym, "buy",
                     amount_usd=short_usd,
                     qty=0,
-                    reason=f"{count} recent funding skips on buy leg ({asset})",
-                    score=float(count),
-                    top25=["skip_reason_funding", "arb_exec_zero"],
-                )
-            elif side == "sell" and venue != "internal":
-                act = _external_buy_action(
-                    venue, sym, "sell",
-                    amount_usd=short_usd,
-                    qty=need - free if need > free else qty,
                     reason=f"{count} recent funding skips on sell leg ({asset})",
                     score=float(count),
                     top25=["skip_reason_funding", "nonkyc_doge_low" if asset == "DOGE" else "arb_exec_zero"],
                 )
             else:
+                continue
+            if not act:
                 continue
             lbl = act["label"]
             if lbl not in seen_labels:
@@ -703,25 +781,25 @@ def suggest_swap_actions(
             move = round((rich["free_quote"] - poor["free_quote"]) * 0.4, 2)
             if move >= 15:
                 ra, pa = rich["quote_asset"], poor["quote_asset"]
-                if {ra, pa} <= {"USDC", "USDT"}:
+                act = None
+                if ra != pa and {ra, pa} <= {"USDC", "USDT"}:
                     act = _stable_internal_swap_action(
                         ra, pa, move,
                         reason=f"Rebalance quote: {rich['venue_id']} rich vs {poor['venue_id']} low",
                         score=4.0,
                         top25=["skip_reason_funding", "binance_quote_cap"],
                     )
-                else:
-                    act = _external_buy_action(
+                elif rich["venue_id"] != poor["venue_id"]:
+                    act = _quote_shortfall_action(
                         poor["venue_id"],
-                        pa if pa not in ("USDC", "USDT") else "BTC",
-                        "buy",
-                        amount_usd=move,
-                        qty=0,
+                        pa,
+                        move,
                         reason=f"Top up {poor['venue_id']} {pa} from imbalance vs {rich['venue_id']}",
                         score=4.0,
                         top25=["skip_reason_funding"],
+                        configured_usd=default_notion,
                     )
-                if act["label"] not in seen_labels:
+                if act and act["label"] not in seen_labels:
                     seen_labels.add(act["label"])
                     actions.append(act)
 
@@ -812,13 +890,15 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
                 "action": action,
                 "hint": "Set rotation_live_enabled or EXCHANGE_ROTATION_LIVE=1 to execute live.",
             }
-        res = vapi.place_market_order(venue, sym, side, qty, dry_run=False)
+        res = vapi.place_market_order(venue, sym, side, qty, dry_run=False, rotation=True)
+        err = _order_error(res)
         exec_res = {
             "success": bool(res.get("success")),
             "dry_run": False,
             "mode": "live",
             "order": res,
             "action": action,
+            "error": err or None,
         }
         if exec_res.get("success"):
             exec_res["baseline_id"] = _record_rotation_baseline(action, exec_res)

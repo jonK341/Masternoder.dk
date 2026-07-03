@@ -179,6 +179,86 @@ def test_execute_rotation_advisory_reduce_notional(rotation_env):
     assert res["skipped"] is True
 
 
+def test_suggest_quote_shortfall_sells_base_not_arb_symbol(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    ppp = rotation_env["ppp"]
+
+    ppp.record_scan(
+        agent_id="arb_agent_btc_eth",
+        best={"symbol": "LINK", "buy_venue": "nonkyc", "sell_venue": "binance", "net_bps": 20},
+        decision="skip",
+        skip_reason="insufficient_venue_balance",
+        notional_usd=95.0,
+        venues=["binance", "nonkyc"],
+    )
+
+    monkeypatch.setattr(
+        rot,
+        "analyze_funding_gaps",
+        lambda aid, sym, notion: {
+            "success": True,
+            "notional_usd": notion,
+            "short_legs": [{
+                "leg": "buy",
+                "venue_id": "nonkyc",
+                "asset": "USDT",
+                "free": 86.0,
+                "need": 98.0,
+            }],
+            "quantity": 1.0,
+            "buy_ask": 7.5,
+            "max_funded_usd": 83,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_has_credentials",
+        lambda vid: vid == "nonkyc",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"USDT": 86.0, "DOGE": 200.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.ex._price_usd",
+        lambda sym: {"DOGE": 0.15, "LINK": 7.5}.get(str(sym).upper(), 1.0),
+    )
+
+    out = rot.suggest_swap_actions(hours=24, limit=5)
+    top = (out.get("actions") or [{}])[0]
+    assert top.get("side") == "sell"
+    assert top.get("symbol") == "DOGE"
+    assert "for USDT" in top.get("label", "")
+
+
+def test_execute_rotation_propagates_venue_error(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
+        lambda venue, sym, side, qty, dry_run=None, rotation=False: {
+            "success": False,
+            "status_code": 400,
+            "body": {"error": {"description": "Insufficient funds for order creation"}},
+        },
+    )
+
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "DOGE",
+        "side": "buy",
+        "amount_usd": 20,
+        "quantity": 100,
+    }
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res["success"] is False
+    assert "Insufficient funds" in str(res.get("error") or "")
+
+
 def test_rotation_auto_execute_dedupe(rotation_env, monkeypatch):
     rot = rotation_env["rot"]
     ppp = rotation_env["ppp"]
