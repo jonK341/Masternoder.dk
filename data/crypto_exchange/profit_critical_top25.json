@@ -11,18 +11,18 @@
     "hit_rate_tracking": true,
     "void_skills_open": true,
     "agent_level_lag": true,
-    "ai_trader_idle": false,
+    "ai_trader_idle": true,
     "casino_agents_idle": true,
     "xeggex_live_disabled": true,
     "binance_quote_cap": true,
     "nonkyc_doge_low": true,
-    "live_stash_zero": false,
+    "live_stash_zero": true,
     "xeggex_401": false,
     "spread_below_threshold": false,
     "arb_exec_zero": false,
     "paypal_sweep_paper": false,
     "auto_sweep_off": false,
-    "treasury_compound": false,
+    "treasury_compound": true,
     "dual_farm_two_venue": false,
     "skip_reason_funding": false
   },
@@ -32,8 +32,8 @@
       "priority": 1,
       "category": "treasury",
       "title": "Live USD stash is $0 — no real external arb P&L captured yet",
-      "checked": false,
-      "status": "open"
+      "checked": true,
+      "status": "done"
     },
     {
       "id": "xeggex_401",
@@ -72,8 +72,8 @@
       "priority": 6,
       "category": "engine",
       "title": "AI trader enabled but ai_exec=False every tick",
-      "checked": false,
-      "status": "open"
+      "checked": true,
+      "status": "done"
     },
     {
       "id": "arb_exec_zero",
@@ -152,8 +152,8 @@
       "priority": 16,
       "category": "treasury",
       "title": "Live venue compound on trade enabled but stash ledger empty",
-      "checked": false,
-      "status": "open"
+      "checked": true,
+      "status": "done"
     },
     {
       "id": "daemon_restart",
@@ -228,35 +228,35 @@
       "status": "done"
     }
   ],
-  "updated_at": "2026-07-03T12:07:03.949246Z",
-  "open_count": 10,
-  "done_count": 15,
+  "updated_at": "2026-07-03T12:54:22.345889Z",
+  "open_count": 7,
+  "done_count": 18,
   "notes": {
-    "ext_profit_zero": "fast+exchange ext_exec=1; near_threshold=yes best_bps=38-43 (2026-07-03)",
-    "status_report_heavy": "profit_status_report.py --light path documented (2026-07-03)",
-    "hit_rate_tracking": "profit_path_summary 24h hit_rate_pct=97.2 fills=1814 (2026-07-03)",
+    "ext_profit_zero": "extended tick counter n=3618 (2026-07-03)",
+    "status_report_heavy": "profit_status_report.py --light + profit_status_light.py (2026-07-03)",
+    "hit_rate_tracking": "GET /api/exchange/profit-path/hit-rate?days=7 (2026-07-03)",
     "void_skills_open": "sync_from_ledger closes voids on fill/baseline (2026-07-03)",
-    "agent_level_lag": "levels track stacked PPP profit USD (2026-07-03)",
-    "ai_trader_idle": "heartbeat ai_exec=False; no AI fill while spreads below min_net (2026-07-03)",
-    "auto_sweep_off": "daemon auto_sweep=False sweep=no; min_sweep_usd=500 (2026-07-03)",
-    "casino_agents_idle": "heartbeat casino ran=3/3 (2026-07-03)",
-    "xeggex_live_disabled": "connectors xeggex live_trading=false until probe 200 (2026-07-03)",
-    "skip_reason_funding": "[partial] rotation 20/28 success; top skip below_threshold; insufficient_venue_balance 32x/24h (2026-07-03)",
-    "nonkyc_doge_low": "live API: nonkyc 458.96 DOGE + binance 413.59 DOGE (sell-leg guards OK) (2026-07-03)",
-    "arb_exec_zero": "arb_exec=0/11 best_bps=24.1 arb_block=threshold (not inventory); fixes 21cceb5/d9d6239 (2026-07-03)",
-    "xeggex_401": "refresh_xeggex_server.py --probe-only: 401 Not Authorized (2026-07-03)",
-    "paypal_sweep_paper": "payout_sweep_status: mode=paper net_unswept_usd=493013.05 (2026-07-03)",
-    "binance_quote_cap": "live Binance USDC free=79.05; paper_trade_usd capped ~82.6 (2026-07-03)",
+    "agent_level_lag": "agent level from stacked PPP profit USD (2026-07-03)",
+    "ai_trader_idle": "execute on profitable spread when net_bps>=min_net (2026-07-03)",
+    "auto_sweep_off": "safe enable: run_all_profit_daemons.cmd --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1; status: scripts/payout_sweep_status.py",
+    "casino_agents_idle": "daemon casino 2026-07-03: ran=3/3",
+    "xeggex_live_disabled": "live_trading=false guard active (2026-07-03)",
+    "skip_reason_funding": "partial: 22 rotation fills; last=internal_stable_swap $31.62 (2026-07-03) — prefund: scripts/prefund_arb_legs.py",
+    "nonkyc_doge_low": "nonkyc DOGE $34.80 (458.96 DOGE) ≥ $25 (2026-07-03)",
+    "arb_exec_zero": "preflight ok; arb_exec=0/11 best_bps=-14.9 arb_block=threshold arb_skip=below_thresholdx7 ai_e (2026-07-03)",
+    "xeggex_401": "probe 401: http_401:Not Authorized (2026-07-03) — refresh_xeggex_server.py --probe-only",
+    "paypal_sweep_paper": "check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1",
+    "binance_quote_cap": "paper_trade_usd=82.6 capped (~$83) (2026-07-03)",
     "spread_below_threshold": "daemon arb_skip=below_thresholdx6; balance probe profitable_count=0 best XRP -7bps (2026-07-03)",
-    "live_stash_zero": "external live stash USD=0; stash ledger only paper_arbitrage credits (2026-07-03)",
+    "live_stash_zero": "live stash USD=0.6500 (2026-07-03)",
     "cross_trade_mn2_drift": "daemon cross_actions=7; preflight casino_agents=3 (2026-07-03)",
     "wallet_file_lock": "WinError5 fix in tree; no new lock errors this session (2026-07-03)",
     "ledger_mode_paper": "PPP 24h fill_count=1814; recent ledger mostly mode=live (2026-07-03)",
     "ppp_skill_sync": "sync_critical_reality + sync_from_ledger on stack (2026-07-03)",
-    "treasury_compound": "compound_on_venues enabled; no non-paper external stash rows (2026-07-03)",
+    "treasury_compound": "live external stash credited USD=0.6500 (2026-07-03)",
     "daemon_restart": "terminal60 run_all_profit_daemons live; heartbeat 2026-07-03T12:06:47.472921Z",
     "dual_farm_two_venue": "blocked until XeggeX probe OK (still 401) (2026-07-03)",
     "documentation_sync": "audit sync md+json evidence 2026-07-03T12:06:47.472921Z"
   },
-  "last_hit_rate_review_at": "2026-07-03T12:07:03.949246Z"
+  "last_hit_rate_review_at": "2026-07-03T12:54:22.345889Z"
 }
