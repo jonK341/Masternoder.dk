@@ -614,6 +614,9 @@ def test_profit_first_defers_reduce_notional_when_hot(rotation_env, monkeypatch)
 
 def test_unknown_venue_filtered_from_suggestions(rotation_env, monkeypatch):
     rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "_refresh_rotation_balances", lambda: None)
+    monkeypatch.setattr(rot, "_hot_spread_ready", lambda *a, **k: (False, 0.0))
+    monkeypatch.setattr(rot, "profit_first_enabled", lambda: False)
     monkeypatch.setattr(
         rot,
         "_venue_rotation_eligible",
