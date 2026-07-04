@@ -1,0 +1,1384 @@
+{
+  "version": "2026-07-04-batch2",
+  "batch": 2,
+  "batch1_doc": "PLATFORM_100_UPGRADES.md",
+  "areas": [
+    {
+      "id": "explorer",
+      "name": "Explorer",
+      "path": "/explorer",
+      "batch1_ref": "1-10",
+      "upgrades": [
+        {
+          "id": 101,
+          "title": "Daemon health banner with staking status",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#8"
+        },
+        {
+          "id": 102,
+          "title": "Block feed auto-scroll toggle",
+          "priority": "P0",
+          "status": "planned",
+          "ref_batch1": "#1"
+        },
+        {
+          "id": 103,
+          "title": "Manual refresh with age badge",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#4"
+        },
+        {
+          "id": 104,
+          "title": "SSE stream indicator with polling fallback",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#5"
+        },
+        {
+          "id": 105,
+          "title": "Network sparkline 5-day block trend",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#6"
+        },
+        {
+          "id": 106,
+          "title": "Chainz search deep-link from hash route",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#7"
+        },
+        {
+          "id": 107,
+          "title": "Cache staleness warning over 60s",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#2"
+        },
+        {
+          "id": 108,
+          "title": "Masternode rank sort by active time",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#9"
+        },
+        {
+          "id": 109,
+          "title": "Market activity delta tiles",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#10"
+        },
+        {
+          "id": 110,
+          "title": "Explorer cross-link to exchange MN2 price",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 111,
+          "title": "Wallet address QR export",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 112,
+          "title": "Block confirmation countdown",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 113,
+          "title": "Peer count history chip",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 114,
+          "title": "Tx mempool size estimator",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 115,
+          "title": "Difficulty retarget ETA",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 116,
+          "title": "Explorer hub-pages UX toolbar",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 117,
+          "title": "Block list pagination controls",
+          "priority": "P1",
+          "status": "planned"
+        },
+        {
+          "id": 118,
+          "title": "Address book recent lookups",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 119,
+          "title": "Network fee suggestion strip",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 120,
+          "title": "Explorer PPP quest cross-link",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "exchange",
+      "name": "Exchange",
+      "path": "/exchange",
+      "batch1_ref": "11-20",
+      "upgrades": [
+        {
+          "id": 121,
+          "title": "Per-tab lazy load with retry",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#15"
+        },
+        {
+          "id": 122,
+          "title": "MN2 balance strip on trade tab",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#16"
+        },
+        {
+          "id": 123,
+          "title": "Per-tab refresh buttons",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#14"
+        },
+        {
+          "id": 124,
+          "title": "PayPal onramp shortcut nav pill",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#17"
+        },
+        {
+          "id": 125,
+          "title": "Profit Oracle deep link strip",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#18"
+        },
+        {
+          "id": 126,
+          "title": "Agent marketplace cross-link card",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#19"
+        },
+        {
+          "id": 127,
+          "title": "Venue liquidity heatmap mini",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#20"
+        },
+        {
+          "id": 128,
+          "title": "Hot pair search ticker",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#11"
+        },
+        {
+          "id": 129,
+          "title": "Treasury monitor sparkline",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#12"
+        },
+        {
+          "id": 130,
+          "title": "Arbitrage feed status chip",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 131,
+          "title": "Bot daemon heartbeat",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 132,
+          "title": "CEX tab load state badges",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 133,
+          "title": "Exchange hub-pages UX toolbar",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 134,
+          "title": "Stash history recent 5 entries",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#12"
+        },
+        {
+          "id": 135,
+          "title": "Profit daemon hot symbols strip",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#13"
+        },
+        {
+          "id": 136,
+          "title": "MN2 swap fee estimator",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 137,
+          "title": "Tax report season selector",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 138,
+          "title": "Venue rotation countdown",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 139,
+          "title": "Paper/live mode toggle badge",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 140,
+          "title": "Exchange PPP agent level chip",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#22"
+        }
+      ]
+    },
+    {
+      "id": "profile",
+      "name": "Profile",
+      "path": "/profile",
+      "batch1_ref": "21-30",
+      "upgrades": [
+        {
+          "id": 141,
+          "title": "PPP quest sync indicator badge",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#24"
+        },
+        {
+          "id": 142,
+          "title": "Stats route deep links strip",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#25"
+        },
+        {
+          "id": 143,
+          "title": "Leaderboard tab shortcut chip",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#26"
+        },
+        {
+          "id": 144,
+          "title": "Shop inventory preview widget",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#27"
+        },
+        {
+          "id": 145,
+          "title": "Social crew status chip",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#28"
+        },
+        {
+          "id": 146,
+          "title": "Trophy income estimate tile",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#29"
+        },
+        {
+          "id": 147,
+          "title": "Profile load time badge",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#30"
+        },
+        {
+          "id": 148,
+          "title": "MN2 wallet tx history link",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#23"
+        },
+        {
+          "id": 149,
+          "title": "Achievement unlock progress",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 150,
+          "title": "Battle stats inline card",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 151,
+          "title": "Quest claimable count badge",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 152,
+          "title": "Generator credit balance chip",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 153,
+          "title": "Casino RG limits summary",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#41"
+        },
+        {
+          "id": 154,
+          "title": "Exchange bot rental count",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 155,
+          "title": "Podcast portal status",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 156,
+          "title": "Theme unlock progress",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 157,
+          "title": "Unified points sync timestamp",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 158,
+          "title": "Profile hub refresh enhancements",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#21"
+        },
+        {
+          "id": 159,
+          "title": "PPP profit stack sparkline",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 160,
+          "title": "Cross-area MN2 total",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#70"
+        }
+      ]
+    },
+    {
+      "id": "shop",
+      "name": "Shop",
+      "path": "/shop",
+      "batch1_ref": "31-40",
+      "upgrades": [
+        {
+          "id": 161,
+          "title": "Daily deal highlight strip",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#34"
+        },
+        {
+          "id": 162,
+          "title": "Sort by category and price",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#35"
+        },
+        {
+          "id": 163,
+          "title": "MN2 on-chain pay modal hint",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#36"
+        },
+        {
+          "id": 164,
+          "title": "VIP tier badge on header",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#37"
+        },
+        {
+          "id": 165,
+          "title": "Auction house quick link",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#38"
+        },
+        {
+          "id": 166,
+          "title": "Flash sale countdown",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#39"
+        },
+        {
+          "id": 167,
+          "title": "Shop analytics panel",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#40"
+        },
+        {
+          "id": 168,
+          "title": "Cart item count badge",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#33"
+        },
+        {
+          "id": 169,
+          "title": "MN2 fulfillment status chip",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#32"
+        },
+        {
+          "id": 170,
+          "title": "Category filter persistence",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#31"
+        },
+        {
+          "id": 171,
+          "title": "Recommended items strip",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 172,
+          "title": "Bundle deal calculator",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 173,
+          "title": "Shop hub-pages UX toolbar",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 174,
+          "title": "PayPal checkout shortcut",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 175,
+          "title": "Wishlist localStorage",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 176,
+          "title": "Recent purchases list",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 177,
+          "title": "MN2 price refresh button",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 178,
+          "title": "Inventory quick-view drawer",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 179,
+          "title": "Shop version badge sync",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 180,
+          "title": "Profit daemon shop cross-link",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "casino",
+      "name": "Casino",
+      "path": "/casino",
+      "batch1_ref": "41-50",
+      "upgrades": [
+        {
+          "id": 181,
+          "title": "Exchange bridge MN2 display",
+          "priority": "P0",
+          "status": "done",
+          "ref_batch1": "#44"
+        },
+        {
+          "id": 182,
+          "title": "Live wins ticker",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#45"
+        },
+        {
+          "id": 183,
+          "title": "Progressive jackpot bar",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#46"
+        },
+        {
+          "id": 184,
+          "title": "Camgirls lounge status",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#47"
+        },
+        {
+          "id": 185,
+          "title": "Tournament countdown widget",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#48"
+        },
+        {
+          "id": 186,
+          "title": "Discord fanout status",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#49"
+        },
+        {
+          "id": 187,
+          "title": "House edge transparency card",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#50"
+        },
+        {
+          "id": 188,
+          "title": "RG session timer chip",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#41"
+        },
+        {
+          "id": 189,
+          "title": "Agent tick summary cockpit",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#42"
+        },
+        {
+          "id": 190,
+          "title": "Slot spin history strip",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 191,
+          "title": "Competition leaderboard mini",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 192,
+          "title": "Casino hub refresh bar",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 193,
+          "title": "MN2 stake conversion hint",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 194,
+          "title": "Mobile swipe tab nav",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 195,
+          "title": "Fan club join CTA",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 196,
+          "title": "Profit oracle cross-link",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#43"
+        },
+        {
+          "id": 197,
+          "title": "Table games availability",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 198,
+          "title": "Coin/MN2 currency toggle badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 199,
+          "title": "Responsible gaming cool-down timer",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 200,
+          "title": "Casino PPP quest hook",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "generator",
+      "name": "Generator",
+      "path": "/generator",
+      "batch1_ref": "51-60",
+      "upgrades": [
+        {
+          "id": 201,
+          "title": "Queue depth live counter",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#54"
+        },
+        {
+          "id": 202,
+          "title": "Credit balance display",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#55"
+        },
+        {
+          "id": 203,
+          "title": "Provider availability grid",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#56"
+        },
+        {
+          "id": 204,
+          "title": "AI magic generate shortcut strip",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#57"
+        },
+        {
+          "id": 205,
+          "title": "Thumbnail preview gallery",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#58"
+        },
+        {
+          "id": 206,
+          "title": "Entitlement reservation status",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#59"
+        },
+        {
+          "id": 207,
+          "title": "Runway-style preset browser",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#60"
+        },
+        {
+          "id": 208,
+          "title": "Generation progress percent label",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#51"
+        },
+        {
+          "id": 209,
+          "title": "API health pulse animation",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#53"
+        },
+        {
+          "id": 210,
+          "title": "Job cancel/retry actions",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 211,
+          "title": "Multi-provider failover badge",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 212,
+          "title": "Generator hub-pages UX toolbar",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 213,
+          "title": "Credit purchase shortcut",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 214,
+          "title": "Theme timeline integration badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 215,
+          "title": "Generation cost estimator",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 216,
+          "title": "Provider latency chip",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 217,
+          "title": "Batch job queue reorder",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 218,
+          "title": "Export to game inventory",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 219,
+          "title": "MN2 pay for generation CTA",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 220,
+          "title": "History filter by status",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#52"
+        }
+      ]
+    },
+    {
+      "id": "command-center",
+      "name": "Command Center",
+      "path": "/command-center",
+      "batch1_ref": "61-70",
+      "upgrades": [
+        {
+          "id": 221,
+          "title": "Power monitor bar",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#64"
+        },
+        {
+          "id": 222,
+          "title": "Exchange monitor panel",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#65"
+        },
+        {
+          "id": 223,
+          "title": "Casino monitor panel",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#66"
+        },
+        {
+          "id": 224,
+          "title": "Agent support status",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#67"
+        },
+        {
+          "id": 225,
+          "title": "Podcast strip integration",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#68"
+        },
+        {
+          "id": 226,
+          "title": "Battlegrounds zone alert",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#69"
+        },
+        {
+          "id": 227,
+          "title": "Cross-area MN2 reward totals",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#70"
+        },
+        {
+          "id": 228,
+          "title": "Daemon connection sparkline",
+          "priority": "P1",
+          "status": "planned",
+          "ref_batch1": "#61"
+        },
+        {
+          "id": 229,
+          "title": "Top25 priority filter chips",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#62"
+        },
+        {
+          "id": 230,
+          "title": "Profit daemon kill-switch status",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 231,
+          "title": "Quick action: start quick battle",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 232,
+          "title": "Register intelligence 404 count",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 233,
+          "title": "Unified sync lag badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 234,
+          "title": "CEO agent profile link",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 235,
+          "title": "Agent skillset coverage",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 236,
+          "title": "Exchange treasury alert threshold",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 237,
+          "title": "CC hub refresh all",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#63"
+        },
+        {
+          "id": 238,
+          "title": "Casino RG violations count",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 239,
+          "title": "Generator queue alert",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 240,
+          "title": "Shop fulfillment backlog",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "game",
+      "name": "Game Hub",
+      "path": "/game",
+      "batch1_ref": "71-80",
+      "upgrades": [
+        {
+          "id": 241,
+          "title": "Champion pulse timestamps",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#74"
+        },
+        {
+          "id": 242,
+          "title": "Nexus campaign arc link",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#75"
+        },
+        {
+          "id": 243,
+          "title": "Aggregator fulfill status",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#76"
+        },
+        {
+          "id": 244,
+          "title": "Star Map 25 cross-link",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#77"
+        },
+        {
+          "id": 245,
+          "title": "Walkthrough guide drawer",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#78"
+        },
+        {
+          "id": 246,
+          "title": "Geo-ref profiling chip",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#79"
+        },
+        {
+          "id": 247,
+          "title": "Competitive loops dashboard",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#80"
+        },
+        {
+          "id": 248,
+          "title": "Daily login streak chip",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 249,
+          "title": "Trophy hunt progress",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 250,
+          "title": "Battle points trend",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 251,
+          "title": "Game hub champion refresh",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#73"
+        },
+        {
+          "id": 252,
+          "title": "Quest claimable inline",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 253,
+          "title": "MN2 wallet inline",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 254,
+          "title": "Season pass progress",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 255,
+          "title": "Crew invite CTA",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 256,
+          "title": "Profit daemon game hook",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 257,
+          "title": "Pixel clan status",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 258,
+          "title": "Load time measurement badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 259,
+          "title": "Featured game rotation",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#71"
+        },
+        {
+          "id": 260,
+          "title": "Game PPP sync indicator",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "quest",
+      "name": "Quest",
+      "path": "/quests",
+      "batch1_ref": "81-90",
+      "upgrades": [
+        {
+          "id": 261,
+          "title": "Daily quest streak display",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#84"
+        },
+        {
+          "id": 262,
+          "title": "AI quest generation CTA",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#85"
+        },
+        {
+          "id": 263,
+          "title": "Quest completion confetti",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#86"
+        },
+        {
+          "id": 264,
+          "title": "Level progression claim panel",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#87"
+        },
+        {
+          "id": 265,
+          "title": "Quest filter by type",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#88"
+        },
+        {
+          "id": 266,
+          "title": "Shared quest crew board",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#89"
+        },
+        {
+          "id": 267,
+          "title": "Quest MN2 reward estimator",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#90"
+        },
+        {
+          "id": 268,
+          "title": "PPP sync timestamp badge",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#83"
+        },
+        {
+          "id": 269,
+          "title": "Trophy quest inline progress",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 270,
+          "title": "Battle-linked quests strip",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 271,
+          "title": "Quest hub refresh enhancements",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 272,
+          "title": "Daily reset countdown",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 273,
+          "title": "Profit-linked quest badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 274,
+          "title": "Quest share link",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 275,
+          "title": "Quest difficulty tags",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 276,
+          "title": "Auto-claim all button",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 277,
+          "title": "Quest leaderboard mini",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 278,
+          "title": "Exchange trade quest hook",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 279,
+          "title": "Casino spin quest hook",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 280,
+          "title": "Generator job quest hook",
+          "priority": "P3",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "battle",
+      "name": "Battle",
+      "path": "/battle",
+      "batch1_ref": "91-100",
+      "upgrades": [
+        {
+          "id": 281,
+          "title": "Quick battle one-click",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#94"
+        },
+        {
+          "id": 282,
+          "title": "Battle stats summary cards",
+          "priority": "P2",
+          "status": "done",
+          "ref_batch1": "#95"
+        },
+        {
+          "id": 283,
+          "title": "Female agent spotlight",
+          "priority": "P2",
+          "status": "planned",
+          "ref_batch1": "#96"
+        },
+        {
+          "id": 284,
+          "title": "Lab tech forge integration",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#97"
+        },
+        {
+          "id": 285,
+          "title": "Champion league season link",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#98"
+        },
+        {
+          "id": 286,
+          "title": "Battle chart analytics",
+          "priority": "P3",
+          "status": "planned",
+          "ref_batch1": "#99"
+        },
+        {
+          "id": 287,
+          "title": "MN2 reward per win display",
+          "priority": "P3",
+          "status": "done",
+          "ref_batch1": "#100"
+        },
+        {
+          "id": 288,
+          "title": "Matchmaking queue status chip",
+          "priority": "P1",
+          "status": "done"
+        },
+        {
+          "id": 289,
+          "title": "Opponent type selector persist",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 290,
+          "title": "RPS mode toggle badge",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 291,
+          "title": "Battle hub quick-battle deep link",
+          "priority": "P1",
+          "status": "done",
+          "ref_batch1": "#93"
+        },
+        {
+          "id": 292,
+          "title": "Win streak flame indicator",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 293,
+          "title": "Season rank chip",
+          "priority": "P2",
+          "status": "planned"
+        },
+        {
+          "id": 294,
+          "title": "PVP trophy gallery link",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 295,
+          "title": "Battle intelligence summary",
+          "priority": "P3",
+          "status": "done"
+        },
+        {
+          "id": 296,
+          "title": "Difficulty recommend chip",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 297,
+          "title": "Battle replay list",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 298,
+          "title": "MN2 prize pool estimate",
+          "priority": "P2",
+          "status": "done"
+        },
+        {
+          "id": 299,
+          "title": "Crew battle invite",
+          "priority": "P3",
+          "status": "planned"
+        },
+        {
+          "id": 300,
+          "title": "Cross-hub battle CTA strip",
+          "priority": "P3",
+          "status": "done"
+        }
+      ]
+    }
+  ]
+}
