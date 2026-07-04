@@ -35,7 +35,32 @@ UPLOAD = [
 ]
 
 
+def _configure_stdio_utf8() -> None:
+    if sys.platform != "win32":
+        return
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
+def _print_remote(text: str, *, tail: int | None = None) -> None:
+    """Print SSH output without Windows console encoding errors."""
+    chunk = text.strip()
+    if not chunk:
+        return
+    if tail is not None and len(chunk) > tail:
+        chunk = chunk[-tail:]
+    enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+    safe = chunk.encode(enc, errors="replace").decode(enc, errors="replace")
+    print(safe)
+
+
 def main() -> int:
+    _configure_stdio_utf8()
     from deploy_ssh_env import connect_deploy_ssh, require_deploy_pass
 
     ssh, auth, _ = connect_deploy_ssh(require_deploy_pass())
@@ -76,10 +101,8 @@ def main() -> int:
         _, stdout, stderr = ssh.exec_command(cmd, timeout=120)
         out = stdout.read().decode(errors="replace")
         err = stderr.read().decode(errors="replace")
-        if out.strip():
-            print(out.strip())
-        if err.strip():
-            print(err.strip()[-1200:])
+        _print_remote(out)
+        _print_remote(err, tail=1200)
 
         verify = (
             f"cd {REMOTE_ROOT} && set -a && . ./.env && set +a && "
@@ -89,7 +112,7 @@ def main() -> int:
         )
         _, vout, _ = ssh.exec_command(verify, timeout=90)
         print("--- monitor ---")
-        print(vout.read().decode(errors="replace")[:2000])
+        _print_remote(vout.read().decode(errors="replace"), tail=2000)
         return 0
     finally:
         ssh.close()

@@ -36,6 +36,7 @@ Full checklist: [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) (21/25 do
 ### Server deploy (from PROFIT_DAEMON_SERVER.md)
 
 - [ ] Run deploy: `python scripts/deploy_profit_daemon_server.py`
+- [ ] Windows: deploy script forces UTF-8 stdout so systemd status bullets do not crash on cp1252.
 - [ ] Fix `.env` line 19 separator (`command not found` when sourcing on server)
 - [ ] Stop laptop daemon once server systemd is healthy (avoid double ticks)
 
