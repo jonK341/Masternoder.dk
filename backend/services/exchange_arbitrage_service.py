@@ -328,6 +328,19 @@ def _summarize_best_qualifying(
             funded = False
         elif reason in ("below_threshold", "no_profitable_spread"):
             funded = False
+        elif reason == "global_threshold_ready":
+            from backend.services import exchange_venue_api_service as vapi
+            sym = str(row.get("symbol") or "").upper()
+            buy_v = str(row.get("buy_venue") or "")
+            sell_v = str(row.get("sell_venue") or "")
+            buy_ask = float(row.get("buy_ask") or 0)
+            if sym and buy_v and sell_v and buy_ask > 0:
+                cap = vapi.max_funded_notional_usd(
+                    sym, buy_v, sell_v, buy_ask, configured_usd=100.0, buffer_pct=0.03,
+                )
+                funded = cap >= 10.0
+            else:
+                funded = True
         else:
             mf = best_action.get("max_funded_usd")
             funded = mf is None or float(mf or 0) >= 10.0
@@ -364,6 +377,7 @@ def _attempt_global_best_live(
     top_nb = float(summary.get("net_bps") or 0)
     state_ready = False
     state_net = 0.0
+    state: Dict[str, Any] = {}
     try:
         from backend.services.exchange_extended_profit_service import read_arb_threshold_state
 
@@ -385,11 +399,45 @@ def _attempt_global_best_live(
     venues = list(agent_cfg.get("venues") or ["binance", "nonkyc"])
     notional = float(agent_cfg.get("paper_trade_usd") or default_notional)
 
+    from backend.services import exchange_venue_api_service as vapi
+    vapi.refresh_venue_balances(venues, force=True)
+
     scan = scan_opportunities(venues=venues, notional_usd=notional)
     opps = [
         o for o in (scan.get("opportunities") or [])
         if float(o.get("net_bps") or 0) >= force_floor and float(o.get("est_profit_usd") or 0) > 0
     ]
+    if not opps and state_ready:
+        sym = str(state.get("top_symbol") or "").upper()
+        buy_v = str(state.get("buy_venue") or "")
+        sell_v = str(state.get("sell_venue") or "")
+        if sym and buy_v and sell_v:
+            sym_scan = scan_opportunities(
+                symbols=[sym], venues=venues, notional_usd=notional,
+            )
+            for o in sym_scan.get("opportunities") or []:
+                if str(o.get("symbol") or "").upper() == sym:
+                    opps.append(dict(o))
+            if not opps and state_net >= force_floor:
+                buy_ask = 0.0
+                try:
+                    tick = conn.fetch_ticker(buy_v, sym)
+                    if tick:
+                        buy_ask = float(tick.get("ask") or tick.get("last") or 0)
+                except Exception:
+                    pass
+                if buy_ask <= 0:
+                    buy_ask = float(ex._price_usd(sym) or 0)
+                opps.append({
+                    "symbol": sym,
+                    "buy_venue": buy_v,
+                    "sell_venue": sell_v,
+                    "net_bps": state_net,
+                    "est_profit_usd": float(state.get("est_profit_usd") or 0.01),
+                    "notional_usd": notional,
+                    "buy_ask": buy_ask,
+                    "sell_bid": buy_ask,
+                })
     if not opps:
         seen: set = set()
         for action in actions:
@@ -529,6 +577,14 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
     transfer_cost_bps = _effective_transfer_cost_bps(cfg)
     min_margin_bps = effective_min_margin_bps(cfg)
     default_notional = float(cfg.get("paper_trade_usd") or 250)
+
+    if live_enabled() and injected is None:
+        from backend.services import exchange_venue_api_service as vapi
+        venue_ids = [
+            str(v["id"]) for v in (cfg.get("venues") or [])
+            if isinstance(v, dict) and v.get("id") and v["id"] != "internal"
+        ]
+        vapi.refresh_venue_balances(venue_ids or ["binance", "nonkyc"], force=True)
 
     fetched = conn.fetch_prices(
         injected=injected,

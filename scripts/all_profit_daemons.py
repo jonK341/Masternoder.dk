@@ -167,6 +167,19 @@ def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     """When spatial arb executes 0 fills, classify dominant blocker for ops."""
     if int(arb.get("executed_count") or 0) > 0:
         return None
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("funded") and bq.get("qualifies"):
+        reason = str(bq.get("reason") or "")
+        if reason == "global_threshold_ready":
+            force = arb.get("force_attempt") or {}
+            if force.get("reason") == "force_attempt_exhausted":
+                return "funding"
+            return None
+        if reason not in ("below_threshold", "no_profitable_spread", "insufficient_venue_balance"):
+            return None
+    force = arb.get("force_attempt") or {}
+    if force.get("reason") == "force_attempt_exhausted" and bq.get("funded"):
+        return "funding"
     min_margin = float(arb.get("min_margin_bps") or 14)
     qualifying: List[Dict[str, Any]] = []
     for action in arb.get("actions") or []:
@@ -246,6 +259,9 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         arb_block = _classify_arb_block(arb)
         if arb_block:
             parts.append(f"arb_block={arb_block}")
+        force = arb.get("force_attempt") or {}
+        if force.get("forced_global") and not force.get("executed"):
+            parts.append(f"force={force.get('reason', '?')}")
         reasons: Dict[str, int] = {}
         for a in arb_actions:
             if a.get("executed"):
@@ -368,8 +384,10 @@ def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
             venue = outcome.get("venue_id") or "?"
             sym = outcome.get("symbol") or "?"
             market = outcome.get("market") or "?"
+            cache_age = outcome.get("balance_cache_age_sec")
+            age_bit = f" balance_cache_age={cache_age}s" if cache_age else ""
             print(
-                f"[all-profit] rotation skip: {label} venue={venue} pair={sym} market={market} reason={outcome.get('reason')}",
+                f"[all-profit] rotation skip: {label} venue={venue} pair={sym} market={market}{age_bit} reason={outcome.get('reason')}",
                 flush=True,
             )
         elif outcome.get("skipped") and outcome.get("reason") == "auto_disabled":

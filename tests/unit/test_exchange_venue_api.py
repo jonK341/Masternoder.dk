@@ -161,3 +161,30 @@ def test_place_market_order_applies_binance_filters(monkeypatch):
     res = vapi.place_market_order("binance", "LINK", "buy", 10.63829787, dry_run=False)
     assert res["success"] is True
     assert captured["quantity"] == 10.63
+
+
+def test_balance_cache_refresh_and_age(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    vapi.invalidate_venue_balance_cache()
+    calls = {"n": 0}
+
+    def fake_balance(venue_id, asset="", *, dry_run=None):
+        calls["n"] += 1
+        return {"success": True, "body": {"balances": [{"asset": "USDT", "free": "25.79"}]}}
+
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda vid: vid == "nonkyc")
+    monkeypatch.setattr(vapi, "get_account_balance", fake_balance)
+
+    first = vapi.parse_spot_balances("nonkyc", dry_run=False)
+    assert first.get("USDT") == 25.79
+    assert calls["n"] == 1
+
+    second = vapi.parse_spot_balances("nonkyc", dry_run=False)
+    assert second.get("USDT") == 25.79
+    assert calls["n"] == 1
+
+    vapi.refresh_venue_balances(["nonkyc"], force=True)
+    assert calls["n"] == 2
+    assert vapi.balance_cache_age_sec("nonkyc") is not None
+

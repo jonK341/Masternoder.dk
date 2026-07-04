@@ -509,3 +509,96 @@ def test_execute_rotation_blocks_sell_below_min_leg_reserve(rotation_env, monkey
     assert res.get("skipped") is True
     assert res.get("error") == "sell_would_breach_min_leg_reserve"
 
+
+def test_profit_first_bypasses_reduce_notional_cooldown(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    action = {
+        "type": "reduce_notional",
+        "venue_id": "nonkyc",
+        "suggested_notional_usd": 10,
+    }
+    state = {
+        "recent": [{
+            "ts": rot._iso(),
+            "asset_key": rot._venue_asset_key(action),
+            "amount_usd": 10,
+            "success": True,
+        }],
+    }
+    assert rot._dedupe_skip(action, state) == "venue_asset_cooldown"
+    assert rot._dedupe_skip(action, state, bypass_cooldown=True) is None
+
+
+def test_profit_first_defers_reduce_notional_when_hot(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    cfg_path = rotation_env["data"] / "profit_path_protocol.json"
+    cfg_path.write_text(
+        json.dumps({"enabled": True, "rotation_profit_first": True, "rotation_auto_execute": True}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(rot, "profit_first_enabled", lambda: True)
+    monkeypatch.setattr(rot, "_hot_spread_ready", lambda *a, **k: (True, 25.0))
+    monkeypatch.setattr(rot, "_refresh_rotation_balances", lambda: None)
+    monkeypatch.setattr(
+        rot,
+        "suggest_swap_actions",
+        lambda **kw: {
+            "actions": [
+                {"type": "reduce_notional", "label": "Lower notional", "priority_score": 10, "venue_id": "nonkyc"},
+                {
+                    "type": "external_market_buy",
+                    "label": "Buy DOGE",
+                    "priority_score": 5,
+                    "venue_id": "nonkyc",
+                    "symbol": "DOGE",
+                    "side": "buy",
+                    "amount_usd": 25,
+                    "market": "DOGE_USDT",
+                    "quantity": 100.0,
+                },
+            ],
+        },
+    )
+    monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(rot, "execute_rotation", lambda *a, **k: {"success": True, "mode": "live"})
+    monkeypatch.setattr(rot, "log_rotation_to_ppp", lambda *a, **k: None)
+    monkeypatch.setattr(rot, "_dedupe_skip", lambda *a, **k: None)
+    monkeypatch.setattr(rot, "_fit_external_action_to_balance", lambda action, max_usd: action)
+
+    res = rot.maybe_auto_rotation({"platform": {"results": {"arbitrage": {"executed_count": 0, "min_margin_bps": 14}}}})
+    assert res.get("auto_executed") is True
+    assert "Buy DOGE" in str(res.get("action") or "")
+
+
+def test_unknown_venue_filtered_from_suggestions(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "_refresh_rotation_balances", lambda: None)
+    monkeypatch.setattr(rot, "_hot_spread_ready", lambda *a, **k: (False, 0.0))
+    monkeypatch.setattr(rot, "profit_first_enabled", lambda: False)
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_has_credentials",
+        lambda vid: vid in ("binance", "bingx"),
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.load_api_config",
+        lambda: {"venues": {"binance": {}, "nonkyc": {}}},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False, force_refresh=False: {"USDT": 100.0} if vid == "binance" else {},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
+    )
+    monkeypatch.setattr(
+        "backend.services.external_exchange_connector_service.load_connectors_config",
+        lambda: {"paper_trade_usd": 75},
+    )
+    monkeypatch.setattr(rot, "search_paths", lambda **kw: {"paths": []})
+
+    out = rot.suggest_swap_actions(hours=1, limit=5)
+    labels = " ".join(a.get("label", "") for a in out.get("actions") or [])
+    assert "bingx" not in labels.lower()
+

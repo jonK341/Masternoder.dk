@@ -55,6 +55,8 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_live_enabled", False)
     cfg.setdefault("rotation_auto_execute", False)
     cfg.setdefault("rotation_auto_max_usd_per_tick", 100)
+    cfg.setdefault("rotation_profit_first", False)
+    cfg.setdefault("balance_cache_ttl_sec", 45)
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
