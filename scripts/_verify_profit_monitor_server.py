@@ -40,8 +40,9 @@ def main() -> int:
 
         print("\n--- curl ---")
         curl = sh(
-            "curl -sS -m 15 http://127.0.0.1:5000/api/profit-daemon/status "
-            "-w '\\nHTTP:%{http_code} TIME:%{time_total}s SIZE:%{size_download}' | tail -c 800"
+            "systemctl restart uwsgi-vidgenerator 2>/dev/null; sleep 3; "
+            "curl -sS -m 20 http://127.0.0.1:5000/api/profit-daemon/status "
+            "-w '\\nHTTP:%{http_code} TIME:%{time_total}s SIZE:%{size_download}' | tail -c 900"
         )
         print(curl)
         return 0

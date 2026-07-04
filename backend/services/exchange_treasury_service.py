@@ -6,6 +6,7 @@ Converts realized USD P&L into MN2 (or shop coins) and credits the configured
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -13,6 +14,9 @@ from backend.services import crypto_exchange_service as ex
 
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_treasury_config.json")
 _LEDGER_PATH = os.path.join(ex._DATA_DIR, "treasury_stash_ledger.jsonl")
+_MONITOR_CACHE: Dict[str, Any] = {}
+_MONITOR_CACHE_AT = 0.0
+_MONITOR_CACHE_TTL_SEC = 120.0
 
 
 def _iso() -> str:
@@ -159,3 +163,24 @@ def treasury_status(mode: Optional[str] = None) -> Dict[str, Any]:
         "fee_allocation": cfg.get("fee_allocation") if isinstance(cfg.get("fee_allocation"), dict) else {},
         "liquidity_pipeline": cfg.get("liquidity_pipeline") if isinstance(cfg.get("liquidity_pipeline"), dict) else {},
     }
+
+
+def treasury_monitor_snapshot() -> Dict[str, Any]:
+    """Cached treasury totals for dashboards — avoids full ledger scan every poll."""
+    global _MONITOR_CACHE, _MONITOR_CACHE_AT
+    now = time.time()
+    if _MONITOR_CACHE and (now - _MONITOR_CACHE_AT) < _MONITOR_CACHE_TTL_SEC:
+        return dict(_MONITOR_CACHE)
+    st = treasury_status()
+    snap = {
+        "success": True,
+        "ledger_stashed_usd": st.get("ledger_stashed_usd"),
+        "ledger_stashed_usd_live": st.get("ledger_stashed_usd_live"),
+        "ledger_stashed_usd_paper": st.get("ledger_stashed_usd_paper"),
+        "live_stash_usd": st.get("live_stash_usd"),
+        "auto_stash_on_trade": st.get("auto_stash_on_trade"),
+        "compound_on_trade": st.get("auto_stash_on_trade"),
+    }
+    _MONITOR_CACHE = snap
+    _MONITOR_CACHE_AT = now
+    return dict(snap)

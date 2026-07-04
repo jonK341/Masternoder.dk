@@ -52,7 +52,7 @@
         "TRX"
       ],
       "min_net_bps": 12,
-      "notional_usd": 10.0,
+      "notional_usd": 75.0,
       "max_executions_per_tick": 2,
       "agent_id": "arb_live_dual_farm"
     },
@@ -101,7 +101,7 @@
         "xeggex"
       ],
       "min_net_bps": 16,
-      "notional_usd": 10.0,
+      "notional_usd": 200,
       "agent_id": "arb_agent_meme"
     },
     "defi_rotation": {
@@ -139,7 +139,7 @@
     "fast_arb_rescan": {
       "enabled": true,
       "min_net_bps": 12,
-      "notional_usd": 10.0,
+      "notional_usd": 75.0,
       "execute_on_threshold": true,
       "agent_id": "arb_live_dual_farm",
       "max_executions_per_tick": 1,
@@ -149,7 +149,8 @@
         "xeggex",
         "okx",
         "bybit"
-      ]
+      ],
+      "note": "Ops may lower threshold via EXCHANGE_FAST_MIN_BPS env (not written to config)."
     }
   }
 }

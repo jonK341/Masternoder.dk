@@ -501,6 +501,38 @@ def profit_path_summary(*, hours: Optional[float] = None) -> Dict[str, Any]:
     }
 
 
+def profit_path_monitor_summary(*, hours: float = 24) -> Dict[str, Any]:
+    """Light PPP rollup for profit monitor — tail ledger only."""
+    from collections import Counter
+    from datetime import timedelta
+
+    rows = _read_ledger(limit=2500)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=float(hours))
+    filtered: List[Dict[str, Any]] = []
+    for row in reversed(rows):
+        ts = _parse_ts(str(row.get("ts") or ""))
+        if ts and ts < cutoff:
+            break
+        filtered.append(row)
+    scans = [r for r in filtered if r.get("phase") == "scan"]
+    attempts = [r for r in filtered if r.get("phase") == "execute"]
+    fills = [r for r in attempts if r.get("decision") in ("fill", "paper", "live") and (r.get("execution") or {}).get("success")]
+    skip_reasons = Counter(str(r.get("skip_reason") or "unknown") for r in filtered if r.get("decision") == "skip" and r.get("skip_reason"))
+    hit_rate = round(100.0 * len(fills) / len(attempts), 1) if attempts else 0.0
+    net_rows = [r for r in filtered if float(r.get("net_bps") or 0) != 0]
+    avg_net = round(sum(float(r.get("net_bps") or 0) for r in net_rows) / len(net_rows), 2) if net_rows else 0.0
+    return {
+        "success": True,
+        "window_hours": hours,
+        "scan_count": len(scans),
+        "attempt_count": len(attempts),
+        "fill_count": len(fills),
+        "hit_rate_pct": hit_rate,
+        "avg_net_bps": avg_net,
+        "top_skip_reasons": [{"reason": k, "count": v} for k, v in skip_reasons.most_common(8)],
+    }
+
+
 def suggest_improvements(*, hours: Optional[float] = None) -> Dict[str, Any]:
     """Rule-based hints from recent ledger patterns."""
     cfg = load_config()

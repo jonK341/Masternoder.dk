@@ -88,3 +88,6 @@
 {"ts": "2026-07-04T18:28:19.886084Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 10964.2998, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}
 {"ts": "2026-07-04T18:31:56.159418Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 5482.1499, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}
 {"ts": "2026-07-04T18:35:34.653647Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 2741.075, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}
+{"ts": "2026-07-04T20:25:05.739509Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 4531.7478, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}
+{"ts": "2026-07-04T20:40:44.427587Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 2265.8738, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}
+{"ts": "2026-07-04T20:43:31.874007Z", "destination": "paypal", "receiver_email": "paypal@sharpobject-world.com", "amount_usd": 1132.937, "share_pct": 50.0, "mode": "paper", "payout_batch_id": null}

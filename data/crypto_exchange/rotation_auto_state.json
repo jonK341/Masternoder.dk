@@ -2,15 +2,6 @@
   "recent": [
     {
       "hash": "a12ac1ef0d7abcc8",
-      "ts": "2026-07-04T05:11:02.017465Z",
-      "asset_key": "binance||reduce_notional|",
-      "amount_usd": 10.0,
-      "type": "reduce_notional",
-      "success": true,
-      "skip_reason": ""
-    },
-    {
-      "hash": "a12ac1ef0d7abcc8",
       "ts": "2026-07-04T05:43:57.184110Z",
       "asset_key": "binance||reduce_notional|",
       "amount_usd": 10.0,
@@ -368,9 +359,18 @@
       "type": "external_market_buy",
       "success": true,
       "skip_reason": ""
+    },
+    {
+      "hash": "cbc9beffe1e8fcd9",
+      "ts": "2026-07-04T20:16:05.971956Z",
+      "asset_key": "nonkyc||reduce_notional|",
+      "amount_usd": 10.41,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
     }
   ],
-  "updated_at": "2026-07-04T18:32:13.967384Z",
-  "last_executed_hash": "37b99681565c8f11",
-  "last_executed_at": "2026-07-04T18:32:13.967384Z"
+  "updated_at": "2026-07-04T20:16:05.971956Z",
+  "last_executed_hash": "cbc9beffe1e8fcd9",
+  "last_executed_at": "2026-07-04T20:16:05.971956Z"
 }

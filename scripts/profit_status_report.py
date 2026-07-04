@@ -168,7 +168,7 @@ def collect() -> Dict[str, Any]:
     arb = agent_accounts()
     scan = scan_opportunities(
         symbols=["BTC", "ETH", "SOL", "XRP", "DOGE"],
-        venues=["binance", "nonkyc", "xeggex"],
+        venues=["binance", "nonkyc"],
         notional_usd=500,
     )
     opps = scan.get("opportunities") or []

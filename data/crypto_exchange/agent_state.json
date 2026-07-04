@@ -1,5 +1,5 @@
 {
-  "tick_count": 1870,
+  "tick_count": 1876,
   "agents": {
     "exchange_agent_stable_router": {
       "last_action": {
@@ -8,48 +8,48 @@
         "strategy": "stable_rebalance",
         "symbol": "USDC",
         "side": "buy",
-        "amount": 12.9178433685,
+        "amount": 12.9300114895,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.355532Z",
-          "trade_id": "ex-swap:8f27aab4c2564c8b:4b883997",
+          "ts": "2026-07-04T20:43:16.289124Z",
+          "trade_id": "ex-swap:b0c66135fb9d401d:657e65f0",
           "user_id": "exchange_agent_stable_router",
           "type": "swap",
           "symbol": "USDC",
           "side": "buy",
-          "amount": 12.9178433685,
+          "amount": 12.9300114895,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.418593Z"
+      "last_tick": "2026-07-04T20:43:16.380128Z"
     },
     "exchange_agent_layer1_scout": {
       "last_action": {
         "agent_id": "exchange_agent_layer1_scout",
         "agent_name": "Layer-1 Scout",
         "strategy": "layer1_rotation",
-        "symbol": "BTC",
+        "symbol": "ETH",
         "side": "buy",
-        "amount": 0.000204673414,
+        "amount": 0.00720749483,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.488830Z",
-          "trade_id": "ex-swap:f31b213f2674404b:37945535",
+          "ts": "2026-07-04T20:43:16.431841Z",
+          "trade_id": "ex-swap:77b2cddb2de74b6d:54f83304",
           "user_id": "exchange_agent_layer1_scout",
           "type": "swap",
-          "symbol": "BTC",
+          "symbol": "ETH",
           "side": "buy",
-          "amount": 0.000204673414,
+          "amount": 0.00720749483,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.563479Z"
+      "last_tick": "2026-07-04T20:43:16.550907Z"
     },
     "exchange_agent_casino_liquidity": {
       "last_action": {
@@ -58,23 +58,23 @@
         "strategy": "casino_liquidity",
         "symbol": "USDC",
         "side": "buy",
-        "amount": 12.9178433685,
+        "amount": 12.9300114895,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.600349Z",
-          "trade_id": "ex-swap:74f7248b54bc4e7e:216f2ee1",
+          "ts": "2026-07-04T20:43:16.594241Z",
+          "trade_id": "ex-swap:91b8bdb555fb4f8e:5235753b",
           "user_id": "exchange_agent_casino_liquidity",
           "type": "swap",
           "symbol": "USDC",
           "side": "buy",
-          "amount": 12.9178433685,
+          "amount": 12.9300114895,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.672598Z"
+      "last_tick": "2026-07-04T20:43:16.715330Z"
     },
     "exchange_agent_meme_hunter": {
       "last_action": {
@@ -83,23 +83,23 @@
         "strategy": "meme_momentum",
         "symbol": "DOGE",
         "side": "buy",
-        "amount": 163.415318551741,
+        "amount": 164.52367441402,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.702913Z",
-          "trade_id": "ex-swap:bf5e263557634a95:e16a2e35",
+          "ts": "2026-07-04T20:43:16.804184Z",
+          "trade_id": "ex-swap:c81a688f30f3458c:5345e70c",
           "user_id": "exchange_agent_meme_hunter",
           "type": "swap",
           "symbol": "DOGE",
           "side": "buy",
-          "amount": 163.415318551741,
+          "amount": 164.52367441402,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.766875Z"
+      "last_tick": "2026-07-04T20:43:16.922412Z"
     },
     "exchange_agent_defi_router": {
       "last_action": {
@@ -108,48 +108,48 @@
         "strategy": "defi_rotation",
         "symbol": "OP",
         "side": "buy",
-        "amount": 7.828995980909,
+        "amount": 7.836370599697,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.814624Z",
-          "trade_id": "ex-swap:563051a3c54f4500:1d6b5c3c",
+          "ts": "2026-07-04T20:43:16.965704Z",
+          "trade_id": "ex-swap:904580a91dc04960:4c7691f2",
           "user_id": "exchange_agent_defi_router",
           "type": "swap",
           "symbol": "OP",
           "side": "buy",
-          "amount": 7.828995980909,
+          "amount": 7.836370599697,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.874414Z"
+      "last_tick": "2026-07-04T20:43:17.094929Z"
     },
     "exchange_agent_payments_hub": {
       "last_action": {
         "agent_id": "exchange_agent_payments_hub",
         "agent_name": "Payments Hub",
         "strategy": "payments_routing",
-        "symbol": "XRP",
+        "symbol": "LTC",
         "side": "buy",
-        "amount": 10.984156790901,
+        "amount": 0.28658175505,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.921898Z",
-          "trade_id": "ex-swap:7a0ac68b4d23446b:07ca853f",
+          "ts": "2026-07-04T20:43:17.149620Z",
+          "trade_id": "ex-swap:2a724e6fe68c425d:6e6ca064",
           "user_id": "exchange_agent_payments_hub",
           "type": "swap",
-          "symbol": "XRP",
+          "symbol": "LTC",
           "side": "buy",
-          "amount": 10.984156790901,
+          "amount": 0.28658175505,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:18.985028Z"
+      "last_tick": "2026-07-04T20:43:17.255644Z"
     },
     "exchange_agent_mn2_yield": {
       "last_action": {
@@ -158,24 +158,24 @@
         "strategy": "native_yield",
         "symbol": "BNB",
         "side": "buy",
-        "amount": 0.022404418131,
+        "amount": 0.022479448373,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:19.025434Z",
-          "trade_id": "ex-swap:45ec102108e04ece:7122d698",
+          "ts": "2026-07-04T20:43:17.340284Z",
+          "trade_id": "ex-swap:c097edaf1d764c9c:726be42d",
           "user_id": "exchange_agent_mn2_yield",
           "type": "swap",
           "symbol": "BNB",
           "side": "buy",
-          "amount": 0.022404418131,
+          "amount": 0.022479448373,
           "quote": "MN2",
-          "usd_value": 12.9178,
+          "usd_value": 12.93,
           "fee_bps": 55
         }
       },
-      "last_tick": "2026-07-04T18:35:19.093918Z"
+      "last_tick": "2026-07-04T20:43:17.476551Z"
     }
   },
-  "last_tick": "2026-07-04T18:35:19.093918Z"
+  "last_tick": "2026-07-04T20:43:17.476551Z"
 }

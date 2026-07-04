@@ -1,6 +1,7 @@
 """Profit daemon monitor — heartbeat, payout, PPP summary for UI/API."""
 from __future__ import annotations
 
+import json
 import os
 import re
 import time
@@ -12,6 +13,10 @@ from backend.services import crypto_exchange_service as ex
 
 _HEARTBEAT = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
 _STATE = os.path.join(ex._DATA_DIR, "profit_daemon_server_state.json")
+_PAYOUT_PATH = os.path.join(ex._DATA_DIR, "payout_config.json")
+_TREASURY_CFG_PATH = os.path.join(ex._BASE, "data", "exchange_treasury_config.json")
+_TREASURY_LEDGER_PATH = os.path.join(ex._DATA_DIR, "treasury_stash_ledger.jsonl")
+_PPP_LEDGER_PATH = os.path.join(ex._DATA_DIR, "profit_path_ledger.jsonl")
 _VENUE_CACHE_FILE = os.path.join(ex._DATA_DIR, "venue_balance_monitor_cache.json")
 _VENUE_CACHE_TTL_SEC = float(os.environ.get("PROFIT_MONITOR_VENUE_CACHE_SEC", "300"))
 _VENUE_FETCH_TIMEOUT_SEC = float(os.environ.get("PROFIT_MONITOR_VENUE_TIMEOUT_SEC", "5"))
@@ -343,8 +348,152 @@ def _build_stats(
     return stats
 
 
+def _sum_treasury_ledger() -> Dict[str, float]:
+    cached = _monitor_cached("treasury_ledger_sums", _sum_treasury_ledger_uncached, ttl=60)
+    return cached if isinstance(cached, dict) else _sum_treasury_ledger_uncached()
+
+
+def _sum_treasury_ledger_uncached() -> Dict[str, float]:
+    stashed_usd = 0.0
+    stashed_paper_usd = 0.0
+    stashed_live_usd = 0.0
+    if os.path.isfile(_TREASURY_LEDGER_PATH):
+        try:
+            with open(_TREASURY_LEDGER_PATH, encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    row = json.loads(line)
+                    amount = float(row.get("amount_usd") or 0)
+                    stashed_usd += amount
+                    if str(row.get("mode") or "paper").lower() == "live":
+                        stashed_live_usd += amount
+                    else:
+                        stashed_paper_usd += amount
+        except Exception:
+            pass
+    return {
+        "ledger_stashed_usd": round(stashed_usd, 4),
+        "ledger_stashed_usd_paper": round(stashed_paper_usd, 4),
+        "ledger_stashed_usd_live": round(stashed_live_usd, 4),
+        "live_stash_usd": round(stashed_live_usd, 4),
+    }
+
+
+def _light_treasury_snapshot() -> Dict[str, Any]:
+    """Fast treasury summary — config + ledger only (no wallet/points DB)."""
+    cfg = ex._read_json(_TREASURY_CFG_PATH, {})
+    sums = _sum_treasury_ledger()
+    return {
+        "success": True,
+        "enabled": bool(cfg.get("enabled", True)),
+        "compound_on_trade": bool(cfg.get("auto_stash_on_trade", True)),
+        "auto_stash_on_trade": bool(cfg.get("auto_stash_on_trade", True)),
+        **sums,
+    }
+
+
+def _light_payout_snapshot() -> Dict[str, Any]:
+    """Fast payout summary — config + ledger only (no Binance/PayPal API probes)."""
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    paypal = cfg.get("paypal") if isinstance(cfg.get("paypal"), dict) else {}
+    email = (os.environ.get("EXCHANGE_PAYOUT_PAYPAL_EMAIL") or paypal.get("email") or "").strip()
+    share = float(paypal.get("share_pct") or 1.0)
+    min_usd = float(cfg.get("min_sweep_usd") or 100)
+    auto_sweep = bool(cfg.get("auto_sweep"))
+    dest = str(cfg.get("destination") or ("paypal" if email else "binance"))
+    paypal_live = os.environ.get("EXCHANGE_PAYOUT_PAYPAL_LIVE", "").strip().lower() in ("1", "true", "yes")
+    sums = _sum_treasury_ledger()
+    mode_ledger = "live" if paypal_live else "paper"
+    pool = sums["ledger_stashed_usd_live"] if mode_ledger == "live" else sums["ledger_stashed_usd_paper"]
+    swept_key = f"swept_total_usd_{mode_ledger}"
+    swept = float(cfg.get(swept_key) or cfg.get("swept_total_usd") or 0)
+    net = round(max(0.0, pool - swept), 4)
+    sweepable = round(net * share, 4) if email else net
+    ready = bool(email and sweepable >= min_usd) if dest == "paypal" else False
+    return {
+        "success": True,
+        "destination": dest,
+        "mode": "live" if paypal_live else "paper",
+        "auto_sweep": auto_sweep,
+        "min_sweep_usd": min_usd,
+        "paypal": {
+            "email": email,
+            "connected": bool(email),
+            "live_enabled": paypal_live,
+        },
+        "paypal_sweepable_usd": sweepable,
+        "ready_to_sweep": ready,
+        "light_snapshot": True,
+    }
+
+
+def _tail_jsonl(path: str, max_lines: int = 2500) -> List[Dict[str, Any]]:
+    if not os.path.isfile(path):
+        return []
+    from collections import deque
+
+    buf: deque = deque(maxlen=max(1, max_lines))
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(row, dict):
+                buf.append(row)
+    return list(buf)
+
+
+def _light_ppp_snapshot(*, hours: float = 24) -> Dict[str, Any]:
+    """Tail PPP ledger only — avoids full profit_path_service import."""
+    from collections import Counter
+    from datetime import timedelta
+
+    rows = _tail_jsonl(_PPP_LEDGER_PATH, 2500)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=float(hours))
+    filtered: List[Dict[str, Any]] = []
+    for row in reversed(rows):
+        ts_raw = str(row.get("ts") or "")
+        try:
+            ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        except Exception:
+            ts = None
+        if ts and ts < cutoff:
+            break
+        filtered.append(row)
+    scans = [r for r in filtered if r.get("phase") == "scan"]
+    attempts = [r for r in filtered if r.get("phase") == "execute"]
+    fills = [
+        r for r in attempts
+        if r.get("decision") in ("fill", "paper", "live") and (r.get("execution") or {}).get("success")
+    ]
+    skip_reasons = Counter(
+        str(r.get("skip_reason") or "unknown")
+        for r in filtered
+        if r.get("decision") == "skip" and r.get("skip_reason")
+    )
+    hit_rate = round(100.0 * len(fills) / len(attempts), 1) if attempts else 0.0
+    net_rows = [r for r in filtered if float(r.get("net_bps") or 0) != 0]
+    avg_net = round(sum(float(r.get("net_bps") or 0) for r in net_rows) / len(net_rows), 2) if net_rows else 0.0
+    return {
+        "success": True,
+        "window_hours": hours,
+        "scan_count": len(scans),
+        "attempt_count": len(attempts),
+        "fill_count": len(fills),
+        "hit_rate_pct": hit_rate,
+        "avg_net_bps": avg_net,
+        "top_skip_reasons": [{"reason": k, "count": v} for k, v in skip_reasons.most_common(8)],
+    }
+
+
 def _critical_snapshot() -> Dict[str, Any]:
-    """Fast critical list from on-disk store (no PPP recompute)."""
+    """Fast critical list from on-disk store (no PPP recompute or heavy imports)."""
     path = os.path.join(ex._DATA_DIR, "profit_critical_top25.json")
     store = ex._read_json(path, {})
     problems = store.get("problems") if isinstance(store.get("problems"), list) else []
@@ -355,11 +504,11 @@ def _critical_snapshot() -> Dict[str, Any]:
             "done_count": len(problems) - open_count,
             "problems": problems,
         }
-    try:
-        from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
-        return critical_problems_top25(refresh=False)
-    except Exception as exc:
-        return {"open_count": 0, "done_count": 0, "problems": [], "error": str(exc)}
+    return {
+        "open_count": int(store.get("open_count") or 0),
+        "done_count": int(store.get("done_count") or 0),
+        "problems": [],
+    }
 
 
 def monitor_status() -> Dict[str, Any]:
@@ -388,40 +537,18 @@ def monitor_status() -> Dict[str, Any]:
     server_state = ex._read_json(_STATE, {})
 
     def _load_payout() -> Dict[str, Any]:
-        from backend.services.exchange_payout_service import payout_status
-        return payout_status(light=True)
+        return _light_payout_snapshot()
 
     def _load_treasury() -> Dict[str, Any]:
-        def _fetch() -> Dict[str, Any]:
-            from backend.services.exchange_treasury_service import treasury_status
-            return treasury_status()
-        return _monitor_cached("treasury", _fetch)
+        return _monitor_cached("treasury", _light_treasury_snapshot)
 
     def _load_ppp() -> Dict[str, Any]:
-        def _fetch() -> Dict[str, Any]:
-            from backend.services.exchange_profit_path_service import profit_path_summary
-            return profit_path_summary(hours=24)
-        return _monitor_cached("ppp_24h", _fetch)
+        return _monitor_cached("ppp_24h", lambda: _light_ppp_snapshot(hours=24))
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {
-            "payout": pool.submit(_load_payout),
-            "treasury": pool.submit(_load_treasury),
-            "ppp": pool.submit(_load_ppp),
-            "critical": pool.submit(_critical_snapshot),
-        }
-        results: Dict[str, Any] = {}
-        for key, fut in futures.items():
-            try:
-                results[key] = fut.result(timeout=_MONITOR_STEP_TIMEOUT_SEC)
-            except FuturesTimeout:
-                results[key] = {"success": False, "error": "timeout"}
-            except Exception as exc:
-                results[key] = {"success": False, "error": str(exc)}
-        payout = results.get("payout") or {}
-        treasury = results.get("treasury") or {}
-        ppp = results.get("ppp") or {}
-        critical = results.get("critical") or {"open_count": 0, "done_count": 0, "problems": []}
+    payout = _load_payout()
+    treasury = _load_treasury()
+    ppp = _load_ppp()
+    critical = _critical_snapshot()
 
     exchange_m = next((r for r in loop_rows if r["loop"] == "exchange"), {})
     fast_m = next((r for r in loop_rows if r["loop"] == "fast"), {})

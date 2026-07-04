@@ -4,7 +4,7 @@
   "live_env_flag": "EXCHANGE_ARBITRAGE_LIVE",
   "request_timeout_sec": 6,
   "price_cache_ttl_sec": 15,
-  "paper_trade_usd": 25,
+  "paper_trade_usd": 75.0,
   "min_margin_bps": 14,
   "transfer_cost_bps": 14,
   "supported_symbols": [
@@ -291,7 +291,7 @@
       "pair_template": "{base}_{quote}",
       "withdrawal_note": "No-KYC altcoin exchange; USDT pairs. API keys at xeggex.com account settings.",
       "live_trading": false,
-      "note": "Excluded from live arb until API 401 resolved (invalid keys or IP whitelist)."
+      "note": "Excluded from live arb (http_401:Not Authorized)."
     }
   ],
   "arbitrage_agents": [
@@ -369,7 +369,7 @@
         "xeggex",
         "internal"
       ],
-      "paper_trade_usd": 10.0,
+      "paper_trade_usd": 400.0,
       "strategy": "internal_vs_external",
       "wallet_label": "arb_internal_wallet"
     },
@@ -471,7 +471,7 @@
         "binance",
         "nonkyc"
       ],
-      "paper_trade_usd": 10.0,
+      "paper_trade_usd": 75.0,
       "wallet_label": "arb_live_dual_wallet"
     },
     {

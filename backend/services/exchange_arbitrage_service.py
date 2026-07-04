@@ -791,6 +791,13 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
     for vid in venue_ids:
         if not vapi.venue_has_credentials(vid):
             continue
+        vrow = next((v for v in (cfg.get("venues") or []) if isinstance(v, dict) and v.get("id") == vid), {})
+        if vrow.get("live_trading") is False:
+            continue
+        if live_enabled():
+            probe = vapi.get_account_balance(vid, dry_run=False)
+            if not probe.get("success"):
+                continue
         bals = vapi.parse_spot_balances(vid, dry_run=False)
         quote = vapi.venue_quote_asset(vid)
         free = float(bals.get(quote) or 0)
@@ -805,12 +812,18 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
         }
 
     amounts = [q["free_quote"] for q in quotes if q["free_quote"] > 0]
-    if not amounts:
-        return {"success": True, "skipped": True, "reason": "no_quote_inventory", "venues": quotes}
+    if len(amounts) < 2:
+        return {
+            "success": True,
+            "skipped": True,
+            "reason": "need_two_funded_venues",
+            "venues": quotes,
+        }
 
+    active = [q for q in quotes if q["free_quote"] > 0]
     avg = sum(amounts) / len(amounts)
-    rich = max(quotes, key=lambda q: q["free_quote"])
-    poor = min(quotes, key=lambda q: q["free_quote"])
+    rich = max(active, key=lambda q: q["free_quote"])
+    poor = min(active, key=lambda q: q["free_quote"])
     ratio = (rich["free_quote"] / poor["free_quote"]) if poor["free_quote"] > 0 else float("inf")
     move_usd = round(max(0.0, rich["free_quote"] - avg), 4)
     rebalance_needed = ratio >= imbalance_ratio and move_usd >= 10.0

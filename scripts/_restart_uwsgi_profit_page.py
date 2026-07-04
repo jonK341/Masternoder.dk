@@ -29,6 +29,9 @@ def main() -> int:
         "backend/services/profit_daemon_monitor_service.py",
         "backend/services/exchange_payout_service.py",
         "backend/services/exchange_profit_agent_skills_service.py",
+        "backend/services/exchange_treasury_service.py",
+        "backend/services/exchange_profit_path_service.py",
+        "backend/middleware/signal_processor_middleware.py",
         "backend/routes/profit_daemon_routes.py",
         "backend/routes/crypto_exchange_routes.py",
         "profit/index.html",
@@ -37,6 +40,7 @@ def main() -> int:
         "exchange/index.html",
         "static/js/exchange-hub.js",
         "static/css/crypto-exchange.css",
+        "data/crypto_exchange/profit_critical_top25.json",
         "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
     ]
@@ -51,8 +55,11 @@ def main() -> int:
 
         print("\n--- restarting uwsgi ---")
         print(sh(ssh, "systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001 2>&1"))
-        time.sleep(4)
+        time.sleep(6)
         print(sh(ssh, "systemctl is-active uwsgi-vidgenerator uwsgi-vidgenerator-5001"))
+
+        print("\n--- warmup (cold worker import) ---")
+        print(sh(ssh, "curl -sS -m 90 -o /dev/null -w 'warmup http=%{http_code} time=%{time_total}' http://127.0.0.1:5000/api/profit-daemon/status"))
 
         checks = [
             ("profit_page", "curl -sS -m 25 -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/profit/"),

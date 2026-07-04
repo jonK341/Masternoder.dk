@@ -2,6 +2,16 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "profit_bf62c4dbfdad",
+      "title": "Cross-trade engine: 7 swaps",
+      "summary": "7-bot cross-trade active \u00b7 arb ?/? \u00b7 best ? bps",
+      "date": "2026-07-04",
+      "category": "profit",
+      "channel": "profit",
+      "href": "/profit/",
+      "featured": false
+    },
+    {
       "id": "casino-tournament-daily_coins-20260701062321-d98ce6",
       "title": "Tournament finished \u2014 Casino tournament",
       "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",

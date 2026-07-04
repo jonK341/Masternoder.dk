@@ -56,11 +56,14 @@ def process_invoke_in_request():
 
 # Paths that never need correction; skip path_corrector (avoids AI path correction / recursion on health checks)
 _SKIP_PATH_CORRECTION = {'/api/health', '/api/version'}
+_SKIP_PATH_CORRECTION_PREFIXES = ('/api/profit-daemon/',)
 
 
 def correct_paths_in_request():
     """Correct paths in incoming requests"""
     if request.path in _SKIP_PATH_CORRECTION:
+        return
+    if any(request.path.startswith(p) for p in _SKIP_PATH_CORRECTION_PREFIXES):
         return
     try:
         from backend.services.path_corrector import path_corrector
@@ -104,6 +107,8 @@ def register_signal_processor_middleware(app):
         if getattr(g, "skip_api_middleware", False):
             return
         if '/api/' not in request.path:
+            return
+        if any(request.path.startswith(p) for p in _SKIP_PATH_CORRECTION_PREFIXES):
             return
         # Discord signs the raw POST body; avoid parsing JSON before the route reads it.
         if request.path == "/api/discord/interactions":

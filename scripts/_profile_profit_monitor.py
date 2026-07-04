@@ -21,12 +21,12 @@ def main() -> int:
     from backend.services import crypto_exchange_service as ex
 
     t("read_hb", lambda: ex._read_json(os.path.join(ROOT, "logs/daemon_all_profit_heartbeat.json"), {}))
+    t("payout_monitor", lambda: __import__(
+        "backend.services.exchange_payout_service", fromlist=["payout_monitor_snapshot"]
+    ).payout_monitor_snapshot())
     t("payout_light", lambda: __import__(
         "backend.services.exchange_payout_service", fromlist=["payout_status"]
     ).payout_status(light=True))
-    t("payout_full", lambda: __import__(
-        "backend.services.exchange_payout_service", fromlist=["payout_status"]
-    ).payout_status(light=False))
     t("treasury", lambda: __import__(
         "backend.services.exchange_treasury_service", fromlist=["treasury_status"]
     ).treasury_status())

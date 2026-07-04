@@ -53,16 +53,17 @@ def _paypal_share_pct(cfg: Dict[str, Any]) -> float:
         return 1.0
 
 
-def _paypal_live_enabled() -> bool:
+def _paypal_live_enabled(*, skip_spork: bool = False) -> bool:
     if os.environ.get("EXCHANGE_PAYOUT_PAYPAL_LIVE", "").strip() not in ("1", "true", "yes"):
         return False
-    try:
-        from backend.services import mn2_spork_service as spork
-        ok, _reason = spork.payout_live_spork_ok()
-        if not ok:
-            return False
-    except Exception:
-        pass
+    if not skip_spork:
+        try:
+            from backend.services import mn2_spork_service as spork
+            ok, _reason = spork.payout_live_spork_ok()
+            if not ok:
+                return False
+        except Exception:
+            pass
     cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
     secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
     return bool(cid and secret and _owner_paypal_email())
@@ -335,7 +336,51 @@ def _daily_withdraw_remaining(cfg: Dict[str, Any]) -> Optional[float]:
     return round(max(0.0, cap_f - used), 8)
 
 
+def payout_monitor_snapshot() -> Dict[str, Any]:
+    """Fast payout fields for profit daemon monitor — no venue RPC or business overview."""
+    cfg = _load()
+    ledger_mode = "live" if _paypal_live_enabled(skip_spork=True) else "paper"
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+        st = treasury_status()
+        pool = float(st.get("ledger_stashed_usd_live") or 0) if ledger_mode == "live" else float(
+            st.get("ledger_stashed_usd_paper") or 0
+        )
+    except Exception:
+        pool = 0.0
+    swept = _swept_total_for_mode(cfg, ledger_mode)
+    net = round(max(0.0, pool - swept), 4)
+    paypal_email = _owner_paypal_email(cfg)
+    share = _paypal_share_pct(cfg)
+    sweepable = round(net * share, 4) if paypal_email else net
+    dest = str(cfg.get("destination") or ("paypal" if paypal_email else "binance"))
+    min_usd = _min_sweep_usd(cfg)
+    paypal_live = _paypal_live_enabled(skip_spork=True)
+    pay_mode = "live" if (paypal_live if dest == "paypal" else False) else "paper"
+    return {
+        "success": True,
+        "destination": dest,
+        "mode": pay_mode,
+        "auto_sweep": bool(cfg.get("auto_sweep")),
+        "min_sweep_usd": min_usd,
+        "paypal": {
+            "email": paypal_email,
+            "connected": bool(paypal_email),
+            "share_pct": round(share * 100, 2),
+            "live_enabled": paypal_live,
+        },
+        "sweep_ledger_mode": ledger_mode,
+        "sweep_pool_usd": round(pool, 4),
+        "net_unswept_usd": net,
+        "paypal_sweepable_usd": sweepable,
+        "ready_to_sweep": bool(paypal_email and sweepable >= min_usd),
+    }
+
+
 def payout_status(*, light: bool = False) -> Dict[str, Any]:
+    if light:
+        return payout_monitor_snapshot()
+
     from backend.services import exchange_secrets_vault_service as vault
 
     cfg = _load()
