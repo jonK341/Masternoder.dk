@@ -116,3 +116,93 @@ def apply_mn2_grants_for_purchase(
         )
     except Exception as ex:
         return {"success": False, "error": str(ex), "mn2_granted": 0.0}
+
+
+_SHOP_FULFILLMENT_TYPES = frozenset({
+    "shop_purchase",
+    "shop_paypal_capture",
+    "shop_mn2_purchase",
+    "shop_monetization",
+    "content_bundle",
+    "digital_good",
+    "mn2_pack",
+})
+
+
+def fulfillment_status_for_user(
+    user_id: str,
+    *,
+    reference: Optional[str] = None,
+    limit: int = 25,
+) -> Dict[str, Any]:
+    """Recent MN2 shop fulfillment rows + balance snapshot for UI status panels."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required"}
+
+    lim = max(1, min(int(limit or 25), 100))
+    ref_filter = (reference or "").strip() or None
+
+    try:
+        from backend.services.mn2_ledger import get_entries_by_user
+
+        raw = get_entries_by_user(uid, limit=lim * 4)
+    except Exception:
+        raw = []
+
+    fulfillments: list = []
+    for row in raw:
+        if not isinstance(row, dict):
+            continue
+        etype = str(row.get("type") or "")
+        meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        txid = str(row.get("txid") or "")
+        if ref_filter and txid != ref_filter and ref_filter not in txid:
+            continue
+        is_shop = (
+            etype in _SHOP_FULFILLMENT_TYPES
+            or "shop" in etype.lower()
+            or str(meta.get("purchase_source") or "").startswith("shop")
+            or str(meta.get("source") or "").startswith("shop")
+        )
+        if not is_shop and not ref_filter:
+            continue
+        if ref_filter and not is_shop and txid != ref_filter:
+            continue
+        fulfillments.append({
+            "reference": txid or None,
+            "item_id": meta.get("item_id"),
+            "item_name": meta.get("item_name"),
+            "amount_mn2": round(float(row.get("amount") or 0), 8),
+            "source": etype,
+            "purchase_source": meta.get("purchase_source") or meta.get("source"),
+            "quantity": meta.get("quantity"),
+            "status": "credited",
+            "created_at": row.get("created_at"),
+        })
+        if len(fulfillments) >= lim:
+            break
+
+    mn2_balance = 0.0
+    try:
+        from backend.services.unified_points_database import unified_points_db
+
+        pts = unified_points_db.get_all_points(uid)
+        p = pts.get("points") if isinstance(pts.get("points"), dict) else {}
+        mn2_balance = float(p.get("mn2_balance") or 0)
+    except Exception:
+        pass
+
+    pending_ref = ref_filter
+    pending = bool(pending_ref and not fulfillments)
+
+    return {
+        "success": True,
+        "user_id": uid,
+        "mn2_balance": round(mn2_balance, 8),
+        "fulfillment_count": len(fulfillments),
+        "fulfillments": fulfillments,
+        "reference": pending_ref,
+        "pending": pending,
+        "status": "pending" if pending else ("ok" if fulfillments else "none"),
+    }

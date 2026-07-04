@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
     <style>
         .shop-page {
             min-height: 100vh;
@@ -527,6 +528,9 @@
             <p class="subtitle">Themes, boosters, cosmetics — <strong style="color: var(--text-primary); font-weight: 600;">one catalog</strong>, your choice of <strong style="color: var(--secondary); font-weight: 600;">coins, unified points, PayPal packs, or MN2</strong></p>
             <p id="shop-service-status" style="text-align:center;font-size:0.9rem;color:var(--text-secondary);margin-top:8px;" aria-live="polite">Loading catalog…</p>
         </header>
+
+        <div data-platform-area="shop" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
 
         <div class="shop-account-bar">
             <div>
@@ -3648,6 +3652,7 @@
         </div>
     </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

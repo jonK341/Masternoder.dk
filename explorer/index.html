@@ -19,11 +19,15 @@
 
     <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
 
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
+
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260704">
 
 </head>
 
-<body class="layout-standard mn2-crypto-hub" data-page-length="unlimited">
+<body class="layout-standard mn2-crypto-hub hub-ux-page" data-page-length="unlimited" data-hub-page="explorer">
 
     <div class="bg-animated"></div>
 
@@ -58,6 +62,9 @@
         </nav>
 
         <div id="mn2-route-note" class="mn2-route-note">Viewing: Explorer overview. Switch tabs above to browse the MN2 crypto hub.</div>
+
+        <div data-platform-area="explorer" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
 
 
 
@@ -552,6 +559,8 @@
 
     <script src="/static/js/mn2-p2p.js?v=20260614d" defer></script>
     <script src="/static/js/mn2-internal-market.js?v=20260617" defer></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
+    <script src="/static/js/hub-pages-ux.js?v=20260704" defer></script>
 
 </body>
 

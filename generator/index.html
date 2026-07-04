@@ -168,6 +168,7 @@
         .gen-crypto-hint { font-size: 0.82rem; color: rgba(0,212,255,0.85); margin-top: 8px; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
 </head>
 <body class="gen-page-body">
 
@@ -177,6 +178,9 @@
             <p>Opret videoer og klip med kunstig intelligens · Mission control · Video: <code style="font-size:0.8em;opacity:0.85;">POST /api/generator/create</code></p>
             <!-- Main nav is the shared navigation toolbar (navigation-toolbar.js) — same as profile/home -->
         </header>
+
+        <div data-platform-area="generator" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
 
         <section class="gen-stats-strip" id="genStatsStrip" aria-live="polite">
             <div class="gen-stat-pill"><span>Videos</span><strong id="genStatVideos">—</strong></div>
@@ -1611,6 +1615,7 @@
         });
     </script>
     <script src="/static/js/navigation-toolbar.js?v=20260304" defer></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="generator" defer></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
 

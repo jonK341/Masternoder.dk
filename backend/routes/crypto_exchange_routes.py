@@ -346,16 +346,61 @@ def exchange_treasury_status():
 
 @crypto_exchange_bp.route("/api/exchange/treasury/stash", methods=["GET"])
 def exchange_treasury_stash():
-    from backend.services.exchange_treasury_service import treasury_status
-    st = treasury_status()
+    from backend.services.exchange_treasury_service import treasury_status, treasury_monitor_snapshot
+
+    mode = (request.args.get("mode") or "").strip() or None
+    include_recent = (request.args.get("recent") or "1").strip().lower() not in ("0", "false", "no")
+    recent_limit = max(1, min(int(request.args.get("recent_limit") or 8), 50))
+    st = treasury_status(mode=mode)
+    snap = treasury_monitor_snapshot()
+
+    recent: list = []
+    if include_recent:
+        ledger_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "data", "crypto_exchange", "treasury_stash_ledger.jsonl",
+        )
+        if os.path.isfile(ledger_path):
+            try:
+                with open(ledger_path, encoding="utf-8") as fh:
+                    lines = [ln.strip() for ln in fh.readlines() if ln.strip()]
+                import json as _json
+                for raw in reversed(lines[-recent_limit * 3:]):
+                    try:
+                        row = _json.loads(raw)
+                    except Exception:
+                        continue
+                    if mode and str(row.get("mode") or "paper").lower() != mode.lower():
+                        continue
+                    recent.append({
+                        "ts": row.get("ts"),
+                        "amount_usd": row.get("amount_usd"),
+                        "source": row.get("source"),
+                        "agent_id": row.get("agent_id"),
+                        "mode": row.get("mode"),
+                        "credited": row.get("credited"),
+                    })
+                    if len(recent) >= recent_limit:
+                        break
+            except Exception:
+                pass
+
     return jsonify({
         "success": True,
+        "mode_filter": mode,
         "live_stash_usd": st.get("live_stash_usd", st.get("ledger_stashed_usd_live")),
         "paper_stash_usd": st.get("ledger_stashed_usd_paper"),
         "total_stash_usd": st.get("ledger_stashed_usd"),
         "ledger_entries": st.get("ledger_entries"),
         "treasury_user_id": st.get("treasury_user_id"),
         "mn2_balance": st.get("mn2_balance"),
+        "coins": st.get("coins"),
+        "stash_quote": st.get("stash_quote"),
+        "auto_stash_on_trade": st.get("auto_stash_on_trade"),
+        "enabled": st.get("enabled"),
+        "exchange_asset_count": len(st.get("exchange_assets") or {}),
+        "monitor": snap,
+        "recent_stashes": recent,
     })
 
 
@@ -827,9 +872,41 @@ def exchange_monitor_live():
     try:
         from backend.services.exchange_trading_monitor_service import live_monitor
 
-        return jsonify(live_monitor(_uid(), feed_limit=int(request.args.get("limit") or 40)))
+        payload = live_monitor(_uid(), feed_limit=int(request.args.get("limit") or 40))
+        include_metrics = (request.args.get("include_metrics") or request.args.get("metrics") or "").strip().lower()
+        if include_metrics in ("1", "true", "yes", "on"):
+            try:
+                from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot
+                payload["daemon_metrics"] = daemon_metrics_snapshot()
+            except Exception as exc:
+                payload["daemon_metrics"] = {"success": False, "error": str(exc)[:200]}
+        return jsonify(payload)
     except Exception as exc:
         return jsonify({"success": False, "error": "monitor_unavailable", "message": str(exc)[:200]}), 500
+
+
+@crypto_exchange_bp.route("/api/exchange/monitor/metrics", methods=["GET"])
+def exchange_monitor_metrics():
+    """Passthrough profit-daemon metrics for exchange hub dashboards."""
+    try:
+        from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot
+        from backend.services.exchange_treasury_service import treasury_monitor_snapshot
+
+        out = daemon_metrics_snapshot()
+        out["treasury_snapshot"] = treasury_monitor_snapshot()
+        return jsonify(out)
+    except Exception as exc:
+        return jsonify({"success": False, "error": "metrics_unavailable", "message": str(exc)[:200]}), 500
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-pair-search", methods=["GET"])
+def exchange_profit_pair_search():
+    """UI-ready profit pair search index (optional refresh)."""
+    from backend.services.exchange_profit_pair_search_service import ui_payload
+
+    refresh = (request.args.get("refresh") or "").strip().lower() in ("1", "true", "yes", "on")
+    limit = int(request.args.get("limit") or 12)
+    return jsonify(ui_payload(refresh=refresh, limit=limit))
 
 
 @crypto_exchange_bp.route("/api/exchange/trust/me", methods=["GET"])

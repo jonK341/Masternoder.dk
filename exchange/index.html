@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
     <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -51,6 +52,9 @@
             <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
         </nav>
         <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+
+        <div data-platform-area="exchange" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
 
         <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
         <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
@@ -515,5 +519,6 @@
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
     <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
 </body>
 </html>

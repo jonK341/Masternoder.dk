@@ -389,6 +389,26 @@ def casino_responsible_gaming_status():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/rg/status", methods=["GET"])
+def casino_rg_status():
+    """Short alias for responsible-gaming status (multi-currency via ?currency=)."""
+    try:
+        from backend.services.casino_responsible_gaming import status_for_user
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        currency = _currency_from_query()
+        payload = status_for_user(user_id, currency)
+        payload["endpoint"] = "/api/casino/rg/status"
+        all_currencies = (request.args.get("all_currencies") or "").strip().lower() in ("1", "true", "yes")
+        if all_currencies:
+            payload["by_currency"] = {
+                cur: status_for_user(user_id, cur)
+                for cur in ("coins", "mn2", "usd")
+            }
+        return jsonify(payload), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/revenue/reconcile", methods=["GET"])
 def casino_revenue_reconcile():
     try:
@@ -1448,6 +1468,18 @@ def casino_agents_spectate():
         import backend.services.casino_agents_service as agents
         limit = request.args.get("limit", 20, type=int)
         return jsonify(agents.get_spectator_feed(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/agents/tick-summary", methods=["GET"])
+def casino_agents_tick_summary():
+    """Aggregate agent tick stats for casino cockpit status panels."""
+    try:
+        import backend.services.casino_agents_service as agents
+        hours = float(request.args.get("hours") or 24)
+        limit = request.args.get("limit", 200, type=int)
+        return jsonify(agents.tick_summary(hours=hours, limit=limit)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

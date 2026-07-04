@@ -26,13 +26,18 @@
         #cc-agent-status { font-size:0.85rem; opacity:0.85; min-height:1.2em; }
     </style>
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260704">
 </head>
-<body>
+<body class="hub-ux-page" data-hub-page="command-center">
     <div class="cc-page">
         <div class="cc-header">
             <h1>Command Center</h1>
             <p style="opacity:0.75;">Battle · Trophies · Game · Quests · Podcast · Social — one hub with MN2 rewards</p>
         </div>
+        <div data-platform-area="command-center" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
         <nav class="cc-hub-nav" id="cc-hub-nav" role="tablist">
             <button type="button" class="cc-tab active" data-cc-tab="overview">Overview</button>
             <button type="button" class="cc-tab" data-cc-tab="battle">Battle</button>
@@ -78,6 +83,8 @@
     </div>
     <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="command-center"></script>
-    <script src="/static/js/command-center-hub.js?v=20260621"></script>
+    <script src="/static/js/hub-pages-ux.js?v=20260704"></script>
+    <script src="/static/js/command-center-hub.js?v=20260704"></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
 </body>
 </html>

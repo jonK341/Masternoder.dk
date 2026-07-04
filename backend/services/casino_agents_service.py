@@ -314,3 +314,93 @@ def get_spectator_feed(limit: int = 20) -> Dict[str, Any]:
             ev["spectator_line"] = f"Watching {ev.get('agent_name', aid)} on {game}" + (f" for {bet} coins" if bet else "")
 
     return {"success": True, "events": events[:limit], "count": min(len(events), limit)}
+
+
+def tick_summary(*, hours: float = 24.0, limit: int = 200) -> Dict[str, Any]:
+    """Aggregate casino agent tick stats for cockpit / status APIs."""
+    from datetime import datetime, timedelta, timezone
+
+    window_h = max(0.5, min(float(hours or 24), 168))
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_h)
+    lim = max(10, min(int(limit or 200), 2000))
+
+    events: List[Dict[str, Any]] = []
+    path = _spectator_log_path()
+    if os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            for raw in reversed(lines):
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    row = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                ts = row.get("ts")
+                if ts:
+                    try:
+                        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                        if dt < cutoff:
+                            break
+                    except Exception:
+                        pass
+                events.append(row)
+                if len(events) >= lim:
+                    break
+        except OSError:
+            pass
+
+    total_ticks = len(events)
+    wins = sum(1 for e in events if float(e.get("net") or 0) > 0)
+    losses = sum(1 for e in events if float(e.get("net") or 0) < 0)
+    total_net = round(sum(float(e.get("net") or 0) for e in events), 4)
+    dry_runs = sum(1 for e in events if e.get("dry_run"))
+
+    by_agent: Dict[str, Dict[str, Any]] = {}
+    by_game: Dict[str, int] = {}
+    for e in events:
+        aid = str(e.get("agent_id") or "unknown")
+        ag = by_agent.setdefault(aid, {
+            "agent_id": aid,
+            "agent_name": e.get("agent_name") or aid,
+            "ticks": 0,
+            "wins": 0,
+            "losses": 0,
+            "net": 0.0,
+            "last_ts": e.get("ts"),
+        })
+        ag["ticks"] += 1
+        net = float(e.get("net") or 0)
+        ag["net"] = round(float(ag["net"]) + net, 4)
+        if net > 0:
+            ag["wins"] += 1
+        elif net < 0:
+            ag["losses"] += 1
+        game = str(e.get("game") or "unknown")
+        by_game[game] = by_game.get(game, 0) + 1
+
+    agents_cfg = _load_json(_AGENTS_FILE)
+    enabled_count = sum(
+        1 for row in agents_cfg.values()
+        if isinstance(row, dict) and row.get("enabled", True)
+    )
+
+    return {
+        "success": True,
+        "window_hours": window_h,
+        "total_ticks": total_ticks,
+        "wins": wins,
+        "losses": losses,
+        "dry_runs": dry_runs,
+        "total_net": total_net,
+        "win_rate_pct": round((wins / total_ticks) * 100, 1) if total_ticks else 0.0,
+        "agents_enabled": enabled_count,
+        "agents_active": len(by_agent),
+        "by_agent": sorted(by_agent.values(), key=lambda r: r["ticks"], reverse=True)[:20],
+        "by_game": by_game,
+        "last_tick_at": events[0].get("ts") if events else None,
+    }

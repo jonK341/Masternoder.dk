@@ -141,9 +141,15 @@
           label.textContent =
             'Battles: ' + wins + ' wins · Generator jobs: ' + genJobs + ' · MN2: ' + mn2.toFixed(4);
         }
+        try {
+          window.dispatchEvent(new CustomEvent('hub-ux-data-ready', { detail: { status: 'ok', page: 'command-center' } }));
+        } catch (e) { /* ignore */ }
       })
       .catch(function () {
         if (label) label.textContent = 'Power data unavailable — links still work.';
+        try {
+          window.dispatchEvent(new CustomEvent('hub-ux-data-ready', { detail: { status: 'warn', page: 'command-center' } }));
+        } catch (e2) { /* ignore */ }
       });
   }
 
@@ -184,7 +190,17 @@
         ' · P/L: $' + Number(profit.estimated_total_pnl_usd || 0).toFixed(2) +
         ' · gateway pending: ' + Number(gateway.pending_count || 0);
     }).catch(function () {
-      el.textContent = 'Exchange monitor unavailable.';
+      el.innerHTML = (window.HubPagesUX && window.HubPagesUX.emptyStateHtml)
+        ? window.HubPagesUX.emptyStateHtml({
+            icon: '💱',
+            title: 'Exchange monitor offline',
+            desc: 'API unreachable — open Exchange directly.',
+            actions: [
+              { href: '/exchange/', label: 'Open Exchange' },
+              { href: '/profit/', label: 'Profit Daemon', secondary: true }
+            ]
+          })
+        : 'Exchange monitor unavailable.';
     });
   }
 
@@ -202,17 +218,30 @@
       });
   }
 
+  function refreshAll() {
+    loadPowerMonitor();
+    loadAgents();
+    loadExchangeMonitor();
+    loadCasinoMonitor();
+    try {
+      window.dispatchEvent(new CustomEvent('hub-ux-data-ready', { detail: { status: 'ok', page: 'command-center' } }));
+    } catch (e) { /* ignore */ }
+    return Promise.resolve();
+  }
+
   function init() {
     Object.keys(LINKS).forEach(function (k) {
       renderGrid('cc-' + k + '-grid', LINKS[k]);
     });
     renderGrid('cc-overview-grid', LINKS.overview);
     initTabs();
-    loadPowerMonitor();
-    loadAgents();
-    loadExchangeMonitor();
-    loadCasinoMonitor();
+    refreshAll();
+    window.addEventListener('hub-ux-refresh', function (ev) {
+      if (ev.detail && ev.detail.page === 'command-center') refreshAll();
+    });
   }
+
+  global.CommandCenterHub = { refreshAll: refreshAll };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

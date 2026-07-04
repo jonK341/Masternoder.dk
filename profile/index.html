@@ -20,6 +20,8 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/sync-status-widget.css?v=20260304">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260704">
     <style>
         .profile-page {
             min-height: 100vh;
@@ -738,10 +740,13 @@
         .mn2-5d-net { font-size: 0.62rem; color: #00d4ff; font-family: ui-monospace, monospace; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
 </head>
-<body class="layout-standard">
+<body class="layout-standard hub-ux-page" data-hub-page="profile">
     <div class="profile-page">
         <div class="profile-container">
+            <div data-platform-area="profile" id="platform-upgrade-mount"></div>
+            <div id="platform-area-widget"></div>
             <!-- Account & Login first so it works even when profile is loading -->
             <div class="section-card account-card-top" id="profile-section-account" data-profile-route="overview account" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account &amp; Login</h2>
@@ -1667,6 +1672,7 @@
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
     <script src="/static/js/user-identification.js?v=20260122020000"></script>
     <script src="/static/js/backend-connector.js?v=20260122020000"></script>
     <!-- Core Template System Scripts -->
@@ -4222,5 +4228,6 @@
     })();
     </script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="profile" defer></script>
+    <script src="/static/js/hub-pages-ux.js?v=20260704" defer></script>
 </body>
 </html>

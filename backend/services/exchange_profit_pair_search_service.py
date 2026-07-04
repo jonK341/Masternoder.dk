@@ -574,3 +574,67 @@ def resolve_agent_symbols(
     if hot:
         return hot
     return agent_symbols
+
+
+def _hit_to_tile(row: Dict[str, Any]) -> Dict[str, Any]:
+    buy_v = str(row.get("buy_venue") or "?")
+    sell_v = str(row.get("sell_venue") or "?")
+    return {
+        "symbol": str(row.get("symbol") or "").upper(),
+        "route": f"{buy_v}→{sell_v}",
+        "buy_venue": buy_v,
+        "sell_venue": sell_v,
+        "search_score": round(float(row.get("search_score") or 0), 2),
+        "avg_net_bps": round(float(row.get("avg_net_bps") or 0), 2),
+        "hit_rate_pct": round(float(row.get("hit_rate_pct") or 0), 1),
+        "live_score": round(float(row.get("live_score") or 0), 2),
+        "est_profit_usd": round(float(row.get("est_profit_usd") or 0), 4),
+        "fill_count": int(row.get("fill_count") or 0),
+        "sources": list(row.get("sources") or []),
+        "triangular": bool(row.get("triangular")),
+        "execution_eligible": _execution_eligible_route(buy_v, sell_v),
+    }
+
+
+def ui_payload(*, refresh: bool = False, limit: int = 12) -> Dict[str, Any]:
+    """Compact payload for exchange hub profit-pair-search tile."""
+    cfg = search_config()
+    n = max(1, min(int(limit or cfg.get("top_n") or 12), 50))
+    en = enabled()
+
+    if refresh and en:
+        search = run_profit_pair_search(top_n=n)
+    else:
+        idx = read_index()
+        hits = idx.get("hits") or []
+        search = {
+            "success": True,
+            "enabled": en,
+            "updated_at": idx.get("updated_at"),
+            "hot_symbols": idx.get("hot_symbols") or get_hot_symbols(limit=n),
+            "hits": hits[:n],
+            "hit_count": len(hits),
+            "catalog_symbol_count": idx.get("catalog_symbol_count"),
+            "ledger_route_count": idx.get("ledger_route_count"),
+            "live_hit_count": idx.get("live_hit_count"),
+        }
+
+    hits = search.get("hits") or []
+    tiles = [_hit_to_tile(h) for h in hits if isinstance(h, dict)][:n]
+    return {
+        "success": True,
+        "enabled": en,
+        "refreshed": bool(refresh and en),
+        "updated_at": search.get("updated_at") or read_index().get("updated_at"),
+        "top_n": n,
+        "hot_symbols": search.get("hot_symbols") or [],
+        "hit_count": search.get("hit_count") or len(hits),
+        "tiles": tiles,
+        "catalog_symbol_count": search.get("catalog_symbol_count"),
+        "ledger_route_count": search.get("ledger_route_count"),
+        "live_hit_count": search.get("live_hit_count"),
+        "config": {
+            "catalog_venues": cfg.get("catalog_venues") or [],
+            "min_live_net_bps": cfg.get("min_live_net_bps"),
+        },
+    }

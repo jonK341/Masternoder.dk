@@ -23,8 +23,11 @@
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260704">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260704">
 </head>
-<body>
+<body class="hub-ux-page" data-hub-page="game">
 
     <!-- Top 50 Monetization Frame -->
     <div id="top50-monetization-frame-container">
@@ -61,6 +64,9 @@
             <p class="manifesto">Built to set a new standard: no grind pressure, no FOMO. Every tab is a way to play your way—trophies, quests, Star Map 25, and more.</p>
             <span class="hunter-game-badge">Industry-leading design</span>
         </header>
+
+        <div data-platform-area="game" id="platform-upgrade-mount"></div>
+        <div id="platform-area-widget"></div>
 
         <section id="game-at-a-glance" style="max-width:1200px;margin:0 auto 20px;padding:16px 20px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,255,136,0.28);border-radius:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:center;">
             <div style="grid-column:span 1;">
@@ -5055,6 +5061,7 @@
     <script src="/static/js/hunter-nexus-campaign.js?v=20260412"></script>
     <script src="/static/js/progression-display.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/platform-upgrades.js?v=20260704" defer></script>
     <script src="/static/js/cooldown-timer.js?v=1"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -5688,5 +5695,6 @@
     });
     </script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="game" defer></script>
+    <script src="/static/js/hub-pages-ux.js?v=20260704" defer></script>
 </body>
 </html>

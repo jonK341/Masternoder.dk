@@ -140,6 +140,9 @@
     renderDaemon(d.daemon);
 
     q('ex-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    try {
+      window.dispatchEvent(new CustomEvent('hub-ux-data-ready', { detail: { status: 'ok', page: 'explorer' } }));
+    } catch (e) { /* ignore */ }
   }
 
   function fmtBytes(n) {
@@ -416,6 +419,14 @@
   }
 
   initSearch();
+  window.__exRefresh = function () {
+    refresh();
+    loadSparklines();
+    loadBlocks();
+    loadMasternodes();
+    loadMonitor();
+  };
+  document.addEventListener('mn2-explorer-refresh', window.__exRefresh);
   refresh();
   loadSparklines();
   loadBlocks();
@@ -427,5 +438,7 @@
   setInterval(loadSparklines, 300000);
   setInterval(loadBlocks, 30000);
   setInterval(loadMasternodes, 60000);
+
+  window.Mn2ExplorerOverview = { refresh: refresh };
   setInterval(loadMonitor, 120000);
 })();

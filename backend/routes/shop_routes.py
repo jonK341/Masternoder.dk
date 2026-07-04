@@ -1418,6 +1418,20 @@ def get_mn2_packs_route():
     return jsonify({'success': True, 'mn2_packs': get_mn2_packs()}), 200
 
 
+@shop_bp.route('/api/shop/mn2/fulfillment/status', methods=['GET'])
+def shop_mn2_fulfillment_status():
+    """MN2 credit status after shop purchase (ledger-backed, idempotent refs)."""
+    try:
+        from backend.services.shop_mn2_fulfillment_service import fulfillment_status_for_user
+
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        reference = request.args.get('reference') or request.args.get('purchase_ref')
+        limit = int(request.args.get('limit') or 25)
+        return jsonify(fulfillment_status_for_user(user_id, reference=reference, limit=limit)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/paypal-items', methods=['GET'])
 def get_paypal_shop_items():
     """Get shop items that can be purchased directly with PayPal (price_usd)."""
@@ -1496,16 +1510,77 @@ def download_digital_good(item_id):
 
 
 @shop_bp.route('/api/game/shop/items', methods=['GET'])
+@shop_bp.route('/api/shop/items', methods=['GET'])
 def game_shop_items():
-    """Get shop items (optionally filtered by category)."""
+    """Get shop items (optionally filtered by category, tag, rail, search, price)."""
     try:
-        category = (request.args.get('category') or '').strip().lower()
-        items = _get_shop_items()
-        if category:
-            items = [i for i in items if (i.get('category') or '').lower() == category]
-        return jsonify({'success': True, 'items': items}), 200
+        items = _filter_shop_catalog_items(_get_shop_items(), request.args)
+        return jsonify({
+            'success': True,
+            'items': items,
+            'count': len(items),
+            'filters_applied': _shop_catalog_filter_summary(request.args),
+        }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'items': []}), 500
+
+
+def _shop_catalog_filter_summary(args) -> dict:
+    """Echo active catalog query params for client debugging."""
+    keys = ('category', 'tag', 'payment_rail', 'rail', 'q', 'search', 'min_price', 'max_price', 'mn2_only')
+    out = {}
+    for k in keys:
+        v = args.get(k)
+        if v is not None and str(v).strip() != '':
+            out[k] = str(v).strip()
+    return out
+
+
+def _filter_shop_catalog_items(items, args) -> list:
+    """Apply optional catalog filters from query params."""
+    category = (args.get('category') or '').strip().lower()
+    tag = (args.get('tag') or '').strip().lower()
+    rail = (args.get('payment_rail') or args.get('rail') or '').strip().lower()
+    q = (args.get('q') or args.get('search') or '').strip().lower()
+    mn2_only = (args.get('mn2_only') or '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+    min_price_raw = args.get('min_price') if args.get('min_price') is not None else args.get('min_coins')
+    max_price_raw = args.get('max_price') if args.get('max_price') is not None else args.get('max_coins')
+    min_price = float(min_price_raw) if min_price_raw not in (None, '') else None
+    max_price = float(max_price_raw) if max_price_raw not in (None, '') else None
+
+    filtered = list(items or [])
+    if category:
+        filtered = [i for i in filtered if (i.get('category') or '').lower() == category]
+    if tag:
+        filtered = [
+            i for i in filtered
+            if tag in [str(t).lower() for t in (i.get('tags') or [])]
+        ]
+    if rail:
+        filtered = [
+            i for i in filtered
+            if rail in [str(r).lower() for r in (i.get('payment_rails') or i.get('rails') or [])]
+        ]
+    if mn2_only:
+        filtered = [
+            i for i in filtered
+            if float(i.get('mn2_granted') or 0) > 0
+            or 'mn2' in [str(r).lower() for r in (i.get('payment_rails') or i.get('rails') or [])]
+            or (i.get('category') or '').lower() == 'mn2_crypto'
+        ]
+    if q:
+        filtered = [
+            i for i in filtered
+            if q in str(i.get('name') or '').lower()
+            or q in str(i.get('id') or '').lower()
+            or q in str(i.get('description') or '').lower()
+        ]
+    if min_price is not None:
+        filtered = [i for i in filtered if float(i.get('price') or 0) >= min_price]
+    if max_price is not None:
+        filtered = [i for i in filtered if float(i.get('price') or 0) <= max_price]
+    return filtered
 
 
 def _get_shop_items():
@@ -1582,7 +1657,7 @@ def _super_stack_bundle_entries():
 def shop_v3_items():
     """Shop-v3: items, artifacts, boosters, category_counts (for overview), etc. (unified format)."""
     try:
-        all_items = _get_shop_items()
+        all_items = _filter_shop_catalog_items(_get_shop_items(), request.args)
         digital_goods_items = [i for i in (all_items or []) if i.get('category') == 'digital_goods']
         bundle_items = [i for i in (all_items or []) if i.get('category') == 'bundles']
         categories = {}
@@ -1592,6 +1667,8 @@ def shop_v3_items():
         return jsonify({
             'success': True,
             'items': all_items,
+            'count': len(all_items or []),
+            'filters_applied': _shop_catalog_filter_summary(request.args),
             'category_counts': categories,
             'artifacts': digital_goods_items,
             'knowledge_items': digital_goods_items,
