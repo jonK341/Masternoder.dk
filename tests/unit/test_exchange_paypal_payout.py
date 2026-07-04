@@ -16,8 +16,8 @@ def payout_env(tmp_path, monkeypatch):
     monkeypatch.setenv("EXCHANGE_PAYOUT_PAYPAL_EMAIL", "owner@test.com")
     monkeypatch.setenv("EXCHANGE_PAYOUT_PAYPAL_SHARE_PCT", "50")
     monkeypatch.delenv("EXCHANGE_PAYOUT_PAYPAL_LIVE", raising=False)
-    monkeypatch.setattr(pay, "_realized_total_usd", lambda: 100.0)
-    monkeypatch.setattr(pay, "_treasury_stashed_usd", lambda: 80.0)
+    monkeypatch.delenv("EXCHANGE_AUTO_PAYPAL_SWEEP", raising=False)
+    monkeypatch.setattr(pay, "_treasury_stashed_usd_by_mode", lambda mode: 100.0)
     return pay
 
 
@@ -52,3 +52,61 @@ def test_execute_paper_sweep(payout_env, monkeypatch):
     assert out["live"] is False
     st = pay.payout_status()
     assert st["swept_total_usd"] == 100.0
+    assert st["sweep_ledger_mode"] == "paper"
+    assert st["sweep_pool_usd"] == 100.0
+
+
+def test_sweep_pool_uses_live_ledger_when_live(payout_env, monkeypatch):
+    pay = payout_env
+    monkeypatch.setenv("EXCHANGE_PAYOUT_PAYPAL_LIVE", "1")
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "test-client")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "test-secret")
+    monkeypatch.setattr(pay, "_paypal_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        pay,
+        "_treasury_stashed_usd_by_mode",
+        lambda mode: 12.0 if mode == "live" else 999999.0,
+    )
+    pay.configure_paypal("owner@test.com", share_pct=1.0)
+    st = pay.payout_status()
+    assert st["sweep_ledger_mode"] == "live"
+    assert st["sweep_pool_usd"] == 12.0
+    assert st["net_unswept_usd"] == 12.0
+
+
+def test_live_gate_selects_live_path(payout_env, monkeypatch):
+    pay = payout_env
+    monkeypatch.setenv("EXCHANGE_PAYOUT_PAYPAL_LIVE", "1")
+    monkeypatch.setenv("EXCHANGE_AUTO_PAYPAL_SWEEP", "1")
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "test-client")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "test-secret")
+    monkeypatch.setattr(pay, "_paypal_live_enabled", lambda: True)
+    monkeypatch.setattr(pay, "_treasury_stashed_usd_by_mode", lambda mode: 200.0 if mode == "live" else 0.0)
+
+    def fake_payout(email, amount, note=""):
+        return {"success": True, "payout_batch_id": "BATCH-TEST-1"}
+
+    monkeypatch.setattr("backend.services.paypal_service.create_payout", fake_payout)
+    pay.configure_paypal("owner@test.com", share_pct=1.0)
+    plan = pay.plan_sweep(min_sweep_usd=5.0)
+    assert plan["mode"] == "live"
+    assert plan["actionable"] is True
+    out = pay.execute_sweep(min_sweep_usd=5.0)
+    assert out["success"] is True
+    assert out["live"] is True
+    assert out["swept"]["mode"] == "live"
+    assert out["swept"]["payout_batch_id"] == "BATCH-TEST-1"
+
+
+def test_without_live_env_stays_paper(payout_env, monkeypatch):
+    pay = payout_env
+    monkeypatch.delenv("EXCHANGE_PAYOUT_PAYPAL_LIVE", raising=False)
+    monkeypatch.setattr(pay, "_treasury_stashed_usd_by_mode", lambda mode: 200.0 if mode == "live" else 100.0)
+    pay.configure_paypal("owner@test.com", share_pct=1.0)
+    plan = pay.plan_sweep(min_sweep_usd=5.0)
+    assert plan["mode"] == "paper"
+    assert plan["sweep_ledger_mode"] == "paper"
+    out = pay.execute_sweep(min_sweep_usd=5.0)
+    assert out["live"] is False
+    assert out["swept"]["mode"] == "paper"
+    assert out["swept"].get("payout_batch_id") is None

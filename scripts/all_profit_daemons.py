@@ -141,6 +141,28 @@ def _best_arb_bps(arb: Dict[str, Any]) -> Optional[float]:
     return best
 
 
+def _classify_ai_skip(ai: Dict[str, Any]) -> Optional[str]:
+    """Classify why AI trader did not execute for daemon heartbeat."""
+    if ai.get("executed"):
+        return None
+    skip = ai.get("skip_reason")
+    if skip in ("no_signal", "below_threshold", "no_creds"):
+        return str(skip)
+    action = ai.get("action") if isinstance(ai.get("action"), dict) else {}
+    nested = str(action.get("skip_reason") or "")
+    if nested in ("no_signal", "below_threshold", "no_creds"):
+        return nested
+    reason = str(action.get("reason") or "")
+    if reason == "no_actionable_ai_signal":
+        best = action.get("best") if isinstance(action.get("best"), dict) else {}
+        if float(best.get("net_bps") or 0) > 0:
+            return "below_threshold"
+        return "no_signal"
+    if "credential" in reason.lower():
+        return "no_creds"
+    return "no_signal"
+
+
 def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     """When spatial arb executes 0 fills, classify dominant blocker for ops."""
     if int(arb.get("executed_count") or 0) > 0:
@@ -249,14 +271,26 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         parts.append(f"live_trades={live_trades}")
     parts.extend([
         f"ai_exec={ai.get('executed')}",
+    ])
+    ai_skip = _classify_ai_skip(ai)
+    if ai_skip and not ai.get("executed"):
+        parts.append(f"ai_skip={ai_skip}")
+    parts.extend([
         f"cross_actions={len((cross.get('actions') or []))}",
         f"ext_exec={ext.get('executed_count', '?')}",
         f"user_agents={res.get('user_agent_ticks', 0)}",
-        f"sweep={'yes' if res.get('sweep') else 'no'}",
     ])
-    stash = res.get("sweep")
-    if isinstance(stash, dict) and stash.get("amount_usd"):
-        parts.append(f"swept_usd={stash.get('amount_usd')}")
+    sweep_res = res.get("sweep")
+    if isinstance(sweep_res, dict) and sweep_res.get("success"):
+        swept = sweep_res.get("swept") or {}
+        mode = swept.get("mode") or ("live" if sweep_res.get("live") else "paper")
+        amt = swept.get("amount_usd")
+        if amt is not None:
+            parts.append(f"sweep=yes mode={mode} amount=${float(amt):.2f}")
+        else:
+            parts.append(f"sweep=yes mode={mode}")
+    else:
+        parts.append(f"sweep={'yes' if sweep_res else 'no'}")
     return " ".join(parts)
 
 

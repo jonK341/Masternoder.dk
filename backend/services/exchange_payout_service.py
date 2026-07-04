@@ -179,9 +179,41 @@ def _treasury_stashed_usd() -> float:
         return 0.0
 
 
-def _profit_pool_usd() -> float:
-    """Best-effort pool available to sweep (bots PnL + treasury ledger, take max)."""
-    return round(max(_realized_total_usd(), _treasury_stashed_usd()), 4)
+def _treasury_stashed_usd_by_mode(mode: str) -> float:
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+        st = treasury_status()
+        if str(mode).lower() == "live":
+            return float(st.get("ledger_stashed_usd_live") or st.get("live_stash_usd") or 0)
+        return float(st.get("ledger_stashed_usd_paper") or 0)
+    except Exception:
+        return 0.0
+
+
+def _sweep_ledger_mode() -> str:
+    """Treasury ledger rows included in the next sweep (live PayPal → live rows only)."""
+    return "live" if _paypal_live_enabled() else "paper"
+
+
+def _swept_total_for_mode(cfg: Dict[str, Any], mode: str) -> float:
+    key = f"swept_total_usd_{mode}"
+    if key in cfg:
+        return float(cfg.get(key) or 0)
+    if mode == "paper":
+        return float(cfg.get("swept_total_usd") or 0)
+    return 0.0
+
+
+def _sweep_pool_usd() -> float:
+    """Treasury stash available to sweep — never agent paper PnL totals."""
+    return round(_treasury_stashed_usd_by_mode(_sweep_ledger_mode()), 4)
+
+
+def _net_unswept_usd(cfg: Dict[str, Any]) -> float:
+    mode = _sweep_ledger_mode()
+    pool = _treasury_stashed_usd_by_mode(mode)
+    swept = _swept_total_for_mode(cfg, mode)
+    return round(max(0.0, pool - swept), 4)
 
 
 def configure_paypal(email: str, *, share_pct: Optional[float] = None) -> Dict[str, Any]:
@@ -307,9 +339,11 @@ def payout_status() -> Dict[str, Any]:
     from backend.services import exchange_secrets_vault_service as vault
 
     cfg = _load()
-    realized = _profit_pool_usd()
-    swept = float(cfg.get("swept_total_usd") or 0)
-    net = round(max(0.0, realized - swept), 4)
+    ledger_mode = _sweep_ledger_mode()
+    realized = _realized_total_usd()
+    pool = _sweep_pool_usd()
+    net = _net_unswept_usd(cfg)
+    swept = _swept_total_for_mode(cfg, ledger_mode)
     names = vault.list_secret_names()
     keys_present = _BINANCE_KEY in names and _BINANCE_SECRET in names
     if not keys_present:
@@ -377,6 +411,10 @@ def payout_status() -> Dict[str, Any]:
         "live_enabled": _live_enabled(),
         "realized_total_usd": round(realized, 4),
         "treasury_stashed_usd": round(_treasury_stashed_usd(), 4),
+        "live_stash_usd": round(_treasury_stashed_usd_by_mode("live"), 4),
+        "paper_stash_usd": round(_treasury_stashed_usd_by_mode("paper"), 4),
+        "sweep_ledger_mode": ledger_mode,
+        "sweep_pool_usd": pool,
         "swept_total_usd": round(swept, 4),
         "net_unswept_usd": net,
         "paypal_sweepable_usd": sweepable,
@@ -387,9 +425,11 @@ def payout_status() -> Dict[str, Any]:
 
 def plan_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
     cfg = _load()
-    realized = _profit_pool_usd()
-    swept = float(cfg.get("swept_total_usd") or 0)
-    net = round(max(0.0, realized - swept), 4)
+    ledger_mode = _sweep_ledger_mode()
+    realized = _realized_total_usd()
+    pool = _sweep_pool_usd()
+    net = _net_unswept_usd(cfg)
+    swept = _swept_total_for_mode(cfg, ledger_mode)
     threshold = float(min_sweep_usd if min_sweep_usd is not None else _min_sweep_usd(cfg))
     dest = str(cfg.get("destination") or "paypal")
     paypal_email = _owner_paypal_email(cfg)
@@ -411,6 +451,9 @@ def plan_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
             "amount_usd": amount,
             "share_pct": round(share * 100, 2),
             "mode": "live" if _paypal_live_enabled() else "paper",
+            "sweep_ledger_mode": ledger_mode,
+            "sweep_pool_usd": pool,
+            "net_unswept_usd": net,
             "note": "Live PayPal payout requires EXCHANGE_PAYOUT_PAYPAL_LIVE=1 and PayPal Payouts enabled on your app.",
         }
 
@@ -520,7 +563,11 @@ def execute_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
         )
     except Exception:
         pass
-    cfg["swept_total_usd"] = round(float(cfg.get("swept_total_usd") or 0) + amount, 4)
+    ledger_mode = str(record.get("mode") or "paper").lower()
+    prev_swept = _swept_total_for_mode(cfg, ledger_mode)
+    cfg[f"swept_total_usd_{ledger_mode}"] = round(prev_swept + amount, 4)
+    if ledger_mode == "paper":
+        cfg["swept_total_usd"] = cfg["swept_total_usd_paper"]
     cfg["last_sweep"] = record
     _save(cfg)
     ex._audit("payout_sweep", user_id="owner", amount_usd=amount, destination=dest, mode=record["mode"])
@@ -532,7 +579,7 @@ def execute_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
     return {
         "success": True,
         "swept": record,
-        "swept_total_usd": cfg["swept_total_usd"],
+        "swept_total_usd": cfg.get(f"swept_total_usd_{ledger_mode}", cfg.get("swept_total_usd")),
         "live": live,
         "paypal": payout_ref if dest == "paypal" else None,
         "binance": withdraw_ref if dest == "binance" and live else None,

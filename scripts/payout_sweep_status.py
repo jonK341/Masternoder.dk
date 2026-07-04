@@ -40,6 +40,9 @@ def _collect(*, include_plan: bool = False) -> dict:
         "realized_total_usd": float(st.get("realized_total_usd") or 0),
         "swept_total_usd": float(st.get("swept_total_usd") or 0),
         "treasury_stashed_usd": float(st.get("treasury_stashed_usd") or 0),
+        "live_stash_usd": float(st.get("live_stash_usd") or 0),
+        "paper_stash_usd": float(st.get("paper_stash_usd") or 0),
+        "sweep_ledger_mode": st.get("sweep_ledger_mode"),
         "paypal_connected": bool((st.get("paypal") or {}).get("connected")),
         "paypal_live_enabled": bool((st.get("paypal") or {}).get("live_enabled")),
         "last_sweep_mode": None,
@@ -59,8 +62,9 @@ def _collect(*, include_plan: bool = False) -> dict:
     out["usd_to_threshold"] = round(max(0.0, gap), 4)
 
     out["auto_sweep_hint"] = (
-        "Enable: run_all_profit_daemons.cmd --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1 "
-        f"(min ${out['min_sweep_usd']:.0f} via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config)"
+        "Live PayPal: python scripts/enable_live_paypal_sweep.py — then "
+        "run_all_profit_daemons.cmd --auto-sweep + EXCHANGE_AUTO_PAYPAL_SWEEP=1 + EXCHANGE_PAYOUT_PAYPAL_LIVE=1 "
+        f"(min ${out['min_sweep_usd']:.0f}; live pool only — paper PnL excluded)"
     )
 
     if include_plan:
@@ -88,6 +92,8 @@ def main() -> int:
     print(f"  auto_sweep:        {out['auto_sweep']}")
     print(f"  min_sweep_usd:     ${out['min_sweep_usd']:.2f}")
     print(f"  net_unswept_usd:   ${out['net_unswept_usd']:.2f}")
+    print(f"  live_stash_usd:    ${out.get('live_stash_usd', 0):.4f}")
+    print(f"  sweep_ledger:      {out.get('sweep_ledger_mode', '?')}")
     print(f"  paypal_sweepable:  ${out['paypal_sweepable_usd']:.2f}")
     if out["usd_to_threshold"] > 0:
         print(f"  usd_to_threshold:  ${out['usd_to_threshold']:.2f} below min")
