@@ -28,15 +28,17 @@ except Exception:
     pass
 
 import paramiko
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
-from mn2_release_config import BASE_TAG, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
+from mn2_release_config import BASE_TAG, EXTRA_PATCH_REL, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
 
-BUILD_ROOT = "/tmp/mn2-build"
+BUILD_ROOT = "/var/mn2-build"
 LOCAL_DIST = os.path.join(ROOT, "dist")
 REMOTE_DIST = f"{BUILD_ROOT}/dist"
 REMOTE_TAR = f"{REMOTE_DIST}/masternoder2d.tar.gz"
 REMOTE_MANIFEST = f"{REMOTE_DIST}/{MANIFEST_NAME}"
 REMOTE_PATCH = "/tmp/mn2-daemon-v1.3.0-multi-ping.patch"
+REMOTE_EXTRA_PATCH = "/tmp/mn2-daemon-v1.3.1-exchange-sporks.patch"
+COMPAT_PATCH_DIR = f"{BUILD_ROOT}/patches"
 
 BOOST_DEPENDS_RE = re.compile(
     r"Failed to build Boost\.Build engine|boost.*stamp_configured|funcs\.mk:.*boost",
@@ -91,16 +93,52 @@ def upload_script(ssh, local_name: str, remote_name: str) -> str:
     return remote_path
 
 
-def upload_patch(ssh) -> str:
-    local_path = os.path.join(ROOT, PATCH_REL)
+def upload_patch(ssh, rel_path: str, remote_path: str) -> str:
+    import base64
+
+    local_path = os.path.join(ROOT, rel_path)
     if not os.path.isfile(local_path):
         raise SystemExit(f"Patch not found: {local_path}")
-    sftp = ssh.open_sftp()
-    with sftp.file(REMOTE_PATCH, "w") as rf:
-        with open(local_path, "rb") as lf:
-            rf.write(lf.read())
-    sftp.close()
-    return REMOTE_PATCH
+    data = open(local_path, "rb").read()
+    b64 = base64.b64encode(data).decode("ascii")
+    cmd = (
+        f"python3 -c \"import base64, pathlib; "
+        f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+    )
+    _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+    err = stderr.read().decode(errors="replace").strip()
+    out = stdout.read().decode(errors="replace").strip()
+    code = stdout.channel.recv_exit_status()
+    if code != 0:
+        raise SystemExit(f"upload_patch failed for {rel_path}: {err or out}")
+    return remote_path
+
+
+def upload_compat_patches(ssh) -> str:
+    """Upload mn2-gcc15-*.patch for GCC 15 / system-boost fast builds."""
+    import base64
+
+    patch_dir = COMPAT_PATCH_DIR
+    local_dir = os.path.join(ROOT, "docs", "patches")
+    ssh.exec_command(f"mkdir -p {patch_dir}", timeout=30)
+    for name in sorted(os.listdir(local_dir)):
+        if not name.startswith("mn2-gcc15-") or not name.endswith(".patch"):
+            continue
+        local_path = os.path.join(local_dir, name)
+        data = open(local_path, "rb").read()
+        b64 = base64.b64encode(data).decode("ascii")
+        remote_path = f"{patch_dir}/{name}"
+        cmd = (
+            f"python3 -c \"import base64, pathlib; "
+            f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+        )
+        _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+        err = stderr.read().decode(errors="replace").strip()
+        code = stdout.channel.recv_exit_status()
+        if code != 0:
+            raise SystemExit(f"upload_compat_patches failed for {name}: {err}")
+        print(f"Uploaded compat patch -> {remote_path}")
+    return patch_dir
 
 
 def main() -> int:
@@ -130,42 +168,101 @@ def main() -> int:
     if args.auto_fast:
         args.fast = False
 
-    pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
+    pw = None
+    if args.ask_pass:
+        pw = require_deploy_pass(force_prompt=True)
+    ssh, auth_method, _ = connect_deploy_ssh(password=pw)
+    print(f"Connected to {deploy_user()}@{deploy_host()} via {auth_method}")
 
     remote_build = upload_script(ssh, "mn2_build_release.sh", "mn2_build_release.sh")
     upload_script(ssh, "mn2_build_smoke.sh", "mn2_build_smoke.sh")
+    compat_patch_dir = upload_compat_patches(ssh)
+
+    # Free CPU/SSH slots from abandoned builds (e.g. after client disconnect).
+    cleanup_cmd = (
+        f"pkill -f 'bash {remote_build}' 2>/dev/null || true; "
+        f"sleep 2; "
+        f"pkill -9 -f 'make -j.*masternoder2d' 2>/dev/null || true"
+    )
+    ssh.exec_command(cleanup_cmd, timeout=30)
 
     patch_file = ""
+    extra_patch_file = ""
     if not args.no_patch and not args.branch:
-        patch_file = upload_patch(ssh)
-        print(f"Uploaded patch → {patch_file}")
+        patch_file = upload_patch(ssh, PATCH_REL, REMOTE_PATCH)
+        print(f"Uploaded patch -> {patch_file}")
+        extra_patch_file = upload_patch(ssh, EXTRA_PATCH_REL, REMOTE_EXTRA_PATCH)
+        print(f"Uploaded extra patch -> {extra_patch_file}")
 
     def run_remote_build(use_fast: bool) -> tuple[int, str, str]:
         use_dep = "0" if use_fast else "1"
         install_deps = "0" if args.skip_deps else "1"
         branch = args.branch.replace("'", "")
-        cmd = (
+        build_log = f"{BUILD_ROOT}/build.log"
+        build_script = f"{BUILD_ROOT}/run_build.sh"
+        inner = (
             f"export BUILD_ROOT={BUILD_ROOT} JOBS={args.jobs} USE_DEPENDS={use_dep} "
-            f"INSTALL_BUILD_DEPS={install_deps} VERSION={TARGET_VERSION} BASE_TAG={BASE_TAG} "
-            f"PATCH_FILE='{patch_file}' CHECKOUT_BRANCH='{branch}'; "
-            f"bash {remote_build}"
+            f"INSTALL_BUILD_DEPS={install_deps} VERSION={TARGET_VERSION} BASE_TAG={BASE_TAG}\n"
+            f"export PATCH_FILE='{patch_file}' EXTRA_PATCH_FILE='{extra_patch_file}'\n"
+            f"export COMPAT_PATCH_DIR='{compat_patch_dir}' CHECKOUT_BRANCH='{branch}'\n"
+            f"bash {remote_build}\n"
+        )
+        import base64
+
+        b64 = base64.b64encode(inner.encode("utf-8")).decode("ascii")
+        launcher = (
+            f"mkdir -p {BUILD_ROOT} && "
+            f"python3 -c \"import base64, pathlib; "
+            f"pathlib.Path('{build_script}').write_bytes(base64.b64decode('{b64}'))\" && "
+            f"chmod +x {build_script} && "
+            f"nohup bash {build_script} > {build_log} 2>&1 & echo $! > {BUILD_ROOT}/build.pid && "
+            f"cat {BUILD_ROOT}/build.pid"
         )
         print(
             f"=== Remote build {TARGET_VERSION} "
             f"(USE_DEPENDS={use_dep}, INSTALL_BUILD_DEPS={install_deps}, JOBS={args.jobs}) "
-            f"— may take 30–90 min ===\n"
+            f"— detached; log {build_log} — may take 30–90 min ===\n"
         )
-        _, stdout, stderr = ssh.exec_command(cmd, get_pty=True, timeout=10800)
-        exit_code = stdout.channel.recv_exit_status()
-        out = stdout.read().decode(errors="replace")
+        _, stdout, stderr = ssh.exec_command(launcher, timeout=120)
+        stdout.channel.recv_exit_status()
+        pid = stdout.read().decode(errors="replace").strip().splitlines()[-1] if stdout else ""
         err = stderr.read().decode(errors="replace")
-        print(out)
         if err.strip():
             print(err, file=sys.stderr)
-        return exit_code, out, err
+
+        import time
+
+        poll_interval = 45
+        deadline = time.time() + 10800
+        last_tail = ""
+        while time.time() < deadline:
+            poll_cmd = (
+                f"if [ -f {BUILD_ROOT}/build.pid ] && kill -0 $(cat {BUILD_ROOT}/build.pid) 2>/dev/null; "
+                f"then echo RUNNING; tail -n 3 {build_log} 2>/dev/null; "
+                f"else echo DONE; cat {build_log} 2>/dev/null; fi"
+            )
+            _, pout, _ = ssh.exec_command(poll_cmd, timeout=120)
+            pout.channel.recv_exit_status()
+            chunk = pout.read().decode(errors="replace")
+            if chunk.startswith("DONE"):
+                out = chunk[4:].lstrip("\n")
+                _, vout, _ = ssh.exec_command(
+                    f"test -f {REMOTE_TAR} && echo OK || echo MISSING", timeout=30
+                )
+                vout.channel.recv_exit_status()
+                exit_code = 0 if vout.read().decode().strip() == "OK" else 1
+                try:
+                    print(out[-120000:])
+                except UnicodeEncodeError:
+                    print(out[-120000:].encode("ascii", errors="replace").decode("ascii"))
+                return exit_code, out, err
+            tail = "\n".join(chunk.splitlines()[1:]) if "\n" in chunk else ""
+            if tail and tail != last_tail:
+                print(f"  ... {tail.splitlines()[-1][:120]}")
+                last_tail = tail
+            time.sleep(poll_interval)
+
+        return 124, "", "build poll timeout"
 
     exit_code, out, err = run_remote_build(args.fast)
     combined = f"{out}\n{err}"

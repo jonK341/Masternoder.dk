@@ -1,6 +1,16 @@
 /* MN2 Crypto Hub — unified explorer / staking / market tabs */
 body.mn2-crypto-hub { background: #0a0e1a; color: #e8eefc; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
-.mn2-hub-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+.mn2-hub-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--page-side-padding, 16px) var(--page-bottom-padding, 64px);
+  position: relative;
+  z-index: 2;
+}
+/* Fallback when page-layout-metrics is not loaded */
+body.mn2-crypto-hub:not(.layout-standard) .mn2-hub-wrap {
+  padding-top: 24px;
+}
 .mn2-hub-header h1 { color: #00ff88; margin: 0 0 4px; }
 .mn2-hub-header p { opacity: 0.8; margin: 0 0 16px; }
 .mn2-hub-nav {
@@ -34,6 +44,11 @@ body.mn2-crypto-hub { background: #0a0e1a; color: #e8eefc; font-family: system-u
 .mn2-hub-tab:hover, .mn2-hub-tab.active {
   background: rgba(0, 255, 136, 0.2);
   color: #fff;
+}
+a.mn2-hub-tab--link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 .mn2-route-note {
   margin-bottom: 18px;

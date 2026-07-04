@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "currency_primary": "coins",
+  "items": [
+    {"id": "cs-frame-neon", "name": "Neon Avatar Frame", "category": "avatar", "icon": "🌈", "description": "Pulsing neon border for your casino profile.", "price_coins": 500, "cosmetic_only": true},
+    {"id": "cs-frame-gold", "name": "Gold VIP Frame", "category": "avatar", "icon": "🥇", "description": "Gilded frame showing high-roller status.", "price_coins": 1200, "cosmetic_only": true},
+    {"id": "cs-frame-diamond", "name": "Diamond Frame", "category": "avatar", "icon": "💎", "description": "Sparkling diamond avatar frame.", "price_coins": 2500, "price_mn2": 0.5, "cosmetic_only": true},
+    {"id": "cs-skin-felt-green", "name": "Classic Green Felt", "category": "table_skin", "icon": "🟩", "description": "Traditional casino table skin.", "price_coins": 350, "cosmetic_only": true},
+    {"id": "cs-skin-felt-red", "name": "Velvet Red Felt", "category": "table_skin", "icon": "🟥", "description": "Luxurious red table skin.", "price_coins": 450, "cosmetic_only": true},
+    {"id": "cs-skin-midnight", "name": "Midnight Table", "category": "table_skin", "icon": "🌙", "description": "Dark midnight-blue table theme.", "price_coins": 600, "cosmetic_only": true},
+    {"id": "cs-cards-royal", "name": "Royal Card Backs", "category": "card_back", "icon": "🂠", "description": "Ornate royal card backs for table games.", "price_coins": 400, "cosmetic_only": true},
+    {"id": "cs-cards-neon", "name": "Neon Card Backs", "category": "card_back", "icon": "✨", "description": "Electric neon card backs.", "price_coins": 550, "cosmetic_only": true},
+    {"id": "cs-slot-theme-pharaoh", "name": "Pharaoh Slot Theme", "category": "slot_theme", "icon": "🏺", "description": "Egyptian slot machine skin overlay.", "price_coins": 800, "cosmetic_only": true},
+    {"id": "cs-slot-theme-ocean", "name": "Ocean Slot Theme", "category": "slot_theme", "icon": "🌊", "description": "Deep-sea slot machine skin.", "price_coins": 800, "cosmetic_only": true},
+    {"id": "cs-booster-freebet-1", "name": "Free Bet Voucher ×1", "category": "booster", "icon": "🎟️", "description": "One free 25-coin bet (cosmetic voucher, no RTP edge).", "price_coins": 200, "cosmetic_only": true, "effect": "free_bet_voucher"},
+    {"id": "cs-booster-freebet-3", "name": "Free Bet Bundle ×3", "category": "booster", "icon": "🎫", "description": "Three free 25-coin bet vouchers.", "price_coins": 500, "cosmetic_only": true, "effect": "free_bet_voucher", "quantity": 3},
+    {"id": "cs-vip-badge-star", "name": "Star VIP Badge", "category": "vip_flair", "icon": "⭐", "description": "Shimmering VIP flair badge.", "price_coins": 1500, "cosmetic_only": true},
+    {"id": "cs-vip-badge-crown", "name": "Crown VIP Badge", "category": "vip_flair", "icon": "👑", "description": "Elite crown badge for your profile.", "price_coins": 3000, "price_mn2": 1.0, "cosmetic_only": true},
+    {"id": "cs-emote-lucky", "name": "Lucky Emote", "category": "emote", "icon": "🍀", "description": "Send a lucky clover emote at the table.", "price_coins": 150, "cosmetic_only": true},
+    {"id": "cs-emote-fire", "name": "On Fire Emote", "category": "emote", "icon": "🔥", "description": "Celebrate a hot streak emote.", "price_coins": 150, "cosmetic_only": true},
+    {"id": "cs-celebration-confetti", "name": "Confetti Win Celebration", "category": "celebration", "icon": "🎉", "description": "Extra confetti on big wins (visual only).", "price_coins": 700, "cosmetic_only": true},
+    {"id": "cs-celebration-fireworks", "name": "Fireworks Celebration", "category": "celebration", "icon": "🎆", "description": "Fireworks overlay on mega wins.", "price_coins": 1000, "cosmetic_only": true},
+    {"id": "cs-token-tournament", "name": "Tournament Entry Token", "category": "token", "icon": "🏆", "description": "Waives one tournament buy-in (coins rail).", "price_coins": 100, "cosmetic_only": true, "effect": "tournament_token"},
+    {"id": "cs-token-duel", "name": "Duel Challenge Token", "category": "token", "icon": "⚔️", "description": "Highlights your open duel on the board.", "price_coins": 75, "cosmetic_only": true, "effect": "duel_token"},
+    {"id": "cs-pedestal-bronze", "name": "Bronze Trophy Pedestal", "category": "display", "icon": "🥉", "description": "Display pedestal for your top trophy.", "price_coins": 900, "cosmetic_only": true},
+    {"id": "cs-pedestal-gold", "name": "Gold Trophy Pedestal", "category": "display", "icon": "🏅", "description": "Premium gold display pedestal.", "price_coins": 2000, "cosmetic_only": true},
+    {"id": "cs-banner-winner", "name": "Winner Profile Banner", "category": "banner", "icon": "🚩", "description": "Victory banner for your casino profile.", "price_coins": 650, "cosmetic_only": true},
+    {"id": "cs-banner-highroller", "name": "High Roller Banner", "category": "banner", "icon": "💰", "description": "Show off high-roller status.", "price_coins": 1800, "price_mn2": 0.75, "cosmetic_only": true}
+  ]
+}

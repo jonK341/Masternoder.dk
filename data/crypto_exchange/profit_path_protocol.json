@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "version": 2,
+  "max_ledger_rows": 50000,
+  "retention_days": 90,
+  "default_threshold_bps": 30,
+  "default_ledger_mode": "auto",
+  "skill_evolution_on_profit": true,
+  "mask_balances": true,
+  "balance_summary_venues": ["binance", "nonkyc", "coinbase", "bingx", "xeggex"],
+  "suggestion_lookback_hours": 168,
+  "export_default_limit": 200,
+  "skill_stack_usd_step": 0.25,
+  "rotation_lookback_hours": 24,
+  "rotation_live_enabled": true,
+  "rotation_auto_execute": true,
+  "rotation_auto_max_usd_per_tick": 100,
+  "min_sell_leg_usd": 25,
+  "rotation_auto_types": [
+    "internal_stable_swap",
+    "external_market_buy",
+    "external_market_sell",
+    "reduce_notional"
+  ],
+  "note": "Local profit-max defaults: rotation_auto_execute + rotation_live_enabled true. Production should set both false unless opted in. Env override: EXCHANGE_ROTATION_AUTO=1, EXCHANGE_ROTATION_LIVE=1."
+}

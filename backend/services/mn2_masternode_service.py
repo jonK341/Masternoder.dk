@@ -760,6 +760,17 @@ def _max_enabled_activetime() -> int:
     return best
 
 
+def _current_ping_metric() -> int:
+    """
+    Ping watchdog metric: fleet ENABLED+activetime count (multi-ping) or primary activetime (legacy).
+    """
+    if multi_ping_enabled():
+        net = network_masternodes(limit=100)
+        rows = net.get("list") if isinstance(net.get("list"), list) else []
+        return _count_enabled_with_activetime(rows)
+    return _primary_ping_activetime()
+
+
 def _primary_ping_activetime() -> int:
     """
     Activetime for ``primary_ping_alias`` collateral on chain — not the max across all ENABLED nodes.
@@ -790,8 +801,7 @@ def _primary_ping_activetime() -> int:
 
 def _ping_loop_healthy() -> bool:
     """
-    True when primary_ping_alias collateral is ENABLED and activetime is rising.
-    Ignores other ENABLED nodes (stale/wrong collateral on the same network list).
+    True when fleet ping is healthy: multi-ping ENABLED count rising, or primary activetime rising.
     """
     ops = _ops_cfg()
     try:
@@ -799,7 +809,7 @@ def _ping_loop_healthy() -> bool:
     except (TypeError, ValueError):
         stall_min = 8
 
-    current = _primary_ping_activetime()
+    current = _current_ping_metric()
     if current <= 0:
         return False
 
@@ -1224,9 +1234,7 @@ def _start_masternode(
     attempts: List[tuple] = [
         ("alias", False, alias),
     ]
-    if multi_ping_enabled():
-        attempts.append(("local", False))
-    else:
+    if not multi_ping_enabled():
         attempts.extend([
             ("local", False),
             ("missing", False),
@@ -1240,6 +1248,10 @@ def _start_masternode(
             r = rpc.startmasternode(set_type, lock)
         if not r.get("error"):
             rpc_ok = True
+            if multi_ping_enabled():
+                reg_err = _register_fleet_ping_targets()
+                if reg_err:
+                    return reg_err
             if sync_err:
                 return sync_err
             return None
@@ -1276,22 +1288,28 @@ def maintain_ping_loop() -> Dict[str, Any]:
 
     _unlock_wallet()
     unlocked = _unlock_collateral_utxos()
-    err = _start_masternode(alias, pk, conf_changed=False, skip_privkey_sync=True)
     sync_err = None
+    fleet_reg_err = None
+    err = None
+    if multi_ping_enabled():
+        fleet_reg_err = _register_fleet_ping_targets()
+        if fleet_reg_err:
+            err = fleet_reg_err
+        else:
+            err = _start_masternode(alias, pk, conf_changed=False, skip_privkey_sync=True)
+    else:
+        err = _start_masternode(alias, pk, conf_changed=False, skip_privkey_sync=True)
     if err and "masternoder2.conf" in err and ("cannot write" in err or "cannot read" in err):
         sync_err = err
-    fleet_reg_err = None
-    if multi_ping_enabled() and err is None:
-        fleet_reg_err = _register_fleet_ping_targets()
     return {
-        "success": err is None and fleet_reg_err is None,
+        "success": err is None,
         "primary_alias": alias,
         "multi_ping": multi_ping_enabled(),
         "unlocked_utxos": unlocked,
-        "error": err or fleet_reg_err,
+        "error": err,
         "sync_error": sync_err,
         "action": (
-            "multi-ping: alias + fleet register (startmasternode all)"
+            "multi-ping: startmasternode all + alias (fleet register)"
             if multi_ping_enabled()
             else "sync primary privkey, restart if changed, startmasternode alias then local"
         ),
@@ -1487,6 +1505,55 @@ def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
     return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
 
 
+def _maybe_capacity_discord_alert(slots_available: int, max_nodes: int, hosted: int) -> None:
+    """Push Discord #market alert when hosting slots drop below configured threshold."""
+    cfg = get_config()
+    ops = cfg.get("ops") if isinstance(cfg.get("ops"), dict) else {}
+    threshold = int(ops.get("capacity_alert_threshold") or 5)
+    if slots_available >= threshold:
+        return
+    cooldown_h = max(1, int(ops.get("capacity_alert_cooldown_hours") or 6))
+    cursor_path = os.path.join(_base(), "logs", "hosting_capacity_alert.json")
+    now = time.time()
+    last_slots = None
+    last_ts = 0.0
+    if os.path.isfile(cursor_path):
+        try:
+            with open(cursor_path, "r", encoding="utf-8") as f:
+                cur = json.load(f) or {}
+            last_ts = float(cur.get("ts") or 0)
+            last_slots = cur.get("slots_available")
+        except Exception:
+            pass
+    if last_ts and (now - last_ts) < cooldown_h * 3600 and last_slots is not None and slots_available >= int(last_slots):
+        return
+    try:
+        from backend.services.discord_service import post_message
+        base_url = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+        post_message(
+            "market",
+            {
+                "embeds": [{
+                    "title": "Masternode hosting capacity low",
+                    "description": (
+                        f"Only **{slots_available}** slot(s) left "
+                        f"({hosted}/{max_nodes} used).\n\n"
+                        f"[Open hosting tab]({base_url}/explorer?tab=masternodes)"
+                    ),
+                    "color": 0xFEE75C,
+                }],
+            },
+            message_id=f"hosting-capacity:{slots_available}",
+        )
+        os.makedirs(os.path.dirname(cursor_path), exist_ok=True)
+        tmp = cursor_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"ts": now, "slots_available": slots_available}, f)
+        os.replace(tmp, cursor_path)
+    except Exception as exc:
+        _LOGGER.debug("capacity discord alert skipped: %s", exc)
+
+
 def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     """Public + ops snapshot for hosting service."""
     cfg = get_config()
@@ -1574,6 +1641,14 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         from backend.services import mn2_masternode_hosting_service as hosting
         out["paypal"] = hosting.get_paypal_config()
         out["hosting_stats"] = hosting.hosting_stats()
+    except Exception:
+        pass
+    try:
+        _maybe_capacity_discord_alert(
+            int(out.get("slots_available") or 0),
+            int(out.get("max_hosted_nodes") or 0),
+            int(out.get("hosted_count") or 0),
+        )
     except Exception:
         pass
     return out

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Business Control · Owner Only</title>
+  <style>
+    :root {
+      --bg: #07080d; --panel: #11131d; --panel2: #161a27; --line: #232838;
+      --txt: #e7ecf6; --muted: #8b93a7; --accent: #4ade80; --accent2: #38bdf8;
+      --danger: #f87171; --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: radial-gradient(1200px 600px at 80% -10%, #15203a 0, var(--bg) 60%);
+      color: var(--txt); font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      padding: 28px 18px 80px;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
+    h1 small { color: var(--muted); font-weight: 500; font-size: 12px; display: block; margin-top: 2px; }
+    .btn {
+      background: var(--panel2); color: var(--txt); border: 1px solid var(--line);
+      border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; transition: .15s;
+    }
+    .btn:hover { border-color: var(--accent2); }
+    .btn.primary { background: linear-gradient(135deg, #16a34a, #15803d); border-color: #16a34a; }
+    .btn.danger { background: linear-gradient(135deg, #b91c1c, #7f1d1d); border-color: #b91c1c; }
+    .btn.small { padding: 5px 10px; font-size: 12px; }
+    .gate { max-width: 420px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 16px; padding: 26px; text-align: center; }
+    .gate input { width: 100%; padding: 11px 12px; margin: 14px 0; background: #0c0e16; border: 1px solid var(--line);
+      border-radius: 10px; color: var(--txt); font-size: 14px; }
+    .hidden { display: none !important; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin: 20px 0; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    .card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    .card .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+    .pos { color: var(--accent); } .neg { color: var(--danger); }
+    .section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 16px 0; }
+    .section h2 { font-size: 14px; margin: 0 0 12px; color: var(--accent2); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+    .pill.on { color: var(--accent); border-color: #1f4d33; background: #0f2419; }
+    .pill.off { color: var(--muted); }
+    .toggle { cursor: pointer; }
+    .sup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; }
+    .sup { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .sup .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .sup .role { color: var(--muted); font-size: 12px; margin: 8px 0; }
+    .sup .stat { font-size: 13px; }
+    .status { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    a.nav { color: var(--accent2); text-decoration: none; font-size: 12px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 6px; border-bottom: 1px solid var(--line); }
+    .tab { padding: 10px 16px; cursor: pointer; color: var(--muted); border: 1px solid transparent; border-bottom: none;
+      border-radius: 10px 10px 0 0; font-size: 13px; }
+    .tab.active { color: var(--txt); background: var(--panel); border-color: var(--line); }
+    .tabpane { display: none; }
+    .tabpane.active { display: block; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .field input { padding: 9px 10px; background: #0c0e16; border: 1px solid var(--line); border-radius: 9px; color: var(--txt); font-size: 13px; }
+    .big { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .muted { color: var(--muted); font-size: 12px; }
+    .warn { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate" class="gate">
+      <h1>Business Control</h1>
+      <p style="color:var(--muted);font-size:13px">Owner access only. Enter your exchange admin key.</p>
+      <input id="key" type="password" placeholder="Admin key" autocomplete="off" />
+      <button class="btn primary" id="unlock" style="width:100%">Unlock</button>
+      <div class="status" id="gateStatus"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <header>
+        <h1>Business Control <small>All trading bots · profit & controls</small></h1>
+        <div class="bar">
+          <a class="nav" href="/exchange">Exchange</a>
+          <a class="nav" href="/command-center">Command Center</a>
+          <button class="btn small" id="refresh">Refresh</button>
+          <button class="btn small primary" id="runAll">Run all bots</button>
+          <button class="btn small danger" id="kill">Kill switch</button>
+          <button class="btn small" id="lock">Lock</button>
+        </div>
+      </header>
+
+      <div class="status" id="topStatus"></div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="predictions">Predictions</div>
+        <div class="tab" data-tab="boost">Profit Boost</div>
+        <div class="tab" data-tab="payout">Payout · PayPal</div>
+        <div class="tab" data-tab="watch">Live Watch</div>
+      </div>
+
+      <div class="tabpane active" id="pane-overview">
+        <div class="cards" id="kpis"></div>
+        <div class="section">
+          <h2>Supervisor agents</h2>
+          <div class="sup-grid" id="supervisors"></div>
+        </div>
+        <div class="section">
+          <h2>Trading bots — profit calculator</h2>
+          <table>
+            <thead>
+              <tr><th>Bot</th><th>Type</th><th>Supervisor</th><th>Realized $</th><th>Unrealized $</th><th>Total $</th><th>Trades</th><th>State</th></tr>
+            </thead>
+            <tbody id="bots"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-predictions">
+        <div class="section">
+          <h2>Prediction radar</h2>
+          <p class="muted">Live ranked symbols by predicted net edge. Heuristic signals — no profit is guaranteed.</p>
+          <table>
+            <thead><tr><th>Symbol</th><th>Direction</th><th>Confidence</th><th>Expected move</th><th>Edge uplift</th><th>Score</th></tr></thead>
+            <tbody id="predRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-boost">
+        <div class="section">
+          <h2>How much can we boost the bots?</h2>
+          <div class="grid2">
+            <label class="field">Capital (USD)<input type="number" id="boostCapital" value="5000" /></label>
+            <label class="field">Skills (comma ids)<input type="text" id="boostSkills" value="spatial_arbitrage,triangular_arbitrage,funding_rate_carry" /></label>
+          </div>
+          <button class="btn primary small" id="boostRun">Calculate boost</button>
+          <table style="margin-top:14px">
+            <thead><tr><th>Scenario</th><th>Premium</th><th>Edge</th><th>Cycles/day</th><th>Daily $</th><th>Monthly $</th><th>ROI/mo</th></tr></thead>
+            <tbody id="boostRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-payout">
+        <div class="section">
+          <h2>PayPal profit payout — your account</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Trading profit is stashed on-platform, then swept to your PayPal email. Set <code>EXCHANGE_PAYOUT_PAYPAL_LIVE=1</code> for real Payouts API transfers.</p>
+          <div id="payoutStatus" class="muted">Loading…</div>
+          <div class="grid2" style="margin-top:12px">
+            <label class="field">PayPal email<input type="email" id="ppEmail" placeholder="you@paypal.com" /></label>
+            <label class="field">Profit share to PayPal (%)<input type="number" id="ppShare" value="50" min="1" max="100" /></label>
+            <label class="field">Min sweep (USD)<input type="number" id="ppMin" value="5" /></label>
+          </div>
+          <div class="bar">
+            <button class="btn small" id="ppSave">Save PayPal config</button>
+            <button class="btn small" id="ppPlan">Plan sweep</button>
+            <button class="btn small primary" id="ppSweep">Sweep to PayPal now</button>
+          </div>
+          <div id="payoutResult" class="muted" style="margin-top:10px"></div>
+          <details style="margin-top:16px;font-size:12px">
+            <summary>Advanced: Binance stash (optional)</summary>
+            <div class="grid2" style="margin-top:8px">
+              <label class="field">Binance API key<input type="password" id="binKey" placeholder="optional" /></label>
+              <label class="field">Binance API secret<input type="password" id="binSecret" placeholder="optional" /></label>
+              <label class="field">USDT deposit address<input type="text" id="binUsdt" placeholder="Binance USDT address" /></label>
+            </div>
+            <button class="btn small" id="binSave" style="margin-top:8px">Save Binance config</button>
+          </details>
+          <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-watch">
+        <div class="section">
+          <h2>Live Watch — trust & activations (all users)</h2>
+          <div id="watchTotals" class="muted">Loading…</div>
+          <table style="margin-top:12px">
+            <thead><tr><th>User</th><th>Trust</th><th>Tier</th><th>Agents</th><th>Active</th><th>Pending</th><th>Profit $</th><th>Avg IQ</th></tr></thead>
+            <tbody id="watchUsers"></tbody>
+          </table>
+          <h2 style="margin-top:18px">Global trust feed</h2>
+          <div id="watchFeed" class="muted"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/business-control.js?v=20260627a"></script>
+</body>
+</html>

@@ -14,6 +14,23 @@ def _ident_path(discord_id: str) -> str:
     return os.path.join(_IDENT_DIR, f"discord_{safe}.json")
 
 
+def get_user_id_for_discord(discord_id: str) -> Optional[str]:
+    discord_id = (discord_id or "").strip()
+    if not discord_id:
+        return None
+    path = _ident_path(discord_id)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            row = json.load(f)
+        if row.get("linked"):
+            return row.get("user_id")
+    except Exception:
+        pass
+    return None
+
+
 def get_discord_id_for_user(user_id: str) -> Optional[str]:
     if not user_id or not os.path.isdir(_IDENT_DIR):
         return None

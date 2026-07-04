@@ -1,0 +1,156 @@
+/* FAQ + Copy Assist widgets — MasterNoder.ai assist */
+.mn-faq-launcher,
+.mn-copy-launcher {
+    position: fixed;
+    z-index: 99990;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font: 600 14px/1 system-ui, sans-serif;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.mn-faq-launcher:hover,
+.mn-copy-launcher:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.mn-faq-launcher {
+    right: 18px;
+    bottom: 18px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #00c864, #0099cc);
+    color: #fff;
+}
+.mn-copy-launcher {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #7c4dff, #512da8);
+    color: #fff;
+    font-size: 13px;
+}
+.mn-assist-panel {
+    position: fixed;
+    z-index: 99991;
+    right: 18px;
+    bottom: 72px;
+    width: min(360px, calc(100vw - 24px));
+    max-height: min(480px, calc(100vh - 100px));
+    display: none;
+    flex-direction: column;
+    background: rgba(12, 18, 32, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    color: #eef2ff;
+    font: 14px/1.45 system-ui, sans-serif;
+}
+.mn-assist-panel.open {
+    display: flex;
+}
+.mn-assist-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 600;
+}
+.mn-assist-head button {
+    background: transparent;
+    border: none;
+    color: #aab;
+    cursor: pointer;
+    font-size: 18px;
+}
+.mn-assist-body {
+    padding: 12px 14px;
+    overflow-y: auto;
+    flex: 1;
+}
+.mn-assist-msgs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+.mn-assist-msg {
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+.mn-assist-msg.user {
+    align-self: flex-end;
+    background: rgba(0, 153, 204, 0.25);
+}
+.mn-assist-msg.bot {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.06);
+}
+.mn-assist-input-row {
+    display: flex;
+    gap: 8px;
+}
+.mn-assist-input-row input,
+.mn-assist-input-row textarea,
+.mn-copy-inline textarea {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font: inherit;
+    resize: vertical;
+}
+.mn-assist-input-row button,
+.mn-copy-inline button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: #00c864;
+    color: #042;
+    font-weight: 600;
+    cursor: pointer;
+}
+.mn-assist-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.mn-assist-topics button {
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cde;
+    font-size: 11px;
+    cursor: pointer;
+}
+.mn-copy-inline {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px dashed rgba(124, 77, 255, 0.45);
+    background: rgba(124, 77, 255, 0.08);
+}
+.mn-copy-inline .mn-copy-result {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+.mn-copy-upsell {
+    color: #ffb74d;
+    font-size: 12px;
+    margin-top: 6px;
+}

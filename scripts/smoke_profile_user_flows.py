@@ -73,8 +73,8 @@ def main() -> int:
         "/user HTML",
         status == 200
         and "Privacy controls" in html
-        and "Password protection" in html
-        and "Request recovery token" in html
+        and "Account password" in html
+        and "account-password-setup" in html
         and "/api/user/account-privacy" in html,
         f"status={status}",
     )
@@ -114,7 +114,7 @@ def main() -> int:
     failures += not check("session revoke rejects missing id", status == 400 and data and not data.get("success"), f"status={status}")
 
     status, _, data = request(f"/api/auth/password/status?user_id={USER_ID}")
-    failures += not check("password status", status == 200 and data and data.get("unlock_rule") is not None and data.get("recovery") is not None, f"status={status}")
+    failures += not check("password status", status == 200 and data and data.get("unlock_rule") is not None and data.get("recovery") is not None and data.get("unlock_progress") is not None, f"status={status}")
 
     status, _, data = request(f"/api/auth/password/recovery/status?user_id={USER_ID}")
     failures += not check("password recovery status", status == 200 and data and "token_reset_supported" in data, f"status={status}")

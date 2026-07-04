@@ -372,6 +372,81 @@ MANIFESTS = {
         "backend/routes/trophies_routes.py",
         "backend/register_blueprints.py",
     ],
+    "casino": [
+        "backend/register_blueprints.py",
+        "backend/routes/casino_routes.py",
+        "backend/routes/agent_casino_routes.py",
+        "backend/services/casino_service.py",
+        "backend/services/casino_rng.py",
+        "backend/services/casino_ledger.py",
+        "backend/services/casino_jackpot.py",
+        "backend/services/casino_tournaments.py",
+        "backend/services/casino_progression.py",
+        "backend/services/casino_shop_service.py",
+        "backend/services/casino_trophies_service.py",
+        "backend/services/casino_competition_service.py",
+        "backend/services/casino_social_service.py",
+        "backend/services/casino_crash_crew_service.py",
+        "backend/services/casino_game_duel_service.py",
+        "backend/services/casino_streak_shield_service.py",
+        "backend/services/casino_coupon_service.py",
+        "backend/services/casino_keno_syndicate_service.py",
+        "backend/services/casino_blackjack_tournament_service.py",
+        "backend/services/casino_wheel_raid_service.py",
+        "backend/services/casino_podcast_bonus_service.py",
+        "backend/services/battle_pass_service.py",
+        "backend/services/casino_discord_fanout.py",
+        "backend/services/casino_agents_service.py",
+        "backend/services/casino_agent_llm_planner.py",
+        "backend/services/casino_responsible_gaming.py",
+        "backend/services/casino_trophy_rake_rebate.py",
+        "backend/services/casino_global_controller.py",
+        "backend/services/casino_video_poker_ladder_service.py",
+        "backend/services/casino_deposit_packs_service.py",
+        "backend/services/casino_revenue_report.py",
+        "backend/services/engines/__init__.py",
+        "backend/services/engines/crash.py",
+        "backend/services/engines/plinko.py",
+        "backend/services/engines/mines.py",
+        "backend/services/engines/wheel.py",
+        "backend/services/engines/keno.py",
+        "backend/services/engines/hilo.py",
+        "backend/services/engines/roulette.py",
+        "backend/services/engines/slots.py",
+        "backend/services/engines/cards.py",
+        "data/casino_config.json",
+        "data/casino_shop_catalog.json",
+        "data/casino_trophies.json",
+        "data/casino_achievements.json",
+        "data/casino_marketing.json",
+        "data/casino_agents.json",
+        "data/casino_agent_models.json",
+        "data/social_networks.json",
+        "casino/index.html",
+        "casino/manifest.webmanifest",
+        "static/js/casino.js",
+        "static/css/casino.css",
+        "static/js/casino-mobile.js",
+        "static/css/casino-mobile.css",
+        "static/js/casino-twa-shell.js",
+        "static/css/casino-twa-shell.css",
+        "static/img/casino/icon-192.svg",
+        "static/img/casino/icon-512.svg",
+        "static/img/casino/icon-maskable.svg",
+        "static/img/casino/og-share.svg",
+        "cron/discord_casino_fanout.sh",
+        "cron/casino_daily_revenue_report.sh",
+        "scripts/casino_ops_remote.py",
+        "scripts/casino_ops_setup.sh",
+        "scripts/casino_agent_daemon.py",
+        "scripts/run_casino_agent_daemon.cmd",
+        "backend/middleware/error_logging_middleware.py",
+    ],
+    # Digital Asset Links + Apple AASA — nginx serves /.well-known/ from web root (not static/)
+    "well_known": [
+        "static/.well-known/assetlinks.json",
+        "static/.well-known/apple-app-site-association",
+    ],
     # Fix production 404s: routes + fallbacks + blueprint registration (see logs/production_404_deploy_checklist.txt)
     "fix_404": [
         "backend/routes/missing_endpoints_routes.py",
@@ -448,6 +523,7 @@ MANIFESTS = {
         ".env",
         "systemd/uwsgi-vidgenerator.service",
         "systemd/uwsgi-vidgenerator-5001.service",
+        "uwsgi_common.ini",
         "systemd/masternoder2d.service.example",
         "scripts/run_masternoder2d.sh",
         "scripts/run_masternoder2d.ps1",
@@ -511,9 +587,16 @@ MANIFESTS = {
         "backend/services/monetization_margin_report_service.py",
         "backend/services/monetization_scr_blend_service.py",
         "backend/services/monetization_config_service.py",
+        "backend/services/monetization_streams_service.py",
+        "backend/services/monetization_activity_queue_service.py",
+        "backend/services/monetization_revenue_tracks_service.py",
+        "backend/services/support_faq_service.py",
+        "backend/services/copy_assist_service.py",
+        "backend/services/mn2_risk_ops_service.py",
         "backend/services/agent_cron_service.py",
         "backend/routes/paypal_routes.py",
         "backend/services/discord_link_service.py",
+        "backend/services/discord_linked_roles_service.py",
         "backend/services/shop_discord_promo_service.py",
         "backend/services/shop_checkout_promo_service.py",
         "backend/routes/battle_routes.py",
@@ -522,6 +605,8 @@ MANIFESTS = {
         "backend/routes/generator_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/routes/monetization_expansion_routes.py",
+        "backend/routes/monetization_routes.py",
+        "backend/routes/ai_assist_routes.py",
         "backend/routes/cogs_routes.py",
         "data/discord_promo_codes.json",
         "profile/index.html",
@@ -550,6 +635,14 @@ MANIFESTS = {
         "data/mn2_staking_terms.json",
         "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "data/monetization_streams.json",
+        "data/monetization_revenue_tracks.json",
+        "monetization/index.html",
+        "static/css/ai-assist-widgets.css",
+        "static/js/faq-widget.js",
+        "static/js/copy-assist-widget.js",
+        "static/js/debugger-risk-panel.js",
+        "debugger/index.html",
         "shop/index.html",
         "hosting/index.html",
         "generator/index.html",
@@ -702,12 +795,45 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "trophies",
     "compendium",
     "game_hub",
+    "casino",
     "config",
     "agent_daemon_env",
     "service_check_backend",
 })
 # HTML/CSS/JS under /var/www/html — clear nginx cache + reload nginx only (no uwsgi/python-proxy)
-RESTART_NGINX_ONLY_FOR = frozenset({"static_pages"})
+RESTART_NGINX_ONLY_FOR = frozenset({"static_pages", "well_known"})
+
+_WELL_KNOWN_PREFIX = "static/.well-known/"
+
+
+def _needs_well_known_webroot_sync(files, manifest_names):
+    """True when deploy uploads casino mobile association files under static/.well-known/."""
+    if manifest_names and "well_known" in manifest_names:
+        return True
+    return any(f.replace("\\", "/").startswith(_WELL_KNOWN_PREFIX) for f in files)
+
+
+def _sync_well_known_webroot(ssh):
+    """Mirror static/.well-known/* to /.well-known/ for nginx root URL (see docs/CASINO_DEPLOY_OPS.md)."""
+    cmd = (
+        f"mkdir -p {REMOTE_BASE}/.well-known && "
+        f"cp -a {REMOTE_BASE}/static/.well-known/* {REMOTE_BASE}/.well-known/ && "
+        f"ls -1 {REMOTE_BASE}/.well-known/"
+    )
+    stdin, stdout, stderr = ssh.exec_command(cmd, timeout=15)
+    out = (stdout.read() or b"").decode(errors="replace").strip()
+    err = (stderr.read() or b"").decode(errors="replace").strip()
+    if out:
+        print(f"  {out.replace(chr(10), chr(10) + '  ')}")
+    if err and "No such file" not in err:
+        print(f"  [WARN] {err[:300]}")
+    stdin, stdout, stderr = ssh.exec_command(
+        f"test -f {REMOTE_BASE}/.well-known/assetlinks.json && echo OK", timeout=5
+    )
+    if (stdout.read() or b"").decode().strip() == "OK":
+        print("  [OK] /.well-known/ synced from static/.well-known/")
+    else:
+        print("  [WARN] /.well-known/assetlinks.json missing after sync — check upload paths")
 
 
 def run_server_prune(server_pass=None, with_disk=False):
@@ -849,6 +975,11 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
         sftp.close()
         print(f"  [SUMMARY] {deployed} files uploaded")
         print()
+
+        if _needs_well_known_webroot_sync(files, _manifests):
+            print("[2a] Well-known web root sync...")
+            _sync_well_known_webroot(ssh)
+            print()
 
         # If we uploaded systemd units, install them so EnvironmentFile=.env is used
         systemd_units = [f for f in files if f.replace("\\", "/").startswith("systemd/") and f.endswith(".service")]

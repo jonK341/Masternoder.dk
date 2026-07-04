@@ -135,19 +135,21 @@
   }
 
   function renderPoR(d) {
-    if (!d || !d.success) return;
-    var cov = d.coverage_ratio;
+    if (!d) return;
+    var por = d.proof_of_reserves || d;
+    if (!por || por.success === false) return;
+    var cov = por.coverage_ratio;
     var banner = q('pr-banner');
     var text = q('pr-banner-text');
     if (!banner || !text) return;
     var icon = banner.querySelector('.big');
-    var reconOk = d.reconcile && d.reconcile.ok === true;
-    var onchainOk = d.assets && d.assets.onchain && d.assets.onchain.status === 'ok';
+    var reconOk = por.reconcile && por.reconcile.ok === true;
+    var onchainOk = por.assets && por.assets.onchain && por.assets.onchain.status === 'ok';
     if (!onchainOk) {
       banner.className = 'banner warn';
       icon.textContent = '⏳';
       text.textContent = 'Daemon balance temporarily unavailable — showing user liabilities only.';
-    } else if (d.fully_backed) {
+    } else if (por.fully_backed) {
       banner.className = 'banner ok';
       icon.textContent = '✅';
       text.textContent = 'Fully backed — all user MN2 is covered by custodial reserves.';
@@ -161,24 +163,48 @@
       text.textContent = 'Coverage is below 1.0 — reserves do not currently cover all user MN2.';
     }
     q('t-coverage').textContent = cov === null ? '—' : (cov * 100).toFixed(2) + '%';
-    q('t-assets').textContent = mn2(d.assets ? d.assets.total_mn2 : null);
-    q('t-liab').textContent = mn2(d.liabilities ? d.liabilities.total_mn2 : null);
-    q('t-surplus').textContent = mn2(d.surplus_mn2);
-    if (d.liabilities) q('t-liab-sub').textContent = d.liabilities.holders + ' holders';
-    var oc = (d.assets && d.assets.onchain) || {};
+    q('t-assets').textContent = mn2(por.assets ? por.assets.total_mn2 : null);
+    q('t-liab').textContent = mn2(por.liabilities ? por.liabilities.total_mn2 : null);
+    q('t-surplus').textContent = mn2(por.surplus_mn2);
+    if (por.liabilities) q('t-liab-sub').textContent = por.liabilities.holders + ' holders';
+    var oc = (por.assets && por.assets.onchain) || {};
     var rows = [
       ['On-chain wallet balance', mn2(oc.balance)],
       ['Immature (staking)', mn2(oc.immature_balance)],
       ['Unconfirmed', mn2(oc.unconfirmed_balance)],
-      ['Stabilization reserve', mn2(d.assets ? d.assets.stabilization_reserve_mn2 : null)],
-      ['User liquid balances', mn2(d.liabilities ? d.liabilities.user_liquid_mn2 : null)],
-      ['User staked balances', mn2(d.liabilities ? d.liabilities.user_staked_mn2 : null)],
+      ['Stabilization reserve', mn2(por.assets ? por.assets.stabilization_reserve_mn2 : null)],
+      ['User liquid balances', mn2(por.liabilities ? por.liabilities.user_liquid_mn2 : null)],
+      ['User staked balances', mn2(por.liabilities ? por.liabilities.user_staked_mn2 : null)],
       ['Reconcile status', reconOk ? 'PASS ✅' : 'review ⚠️']
     ];
     q('pr-breakdown').innerHTML = rows.map(function (r) {
       return '<tr><td>' + r[0] + '</td><td class="num">' + r[1] + '</td></tr>';
     }).join('');
-    if (d.generated_at) q('pr-ts').textContent = 'As of ' + d.generated_at;
+    if (por.generated_at) q('pr-ts').textContent = 'As of ' + por.generated_at;
+  }
+
+  function renderTreasuryOverview(d) {
+    if (!d || !d.success) return;
+    var tre = d.exchange_treasury || {};
+    var fee = d.fee_treasury || {};
+    var ops = d.network_ops || {};
+    if (q('t-treasury-mn2')) q('t-treasury-mn2').textContent = mn2(tre.mn2_balance);
+    if (q('t-treasury-sub')) q('t-treasury-sub').textContent = tre.treasury_user_id || 'platform treasury';
+    if (q('t-treasury-usd')) q('t-treasury-usd').textContent = tre.ledger_stashed_usd != null ? ('$' + fmtNum(tre.ledger_stashed_usd, 2)) : '--';
+    if (q('t-treasury-ledger')) q('t-treasury-ledger').textContent = (tre.ledger_entries || 0) + ' ledger entries';
+    if (q('t-fee-mn2')) q('t-fee-mn2').textContent = mn2(fee.total_fees_mn2);
+    if (q('t-fee-usd')) q('t-fee-usd').textContent = fee.total_fees_usd_est != null ? ('≈ $' + fmtNum(fee.total_fees_usd_est, 2)) : 'fee treasury';
+    var sh = ops.staking_health || {};
+    if (q('t-daemon-stake')) {
+      q('t-daemon-stake').textContent = sh.staking_active ? 'Active' : (sh.status || '—');
+    }
+    var pool = ops.pool || {};
+    if (q('t-pool-staked')) {
+      q('t-pool-staked').textContent = fmtNum(pool.total_staked_mn2, 2) + ' MN2 staked · ' +
+        (pool.dynamic_apr_percent != null ? pool.dynamic_apr_percent + '% APR' : 'APR —');
+    }
+    if (d.yield_report) renderYield(d.yield_report);
+    if (d.generated_at && q('pr-ts')) q('pr-ts').textContent = 'As of ' + d.generated_at;
   }
 
   function renderYield(d) {
@@ -198,17 +224,18 @@
   }
 
   function loadProofOfReserves() {
-    fetch('/api/mn2/staking/proof-of-reserves').then(function (r) { return r.json(); })
-      .then(renderPoR).catch(function () {
+    fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
+      .then(function (d) {
+        renderPoR(d);
+        renderTreasuryOverview(d);
+      }).catch(function () {
         var text = q('pr-banner-text');
         if (text) text.textContent = 'Could not load reserve data. Please retry shortly.';
       });
-    fetch('/api/mn2/staking/yield-report').then(function (r) { return r.json(); })
-      .then(renderYield).catch(function () {});
     setInterval(function () {
       if (q('mn2-tab-reserves') && !q('mn2-tab-reserves').hidden) {
-        fetch('/api/mn2/staking/proof-of-reserves').then(function (r) { return r.json(); }).then(renderPoR).catch(function () {});
-        fetch('/api/mn2/staking/yield-report').then(function (r) { return r.json(); }).then(renderYield).catch(function () {});
+        fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
+          .then(function (d) { renderPoR(d); renderTreasuryOverview(d); }).catch(function () {});
       }
     }, 60000);
   }
@@ -408,6 +435,36 @@
       }).catch(function () {});
 
     setupMasternodeCheckout();
+    loadMasternodeMyOrders();
+  }
+
+  function loadMasternodeMyOrders() {
+    var tbody = q('mn-my-orders');
+    if (!tbody) return;
+    fetch('/api/mn2/masternode/my-orders?limit=20', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.success) {
+          tbody.innerHTML = '<tr><td colspan="5">' +
+            (d && d.error === 'auth_required' ? 'Sign in to see your order history.' : 'Could not load orders.') +
+            '</td></tr>';
+          return;
+        }
+        var rows = d.orders || [];
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="5">No hosting orders yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(function (o) {
+          var total = o.usd_total != null ? ('$' + fmtNum(o.usd_total, 2)) :
+            (o.mn2_total != null ? fmtNum(o.mn2_total, 4) + ' MN2' : '—');
+          return '<tr><td>' + (o.order_id || '—') + '</td><td>' + (o.status || '—') +
+            '</td><td>' + (o.slots || 1) + '</td><td class="num">' + total +
+            '</td><td>' + (o.paid_at || o.created_at || '—') + '</td></tr>';
+        }).join('');
+      }).catch(function () {
+        tbody.innerHTML = '<tr><td colspan="5">Could not load orders.</td></tr>';
+      });
   }
 
   function hostingRails() {

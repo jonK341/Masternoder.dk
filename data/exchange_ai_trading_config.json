@@ -1,0 +1,52 @@
+{
+  "enabled": true,
+  "agent_id": "ai_market_trader",
+  "name": "AI Multi-Venue Trader",
+  "default_skills": [
+    "spatial_arbitrage",
+    "sentiment_alpha",
+    "ml_price_forecast",
+    "kelly_sizing",
+    "latency_momentum",
+    "statistical_arbitrage"
+  ],
+  "min_ai_score": 42,
+  "min_net_bps": 14,
+  "volatility_default": 0.35,
+  "capital_usd": 500,
+  "paper_trade_usd": 75.0,
+  "probe_venues_on_analyze": true,
+  "symbols": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "ADA",
+    "DOGE",
+    "LTC",
+    "AVAX",
+    "LINK",
+    "DOT",
+    "SHIB",
+    "BNB",
+    "UNI",
+    "ATOM",
+    "TRX",
+    "NEAR",
+    "XLM",
+    "DASH"
+  ],
+  "venues": [
+    "binance",
+    "nonkyc",
+    "xeggex",
+    "okx",
+    "bybit",
+    "kucoin",
+    "coinbase",
+    "bitfinex",
+    "gateio",
+    "bitstamp",
+    "cryptocom"
+  ]
+}

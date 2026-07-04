@@ -329,6 +329,7 @@
         { href: '/gallery', label: 'Gallery', icon: '🖼️', tags: ['create'] },
         { href: '/chat', label: 'Chat', icon: '💬', tags: ['social'] },
         { href: '/news', label: 'News page', icon: '📰', tags: ['read'] },
+        { href: '/profit/', label: 'Profit Daemon', icon: '⚡', tags: ['economy', 'evening'] },
     ];
 
     function hourTag() {
@@ -392,26 +393,31 @@
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const [platformRes, feedRes] = await Promise.all([
+            const [platformRes, profitRes, feedRes] = await Promise.all([
                 fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
             ]);
+            const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
+            const profitIds = new Set(profit.map((n) => n.id));
+            const platformFiltered = platform.filter((n) => !profitIds.has(n.id));
+            const mergedPlatform = [...profit, ...platformFiltered].slice(0, 6);
             const external = (feedRes && feedRes.news) || [];
-            if (!platform.length && !external.length) {
+            if (!mergedPlatform.length && !external.length) {
                 ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
                 return;
             }
             ul.textContent = '';
-            platform.forEach((n) => {
+            mergedPlatform.forEach((n) => {
                 const li = document.createElement('li');
-                li.className = 'fp-news-platform';
+                li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
                 const a = document.createElement('a');
                 a.href = n.href || '/news/';
                 a.textContent = (n.title || 'Platform update');
                 const meta = document.createElement('span');
                 meta.className = 'fp-news-meta';
-                meta.textContent = 'MasterNoder · ' + (n.date || '').slice(0, 10);
+                meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
                 li.appendChild(a);
                 li.appendChild(meta);
                 if (n.summary) {
@@ -422,7 +428,7 @@
                 }
                 ul.appendChild(li);
             });
-            if (platform.length && external.length) {
+            if (mergedPlatform.length && external.length) {
                 const sep = document.createElement('li');
                 sep.className = 'fp-news-divider';
                 sep.textContent = 'Tech feed';

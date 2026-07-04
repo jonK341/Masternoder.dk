@@ -15,10 +15,8 @@ import argparse
 import os
 import sys
 
-import paramiko
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 WEB = "/var/www/html"
 
@@ -29,6 +27,7 @@ AUDIT_KEYS = (
     "MONETIZATION_TIER_ENFORCEMENT",
     "PAYPAL_MODE",
     "PAYPAL_CLIENT_ID",
+    "PAYPAL_CLIENT_SECRET",
 )
 
 
@@ -118,6 +117,21 @@ CODE=$(curl -sS -m 20 -o /tmp/_promo.json -w '%{{http_code}}' -X POST -H 'Conten
   http://127.0.0.1:5000/api/shop/promo/apply 2>/dev/null || echo 000)
 echo "promo/apply GENERATE10 HTTP $CODE"
 grep -o '"mode":"[^"]*"' /tmp/_promo.json 2>/dev/null || head -c 120 /tmp/_promo.json 2>/dev/null; echo
+
+CODE=$(curl -sS -m 20 -o /tmp/_copy.json -w '%{{http_code}}' -X POST -H 'Content-Type: application/json' \
+  -d '{{"kind":"video_title","context":{{"subject":"P1 smoke"}},"user_id":"p1_smoke"}}' \
+  http://127.0.0.1:5000/api/assist/copy 2>/dev/null || echo 000)
+echo "assist/copy HTTP $CODE"
+grep -o '"error":"[^"]*"' /tmp/_copy.json 2>/dev/null || head -c 120 /tmp/_copy.json 2>/dev/null; echo
+ENDSCRIPT'''
+
+
+def _remote_bootstrap_pro_plan() -> str:
+    return rf'''bash -s <<'ENDSCRIPT'
+set +e
+cd {WEB}
+python3 scripts/paypal_bootstrap_pro_plan.py > /tmp/_pp_boot.json 2>&1
+cat /tmp/_pp_boot.json
 ENDSCRIPT'''
 
 
@@ -131,6 +145,11 @@ def main() -> int:
     p.add_argument("--paypal-webhook-id", help="Set PAYPAL_WEBHOOK_ID=WH-…")
     p.add_argument("--reload", action="store_true")
     p.add_argument("--verify", action="store_true")
+    p.add_argument(
+        "--bootstrap-pro-plan",
+        action="store_true",
+        help="Create Pro billing plan on PayPal via API (server .env creds)",
+    )
     p.add_argument("--all", action="store_true", help="enable tier enforcement + reload + verify")
     args = p.parse_args()
 
@@ -145,6 +164,7 @@ def main() -> int:
         args.paypal_plan_pro,
         args.paypal_plan_mn_host,
         args.paypal_webhook_id,
+        args.bootstrap_pro_plan,
         args.reload,
         args.verify,
         args.all,
@@ -162,13 +182,30 @@ def main() -> int:
         extra.append(_shell_export("PAYPAL_WEBHOOK_ID", args.paypal_webhook_id.strip()))
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
-    print(f"== Connected {deploy_user()}@{deploy_host()} ==\n")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"== Connected {deploy_user()}@{deploy_host()} ({auth_method}) ==\n")
 
     if args.audit:
         print(sh(ssh, _remote_audit(), timeout=60))
+        print()
+
+    if args.bootstrap_pro_plan:
+        print("== bootstrap Pro plan (PayPal API) ==")
+        raw = sh(ssh, _remote_bootstrap_pro_plan(), timeout=120)
+        print(raw)
+        plan_id = ""
+        try:
+            import json as _json
+            import re
+
+            blob = raw or ""
+            m = re.search(r"\{[\s\S]*\}", blob)
+            data = _json.loads(m.group(0) if m else blob)
+            plan_id = (data.get("plan_id") or "").strip()
+        except Exception:
+            pass
+        if plan_id and not args.paypal_plan_pro:
+            extra.append(_shell_export("PAYPAL_SUBSCRIPTION_PLAN_PRO", plan_id))
         print()
 
     if extra:
@@ -186,7 +223,7 @@ def main() -> int:
 
     ssh.close()
     print("P1 monetization pass complete.")
-    print("PayPal dashboard: create billing plan → pass --paypal-plan-pro + --paypal-webhook-id above.")
+    print("PayPal dashboard: create billing plan -> pass --paypal-plan-pro + --paypal-webhook-id above.")
     return 0
 
 

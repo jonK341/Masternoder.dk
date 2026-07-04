@@ -97,19 +97,48 @@ def paypal_capture():
 
     amount = float(result.get("amount", 0) or 0)
     coins_granted = 0
+    mn2_granted = 0.0
     item_granted = None
     pack = None
+    mn2_pack = None
     fulfillment_error = None
 
     try:
         from backend.services.unified_points_database import unified_points_db
-        from backend.routes.shop_routes import get_coin_pack_map, _get_paypal_shop_items, _get_shop_items, _apply_shop_item_effects
+        from backend.routes.shop_routes import get_coin_pack_map, get_mn2_pack_map, _get_paypal_shop_items, _get_shop_items, _apply_shop_item_effects
 
         pack = get_coin_pack_map().get(item_id) if item_id else None
+        mn2_pack = get_mn2_pack_map().get(item_id) if item_id else None
         paypal_items = _get_paypal_shop_items()
         shop_item = paypal_items.get(item_id) if item_id else None
 
-        if pack and pack.get("coins_granted"):
+        if mn2_pack and float(mn2_pack.get("mn2_granted") or 0) > 0:
+            from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
+
+            capture_id = result.get("capture_id") or order_id
+            ref = f"paypal_mn2_pack:{capture_id}:{item_id}"
+            grant = fulfill_mn2_purchase(
+                user_id,
+                item_id,
+                1,
+                source="paypal_mn2_pack",
+                reference=ref,
+                metadata={
+                    "order_id": order_id,
+                    "capture_id": capture_id,
+                    "item_id": item_id,
+                    "item_name": item_name or mn2_pack.get("name"),
+                    "amount_usd": amount,
+                },
+                item=mn2_pack,
+            )
+            if grant.get("success") and not grant.get("skipped"):
+                mn2_granted = float(grant.get("mn2_granted") or 0)
+            elif grant.get("skipped"):
+                fulfillment_error = "MN2 pack fulfillment skipped (no grant amount resolved)"
+            else:
+                fulfillment_error = grant.get("error") or "MN2 pack fulfillment failed"
+        elif pack and pack.get("coins_granted"):
             coins_granted = int(pack["coins_granted"])
             if unified_points_db and coins_granted > 0:
                 unified_points_db.add_points(
@@ -140,7 +169,7 @@ def paypal_capture():
                 )
                 item_granted = item_id
                 full_item = next((i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id), {"id": item_id, "name": item_display_name})
-                _apply_shop_item_effects(user_id, item_id, full_item, 1)
+                _apply_shop_item_effects(user_id, item_id, full_item, 1, purchase_ref=result.get("capture_id") or order_id)
             except Exception as e:
                 fulfillment_error = str(e)
         elif unified_points_db and amount > 0:
@@ -186,6 +215,7 @@ def paypal_capture():
         "capture_id": result.get("capture_id"),
         "amount": result.get("amount"),
         "coins_granted": coins_granted,
+        "mn2_granted": mn2_granted,
     }
     if item_granted:
         payload["item_granted"] = item_granted

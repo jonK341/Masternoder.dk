@@ -47,7 +47,12 @@
             '</div>';
 
         if (script && script.parentNode) {
-            script.parentNode.insertBefore(wrap, script.nextSibling);
+            var hub = document.querySelector('.mn2-hub-wrap');
+            if (hub) {
+                hub.insertBefore(wrap, hub.firstChild);
+            } else {
+                script.parentNode.insertBefore(wrap, script.nextSibling);
+            }
         } else {
             var anchor = document.querySelector('.podcast-header') || document.querySelector('main') || document.body;
             anchor.insertBefore(wrap, anchor.firstChild);

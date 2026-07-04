@@ -1,0 +1,31 @@
+{
+  "agent_id": "arb_agent_midcap",
+  "realized_profit_usd": 0.0,
+  "trade_count": 0,
+  "notional_traded_usd": 0.0,
+  "by_venue": {},
+  "wallet_label": "arb_midcap_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_midcap",
+    "executed": false,
+    "reason": "below_threshold",
+    "best": {
+      "symbol": "AVAX",
+      "buy_venue": "kucoin",
+      "buy_ask": 7.037,
+      "sell_venue": "xt",
+      "sell_bid": 7.04,
+      "gross_bps": 4.26,
+      "fee_bps": 28.0,
+      "net_bps": -23.74,
+      "notional_usd": 200.0,
+      "est_profit_usd": -0.4747
+    },
+    "mode": "live",
+    "profit_path_id": "6261f99a"
+  },
+  "created_at": "2026-06-27T20:44:47.051496Z",
+  "ticks": 2271,
+  "game_time_sec": 8175600,
+  "agent_level": 46
+}

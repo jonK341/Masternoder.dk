@@ -105,6 +105,9 @@ def register_signal_processor_middleware(app):
             return
         if '/api/' not in request.path:
             return
+        # Discord signs the raw POST body; avoid parsing JSON before the route reads it.
+        if request.path == "/api/discord/interactions":
+            return
         process_invoke_in_request()
         if path_correction_enabled:
             correct_paths_in_request()

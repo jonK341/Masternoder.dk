@@ -15,6 +15,9 @@ _MARKET_EVENT_TYPES = frozenset({
     "p2p_market_fill",
     "p2p_market_order",
     "trader_market_tick",
+    "exchange_rental_start",
+    "casino_mn2_big_win",
+    "bridge_cross_highlight",
 })
 
 
@@ -139,7 +142,63 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             }],
         }
 
+    if et == "exchange_rental_start":
+        name = payload.get("name") or "Exchange bot"
+        days = payload.get("days") or 7
+        price = float(payload.get("price_mn2") or 0)
+        return {
+            "embeds": [{
+                "title": "🤖 New exchange rental",
+                "description": (
+                    f"**{name}** — **{days} days** @ **{price:.0f} MN2**\n\n"
+                    f"[Rent your bot]({base_url}/exchange#cex-control-center)\n\n"
+                    "_Paper trading — try before you buy._"
+                ),
+                "color": 0x7C3AED,
+            }],
+        }
+
+    if et == "casino_mn2_big_win":
+        net = float(payload.get("net") or 0)
+        game = payload.get("game") or "casino"
+        return {
+            "embeds": [{
+                "title": "🎰 MN2 casino win",
+                "description": (
+                    f"**{net:.4f} MN2** net on **{game}**\n\n"
+                    f"[Play MN2 tables]({base_url}/casino/)\n\n"
+                    "_Shared MN2 wallet with exchange rentals._"
+                ),
+                "color": 0xF59E0B,
+            }],
+        }
+
+    if et == "bridge_cross_highlight":
+        return {
+            "embeds": [{
+                "title": payload.get("title") or "Bridge highlight",
+                "description": payload.get("description") or "",
+                "color": 0xA855F7,
+            }],
+        }
+
     return None
+
+
+def _embed_bridge_combined(rental: Dict[str, Any], win: Dict[str, Any]) -> Dict[str, Any]:
+    base_url = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+    exchange_url = f"{base_url}/exchange#cex-control-center"
+    casino_url = f"{base_url}/casino/"
+    rp = rental.get("payload") or {}
+    wp = win.get("payload") or {}
+    lines = [
+        f"🤖 **{rp.get('name') or 'Exchange rental'}** — {rp.get('days', '?')}d @ {float(rp.get('price_mn2') or 0):.0f} MN2",
+        f"🎰 **MN2 win** — {float(wp.get('net') or 0):.4f} MN2 on **{wp.get('game') or 'casino'}**",
+        "",
+        f"[Agent control]({exchange_url}) · [Casino]({casino_url})",
+        "_Exchange ↔ Casino bridge — paper profit + MN2 play._",
+    ]
+    return {"embeds": [{"title": "Trader + High roller pulse", "description": "\n".join(lines), "color": 0xA855F7}]}
 
 
 def run_fanout(*, dry_run: bool = False) -> Dict[str, Any]:
@@ -151,9 +210,22 @@ def run_fanout(*, dry_run: bool = False) -> Dict[str, Any]:
 
     from backend.services.discord_service import post_message
 
+    rental_row = next((r for r in rows if r.get("type") == "exchange_rental_start"), None)
+    win_row = next((r for r in rows if r.get("type") == "casino_mn2_big_win"), None)
+    combined_ref = None
+    if rental_row and win_row and not dry_run:
+        combined = _embed_bridge_combined(rental_row, win_row)
+        combined_ref = f"bridge-combined:{rental_row.get('ts')}:{win_row.get('ts')}"
+        result = post_message("market", combined, message_id=combined_ref)
+        if result.get("success"):
+            posted.append(combined_ref)
+
     for row in rows:
         et = row.get("type") or "event"
         ts = row.get("ts") or ""
+        if rental_row and win_row and et in ("exchange_rental_start", "casino_mn2_big_win"):
+            skipped.append(et)
+            continue
         bet_id = (row.get("payload") or {}).get("order_id") or (row.get("payload") or {}).get("ref")
         msg_id = f"market-fanout:{et}:{bet_id or ts}"
         embed = _embed_for_event(row)

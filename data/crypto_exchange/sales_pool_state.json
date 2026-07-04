@@ -1,0 +1,17 @@
+{
+  "last_transfer_at": "2026-07-04T18:35:31.410169Z",
+  "transfer_count": 2632,
+  "auto_tune_gap_streak": {
+    "BTC": 2174
+  },
+  "auto_tune_effective_mins": {
+    "USDC": 1.0,
+    "USDT": 1.0,
+    "BTC": 0.00024,
+    "ETH": 0.005,
+    "SOL": 0.05,
+    "ADA": 25.0,
+    "AVAX": 0.5,
+    "DASH": 0.02
+  }
+}

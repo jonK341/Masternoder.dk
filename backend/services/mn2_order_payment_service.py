@@ -293,7 +293,7 @@ def confirm_and_fulfill(payment_ref: str, txid: str, amount_received: Optional[f
         try:
             items = _get_shop_items() or []
             item = next((x for x in items if (x.get("id") or "") == item_id), {})
-            _apply_shop_item_effects(user_id, item_id, item, quantity)
+            _apply_shop_item_effects(user_id, item_id, item, quantity, purchase_ref=txid_val or payment_ref)
         except Exception as effects_ex:
             _log.exception("mn2_order_payment effects failed ref=%s: %s", payment_ref, effects_ex)
 

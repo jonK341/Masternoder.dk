@@ -1,0 +1,67 @@
+{
+  "enabled": true,
+  "season_id": "bridge-2026-s1",
+  "week_resets": true,
+  "quests": [
+    {
+      "id": "xcq-rent-bot",
+      "label": "Rent an exchange bot",
+      "description": "Start any bot rental via Agent Control Center or checkout.",
+      "action": "exchange_rent",
+      "target": 1,
+      "reward_coins": 35,
+      "reward_xp": 60,
+      "battle_pass_action": "exchange_rent",
+      "icon": "🤖"
+    },
+    {
+      "id": "xcq-mn2-wins-3",
+      "label": "Win 3 casino hands with MN2",
+      "description": "Land 3 winning MN2 bets at the casino tables.",
+      "action": "casino_mn2_win",
+      "target": 3,
+      "reward_coins": 50,
+      "reward_xp": 80,
+      "battle_pass_action": "casino_mn2_win",
+      "icon": "🎰"
+    },
+    {
+      "id": "xcq-skill-addon",
+      "label": "Bolt on an exchange skill",
+      "description": "Attach any skill add-on to a rental or owned bot.",
+      "action": "exchange_skill_addon",
+      "target": 1,
+      "reward_coins": 25,
+      "reward_xp": 45,
+      "icon": "⚡"
+    },
+    {
+      "id": "xcq-cashout-casino",
+      "label": "Cash out profit to casino coins",
+      "description": "Convert exchange paper profit to casino play coins once.",
+      "action": "exchange_cashout_casino",
+      "target": 1,
+      "reward_coins": 40,
+      "reward_xp": 70,
+      "icon": "💱"
+    },
+    {
+      "id": "xcq-bridge-complete",
+      "label": "Complete a rental term",
+      "description": "Run a rental to expiry and claim the completion reward.",
+      "action": "exchange_rental_complete",
+      "target": 1,
+      "reward_coins": 60,
+      "reward_xp": 100,
+      "icon": "🏁"
+    }
+  ],
+  "leaderboard": {
+    "enabled": true,
+    "period": "week",
+    "trader_weight": 10.0,
+    "highroller_weight": 100.0,
+    "rental_bonus": 25.0,
+    "top_rewards_coins": [200, 100, 50]
+  }
+}

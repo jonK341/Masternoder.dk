@@ -137,7 +137,7 @@ def purchase_with_mn2_balance(
         metadata=meta,
     )
 
-    _apply_shop_item_effects(uid, iid, item, qty)
+    _apply_shop_item_effects(uid, iid, item, qty, purchase_ref=str(purchase_id) if purchase_id else None)
 
     # Shop V9.2: loyalty/cashback on the coin-equivalent value of MN2 spend.
     loyalty_earned = 0
