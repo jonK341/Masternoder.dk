@@ -35,6 +35,8 @@ def search_config() -> Dict[str, Any]:
     cfg.setdefault("live_weight", 0.45)
     cfg.setdefault("skip_agent_symbols_when_hot", True)
     cfg.setdefault("min_live_net_bps", 8.0)
+    cfg.setdefault("volatility_weight", 0.12)
+    cfg.setdefault("triangular_bonus", 4.0)
     return cfg
 
 
@@ -377,6 +379,51 @@ def live_spread_rank(
     return hits[: max(1, limit)]
 
 
+def volatility_spread_score(symbol: str, *, hours: Optional[float] = None) -> float:
+    """Score symbol by recent scan net_bps variance (higher = more volatile opportunity)."""
+    from backend.services.exchange_profit_path_service import search_paths
+
+    cfg = search_config()
+    lookback = float(hours if hours is not None else cfg.get("ledger_lookback_hours") or 24)
+    sym = str(symbol or "").upper()
+    nets: List[float] = []
+    for row in search_paths(hours=lookback, limit=5000).get("paths") or []:
+        if str(row.get("symbol") or "").upper() != sym:
+            continue
+        if row.get("phase") != "scan":
+            continue
+        nb = float(row.get("net_bps") or 0)
+        if nb != 0:
+            nets.append(nb)
+    if len(nets) < 2:
+        return 0.0
+    mean = sum(nets) / len(nets)
+    var = sum((n - mean) ** 2 for n in nets) / len(nets)
+    return round(min(25.0, var ** 0.5), 2)
+
+
+def triangular_symbol_bonus(symbols: Optional[List[str]] = None) -> Dict[str, float]:
+    """Bonus score for symbols appearing in configured triangular loops."""
+    cfg = search_config()
+    bonus = float(cfg.get("triangular_bonus") or 4.0)
+    try:
+        from backend.services.exchange_extended_profit_service import _strategy_cfg
+
+        scfg = _strategy_cfg("triangular_paper")
+        loops = scfg.get("loops") or []
+    except Exception:
+        loops = []
+    out: Dict[str, float] = {}
+    for loop in loops:
+        if not isinstance(loop, (list, tuple)) or len(loop) < 3:
+            continue
+        for sym in loop:
+            s = str(sym or "").upper()
+            if s and (not symbols or s in symbols):
+                out[s] = max(out.get(s, 0.0), bonus)
+    return out
+
+
 def _merge_rankings(
     ledger_rows: List[Dict[str, Any]],
     live_rows: List[Dict[str, Any]],
@@ -430,16 +477,25 @@ def _merge_rankings(
     for row in live_rows:
         _upsert(row, from_ledger=False)
 
+    tri_bonus = triangular_symbol_bonus()
+    vw = float(cfg.get("volatility_weight") or 0.12)
+
     ranked: List[Dict[str, Any]] = []
     for key, row in combined.items():
+        sym = str(row.get("symbol") or "").upper()
         ledger_part = float(row.get("avg_net_bps") or 0) * (0.5 + float(row.get("hit_rate_pct") or 0) / 200.0)
         live_part = float(row.get("live_score") or 0)
-        score = lw * ledger_part + sw * live_part
+        vol = volatility_spread_score(sym) if sym else 0.0
+        score = lw * ledger_part + sw * live_part + vw * vol
         if row.get("fill_count"):
             score += min(15.0, float(row["fill_count"]) * 3.0)
+        if sym in tri_bonus:
+            score += tri_bonus[sym]
+            row["triangular"] = True
         ranked.append({
             **row,
             "route": key,
+            "volatility_score": vol,
             "search_score": round(score, 2),
         })
     ranked.sort(key=lambda r: (r["search_score"], r["fill_count"], r["live_score"]), reverse=True)

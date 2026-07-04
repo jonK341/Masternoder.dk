@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-04_
 
-Canonical ops checklist for Masternoder.dk profit engines. For the full 25-item audit (auto-synced from PPP ledger), see [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md). For PPP schema and research workflow, see [PROFIT_PATH_PROTOCOL.md](./PROFIT_PATH_PROTOCOL.md). For 24/7 server systemd plan, see [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md).
+Canonical ops checklist for Masternoder.dk profit engines. For the **110-upgrade roadmap** (22 done / 88 planned), see [PROFIT_DAEMON_110_UPGRADES.md](./PROFIT_DAEMON_110_UPGRADES.md). For the full 25-item audit (auto-synced from PPP ledger), see [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md). For PPP schema and research workflow, see [PROFIT_PATH_PROTOCOL.md](./PROFIT_PATH_PROTOCOL.md). For 24/7 server systemd plan, see [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md).
 
 ---
 
@@ -106,6 +106,11 @@ See [DAEMONS_AND_AGENTS.md](./DAEMONS_AND_AGENTS.md) — unset `EXCHANGE_ARBITRA
 | `EXCHANGE_ROTATION_LIVE` | Live rotation orders | `1` (local max); `0` prod unless opted in |
 | `EXCHANGE_FAST_MIN_BPS` | Lower fast-rescan threshold (session only) | e.g. `10` when near threshold |
 | `EXCHANGE_ZERO_FILL_WARN` | Consecutive hot ticks with arb_exec=0 before warn | default `3` |
+| `EXCHANGE_PROFIT_KILL` | Emergency stop — blocks live exec + sweeps | `1` to activate |
+| `PROFIT_OPS_DISCORD_CHANNEL` | Discord outbox channel for ops alerts | default `ops` |
+| `PROFIT_ALERT_COOLDOWN_SEC` | Min seconds between duplicate ops webhooks | default `900` |
+| `EXCHANGE_AUTO_TUNE_SWEEP_MIN` | Lower min_sweep when live stash grows | default `1` |
+| `EXCHANGE_AUTO_SCALE_NOTIONAL` | Scale paper_trade_usd to max_funded | default `1` |
 | `EXCHANGE_VAULT_KEY` | Fernet key for encrypted secrets vault | server-only, never commit |
 | `EXCHANGE_ADMIN_KEY` | Admin PPP export / rotation execute | server-only |
 | `XEGGEX_API_KEY` / `XEGGEX_API_SECRET` | XeggeX signed API (#2) | in `.env` + vault |
@@ -204,6 +209,15 @@ sweep=yes mode=live amount=$125.00
 - Venue balance monitor cache, arb threshold state, extensive PPP ledger population
 - Agent account tuning across all arb agents + payments_plus
 
+### 2026-07-04 — 110-upgrade P0/P1 batch (22 shipped)
+
+- Ops service: kill-switch, Discord zero-fill + low-balance alerts, sweep auto-tune, prefund queue
+- Pair search: volatility score + triangular bonus; shared hot symbols across fast/exchange loops
+- API: `/api/profit-daemon/metrics`, `POST /api/profit-daemon/reload-config`
+- Monitor UI: pair_search, hot_prefund, zero_fill tiles; daily PPP summary hook
+- Ops: log rotation, `scripts/profit_daemon_healthcheck.sh` for systemd
+- Full list: [PROFIT_DAEMON_110_UPGRADES.md](./PROFIT_DAEMON_110_UPGRADES.md)
+
 ### ff76442 — Venue execution eligibility
 
 - `venue_execution_eligible` gates private-API venues
@@ -234,6 +248,7 @@ sweep=yes mode=live amount=$125.00
 
 | Doc | Use when |
 |-----|----------|
+| [PROFIT_DAEMON_110_UPGRADES.md](./PROFIT_DAEMON_110_UPGRADES.md) | Full 110-item roadmap (P0–P3), done vs planned |
 | [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) | Full checkbox audit + runbooks (#2, #10, #14, #7) |
 | [PROFIT_PATH_PROTOCOL.md](./PROFIT_PATH_PROTOCOL.md) | Ledger research, rotation API, skill evolution |
 | [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md) | systemd 24/7 deploy, monitor/news/rentals |

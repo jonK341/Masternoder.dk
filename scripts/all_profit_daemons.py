@@ -500,19 +500,64 @@ def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
 
 def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threading.Event) -> None:
     print(f"[all-profit] exchange loop interval={interval}s profile={profile} mode={daemon_mode_label()}", flush=True)
+    tick_n = 0
     while not stop.is_set():
         try:
+            from backend.services.profit_daemon_ops_service import (
+                check_profit_kill,
+                maybe_alert_venue_balance_low,
+                maybe_alert_zero_fill_streak,
+                maybe_auto_tune_sweep_min,
+                maybe_daily_ppp_summary,
+                maybe_prefund_queue,
+                maybe_scale_paper_trade_usd,
+                publish_hot_symbols_shared,
+                reload_ppp_config,
+            )
+
+            kill = check_profit_kill(action="exchange_tick")
+            if kill:
+                print(f"[all-profit] KILL-SWITCH active — skipping exchange tick ({kill['reason']})", flush=True)
+                _write_heartbeat("exchange", f"kill_switch=yes reason={kill['reason']}", extra={"profit_kill": True})
+                stop.wait(max(15, interval))
+                continue
+
+            reload_ppp_config()
             res = _exchange_once(auto_sweep, profile)
             plat = res.get("platform") or {}
             ps = plat.get("profit_pair_search")
             if ps is not None:
                 print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+                if ps.get("hot_symbols"):
+                    publish_hot_symbols_shared(list(ps.get("hot_symbols") or []), source="exchange")
             summary = _summarize_exchange(res)
             print(f"[all-profit] exchange {summary}", flush=True)
             streak = _track_zero_fill_streak(res)
+            maybe_alert_zero_fill_streak(streak=streak, exchange_res=res)
+            scale = maybe_scale_paper_trade_usd(res)
+            if scale.get("success"):
+                print(f"[all-profit] notional scaled paper_trade_usd={scale.get('paper_trade_usd')}", flush=True)
             _maybe_hot_pair_prefund(res)
+            pref = maybe_prefund_queue(res, top_n=3)
+            if pref.get("prefund_executed"):
+                print(f"[all-profit] prefund_queue executed symbol={pref.get('outcomes', [{}])[0].get('symbol', '?')}", flush=True)
             _maybe_auto_rotation(res)
-            _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
+            maybe_auto_tune_sweep_min()
+            maybe_alert_venue_balance_low()
+            tick_n += 1
+            if tick_n == 1 or tick_n % 48 == 0:
+                maybe_daily_ppp_summary()
+            hot_prefund = "ok" if pref.get("prefund_executed") else "idle"
+            _write_heartbeat(
+                "exchange",
+                summary,
+                extra={
+                    "zero_fill_streak": streak,
+                    "hot_symbols": list((ps or {}).get("hot_symbols") or [])[:8],
+                    "hot_prefund": hot_prefund,
+                    "profit_kill": False,
+                },
+            )
             try:
                 from backend.services.profit_daemon_news_service import maybe_publish_tick_news
                 maybe_publish_tick_news("exchange", summary, res=res)
@@ -527,11 +572,18 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
     print(f"[all-profit] fast rescan loop interval={interval}s profile={profile}", flush=True)
     while not stop.is_set():
         try:
+            from backend.services.profit_daemon_ops_service import check_profit_kill, publish_hot_symbols_shared
+
+            if check_profit_kill(action="fast_tick"):
+                stop.wait(max(30, interval))
+                continue
             res = _extended_once(profile)
             far = (res.get("results") or {}).get("fast_arb_rescan") or {}
             ps = far.get("profit_pair_search")
             if ps is not None:
                 print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+                if ps.get("hot_symbols"):
+                    publish_hot_symbols_shared(list(ps.get("hot_symbols") or []), source="fast")
             summary = _summarize_fast(res)
             print(f"[all-profit] fast {summary}", flush=True)
             _write_heartbeat("fast", summary)
@@ -656,6 +708,17 @@ def main() -> int:
         from scripts.daemon_preflight import format_preflight, run_preflight
         pf = run_preflight()
         print(format_preflight(pf), flush=True)
+
+    try:
+        from backend.services.profit_daemon_ops_service import profit_kill_active, rotate_daemon_logs
+
+        rot = rotate_daemon_logs()
+        if rot.get("rotated"):
+            print(f"[all-profit] log rotation: {rot.get('rotated')}", flush=True)
+        if profit_kill_active():
+            print("[all-profit] WARNING EXCHANGE_PROFIT_KILL=1 — live execution blocked", flush=True)
+    except Exception:
+        pass
 
     _warm_flask_for_daemons()
 

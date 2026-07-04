@@ -222,8 +222,10 @@ def _build_stats(
     conn: Dict[str, Any],
     critical_open: int,
     critical_done: int,
+    hb_extra: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     stats: List[Dict[str, Any]] = []
+    hb_extra = hb_extra or {}
     ex_age = next((r.get("age_sec") for r in loop_rows if r["loop"] == "exchange"), None)
     fa_age = next((r.get("age_sec") for r in loop_rows if r["loop"] == "fast"), None)
     ca_age = next((r.get("age_sec") for r in loop_rows if r["loop"] == "casino"), None)
@@ -271,6 +273,21 @@ def _build_stats(
                        status="good" if _int_or_none(em.get("cross_actions")) and _int_or_none(em.get("cross_actions")) >= 7 else "neutral"))
     stats.append(_stat("ext_exec", "Extended strategies", em.get("ext_exec", "—"), category="arb"))
     stats.append(_stat("user_agents", "User marketplace ticks", em.get("user_agents", 0), category="arb"))
+
+    zfs = em.get("zero_fill_streak") or hb_extra.get("zero_fill_streak")
+    stats.append(_stat("zero_fill_streak", "Zero-fill streak", zfs if zfs is not None else 0, category="arb",
+                       status="bad" if zfs and int(zfs) >= 3 else "good",
+                       hint="Hot ticks with arb_exec=0"))
+    ps_hot = em.get("pair_search") or em.get("search_hot") or "—"
+    stats.append(_stat("pair_search_hot", "Pair search hot", ps_hot, category="search",
+                       status="good" if ps_hot and ps_hot != "—" else "neutral",
+                       hint="Top symbols from ledger+catalog ranking"))
+    stats.append(_stat("hot_prefund", "Hot prefund", em.get("hot_prefund", "—"), category="search",
+                       status="good" if str(em.get("hot_prefund") or "").startswith("ok") else "neutral"))
+    shared_hot = hb_extra.get("hot_symbols") or []
+    if shared_hot:
+        stats.append(_stat("shared_hot", "Shared hot symbols", ",".join(shared_hot[:4]), category="search",
+                           hint="Exchange+fast loop merged index"))
 
     stats.append(_stat("fast_best_bps", "Fast best spread", fm.get("best_bps", "—"), unit="bps", category="fast"))
     stats.append(_stat("fast_threshold", "Fast threshold", fm.get("threshold", "—"), unit="bps", category="fast"))
@@ -587,6 +604,10 @@ def monitor_status() -> Dict[str, Any]:
         conn=conn,
         critical_open=open_count,
         critical_done=done_count,
+        hb_extra={
+            k: v for k, v in hb.items()
+            if k in ("zero_fill_streak", "hot_symbols", "hot_prefund", "profit_kill")
+        },
     )
 
     readiness_stat = next((s for s in stats if s["id"] == "profit_readiness"), {})
@@ -637,6 +658,9 @@ def monitor_status() -> Dict[str, Any]:
         "venues": venues,
         "config": conn,
         "critical": {"open": open_count, "done": done_count},
+        "profit_kill": bool(hb.get("profit_kill")),
+        "zero_fill_streak": hb.get("zero_fill_streak"),
+        "hot_symbols": hb.get("hot_symbols") or [],
         "server": server_state,
         "checked_at": _iso(),
     }

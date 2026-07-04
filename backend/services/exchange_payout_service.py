@@ -541,6 +541,8 @@ def _debit_treasury_for_payout(amount_usd: float) -> None:
 
 
 def execute_sweep(min_sweep_usd: Optional[float] = None) -> Dict[str, Any]:
+    if os.environ.get("EXCHANGE_PROFIT_KILL", "").strip().lower() in ("1", "true", "yes", "on"):
+        return {"success": False, "error": "profit_kill", "blocked": True}
     plan = plan_sweep(min_sweep_usd)
     if not plan.get("actionable"):
         return {"success": False, "error": plan.get("reason"), "plan": plan}

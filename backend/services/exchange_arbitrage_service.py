@@ -26,6 +26,8 @@ def _iso() -> str:
 
 
 def live_enabled() -> bool:
+    if os.environ.get("EXCHANGE_PROFIT_KILL", "").strip().lower() in ("1", "true", "yes", "on"):
+        return False
     cfg = conn.load_connectors_config()
     flag = cfg.get("live_env_flag") or "EXCHANGE_ARBITRAGE_LIVE"
     if str(os.environ.get(flag, "")).strip() != "1":

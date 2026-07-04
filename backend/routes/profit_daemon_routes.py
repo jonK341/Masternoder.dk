@@ -6,6 +6,18 @@ from flask import Blueprint, jsonify, request
 profit_daemon_bp = Blueprint("profit_daemon", __name__)
 
 
+@profit_daemon_bp.route("/api/profit-daemon/metrics", methods=["GET"])
+def profit_daemon_metrics():
+    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot
+    return jsonify(daemon_metrics_snapshot())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/reload-config", methods=["POST"])
+def profit_daemon_reload_config():
+    from backend.services.profit_daemon_ops_service import reload_ppp_config
+    return jsonify(reload_ppp_config())
+
+
 @profit_daemon_bp.route("/api/profit-daemon/status", methods=["GET"])
 def profit_daemon_status():
     from backend.services.profit_daemon_monitor_service import monitor_status

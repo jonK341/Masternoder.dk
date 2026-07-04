@@ -347,6 +347,8 @@ _STRATEGY_RUNNERS = {
 
 
 def run_extended_profit_tick(*, profile: str = "standard") -> Dict[str, Any]:
+    if os.environ.get("EXCHANGE_PROFIT_KILL", "").strip().lower() in ("1", "true", "yes", "on"):
+        return {"success": False, "error": "profit_kill", "blocked": True}
     cfg = load_config()
     if not cfg.get("enabled", True):
         return {"success": False, "error": "extended_profit_disabled"}

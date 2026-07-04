@@ -13,6 +13,7 @@
         payout: 'PayPal sweep',
         venues: 'Venues',
         ops: 'Ops readiness',
+        search: 'Pair search',
     };
 
     function $(id) { return document.getElementById(id); }
@@ -58,7 +59,7 @@
             byCat[c].push(s);
         });
 
-        const order = ['ops', 'daemon', 'arb', 'fast', 'funding', 'treasury', 'ppp', 'payout', 'casino', 'venues'];
+        const order = ['ops', 'daemon', 'search', 'arb', 'fast', 'funding', 'treasury', 'ppp', 'payout', 'casino', 'venues'];
         root.innerHTML = order.filter((c) => byCat[c]).map((cat) => {
             const cards = byCat[cat].map((s) => {
                 const unit = s.unit && s.unit !== 'USD' && s.unit !== '%'

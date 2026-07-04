@@ -16,6 +16,7 @@ from backend.services import crypto_exchange_service as ex
 
 _CFG_PATH = os.path.join(ex._DATA_DIR, "profit_path_protocol.json")
 _LEDGER_PATH = os.path.join(ex._DATA_DIR, "profit_path_ledger.jsonl")
+_CFG_CACHE: Dict[str, Any] = {"mtime": 0.0, "cfg": {}}
 
 
 def _iso() -> str:
@@ -37,7 +38,21 @@ def _parse_ts(ts: str) -> Optional[datetime]:
         return None
 
 
+def reload_config() -> Dict[str, Any]:
+    """Hot-reload PPP config from disk (no daemon restart)."""
+    global _CFG_CACHE
+    _CFG_CACHE = {"mtime": 0.0, "cfg": {}}
+    cfg = load_config()
+    return {"success": True, "reloaded_at": _iso(), "keys": sorted(cfg.keys())}
+
+
 def load_config() -> Dict[str, Any]:
+    try:
+        mtime = os.path.getmtime(_CFG_PATH) if os.path.isfile(_CFG_PATH) else 0.0
+    except OSError:
+        mtime = 0.0
+    if _CFG_CACHE.get("cfg") and float(_CFG_CACHE.get("mtime") or 0) == mtime:
+        return dict(_CFG_CACHE["cfg"])
     cfg = ex._read_json(_CFG_PATH, {})
     if not isinstance(cfg, dict):
         cfg = {}
@@ -58,6 +73,8 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
+    _CFG_CACHE["mtime"] = mtime
+    _CFG_CACHE["cfg"] = dict(cfg)
     return cfg
 
 
