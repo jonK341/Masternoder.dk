@@ -52,14 +52,14 @@
         "TRX"
       ],
       "min_net_bps": 12,
-      "notional_usd": 75.0,
+      "notional_usd": 10.0,
       "max_executions_per_tick": 2,
       "agent_id": "arb_live_dual_farm"
     },
     "stablecoin_peg": {
       "enabled": true,
       "min_deviation_bps": 8,
-      "notional_usd": 200,
+      "notional_usd": 10.0,
       "agent_id": "arb_stablecoin_peg"
     },
     "triangular_paper": {
@@ -86,7 +86,7 @@
         ]
       ],
       "min_edge_bps": 12,
-      "notional_usd": 150,
+      "notional_usd": 10.0,
       "agent_id": "arb_triangular_paper"
     },
     "meme_momentum": {
@@ -101,7 +101,7 @@
         "xeggex"
       ],
       "min_net_bps": 16,
-      "notional_usd": 200,
+      "notional_usd": 10.0,
       "agent_id": "arb_agent_meme"
     },
     "defi_rotation": {
@@ -133,13 +133,13 @@
         "whitebit"
       ],
       "min_net_bps": 18,
-      "notional_usd": 100,
+      "notional_usd": 10.0,
       "agent_id": "arb_agent_payments_plus"
     },
     "fast_arb_rescan": {
       "enabled": true,
       "min_net_bps": 12,
-      "notional_usd": 75.0,
+      "notional_usd": 10.0,
       "execute_on_threshold": true,
       "agent_id": "arb_live_dual_farm",
       "max_executions_per_tick": 1,

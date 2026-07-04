@@ -4,7 +4,8 @@
   "stash_quote": "MN2",
   "min_stash_usd": 0.01,
   "auto_stash_on_trade": true,
-  "auto_paypal_sweep": true,
+  "auto_paypal_sweep": false,
+  "compound_on_venues": true,
   "daemon_mesh_enabled": true,
   "sync_internal_to_external_mid": true,
   "mesh_symbols": [
@@ -29,5 +30,5 @@
     "operating_reserve_pct": 15,
     "note": "Target split for exchange fee_treasury MN2. Use GET /api/exchange/treasury/status fee_allocation field; allocation is informational until swept."
   },
-  "note": "Realized bot profit is converted to MN2 on the exchange treasury. When EXCHANGE_PAYOUT_PAYPAL_EMAIL is set, auto_paypal_sweep sends the configured share to your PayPal via Payouts API."
+  "note": "Realized bot profit is converted to MN2 on the exchange treasury ledger. Live arb P&L also compounds as USDC/USDT on Binance/NonKYC wallets from the trade legs. PayPal sweep is OFF by default (EXCHANGE_AUTO_PAYPAL_SWEEP=0) — withdraw manually when you want fiat."
 }

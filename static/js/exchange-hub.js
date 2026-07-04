@@ -193,6 +193,39 @@
     applyTab(valid ? hub : 'trade');
   }
 
+  function renderProfitBlockers(data, listId, countId) {
+    var ul = q(listId);
+    var countEl = q(countId);
+    if (!ul) return;
+    if (!data || data.success === false) {
+      ul.innerHTML = '<li class="cex-muted">Blockers unavailable.</li>';
+      if (countEl) countEl.textContent = '—';
+      return;
+    }
+    var open = Number(data.open_count || 0);
+    var problems = data.problems || [];
+    var blockers = problems.filter(function (p) { return !p.checked; });
+    if (countEl) countEl.textContent = open + ' open';
+    if (!blockers.length) {
+      ul.innerHTML = '<li class="cex-muted">All critical items done — focus on spreads ≥ min margin and venue auth.</li>';
+      return;
+    }
+    ul.innerHTML = blockers.slice(0, 8).map(function (b) {
+      return '<li class="cex-blocker-row">' +
+        '<span class="cex-blocker-pri">#' + (b.priority || '?') + '</span>' +
+        '<span><strong>' + (b.title || b.id) + '</strong>' +
+        '<br><span class="cex-muted">' + (b.category || '') + '</span></span></li>';
+    }).join('');
+  }
+
+  function loadProfitBlockers() {
+    return fetchJson('/api/exchange/profit-path/critical-top25?refresh=false&dynamic=false', { timeout: 8000 })
+      .then(function (data) {
+        renderProfitBlockers(data, 'cex-blockers-list-overview', 'cex-blockers-open-count');
+        renderProfitBlockers(data, 'cex-blockers-list-bots', 'cex-blockers-open-count-bots');
+      });
+  }
+
   function renderHealth(data) {
     var el = q('cex-health-summary');
     if (!el) return;
@@ -390,6 +423,7 @@
   }
 
   onTab('overview', loadOverviewHealth);
+  onTab('overview', loadProfitBlockers);
   onTab('liquidity', loadLiquidityTab);
   onTab('treasury', loadTreasuryTab);
   onTab('venues', loadVenuesTab);
@@ -397,6 +431,7 @@
     initProfitPathFilters();
     return loadProfitPathResearch();
   });
+  onTab('bots', loadProfitBlockers);
 
   window.ExchangeHub = {
     onTab: onTab,

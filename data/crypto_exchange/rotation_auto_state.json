@@ -1,0 +1,376 @@
+{
+  "recent": [
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T05:11:02.017465Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T05:43:57.184110Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T06:16:23.809304Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T06:49:13.442211Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T07:21:38.255237Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T07:53:56.513768Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T08:25:52.745441Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T08:57:20.321598Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T09:27:33.110779Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a12ac1ef0d7abcc8",
+      "ts": "2026-07-04T09:57:52.541923Z",
+      "asset_key": "binance||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a29de19ecbd5fff4",
+      "ts": "2026-07-04T15:38:53.465795Z",
+      "asset_key": "nonkyc||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "a29de19ecbd5fff4",
+      "ts": "2026-07-04T16:09:08.624816Z",
+      "asset_key": "nonkyc||reduce_notional|",
+      "amount_usd": 10.0,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T16:28:35.389240Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "ec76b4f266331065",
+      "ts": "2026-07-04T16:36:23.238544Z",
+      "asset_key": "binance|DOGE|buy|DOGEUSDC",
+      "amount_usd": 8.98,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:37:02.491001Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:37:22.158801Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:38:15.271113Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:41:14.652719Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:44:47.754014Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:47:30.945253Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:48:27.216840Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T16:49:04.578238Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:49:27.061454Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T16:55:34.942358Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T16:56:22.895509Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T17:01:48.110515Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T17:02:18.018907Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T17:05:28.354368Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T17:08:06.795810Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T17:09:35.112787Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T17:12:24.342221Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "003d7ba8f36c283f",
+      "ts": "2026-07-04T17:18:23.563627Z",
+      "asset_key": "bingx|ADA|buy|ADA-USDT",
+      "amount_usd": 10.0,
+      "type": "external_market_buy",
+      "success": false,
+      "skip_reason": "unknown_venue"
+    },
+    {
+      "hash": "f20e67d95b4d0585",
+      "ts": "2026-07-04T17:23:49.299400Z",
+      "asset_key": "nonkyc|DOGE|buy|DOGE_USDT",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "f0a4181bab04850d",
+      "ts": "2026-07-04T17:24:43.481007Z",
+      "asset_key": "nonkyc|BTC|buy|BTC_USDT",
+      "amount_usd": 24.5,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "3220569fcd4bc1e1",
+      "ts": "2026-07-04T17:32:26.707195Z",
+      "asset_key": "nonkyc|DOGE|sell|DOGE_USDT",
+      "amount_usd": 10.26,
+      "type": "external_market_sell",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "93da423d9a296157",
+      "ts": "2026-07-04T17:37:53.150761Z",
+      "asset_key": "nonkyc||reduce_notional|",
+      "amount_usd": 10.42,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "1546ee6c44227e86",
+      "ts": "2026-07-04T17:43:01.705614Z",
+      "asset_key": "coinbase|BTC|buy|BTC-USD",
+      "amount_usd": 25.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "37b99681565c8f11",
+      "ts": "2026-07-04T18:01:09.457314Z",
+      "asset_key": "binance|LINK|buy|LINKUSDC",
+      "amount_usd": 5.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "3220569fcd4bc1e1",
+      "ts": "2026-07-04T18:14:47.365505Z",
+      "asset_key": "nonkyc|DOGE|sell|DOGE_USDT",
+      "amount_usd": 10.18,
+      "type": "external_market_sell",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "cbc9beffe1e8fcd9",
+      "ts": "2026-07-04T18:17:36.182804Z",
+      "asset_key": "nonkyc||reduce_notional|",
+      "amount_usd": 10.41,
+      "type": "reduce_notional",
+      "success": true,
+      "skip_reason": ""
+    },
+    {
+      "hash": "37b99681565c8f11",
+      "ts": "2026-07-04T18:32:13.967384Z",
+      "asset_key": "binance|LINK|buy|LINKUSDC",
+      "amount_usd": 5.0,
+      "type": "external_market_buy",
+      "success": true,
+      "skip_reason": ""
+    }
+  ],
+  "updated_at": "2026-07-04T18:32:13.967384Z",
+  "last_executed_hash": "37b99681565c8f11",
+  "last_executed_at": "2026-07-04T18:32:13.967384Z"
+}

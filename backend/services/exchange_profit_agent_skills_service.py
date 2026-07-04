@@ -723,19 +723,34 @@ def _dynamic_critical_from_ppp() -> List[Dict[str, Any]]:
     return hints
 
 
-def critical_problems_top25(*, refresh: bool = True) -> Dict[str, Any]:
+def critical_problems_top25(*, refresh: bool = True, dynamic: bool = True) -> Dict[str, Any]:
     """Critical problem list with checkbox state for ops tracking."""
     store = _read_json(_CRITICAL_PATH, {})
     if not isinstance(store, dict):
         store = {}
+    stored_problems = store.get("problems")
+    if not refresh and isinstance(stored_problems, list) and stored_problems:
+        open_count = int(store.get("open_count") or sum(1 for p in stored_problems if not p.get("checked")))
+        done_count = int(store.get("done_count") or max(0, len(stored_problems) - open_count))
+        return {
+            "success": True,
+            "updated_at": store.get("updated_at"),
+            "last_hit_rate_review_at": store.get("last_hit_rate_review_at"),
+            "open_count": open_count,
+            "done_count": done_count,
+            "problems": stored_problems,
+            "cached": True,
+        }
+
     checks: Dict[str, bool] = store.get("checks") if isinstance(store.get("checks"), dict) else {}
 
     problems = _base_critical_problems()
     seen_ids = {p["id"] for p in problems}
-    for dyn in _dynamic_critical_from_ppp():
-        if dyn["id"] not in seen_ids and len(problems) < 25:
-            problems.append(dyn)
-            seen_ids.add(dyn["id"])
+    if dynamic:
+        for dyn in _dynamic_critical_from_ppp():
+            if dyn["id"] not in seen_ids and len(problems) < 25:
+                problems.append(dyn)
+                seen_ids.add(dyn["id"])
     problems.sort(key=lambda p: int(p.get("priority") or 99))
     problems = problems[:25]
 
@@ -758,15 +773,19 @@ def critical_problems_top25(*, refresh: bool = True) -> Dict[str, Any]:
         store["done_count"] = len(items) - open_count
         _write_json(_CRITICAL_PATH, store)
 
-    return {
+    result: Dict[str, Any] = {
         "success": True,
         "updated_at": store.get("updated_at") or _iso(),
         "last_hit_rate_review_at": store.get("last_hit_rate_review_at"),
         "open_count": open_count,
         "done_count": len(items) - open_count,
         "problems": items,
-        "markdown": render_critical_markdown(items, notes=store.get("notes") if isinstance(store.get("notes"), dict) else {}),
     }
+    if dynamic or refresh:
+        result["markdown"] = render_critical_markdown(
+            items, notes=store.get("notes") if isinstance(store.get("notes"), dict) else {},
+        )
+    return result
 
 
 def update_critical_checkbox(problem_id: str, checked: bool) -> Dict[str, Any]:

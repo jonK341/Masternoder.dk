@@ -175,6 +175,12 @@
             <section class="cex-panel cex-overview-panel">
                 <h2>Exchange health</h2>
                 <div id="cex-health-summary" class="cex-monitor-totals">Open this tab to load health…</div>
+                <div class="cex-profile-card cex-blockers-card" id="cex-profit-blockers-overview">
+                    <h3>Profit blockers <span class="cex-badge" id="cex-blockers-open-count">—</span></h3>
+                    <p class="cex-market-sub" style="margin:0 0 8px">Critical path items blocking full profit readiness.</p>
+                    <ul id="cex-blockers-list-overview" class="cex-blockers-list"><li class="cex-muted">Open Overview to load…</li></ul>
+                    <p style="margin:8px 0 0"><a href="/profit/" class="cex-mini-link">Full profit monitor →</a></p>
+                </div>
                 <div class="cex-profile-card cex-progress-card" id="cex-progress-monitor">
                     <h3>User progress monitor</h3>
                     <div id="cex-progress-summary" class="cex-progress-summary">—</div>
@@ -205,6 +211,12 @@
         <div class="cex-tab-shell" data-cex-tab="bots" id="cex-shell-bots" hidden>
             <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
             <section class="cex-panel cex-bots-panel">
+                <div class="cex-profile-card cex-blockers-card" id="cex-profit-blockers-bots">
+                    <h3>What's left <span class="cex-badge" id="cex-blockers-open-count-bots">—</span></h3>
+                    <p class="cex-market-sub" style="margin:0 0 8px">Top critical checklist — close these to unlock full profit path.</p>
+                    <ul id="cex-blockers-list-bots" class="cex-blockers-list"><li class="cex-muted">Open Bots tab to load…</li></ul>
+                    <p style="margin:8px 0 0"><a href="/profit/" class="cex-mini-link">Full profit monitor →</a></p>
+                </div>
                 <div class="cex-profile-card cex-monitor-card" id="cex-live-monitor">
                     <h3>Live trading monitor <span class="cex-live-dot" id="cex-live-dot"></span></h3>
                     <div id="cex-monitor-totals" class="cex-monitor-totals">—</div>
@@ -500,7 +512,7 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20260702b"></script>
+    <script src="/static/js/exchange-hub.js?v=20260704a"></script>
     <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
 </body>

@@ -335,7 +335,7 @@ def _daily_withdraw_remaining(cfg: Dict[str, Any]) -> Optional[float]:
     return round(max(0.0, cap_f - used), 8)
 
 
-def payout_status() -> Dict[str, Any]:
+def payout_status(*, light: bool = False) -> Dict[str, Any]:
     from backend.services import exchange_secrets_vault_service as vault
 
     cfg = _load()
@@ -364,7 +364,7 @@ def payout_status() -> Dict[str, Any]:
     daily_left = _daily_withdraw_remaining(cfg)
     binance_spot_usdt_free: Optional[float] = None
     withdraw_preflight: Optional[Dict[str, Any]] = None
-    if keys_present and waddr:
+    if not light and keys_present and waddr:
         spot_res = get_spot_usdt_free(skip_live_gate=True)
         if spot_res.get("success") or spot_res.get("simulated"):
             binance_spot_usdt_free = float(spot_res.get("free") or 0)

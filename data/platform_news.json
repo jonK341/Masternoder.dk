@@ -2,9 +2,29 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "casino-tournament-daily_coins-20260701062321-d98ce6",
+      "title": "Tournament finished \u2014 Casino tournament",
+      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-07-01",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
+      "id": "casino-tournament-start-daily_coins-20260701062321-d98ce6",
+      "title": "Tournament live \u2014 Daily Coin Cup",
+      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
+      "date": "2026-07-01",
+      "category": "casino",
+      "channel": "casino",
+      "href": "/casino/",
+      "featured": false
+    },
+    {
       "id": "news-casino-mega-expansion-20260626",
-      "title": "Casino mega-expansion — 35 slots & global network",
-      "summary": "MasterNoder2 Casino now ships a tabbed lounge with 35 slot machines, global leaderboard, revenue reports, social sharing, mobile shells, Discord integration, and AI betting agents. Broadcast and PR #43 are critical infrastructure — review before merge. Play Store SHA updates Tuesday after developer registration.",
+      "title": "Casino mega-expansion \u2014 35 slots & global network",
+      "summary": "MasterNoder2 Casino now ships a tabbed lounge with 35 slot machines, global leaderboard, revenue reports, social sharing, mobile shells, Discord integration, and AI betting agents. Broadcast and PR #43 are critical infrastructure \u2014 review before merge. Play Store SHA updates Tuesday after developer registration.",
       "date": "2026-06-26",
       "category": "casino",
       "channel": "casino",

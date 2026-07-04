@@ -15,11 +15,17 @@
       "progress": 1,
       "target": 1,
       "updated_at": "2026-06-30T01:49:06.889119Z"
+    },
+    "xcq-cashout-casino": {
+      "progress": 1,
+      "target": 1,
+      "updated_at": "2026-07-02T15:20:07.684792Z"
     }
   },
   "completed": {
     "xcq-rent-bot": "2026-06-30T01:49:05.811442Z",
     "xcq-skill-addon": "2026-06-30T01:49:05.969874Z",
-    "xcq-bridge-complete": "2026-06-30T01:49:06.889119Z"
+    "xcq-bridge-complete": "2026-06-30T01:49:06.889119Z",
+    "xcq-cashout-casino": "2026-07-02T15:20:07.684792Z"
   }
 }

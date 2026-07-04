@@ -715,75 +715,14 @@ def venue_quote_asset(venue_id: str) -> str:
     return conn.venue_quote(venue_id)
 
 
-_BALANCE_CACHE: Dict[str, Dict[str, Any]] = {}
-_BALANCE_CACHE_TTL_SEC = 45.0
-
-
-def _balance_cache_ttl_sec() -> float:
-    try:
-        from backend.services.exchange_profit_path_service import load_config
-        return float(load_config().get("balance_cache_ttl_sec") or _BALANCE_CACHE_TTL_SEC)
-    except Exception:
-        return _BALANCE_CACHE_TTL_SEC
-
-
-def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
-    """Drop cached spot balances (one venue or all)."""
-    if venue_id:
-        _BALANCE_CACHE.pop(str(venue_id).lower(), None)
-    else:
-        _BALANCE_CACHE.clear()
-
-
-def balance_cache_age_sec(venue_id: str) -> Optional[float]:
-    """Seconds since this venue's balance cache was populated, or None if uncached."""
-    entry = _BALANCE_CACHE.get(str(venue_id).lower())
-    if not entry:
-        return None
-    fetched_at = entry.get("fetched_at")
-    if fetched_at is None:
-        return None
-    try:
-        return max(0.0, time.time() - float(fetched_at))
-    except (TypeError, ValueError):
-        return None
-
-
-def refresh_venue_balances(
-    venue_ids: Optional[List[str]] = None,
-    *,
-    force: bool = True,
-) -> Dict[str, Any]:
-    """Force-fetch live spot balances for credentialed venues (arb/rotation preflight)."""
-    ids: List[str] = []
-    if venue_ids:
-        ids = [str(v).lower() for v in venue_ids if v and str(v).lower() != "internal"]
-    else:
-        try:
-            from backend.services.exchange_profit_path_service import load_config
-            ids = [
-                str(v).lower()
-                for v in (load_config().get("balance_summary_venues") or ["binance", "nonkyc"])
-            ]
-        except Exception:
-            ids = ["binance", "nonkyc"]
-    refreshed: Dict[str, Any] = {}
-    for vid in ids:
-        if not venue_has_credentials(vid):
-            continue
-        if force:
-            invalidate_venue_balance_cache(vid)
-        bals = parse_spot_balances(vid, dry_run=False, force_refresh=True)
-        quote = venue_quote_asset(vid)
-        refreshed[vid] = {
-            "ok": bool(bals),
-            "quote_free": round(float(bals.get(quote) or 0), 4),
-            "cache_age_sec": balance_cache_age_sec(vid),
-        }
-    return {"success": True, "venues": refreshed, "refreshed_at": _iso()}
-
-
-def _parse_balance_body(venue_id: str, body: Any) -> Dict[str, float]:
+def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
+    """Return asset -> free spot balance for a credentialed venue."""
+    if not venue_has_credentials(venue_id):
+        return {}
+    res = get_account_balance(venue_id, dry_run=dry_run)
+    if not res.get("success"):
+        return {}
+    body = res.get("body")
     out: Dict[str, float] = {}
     if venue_id == "binance" and isinstance(body, dict):
         for row in body.get("balances") or []:
@@ -815,31 +754,6 @@ def _parse_balance_body(venue_id: str, body: Any) -> Dict[str, float]:
             free = 0.0
         if sym and free > 0:
             out[sym] = free
-    return out
-
-
-def parse_spot_balances(
-    venue_id: str,
-    *,
-    dry_run: Optional[bool] = None,
-    force_refresh: bool = False,
-) -> Dict[str, float]:
-    """Return asset -> free spot balance for a credentialed venue."""
-    vid = str(venue_id).lower()
-    if not venue_has_credentials(vid):
-        return {}
-    if not force_refresh:
-        cached = _BALANCE_CACHE.get(vid)
-        if cached and cached.get("balances") is not None:
-            age = balance_cache_age_sec(vid)
-            if age is not None and age < _balance_cache_ttl_sec():
-                return dict(cached["balances"])
-    res = get_account_balance(vid, dry_run=dry_run)
-    if not res.get("success"):
-        stale = _BALANCE_CACHE.get(vid, {}).get("balances")
-        return dict(stale) if isinstance(stale, dict) else {}
-    out = _parse_balance_body(vid, res.get("body"))
-    _BALANCE_CACHE[vid] = {"balances": out, "fetched_at": time.time()}
     return out
 
 

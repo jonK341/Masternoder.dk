@@ -540,3 +540,12 @@
 .cex-ppp-suggestion--high { border-color: rgba(255,100,100,0.35); }
 .cex-ppp-suggestion--medium { border-color: rgba(255,200,80,0.25); }
 .cex-ppp-suggestion--low { border-color: rgba(255,255,255,0.1); }
+
+.cex-blockers-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cex-blocker-row {
+  display: flex; gap: 10px; align-items: flex-start; font-size: 0.82rem;
+  padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,100,100,0.22);
+}
+.cex-blocker-pri { font-size: 0.7rem; color: #ffd966; min-width: 28px; font-weight: 700; flex-shrink: 0; }
+.cex-blockers-card .cex-badge { vertical-align: middle; }

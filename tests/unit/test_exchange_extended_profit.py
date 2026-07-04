@@ -91,6 +91,38 @@ def test_fast_arb_rescan_not_ready_below_threshold(ext_env, monkeypatch):
     assert state["best_net_bps"] == 5.7
 
 
+def test_write_arb_threshold_state_includes_hot_symbols(ext_env):
+    ext = ext_env
+    opp = _sample_opp(18.0)
+    state = ext.write_arb_threshold_state(
+        best=opp, threshold_bps=12, source="test", hot_symbols=["BTC", "DOGE", "LINK"],
+    )
+    assert state["hot_symbols"] == ["BTC", "DOGE", "LINK"]
+    loaded = ext.read_arb_threshold_state()
+    assert loaded["hot_symbols"] == ["BTC", "DOGE", "LINK"]
+
+
+def test_fast_arb_rescan_pair_search_always_attached(ext_env, monkeypatch):
+    ext = ext_env
+    opp = _sample_opp(18.0)
+    monkeypatch.setattr(
+        "backend.services.exchange_arbitrage_service.scan_opportunities",
+        lambda **kw: {"opportunity_count": 1, "opportunities": [opp]},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_pair_search_service.enabled",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_pair_search_service.run_profit_pair_search",
+        lambda **kw: {"success": True, "hot_symbols": ["DOGE", "LINK"], "hit_count": 2},
+    )
+    res = ext.tick_fast_arb_rescan({"min_net_bps": 12, "execute_on_threshold": False})
+    assert res.get("profit_pair_search", {}).get("hot_symbols") == ["DOGE", "LINK"]
+    state = ext.read_arb_threshold_state()
+    assert state.get("hot_symbols") == ["DOGE", "LINK"]
+
+
 def test_fast_arb_rescan_executes_on_threshold(ext_env, monkeypatch):
     ext = ext_env
     opp = _sample_opp(20.0)

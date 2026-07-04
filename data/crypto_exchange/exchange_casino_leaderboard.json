@@ -3,7 +3,7 @@
   "users": {
     "w4-user": {
       "trader_usd": 0.0,
-      "highroller_mn2": 0.1,
+      "highroller_mn2": 0.2,
       "rentals": 0
     },
     "u_buyer": {
@@ -12,9 +12,9 @@
       "rentals": 0
     },
     "u1": {
-      "trader_usd": 6.7752,
+      "trader_usd": 14656.8777,
       "highroller_mn2": 0.0,
-      "rentals": 6
+      "rentals": 31
     }
   }
 }

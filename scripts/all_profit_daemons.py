@@ -141,10 +141,45 @@ def _best_arb_bps(arb: Dict[str, Any]) -> Optional[float]:
     return best
 
 
+def _classify_ai_skip(ai: Dict[str, Any]) -> Optional[str]:
+    """Classify why AI trader did not execute for daemon heartbeat."""
+    if ai.get("executed"):
+        return None
+    skip = ai.get("skip_reason")
+    if skip in ("no_signal", "below_threshold", "no_creds"):
+        return str(skip)
+    action = ai.get("action") if isinstance(ai.get("action"), dict) else {}
+    nested = str(action.get("skip_reason") or "")
+    if nested in ("no_signal", "below_threshold", "no_creds"):
+        return nested
+    reason = str(action.get("reason") or "")
+    if reason == "no_actionable_ai_signal":
+        best = action.get("best") if isinstance(action.get("best"), dict) else {}
+        if float(best.get("net_bps") or 0) > 0:
+            return "below_threshold"
+        return "no_signal"
+    if "credential" in reason.lower():
+        return "no_creds"
+    return "no_signal"
+
+
 def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     """When spatial arb executes 0 fills, classify dominant blocker for ops."""
     if int(arb.get("executed_count") or 0) > 0:
         return None
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("funded") and bq.get("qualifies"):
+        reason = str(bq.get("reason") or "")
+        if reason == "global_threshold_ready":
+            force = arb.get("force_attempt") or {}
+            if force.get("reason") == "force_attempt_exhausted":
+                return "funding"
+            return None
+        if reason not in ("below_threshold", "no_profitable_spread", "insufficient_venue_balance"):
+            return None
+    force = arb.get("force_attempt") or {}
+    if force.get("reason") == "force_attempt_exhausted" and bq.get("funded"):
+        return "funding"
     min_margin = float(arb.get("min_margin_bps") or 14)
     qualifying: List[Dict[str, Any]] = []
     for action in arb.get("actions") or []:
@@ -197,6 +232,61 @@ def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     return "spread"
 
 
+def _format_pair_search(ps: Dict[str, Any]) -> str:
+    """One-line pair search status for daemon stdout."""
+    if not ps.get("success"):
+        return f"ok=no error={ps.get('error', '?')}"
+    hot = ps.get("hot_symbols") or []
+    parts = [f"ok=yes hits={ps.get('hit_count', len(hot))}"]
+    if hot:
+        parts.append(f"hot={','.join(hot[:4])}")
+        if len(hot) > 4:
+            parts.append(f"n={len(hot)}")
+    else:
+        parts.append("hot=none")
+    return " ".join(parts)
+
+
+_zero_fill_streak = 0
+_ZERO_FILL_WARN = int(os.environ.get("EXCHANGE_ZERO_FILL_WARN", "3") or "3")
+
+
+def _track_zero_fill_streak(res: Dict[str, Any]) -> int:
+    """Count consecutive hot exchange ticks with arb_exec=0."""
+    global _zero_fill_streak
+    plat = res.get("platform") or {}
+    arb = (plat.get("results") or {}).get("arbitrage") or {}
+    if int(arb.get("executed_count") or 0) > 0:
+        _zero_fill_streak = 0
+        return 0
+    bq = arb.get("best_qualifying") or {}
+    min_m = float(bq.get("min_margin_bps") or arb.get("min_margin_bps") or 14)
+    net = float(bq.get("net_bps") or 0)
+    hot_tick = bool(bq.get("qualifies") and net >= min_m)
+    if not hot_tick:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state()
+            state_net = float(state.get("best_net_bps") or 0)
+            hot_tick = bool(state.get("ready") and state_net >= min_m)
+        except Exception:
+            pass
+    if hot_tick:
+        _zero_fill_streak += 1
+        if _zero_fill_streak >= _ZERO_FILL_WARN:
+            sym = bq.get("symbol") or "?"
+            funded = "yes" if bq.get("funded") else "no"
+            print(
+                f"[all-profit] WARN zero_fill_streak={_zero_fill_streak} "
+                f"best_net={net:.1f} min={min_m:.0f} symbol={sym} funded={funded}",
+                flush=True,
+            )
+    else:
+        _zero_fill_streak = 0
+    return _zero_fill_streak
+
+
 def _summarize_exchange(res: Dict[str, Any]) -> str:
     plat = res.get("platform") or {}
     results = plat.get("results") or {}
@@ -204,11 +294,19 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     ai = results.get("ai_trading") or {}
     cross = results.get("cross_trade") or {}
     ext = results.get("extended_profit") or {}
+    pair_search = plat.get("profit_pair_search") or {}
     best_bps = _best_arb_bps(arb)
     parts = [
         f"platform_ok={plat.get('success')}",
         f"arb_exec={arb.get('executed_count', '?')}/{arb.get('agent_count', '?')}",
     ]
+    if pair_search.get("success"):
+        hot = pair_search.get("hot_symbols") or []
+        hit_n = int(pair_search.get("hit_count") or len(hot))
+        if hot:
+            parts.append(f"pair_search={','.join(hot[:4])}")
+            if hit_n > 4:
+                parts.append(f"pair_search_n={hit_n}")
     if best_bps is not None:
         parts.append(f"best_bps={best_bps:.1f}")
     bq = arb.get("best_qualifying") or {}
@@ -224,6 +322,9 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         arb_block = _classify_arb_block(arb)
         if arb_block:
             parts.append(f"arb_block={arb_block}")
+        force = arb.get("force_attempt") or {}
+        if force.get("forced_global") and not force.get("executed"):
+            parts.append(f"force={force.get('reason', '?')}")
         reasons: Dict[str, int] = {}
         for a in arb_actions:
             if a.get("executed"):
@@ -249,14 +350,26 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         parts.append(f"live_trades={live_trades}")
     parts.extend([
         f"ai_exec={ai.get('executed')}",
+    ])
+    ai_skip = _classify_ai_skip(ai)
+    if ai_skip and not ai.get("executed"):
+        parts.append(f"ai_skip={ai_skip}")
+    parts.extend([
         f"cross_actions={len((cross.get('actions') or []))}",
         f"ext_exec={ext.get('executed_count', '?')}",
         f"user_agents={res.get('user_agent_ticks', 0)}",
-        f"sweep={'yes' if res.get('sweep') else 'no'}",
     ])
-    stash = res.get("sweep")
-    if isinstance(stash, dict) and stash.get("amount_usd"):
-        parts.append(f"swept_usd={stash.get('amount_usd')}")
+    sweep_res = res.get("sweep")
+    if isinstance(sweep_res, dict) and sweep_res.get("success"):
+        swept = sweep_res.get("swept") or {}
+        mode = swept.get("mode") or ("live" if sweep_res.get("live") else "paper")
+        amt = swept.get("amount_usd")
+        if amt is not None:
+            parts.append(f"sweep=yes mode={mode} amount=${float(amt):.2f}")
+        else:
+            parts.append(f"sweep=yes mode={mode}")
+    else:
+        parts.append(f"sweep={'yes' if sweep_res else 'no'}")
     return " ".join(parts)
 
 
@@ -290,6 +403,14 @@ def _summarize_fast(res: Dict[str, Any]) -> str:
             if not os.environ.get("EXCHANGE_FAST_MIN_BPS"):
                 parts.append("hint=EXCHANGE_FAST_MIN_BPS")
     parts.append(f"strategies={res.get('strategy_count', 0)}")
+    far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+    ps = far.get("profit_pair_search") or {}
+    if ps.get("success"):
+        hot = ps.get("hot_symbols") or []
+        if hot:
+            parts.append(f"search_hot={','.join(hot[:4])}")
+            if len(hot) > 4:
+                parts.append(f"search_n={len(hot)}")
     return " ".join(parts)
 
 
@@ -301,6 +422,33 @@ def _summarize_casino(res: Dict[str, Any]) -> str:
         f"success={res.get('success')} ran={res.get('ran', res.get('agent_count', '?'))}"
         f"/{res.get('agent_count', '?')}{skip_str}"
     )
+
+
+def _maybe_hot_pair_prefund(res: Dict[str, Any]) -> None:
+    """Targeted prefund when hot pair qualifies but is unfunded."""
+    try:
+        from backend.services.exchange_swap_rotation_service import maybe_hot_pair_prefund
+
+        outcome = maybe_hot_pair_prefund(res)
+        if outcome.get("prefund_executed"):
+            label = outcome.get("action") or "?"
+            mode = outcome.get("mode") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            pair_info = f" venue={venue} pair={sym} market={market}"
+            if outcome.get("success"):
+                print(
+                    f"[all-profit] hot_prefund executed: {label}{pair_info} mode={mode} success=True",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[all-profit] hot_prefund skip: {label}{pair_info} reason={outcome.get('skip_reason') or 'failed'}",
+                    flush=True,
+                )
+    except Exception:
+        pass
 
 
 def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
@@ -355,10 +503,16 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
     while not stop.is_set():
         try:
             res = _exchange_once(auto_sweep, profile)
+            plat = res.get("platform") or {}
+            ps = plat.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
             summary = _summarize_exchange(res)
             print(f"[all-profit] exchange {summary}", flush=True)
+            streak = _track_zero_fill_streak(res)
+            _maybe_hot_pair_prefund(res)
             _maybe_auto_rotation(res)
-            _write_heartbeat("exchange", summary)
+            _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
             try:
                 from backend.services.profit_daemon_news_service import maybe_publish_tick_news
                 maybe_publish_tick_news("exchange", summary, res=res)
@@ -374,6 +528,10 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
     while not stop.is_set():
         try:
             res = _extended_once(profile)
+            far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+            ps = far.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
             summary = _summarize_fast(res)
             print(f"[all-profit] fast {summary}", flush=True)
             _write_heartbeat("fast", summary)
@@ -448,7 +606,11 @@ def main() -> int:
             print(json.dumps(out, indent=2, default=str))
         else:
             if "exchange" in out:
-                print(f"[all-profit] exchange {_summarize_exchange(out['exchange'])}", flush=True)
+                ex_res = out["exchange"]
+                ps = (ex_res.get("platform") or {}).get("profit_pair_search")
+                if ps is not None:
+                    print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+                print(f"[all-profit] exchange {_summarize_exchange(ex_res)}", flush=True)
             if "casino" in out:
                 print(f"[all-profit] casino {_summarize_casino(out['casino'])}", flush=True)
         return 0 if out else 1

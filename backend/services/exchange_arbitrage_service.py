@@ -346,6 +346,9 @@ def _summarize_best_qualifying(
             funded = mf is None or float(mf or 0) >= 10.0
     return {
         "agent_id": best_action.get("agent_id"),
+        "symbol": row.get("symbol"),
+        "buy_venue": row.get("buy_venue"),
+        "sell_venue": row.get("sell_venue"),
         "net_bps": round(nb, 2),
         "min_margin_bps": min_margin_bps,
         "funded": funded,

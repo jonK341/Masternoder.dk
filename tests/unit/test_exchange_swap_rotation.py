@@ -640,3 +640,79 @@ def test_unknown_venue_filtered_from_suggestions(rotation_env, monkeypatch):
     labels = " ".join(a.get("label", "") for a in out.get("actions") or [])
     assert "bingx" not in labels.lower()
 
+
+def test_maybe_hot_pair_prefund_executes_buy_on_sell_leg(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        rot,
+        "analyze_funding_gaps",
+        lambda aid, sym, notion: {
+            "symbol": "LINK",
+            "sell_venue": "binance",
+            "buy_venue": "nonkyc",
+            "notional_usd": 25.0,
+            "funded_ok": False,
+            "short_legs": [{"leg": "sell", "venue_id": "binance", "asset": "LINK", "need": 4.0, "free": 0.0}],
+            "buy_ask": 7.5,
+            "quantity": 3.3,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_execution_eligible",
+        lambda vid: vid in ("binance", "nonkyc"),
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **kw: {"ok": True, "market": "LINKUSDC", "quote": "USDC", "quantity": 3.3},
+    )
+    monkeypatch.setattr(rot, "_dedupe_skip", lambda action, state: None)
+    monkeypatch.setattr(rot, "_load_rotation_state", lambda: {})
+    monkeypatch.setattr(rot, "_record_rotation_attempt", lambda *a, **k: None)
+    monkeypatch.setattr(
+        rot,
+        "execute_rotation",
+        lambda action, dry_run=False: {"success": True, "mode": "live"},
+    )
+
+    res = rot.maybe_hot_pair_prefund({
+        "platform": {
+            "profit_pair_search": {"success": True, "hot_symbols": ["LINK", "BTC"]},
+            "results": {
+                "arbitrage": {
+                    "executed_count": 0,
+                    "best_qualifying": {
+                        "qualifies": True,
+                        "funded": False,
+                        "symbol": "LINK",
+                        "agent_id": "arb_agent_defi",
+                        "sell_venue": "binance",
+                        "net_bps": 22.0,
+                    },
+                },
+            },
+        },
+    })
+    assert res.get("prefund_executed") is True
+    assert res.get("success") is True
+    assert "LINK" in str(res.get("action") or "")
+
+
+def test_maybe_hot_pair_prefund_skips_when_funded(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
+    res = rot.maybe_hot_pair_prefund({
+        "platform": {
+            "profit_pair_search": {"success": True, "hot_symbols": ["BTC"]},
+            "results": {
+                "arbitrage": {
+                    "executed_count": 0,
+                    "best_qualifying": {"qualifies": True, "funded": True, "symbol": "BTC", "net_bps": 20.0},
+                },
+            },
+        },
+    })
+    assert res.get("skipped") is True
+    assert res.get("reason") == "not_unfunded_qualifying"
+

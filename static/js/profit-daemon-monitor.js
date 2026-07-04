@@ -2,6 +2,19 @@
     'use strict';
     const BASE = window.location.origin || '';
 
+    const CATEGORY_LABELS = {
+        daemon: 'Daemon health',
+        arb: 'Arbitrage engine',
+        fast: 'Fast rescan',
+        casino: 'Casino agents',
+        funding: 'Venue funding',
+        treasury: 'Treasury',
+        ppp: 'Profit path (24h)',
+        payout: 'PayPal sweep',
+        venues: 'Venues',
+        ops: 'Ops readiness',
+    };
+
     function $(id) { return document.getElementById(id); }
 
     function wireTabs() {
@@ -18,15 +31,58 @@
                 });
                 if (name === 'news') loadNews();
                 if (name === 'rent') loadRentals();
+                if (name === 'blockers') { /* filled on status load */ }
             });
         });
     }
 
-    function fmtUsd(v) {
+    function fmtVal(stat) {
+        const v = stat.value;
         if (v == null || v === '') return '—';
-        const n = Number(v);
-        if (Number.isNaN(n)) return String(v);
-        return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        if (stat.unit === 'USD' && typeof v === 'number') {
+            return '$' + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        }
+        return String(v);
+    }
+
+    function renderStats(stats) {
+        const root = $('pdm-stats-sections');
+        const countEl = $('pdm-stat-count');
+        if (!root || !Array.isArray(stats)) return;
+        if (countEl) countEl.textContent = stats.length + ' live stats · updates every 30s';
+
+        const byCat = {};
+        stats.forEach((s) => {
+            const c = s.category || 'daemon';
+            if (!byCat[c]) byCat[c] = [];
+            byCat[c].push(s);
+        });
+
+        const order = ['ops', 'daemon', 'arb', 'fast', 'funding', 'treasury', 'ppp', 'payout', 'casino', 'venues'];
+        root.innerHTML = order.filter((c) => byCat[c]).map((cat) => {
+            const cards = byCat[cat].map((s) => {
+                const unit = s.unit && s.unit !== 'USD' && s.unit !== '%'
+                    ? ' <span class="pdm-unit">' + s.unit + '</span>' : (s.unit === '%' ? '%' : '');
+                const hint = s.hint ? '<span class="pdm-hint">' + s.hint + '</span>' : '';
+                return '<div class="pdm-card status-' + (s.status || 'neutral') + '" title="' + (s.hint || '') + '">' +
+                    '<span class="pdm-label">' + s.label + '</span>' +
+                    '<strong>' + fmtVal(s) + unit + '</strong>' + hint + '</div>';
+            }).join('');
+            return '<div class="pdm-stat-section"><h3>' + (CATEGORY_LABELS[cat] || cat) + '</h3><div class="pdm-grid">' + cards + '</div></div>';
+        }).join('');
+    }
+
+    function renderBlockers(blockers) {
+        const ul = $('pdm-blockers');
+        if (!ul) return;
+        if (!blockers || !blockers.length) {
+            ul.innerHTML = '<li class="pdm-muted">All critical items done — focus on spreads ≥ min margin and XeggeX if dual-venue needed.</li>';
+            return;
+        }
+        ul.innerHTML = blockers.map((b) =>
+            '<li><span class="pdm-blocker-pri">#' + (b.priority || '?') + '</span>' +
+            '<span><strong>' + (b.title || b.id) + '</strong><br><span class="pdm-muted">' + (b.category || '') + '</span></span></li>'
+        ).join('');
     }
 
     async function loadStatus() {
@@ -35,23 +91,19 @@
             const data = await res.json();
             const pill = $('pdm-running-pill');
             if (pill) {
-                pill.textContent = data.running ? 'Daemon online' : 'Daemon stale / offline';
+                pill.textContent = data.running ? 'Daemon online · ' + (data.mode || 'live') : 'Daemon stale / offline';
                 pill.classList.toggle('on', !!data.running);
                 pill.classList.toggle('off', !data.running);
             }
-            const h = data.highlights || {};
-            if ($('pdm-arb-exec')) $('pdm-arb-exec').textContent = h.arb_exec || '0/11';
-            if ($('pdm-best-bps')) $('pdm-best-bps').textContent = h.best_bps != null ? h.best_bps + ' bps' : '—';
-            if ($('pdm-cross')) $('pdm-cross').textContent = h.cross_actions != null ? String(h.cross_actions) : '—';
-            const tre = data.treasury || {};
-            if ($('pdm-stash')) $('pdm-stash').textContent = fmtUsd(tre.live_stash_usd);
-            const ppp = data.ppp_24h || {};
-            if ($('pdm-ppp-fills')) $('pdm-ppp-fills').textContent = ppp.fill_count != null ? String(ppp.fill_count) : '—';
-            const pay = data.payout || {};
-            const sweep = pay.ready_to_sweep ? 'ready' : (pay.auto_sweep ? 'auto on' : 'manual');
-            if ($('pdm-sweep')) {
-                $('pdm-sweep').textContent = (pay.mode || '?') + ' · ' + sweep;
-            }
+            const pct = data.profit_readiness_pct;
+            const fill = $('pdm-readiness-fill');
+            const pctEl = $('pdm-readiness-pct');
+            if (fill && pct != null) fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+            if (pctEl && pct != null) pctEl.textContent = pct + '%';
+
+            renderStats(data.stats || []);
+            renderBlockers(data.blockers || []);
+
             const loopsEl = $('pdm-loops');
             if (loopsEl && Array.isArray(data.loops)) {
                 loopsEl.innerHTML = data.loops.map((row) => {
@@ -76,7 +128,7 @@
             const data = await res.json();
             const items = data.news || [];
             if (!items.length) {
-                ul.innerHTML = '<li class="pdm-muted">No profit news yet — daemon will publish on fills &amp; sweeps.</li>';
+                ul.innerHTML = '<li class="pdm-muted">No profit news yet — daemon publishes on fills &amp; sweeps.</li>';
                 return;
             }
             ul.innerHTML = items.map((n) =>

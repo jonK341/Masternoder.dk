@@ -665,19 +665,6 @@ def exchange_profit_path_search():
     ))
 
 
-@crypto_exchange_bp.route("/api/exchange/profit-pair-search", methods=["GET"])
-def exchange_profit_pair_search():
-    from backend.services.exchange_profit_pair_search_service import read_index, run_profit_pair_search
-
-    refresh = str(request.args.get("refresh") or "").strip().lower() in ("1", "true", "yes")
-    if refresh:
-        return jsonify(run_profit_pair_search())
-    idx = read_index()
-    if idx.get("hits"):
-        return jsonify({"success": True, **idx})
-    return jsonify(run_profit_pair_search())
-
-
 @crypto_exchange_bp.route("/api/exchange/profit-path/summary", methods=["GET"])
 def exchange_profit_path_summary():
     from backend.services.exchange_profit_path_service import profit_path_summary
@@ -728,7 +715,11 @@ def exchange_profit_path_skills_sync():
 def exchange_profit_path_critical_top25():
     from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
 
-    return jsonify(critical_problems_top25(refresh=True))
+    refresh_raw = (request.args.get("refresh") or "true").strip().lower()
+    refresh = refresh_raw not in ("0", "false", "no", "off")
+    dynamic_raw = (request.args.get("dynamic") or "true").strip().lower()
+    dynamic = dynamic_raw not in ("0", "false", "no", "off")
+    return jsonify(critical_problems_top25(refresh=refresh, dynamic=dynamic))
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/baselines", methods=["GET"])

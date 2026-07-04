@@ -21,3 +21,7 @@ def test_monitor_status_structure():
     st = monitor_status()
     assert st.get("success") is True
     assert isinstance(st.get("loops"), list)
+    assert isinstance(st.get("stats"), list)
+    assert st.get("stat_count", 0) >= 31
+    assert "blockers" in st
+    assert "profit_readiness_pct" in st

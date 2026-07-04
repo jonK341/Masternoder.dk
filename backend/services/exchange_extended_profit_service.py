@@ -42,6 +42,7 @@ def write_arb_threshold_state(
     best: Optional[Dict[str, Any]],
     threshold_bps: float,
     source: str,
+    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     best_net_bps = float(best.get("net_bps") or 0) if best else 0.0
     est_profit = float(best.get("est_profit_usd") or 0) if best else 0.0
@@ -57,6 +58,8 @@ def write_arb_threshold_state(
         "updated_at": _iso(),
         "source": source,
     }
+    if hot_symbols:
+        state["hot_symbols"] = list(dict.fromkeys(str(s).upper() for s in hot_symbols if s))
     ex._write_json(_THRESHOLD_STATE_PATH, state)
     return state
 
@@ -245,7 +248,10 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
     top = all_opps[0] if all_opps else None
     opps = [o for o in all_opps if float(o.get("net_bps") or 0) >= min_bps]
 
-    write_arb_threshold_state(best=top, threshold_bps=min_bps, source="fast_arb_rescan")
+    hot_syms = pair_search.get("hot_symbols") if pair_search else None
+    write_arb_threshold_state(
+        best=top, threshold_bps=min_bps, source="fast_arb_rescan", hot_symbols=hot_syms,
+    )
 
     ready = bool(
         top
@@ -263,6 +269,8 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
         "ready": ready,
         "executed": False,
     }
+    if pair_search is not None:
+        result["profit_pair_search"] = pair_search
 
     if not execute_on_threshold or not opps:
         return result
@@ -324,8 +332,6 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
 
     if skip_reason:
         result["skip_reason"] = skip_reason
-    if pair_search is not None:
-        result["profit_pair_search"] = pair_search
     return result
 
 

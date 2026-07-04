@@ -432,6 +432,7 @@ FILES_TO_DEPLOY = [
     "backend/templates/debugger/index.html",
     # Root frontpage v2.0 upgrade: hero, upgrade panels, opt-in sound console.
     "index.html",
+    "manifest.webmanifest",
     "service-worker.js",
     "static/css/navigation-toolbar.css",
     "static/css/frontpage-home.css",
@@ -440,6 +441,10 @@ FILES_TO_DEPLOY = [
     "static/js/hypnotic-point-counters.js",
     "static/js/unified-point-counters.js",
     "static/js/navigation-toolbar.js",
+    "static/css/mobile-install.css",
+    "static/js/mobile-install.js",
+    "static/img/app/icon-192.svg",
+    "static/img/app/icon-512.svg",
     "static/js/navigation.js",
     "static/js/enhanced-game-mechanics.js",
     "static/js/quick-battle-frontend.js",

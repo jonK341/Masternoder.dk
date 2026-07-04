@@ -5,15 +5,27 @@
   "notional_traded_usd": 0.0,
   "by_venue": {},
   "wallet_label": "arb_triangular_wallet",
-  "game_time_sec": 86400,
-  "ticks": 24,
-  "agent_level": 1,
+  "game_time_sec": 5580000,
+  "ticks": 1550,
+  "agent_level": 32,
   "last_action": {
     "agent_id": "arb_triangular_paper",
     "executed": false,
-    "reason": "no_profitable_spread",
-    "best": null,
-    "mode": "paper"
+    "reason": "below_threshold",
+    "best": {
+      "symbol": "ETH",
+      "buy_venue": "binance",
+      "buy_ask": 1793.6,
+      "sell_venue": "nonkyc",
+      "sell_bid": 1798.03,
+      "gross_bps": 24.7,
+      "fee_bps": 36.0,
+      "net_bps": -11.3,
+      "notional_usd": 10.0,
+      "est_profit_usd": -0.0113
+    },
+    "mode": "live",
+    "profit_path_id": "ca6be32c"
   },
   "created_at": "2026-06-30T22:16:32.772270Z"
 }

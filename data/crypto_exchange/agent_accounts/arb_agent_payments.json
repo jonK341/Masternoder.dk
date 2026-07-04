@@ -8,23 +8,24 @@
   "last_action": {
     "agent_id": "arb_agent_payments",
     "executed": false,
-    "reason": "no_profitable_spread",
+    "reason": "below_threshold",
     "best": {
-      "symbol": "DOGE",
-      "buy_venue": "gateio",
-      "buy_ask": 0.07191,
-      "sell_venue": "binance",
-      "sell_bid": 0.07197,
-      "gross_bps": 8.34,
-      "fee_bps": 50.0,
-      "net_bps": -41.66,
-      "notional_usd": 150.0,
-      "est_profit_usd": -0.6248
+      "symbol": "XRP",
+      "buy_venue": "binance",
+      "buy_ask": 1.1752,
+      "sell_venue": "bitfinex",
+      "sell_bid": 1.177,
+      "gross_bps": 15.32,
+      "fee_bps": 36.0,
+      "net_bps": -20.68,
+      "notional_usd": 10.0,
+      "est_profit_usd": -0.0207
     },
-    "mode": "paper"
+    "mode": "live",
+    "profit_path_id": "1629b07f"
   },
   "created_at": "2026-06-27T20:44:47.205491Z",
-  "ticks": 733,
-  "game_time_sec": 2638800,
-  "agent_level": 15
+  "ticks": 2267,
+  "game_time_sec": 8161200,
+  "agent_level": 46
 }

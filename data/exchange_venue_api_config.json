@@ -95,7 +95,7 @@
       }
     },
     "xeggex": {
-      "auth": "nonkyc_hmac",
+      "auth": "xeggex_hmac",
       "api_base": "https://api.xeggex.com/api/v2",
       "live_supported": true,
       "endpoints": {

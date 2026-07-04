@@ -284,6 +284,14 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
                 hot_symbols = list(pair_search.get("hot_symbols") or [])
         except Exception as exc:
             pair_search = {"success": False, "error": str(exc)}
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state_hot = list(read_arb_threshold_state().get("hot_symbols") or [])
+            if state_hot:
+                hot_symbols = list(dict.fromkeys((hot_symbols or []) + state_hot))
+        except Exception:
+            pass
 
     if sup_arb and sup_arb.get("enabled", True):
         try:

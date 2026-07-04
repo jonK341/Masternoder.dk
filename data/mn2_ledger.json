@@ -680,6 +680,66 @@
         "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
         "source": "exchange_paypal_mn2"
       }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-02T15:17:51.175580Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-02T15:19:18.631813Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-02T15:27:39.318930Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
     }
   ]
 }

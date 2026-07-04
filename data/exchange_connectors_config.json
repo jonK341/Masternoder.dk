@@ -4,7 +4,7 @@
   "live_env_flag": "EXCHANGE_ARBITRAGE_LIVE",
   "request_timeout_sec": 6,
   "price_cache_ttl_sec": 15,
-  "paper_trade_usd": 10.41,
+  "paper_trade_usd": 25,
   "min_margin_bps": 14,
   "transfer_cost_bps": 14,
   "supported_symbols": [
