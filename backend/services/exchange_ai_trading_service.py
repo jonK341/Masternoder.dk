@@ -153,6 +153,7 @@ def analyze_market(
     skill_ids: Optional[List[str]] = None,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     probe_venues: Optional[bool] = None,
+    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Scan all major venues, score opportunities with AI super-skills."""
     cfg = load_ai_config()
@@ -160,7 +161,18 @@ def analyze_market(
         return {"success": False, "error": "ai_trading_disabled"}
 
     skill_ids = list(skill_ids or cfg.get("default_skills") or [])
-    symbols = symbols or cfg.get("symbols")
+    base_symbols = symbols or cfg.get("symbols")
+    try:
+        from backend.services.exchange_profit_pair_search_service import resolve_agent_symbols
+
+        if isinstance(base_symbols, list):
+            base_symbols = resolve_agent_symbols(
+                [str(s).upper() for s in base_symbols],
+                hot_symbols=hot_symbols,
+            )
+    except Exception:
+        pass
+    symbols = base_symbols
     venues = venues or cfg.get("venues")
 
     scan = arb.scan_opportunities(symbols, venues, injected=injected)
@@ -281,6 +293,7 @@ def run_ai_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     force_execute: bool = False,
+    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Full AI trading cycle: analyze → pick best → execute → book P&L."""
     cfg = load_ai_config()
@@ -289,7 +302,7 @@ def run_ai_tick(
 
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
     skill_ids = list(cfg.get("default_skills") or [])
-    analysis = analyze_market(injected=injected, probe_venues=False)
+    analysis = analyze_market(injected=injected, probe_venues=False, hot_symbols=hot_symbols)
     ranked = analysis.get("ranked_opportunities") or []
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)

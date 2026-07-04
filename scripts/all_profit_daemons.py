@@ -232,6 +232,21 @@ def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
     return "spread"
 
 
+def _format_pair_search(ps: Dict[str, Any]) -> str:
+    """One-line pair search status for daemon stdout."""
+    if not ps.get("success"):
+        return f"ok=no error={ps.get('error', '?')}"
+    hot = ps.get("hot_symbols") or []
+    parts = [f"ok=yes hits={ps.get('hit_count', len(hot))}"]
+    if hot:
+        parts.append(f"hot={','.join(hot[:4])}")
+        if len(hot) > 4:
+            parts.append(f"n={len(hot)}")
+    else:
+        parts.append("hot=none")
+    return " ".join(parts)
+
+
 def _summarize_exchange(res: Dict[str, Any]) -> str:
     plat = res.get("platform") or {}
     results = plat.get("results") or {}
@@ -239,11 +254,19 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     ai = results.get("ai_trading") or {}
     cross = results.get("cross_trade") or {}
     ext = results.get("extended_profit") or {}
+    pair_search = plat.get("profit_pair_search") or {}
     best_bps = _best_arb_bps(arb)
     parts = [
         f"platform_ok={plat.get('success')}",
         f"arb_exec={arb.get('executed_count', '?')}/{arb.get('agent_count', '?')}",
     ]
+    if pair_search.get("success"):
+        hot = pair_search.get("hot_symbols") or []
+        hit_n = int(pair_search.get("hit_count") or len(hot))
+        if hot:
+            parts.append(f"pair_search={','.join(hot[:4])}")
+            if hit_n > 4:
+                parts.append(f"pair_search_n={hit_n}")
     if best_bps is not None:
         parts.append(f"best_bps={best_bps:.1f}")
     bq = arb.get("best_qualifying") or {}
@@ -340,6 +363,14 @@ def _summarize_fast(res: Dict[str, Any]) -> str:
             if not os.environ.get("EXCHANGE_FAST_MIN_BPS"):
                 parts.append("hint=EXCHANGE_FAST_MIN_BPS")
     parts.append(f"strategies={res.get('strategy_count', 0)}")
+    far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+    ps = far.get("profit_pair_search") or {}
+    if ps.get("success"):
+        hot = ps.get("hot_symbols") or []
+        if hot:
+            parts.append(f"search_hot={','.join(hot[:4])}")
+            if len(hot) > 4:
+                parts.append(f"search_n={len(hot)}")
     return " ".join(parts)
 
 
@@ -407,6 +438,10 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
     while not stop.is_set():
         try:
             res = _exchange_once(auto_sweep, profile)
+            plat = res.get("platform") or {}
+            ps = plat.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
             summary = _summarize_exchange(res)
             print(f"[all-profit] exchange {summary}", flush=True)
             _maybe_auto_rotation(res)
@@ -421,6 +456,10 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
     while not stop.is_set():
         try:
             res = _extended_once(profile)
+            far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+            ps = far.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
             summary = _summarize_fast(res)
             print(f"[all-profit] fast {summary}", flush=True)
             _write_heartbeat("fast", summary)
@@ -495,7 +534,11 @@ def main() -> int:
             print(json.dumps(out, indent=2, default=str))
         else:
             if "exchange" in out:
-                print(f"[all-profit] exchange {_summarize_exchange(out['exchange'])}", flush=True)
+                ex_res = out["exchange"]
+                ps = (ex_res.get("platform") or {}).get("profit_pair_search")
+                if ps is not None:
+                    print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+                print(f"[all-profit] exchange {_summarize_exchange(ex_res)}", flush=True)
             if "casino" in out:
                 print(f"[all-profit] casino {_summarize_casino(out['casino'])}", flush=True)
         return 0 if out else 1

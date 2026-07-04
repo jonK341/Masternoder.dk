@@ -273,15 +273,27 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     sup_arb = _supervisor_for_kind(controls, "arbitrage_paper")
     sup_cross = _supervisor_for_kind(controls, "cross_trade")
 
+    pair_search: Optional[Dict[str, Any]] = None
+    hot_symbols: Optional[List[str]] = None
+    if sup_arb and sup_arb.get("enabled", True):
+        try:
+            from backend.services.exchange_profit_pair_search_service import run_profit_pair_search
+
+            pair_search = run_profit_pair_search()
+            if pair_search.get("success"):
+                hot_symbols = list(pair_search.get("hot_symbols") or [])
+        except Exception as exc:
+            pair_search = {"success": False, "error": str(exc)}
+
     if sup_arb and sup_arb.get("enabled", True):
         try:
             from backend.services.exchange_arbitrage_service import run_paper_tick
-            results["arbitrage"] = run_paper_tick()
+            results["arbitrage"] = run_paper_tick(hot_symbols=hot_symbols)
         except Exception as exc:
             results["arbitrage"] = {"success": False, "error": str(exc)}
         try:
             from backend.services.exchange_ai_trading_service import run_ai_tick
-            results["ai_trading"] = run_ai_tick()
+            results["ai_trading"] = run_ai_tick(hot_symbols=hot_symbols)
         except Exception as exc:
             results["ai_trading"] = {"success": False, "error": str(exc)}
     else:
@@ -310,4 +322,7 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     ex._audit("control_board_run_all", user_id="owner",
               arbitrage_ok=bool(results.get("arbitrage", {}).get("success")),
               cross_trade_ok=bool(results.get("cross_trade", {}).get("success")))
-    return {"success": True, "ran_at": _iso(), "results": results}
+    out: Dict[str, Any] = {"success": True, "ran_at": _iso(), "results": results}
+    if pair_search is not None:
+        out["profit_pair_search"] = pair_search
+    return out

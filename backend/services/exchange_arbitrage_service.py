@@ -568,7 +568,11 @@ def scan_opportunities(
     }
 
 
-def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None) -> Dict[str, Any]:
+def run_paper_tick(
+    *,
+    injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
+    hot_symbols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """Scan per-agent and credit paper profit for the best profitable opportunity."""
     cfg = conn.load_connectors_config()
     if not cfg.get("enabled", True):
@@ -607,6 +611,12 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         if not agent_id:
             continue
         a_symbols = [str(s).upper() for s in (agent.get("symbols") or cfg.get("supported_symbols") or [])]
+        try:
+            from backend.services.exchange_profit_pair_search_service import resolve_agent_symbols
+
+            a_symbols = resolve_agent_symbols(a_symbols, hot_symbols=hot_symbols)
+        except Exception:
+            pass
         a_venues = _live_api_ready_venues(list(agent.get("venues") or list(vmap.keys())))
         if live_enabled() and agent_id in ("arb_live_dual_farm", "arb_agent_meme"):
             a_symbols = _inventory_tradeable_symbols(a_venues, a_symbols)
@@ -729,7 +739,7 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
     except Exception:
         pass
 
-    return {
+    out: Dict[str, Any] = {
         "success": True,
         "ticked_at": _iso(),
         "live": live_enabled(),
@@ -741,6 +751,9 @@ def run_paper_tick(*, injected: Optional[Dict[str, Dict[str, Dict[str, float]]]]
         "actions": actions,
         "force_attempt": force_meta,
     }
+    if hot_symbols:
+        out["hot_symbols"] = hot_symbols
+    return out
 
 
 def agent_accounts() -> Dict[str, Any]:

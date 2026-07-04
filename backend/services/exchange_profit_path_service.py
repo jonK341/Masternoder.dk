@@ -60,6 +60,18 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
+    cfg.setdefault("profit_pair_search", {
+        "enabled": False,
+        "top_n": 12,
+        "ledger_lookback_hours": 24,
+        "ledger_min_attempts": 1,
+        "catalog_venues": ["binance", "nonkyc"],
+        "live_scan_top": 24,
+        "ledger_weight": 0.55,
+        "live_weight": 0.45,
+        "skip_agent_symbols_when_hot": True,
+        "min_live_net_bps": 8.0,
+    })
     return cfg
 
 

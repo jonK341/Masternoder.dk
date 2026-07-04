@@ -235,3 +235,48 @@ from backend.services.exchange_profit_agent_skills_service import (
 sync_from_ledger_research(hours=168)
 write_critical_markdown_doc()
 ```
+
+## Profit Pair Search
+
+Rank trading pairs before each exchange tick so arb agents, AI trader, and fast rescan focus on historically profitable routes and current hot spreads — not only fixed symbol lists from `exchange_connectors_config.json`.
+
+### Enable
+
+```bash
+EXCHANGE_PROFIT_PAIR_SEARCH=1
+```
+
+Or set `"profit_pair_search": { "enabled": true }` in `data/crypto_exchange/profit_path_protocol.json`.
+
+### Strategies (each tick)
+
+1. **Ledger-driven** — aggregate PPP ledger routes by hit rate and avg net bps (24h lookback).
+2. **Catalog intersection** — Binance USDC bases ∩ NonKYC USDT bases (cached 1h; falls back to `supported_symbols`).
+3. **Live spread snapshot** — `scan_opportunities` on the merged symbol pool; merge scores into a JSON index.
+
+Top hits become the symbol list for `run_paper_tick`, `run_ai_tick`, and `fast_arb_rescan` when search returns hot pairs (`skip_agent_symbols_when_hot`).
+
+### Files
+
+| File | Role |
+|------|------|
+| `data/crypto_exchange/profit_pair_search_index.json` | Latest ranked hits (updated each search tick) |
+| `data/crypto_exchange/profit_pair_catalog_cache.json` | Cached venue symbol lists |
+
+### API
+
+```
+GET /api/exchange/profit-pair-search
+GET /api/exchange/profit-pair-search?refresh=1
+```
+
+Returns `hot_symbols`, `hits[]` with `{symbol, buy_venue, sell_venue, search_score, avg_net_bps, hit_rate_pct, fill_count}`.
+
+### Daemon log lines (after restart)
+
+```
+[all-profit] exchange ... search_hot=DOGE,XRP,BTC,SOL search_n=12 arb_exec=1/11 ...
+```
+
+When disabled, no `search_hot=` prefix appears and agents use their configured symbol lists.
+

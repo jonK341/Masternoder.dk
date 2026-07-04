@@ -665,6 +665,19 @@ def exchange_profit_path_search():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-pair-search", methods=["GET"])
+def exchange_profit_pair_search():
+    from backend.services.exchange_profit_pair_search_service import read_index, run_profit_pair_search
+
+    refresh = str(request.args.get("refresh") or "").strip().lower() in ("1", "true", "yes")
+    if refresh:
+        return jsonify(run_profit_pair_search())
+    idx = read_index()
+    if idx.get("hits"):
+        return jsonify({"success": True, **idx})
+    return jsonify(run_profit_pair_search())
+
+
 @crypto_exchange_bp.route("/api/exchange/profit-path/summary", methods=["GET"])
 def exchange_profit_path_summary():
     from backend.services.exchange_profit_path_service import profit_path_summary

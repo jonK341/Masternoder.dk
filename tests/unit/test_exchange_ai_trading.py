@@ -61,6 +61,8 @@ def ai_env(tmp_path, monkeypatch):
     }), encoding="utf-8")
 
     monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
+    # Avoid MN2 RPC (127.0.0.1:9332) when a test temporarily enables live gates.
+    monkeypatch.setenv("MN2_SPORK_GATES", "0")
     return {"ex": ex, "arb": arb, "ai": ai, "vapi": vapi, "vault": vault}
 
 
@@ -208,7 +210,35 @@ def test_venue_api_live_gated_without_env(ai_env, monkeypatch):
     vault.set_secret("binance_api_key", "key")
     vault.set_secret("binance_api_secret", "secret")
 
+    monkeypatch.setattr(
+        vapi,
+        "fetch_binance_symbol_filters",
+        lambda market, **kw: {
+            "ok": True,
+            "market": market,
+            "step_size": 0.00001,
+            "min_qty": 0.00001,
+            "max_qty": 9000.0,
+            "min_notional": 5.0,
+        },
+    )
+
     def fake_http(method, url, **kwargs):
+        if "exchangeInfo" in str(url):
+            sym = str(url).split("symbol=")[-1].split("&")[0].upper()
+            return {
+                "success": True,
+                "status_code": 200,
+                "body": {
+                    "symbols": [{
+                        "symbol": sym,
+                        "filters": [
+                            {"filterType": "LOT_SIZE", "stepSize": "0.00001", "minQty": "0.00001", "maxQty": "9000"},
+                            {"filterType": "NOTIONAL", "minNotional": "5"},
+                        ],
+                    }],
+                },
+            }
         return {"success": True, "status_code": 200, "body": {"orderId": 99}}
 
     monkeypatch.setattr(vapi, "_http_request", fake_http)

@@ -221,6 +221,22 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
     max_exec = int(scfg.get("max_executions_per_tick") or 1)
 
     scan = arb.scan_opportunities(venues=venues, notional_usd=notional)
+    pair_search: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services.exchange_profit_pair_search_service import enabled, run_profit_pair_search
+
+        if enabled():
+            search = run_profit_pair_search(venues=venues)
+            pair_search = {
+                "success": bool(search.get("success")),
+                "hot_symbols": list(search.get("hot_symbols") or []),
+                "hit_count": int(search.get("hit_count") or 0),
+            }
+            hot = pair_search["hot_symbols"]
+            if hot:
+                scan = arb.scan_opportunities(symbols=hot, venues=venues, notional_usd=notional)
+    except Exception as exc:
+        pair_search = {"success": False, "error": str(exc)}
     all_opps = sorted(
         (scan.get("opportunities") or []),
         key=lambda o: float(o.get("net_bps") or 0),
@@ -308,6 +324,8 @@ def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
 
     if skip_reason:
         result["skip_reason"] = skip_reason
+    if pair_search is not None:
+        result["profit_pair_search"] = pair_search
     return result
 
 
