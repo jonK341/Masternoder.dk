@@ -84,6 +84,16 @@ systemctl status masternoder-profit-daemon.service
 tail -f /var/www/html/logs/profit_daemon_stdout.log
 ```
 
+
+## Troubleshooting (Windows CRLF)
+
+If install fails with `set: -` / `$'\r': command not found` or paths containing `'\r'`, the script was saved with Windows line endings. Re-deploy from git (repo enforces `*.sh` LF via `.gitattributes`), or on the server:
+
+```bash
+sed -i 's/\r$//' /var/www/html/scripts/install_profit_daemon_server.sh
+sed -i 's/\r$//' /var/www/html/scripts/run_profit_daemon_server.sh
+```
+
 ## Cron fallback
 
 Legacy `cron/exchange_master_tick.sh` runs a **single** `exchange_master_daemon.py --once` tick. Prefer **systemd** for full stack. Keep cron as backup only if systemd fails.
