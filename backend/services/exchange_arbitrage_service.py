@@ -78,7 +78,8 @@ def prepare_live_opportunity(
     cap = vapi.max_funded_notional_usd(
         symbol, buy_v, sell_v, buy_ask, configured_usd=float(configured_usd), buffer_pct=buffer_pct,
     )
-    if cap < min_live_usd:
+    scaled_notional = min(float(configured_usd), cap)
+    if scaled_notional < min_live_usd:
         return {
             "ok": False,
             "reason": "insufficient_venue_balance",
@@ -86,8 +87,17 @@ def prepare_live_opportunity(
             "best": opp,
         }
 
-    scaled = _scale_opportunity_notional(opp, min(float(configured_usd), cap))
+    scaled = _scale_opportunity_notional(opp, scaled_notional)
     funding = vapi.opportunity_funded(scaled, buffer_pct=buffer_pct)
+    if not funding.get("ok") and cap >= min_live_usd and scaled_notional > min_live_usd:
+        for factor in (0.85, 0.7, 0.55):
+            retry_notional = max(min_live_usd, round(scaled_notional * factor, 2))
+            if retry_notional >= scaled_notional:
+                continue
+            scaled = _scale_opportunity_notional(opp, retry_notional)
+            funding = vapi.opportunity_funded(scaled, buffer_pct=buffer_pct)
+            if funding.get("ok"):
+                break
     if not funding.get("ok"):
         return {
             "ok": False,
@@ -256,12 +266,43 @@ def _summarize_best_qualifying(
     """Top agent by net_bps with threshold/funding context for ops logging."""
     best_action: Optional[Dict[str, Any]] = None
     best_nb = -999.0
+    qualifying_pool: List[Dict[str, Any]] = []
     for action in actions:
         row = action.get("best") if isinstance(action.get("best"), dict) else {}
         nb = float(row.get("net_bps") or -999)
         if nb > best_nb:
             best_nb = nb
             best_action = action
+        if nb >= min_margin_bps and float(row.get("est_profit_usd") or 0) > 0:
+            qualifying_pool.append(action)
+    if qualifying_pool:
+        best_action = max(
+            qualifying_pool,
+            key=lambda a: float((a.get("best") or {}).get("net_bps") or 0),
+        )
+        best_nb = float((best_action.get("best") or {}).get("net_bps") or 0)
+    elif best_nb < min_margin_bps:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state()
+            state_net = float(state.get("best_net_bps") or 0)
+            if state.get("ready") and state_net >= min_margin_bps:
+                best_nb = state_net
+                best_action = {
+                    "agent_id": "arb_live_dual_farm",
+                    "executed": False,
+                    "reason": "global_threshold_ready",
+                    "best": {
+                        "symbol": state.get("top_symbol"),
+                        "buy_venue": state.get("buy_venue"),
+                        "sell_venue": state.get("sell_venue"),
+                        "net_bps": state_net,
+                        "est_profit_usd": float(state.get("est_profit_usd") or 0),
+                    },
+                }
+        except Exception:
+            pass
     if not best_action or best_nb < -900:
         return {
             "agent_id": None,
@@ -321,7 +362,20 @@ def _attempt_global_best_live(
 
     summary = _summarize_best_qualifying(actions, min_margin_bps)
     top_nb = float(summary.get("net_bps") or 0)
-    if top_nb < force_floor:
+    state_ready = False
+    state_net = 0.0
+    try:
+        from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+        state = read_arb_threshold_state()
+        state_net = float(state.get("best_net_bps") or 0)
+        state_ready = bool(state.get("ready") and state_net >= min_margin_bps)
+        if state_ready:
+            top_nb = max(top_nb, state_net)
+            force_floor = min(force_floor, min_margin_bps)
+    except Exception:
+        pass
+    if not state_ready and top_nb < force_floor:
         return None
 
     agent_cfg = next(

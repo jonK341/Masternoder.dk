@@ -96,6 +96,101 @@ def test_ai_tick_credits_paper_profit(ai_env):
     assert res["execution"]["buy_order"].get("simulated") is True
 
 
+def test_ai_tick_hot_spread_bypass_low_score(ai_env, monkeypatch):
+    """net_bps >= min_net executes even when ai_score is below min_ai_score."""
+    ai = ai_env["ai"]
+    arb = ai_env["arb"]
+    monkeypatch.setattr(arb, "live_enabled", lambda: False)
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+
+    def fake_analyze(**kwargs):
+        return {
+            "success": True,
+            "volatility": 0.35,
+            "scan": {"opportunity_count": 1},
+            "ranked_opportunities": [{
+                "symbol": "LINK",
+                "buy_venue": "nonkyc",
+                "sell_venue": "binance",
+                "buy_ask": 7.81,
+                "sell_bid": 7.86,
+                "net_bps": 22.0,
+                "est_profit_usd": 0.18,
+                "profitable": True,
+                "ai_score": 12.0,
+                "sized_notional_usd": 75.0,
+                "notional_usd": 75.0,
+                "actionable": False,
+            }],
+        }
+
+    monkeypatch.setattr(ai, "analyze_market", fake_analyze)
+    monkeypatch.setattr(
+        ai,
+        "execute_opportunity",
+        lambda opp, **kw: {
+            "success": True,
+            "mode": "paper",
+            "est_profit_usd": float(opp.get("est_profit_usd") or 0.18),
+            "buy_order": {"simulated": True},
+        },
+    )
+    res = ai.run_ai_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed"] is True
+    assert res.get("skip_reason") is None
+
+
+def test_ai_tick_uses_global_threshold_state(ai_env, monkeypatch):
+    """When wide scan finds nothing, reuse fast-loop arb_threshold_state."""
+    ai = ai_env["ai"]
+    arb = ai_env["arb"]
+    monkeypatch.setattr(arb, "live_enabled", lambda: False)
+
+    monkeypatch.setattr(
+        ai,
+        "analyze_market",
+        lambda **kw: {
+            "success": True,
+            "volatility": 0.35,
+            "scan": {"opportunity_count": 0},
+            "ranked_opportunities": [],
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_extended_profit_service.read_arb_threshold_state",
+        lambda: {
+            "ready": True,
+            "best_net_bps": 24.0,
+            "threshold_bps": 12,
+            "top_symbol": "LINK",
+            "buy_venue": "nonkyc",
+            "sell_venue": "binance",
+            "est_profit_usd": 0.2,
+        },
+    )
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+    monkeypatch.setattr(
+        ai,
+        "execute_opportunity",
+        lambda opp, **kw: {
+            "success": True,
+            "mode": "paper",
+            "est_profit_usd": float(opp.get("est_profit_usd") or 0.2),
+            "buy_order": {"simulated": True},
+        },
+    )
+    res = ai.run_ai_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed"] is True
+
+
 def test_venue_api_paper_order_without_keys(ai_env):
     vapi = ai_env["vapi"]
     res = vapi.place_market_order("binance", "BTC", "buy", 0.01)
