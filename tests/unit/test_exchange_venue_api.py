@@ -30,6 +30,25 @@ def test_resolve_market_unknown_venue():
     assert out["error"] == "unknown_venue"
 
 
+def test_venue_execution_eligible_requires_api_config_and_creds(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    monkeypatch.setattr(
+        vapi,
+        "load_api_config",
+        lambda: {"venues": {"binance": {"live_supported": True}, "coinbase": {"live_supported": False}}},
+    )
+    monkeypatch.setattr(
+        vapi,
+        "venue_has_credentials",
+        lambda vid: str(vid).lower() in ("binance", "bingx"),
+    )
+    assert vapi.venue_execution_eligible("binance") is True
+    assert vapi.venue_execution_eligible("bingx") is False
+    assert vapi.venue_execution_eligible("coinbase") is False
+    assert vapi.venue_execution_eligible("") is False
+
+
 def test_venue_supports_symbol_with_ticker(monkeypatch):
     from backend.services import exchange_venue_api_service as vapi
 

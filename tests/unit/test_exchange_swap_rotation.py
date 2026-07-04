@@ -25,6 +25,12 @@ def rotation_env(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
+    monkeypatch.setattr(
+        rot,
+        "_venue_rotation_eligible",
+        lambda vid: str(vid or "").lower() in ("binance", "nonkyc", "internal"),
+    )
+
     return {"ppp": ppp, "rot": rot, "ledger_path": ledger_path, "data": data}
 
 
@@ -561,10 +567,32 @@ def test_profit_first_defers_reduce_notional_when_hot(rotation_env, monkeypatch)
     )
     monkeypatch.setattr(rot, "rotation_auto_execute_enabled", lambda: True)
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
-    monkeypatch.setattr(rot, "execute_rotation", lambda *a, **k: {"success": True, "mode": "live"})
-    monkeypatch.setattr(rot, "log_rotation_to_ppp", lambda *a, **k: None)
-    monkeypatch.setattr(rot, "_dedupe_skip", lambda *a, **k: None)
-    monkeypatch.setattr(rot, "_fit_external_action_to_balance", lambda action, max_usd: action)
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.execute_rotation",
+        lambda *a, **k: {"success": True, "mode": "live"},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.log_rotation_to_ppp",
+        lambda *a, **k: None,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service._dedupe_skip",
+        lambda *a, **k: None,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service._fit_external_action_to_balance",
+        lambda action, max_usd: action,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **k: {
+            "ok": True,
+            "market": "DOGE_USDT",
+            "quantity": 100.0,
+            "notional_usd": 25.0,
+            "side": "buy",
+        },
+    )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
         lambda venue, leg, sym, usd, **kw: {
@@ -590,12 +618,9 @@ def test_unknown_venue_filtered_from_suggestions(rotation_env, monkeypatch):
     monkeypatch.setattr(rot, "_hot_spread_ready", lambda *a, **k: (False, 0.0))
     monkeypatch.setattr(rot, "profit_first_enabled", lambda: False)
     monkeypatch.setattr(
-        "backend.services.exchange_swap_rotation_service.vapi.venue_has_credentials",
-        lambda vid: vid in ("binance", "bingx"),
-    )
-    monkeypatch.setattr(
-        "backend.services.exchange_swap_rotation_service.vapi.load_api_config",
-        lambda: {"venues": {"binance": {}, "nonkyc": {}}},
+        rot,
+        "_venue_rotation_eligible",
+        lambda vid: str(vid or "").lower() in ("binance", "nonkyc", "internal"),
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",

@@ -73,9 +73,18 @@ def _venue_rotation_eligible(venue_id: str) -> bool:
     vid = str(venue_id or "").lower()
     if not vid or vid == "internal":
         return bool(vid == "internal")
-    if not vapi.venue_has_credentials(vid):
-        return False
-    return bool((vapi.load_api_config().get("venues") or {}).get(vid))
+    return vapi.venue_execution_eligible(vid)
+
+
+def _filter_rotation_actions(actions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Drop actions targeting scan-only venues (e.g. bingx — public ticker, no private API)."""
+    out: List[Dict[str, Any]] = []
+    for act in actions:
+        venue = str(act.get("venue_id") or act.get("wallet_user_id") or "").lower()
+        if venue and venue != "internal" and not _venue_rotation_eligible(venue):
+            continue
+        out.append(act)
+    return out
 
 
 def _refresh_rotation_balances() -> None:
@@ -438,7 +447,9 @@ def _record_rotation_baseline(action: Dict[str, Any], exec_res: Dict[str, Any]) 
 
 def _pick_auto_action(actions: List[Dict[str, Any]], allowed_types: List[str]) -> Optional[Dict[str, Any]]:
     live = rotation_live_enabled()
-    candidates = [a for a in actions if str(a.get("type") or "") in allowed_types]
+    candidates = _filter_rotation_actions(
+        [a for a in actions if str(a.get("type") or "") in allowed_types]
+    )
     if not live:
         candidates = [a for a in candidates if str(a.get("type") or "") != "external_market_buy"
                         and str(a.get("type") or "") != "external_market_sell"]
@@ -1170,6 +1181,7 @@ def suggest_swap_actions(
                     seen_labels.add(act["label"])
                     actions.append(act)
 
+    actions = _filter_rotation_actions(actions)
     actions.sort(key=_action_score, reverse=True)
     trimmed = actions[: max(1, int(limit))]
     return {

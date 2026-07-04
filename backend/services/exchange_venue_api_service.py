@@ -104,6 +104,17 @@ def venue_has_credentials(venue_id: str) -> bool:
     return bool(vault.get_secret(key_name) and vault.get_secret(sec_name))
 
 
+def venue_execution_eligible(venue_id: str) -> bool:
+    """Venue has vault creds and a private API config entry (live execution)."""
+    vid = str(venue_id or "").lower()
+    if not vid:
+        return False
+    if not venue_has_credentials(vid):
+        return False
+    entry = (load_api_config().get("venues") or {}).get(vid)
+    return isinstance(entry, dict)
+
+
 def venue_credentials(venue_id: str) -> Dict[str, Optional[str]]:
     from backend.services import exchange_secrets_vault_service as vault
     key_name, sec_name, pass_name = _secret_names(venue_id)
