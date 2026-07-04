@@ -153,7 +153,6 @@ def analyze_market(
     skill_ids: Optional[List[str]] = None,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     probe_venues: Optional[bool] = None,
-    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Scan all major venues, score opportunities with AI super-skills."""
     cfg = load_ai_config()
@@ -161,18 +160,7 @@ def analyze_market(
         return {"success": False, "error": "ai_trading_disabled"}
 
     skill_ids = list(skill_ids or cfg.get("default_skills") or [])
-    base_symbols = symbols or cfg.get("symbols")
-    try:
-        from backend.services.exchange_profit_pair_search_service import resolve_agent_symbols
-
-        if isinstance(base_symbols, list):
-            base_symbols = resolve_agent_symbols(
-                [str(s).upper() for s in base_symbols],
-                hot_symbols=hot_symbols,
-            )
-    except Exception:
-        pass
-    symbols = base_symbols
+    symbols = symbols or cfg.get("symbols")
     venues = venues or cfg.get("venues")
 
     scan = arb.scan_opportunities(symbols, venues, injected=injected)
@@ -240,60 +228,10 @@ def execute_opportunity(
     return execute_spatial_arbitrage(opp, agent_id=agent_id, dry_run=dry_run)
 
 
-def _dual_venue_global_opportunity(
-    cfg: Dict[str, Any],
-    *,
-    min_net: float,
-    skill_ids: List[str],
-    agent: Dict[str, Any],
-    volatility: float,
-    injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
-) -> Optional[Dict[str, Any]]:
-    """When wide-scan misses spreads, reuse fast-loop global binance+nonkyc scan."""
-    try:
-        from backend.services.exchange_extended_profit_service import read_arb_threshold_state
-
-        state = read_arb_threshold_state()
-    except Exception:
-        return None
-    state_net = float(state.get("best_net_bps") or 0)
-    if not state.get("ready") or state_net < min_net:
-        return None
-
-    dual_venues = ["binance", "nonkyc"]
-    notional = float(cfg.get("paper_trade_usd") or 75)
-    scan = arb.scan_opportunities(venues=dual_venues, notional_usd=notional, injected=injected)
-    for opp in scan.get("opportunities") or []:
-        nb = float(opp.get("net_bps") or 0)
-        if nb >= min_net and float(opp.get("est_profit_usd") or 0) > 0:
-            return score_opportunity(opp, skill_ids, volatility=volatility, agent=agent)
-    return None
-
-
-def _ai_skip_reason(
-    *,
-    best: Optional[Dict[str, Any]],
-    min_net: float,
-    min_score: float,
-    no_creds: bool = False,
-) -> str:
-    if no_creds:
-        return "no_creds"
-    if not best:
-        return "no_signal"
-    nb = float(best.get("net_bps") or 0)
-    if nb < min_net:
-        return "below_threshold"
-    if float(best.get("ai_score") or 0) < min_score and nb < min_net:
-        return "below_threshold"
-    return "no_signal"
-
-
 def run_ai_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     force_execute: bool = False,
-    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Full AI trading cycle: analyze → pick best → execute → book P&L."""
     cfg = load_ai_config()
@@ -301,22 +239,11 @@ def run_ai_tick(
         return {"success": False, "error": "ai_trading_disabled"}
 
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
-    skill_ids = list(cfg.get("default_skills") or [])
-    analysis = analyze_market(injected=injected, probe_venues=False, hot_symbols=hot_symbols)
+    analysis = analyze_market(injected=injected, probe_venues=False)
     ranked = analysis.get("ranked_opportunities") or []
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
-    hot_bps = float(
-        cfg.get("hot_spread_bps")
-        or os.environ.get("EXCHANGE_AI_HOT_BPS")
-        or min_net
-    )
-    volatility = float(analysis.get("volatility") or cfg.get("volatility_default") or 0.35)
-    agent_ctx = {
-        "capital_usd": float(cfg.get("capital_usd") or 1000),
-        "skills": skill_ids,
-        "skill_proficiency": {s: 0.35 for s in skill_ids},
-    }
+    hot_bps = float(cfg.get("hot_spread_bps") or os.environ.get("EXCHANGE_AI_HOT_BPS") or 20)
 
     best = next(
         (o for o in ranked if o.get("actionable") and float(o.get("net_bps") or 0) >= min_net),
@@ -329,18 +256,8 @@ def run_ai_tick(
         )
     if not best:
         best = next(
-            (o for o in ranked if float(o.get("net_bps") or 0) >= min_net),
-            None,
-        )
-    if not best:
-        best = next(
             (o for o in ranked if float(o.get("net_bps") or 0) >= hot_bps),
             None,
-        )
-    if not best:
-        best = _dual_venue_global_opportunity(
-            cfg, min_net=min_net, skill_ids=skill_ids, agent=agent_ctx, volatility=volatility,
-            injected=injected,
         )
     if not best and ranked and force_execute:
         best = ranked[0]
@@ -351,35 +268,26 @@ def run_ai_tick(
     acct["ticks"] = int(acct.get("ticks") or 0) + 1
     acct["game_time_sec"] = int(acct.get("game_time_sec") or 0) + 3600
     acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 40
-    acct["skills"] = skill_ids
+    acct["skills"] = list(cfg.get("default_skills") or [])
 
-    net_bps = float(best.get("net_bps") or 0) if best else 0.0
-    hot_spread = bool(best and net_bps >= hot_bps)
-    near_margin = bool(best and net_bps >= min_net - 2)
+    hot_spread = bool(best and float(best.get("net_bps") or 0) >= hot_bps)
+    near_margin = bool(
+        best
+        and float(best.get("net_bps") or 0) >= min_net - 2
+        and (best.get("profitable") or float(best.get("net_bps") or 0) >= min_net)
+    )
     effective_min_score = min(min_score, 28.0) if hot_spread else min(min_score, 22.0) if near_margin else min_score
     score_ok = float(best.get("ai_score") or 0) >= effective_min_score if best else False
-    spread_ok = bool(best and net_bps >= min_net)
-    should_execute = bool(best and net_bps >= min_net and (score_ok or spread_ok or hot_spread))
-
-    no_creds = False
-    if should_execute and arb.live_enabled() and best:
-        try:
-            from backend.services import exchange_venue_api_service as vapi
-
-            for vid in (best.get("buy_venue"), best.get("sell_venue")):
-                if vid and vid != "internal" and not vapi.venue_has_credentials(str(vid)):
-                    no_creds = True
-                    break
-        except Exception:
-            pass
-
-    if not should_execute or no_creds:
-        skip = _ai_skip_reason(best=best, min_net=min_net, min_score=min_score, no_creds=no_creds)
+    spread_ok = bool(
+        best
+        and float(best.get("net_bps") or 0) >= min_net
+        and (best.get("profitable") or hot_spread)
+    )
+    if not best or (not score_ok and not spread_ok):
         action = {
             "agent_id": agent_id,
             "executed": False,
             "reason": "no_actionable_ai_signal",
-            "skip_reason": skip,
             "best": best,
             "analysis_summary": analysis.get("scan"),
         }
@@ -388,55 +296,23 @@ def run_ai_tick(
         return {
             "success": True,
             "executed": False,
-            "skip_reason": skip,
             "analysis": analysis,
             "action": action,
             "account": acct,
         }
 
-    trade_opp = best
-    if arb.live_enabled():
-        notional = float(best.get("sized_notional_usd") or cfg.get("paper_trade_usd") or 75)
-        prepared = arb.prepare_live_opportunity(
-            best, configured_usd=notional, buffer_pct=0.03, min_live_usd=10.0,
-        )
-        if not prepared.get("ok"):
-            skip = "below_threshold" if net_bps < min_net else "no_signal"
-            if str(prepared.get("reason") or "") == "insufficient_venue_balance":
-                skip = "no_signal"
-            action = {
-                "agent_id": agent_id,
-                "executed": False,
-                "reason": str(prepared.get("reason") or "insufficient_venue_balance"),
-                "skip_reason": skip,
-                "best": prepared.get("best") or best,
-                "max_funded_usd": prepared.get("max_funded_usd"),
-            }
-            acct["last_action"] = action
-            arb.write_account(acct)
-            return {
-                "success": True,
-                "executed": False,
-                "skip_reason": skip,
-                "analysis": analysis,
-                "action": action,
-                "account": acct,
-            }
-        trade_opp = prepared["opportunity"]
-
-    exec_res = execute_opportunity(trade_opp, agent_id=agent_id)
+    exec_res = execute_opportunity(best, agent_id=agent_id)
     profit = float(exec_res.get("est_profit_usd") or 0) if exec_res.get("success") else 0.0
 
     if exec_res.get("success") and profit > 0:
         acct["realized_profit_usd"] = round(float(acct.get("realized_profit_usd") or 0) + profit, 6)
         acct["trade_count"] = int(acct.get("trade_count") or 0) + 1
         acct["notional_traded_usd"] = round(
-            float(acct.get("notional_traded_usd") or 0) + float(trade_opp.get("sized_notional_usd") or trade_opp.get("notional_usd") or 0), 2
+            float(acct.get("notional_traded_usd") or 0) + float(best.get("sized_notional_usd") or 0), 2
         )
         by_venue = acct.setdefault("by_venue", {})
-        sized = float(trade_opp.get("sized_notional_usd") or trade_opp.get("notional_usd") or 0)
-        for vid in (trade_opp.get("buy_venue"), trade_opp.get("sell_venue")):
-            by_venue[str(vid)] = round(float(by_venue.get(vid) or 0) + sized, 2)
+        for vid in (best.get("buy_venue"), best.get("sell_venue")):
+            by_venue[str(vid)] = round(float(by_venue.get(vid) or 0) + float(best.get("sized_notional_usd") or 0), 2)
 
         try:
             from backend.services.exchange_agent_learning_service import learn_from_profit
@@ -448,33 +324,28 @@ def run_ai_tick(
             "ai_trading_execute",
             user_id=agent_id,
             amount_usd=profit,
-            symbol=trade_opp.get("symbol"),
-            buy_venue=trade_opp.get("buy_venue"),
-            sell_venue=trade_opp.get("sell_venue"),
+            symbol=best.get("symbol"),
+            buy_venue=best.get("buy_venue"),
+            sell_venue=best.get("sell_venue"),
             ai_score=best.get("ai_score"),
             mode=exec_res.get("mode"),
         )
 
-    executed = bool(exec_res.get("success") and profit > 0)
     action = {
         "agent_id": agent_id,
-        "executed": executed,
+        "executed": bool(exec_res.get("success") and profit > 0),
         "mode": exec_res.get("mode"),
         "ai_score": best.get("ai_score"),
         "ai_strategies": best.get("ai_strategies"),
-        **trade_opp,
+        **best,
         "execution": exec_res,
     }
-    if not executed:
-        action["skip_reason"] = "no_signal"
-        action["reason"] = str(exec_res.get("error") or "execution_failed")
     acct["last_action"] = action
     arb.write_account(acct)
 
     return {
         "success": True,
-        "executed": executed,
-        "skip_reason": None if executed else action.get("skip_reason"),
+        "executed": action["executed"],
         "ticked_at": _iso(),
         "live": arb.live_enabled(),
         "analysis": analysis,

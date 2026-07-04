@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit Daemon — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/profit-daemon-monitor.css?v=20260704">
+</head>
+<body>
+    <div class="pdm-page">
+        <header class="pdm-header">
+            <h1>⚡ Profit Daemon</h1>
+            <p class="pdm-sub">24/7 live trading on masternoder.dk — arb, cross-trade, extended strategies, casino, sweeps.</p>
+            <div class="pdm-status-pill" id="pdm-running-pill">Checking…</div>
+        </header>
+
+        <nav class="pdm-tabs" id="pdm-tabs" role="tablist" aria-label="Profit daemon sections">
+            <button type="button" class="pdm-tab active" data-pdm-tab="monitor" role="tab">Monitor</button>
+            <button type="button" class="pdm-tab" data-pdm-tab="news" role="tab">Profit news</button>
+            <button type="button" class="pdm-tab" data-pdm-tab="rent" role="tab">Rent / buy</button>
+            <button type="button" class="pdm-tab" data-pdm-tab="rewards" role="tab">Rewards</button>
+        </nav>
+
+        <section class="pdm-panel active" data-pdm-panel="monitor" id="pdm-panel-monitor">
+            <div class="pdm-grid" id="pdm-metrics">
+                <div class="pdm-card"><span class="pdm-label">Arb fills</span><strong id="pdm-arb-exec">—</strong></div>
+                <div class="pdm-card"><span class="pdm-label">Best spread</span><strong id="pdm-best-bps">—</strong></div>
+                <div class="pdm-card"><span class="pdm-label">Cross-trade</span><strong id="pdm-cross">—</strong></div>
+                <div class="pdm-card"><span class="pdm-label">Live stash</span><strong id="pdm-stash">—</strong></div>
+                <div class="pdm-card"><span class="pdm-label">PPP 24h fills</span><strong id="pdm-ppp-fills">—</strong></div>
+                <div class="pdm-card"><span class="pdm-label">PayPal sweep</span><strong id="pdm-sweep">—</strong></div>
+            </div>
+            <h2>Loop heartbeats</h2>
+            <div id="pdm-loops" class="pdm-loops">Loading…</div>
+            <p class="pdm-muted">Auto-refresh every 30s · <a href="/exchange?tab=bots">Exchange bot control</a> · <a href="/shop">Shop</a></p>
+        </section>
+
+        <section class="pdm-panel" data-pdm-panel="news" id="pdm-panel-news" hidden>
+            <h2>Profit feed</h2>
+            <p class="pdm-muted">Synced to home page news — live ticks, sweeps, cross-trade.</p>
+            <ul id="pdm-news-list" class="pdm-news-list"></ul>
+        </section>
+
+        <section class="pdm-panel" data-pdm-panel="rent" id="pdm-panel-rent" hidden>
+            <h2>Rent a daemon bot</h2>
+            <p class="pdm-muted">Run your own 24/7 bot on platform venues — profits accrue to your wallet. Tune venues in Exchange → Daemon control.</p>
+            <div id="pdm-rentals" class="pdm-rentals">Loading…</div>
+            <p><a class="pdm-btn" href="/exchange?tab=marketplace">Open marketplace &amp; shop</a></p>
+        </section>
+
+        <section class="pdm-panel" data-pdm-panel="rewards" id="pdm-panel-rewards" hidden>
+            <h2>Rewards &amp; shop boosts</h2>
+            <ul class="pdm-reward-list">
+                <li><strong>Completion rewards</strong> — MN2 + XP when a rental finishes profitably.</li>
+                <li><strong>Profit Boost 24h</strong> — +25% paper profit on your bots (Exchange shop).</li>
+                <li><strong>Silver Trust Badge</strong> — faster activations and marketplace trust.</li>
+                <li><strong>Daemon rental vouchers</strong> — discount elite / cross-exchange daemon trials.</li>
+            </ul>
+            <a class="pdm-btn" href="/exchange?tab=marketplace">Exchange shop</a>
+        </section>
+    </div>
+    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/profit-daemon-monitor.js?v=20260704" defer></script>
+</body>
+</html>

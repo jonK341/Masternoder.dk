@@ -1,0 +1,70 @@
+.pdm-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  color: #e8eefc;
+  font-family: system-ui, sans-serif;
+}
+.pdm-header h1 { margin: 0 0 0.35rem; color: #00ff88; }
+.pdm-sub { opacity: 0.85; margin: 0 0 1rem; }
+.pdm-status-pill {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(0, 255, 136, 0.4);
+  background: rgba(0, 255, 136, 0.08);
+}
+.pdm-status-pill.off { border-color: rgba(255, 100, 100, 0.5); background: rgba(255, 80, 80, 0.1); color: #ffb0b0; }
+.pdm-status-pill.on { color: #00ff88; }
+.pdm-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.25rem 0; }
+.pdm-tab {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: #e8eefc;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pdm-tab.active { background: rgba(0,255,136,0.15); color: #00ff88; }
+.pdm-panel { display: none; }
+.pdm-panel.active { display: block; }
+.pdm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.pdm-card {
+  background: rgba(10, 14, 28, 0.85);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+.pdm-label { display: block; font-size: 0.75rem; opacity: 0.7; }
+.pdm-card strong { font-size: 1.15rem; color: #00ff88; }
+.pdm-loops { font-family: ui-monospace, monospace; font-size: 0.8rem; line-height: 1.5; }
+.pdm-loop-row { padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdm-loop-row.stale { opacity: 0.55; }
+.pdm-muted { opacity: 0.75; font-size: 0.9rem; }
+.pdm-news-list { list-style: none; padding: 0; }
+.pdm-news-list li { margin-bottom: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.pdm-news-list a { color: #00ff88; text-decoration: none; font-weight: 600; }
+.pdm-rentals { display: grid; gap: 0.75rem; }
+.pdm-rent-card {
+  border: 1px solid rgba(0,255,136,0.25);
+  border-radius: 10px;
+  padding: 1rem;
+  background: rgba(8,12,24,0.9);
+}
+.pdm-btn {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0,255,136,0.15);
+  border: 1px solid rgba(0,255,136,0.45);
+  border-radius: 8px;
+  color: #00ff88;
+  text-decoration: none;
+}
+.pdm-reward-list { line-height: 1.6; }

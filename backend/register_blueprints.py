@@ -224,6 +224,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP crypto_exchange: {e}")
     try:
+        from backend.routes.profit_daemon_routes import profit_daemon_bp
+        if "profit_daemon" not in app.blueprints:
+            app.register_blueprint(profit_daemon_bp)
+            n += 1
+            print("  [OK] Registered profit_daemon blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP profit_daemon: {e}")
+    try:
         from backend.routes.camgirls_routes import camgirls_bp
         if "camgirls" not in app.blueprints:
             app.register_blueprint(camgirls_bp)

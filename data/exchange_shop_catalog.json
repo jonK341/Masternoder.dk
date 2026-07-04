@@ -81,14 +81,37 @@
       "description": "10 priority opportunity-radar scans with premium edge uplift."
     },
     {
-      "id": "ex_sentient_trial_rental",
-      "name": "Sentient Trial Voucher",
+      "id": "ex_daemon_rent_voucher_7d",
+      "name": "Cross Daemon Voucher — 7 days",
       "category": "rental_voucher",
-      "price_mn2": 200,
-      "rental_id": "rent_elite_3d",
-      "shop_linked": false,
-      "image": "/static/img/exchange/shop-voucher.svg",
-      "description": "Discount voucher: redeems one elite rental at half the usual skill cap."
-    }
+      "price_mn2": 75,
+      "rental_id": "rent_daemon_cross_7d",
+      "shop_linked": true,
+      "featured": true,
+      "image": "/static/img/exchange/rent-pro.svg",
+      "description": "Redeem a 7-day cross-exchange daemon rental at a discount. Profits stay in your wallet."
+    },
+    {
+      "id": "ex_daemon_ai_voucher_3d",
+      "name": "AI Daemon Trial Voucher — 3 days",
+      "category": "rental_voucher",
+      "price_mn2": 95,
+      "rental_id": "rent_daemon_ai_3d",
+      "shop_linked": true,
+      "featured": true,
+      "image": "/static/img/exchange/rent-elite.svg",
+      "description": "Premium AI multi-venue daemon trial — tune venues from Daemon Control."
+    },
+    {
+      "id": "ex_profit_monitor_pass",
+      "name": "Profit Monitor Pass (7d)",
+      "category": "reward",
+      "price_mn2": 15,
+      "reward_mn2": 3,
+      "reward_xp": 35,
+      "shop_linked": true,
+      "image": "/static/img/exchange/shop-scan.svg",
+      "description": "Unlock featured profit news + 35 XP. Follow live daemon ticks on /profit/."
+    },
   ]
 }

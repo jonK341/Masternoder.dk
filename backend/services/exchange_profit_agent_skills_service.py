@@ -406,36 +406,6 @@ def _exchange_loop_ai_exec_signal(hb: Dict[str, Any], *, max_age_sec: float = 36
     return ai_exec, recent, summary
 
 
-def _exchange_loop_arb_exec_count(
-    hb: Dict[str, Any], *, max_age_sec: float = 3600.0,
-) -> tuple[int, bool, str]:
-    """Parse exchange loop summary for arb_exec=N/M; recent if updated within max_age_sec."""
-    loops = hb.get("loops") if isinstance(hb.get("loops"), dict) else {}
-    exchange = loops.get("exchange") if isinstance(loops.get("exchange"), dict) else {}
-    summary = str(exchange.get("summary") or "")
-    updated_at = exchange.get("updated_at") or hb.get("updated_at")
-    recent = False
-    if updated_at:
-        try:
-            ts = datetime.fromisoformat(str(updated_at).replace("Z", "+00:00"))
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
-            recent = (datetime.now(timezone.utc) - ts).total_seconds() <= max_age_sec
-        except (TypeError, ValueError):
-            recent = bool(summary)
-    executed = 0
-    for part in summary.split():
-        if part.startswith("arb_exec="):
-            val = part.split("=", 1)[1].strip()
-            if "/" in val:
-                try:
-                    executed = int(val.split("/", 1)[0])
-                except ValueError:
-                    pass
-            break
-    return executed, recent, summary
-
-
 def _infer_auto_checks() -> Dict[str, str]:
     """Return problem_id -> note for items resolved by daemon/state signals."""
     resolved: Dict[str, str] = {}
@@ -500,9 +470,6 @@ def _infer_auto_checks() -> Dict[str, str]:
     ai_exec, ai_recent, exchange_sum = _exchange_loop_ai_exec_signal(hb)
     if ai_recent and ai_exec is True:
         resolved["ai_trader_idle"] = f"heartbeat ai_exec=True ({today})"
-    arb_exec, arb_recent, _ = _exchange_loop_arb_exec_count(hb)
-    if arb_recent and arb_exec >= 1:
-        resolved["arb_exec_zero"] = f"heartbeat arb_exec={arb_exec} ({today})"
 
     for v in conn.get("venues") or []:
         if isinstance(v, dict) and str(v.get("id") or "") == "xeggex":
@@ -634,42 +601,19 @@ def sync_critical_reality() -> Dict[str, Any]:
     for pid, note in auto_resolved.items():
         checks[pid] = True
         notes[pid] = note
-    _engine_fix_evidence = {
-        "ai_trader_idle": (
-            f"c7b70f5 hot spread bypass at min_net + arb_threshold_state fallback + ai_skip heartbeat; "
-            f"pytest 2026-07-04 — restart daemon for live ai_exec=True"
-        ),
-        "arb_exec_zero": (
-            f"5894176 force_attempt when ready=yes + prepare_live max_funded + profit-first balance refresh; "
-            f"pytest 2026-07-04 — restart daemon for live arb_exec≥1"
-        ),
-    }
-    hb = _read_json(os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json"), {})
-    ai_exec, ai_recent, exchange_sum = _exchange_loop_ai_exec_signal(hb)
-    arb_exec, arb_recent, _ = _exchange_loop_arb_exec_count(hb)
-    snippet = exchange_sum[:80].strip() if exchange_sum else "no exchange summary"
     if "ai_trader_idle" not in auto_resolved:
+        checks["ai_trader_idle"] = False
+        hb = _read_json(os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json"), {})
+        ai_exec, ai_recent, exchange_sum = _exchange_loop_ai_exec_signal(hb)
+        snippet = exchange_sum[:80].strip() if exchange_sum else "no exchange summary"
         if ai_recent and ai_exec is False:
-            notes["ai_trader_idle"] = (
-                f"fix deployed; heartbeat ai_exec=False — restart daemon; {snippet} ({today})"
-            )
+            notes["ai_trader_idle"] = f"heartbeat ai_exec=False; {snippet} ({today})"
         elif ai_recent and ai_exec is None:
-            notes["ai_trader_idle"] = f"fix deployed; heartbeat missing ai_exec; {snippet} ({today})"
+            notes["ai_trader_idle"] = f"heartbeat missing ai_exec; {snippet} ({today})"
         elif not ai_recent:
-            notes["ai_trader_idle"] = _engine_fix_evidence["ai_trader_idle"]
+            notes["ai_trader_idle"] = f"exchange heartbeat stale — ai_exec unverified ({today})"
         else:
-            notes["ai_trader_idle"] = _engine_fix_evidence["ai_trader_idle"]
-        checks["ai_trader_idle"] = True
-    if "arb_exec_zero" not in auto_resolved:
-        if arb_recent and arb_exec == 0:
-            notes["arb_exec_zero"] = (
-                f"fix deployed; heartbeat arb_exec=0 — restart daemon; {snippet} ({today})"
-            )
-        elif not arb_recent:
-            notes["arb_exec_zero"] = _engine_fix_evidence["arb_exec_zero"]
-        else:
-            notes["arb_exec_zero"] = _engine_fix_evidence["arb_exec_zero"]
-        checks["arb_exec_zero"] = True
+            notes["ai_trader_idle"] = f"ai_exec not True on recent tick; {snippet} ({today})"
     for pid, note in _infer_rotation_notes().items():
         if pid not in auto_resolved:
             notes[pid] = note

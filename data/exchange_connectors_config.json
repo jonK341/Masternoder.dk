@@ -3,10 +3,10 @@
   "mode": "live",
   "live_env_flag": "EXCHANGE_ARBITRAGE_LIVE",
   "request_timeout_sec": 6,
-  "price_cache_ttl_sec": 30,
-  "paper_trade_usd": 250.0,
-  "min_margin_bps": 30,
-  "transfer_cost_bps": 20,
+  "price_cache_ttl_sec": 15,
+  "paper_trade_usd": 10.41,
+  "min_margin_bps": 14,
+  "transfer_cost_bps": 14,
   "supported_symbols": [
     "BTC",
     "ETH",
@@ -31,10 +31,10 @@
       "name": "Binance",
       "enabled": true,
       "fee_taker_bps": 10,
-      "quote": "USDT",
+      "quote": "USDC",
       "ticker_url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol={pair}",
       "pair_template": "{base}{quote}",
-      "withdrawal_note": "Per-asset flat network fee; USDT on TRC20 cheapest."
+      "withdrawal_note": "EEA/MiCA: USDC spot quote (USDT delisted for retail). USDC TRC20 for transfers."
     },
     {
       "id": "coinbase",
@@ -289,7 +289,9 @@
       "quote": "USDT",
       "ticker_url": "https://api.xeggex.com/api/v2/ticker/{pair}",
       "pair_template": "{base}_{quote}",
-      "withdrawal_note": "No-KYC altcoin exchange; USDT pairs. API keys at xeggex.com account settings."
+      "withdrawal_note": "No-KYC altcoin exchange; USDT pairs. API keys at xeggex.com account settings.",
+      "live_trading": false,
+      "note": "Excluded from live arb until API 401 resolved (invalid keys or IP whitelist)."
     }
   ],
   "arbitrage_agents": [
@@ -309,7 +311,7 @@
         "gemini",
         "bingx"
       ],
-      "paper_trade_usd": 500.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_btc_eth_wallet"
     },
     {
@@ -329,7 +331,7 @@
         "bitget",
         "bingx"
       ],
-      "paper_trade_usd": 300.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_majors_wallet"
     },
     {
@@ -367,7 +369,7 @@
         "xeggex",
         "internal"
       ],
-      "paper_trade_usd": 250.0,
+      "paper_trade_usd": 10.0,
       "strategy": "internal_vs_external",
       "wallet_label": "arb_internal_wallet"
     },
@@ -387,7 +389,7 @@
         "whitebit",
         "lbank"
       ],
-      "paper_trade_usd": 150.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_payments_wallet"
     },
     {
@@ -412,7 +414,7 @@
         "upbit",
         "phemex"
       ],
-      "paper_trade_usd": 350.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_global_farm_wallet"
     },
     {
@@ -429,7 +431,7 @@
         "mexc",
         "bitget"
       ],
-      "paper_trade_usd": 120.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_meme_wallet"
     },
     {
@@ -449,25 +451,27 @@
         "kucoin",
         "gateio"
       ],
-      "paper_trade_usd": 180.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_defi_wallet"
     },
     {
       "id": "arb_live_dual_farm",
       "name": "Live Binance+NonKYC Farm",
       "symbols": [
-        "BTC",
-        "ETH",
-        "SOL",
-        "XRP",
         "DOGE",
-        "LTC"
+        "XRP",
+        "LTC",
+        "SOL",
+        "ETH",
+        "BTC",
+        "AVAX",
+        "LINK"
       ],
       "venues": [
         "binance",
         "nonkyc"
       ],
-      "paper_trade_usd": 350.0,
+      "paper_trade_usd": 10.0,
       "wallet_label": "arb_live_dual_wallet"
     },
     {
@@ -482,7 +486,7 @@
         "nonkyc",
         "internal"
       ],
-      "paper_trade_usd": 200.0,
+      "paper_trade_usd": 10.0,
       "strategy": "stablecoin_peg",
       "wallet_label": "arb_stable_wallet"
     },
@@ -500,9 +504,10 @@
         "binance",
         "nonkyc"
       ],
-      "paper_trade_usd": 150.0,
+      "paper_trade_usd": 10.0,
       "strategy": "triangular",
       "wallet_label": "arb_triangular_wallet"
     }
-  ]
+  ],
+  "prefunded_transfer_cost_bps": 6
 }

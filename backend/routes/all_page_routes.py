@@ -48,6 +48,7 @@ PAGES = [
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'profit',
     'wallets',
     'podcast', 'business-control',
 ]
