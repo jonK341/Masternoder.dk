@@ -51,6 +51,7 @@
           '</div>' +
           '<div class="platform-upgrade-actions">' +
           '<a href="/docs/PLATFORM_100_UPGRADES.md" target="_blank" rel="noopener">Roadmap</a>' +
+          '<a href="/docs/PLATFORM_UPGRADES_BATCH2.md" target="_blank" rel="noopener">Batch 2</a>' +
           '<button type="button" class="pu-refresh" data-area="' + esc(area) + '">Refresh</button>' +
           '</div></div>';
         var btn = el.querySelector('.pu-refresh');

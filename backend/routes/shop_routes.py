@@ -2645,3 +2645,34 @@ def shop_daily_deal():
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/daily-deal/ui', methods=['GET'])
+def shop_daily_deal_ui():
+    """UI-friendly daily deal strip payload for shop hub widgets."""
+    try:
+        from datetime import datetime, timezone
+        import hashlib
+        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        day_hash = int(hashlib.md5(today.encode()).hexdigest()[:6], 16)
+        items = _get_shop_items()
+        if not items:
+            return jsonify({'success': False, 'error': 'No items'}), 200
+        item = items[day_hash % len(items)]
+        original_price = item.get('price', 100)
+        discount_pct = 25 + (day_hash % 16)
+        deal_price = max(10, int(original_price * (1 - discount_pct / 100))) if isinstance(original_price, (int, float)) else original_price
+        return jsonify({
+            'success': True,
+            'date': today,
+            'item_id': item.get('id'),
+            'name': item.get('name'),
+            'category': item.get('category'),
+            'original_price': original_price,
+            'deal_price': deal_price,
+            'discount_pct': discount_pct,
+            'headline': f"{discount_pct}% off — {item.get('name')}",
+            'expires_utc': today + 'T23:59:59Z',
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

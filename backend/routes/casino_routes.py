@@ -1484,6 +1484,40 @@ def casino_agents_tick_summary():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/wins/ticker", methods=["GET"])
+def casino_wins_ticker():
+    """Live wins ticker for casino hub — recent agent wins from spectator feed."""
+    try:
+        import backend.services.casino_agents_service as agents
+        limit = request.args.get("limit", 10, type=int)
+        feed = agents.get_spectator_feed(limit=max(limit, 20))
+        events = feed.get("events") or []
+        wins = []
+        for ev in events:
+            net = float(ev.get("net") or 0)
+            if net > 0:
+                wins.append({
+                    "agent": ev.get("agent_name") or ev.get("agent_id"),
+                    "game": ev.get("game"),
+                    "net": net,
+                    "bet": ev.get("bet"),
+                    "ts": ev.get("ts"),
+                    "line": ev.get("spectator_line") or f"Won {net} on {ev.get('game', 'casino')}",
+                })
+            if len(wins) >= limit:
+                break
+        tick = agents.tick_summary(hours=6, limit=50)
+        return jsonify({
+            "success": True,
+            "wins": wins,
+            "win_rate_pct": tick.get("win_rate_pct"),
+            "total_ticks": tick.get("total_ticks"),
+            "jackpot_pool": 10000,
+        }), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/duels/plinko-battle/create", methods=["POST"])
 def casino_plinko_battle_create():
     try:

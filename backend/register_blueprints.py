@@ -306,6 +306,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP platform_news: {e}")
     try:
+        from backend.routes.platform_upgrades_routes import platform_upgrades_bp
+        app.register_blueprint(platform_upgrades_bp)
+        n += 1
+        print("  [OK] Registered platform_upgrades blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP platform_upgrades: {e}")
+    try:
         from backend.routes.discord_routes import discord_bp
         if "discord" not in app.blueprints:
             app.register_blueprint(discord_bp)
@@ -1563,6 +1570,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [ERROR] Error registering platform_news: {e}")
 
     try:
+        from backend.routes.platform_upgrades_routes import platform_upgrades_bp
+        app.register_blueprint(platform_upgrades_bp)
+        registered_count += 1
+        print("  [OK] Registered platform_upgrades blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import platform_upgrades: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering platform_upgrades: {e}")
+
+    try:
         from backend.routes.discord_routes import discord_bp
         if "discord" not in app.blueprints:
             app.register_blueprint(discord_bp)
@@ -2184,6 +2201,18 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import cogs: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering cogs: {e}")
+
+    # Platform 100-upgrade roadmap API
+    try:
+        from backend.routes.platform_upgrades_routes import platform_upgrades_bp
+        if "platform_upgrades" not in app.blueprints:
+            app.register_blueprint(platform_upgrades_bp)
+            registered_count += 1
+            print("  [OK] Registered platform_upgrades blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import platform_upgrades: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering platform_upgrades: {e}")
 
     # Quest Routes (AI-generated daily + personal quests)
     try:

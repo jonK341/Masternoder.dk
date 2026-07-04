@@ -578,6 +578,29 @@ def battle_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@battle_bp.route('/api/battle/matchmaking/status', methods=['GET'])
+def battle_matchmaking_status():
+    """Quick-battle matchmaking queue status for hub widgets."""
+    try:
+        user_id = _resolve_uid()
+        stats = _get_battle_stats(user_id)
+        total = int(stats.get('total_battles') or 0)
+        wins = int(stats.get('wins') or 0)
+        difficulty = 'easy' if total < 3 else ('hard' if wins > total * 0.6 else 'normal')
+        return jsonify({
+            'success': True,
+            'user_id': user_id,
+            'queue_depth': 0,
+            'opponent_type': 'ai',
+            'recommended_difficulty': difficulty,
+            'win_streak': stats.get('win_streak') or 0,
+            'mn2_per_win': 0.01,
+            'quick_battle_href': '/battle#quick-battle',
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @battle_bp.route('/api/battle/history', methods=['GET'])
 def battle_history():
     """Get battle history (from DB when migration run)."""

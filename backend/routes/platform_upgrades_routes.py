@@ -10,7 +10,7 @@ platform_upgrades_bp = Blueprint("platform_upgrades", __name__)
 
 
 @platform_upgrades_bp.route("/api/platform/upgrades", methods=["GET"])
-@cached_response(max_age=60)
+@cached_response(ttl=60)
 def platform_upgrades_roadmap():
     area = request.args.get("area")
     return jsonify(get_roadmap(area)), 200
@@ -25,7 +25,7 @@ def platform_area_summary(area: str):
 
 
 @platform_upgrades_bp.route("/api/platform/health", methods=["GET"])
-@cached_response(max_age=30)
+@cached_response(ttl=30)
 def platform_cross_health():
     areas = ["explorer", "exchange", "command-center"]
     snapshots = {}

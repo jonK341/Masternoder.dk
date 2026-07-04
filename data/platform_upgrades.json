@@ -28,37 +28,37 @@
           "id": 4,
           "title": "Manual refresh button on overview",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 5,
           "title": "SSE stream with polling fallback",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 6,
           "title": "5-day network monitor sparklines",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 7,
           "title": "Search opens Chainz tx/address detail",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 8,
           "title": "Daemon health banner with staking status",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 9,
           "title": "Masternode rank table with active time",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 10,
@@ -95,31 +95,31 @@
           "id": 14,
           "title": "Per-tab refresh buttons",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 15,
           "title": "Lazy tab loading with retry",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 16,
           "title": "MN2 balance strip on trade tab",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 17,
           "title": "PayPal onramp shortcut nav",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 18,
           "title": "Profit Oracle deep link",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 19,
@@ -162,7 +162,7 @@
           "id": 24,
           "title": "PPP quest sync indicator",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 25,
@@ -229,13 +229,13 @@
           "id": 34,
           "title": "Daily deal highlight strip",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 35,
           "title": "Sort by category and price",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 36,
@@ -296,25 +296,25 @@
           "id": 44,
           "title": "Exchange bridge MN2 display",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 45,
           "title": "Live wins ticker",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 46,
           "title": "Progressive jackpot bar",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 47,
           "title": "Camgirls lounge status",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 48,
@@ -363,13 +363,13 @@
           "id": 54,
           "title": "Queue depth display",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 55,
           "title": "Credit balance display",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 56,
@@ -430,19 +430,19 @@
           "id": 64,
           "title": "Power monitor bar",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 65,
           "title": "Exchange monitor panel",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 66,
           "title": "Casino monitor panel",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 67,
@@ -497,13 +497,13 @@
           "id": 74,
           "title": "Champion pulse timestamps",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 75,
           "title": "Nexus campaign arc link",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 76,
@@ -564,7 +564,7 @@
           "id": 84,
           "title": "Daily quest streak display",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 85,
@@ -631,19 +631,19 @@
           "id": 94,
           "title": "Quick battle one-click",
           "priority": "P1",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 95,
           "title": "Battle stats summary cards",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 96,
           "title": "Female agent spotlight",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 97,

@@ -46,6 +46,30 @@
       position: 'prepend',
       skeleton: '#battle-at-a-glance',
       onRefresh: refreshBattle
+    },
+    exchange: {
+      title: 'Exchange',
+      mount: '.cex-page',
+      position: 'prepend',
+      onRefresh: refreshExchangeHub
+    },
+    shop: {
+      title: 'Shop',
+      mount: '.shop-page',
+      position: 'prepend',
+      onRefresh: refreshShop
+    },
+    casino: {
+      title: 'Casino',
+      mount: '.casino-page',
+      position: 'prepend',
+      onRefresh: refreshCasino
+    },
+    generator: {
+      title: 'Generator',
+      mount: '.gen-page',
+      position: 'prepend',
+      onRefresh: refreshGenerator
     }
   };
 
@@ -69,6 +93,10 @@
     if (/\/game\/?$/i.test(path) || path.indexOf('/game') === 0) return 'game';
     if (/\/quests\/?$/i.test(path)) return 'quests';
     if (/\/battle\/?$/i.test(path)) return 'battle';
+    if (/\/exchange\/?$/i.test(path) || path.indexOf('/exchange') === 0) return 'exchange';
+    if (/\/shop\/?$/i.test(path) || path.indexOf('/shop') === 0) return 'shop';
+    if (/\/casino\/?$/i.test(path) || path.indexOf('/casino') === 0) return 'casino';
+    if (/\/generator\/?$/i.test(path) || path.indexOf('/generator') === 0) return 'generator';
     return null;
   }
 
@@ -257,6 +285,45 @@
         markReady('ok');
       })
       .catch(function () { markReady('warn'); });
+  }
+
+  function refreshExchangeHub() {
+    global.dispatchEvent(new CustomEvent('hub-ux-refresh', { detail: { page: 'exchange' } }));
+    if (global.PlatformUpgradesBatch2 && global.PlatformUpgradesBatch2.initArea) {
+      global.PlatformUpgradesBatch2.initArea('exchange');
+    }
+    if (typeof global.initArea === 'function') {
+      return Promise.resolve(global.initArea('exchange', true)).then(function () { markReady('ok'); });
+    }
+    markReady('ok');
+    return Promise.resolve();
+  }
+
+  function refreshShop() {
+    global.dispatchEvent(new CustomEvent('hub-ux-refresh', { detail: { page: 'shop' } }));
+    if (global.PlatformUpgradesBatch2 && global.PlatformUpgradesBatch2.initArea) {
+      global.PlatformUpgradesBatch2.initArea('shop');
+    }
+    markReady('ok');
+    return Promise.resolve();
+  }
+
+  function refreshCasino() {
+    global.dispatchEvent(new CustomEvent('hub-ux-refresh', { detail: { page: 'casino' } }));
+    if (global.PlatformUpgradesBatch2 && global.PlatformUpgradesBatch2.initArea) {
+      global.PlatformUpgradesBatch2.initArea('casino');
+    }
+    markReady('ok');
+    return Promise.resolve();
+  }
+
+  function refreshGenerator() {
+    global.dispatchEvent(new CustomEvent('hub-ux-refresh', { detail: { page: 'generator' } }));
+    if (global.PlatformUpgradesBatch2 && global.PlatformUpgradesBatch2.initArea) {
+      global.PlatformUpgradesBatch2.initArea('generator');
+    }
+    markReady('ok');
+    return Promise.resolve();
   }
 
   function patchQuestEmptyState() {
