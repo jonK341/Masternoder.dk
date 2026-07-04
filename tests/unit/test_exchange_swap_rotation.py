@@ -565,6 +565,19 @@ def test_profit_first_defers_reduce_notional_when_hot(rotation_env, monkeypatch)
     monkeypatch.setattr(rot, "log_rotation_to_ppp", lambda *a, **k: None)
     monkeypatch.setattr(rot, "_dedupe_skip", lambda *a, **k: None)
     monkeypatch.setattr(rot, "_fit_external_action_to_balance", lambda action, max_usd: action)
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, leg, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": sym,
+            "quote": "USDT",
+            "market": f"{sym}_USDT",
+            "side": leg,
+            "quantity": float(kw.get("quantity") or 100.0),
+            "notional_usd": usd,
+        },
+    )
 
     res = rot.maybe_auto_rotation({"platform": {"results": {"arbitrage": {"executed_count": 0, "min_margin_bps": 14}}}})
     assert res.get("auto_executed") is True

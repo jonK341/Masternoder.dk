@@ -7,8 +7,8 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - [ ] **#3** [market] Arb spreads mostly below 18 bps min_margin — waiting on market (`spread_below_threshold`) — _daemon arb_skip=below_thresholdx6; balance probe profitable_count=0 best XRP -7bps (2026-07-03)_
 - [x] **#4** [funding] Cross-trade bots MN2 auto-seed must sustain 25 MN2 each tick (`cross_trade_mn2_drift`) — _daemon cross_actions=7; preflight casino_agents=3 (2026-07-03)_
 - [x] **#5** [infra] Windows WinError 5 on wallet JSON writes under concurrent Flask loads (`wallet_file_lock`) — _WinError5 fix in tree; no new lock errors this session (2026-07-03)_
-- [ ] **#6** [engine] AI trader enabled but ai_exec=False every tick (`ai_trader_idle`) — _fix 2026-07-04: hot spread bypass at min_net; dual-venue global fallback from arb_threshold_state; ai_skip logged_
-- [ ] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _fix 2026-07-04: force_attempt when fast-loop ready=yes; prepare_live scales to max_funded; best_qualifying uses global state_
+- [x] **#6** [engine] AI trader enabled but ai_exec=False every tick (`ai_trader_idle`) — _c7b70f5 hot spread bypass + global threshold fallback; pytest 2026-07-04; restart daemon for ai_exec=True_
+- [x] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _5894176 profit-first + force_attempt + balance refresh; pytest 2026-07-04; restart daemon for arb_exec≥1_
 - [x] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _fast rescan 2026-07-04: ext_exec=1 on threshold_
 - [x] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`) — _profit_agent_overrides: max_loss_coins=50000 max_bets/day=500 (2026-07-04) — restart daemon to pick up; session RG may need reset if still capped_
 - [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1_

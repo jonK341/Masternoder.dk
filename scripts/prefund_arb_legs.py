@@ -6,6 +6,7 @@ Usage:
   python scripts/prefund_arb_legs.py --live       # live buy-leg prefund only (default --leg buy)
   python scripts/prefund_arb_legs.py --list       # show top 3 suggestions only
   python scripts/prefund_arb_legs.py --live --symbol DOGE --leg buy   # NonKYC DOGE sell-leg prefund
+  python scripts/prefund_arb_legs.py --live --venue binance --quote-prefund  # Binance USDC buy-leg via sell→quote
 """
 from __future__ import annotations
 
@@ -43,12 +44,16 @@ def filter_prefund_actions(
     symbol: str = "",
     leg: str = "",
     buy_sell_leg: bool = False,
-    venue: str = "nonkyc",
+    venue: str = "",
+    quote_prefund: bool = False,
 ) -> List[Dict[str, Any]]:
     """Keep only safe prefund actions (buy on sell venue; never sell base inventory)."""
     sym = str(symbol or "").strip().upper()
     leg_l = str(leg or "").strip().lower()
     prefund = buy_sell_leg or bool(sym)
+    venue_id = str(venue or "").strip().lower()
+    if not venue_id and (sym or buy_sell_leg):
+        venue_id = "nonkyc"
 
     if prefund and not leg_l:
         leg_l = "buy"
@@ -61,8 +66,15 @@ def filter_prefund_actions(
             or sym in str(a.get("label") or "").upper()
         ]
 
+    if venue_id:
+        out = [
+            a for a in out
+            if str(a.get("venue_id") or "").lower() == venue_id
+        ]
+
     if prefund or leg_l == "buy":
-        out = [a for a in out if str(a.get("type") or "") != "external_market_sell"]
+        if not quote_prefund and leg_l != "sell":
+            out = [a for a in out if str(a.get("type") or "") != "external_market_sell"]
 
     if leg_l == "buy":
         out = [
@@ -76,15 +88,19 @@ def filter_prefund_actions(
             if str(a.get("type") or "") == "external_market_sell"
             or str(a.get("side") or "").lower() == "sell"
         ]
-
-    if sym or buy_sell_leg:
-        venue_id = str(venue or "nonkyc").lower()
+    elif quote_prefund:
         out = [
             a for a in out
-            if str(a.get("venue_id") or "").lower() == venue_id
+            if str(a.get("type") or "") in ("external_market_buy", "external_market_sell")
+            and (
+                str(a.get("funding_target") or "")
+                or "skip_reason_funding" in (a.get("top25_items") or [])
+                or str(a.get("type") or "") == "external_market_buy"
+            )
         ]
-        if sym:
-            out = [a for a in out if sym == str(a.get("symbol") or "").upper()]
+
+    if sym:
+        out = [a for a in out if sym == str(a.get("symbol") or "").upper() or not sym]
 
     return out
 
@@ -104,13 +120,24 @@ def main() -> int:
         help="Leg filter: buy=sell-leg prefund (default buy on --live); use --leg sell explicitly to sell",
     )
     parser.add_argument(
+        "--venue",
+        type=str,
+        default="",
+        help="Filter to venue (e.g. binance, nonkyc)",
+    )
+    parser.add_argument(
+        "--quote-prefund",
+        action="store_true",
+        help="Allow sell→quote on buy venue to top up quote balance (e.g. Binance USDC)",
+    )
+    parser.add_argument(
         "--buy-sell-leg",
         action="store_true",
         help="Prefund sell-leg inventory: external_market_buy on nonkyc only (skips sells)",
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON result")
     args = parser.parse_args()
-    if args.live and not args.leg:
+    if args.live and not args.leg and not args.quote_prefund:
         args.leg = "buy"
 
     from scripts.daemon_env import load_dotenv
@@ -130,6 +157,8 @@ def main() -> int:
         symbol=args.symbol,
         leg=args.leg,
         buy_sell_leg=args.buy_sell_leg,
+        venue=args.venue,
+        quote_prefund=args.quote_prefund,
     )
     if not actions:
         out = {
