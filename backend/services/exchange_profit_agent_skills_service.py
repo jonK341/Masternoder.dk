@@ -381,6 +381,31 @@ def hit_rate_by_route(*, days: float = 7) -> Dict[str, Any]:
     }
 
 
+
+def _exchange_loop_ai_exec_signal(hb: Dict[str, Any], *, max_age_sec: float = 3600.0) -> tuple[Optional[bool], bool, str]:
+    """Parse exchange loop summary for ai_exec=; recent if updated within max_age_sec."""
+    loops = hb.get("loops") if isinstance(hb.get("loops"), dict) else {}
+    exchange = loops.get("exchange") if isinstance(loops.get("exchange"), dict) else {}
+    summary = str(exchange.get("summary") or "")
+    updated_at = exchange.get("updated_at") or hb.get("updated_at")
+    recent = False
+    if updated_at:
+        try:
+            ts = datetime.fromisoformat(str(updated_at).replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            recent = (datetime.now(timezone.utc) - ts).total_seconds() <= max_age_sec
+        except (TypeError, ValueError):
+            recent = bool(summary)
+    ai_exec: Optional[bool] = None
+    for part in summary.split():
+        if part.startswith("ai_exec="):
+            val = part.split("=", 1)[1].strip().lower()
+            ai_exec = val in ("true", "1", "yes")
+            break
+    return ai_exec, recent, summary
+
+
 def _infer_auto_checks() -> Dict[str, str]:
     """Return problem_id -> note for items resolved by daemon/state signals."""
     resolved: Dict[str, str] = {}
@@ -427,6 +452,11 @@ def _infer_auto_checks() -> Dict[str, str]:
             resolved["treasury_compound"] = f"live external stash credited USD={live_stash:.4f} ({today})"
     except Exception:
         pass
+
+    exchange = loops.get("exchange") if isinstance(loops.get("exchange"), dict) else {}
+    ai_exec, ai_recent, exchange_sum = _exchange_loop_ai_exec_signal(hb)
+    if ai_recent and ai_exec is True:
+        resolved["ai_trader_idle"] = f"heartbeat ai_exec=True ({today})"
 
     for v in conn.get("venues") or []:
         if isinstance(v, dict) and str(v.get("id") or "") == "xeggex":
@@ -548,9 +578,23 @@ def sync_critical_reality() -> Dict[str, Any]:
     checks = store.get("checks") if isinstance(store.get("checks"), dict) else {}
     notes = store.get("notes") if isinstance(store.get("notes"), dict) else {}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    for pid, note in _infer_auto_checks().items():
+    auto_resolved = _infer_auto_checks()
+    for pid, note in auto_resolved.items():
         checks[pid] = True
         notes[pid] = note
+    if "ai_trader_idle" not in auto_resolved:
+        checks["ai_trader_idle"] = False
+        hb = _read_json(os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json"), {})
+        ai_exec, ai_recent, exchange_sum = _exchange_loop_ai_exec_signal(hb)
+        snippet = exchange_sum[:80].strip() if exchange_sum else "no exchange summary"
+        if ai_recent and ai_exec is False:
+            notes["ai_trader_idle"] = f"heartbeat ai_exec=False; {snippet} ({today})"
+        elif ai_recent and ai_exec is None:
+            notes["ai_trader_idle"] = f"heartbeat missing ai_exec; {snippet} ({today})"
+        elif not ai_recent:
+            notes["ai_trader_idle"] = f"exchange heartbeat stale — ai_exec unverified ({today})"
+        else:
+            notes["ai_trader_idle"] = f"ai_exec not True on recent tick; {snippet} ({today})"
     for pid, note in _infer_rotation_notes().items():
         notes[pid] = note
     doge_ok, doge_note = _verify_nonkyc_doge()
@@ -562,7 +606,6 @@ def sync_critical_reality() -> Dict[str, Any]:
         "hit_rate_tracking": f"GET /api/exchange/profit-path/hit-rate?days=7 ({today})",
         "void_skills_open": f"sync_from_ledger closes voids on fill/baseline ({today})",
         "agent_level_lag": f"agent level from stacked PPP profit USD ({today})",
-        "ai_trader_idle": f"hot_spread_bps>=20 bypasses min_ai_score; execute when net_bps>=min_net ({today})",
     }.items():
         checks[pid] = True
         notes[pid] = note
