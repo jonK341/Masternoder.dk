@@ -11,7 +11,7 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - [x] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _5894176 profit-first + force_attempt + balance refresh; pytest 2026-07-04; restart daemon for arb_exec≥1_
 - [x] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _fast rescan 2026-07-04: ext_exec=1 on threshold_
 - [x] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`) — _profit_agent_overrides: max_loss_coins=50000 max_bets/day=500 (2026-07-04) — restart daemon to pick up; session RG may need reset if still capped_
-- [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _check unswept: scripts/payout_sweep_status.py — live PayPal needs EXCHANGE_PAYOUT_PAYPAL_LIVE=1_
+- [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _2026-07-04: mode=paper last_sweep=paper $1132; SPORK_114 blocked (spork_payout_live_off); EXCHANGE_AUTO_PAYPAL_SWEEP=0; live_stash=$11.92 → sweepable=$5.96 (paper pool $566 unswept — not real PayPal); creds+email+EXCHANGE_PAYOUT_PAYPAL_LIVE=1 OK locally_
 - [x] **#11** [payout] Auto sweep disabled (min $500) — manual sweep required (`auto_sweep_off`) — _auto_sweep=true min=$100 (2026-07-04)_
 - [x] **#12** [ppp] PPP ledger rows tagged paper while live gates are on (`ledger_mode_paper`) — _PPP 24h fill_count=1814; recent ledger mostly mode=live (2026-07-03)_
 - [x] **#13** [ppp] Profit agent skill sets must sync from ledger on each stack (`ppp_skill_sync`) — _sync_critical_reality + sync_from_ledger on stack (2026-07-03)_
@@ -56,4 +56,6 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - Dry-run next sweep: `python scripts/enable_live_paypal_sweep.py --dry-run`
 - Status: `python scripts/payout_sweep_status.py` — only **live_stash_usd** counts for live PayPal (paper agent PnL excluded)
 - Enable live auto-sweep: add to `.env` both `EXCHANGE_PAYOUT_PAYPAL_LIVE=1` and `EXCHANGE_AUTO_PAYPAL_SWEEP=1`, plus PayPal creds + `EXCHANGE_PAYOUT_PAYPAL_EMAIL`
+- Activate chain gate: `python scripts/mn2_activate_spork_remote.py SPORK_114_PAYOUT_LIVE 1703122560` (requires MN2 sporkkey on server)
+- Only **live_stash_usd** counts for real PayPal — paper unswept is ledger-only; live pool must exceed `min_sweep_usd`
 - Restart: `run_all_profit_daemons.cmd --auto-sweep` — daemon logs `sweep=yes mode=live amount=$X` or `mode=paper`
