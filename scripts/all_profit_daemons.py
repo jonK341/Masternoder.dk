@@ -94,7 +94,9 @@ def _iso() -> str:
 
 
 def _heartbeat_path() -> str:
-    return os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
+    from backend.services.profit_daemon_paths import heartbeat_path
+
+    return heartbeat_path()
 
 
 def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = None) -> None:
@@ -122,6 +124,10 @@ def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = 
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
+        try:
+            os.chmod(path, 0o644)
+        except OSError:
+            pass
     except OSError:
         pass
 
@@ -572,6 +578,7 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
                 pass
         except Exception as exc:
             print(f"[all-profit] exchange error: {exc}", flush=True)
+            _write_heartbeat("exchange", f"error={type(exc).__name__} msg={str(exc)[:120]}")
         stop.wait(max(15, interval))
 
 
@@ -582,6 +589,7 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
             from backend.services.profit_daemon_ops_service import check_profit_kill, publish_hot_symbols_shared
 
             if check_profit_kill(action="fast_tick"):
+                _write_heartbeat("fast", "kill_switch=yes skipped=1")
                 stop.wait(max(30, interval))
                 continue
             res = _extended_once(profile)
@@ -596,6 +604,7 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
             _write_heartbeat("fast", summary)
         except Exception as exc:
             print(f"[all-profit] fast error: {exc}", flush=True)
+            _write_heartbeat("fast", f"error={type(exc).__name__} msg={str(exc)[:120]}")
         stop.wait(max(30, interval))
 
 
@@ -728,6 +737,8 @@ def main() -> int:
         pass
 
     _warm_flask_for_daemons()
+
+    _write_heartbeat("startup", f"profile={profile} mode={daemon_mode_label()} workers=starting")
 
     for t in threads:
         t.start()

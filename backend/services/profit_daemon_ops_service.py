@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from backend.services import crypto_exchange_service as ex
+from backend.services.profit_daemon_paths import heartbeat_path
 
 _SHARED_HOT_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_hot_symbols.json")
 _DAILY_STATE_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_daily_state.json")
@@ -402,7 +403,7 @@ def daemon_metrics_snapshot() -> Dict[str, Any]:
     from backend.services.profit_daemon_monitor_service import monitor_status
 
     st = monitor_status()
-    hb_path = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
+    hb_path = heartbeat_path()
     hb = ex._read_json(hb_path, {})
     shared = _read_state(_SHARED_HOT_PATH)
     alert_state = _load_alert_state()
@@ -449,7 +450,7 @@ def _fast_near_threshold_flag(monitor_st: Dict[str, Any]) -> bool:
 def maybe_alert_heartbeat_stale(*, max_age_sec: Optional[float] = None) -> Dict[str, Any]:
     """Discord alert when profit daemon heartbeat is older than 5 minutes."""
     limit = max_age_sec or float(os.environ.get("PROFIT_HEARTBEAT_MAX_AGE_SEC", "300"))
-    hb_path = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
+    hb_path = heartbeat_path()
     hb = ex._read_json(hb_path, {})
     updated = str(hb.get("updated_at") or "")
     if not updated:
@@ -601,3 +602,177 @@ def audit_kill_switch_activation(*, source: str = "daemon") -> Dict[str, Any]:
     except OSError as exc:
         return {"success": False, "error": str(exc)}
     return {"success": True, "audited": True}
+
+
+def cross_venue_prefund_batch(exchange_res: Dict[str, Any], *, max_legs: int = 3) -> Dict[str, Any]:
+    """Single rotation tick — attempt prefund for multiple pair-search hits."""
+    if os.environ.get("EXCHANGE_PREFUND_BATCH", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"skipped": True, "reason": "disabled"}
+    single = maybe_prefund_queue(exchange_res, top_n=max_legs)
+    outcomes = single.get("outcomes") or []
+    executed = any(o.get("prefund_executed") for o in outcomes if isinstance(o, dict))
+    return {"success": True, "batch": True, "prefund_executed": executed, "outcomes": outcomes}
+
+
+def force_attempt_budget_state() -> Dict[str, Any]:
+    """Cap runaway retries — track attempts per hour."""
+    path = os.path.join(ex._DATA_DIR, "profit_force_attempt_budget.json")
+    state = _read_state(path)
+    now = datetime.now(timezone.utc)
+    hour_key = now.strftime("%Y-%m-%dT%H")
+    cap = int(os.environ.get("EXCHANGE_FORCE_ATTEMPT_CAP", "120"))
+    if state.get("hour") != hour_key:
+        state = {"hour": hour_key, "attempts": 0, "cap": cap}
+    return {
+        "success": True,
+        "hour": hour_key,
+        "attempts": int(state.get("attempts") or 0),
+        "cap": cap,
+        "remaining": max(0, cap - int(state.get("attempts") or 0)),
+    }
+
+
+def record_force_attempt() -> Dict[str, Any]:
+    path = os.path.join(ex._DATA_DIR, "profit_force_attempt_budget.json")
+    state = _read_state(path)
+    now = datetime.now(timezone.utc)
+    hour_key = now.strftime("%Y-%m-%dT%H")
+    cap = int(os.environ.get("EXCHANGE_FORCE_ATTEMPT_CAP", "120"))
+    if state.get("hour") != hour_key:
+        state = {"hour": hour_key, "attempts": 0, "cap": cap}
+    state["attempts"] = int(state.get("attempts") or 0) + 1
+    _write_state(path, state)
+    return force_attempt_budget_state()
+
+
+def venue_min_notional_floors() -> Dict[str, Any]:
+    """Venue-specific min notional floors from connectors config."""
+    cfg = ex._read_json(_CONNECTORS_PATH, {})
+    floors: Dict[str, float] = {}
+    for v in cfg.get("venues") or []:
+        if isinstance(v, dict) and v.get("id"):
+            floors[str(v["id"])] = float(v.get("min_notional_usd") or v.get("min_order_usd") or 10)
+    defaults = {"binance": 10, "nonkyc": 15, "xeggex": 20, "bingx": 12}
+    for k, v in defaults.items():
+        floors.setdefault(k, v)
+    return {"success": True, "floors_usd": floors}
+
+
+def paypal_tier_presets() -> Dict[str, Any]:
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    tiers = cfg.get("paypal_tiers") or [
+        {"id": "micro", "min_sweep_usd": 25, "label": "Micro"},
+        {"id": "standard", "min_sweep_usd": 75, "label": "Standard"},
+        {"id": "whale", "min_sweep_usd": 250, "label": "Whale"},
+    ]
+    active = cfg.get("paypal_tier") or "standard"
+    return {"success": True, "active_tier": active, "tiers": tiers}
+
+
+def paper_unswept_threshold_display() -> Dict[str, Any]:
+    """Display-only auto-threshold hint when paper unswept grows."""
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+        snap = _light_treasury_snapshot()
+    except Exception:
+        snap = {}
+    paper = float(snap.get("paper_unswept_usd") or snap.get("ledger_stashed_usd_paper") or 0)
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    current_min = float(cfg.get("min_sweep_usd") or 100)
+    suggested = max(25, round(current_min * 0.85, 2)) if paper > current_min * 1.5 else current_min
+    return {
+        "success": True,
+        "paper_unswept_usd": round(paper, 2),
+        "current_min_sweep_usd": current_min,
+        "suggested_min_sweep_usd": suggested,
+        "display_only": True,
+    }
+
+
+def tax_export_csv(*, season: Optional[str] = None) -> Dict[str, Any]:
+    """Tax export CSV rows from sweep + stash ledger."""
+    season = season or datetime.now(timezone.utc).strftime("%Y")
+    rows: List[Dict[str, Any]] = []
+    ledger_path = os.path.join(ex._DATA_DIR, "treasury_stash_ledger.jsonl")
+    if os.path.isfile(ledger_path):
+        try:
+            with open(ledger_path, "r", encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        if season in str(row.get("ts") or row.get("timestamp") or ""):
+                            rows.append({
+                                "ts": row.get("ts") or row.get("timestamp"),
+                                "type": row.get("type") or "stash",
+                                "amount_usd": row.get("amount_usd") or row.get("usd"),
+                            })
+                    except json.JSONDecodeError:
+                        pass
+        except OSError:
+            pass
+    header = "ts,type,amount_usd\n"
+    body = header + "\n".join(
+        f"{r.get('ts','')},{r.get('type','')},{r.get('amount_usd','')}" for r in rows[:500]
+    )
+    return {"success": True, "season": season, "rows": rows[:500], "csv": body, "count": len(rows)}
+
+
+def validate_payout_share_pct() -> Dict[str, Any]:
+    """Validate payout share_pct on startup."""
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    share = float(cfg.get("share_pct") or cfg.get("payout_share_pct") or 0.5)
+    valid = 0 < share <= 1.0
+    return {"success": valid, "share_pct": share, "valid": valid}
+
+
+def loop_sparkline_from_heartbeat(*, points: int = 12) -> Dict[str, Any]:
+    """Per-loop sparkline buckets from heartbeat history."""
+    hb_path = heartbeat_path()
+    hb = ex._read_json(hb_path, {})
+    history = hb.get("history") or hb.get("sparkline") or {}
+    loops = {}
+    for loop_id in ("exchange", "fast", "extended"):
+        series = history.get(loop_id) if isinstance(history, dict) else []
+        if not isinstance(series, list):
+            series = [float(hb.get(f"{loop_id}_bps") or 0)] * min(points, 3)
+        loops[loop_id] = [float(x) for x in series[-points:]]
+    return {"success": True, "loops": loops, "updated_at": hb.get("updated_at")}
+
+
+def spork_gate_startup_audit() -> Dict[str, Any]:
+    """SPORK gate audit line for daemon startup banner."""
+    try:
+        from backend.services import mn2_spork_service as spork
+        ok, reason = spork.exchange_live_spork_ok()
+    except Exception as exc:
+        ok, reason = False, str(exc)
+    line = f"SPORK live gate: {'OK' if ok else 'BLOCKED'} — {reason}"
+    return {"success": True, "spork_ok": ok, "reason": reason, "banner_line": line}
+
+
+def casino_agent_tick_skip_on_kill() -> Dict[str, Any]:
+    """Casino agent tick should skip when profit kill active."""
+    active = profit_kill_active()
+    return {
+        "success": True,
+        "skip_casino_agent_tick": active,
+        "reason": profit_kill_reason() if active else None,
+    }
+
+
+def paper_live_separation_banner() -> Dict[str, Any]:
+    """Paper/live separation banner payload for /profit/ UI."""
+    from backend.services.profit_daemon_monitor_service import monitor_status
+    st = monitor_status()
+    mode = st.get("mode") or "paper"
+    return {
+        "success": True,
+        "mode": mode,
+        "paper": mode == "paper",
+        "live": mode == "live",
+        "banner": f"Profit daemon running in **{mode.upper()}** mode — live execution gated by SPORK.",
+        "kill_active": profit_kill_active(),
+    }

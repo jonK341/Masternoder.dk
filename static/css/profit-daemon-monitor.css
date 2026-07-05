@@ -24,6 +24,7 @@
 }
 .pdm-status-pill.off { border-color: rgba(255, 100, 100, 0.5); background: rgba(255, 80, 80, 0.1); color: #ffb0b0; }
 .pdm-status-pill.on { color: #00ff88; }
+.pdm-status-pill.warn { border-color: rgba(255, 200, 80, 0.55); background: rgba(255, 180, 60, 0.12); color: #ffd080; }
 .pdm-readiness { flex: 1; min-width: 200px; max-width: 320px; }
 .pdm-readiness-bar {
   height: 8px;

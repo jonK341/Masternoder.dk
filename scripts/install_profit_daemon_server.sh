@@ -7,6 +7,9 @@ UNIT_DST="/etc/systemd/system/masternoder-profit-daemon.service"
 
 chmod +x "$ROOT/scripts/run_profit_daemon_server.sh"
 mkdir -p "$ROOT/logs"
+chmod 755 "$ROOT/logs"
+touch "$ROOT/logs/daemon_all_profit_heartbeat.json"
+chmod 644 "$ROOT/logs/daemon_all_profit_heartbeat.json" 2>/dev/null || true
 
 if [[ ! -f "$UNIT_SRC" ]]; then
   echo "Missing $UNIT_SRC"

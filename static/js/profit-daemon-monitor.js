@@ -92,9 +92,20 @@
             const data = await res.json();
             const pill = $('pdm-running-pill');
             if (pill) {
-                pill.textContent = data.running ? 'Daemon online · ' + (data.mode || 'live') : 'Daemon stale / offline';
-                pill.classList.toggle('on', !!data.running);
-                pill.classList.toggle('off', !data.running);
+                const health = data.health || (data.running ? 'online' : 'offline');
+                if (health === 'online') {
+                    pill.textContent = 'Daemon online · ' + (data.mode || 'live');
+                    pill.classList.add('on');
+                    pill.classList.remove('off', 'warn');
+                } else if (health === 'degraded') {
+                    pill.textContent = 'Degraded — exchange loop stale (casino only)';
+                    pill.classList.add('warn');
+                    pill.classList.remove('on', 'off');
+                } else {
+                    pill.textContent = 'Daemon stale / offline';
+                    pill.classList.add('off');
+                    pill.classList.remove('on', 'warn');
+                }
             }
             const pct = data.profit_readiness_pct;
             const fill = $('pdm-readiness-fill');

@@ -25,3 +25,14 @@ def test_monitor_status_structure():
     assert st.get("stat_count", 0) >= 31
     assert "blockers" in st
     assert "profit_readiness_pct" in st
+    assert st.get("health") in ("online", "degraded", "offline")
+    assert "heartbeat" in st
+    assert "path" in st["heartbeat"]
+
+
+def test_heartbeat_path_env_override(monkeypatch, tmp_path):
+    hb = tmp_path / "custom_hb.json"
+    monkeypatch.setenv("PROFIT_DAEMON_HEARTBEAT_PATH", str(hb))
+    from backend.services.profit_daemon_paths import heartbeat_path
+
+    assert heartbeat_path() == str(hb.resolve())

@@ -10,8 +10,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from backend.services import crypto_exchange_service as ex
+from backend.services.profit_daemon_paths import heartbeat_path
 
-_HEARTBEAT = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
+_HEARTBEAT = heartbeat_path()
 _STATE = os.path.join(ex._DATA_DIR, "profit_daemon_server_state.json")
 _PAYOUT_PATH = os.path.join(ex._DATA_DIR, "payout_config.json")
 _TREASURY_CFG_PATH = os.path.join(ex._BASE, "data", "exchange_treasury_config.json")
@@ -62,7 +63,25 @@ def _age_sec(ts: str) -> Optional[float]:
 
 
 def _stale_threshold_sec() -> float:
-    return float(os.environ.get("PROFIT_DAEMON_STALE_SEC", "300"))
+    return float(os.environ.get("PROFIT_DAEMON_STALE_SEC", "420"))
+
+
+def _loop_is_recent(updated_at: str, stale_sec: float) -> bool:
+    age = _age_sec(updated_at)
+    return age is not None and age <= stale_sec
+
+
+def _heartbeat_diagnostics(hb: Dict[str, Any]) -> Dict[str, Any]:
+    path = _HEARTBEAT
+    exists = os.path.isfile(path)
+    readable = os.access(path, os.R_OK) if exists else False
+    top_age = _age_sec(str(hb.get("updated_at") or ""))
+    return {
+        "path": path,
+        "exists": exists,
+        "readable": readable,
+        "top_level_age_sec": round(top_age, 1) if top_age is not None else None,
+    }
 
 
 def _float_or_none(v: Any) -> Optional[float]:
@@ -535,11 +554,14 @@ def monitor_status() -> Dict[str, Any]:
     loop_rows: List[Dict[str, Any]] = []
     any_recent = False
 
+    exchange_recent = False
     for name in ("exchange", "fast", "casino"):
         row = loops.get(name) if isinstance(loops.get(name), dict) else {}
         updated = str(row.get("updated_at") or "")
         age = _age_sec(updated)
-        recent = age is not None and age <= stale_sec
+        recent = _loop_is_recent(updated, stale_sec)
+        if name == "exchange":
+            exchange_recent = recent
         any_recent = any_recent or recent
         parsed = _parse_summary_kv(str(row.get("summary") or ""))
         loop_rows.append({
@@ -612,10 +634,15 @@ def monitor_status() -> Dict[str, Any]:
 
     readiness_stat = next((s for s in stats if s["id"] == "profit_readiness"), {})
 
+    health = "online" if exchange_recent else ("degraded" if any_recent else "offline")
+
     return {
         "success": True,
         "host": os.environ.get("DEPLOY_HOST", "masternoder.dk"),
         "running": any_recent,
+        "exchange_alive": exchange_recent,
+        "health": health,
+        "heartbeat": _heartbeat_diagnostics(hb),
         "stale_threshold_sec": stale_sec,
         "mode": hb.get("mode") or server_state.get("mode"),
         "profile": hb.get("profile") or server_state.get("profile"),

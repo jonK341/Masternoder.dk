@@ -20,6 +20,8 @@ UPLOAD = [
     "scripts/_daemon_env.cmd",
     "systemd/masternoder-profit-daemon.service",
     "backend/services/profit_daemon_monitor_service.py",
+    "backend/services/profit_daemon_ops_service.py",
+    "backend/services/profit_daemon_paths.py",
     "backend/services/profit_daemon_news_service.py",
     "backend/routes/profit_daemon_routes.py",
     "backend/register_blueprints.py",
