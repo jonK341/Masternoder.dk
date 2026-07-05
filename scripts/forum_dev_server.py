@@ -38,6 +38,10 @@ def create_dev_app() -> Flask:
     def _forum():
         return send_from_directory(os.path.join(_SITE, "pages", "forum"), "index.html")
 
+    @app.route("/home")
+    def _home():
+        return send_from_directory(_SITE, "index.html")
+
     @app.route("/api/health")
     def _health():
         return {"success": True, "service": "forum-dev"}

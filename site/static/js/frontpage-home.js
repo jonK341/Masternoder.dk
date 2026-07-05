@@ -227,7 +227,9 @@
         const modeButtons = Array.from(document.querySelectorAll('[data-sound-mode]'));
         if (!primaryToggle && !floatToggle) return;
 
-        const sound = new FrontpageSoundSystem();
+        // Prefer the shared platform-wide Sonic Engine (v10.07.9); fall back to the
+        // local implementation if the shared module did not load.
+        const sound = window.SonicEngine || new FrontpageSoundSystem();
 
         const render = () => {
             const mode = SOUND_MODES[sound.mode] || SOUND_MODES.focus;
@@ -393,16 +395,27 @@
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const [platformRes, profitRes, feedRes] = await Promise.all([
+            const [platformRes, profitRes, feedRes, forumRes] = await Promise.all([
                 fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/forum/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
             ]);
             const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
+            const forumNews = ((forumRes && forumRes.news) || []).map((n) => ({
+                id: n.id,
+                title: n.title,
+                summary: n.summary,
+                date: n.date,
+                channel: n.channel || 'forum',
+                href: n.href || '/forum#news',
+            }));
             const profitIds = new Set(profit.map((n) => n.id));
+            const seen = new Set(profit.map((n) => n.id));
             const platformFiltered = platform.filter((n) => !profitIds.has(n.id));
-            const mergedPlatform = [...profit, ...platformFiltered].slice(0, 6);
+            const forumFiltered = forumNews.filter((n) => !seen.has(n.id));
+            const mergedPlatform = [...profit, ...platformFiltered, ...forumFiltered].slice(0, 7);
             const external = (feedRes && feedRes.news) || [];
             if (!mergedPlatform.length && !external.length) {
                 ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
@@ -411,13 +424,15 @@
             ul.textContent = '';
             mergedPlatform.forEach((n) => {
                 const li = document.createElement('li');
-                li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
+                const chan = (n.channel || n.category || '').toLowerCase();
+                li.className = 'fp-news-platform' + (chan === 'profit' ? ' fp-news-profit' : '') + (chan === 'forum' ? ' fp-news-forum' : '');
                 const a = document.createElement('a');
-                a.href = n.href || '/news/';
+                a.href = n.href || '/forum#news';
                 a.textContent = (n.title || 'Platform update');
                 const meta = document.createElement('span');
                 meta.className = 'fp-news-meta';
-                meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
+                const label = chan === 'profit' ? 'Profit · ' : (chan === 'forum' ? 'Forum · ' : 'MasterNoder · ');
+                meta.textContent = label + (n.date || '').slice(0, 10);
                 li.appendChild(a);
                 li.appendChild(meta);
                 if (n.summary) {

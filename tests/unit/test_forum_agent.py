@@ -190,3 +190,28 @@ def test_api_moderation_rejects_spam(client, forum_data_tmp):
         "body": "free-crypto-giveaway click here", "kind": "question", "author_name": "Spammer",
     })
     assert r.status_code == 400
+
+
+def test_api_languages(client):
+    r = client.get("/api/forum/languages")
+    assert r.status_code == 200
+    codes = [l["code"] for l in r.get_json()["languages"]]
+    assert "en" in codes and "da" in codes and "auto" in codes
+
+
+def test_api_grammar_fallback(client):
+    r = client.post("/api/forum/grammar", json={
+        "text": "this  is a   test ,i has bad grammar.and no caps",
+        "language": "en",
+    })
+    assert r.status_code == 200
+    d = r.get_json()
+    assert d["success"] and d["language"] == "en"
+    # Fallback cleanup capitalizes and fixes spacing even without an LLM key.
+    assert d["corrected"].startswith("This is a test")
+    assert d["changed"] is True
+
+
+def test_api_grammar_requires_text(client):
+    r = client.post("/api/forum/grammar", json={"text": "  ", "language": "da"})
+    assert r.status_code == 400

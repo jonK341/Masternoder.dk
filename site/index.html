@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260614b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260706">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -31,7 +31,7 @@
     <main id="mainContent" class="fp-main">
         <section class="fp-hero fp-hero-v20" aria-labelledby="fp-hero-title">
             <div class="fp-hero-copy">
-                <p class="fp-kicker"><span>System v2.0</span><span>Neural sound online</span></p>
+                <p class="fp-kicker"><span>System v2.0</span><span>Sonic engine v10.07.9</span></p>
                 <h1 id="fp-hero-title">MasterNoder.dk</h1>
                 <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
                 <p class="fp-hero-text">Et hurtigere kontrolrum til at skabe video, spille, battle, styre agenter og mærke systemet reagere med opt-in lyd.</p>
@@ -62,6 +62,22 @@
                 <a class="fp-mn2-link" href="/profile#mn2-wallet">Open wallet</a>
                 <a class="fp-mn2-link" href="/explorer">Explorer</a>
                 <a class="fp-mn2-link" href="/casino/">Casino</a>
+            </div>
+        </section>
+
+        <section class="fp-forum-band" id="fp-forum-band" aria-labelledby="fp-forum-title">
+            <div class="fp-forum-copy">
+                <p class="fp-kicker"><span>Community</span><span id="fp-forum-live">Forum</span></p>
+                <h2 id="fp-forum-title">💬 MasterNoder Forum</h2>
+                <p>News, articles, chat, podcast, rulebooks, docs, support, social &amp; Wikipedia — plus community discussions where members ask and answer in every language.</p>
+                <p class="fp-forum-stats" id="fp-forum-stats" aria-live="polite"></p>
+            </div>
+            <div class="fp-forum-actions">
+                <a class="fp-mn2-badge" href="/forum">Open Forum</a>
+                <a class="fp-mn2-link" href="/forum#discussions">Discussions</a>
+                <a class="fp-mn2-link" href="/forum#news">News</a>
+                <a class="fp-mn2-link" href="/forum#articles">Write article</a>
+                <a class="fp-mn2-link" href="/forum#podcast">Podcast</a>
             </div>
         </section>
 
@@ -104,8 +120,8 @@
             </div>
             <div class="fp-upgrade-grid">
                 <article>
-                    <strong>Sonic engine</strong>
-                    <span>Ambient hum, pulse clicks og battle drive styres direkte fra forsiden.</span>
+                    <strong>Sonic engine v10.07.9</strong>
+                    <span>Delt lydmotor på tværs af hele platformen — ambient hum, pulse clicks, battle drive og interaktions-cues i forum, game og casino.</span>
                 </article>
                 <article>
                     <strong>Mission control</strong>
@@ -120,7 +136,7 @@
 
         <section class="fp-sound-console" aria-labelledby="fp-sound-title">
             <div class="fp-sound-copy">
-                <p class="fp-kicker"><span>Audio deck</span><span>opt-in</span></p>
+                <p class="fp-kicker"><span>Audio deck</span><span>Sonic engine v10.07.9 · opt-in</span></p>
                 <h2 id="fp-sound-title">MasterNoder Sound System</h2>
                 <p>Aktivér et lavt cyber-ambient lydlag. Vælg rolig fokus, stjernekort-puls eller battle drive.</p>
             </div>
@@ -174,12 +190,13 @@
                 <h2 id="fp-agent-title">Agent void</h2>
                 <p class="fp-muted">Orkestrér AIs, tickets og værktøj ét sted.</p>
                 <div class="fp-agent-grid">
+                    <a class="fp-agent-card" href="/forum"><span>💬</span>Forum</a>
                     <a class="fp-agent-card" href="/agents"><span>🤖</span>AI Agents</a>
                     <a class="fp-agent-card" href="/agent_support"><span>🛠️</span>Agent support</a>
                     <a class="fp-agent-card" href="/lab"><span>🔬</span>Lab</a>
                     <a class="fp-agent-card" href="/debugger"><span>🔧</span>Debugger</a>
-                    <a class="fp-agent-card" href="/news"><span>📰</span>News</a>
-                    <a class="fp-agent-card" href="/podcast"><span>🎙️</span>Podcast</a>
+                    <a class="fp-agent-card" href="/forum#news"><span>📰</span>News</a>
+                    <a class="fp-agent-card" href="/forum#podcast"><span>🎙️</span>Podcast</a>
                     <a class="fp-agent-card" href="/game"><span>🎮</span>Game hub</a>
                 </div>
             </section>
@@ -218,6 +235,23 @@
                 }
             } catch (e) {
                 console.warn('[Frontpage] MN2', e);
+            }
+        }
+
+        async function loadForumSurface() {
+            const el = document.getElementById('fp-forum-stats');
+            const live = document.getElementById('fp-forum-live');
+            if (!el) return;
+            try {
+                const res = await fetch(`${BASE_URL || ''}/api/forum/stats`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.success || !data.stats) return;
+                const s = data.stats;
+                el.textContent = `${(s.threads || 0).toLocaleString()} threads · ${(s.posts || 0).toLocaleString()} posts · ${(s.contributors || 0).toLocaleString()} members · ${(s.solved || 0).toLocaleString()} solved`;
+                if (live) live.textContent = `${(s.threads || 0).toLocaleString()} threads live`;
+            } catch (e) {
+                console.warn('[Frontpage] forum', e);
             }
         }
 
@@ -273,14 +307,17 @@
             runWhenIdle(() => {
                 loadMn2Surface();
                 loadAllStats();
+                loadForumSurface();
                 setInterval(loadAllStats, 45000);
                 setInterval(loadMn2Surface, 120000);
+                setInterval(loadForumSurface, 90000);
             });
         });
     </script>
     <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
+    <script src="/static/js/sonic-engine.js?v=10_07_9" defer></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260428a" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20260706" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20260617a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

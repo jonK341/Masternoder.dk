@@ -411,6 +411,47 @@
 .forum-toast.err { border-color: rgba(255, 107, 107, 0.6); }
 .forum-toast.ok { border-color: rgba(0, 255, 136, 0.6); }
 
+/* ===== Grammar assistant ===== */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+}
+.forum-grammar-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 10px;
+}
+.grammar-lang-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+.grammar-suggestion {
+  flex-basis: 100%;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 255, 136, 0.06);
+  margin-top: 4px;
+}
+.grammar-corrected {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+}
+.grammar-actions { display: flex; gap: 8px; }
+body.forum-light .grammar-lang-select { color: #14202e; background: #fff; }
+body.forum-light .grammar-corrected { background: #f0f4f8; color: #14202e; }
+
 /* ===== Light theme ===== */
 body.forum-light { background: #f4f7fb; color: #14202e; }
 body.forum-light .forum-tabs { background: rgba(244, 247, 251, 0.92); }

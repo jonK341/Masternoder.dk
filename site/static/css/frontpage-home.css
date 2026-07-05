@@ -872,6 +872,30 @@ body.mn-sound-active .theme-sound-toggle {
     background: rgba(0, 212, 255, 0.14);
 }
 
+/* Forum band on homepage */
+.fp-forum-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 18px 22px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 20px;
+    background:
+        linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.06)),
+        rgba(8, 12, 24, 0.72);
+}
+.fp-forum-copy h2 { margin: 0 0 6px; font-size: 1.15rem; color: #9dffd4; }
+.fp-forum-copy p { margin: 0 0 6px; font-size: 0.88rem; color: rgba(255, 255, 255, 0.72); max-width: 560px; }
+.fp-forum-stats { font-size: 0.8rem; color: #00ff88; font-weight: 700; }
+.fp-forum-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+@media (max-width: 720px) {
+    .fp-forum-band { flex-direction: column; align-items: flex-start; }
+}
+.fp-news-forum a { color: #9dffd4; }
+
 .fp-mn2-balance-pill {
     font-size: 0.82rem;
     color: rgba(255, 255, 255, 0.65);

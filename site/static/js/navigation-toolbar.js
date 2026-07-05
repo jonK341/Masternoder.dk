@@ -258,6 +258,8 @@
             APP_BASE + '/static/js/stats-achievements-tracker.js',
             APP_BASE + '/static/js/comprehensive-api-integration.js',
             APP_BASE + '/static/js/agent-skill-sets.js',
+            // Shared Sonic Engine v10.07.9 — one audio engine across all toolbar pages.
+            APP_BASE + '/static/js/sonic-engine.js',
         ];
 
         sharedScripts.forEach(loadScriptOnce);

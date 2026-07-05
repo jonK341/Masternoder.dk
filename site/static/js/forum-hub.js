@@ -28,6 +28,68 @@
   let threadOffset = 0;
   const PAGE = 12;
 
+  // ---- Multi-language grammar assistant ----
+  let LANGS = [];
+  async function ensureLangs() {
+    if (LANGS.length) return LANGS;
+    try {
+      const d = await api('/api/forum/languages');
+      LANGS = d.languages || [];
+    } catch (_) { LANGS = []; }
+    return LANGS;
+  }
+  function savedLang() { return localStorage.getItem('forum_lang') || 'auto'; }
+
+  async function attachGrammar(textarea) {
+    if (!textarea || textarea.dataset.grammarBound) return;
+    textarea.dataset.grammarBound = '1';
+    await ensureLangs();
+    const bar = document.createElement('div');
+    bar.className = 'forum-grammar-bar';
+    const opts = LANGS.map((l) => `<option value="${l.code}">${l.flag} ${l.native}</option>`).join('');
+    bar.innerHTML = `
+      <label class="grammar-lang"><span class="sr-only">Language</span>
+        <select class="grammar-lang-select" aria-label="Writing language">${opts}</select>
+      </label>
+      <button type="button" class="forum-btn secondary sm grammar-check">✓ Grammar</button>
+      <span class="grammar-status meta"></span>
+      <div class="grammar-suggestion" hidden></div>`;
+    textarea.insertAdjacentElement('afterend', bar);
+    const sel = bar.querySelector('.grammar-lang-select');
+    sel.value = savedLang();
+    sel.addEventListener('change', () => localStorage.setItem('forum_lang', sel.value));
+    const status = bar.querySelector('.grammar-status');
+    const sugg = bar.querySelector('.grammar-suggestion');
+    bar.querySelector('.grammar-check').addEventListener('click', async () => {
+      const text = (textarea.value || '').trim();
+      if (!text) { toast('Write something first', 'err'); return; }
+      status.textContent = 'Checking…';
+      sugg.hidden = true;
+      const d = await api('/api/forum/grammar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, language: sel.value }),
+      });
+      if (!d.success) { status.textContent = d.error || 'Failed'; return; }
+      status.textContent = `${d.language_name}${d.engine === 'fallback' ? ' · basic' : ' · AI'}`;
+      if (!d.changed) { sugg.hidden = false; sugg.innerHTML = `<p class="meta">${esc(d.note)} ✅</p>`; return; }
+      sugg.hidden = false;
+      sugg.innerHTML = `
+        <p class="meta">${esc(d.note)} (${esc(d.language_name)})</p>
+        <div class="grammar-corrected">${esc(d.corrected)}</div>
+        <div class="grammar-actions">
+          <button type="button" class="forum-btn sm grammar-apply">Apply</button>
+          <button type="button" class="forum-btn secondary sm grammar-dismiss">Dismiss</button>
+        </div>`;
+      sugg.querySelector('.grammar-apply').addEventListener('click', () => {
+        textarea.value = d.corrected;
+        sugg.hidden = true;
+        status.textContent = 'Applied ✓';
+        toast('Grammar applied', 'ok');
+      });
+      sugg.querySelector('.grammar-dismiss').addEventListener('click', () => { sugg.hidden = true; });
+    });
+  }
+
   function $(sel) { return document.querySelector(sel); }
   function esc(s) {
     const d = document.createElement('div');
@@ -58,6 +120,8 @@
     }
     return s + 's ago';
   }
+
+  function sonic(name) { try { if (window.SonicEngine) window.SonicEngine.cue(name); } catch (_) {} }
 
   function toast(msg, kind) {
     const el = $('#forum-toast');
@@ -620,6 +684,7 @@
   }
 
   function bindThreadView(id, t) {
+    if (!t.locked) attachGrammar($('#reply-body'));
     $('#thread-close')?.addEventListener('click', () => {
       openThreadId = '';
       $('#thread-view').innerHTML = '';
@@ -630,7 +695,7 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: uid(), direction: 1 }),
       });
-      if (d.success) { $('#vote-btn').textContent = `⬆ Vote (${d.votes})`; toast(d.voted ? 'Voted' : 'Vote removed', 'ok'); }
+      if (d.success) { $('#vote-btn').textContent = `⬆ Vote (${d.votes})`; toast(d.voted ? 'Voted' : 'Vote removed', 'ok'); sonic('vote'); }
     });
     $('#copy-link')?.addEventListener('click', () => {
       const url = location.origin + '/forum#discussions/' + id;
@@ -652,6 +717,7 @@
       if (d.success) {
         const span = b.querySelector('span');
         span.textContent = (d.reactions || {})[b.dataset.react] || 0;
+        sonic('click');
       }
     }));
     document.querySelectorAll('.accept-btn').forEach((b) => b.addEventListener('click', async () => {
@@ -659,7 +725,7 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: b.dataset.post }),
       });
-      if (d.success) { toast('Answer accepted', 'ok'); openThread(id); }
+      if (d.success) { toast('Answer accepted', 'ok'); sonic('reward'); openThread(id); }
     }));
     $('#reply-submit')?.addEventListener('click', async () => {
       const body = ($('#reply-body') || {}).value.trim();
@@ -668,7 +734,7 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: uid(), author_name: uid(), body }),
       });
-      if (d.success) { toast('Reply posted', 'ok'); openThread(id); loadThreadsList(); }
+      if (d.success) { toast('Reply posted', 'ok'); sonic('post'); openThread(id); loadThreadsList(); }
       else toast(d.error || 'Reply failed', 'err');
     });
   }
@@ -695,6 +761,7 @@
     status.textContent = data.success ? 'Posted!' : (data.error || 'Failed');
     if (data.success) {
       toast('Thread posted', 'ok');
+      sonic('post');
       $('#thread-body').value = '';
       $('#thread-title').value = '';
       if ($('#thread-tags')) $('#thread-tags').value = '';
@@ -800,6 +867,9 @@
         $('#global-search')?.focus();
       }
     });
+
+    attachGrammar($('#thread-body'));
+    attachGrammar($('#article-body'));
 
     loadRules();
   }

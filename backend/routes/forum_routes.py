@@ -703,6 +703,129 @@ def forum_share():
     return jsonify({"success": True, "share_url": share_url, "network": network_id}), 200
 
 
+# ---------------------------------------------------------------------------
+# Multi-language grammar assistant ("Grammarly" per language)
+# ---------------------------------------------------------------------------
+_SUPPORTED_LANGUAGES = [
+    {"code": "auto", "name": "Auto-detect", "native": "Auto", "flag": "🌐"},
+    {"code": "en", "name": "English", "native": "English", "flag": "🇬🇧"},
+    {"code": "da", "name": "Danish", "native": "Dansk", "flag": "🇩🇰"},
+    {"code": "de", "name": "German", "native": "Deutsch", "flag": "🇩🇪"},
+    {"code": "es", "name": "Spanish", "native": "Español", "flag": "🇪🇸"},
+    {"code": "fr", "name": "French", "native": "Français", "flag": "🇫🇷"},
+    {"code": "it", "name": "Italian", "native": "Italiano", "flag": "🇮🇹"},
+    {"code": "pt", "name": "Portuguese", "native": "Português", "flag": "🇵🇹"},
+    {"code": "nl", "name": "Dutch", "native": "Nederlands", "flag": "🇳🇱"},
+    {"code": "sv", "name": "Swedish", "native": "Svenska", "flag": "🇸🇪"},
+    {"code": "nb", "name": "Norwegian", "native": "Norsk", "flag": "🇳🇴"},
+    {"code": "fi", "name": "Finnish", "native": "Suomi", "flag": "🇫🇮"},
+    {"code": "pl", "name": "Polish", "native": "Polski", "flag": "🇵🇱"},
+    {"code": "tr", "name": "Turkish", "native": "Türkçe", "flag": "🇹🇷"},
+    {"code": "ru", "name": "Russian", "native": "Русский", "flag": "🇷🇺"},
+    {"code": "uk", "name": "Ukrainian", "native": "Українська", "flag": "🇺🇦"},
+    {"code": "ar", "name": "Arabic", "native": "العربية", "flag": "🇸🇦"},
+    {"code": "hi", "name": "Hindi", "native": "हिन्दी", "flag": "🇮🇳"},
+    {"code": "zh", "name": "Chinese", "native": "中文", "flag": "🇨🇳"},
+    {"code": "ja", "name": "Japanese", "native": "日本語", "flag": "🇯🇵"},
+    {"code": "ko", "name": "Korean", "native": "한국어", "flag": "🇰🇷"},
+]
+_LANG_BY_CODE = {l["code"]: l for l in _SUPPORTED_LANGUAGES}
+
+
+def _basic_grammar_cleanup(text: str) -> str:
+    """Offline fallback: whitespace, spacing and simple capitalization tidy-up."""
+    import re
+    t = re.sub(r"[ \t]+", " ", text.strip())
+    t = re.sub(r"\s+([,.;:!?])", r"\1", t)          # no space before punctuation
+    t = re.sub(r"([,.;:!?])(?=[^\s\d])", r"\1 ", t)   # space after punctuation
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    # Capitalize first letter of each sentence
+    parts = re.split(r"([.!?]\s+)", t)
+    out = []
+    for i, p in enumerate(parts):
+        if i % 2 == 0 and p:
+            p = p[0].upper() + p[1:]
+        out.append(p)
+    return "".join(out)
+
+
+@forum_bp.route("/api/forum/languages", methods=["GET"])
+def forum_languages():
+    """Supported languages for the per-language grammar assistant."""
+    return jsonify({"success": True, "languages": _SUPPORTED_LANGUAGES}), 200
+
+
+@forum_bp.route("/api/forum/grammar", methods=["POST"])
+def forum_grammar():
+    """Language-aware grammar / spelling assistant for forum writing.
+
+    Body: {text, language} where language is a code from /api/forum/languages.
+    Returns corrected text in the same language, preserving meaning and tone.
+    """
+    if _rate_limited("grammar", limit=20, window_s=60):
+        return jsonify({"success": False, "error": "rate limited — slow down"}), 429
+    body = request.get_json(silent=True) or {}
+    text = (body.get("text") or "").strip()
+    lang_code = (body.get("language") or "auto").strip().lower()
+    if not text:
+        return jsonify({"success": False, "error": "text required"}), 400
+    if len(text) > 8000:
+        return jsonify({"success": False, "error": "text too long (max 8000)"}), 400
+    lang = _LANG_BY_CODE.get(lang_code, _LANG_BY_CODE["auto"])
+    lang_name = lang["name"]
+
+    corrected = None
+    engine = "fallback"
+    try:
+        from backend.services.llm_service import chat
+        if lang_code == "auto":
+            lang_instr = (
+                "First detect the language of the text, then correct it IN THAT SAME LANGUAGE. "
+                "Never translate to another language."
+            )
+        else:
+            lang_instr = (
+                f"The text is written in {lang_name}. Correct it in {lang_name}. "
+                "Never translate to another language."
+            )
+        system = (
+            "You are a meticulous multilingual proofreader (like Grammarly). "
+            "Fix spelling, grammar, punctuation, and clumsy phrasing while preserving the "
+            "author's meaning, tone, and formatting. " + lang_instr + " "
+            "Return ONLY the corrected text with no preamble, quotes, or commentary."
+        )
+        resp = chat(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": text},
+            ],
+            temperature=0.2,
+            max_tokens=1200,
+            task_type="default",
+        )
+        if resp.success and resp.content:
+            corrected = resp.content.strip().strip('"')
+            engine = "llm"
+    except Exception:
+        corrected = None
+
+    if not corrected:
+        corrected = _basic_grammar_cleanup(text)
+        engine = "fallback"
+
+    changed = corrected.strip() != text.strip()
+    return jsonify({
+        "success": True,
+        "language": lang_code,
+        "language_name": lang_name,
+        "engine": engine,
+        "original": text,
+        "corrected": corrected,
+        "changed": changed,
+        "note": ("Suggestions ready" if changed else "Looks good — no changes needed"),
+    }), 200
+
+
 @forum_bp.route("/api/forum/wikipedia", methods=["GET"])
 def forum_wikipedia():
     """Wikipedia REST summary proxy for research posts."""
