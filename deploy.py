@@ -74,26 +74,28 @@ FILES_TO_DEPLOY = [
     # Frontend fixes
     "vidgenerator/leaderboards/index.html",  # Fixed API endpoint URLs
     "vidgenerator/python_proxy_server.py",  # python-proxy.service entrypoint
-    "vidgenerator/service-worker.js",  # Reduced verbose logging
+    "site/service-worker.js",
+    "site/index.html",
+    "backend/routes/all_page_routes.py",
     
-    # Static files for leaderboards and unified dashboard
-    "vidgenerator/static/css/dashboard.css",
-    "vidgenerator/static/css/image-support.css",
-    "vidgenerator/static/css/template-effects.css",
-    "vidgenerator/static/css/agent-skill-sets.css",
-    "vidgenerator/static/css/modern-design-system.css",
-    "vidgenerator/static/css/navigation-toolbar.css",
-    "vidgenerator/static/js/image-support.js",
-    "vidgenerator/static/js/template-effects.js",
-    "vidgenerator/static/js/template-engine-core.js",
-    "vidgenerator/static/js/template-services.js",
-    "vidgenerator/static/js/agent-skill-sets.js",
-    "vidgenerator/static/js/stats-achievements-tracker.js",
-    "vidgenerator/static/js/navigation-toolbar.js",
-    "vidgenerator/static/js/comprehensive-auto-save.js",
-    "vidgenerator/static/js/enhanced-frontpage-stats.js",
-    "vidgenerator/static/js/top50-monetization-frame.js",
-    "vidgenerator/static/js/energy-regeneration-timers.js",
+    # Static files (site/static → /static/)
+    "site/static/css/dashboard.css",
+    "site/static/css/image-support.css",
+    "site/static/css/template-effects.css",
+    "site/static/css/agent-skill-sets.css",
+    "site/static/css/modern-design-system.css",
+    "site/static/css/navigation-toolbar.css",
+    "site/static/js/image-support.js",
+    "site/static/js/template-effects.js",
+    "site/static/js/template-engine-core.js",
+    "site/static/js/template-services.js",
+    "site/static/js/agent-skill-sets.js",
+    "site/static/js/stats-achievements-tracker.js",
+    "site/static/js/navigation-toolbar.js",
+    "site/static/js/comprehensive-auto-save.js",
+    "site/static/js/enhanced-frontpage-stats.js",
+    "site/static/js/top50-monetization-frame.js",
+    "site/static/js/energy-regeneration-timers.js",
     # Unified dashboard page
     "vidgenerator/unified_dashboard/index.html",
     
@@ -101,12 +103,12 @@ FILES_TO_DEPLOY = [
     "backend/routes/battle.py",  # Fixed 500 errors + added 22 missing endpoints
     "backend/routes/game.py",  # Fixed stats endpoint
     "backend/services/unified_points_database.py",  # Syntax error fix
-    "vidgenerator/battle/index.html",  # Updated quick battle frontend integration + 6 new tabs
-    "vidgenerator/index.html",
+    "site/pages/battle/index.html",
+    "site/index.html",
     "backend/routes/stats_summary.py",
     "backend/routes/all_page_routes.py",
-    "vidgenerator/static/js/comprehensive-api-integration.js",
-    "vidgenerator/static/js/all-api-integration.js",
+    "site/static/js/comprehensive-api-integration.js",
+    "site/static/js/all-api-integration.js",
     # Critical missing services and routes
     # Added automatically - 164 files
     "backend/routes/activity_points_routes.py",

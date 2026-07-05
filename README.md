@@ -23,8 +23,8 @@ python run.py
 ```
 
 ### Access URLs
-- **Local:** http://localhost:5000/vidgenerator
-- **Live:** https://masternoder.dk/vidgenerator
+- **Local:** http://localhost:5000/
+- **Live:** https://masternoder.dk/
 
 ---
 
@@ -42,7 +42,7 @@ masternoder.dk/
 └── requirements.txt         # Dependencies
 ```
 
-**Full structure:** See `docs/PROJECT_STRUCTURE.md`
+**Full path map:** `docs/SITE_STRUCTURE.md`
 
 ---
 

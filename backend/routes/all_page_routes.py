@@ -1,6 +1,7 @@
 """
 All Page Routes
-Generic routes for serving HTML pages from project root (static/, index.html, generator/, etc.)
+Serve HTML pages and static assets from site/ (pages/, static/, index.html).
+Public URLs stay at domain root: /, /generator/, /static/, /api/.
 """
 from flask import Blueprint, send_from_directory, redirect, request, render_template, make_response
 import os
@@ -8,16 +9,47 @@ import os
 all_page_bp = Blueprint('all_pages', __name__)
 
 # Version for cache busting - bump on deploy
-CONTENT_VERSION = "20260428a"
+CONTENT_VERSION = "20260705a"
 
 
 def _base_path():
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def _site_root():
+    return os.path.join(_base_path(), 'site')
+
+
+def _pages_dir():
+    """User-facing HTML pages: site/pages/ (fallback: project root during migration)."""
+    site_pages = os.path.join(_site_root(), 'pages')
+    if os.path.isdir(site_pages):
+        return site_pages
+    return _base_path()
+
+
 def _static_dir():
-    """Static assets at project root: static/ (merged from former vidgenerator/static)."""
+    """Static assets: site/static/ at URL /static/ (fallback: root static/)."""
+    site_static = os.path.join(_site_root(), 'static')
+    if os.path.isdir(site_static):
+        return site_static
     return os.path.join(_base_path(), 'static')
+
+
+def _page_dir(page_name: str) -> str:
+    return os.path.join(_pages_dir(), page_name)
+
+
+def _page_index(page_name: str) -> str:
+    return os.path.join(_page_dir(page_name), 'index.html')
+
+
+def _site_index_path():
+    for rel in ('site/index.html', 'index.html', 'vidgenerator/index.html'):
+        path = os.path.join(_base_path(), *rel.split('/'))
+        if os.path.isfile(path):
+            return path
+    return os.path.join(_site_root(), 'index.html')
 
 
 # Serve static files at /static/ from project root static/ (avoid clash with Flask default 'static' endpoint)
@@ -36,7 +68,7 @@ def serve_static(filename):
 
 
 # All pages are registered automatically from this list (create_page_route below).
-# Add any new page subdir with index.html at project root here to expose it.
+# Add any new page subdir with index.html under site/pages/ here to expose it.
 PAGES = [
     'gallery', 'battle', 'shop', 'chat', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
@@ -82,19 +114,16 @@ _register_profile_redirects()
 
 @all_page_bp.route('/', methods=['GET'])
 def root_index():
-    """Serve index.html at project root for /."""
+    """Serve site/index.html for /."""
     try:
-        base_path = _base_path()
-        # Prefer root index.html (after move); fallback to legacy vidgenerator/index.html
-        for dir_name, file_name in [('', 'index.html'), ('vidgenerator', 'index.html')]:
-            page_path = os.path.join(base_path, dir_name, file_name) if dir_name else os.path.join(base_path, file_name)
-            if os.path.exists(page_path):
-                directory = os.path.join(base_path, dir_name) if dir_name else base_path
-                resp = send_from_directory(directory, 'index.html', mimetype='text/html; charset=utf-8')
-                resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
-                resp.headers['ETag'] = CONTENT_VERSION
-                resp.headers['X-Content-Version'] = CONTENT_VERSION
-                return resp
+        page_path = _site_index_path()
+        if os.path.isfile(page_path):
+            directory = os.path.dirname(page_path)
+            resp = send_from_directory(directory, 'index.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+            resp.headers['ETag'] = CONTENT_VERSION
+            resp.headers['X-Content-Version'] = CONTENT_VERSION
+            return resp
     except Exception:
         pass
     return (
@@ -117,50 +146,14 @@ def create_page_route(page_name):
     def page_handler(_page_name=_pn):
         """Generic page handler - _page_name default captures correct page per route."""
         try:
-            base_path = _base_path()
-            # Handle special cases
-            if _page_name == 'theme_premium':
-                page_path = os.path.join(base_path, 'theme_premium', 'index.html')
-            elif _page_name == 'theme-points':
-                page_path = os.path.join(base_path, 'theme-points', 'index.html')
-            elif _page_name == 'champions-league':
-                page_path = os.path.join(base_path, 'champions-league', 'index.html')
-            elif _page_name == 'danish-divine-tech-tree':
-                page_path = os.path.join(base_path, 'danish-divine-tech-tree', 'index.html')
-            elif _page_name == 'victory-tech-tree':
-                page_path = os.path.join(base_path, 'victory-tech-tree', 'index.html')
-            elif _page_name == 'academic-perspective':
-                page_path = os.path.join(base_path, 'academic-perspective', 'index.html')
-            elif _page_name == 'time-achievement-guides':
-                page_path = os.path.join(base_path, 'time-achievement-guides', 'index.html')
-            elif _page_name == 'beta_testing':
-                page_path = os.path.join(base_path, 'beta_testing', 'index.html')
-            elif _page_name == 'unified_dashboard':
-                page_path = os.path.join(base_path, 'unified_dashboard', 'index.html')
-            elif _page_name == 'advanced_calculator':
-                page_path = os.path.join(base_path, 'advanced_calculator', 'index.html')
-            elif _page_name == 'agent_support':
-                page_path = os.path.join(base_path, 'agent_support', 'index.html')
-            elif _page_name == 'lab':
-                page_path = os.path.join(base_path, 'lab', 'index.html')
-            elif _page_name == 'compendium':
-                page_path = os.path.join(base_path, 'compendium', 'index.html')
-            else:
-                page_path = os.path.join(base_path, _page_name, 'index.html')
-            
+            page_path = _page_index(_page_name)
+
             if os.path.exists(page_path):
-                # Stream with send_file for faster TTFB (same as root_index)
-                if _page_name in ('theme_premium', 'theme-points', 'champions-league', 'danish-divine-tech-tree',
-                                 'victory-tech-tree', 'academic-perspective', 'time-achievement-guides', 'beta_testing',
-                                 'unified_dashboard', 'advanced_calculator', 'agent_support', 'lab', 'compendium'):
-                    dir_path = os.path.dirname(page_path)
-                    resp = send_from_directory(dir_path, 'index.html', mimetype='text/html; charset=utf-8')
-                else:
-                    resp = send_from_directory(
-                        os.path.join(base_path, _page_name),
-                        'index.html',
-                        mimetype='text/html; charset=utf-8',
-                    )
+                resp = send_from_directory(
+                    _page_dir(_page_name),
+                    'index.html',
+                    mimetype='text/html; charset=utf-8',
+                )
                 resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
                 resp.headers['ETag'] = CONTENT_VERSION
                 resp.headers['X-Content-Version'] = CONTENT_VERSION
@@ -224,8 +217,7 @@ def casino_redirect():
 def casino_page():
     """Serve virtual-coins casino page."""
     try:
-        base_path = _base_path()
-        page_dir = os.path.join(base_path, 'casino')
+        page_dir = _page_dir('casino')
         if os.path.isfile(os.path.join(page_dir, 'index.html')):
             resp = send_from_directory(page_dir, 'index.html', mimetype='text/html; charset=utf-8')
             resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
@@ -241,8 +233,7 @@ def casino_page():
 def casino_manifest():
     """PWA manifest for casino (Play TWA + installable web app)."""
     try:
-        base_path = _base_path()
-        page_dir = os.path.join(base_path, 'casino')
+        page_dir = _page_dir('casino')
         if os.path.isfile(os.path.join(page_dir, 'manifest.webmanifest')):
             resp = send_from_directory(
                 page_dir,
@@ -311,8 +302,7 @@ def debugger_from_flask_template():
         resp.headers['X-Debugger-Served'] = 'flask-template'
         return resp
     except Exception as e:
-        base_path = _base_path()
-        fb_dir = os.path.join(base_path, 'debugger')
+        fb_dir = _page_dir('debugger')
         fb_file = os.path.join(fb_dir, 'index.html')
         if os.path.isfile(fb_file):
             resp = send_from_directory(fb_dir, 'index.html', mimetype='text/html; charset=utf-8')
@@ -349,8 +339,7 @@ def compendium_page(n):
     if blocked:
         return blocked
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'compendium', f'page-{n}.html')
+        page_path = os.path.join(_page_dir('compendium'), f'page-{n}.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -369,8 +358,7 @@ def compendium_page(n):
 def _serve_compendium_rulebook_viewer_html():
     """Serve shared rulebook-viewer.html (same shell for v1, v4–v16, v3-2)."""
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'compendium', 'rulebook-viewer.html')
+        page_path = os.path.join(_page_dir('compendium'), 'rulebook-viewer.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -422,8 +410,7 @@ def compendium_hunters_rulebook():
     if blocked:
         return blocked
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'compendium', 'hunters-rulebook.html')
+        page_path = os.path.join(_page_dir('compendium'), 'hunters-rulebook.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -446,8 +433,7 @@ def compendium_hunters_rulebook():
 def dashboard_master_control():
     """Serve dashboard/master_control/index.html at project root."""
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'dashboard', 'master_control', 'index.html')
+        page_path = os.path.join(_page_dir('dashboard'), 'master_control', 'index.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -474,8 +460,7 @@ def dashboard_master_control():
 def dashboard_agents_control():
     """Serve dashboard/agents_control/index.html."""
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'dashboard', 'agents_control', 'index.html')
+        page_path = os.path.join(_page_dir('dashboard'), 'agents_control', 'index.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -492,8 +477,7 @@ def dashboard_agents_control():
 def agents_page():
     """Serve agents/index.html at project root."""
     try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'agents', 'index.html')
+        page_path = _page_index('agents')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -511,6 +495,21 @@ def agents_page():
         200,
         {'Content-Type': 'text/html; charset=utf-8'},
     )
+
+
+@all_page_bp.route('/service-worker.js', methods=['GET'])
+def service_worker():
+    """PWA service worker at domain root."""
+    for directory, filename in (
+        (_site_root(), 'service-worker.js'),
+        (_base_path(), 'service-worker.js'),
+    ):
+        path = os.path.join(directory, filename)
+        if os.path.isfile(path):
+            resp = send_from_directory(directory, filename, mimetype='application/javascript; charset=utf-8')
+            resp.headers['Cache-Control'] = 'no-cache'
+            return resp
+    return 'Not found', 404
 
 
 # --- SEO: sitemap + robots ---
