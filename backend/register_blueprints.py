@@ -306,6 +306,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP platform_news: {e}")
     try:
+        from backend.routes.forum_routes import forum_bp
+        app.register_blueprint(forum_bp)
+        n += 1
+        print("  [OK] Registered forum blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP forum: {e}")
+    try:
         from backend.routes.discord_routes import discord_bp
         if "discord" not in app.blueprints:
             app.register_blueprint(discord_bp)
@@ -1561,6 +1568,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import platform_news: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering platform_news: {e}")
+
+    try:
+        from backend.routes.forum_routes import forum_bp
+        app.register_blueprint(forum_bp)
+        registered_count += 1
+        print("  [OK] Registered forum blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import forum: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering forum: {e}")
 
     try:
         from backend.routes.discord_routes import discord_bp

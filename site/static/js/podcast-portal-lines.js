@@ -6,7 +6,7 @@
     if (!siteId) {
         var path = (location.pathname || '').replace(/\/$/, '') || '/';
         var map = {
-            '/': 'home', '/generator': 'generator', '/gallery': 'gallery', '/aggregator': 'aggregator',
+            '/forum': 'forum', '/generator': 'generator', '/gallery': 'gallery', '/aggregator': 'aggregator',
             '/command-center': 'command-center', '/social': 'social', '/news': 'news', '/lab': 'lab',
             '/explorer': 'explorer', '/shop': 'shop', '/compendium': 'compendium', '/rights-law': 'rights-law',
             '/camgirls': 'camgirls', '/battle': 'battle', '/game': 'game', '/casino': 'casino',
@@ -29,10 +29,10 @@
         wrap.setAttribute('aria-label', 'Podcast portal');
 
         var newsBit = data.latest_news
-            ? '<p class="podcast-portal-news">📰 Latest: <a href="/podcast#news">' + esc(data.latest_news.title) + '</a> — <em>komment + MN2</em></p>'
+            ? '<p class="podcast-portal-news">📰 Latest: <a href="/forum#news">' + esc(data.latest_news.title) + '</a> — <em>komment + MN2</em></p>'
             : '';
         var epBit = data.latest_episode
-            ? '<p class="podcast-portal-latest">🎙️ Episode: <a href="/podcast">' + esc(data.latest_episode.title) + '</a></p>'
+            ? '<p class="podcast-portal-latest">🎙️ Episode: <a href="/forum#podcast">' + esc(data.latest_episode.title) + '</a></p>'
             : '';
 
         wrap.innerHTML =
@@ -41,9 +41,9 @@
             epBit + newsBit +
             '<p class="podcast-portal-hint">' + esc(data.comment_hint) + '</p>' +
             '<div class="podcast-portal-actions">' +
-            '<a href="/podcast" class="podcast-portal-link podcast-portal-btn">Open Podcast</a>' +
-            '<a href="/podcast#news" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--news">News &amp; komment</a>' +
-            '<a href="/podcast#episodes" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--ghost">Listen</a>' +
+            '<a href="/forum#podcast" class="podcast-portal-link podcast-portal-btn">Open Forum Podcast</a>' +
+            '<a href="/forum#news" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--news">News &amp; komment</a>' +
+            '<a href="/forum#articles" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--ghost">Write article</a>' +
             '</div>';
 
         if (script && script.parentNode) {

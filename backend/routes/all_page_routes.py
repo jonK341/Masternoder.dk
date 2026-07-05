@@ -70,14 +70,15 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html under site/pages/ here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
-    'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
-    'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
+    'forum',
+    'gallery', 'battle', 'shop', 'debugger',
+    'quests', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
+    'editor', 'monetization', 'milkyway', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
-    'time-achievement-guides', 'beta_testing',
-    'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
+    'beta_testing',
+    'advanced_calculator', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
-    'compendium', 'starmap25',
+    'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
@@ -110,6 +111,35 @@ def _register_profile_redirects():
 
 
 _register_profile_redirects()
+
+
+# --- Consolidated into Forum: redirect former portal pages ---
+_FORUM_REDIRECTS = {
+    'news': 'news',
+    'chat': 'chat',
+    'podcast': 'podcast',
+    'compendium': 'rulebooks',
+    'rights-law': 'paragraphs',
+    'time-achievement-guides': 'docs',
+    'agent_support': 'support',
+}
+
+
+def _register_forum_redirects():
+    for old_path, tab in _FORUM_REDIRECTS.items():
+
+        def _make_redirect(t=tab):
+            def _handler():
+                return redirect(f'/forum#{t}', code=301)
+            _handler.__name__ = f'forum_redirect_{t}'
+            return _handler
+
+        h = _make_redirect()
+        all_page_bp.add_url_rule(f'/{old_path}', view_func=h, strict_slashes=False)
+        all_page_bp.add_url_rule(f'/{old_path}/', view_func=h)
+
+
+_register_forum_redirects()
 
 
 @all_page_bp.route('/', methods=['GET'])
@@ -523,6 +553,7 @@ _SITEMAP_PATHS = (
     '/shop/',
     '/game/',
     '/explorer/',
+    '/forum/',
     '/compendium/',
     '/profile/',
 )

@@ -35,7 +35,8 @@
         starmap25: APP_BASE + '/static/img/nav/starmap.svg',
         explorer: APP_BASE + '/static/img/nav/explorer.svg',
         news: APP_BASE + '/static/img/nav/news.svg',
-        library: APP_BASE + '/static/img/nav/stories.svg'
+        library: APP_BASE + '/static/img/nav/stories.svg',
+        forum: APP_BASE + '/static/img/nav/news.svg'
     };
 
     // Navigation configuration — Purple bg, light neon green. Favorites: Battle, Trophies, Game, Generator.
@@ -56,11 +57,9 @@
             { name: 'Command Center', icon: '🎯', url: APP_BASE + '/command-center', id: 'command-center', title: 'Battle, trophies, game, quests — unified hub' },
             { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
-            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
+            { name: 'Forum', icon: '💬', url: APP_BASE + '/forum', id: 'forum', favorite: true, title: 'News, articles, chat, podcast, rulebooks, docs, support, social & Wikipedia' },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
-            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
-            { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
             { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
             { name: 'BattleGrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
             { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
@@ -72,14 +71,10 @@
             { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
             { name: 'Agents', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
             { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' },
-            { name: 'Chat', icon: '💬', url: APP_BASE + '/lab#discussion', id: 'chat', title: 'Lab discussion room (was chat)' },
-            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab' },
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
-            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'Download MN2 daemon and Qt wallet' },
-            { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
         ],
         apiBase: window.location.origin + APP_BASE
     };

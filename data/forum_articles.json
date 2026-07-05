@@ -1,0 +1,18 @@
+{
+  "$schema": "masternoder.forum_articles.v1",
+  "articles": [
+    {
+      "id": "master-guide-all-pages",
+      "slug": "master-guide-all-pages",
+      "title": "MasterNoder Portal — guide to every page",
+      "author_id": "platform",
+      "author_name": "MasterNoder",
+      "category": "documentation",
+      "featured": true,
+      "created_at": "2026-07-05T22:00:00Z",
+      "updated_at": "2026-07-05T22:00:00Z",
+      "summary": "Complete map of platform pages — play, create, economy, library, and community — now unified under the Forum hub.",
+      "body_markdown": "# MasterNoder portal guide\n\nThis article lists every major page on the platform. **News, chat, podcast, rulebooks, documentation, paragraphs, and support** now live in the **Forum** (`/forum/`).\n\n## Create\n- **Generator** `/generator/` — AI video documentaries\n- **Gallery** `/gallery/` — finished videos\n- **Editor** `/editor/` — content tools\n- **Podcast** `/forum#podcast` — channels, episodes, iPod-style player\n\n## Play\n- **Game** `/game/` — Hunters, walkthroughs, guides\n- **Battle** `/battle/` — PvP and stats\n- **Casino** `/casino/` — slots and tournaments\n- **Battlegrounds** `/battlegrounds/`\n\n## Account\n- **Profile** `/profile/` — points, wallet, inventory\n- **Shop** `/shop/` — MN2 purchases\n- **Trophies** `/trophies/` — achievements and stories\n\n## Platform\n- **Lab** `/lab/` — experiments and roundtable\n- **Debugger** `/debugger/` — diagnostics\n- **Aggregator** `/aggregator/` — AI catalog\n- **Exchange** `/exchange/` — crypto swap\n- **Explorer** `/explorer/` — MN2 chain tools\n\n## Forum hub (community & knowledge)\n- **News** — platform announcements\n- **Articles** — user-written posts\n- **Chat** — AI + social room\n- **Rulebooks** — compendium V1–V16\n- **Paragraphs** — rights & citation rules\n- **Documentation** — guides and FAQs\n- **Support** — tickets and agent help\n- **Social** — Discord, Facebook, Instagram, Snapchat share\n- **Wikipedia** — lookup summaries for research posts\n\n## Legacy URLs\nOld `/news`, `/chat`, `/podcast`, `/compendium` home pages redirect into Forum tabs. Deep links like `/compendium/rulebook-v9` still work.\n"
+    }
+  ]
+}

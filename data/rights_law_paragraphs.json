@@ -1,0 +1,30 @@
+{
+  "$schema": "masternoder.rights_law.v1",
+  "title": "Rights & paragraphs reference",
+  "paragraphs": [
+    {
+      "id": "p1",
+      "number": "§1",
+      "title": "Platform content license",
+      "body": "User-generated forum articles remain yours; you grant MasterNoder a non-exclusive license to display and index them on the platform."
+    },
+    {
+      "id": "p2",
+      "number": "§2",
+      "title": "Rulebook canon",
+      "body": "Official game and compendium rulebooks (V1–V16) override forum speculation when conflicts arise."
+    },
+    {
+      "id": "p3",
+      "number": "§3",
+      "title": "Citation",
+      "body": "When quoting rulebooks or Wikipedia summaries, include version, page, or URL."
+    },
+    {
+      "id": "p4",
+      "number": "§4",
+      "title": "Privacy",
+      "body": "Do not share private user data, wallet keys, or ticket contents in public threads."
+    }
+  ]
+}

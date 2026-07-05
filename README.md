@@ -48,26 +48,18 @@ masternoder.dk/
 
 ## 🎯 Features
 
-### Main Routes
-- ✅ `/vidgenerator` - Landing page
-- ✅ `/vidgenerator/generator` - Video generator
-- ✅ `/vidgenerator/gallery` - Video gallery
-- ✅ `/vidgenerator/stats` - Statistics & analytics (with graffiti UI)
-- ✅ `/vidgenerator/debugger` - Debug tools
-- ✅ `/vidgenerator/game` - Game mechanics (with graffiti UI)
+### Main Routes (domain root)
+- ✅ `/` - Landing page
+- ✅ `/generator` - Video generator
+- ✅ `/gallery` - Video gallery
+- ✅ `/debugger` - Debug tools
+- ✅ `/game` - Game mechanics
 
 ### API Endpoints
-- ✅ `/vidgenerator/api/generator/create` - Create video
-- ✅ `/vidgenerator/api/gallery/list` - List videos (with search, filter, sort)
-- ✅ `/vidgenerator/api/stats/*` - Statistics APIs
-- ✅ `/vidgenerator/api/debug/*` - Debug APIs
-- ✅ `/vidgenerator/api/game/*` - Game APIs
-  - `/api/game/achievements` - Get achievements
-  - `/api/game/milestones` - Get milestones
-  - `/api/game/stats-points` - Get stats points
-- ✅ `/vidgenerator/api/categories/*` - Content categories APIs
-- ✅ `/vidgenerator/api/health/system` - System health check
-- ✅ `/vidgenerator/api/metrics` - Application performance metrics
+- ✅ `/api/generator/create` - Create video
+- ✅ `/api/health` - Health check
+
+**Legacy:** `/vidgenerator/*` redirects to `/*`.
 
 ### Game System
 - ✅ **Achievements System** - 11 achievements with stats points

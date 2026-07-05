@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Forum — MasterNoder</title>
+    <link rel="canonical" href="https://masternoder.dk/forum/">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/forum-hub.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="forum-page">
+        <header class="forum-hero">
+            <h1>💬 MasterNoder Forum</h1>
+            <p>News · articles · chat · podcast · rulebooks · docs · support · social · Wikipedia — all in one place.</p>
+        </header>
+
+        <nav class="forum-tabs" aria-label="Forum sections">
+            <button type="button" class="forum-tab active" data-tab="home">🏠 Home</button>
+            <button type="button" class="forum-tab" data-tab="news">📰 News</button>
+            <button type="button" class="forum-tab" data-tab="articles">✍️ Articles</button>
+            <button type="button" class="forum-tab" data-tab="chat">💬 Chat</button>
+            <button type="button" class="forum-tab" data-tab="podcast">🎙️ Podcast</button>
+            <button type="button" class="forum-tab" data-tab="rulebooks">📖 Rulebooks</button>
+            <button type="button" class="forum-tab" data-tab="paragraphs">§ Paragraphs</button>
+            <button type="button" class="forum-tab" data-tab="docs">📚 Docs</button>
+            <button type="button" class="forum-tab" data-tab="support">🛠️ Support</button>
+            <button type="button" class="forum-tab" data-tab="social">🌐 Social</button>
+            <button type="button" class="forum-tab" data-tab="wikipedia">🔍 Wikipedia</button>
+        </nav>
+
+        <section id="panel-home" class="forum-panel active">
+            <h2>Community feed</h2>
+            <div id="feed-list"></div>
+        </section>
+
+        <section id="panel-news" class="forum-panel">
+            <h2>Platform news</h2>
+            <p class="meta">Merged from the former News portal and podcast announcements.</p>
+            <div id="news-list"></div>
+        </section>
+
+        <section id="panel-articles" class="forum-panel">
+            <h2>Write an article</h2>
+            <ul id="rules-list" class="forum-rules-list" style="margin-bottom:1rem"></ul>
+            <form id="article-form" class="forum-compose">
+                <input type="text" id="article-title" placeholder="Article title" required maxlength="200">
+                <textarea id="article-body" placeholder="Write your article (Markdown supported)" required></textarea>
+                <button type="submit" class="forum-btn">Publish article</button>
+                <span id="article-status" class="meta"></span>
+            </form>
+            <div id="article-reader"></div>
+            <h3>Published articles</h3>
+            <div id="articles-list"></div>
+        </section>
+
+        <section id="panel-chat" class="forum-panel">
+            <h2>Chat</h2>
+            <div class="forum-grid-2">
+                <div>
+                    <h3>Community room</h3>
+                    <div id="chat-messages" class="forum-chat-box"></div>
+                    <div class="forum-compose" style="flex-direction:row">
+                        <input type="text" id="chat-input" placeholder="Message the community…" style="flex:1">
+                        <button type="button" id="chat-send" class="forum-btn">Send</button>
+                    </div>
+                </div>
+                <div>
+                    <h3>AI assistant</h3>
+                    <div class="forum-compose" style="flex-direction:row">
+                        <input type="text" id="ai-chat-input" placeholder="Ask the AI…" style="flex:1">
+                        <button type="button" id="ai-chat-send" class="forum-btn secondary">Ask</button>
+                    </div>
+                    <div id="ai-chat-reply" class="forum-card" style="margin-top:10px;min-height:80px"></div>
+                    <p class="meta"><a href="/lab#discussion">Lab roundtable →</a></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-podcast" class="forum-panel">
+            <h2>Podcast &amp; iPod-style player</h2>
+            <p class="meta">YouTube, Facebook, Discord channels — crypto rewards &amp; episodes.</p>
+            <div id="podcast-panel-body"></div>
+        </section>
+
+        <section id="panel-rulebooks" class="forum-panel">
+            <h2>Rulebooks &amp; compendium</h2>
+            <p class="meta">Official V1–V16 rulebooks. Deep links open the full compendium reader.</p>
+            <div id="rulebooks-list"></div>
+        </section>
+
+        <section id="panel-paragraphs" class="forum-panel">
+            <h2>Paragraphs &amp; rights</h2>
+            <div id="paragraphs-list"></div>
+        </section>
+
+        <section id="panel-docs" class="forum-panel">
+            <h2>Documentation</h2>
+            <div id="docs-list"></div>
+        </section>
+
+        <section id="panel-support" class="forum-panel">
+            <h2>Support</h2>
+            <div id="support-panel-body"></div>
+        </section>
+
+        <section id="panel-social" class="forum-panel">
+            <h2>Share to social media</h2>
+            <p class="meta">Discord, Facebook, Instagram, Snapchat, X, LinkedIn, WhatsApp</p>
+            <div id="social-networks" class="forum-social-row"></div>
+        </section>
+
+        <section id="panel-wikipedia" class="forum-panel">
+            <h2>Wikipedia research</h2>
+            <div class="forum-compose" style="flex-direction:row">
+                <input type="search" id="wiki-query" placeholder="Search topic (e.g. Documentary film)">
+                <button type="button" id="wiki-search" class="forum-btn">Search</button>
+            </div>
+            <div id="wiki-result"></div>
+        </section>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/forum-hub.js?v=20260705" defer></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+</body>
+</html>
