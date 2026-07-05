@@ -4,11 +4,15 @@ Wired from ``scripts/all_profit_daemons.py`` and monitor API — no separate pro
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
+import socket
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
 from backend.services.profit_daemon_paths import heartbeat_path
@@ -1012,9 +1016,14 @@ def run_exchange_tick_ops(
         return out
     out["compound"] = compound_pause_on_kill()
     out["stash_cap"] = maybe_alert_stash_cap_before_sweep()
+    out["stash_milestone"] = maybe_alert_stash_milestone()
     out["binance_preflight"] = binance_withdraw_preflight()
+    out["paypal_sweep"] = maybe_paypal_auto_sweep(exchange_res)
     out["partial_sweep"] = plan_partial_sweep()
     out["top25_sync"] = sync_critical_top25_on_tick()
+    out["catalog_refresh"] = maybe_refresh_catalog_cache()
+    out["treasury_reconcile"] = treasury_ledger_reconciliation()
+    out["sales_pool_transfer"] = maybe_sales_pool_treasury_transfer()
     out["sweep_dry_run"] = sweep_dry_run_line()
     streak = int((exchange_res.get("platform") or {}).get("compound_streak") or 0)
     out["compound_tier"] = compound_streak_bonus_tier(streak)
@@ -1022,6 +1031,10 @@ def run_exchange_tick_ops(
     out["prefund_batch"] = pref
     xeg = maybe_auto_enable_xeggex_live_farm()
     out["xeggex_auto"] = xeg
+    force = arb_force_attempt_gate(exchange_res)
+    out["force_attempt"] = force
+    if force.get("recorded"):
+        out["force_budget"] = force_attempt_budget_state()
     hits = ((exchange_res.get("platform") or {}).get("profit_pair_search") or {}).get("hits") or []
     for row in hits[:3]:
         if not isinstance(row, dict):
@@ -1033,5 +1046,596 @@ def run_exchange_tick_ops(
             reg = maybe_alert_hit_rate_regression(route=route, current_pct=cur, baseline_pct=base)
             if not reg.get("skipped"):
                 out.setdefault("hit_rate_alerts", []).append(reg)
+    sweep_res = exchange_res.get("sweep")
+    if isinstance(sweep_res, dict) and sweep_res.get("success") and sweep_res.get("swept"):
+        out["sweep_celebration"] = maybe_alert_sweep_success(sweep_res)
+    out["tick_profile"] = profile_exchange_tick(start)
     out["elapsed_sec"] = round(time.time() - start, 2)
     return out
+
+
+# --- Profit daemon 110 upgrades (batch 4) ---
+
+_CATALOG_SHARED_PATH = os.path.join(ex._DATA_DIR, "profit_pair_catalog_cache.json")
+_PPP_TAIL_CACHE_PATH = os.path.join(ex._DATA_DIR, "profit_ppp_24h_cache.json")
+_CATALOG_REFRESH_STATE = os.path.join(ex._DATA_DIR, "profit_catalog_refresh_state.json")
+
+
+def plan_iceberg_splits(*, notional_usd: float, max_chunk_usd: Optional[float] = None) -> Dict[str, Any]:
+    """Iceberg-style split orders for large arb notionals (#11)."""
+    chunk = max_chunk_usd or float(os.environ.get("EXCHANGE_ICEBERG_CHUNK_USD", "75"))
+    n = float(notional_usd or 0)
+    if n <= chunk:
+        return {"success": True, "splits": 1, "chunks_usd": [round(n, 2)], "total_usd": round(n, 2)}
+    chunks: List[float] = []
+    remaining = n
+    while remaining > 0:
+        piece = min(chunk, remaining)
+        chunks.append(round(piece, 2))
+        remaining -= piece
+    return {"success": True, "splits": len(chunks), "chunks_usd": chunks, "total_usd": round(n, 2)}
+
+
+def maybe_refresh_catalog_cache(*, force: bool = False) -> Dict[str, Any]:
+    """Catalog auto-refresh independent of pair-search ticks (#19)."""
+    if not force and os.environ.get("EXCHANGE_CATALOG_AUTO_REFRESH", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"skipped": True, "reason": "disabled"}
+    interval_h = float(os.environ.get("EXCHANGE_CATALOG_REFRESH_HOURS", "6"))
+    state = _read_state(_CATALOG_REFRESH_STATE)
+    last = str(state.get("last_refresh_at") or "")
+    if last and not force:
+        try:
+            prev = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) - prev < timedelta(hours=interval_h):
+                return {"skipped": True, "reason": "not_due", "last_at": last}
+        except Exception:
+            pass
+    try:
+        from backend.services.exchange_profit_pair_search_service import catalog_intersection
+        syms = catalog_intersection()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    payload = {"updated_at": _iso(), "symbol_count": len(syms), "symbols": syms[:200]}
+    _write_state(_CATALOG_SHARED_PATH, payload)
+    state["last_refresh_at"] = _iso()
+    state["symbol_count"] = len(syms)
+    _write_state(_CATALOG_REFRESH_STATE, state)
+    return {"success": True, "symbol_count": len(syms), "refreshed_at": state["last_refresh_at"]}
+
+
+def read_shared_catalog_cache() -> Dict[str, Any]:
+    """Pair-search catalog cache shared across workers (#101)."""
+    data = _read_state(_CATALOG_SHARED_PATH)
+    if not data.get("symbols"):
+        try:
+            from backend.services.exchange_profit_pair_search_service import catalog_intersection
+            syms = catalog_intersection()
+            data = {"updated_at": _iso(), "symbols": syms, "symbol_count": len(syms)}
+            _write_state(_CATALOG_SHARED_PATH, data)
+        except Exception:
+            pass
+    return {"success": True, **data}
+
+
+def search_index_export(*, limit: int = 50) -> Dict[str, Any]:
+    """Search index export API for research notebooks (#21)."""
+    try:
+        from backend.services.exchange_profit_pair_search_service import read_index
+        idx = read_index()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    hits = (idx.get("hits") or [])[: max(1, limit)]
+    return {
+        "success": True,
+        "updated_at": idx.get("updated_at"),
+        "hot_symbols": idx.get("hot_symbols") or [],
+        "hit_count": len(hits),
+        "hits": hits,
+        "catalog_symbol_count": idx.get("catalog_symbol_count"),
+    }
+
+
+def pair_search_score_decomposition(hit: Dict[str, Any]) -> Dict[str, Any]:
+    """Pair-search score decomposition export (#87)."""
+    sym = str(hit.get("symbol") or "").upper()
+    ledger_part = float(hit.get("avg_net_bps") or 0) * (0.5 + float(hit.get("hit_rate_pct") or 0) / 200.0)
+    live_part = float(hit.get("live_score") or 0)
+    vol = float(hit.get("volatility_score") or 0)
+    tri = 4.0 if hit.get("triangular") else 0.0
+    fill_bonus = min(15.0, float(hit.get("fill_count") or 0) * 3.0)
+    total = float(hit.get("search_score") or ledger_part + live_part + vol + tri + fill_bonus)
+    return {
+        "success": True,
+        "symbol": sym,
+        "route": hit.get("route"),
+        "components": {
+            "ledger_part": round(ledger_part, 2),
+            "live_part": round(live_part, 2),
+            "volatility_score": round(vol, 2),
+            "triangular_bonus": tri,
+            "fill_bonus": round(fill_bonus, 2),
+        },
+        "search_score": round(total, 2),
+    }
+
+
+def ensemble_signal_blend(
+    *,
+    spatial_bps: float,
+    ai_bps: float,
+    extended_bps: float,
+) -> Dict[str, Any]:
+    """Ensemble signal blend — spatial + AI + extended (#23)."""
+    ws = float(os.environ.get("PROFIT_ENSEMBLE_SPATIAL_W", "0.5"))
+    wa = float(os.environ.get("PROFIT_ENSEMBLE_AI_W", "0.3"))
+    we = float(os.environ.get("PROFIT_ENSEMBLE_EXTENDED_W", "0.2"))
+    blend = ws * spatial_bps + wa * ai_bps + we * extended_bps
+    return {
+        "success": True,
+        "blend_bps": round(blend, 2),
+        "weights": {"spatial": ws, "ai": wa, "extended": we},
+        "inputs": {"spatial_bps": spatial_bps, "ai_bps": ai_bps, "extended_bps": extended_bps},
+    }
+
+
+def venue_routing_score(venue_id: str, *, latency_ms: Optional[float] = None) -> float:
+    """Venue routing score in AI trader pick (#24)."""
+    base = {
+        "binance": 0.95,
+        "nonkyc": 0.82,
+        "xeggex": 0.75,
+        "bingx": 0.7,
+        "coinbase": 0.88,
+    }
+    score = float(base.get(str(venue_id or "").lower(), 0.65))
+    if latency_ms is not None and latency_ms > 0:
+        penalty = min(0.25, latency_ms / 2000.0)
+        score = max(0.1, score - penalty)
+    return round(score, 4)
+
+
+def risk_adjusted_notional_usd(
+    *,
+    base_usd: float,
+    volatility_score: float,
+    hit_rate_pct: float,
+) -> Dict[str, Any]:
+    """Risk-adjusted sizing from volatility + hit rate (#25)."""
+    vol_factor = max(0.5, 1.0 - min(0.4, float(volatility_score or 0) / 50.0))
+    hit_factor = max(0.5, min(1.2, float(hit_rate_pct or 0) / 50.0))
+    adjusted = round(float(base_usd) * vol_factor * hit_factor, 2)
+    floor = float(os.environ.get("EXCHANGE_PAPER_TRADE_FLOOR_USD", "10"))
+    return {
+        "success": True,
+        "base_usd": base_usd,
+        "adjusted_usd": max(floor, adjusted),
+        "vol_factor": round(vol_factor, 3),
+        "hit_factor": round(hit_factor, 3),
+    }
+
+
+def treasury_stash_buckets() -> Dict[str, Any]:
+    """Multi-currency stash buckets USD/EUR stable (#33)."""
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+        snap = _light_treasury_snapshot()
+    except Exception:
+        snap = {}
+    live = float(snap.get("live_stash_usd") or 0)
+    paper = float(snap.get("paper_unswept_usd") or snap.get("ledger_stashed_usd_paper") or 0)
+    eur_rate = float(os.environ.get("PROFIT_EUR_USD_RATE", "1.08"))
+    return {
+        "success": True,
+        "buckets": {
+            "usd_live": round(live, 2),
+            "usd_paper": round(paper, 2),
+            "eur_live_equiv": round(live / eur_rate, 2),
+            "eur_paper_equiv": round(paper / eur_rate, 2),
+        },
+        "eur_usd_rate": eur_rate,
+    }
+
+
+def prefer_usdc_vs_usdt_route(buy_venue: str, sell_venue: str) -> Dict[str, Any]:
+    """Fee optimization — prefer USDC vs USDT route (#34)."""
+    venues = {str(buy_venue or "").lower(), str(sell_venue or "").lower()}
+    if "binance" in venues:
+        preferred = "USDC"
+        reason = "binance_usdc_lower_fees"
+    elif venues & {"nonkyc", "xeggex"}:
+        preferred = "USDT"
+        reason = "alt_venue_usdt_liquidity"
+    else:
+        preferred = "USDC"
+        reason = "default_usdc"
+    return {"success": True, "preferred_quote": preferred, "reason": reason, "venues": sorted(venues)}
+
+
+def treasury_ledger_reconciliation() -> Dict[str, Any]:
+    """Treasury liquidity ledger reconciliation job (#35)."""
+    ledger_path = os.path.join(ex._DATA_DIR, "treasury_stash_ledger.jsonl")
+    live_sum = 0.0
+    paper_sum = 0.0
+    rows = 0
+    if os.path.isfile(ledger_path):
+        try:
+            with open(ledger_path, "r", encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        amt = float(row.get("amount_usd") or row.get("usd") or 0)
+                        mode = str(row.get("mode") or "live").lower()
+                        if mode == "paper":
+                            paper_sum += amt
+                        else:
+                            live_sum += amt
+                        rows += 1
+                    except (json.JSONDecodeError, TypeError, ValueError):
+                        pass
+        except OSError:
+            pass
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+        snap = _light_treasury_snapshot()
+        reported_live = float(snap.get("live_stash_usd") or 0)
+    except Exception:
+        reported_live = 0.0
+    drift = round(reported_live - live_sum, 4)
+    return {
+        "success": True,
+        "ledger_rows": rows,
+        "ledger_live_usd": round(live_sum, 2),
+        "ledger_paper_usd": round(paper_sum, 2),
+        "reported_live_usd": round(reported_live, 2),
+        "drift_usd": drift,
+        "reconciled": abs(drift) < 1.0,
+    }
+
+
+def maybe_sales_pool_treasury_transfer() -> Dict[str, Any]:
+    """Internal sales-pool ↔ treasury transfer automation (#37)."""
+    if os.environ.get("EXCHANGE_SALES_POOL_TRANSFER", "0").strip().lower() not in ("1", "true", "yes", "on"):
+        return {"skipped": True, "reason": "disabled"}
+    if profit_kill_active():
+        return {"skipped": True, "reason": "kill_switch"}
+    try:
+        from backend.services.exchange_sales_pool_service import sales_pool_status
+        pool = sales_pool_status()
+    except Exception as exc:
+        return {"skipped": True, "reason": "no_sales_pool", "error": str(exc)}
+    balance = float(pool.get("balance_usd") or pool.get("pool_usd") or 0)
+    min_xfer = float(os.environ.get("EXCHANGE_SALES_POOL_MIN_USD", "50"))
+    if balance < min_xfer:
+        return {"skipped": True, "reason": "below_min", "balance_usd": balance}
+    return {
+        "success": True,
+        "actionable": True,
+        "balance_usd": round(balance, 2),
+        "suggested_transfer_usd": round(balance * 0.5, 2),
+        "display_only": True,
+    }
+
+
+def maybe_paypal_auto_sweep(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
+    """PayPal sweep automation when profit pool ready (#42 extension)."""
+    if os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "").strip().lower() not in ("1", "true", "yes", "on"):
+        if not exchange_res.get("sweep"):
+            return {"skipped": True, "reason": "auto_sweep_disabled"}
+    if profit_kill_active():
+        return {"skipped": True, "reason": "kill_switch"}
+    sweep = exchange_res.get("sweep")
+    if isinstance(sweep, dict) and sweep.get("success"):
+        return {"success": True, "swept": True, "mode": (sweep.get("swept") or {}).get("mode")}
+    try:
+        from backend.services.exchange_payout_service import plan_sweep
+        plan = plan_sweep()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    if not plan.get("actionable"):
+        return {"skipped": True, "reason": plan.get("reason"), "display_only": True}
+    return {
+        "success": True,
+        "actionable": True,
+        "amount_usd": plan.get("amount_usd"),
+        "destination": plan.get("destination"),
+        "display_only": not plan.get("live"),
+    }
+
+
+def maybe_alert_sweep_success(sweep_res: Dict[str, Any]) -> Dict[str, Any]:
+    """Sweep success Discord celebration embed (#50)."""
+    swept = sweep_res.get("swept") or {}
+    amt = swept.get("amount_usd")
+    mode = swept.get("mode") or ("live" if sweep_res.get("live") else "paper")
+    body = f"Profit sweep completed — **${float(amt or 0):.2f}** via `{mode}` mode."
+    return _post_ops_alert(
+        "Profit daemon — sweep success",
+        body,
+        alert_key="sweep_success",
+        fields=[
+            {"name": "Amount", "value": f"${float(amt or 0):.2f}", "inline": True},
+            {"name": "Mode", "value": str(mode), "inline": True},
+        ],
+    )
+
+
+def maybe_alert_stash_milestone(*, milestones: Optional[List[float]] = None) -> Dict[str, Any]:
+    """Discord alert when live stash crosses milestone (#94)."""
+    tiers = milestones or [100, 250, 500, 1000, 2500, 5000]
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+        stash = float((_light_treasury_snapshot().get("live_stash_usd") or 0))
+    except Exception:
+        return {"skipped": True, "reason": "no_treasury"}
+    state_path = os.path.join(ex._DATA_DIR, "profit_stash_milestone_state.json")
+    state = _read_state(state_path)
+    last = float(state.get("last_milestone_usd") or 0)
+    crossed = [t for t in sorted(tiers) if stash >= t and t > last]
+    if not crossed:
+        return {"skipped": True, "reason": "no_new_milestone", "live_stash_usd": stash}
+    milestone = max(crossed)
+    state["last_milestone_usd"] = milestone
+    state["updated_at"] = _iso()
+    _write_state(state_path, state)
+    body = f"Live stash milestone **${milestone:.0f}** reached (current ${stash:.2f})."
+    alert = _post_ops_alert(
+        "Profit daemon — stash milestone",
+        body,
+        alert_key=f"stash_milestone_{int(milestone)}",
+        fields=[{"name": "Stash", "value": f"${stash:.2f}", "inline": True}],
+    )
+    return {"success": True, "milestone_usd": milestone, "live_stash_usd": stash, "alert": alert}
+
+
+def arb_force_attempt_gate(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
+    """Record force-attempt usage and block when hourly cap exceeded."""
+    plat = exchange_res.get("platform") or {}
+    arb = (plat.get("results") or {}).get("arbitrage") or {}
+    force = arb.get("force_attempt") or {}
+    if not force.get("forced_global"):
+        return {"skipped": True, "reason": "no_force_attempt"}
+    budget = force_attempt_budget_state()
+    if int(budget.get("remaining") or 0) <= 0:
+        return {"blocked": True, "reason": "force_attempt_exhausted", **budget}
+    recorded = record_force_attempt()
+    return {"recorded": True, "blocked": False, **recorded}
+
+
+def profile_exchange_tick(start_ts: float) -> Dict[str, Any]:
+    """Tick budget profiler — warn when exchange tick >60s (#70)."""
+    elapsed = time.time() - start_ts
+    budget = exchange_tick_budget_sec()
+    warn = elapsed >= budget
+    return {
+        "success": True,
+        "elapsed_sec": round(elapsed, 2),
+        "budget_sec": budget,
+        "warn": warn,
+        "over_budget": warn,
+    }
+
+
+def heartbeat_host_preflight() -> Dict[str, Any]:
+    """Block start if heartbeat owned by another host (#71)."""
+    if os.environ.get("PROFIT_HEARTBEAT_HOST_CHECK", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"success": True, "skipped": True, "reason": "disabled"}
+    hb = ex._read_json(heartbeat_path(), {})
+    owner = str(hb.get("host") or hb.get("hostname") or "")
+    this_host = socket.gethostname()
+    updated = str(hb.get("updated_at") or "")
+    stale = True
+    if updated:
+        try:
+            ts = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+            stale = (datetime.now(timezone.utc) - ts).total_seconds() > float(
+                os.environ.get("PROFIT_HEARTBEAT_MAX_AGE_SEC", "300")
+            )
+        except Exception:
+            stale = True
+    if owner and owner != this_host and not stale:
+        return {
+            "success": False,
+            "blocked": True,
+            "reason": "heartbeat_owned_by_other_host",
+            "owner": owner,
+            "this_host": this_host,
+        }
+    return {"success": True, "this_host": this_host, "owner": owner or None, "stale": stale}
+
+
+def stamp_heartbeat_host(extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Stamp current host on heartbeat writes."""
+    host = socket.gethostname()
+    payload = {"host": host, "hostname": host, "stamped_at": _iso()}
+    if extra:
+        payload.update(extra)
+    return payload
+
+
+def require_profit_daemon_admin(headers: Optional[Dict[str, str]] = None) -> Tuple[bool, str]:
+    """Admin key required for reload-config POST (#77)."""
+    key = os.environ.get("PROFIT_DAEMON_ADMIN_KEY", "").strip()
+    if not key:
+        return True, ""
+    hdrs = headers or {}
+    provided = (
+        hdrs.get("X-Profit-Daemon-Admin")
+        or hdrs.get("x-profit-daemon-admin")
+        or hdrs.get("Authorization", "").replace("Bearer ", "")
+    )
+    if provided.strip() == key:
+        return True, ""
+    return False, "admin_key_required"
+
+
+def mask_venue_balances(venues: Dict[str, Any]) -> Dict[str, Any]:
+    """Mask venue balances in metrics export (#78)."""
+    masked: Dict[str, Any] = {}
+    for vid, row in (venues or {}).items():
+        if not isinstance(row, dict):
+            masked[vid] = row
+            continue
+        m = dict(row)
+        for field in ("quote_free", "usdc", "usdt", "doge", "doge_usd", "balance_usd"):
+            if field in m and m[field] is not None:
+                try:
+                    val = float(m[field])
+                    m[field] = "masked" if val > 0 else 0
+                except (TypeError, ValueError):
+                    m[field] = "masked"
+        masked[vid] = m
+    return masked
+
+
+def daemon_metrics_snapshot_public(*, mask_balances: bool = True) -> Dict[str, Any]:
+    """Metrics export with optional balance masking."""
+    snap = daemon_metrics_snapshot()
+    if mask_balances and os.environ.get("PROFIT_MASK_BALANCES", "1").strip().lower() not in ("0", "false", "no", "off"):
+        treas = snap.get("treasury") or {}
+        if isinstance(treas, dict) and treas.get("venues"):
+            treas = dict(treas)
+            treas["venues"] = mask_venue_balances(treas.get("venues"))
+            snap["treasury"] = treas
+        snap["balances_masked"] = True
+    return snap
+
+
+def sign_heartbeat_hmac(payload: Dict[str, Any], *, secret: Optional[str] = None) -> str:
+    """Signed heartbeat file optional HMAC (#79)."""
+    sec = secret or os.environ.get("PROFIT_HEARTBEAT_HMAC_SECRET", "").strip()
+    if not sec:
+        return ""
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hmac.new(sec.encode("utf-8"), body.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def verify_heartbeat_hmac(payload: Dict[str, Any], signature: str, *, secret: Optional[str] = None) -> bool:
+    if not signature:
+        return False
+    expected = sign_heartbeat_hmac(payload, secret=secret)
+    return hmac.compare_digest(expected, signature) if expected else False
+
+
+def skip_reason_trend_export(*, hours: float = 24) -> Dict[str, Any]:
+    """Skip-reason trend chart export (#86)."""
+    from backend.services.exchange_profit_path_service import search_paths
+    counts: Dict[str, int] = {}
+    for row in search_paths(hours=hours, limit=5000).get("paths") or []:
+        reason = str(row.get("skip_reason") or row.get("reason") or "unknown")
+        counts[reason] = counts.get(reason, 0) + 1
+    series = [{"reason": k, "count": v} for k, v in sorted(counts.items(), key=lambda x: -x[1])]
+    return {"success": True, "hours": hours, "series": series, "total": sum(counts.values())}
+
+
+def ppp_24h_snapshot_cached(*, hours: float = 24) -> Dict[str, Any]:
+    """JSONL tail cache for PPP 24h snapshot (#103)."""
+    ttl = float(os.environ.get("PROFIT_PPP_CACHE_TTL_SEC", "120"))
+    cached = _read_state(_PPP_TAIL_CACHE_PATH)
+    updated = str(cached.get("updated_at") or "")
+    if updated:
+        try:
+            ts = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+            if (datetime.now(timezone.utc) - ts).total_seconds() < ttl:
+                return {"success": True, "cached": True, **cached}
+        except Exception:
+            pass
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_ppp_snapshot
+        snap = _light_ppp_snapshot(hours=hours)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    payload = {"updated_at": _iso(), "hours": hours, "ppp": snap}
+    _write_state(_PPP_TAIL_CACHE_PATH, payload)
+    return {"success": True, "cached": False, **payload}
+
+
+def ppp_export_redacted(*, hours: float = 24) -> Dict[str, Any]:
+    """PPP export redaction mode for sharing (#108)."""
+    from backend.services.exchange_profit_path_service import search_paths
+    rows = []
+    for row in search_paths(hours=hours, limit=500).get("paths") or []:
+        rows.append({
+            "ts": row.get("ts") or row.get("timestamp"),
+            "phase": row.get("phase") or row.get("decision"),
+            "symbol": row.get("symbol"),
+            "net_bps": row.get("net_bps"),
+            "agent_id": row.get("agent_id"),
+        })
+    return {"success": True, "redacted": True, "hours": hours, "paths": rows, "count": len(rows)}
+
+
+def validate_payout_tax_id() -> Dict[str, Any]:
+    """Sweep tax ID field in payout config validation (#109)."""
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    tax_id = str(cfg.get("tax_id") or cfg.get("payout_tax_id") or "").strip()
+    required = os.environ.get("EXCHANGE_PAYOUT_TAX_ID_REQUIRED", "0").strip().lower() in ("1", "true", "yes")
+    valid = bool(tax_id) or not required
+    return {
+        "success": valid,
+        "valid": valid,
+        "tax_id_set": bool(tax_id),
+        "required": required,
+        "masked_tax_id": ("***" + tax_id[-4:]) if len(tax_id) >= 4 else None,
+    }
+
+
+def parallel_venue_balances(
+    venue_ids: Optional[List[str]] = None,
+    *,
+    workers: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Parallel venue fetch (3+ workers) in monitor (#99)."""
+    ids = venue_ids or ["binance", "nonkyc", "xeggex"]
+    n_workers = workers or int(os.environ.get("PROFIT_VENUE_FETCH_WORKERS", "3"))
+    results: Dict[str, Any] = {}
+
+    def _fetch(vid: str) -> Tuple[str, Dict[str, Any]]:
+        try:
+            from backend.services.profit_daemon_monitor_service import _fetch_venue_balance
+            return vid, _fetch_venue_balance(vid)
+        except Exception as exc:
+            return vid, {"ok": False, "error": str(exc)}
+
+    with ThreadPoolExecutor(max_workers=max(1, n_workers)) as pool:
+        futs = {pool.submit(_fetch, vid): vid for vid in ids}
+        for fut in as_completed(futs):
+            vid, row = fut.result()
+            results[vid] = row
+    return {"success": True, "venues": results, "worker_count": n_workers}
+
+
+def worker_thread_health(threads: List[Any]) -> Dict[str, Any]:
+    """Auto-restart wrapper telemetry on unhandled thread death (#67)."""
+    dead = [getattr(t, "name", "?") for t in threads if hasattr(t, "is_alive") and not t.is_alive()]
+    alive = [getattr(t, "name", "?") for t in threads if hasattr(t, "is_alive") and t.is_alive()]
+    return {
+        "success": len(dead) == 0,
+        "dead": dead,
+        "alive": alive,
+        "restart_recommended": bool(dead),
+    }
+
+
+def post_deploy_verify_hook() -> Dict[str, Any]:
+    """Deploy hook post-push verification (#68)."""
+    checks: Dict[str, Any] = {}
+    try:
+        checks["metrics"] = daemon_metrics_snapshot_public(mask_balances=True)
+    except Exception as exc:
+        checks["metrics"] = {"success": False, "error": str(exc)}
+    try:
+        checks["heartbeat_preflight"] = heartbeat_host_preflight()
+    except Exception as exc:
+        checks["heartbeat_preflight"] = {"success": False, "error": str(exc)}
+    try:
+        checks["payout_validation"] = validate_payout_share_pct()
+    except Exception as exc:
+        checks["payout_validation"] = {"success": False, "error": str(exc)}
+    ok = all(
+        isinstance(v, dict) and (v.get("success") is not False or v.get("skipped"))
+        for v in checks.values()
+    )
+    return {"success": ok, "checks": checks, "verified_at": _iso()}

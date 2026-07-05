@@ -119,6 +119,14 @@ def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = 
         "profile": os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"),
         "mode": daemon_mode_label(),
     }
+    try:
+        from backend.services.profit_daemon_ops_service import stamp_heartbeat_host, sign_heartbeat_hmac
+        payload.update(stamp_heartbeat_host())
+        sig = sign_heartbeat_hmac(payload)
+        if sig:
+            payload["hmac"] = sig
+    except Exception:
+        pass
     if extra:
         payload.update(extra)
     try:
@@ -706,6 +714,7 @@ def main() -> int:
 
     stop = threading.Event()
     threads: list[threading.Thread] = []
+    thread_specs: list[tuple] = []
 
     print("=" * 72)
     print("MasterNoder — ALL profit daemons (single process)")
@@ -725,14 +734,17 @@ def main() -> int:
     print("=" * 72)
 
     if not args.skip_exchange:
+        thread_specs.append((_exchange_loop, (ex_iv, auto_sweep, profile, stop), {}, "exchange"))
         threads.append(threading.Thread(
             target=_exchange_loop, args=(ex_iv, auto_sweep, profile, stop), name="exchange", daemon=True,
         ))
         if fast_iv:
+            thread_specs.append((_fast_loop, (fast_iv, profile, stop), {}, "fast"))
             threads.append(threading.Thread(
                 target=_fast_loop, args=(fast_iv, profile, stop), name="fast", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
+        thread_specs.append((_casino_loop, (cas_iv, casino_dry_run, stop), {}, "casino"))
         threads.append(threading.Thread(
             target=_casino_loop, args=(cas_iv, casino_dry_run, stop), name="casino", daemon=True,
         ))
@@ -745,6 +757,18 @@ def main() -> int:
         from scripts.daemon_preflight import format_preflight, run_preflight
         pf = run_preflight()
         print(format_preflight(pf), flush=True)
+        try:
+            from backend.services.profit_daemon_ops_service import heartbeat_host_preflight
+            hb_pf = heartbeat_host_preflight()
+            if hb_pf.get("blocked"):
+                print(
+                    f"[all-profit] BLOCKED heartbeat owned by {hb_pf.get('owner')} "
+                    f"(this host={hb_pf.get('this_host')})",
+                    flush=True,
+                )
+                return 1
+        except Exception:
+            pass
 
     try:
         from backend.services.profit_daemon_ops_service import profit_kill_active, rotate_daemon_logs
@@ -773,6 +797,21 @@ def main() -> int:
             dead = [t.name for t in threads if not t.is_alive()]
             if dead:
                 print(f"[all-profit] ERROR worker thread(s) died: {', '.join(dead)}", flush=True)
+                try:
+                    from backend.services.profit_daemon_ops_service import worker_thread_health
+                    health = worker_thread_health(threads)
+                    if health.get("restart_recommended") and os.environ.get("PROFIT_DAEMON_AUTO_RESTART", "1").strip().lower() not in ("0", "false", "no", "off"):
+                        print("[all-profit] auto-restart: respawning dead workers", flush=True)
+                        for i, t in enumerate(threads):
+                            if t.is_alive():
+                                continue
+                            target, args, kwargs, name = thread_specs[i]
+                            fresh = threading.Thread(target=target, args=args, kwargs=kwargs, name=name, daemon=True)
+                            threads[i] = fresh
+                            fresh.start()
+                        continue
+                except Exception:
+                    pass
                 stop.set()
                 break
     except KeyboardInterrupt:

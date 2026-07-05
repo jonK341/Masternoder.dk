@@ -115,6 +115,16 @@ def main() -> int:
         _, vout, _ = ssh.exec_command(verify, timeout=90)
         print("--- monitor ---")
         _print_remote(vout.read().decode(errors="replace"), tail=2000)
+
+        post_deploy = (
+            f"cd {REMOTE_ROOT} && set -a && . ./.env && set +a && "
+            "LITE_APP=1 DAEMON_QUIET=1 python3 -c "
+            "\"from backend.services.profit_daemon_ops_service import post_deploy_verify_hook; "
+            "import json; print(json.dumps(post_deploy_verify_hook()))\""
+        )
+        _, pout, _ = ssh.exec_command(post_deploy, timeout=90)
+        print("--- post-deploy verify ---")
+        _print_remote(pout.read().decode(errors="replace"), tail=1500)
         return 0
     finally:
         ssh.close()

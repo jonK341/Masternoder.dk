@@ -14,7 +14,10 @@ def profit_daemon_metrics():
 
 @profit_daemon_bp.route("/api/profit-daemon/reload-config", methods=["POST"])
 def profit_daemon_reload_config():
-    from backend.services.profit_daemon_ops_service import reload_ppp_config
+    from backend.services.profit_daemon_ops_service import reload_ppp_config, require_profit_daemon_admin
+    ok, reason = require_profit_daemon_admin(dict(request.headers))
+    if not ok:
+        return jsonify({"success": False, "error": reason}), 403
     return jsonify(reload_ppp_config())
 
 
@@ -171,6 +174,171 @@ def profit_daemon_defi_symbols():
         return blocked
     from backend.services.profit_daemon_ops_service import defi_router_symbols
     return jsonify({"success": True, "symbols": defi_router_symbols()})
+
+
+@profit_daemon_bp.route("/api/profit-daemon/search-export", methods=["GET"])
+def profit_daemon_search_export():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import search_index_export
+    limit = request.args.get("limit", 50, type=int)
+    return jsonify(search_index_export(limit=limit))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/score-decomposition", methods=["GET"])
+def profit_daemon_score_decomposition():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import pair_search_score_decomposition
+    from backend.services.exchange_profit_pair_search_service import read_index
+    sym = (request.args.get("symbol") or "").upper()
+    hits = read_index().get("hits") or []
+    hit = next((h for h in hits if str(h.get("symbol") or "").upper() == sym), hits[0] if hits else {})
+    return jsonify(pair_search_score_decomposition(hit or {}))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ensemble-blend", methods=["GET"])
+def profit_daemon_ensemble_blend():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ensemble_signal_blend
+    return jsonify(ensemble_signal_blend(
+        spatial_bps=request.args.get("spatial_bps", 15.0, type=float),
+        ai_bps=request.args.get("ai_bps", 10.0, type=float),
+        extended_bps=request.args.get("extended_bps", 8.0, type=float),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/risk-notional", methods=["GET"])
+def profit_daemon_risk_notional():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import risk_adjusted_notional_usd
+    return jsonify(risk_adjusted_notional_usd(
+        base_usd=request.args.get("base_usd", 75.0, type=float),
+        volatility_score=request.args.get("volatility_score", 5.0, type=float),
+        hit_rate_pct=request.args.get("hit_rate_pct", 40.0, type=float),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/treasury-buckets", methods=["GET"])
+def profit_daemon_treasury_buckets():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import treasury_stash_buckets
+    return jsonify(treasury_stash_buckets())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/quote-route", methods=["GET"])
+def profit_daemon_quote_route():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import prefer_usdc_vs_usdt_route
+    return jsonify(prefer_usdc_vs_usdt_route(
+        request.args.get("buy_venue", "binance"),
+        request.args.get("sell_venue", "nonkyc"),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/treasury-reconcile", methods=["GET"])
+def profit_daemon_treasury_reconcile():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import treasury_ledger_reconciliation
+    return jsonify(treasury_ledger_reconciliation())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/catalog-cache", methods=["GET"])
+def profit_daemon_catalog_cache():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import read_shared_catalog_cache
+    return jsonify(read_shared_catalog_cache())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/skip-trends", methods=["GET"])
+def profit_daemon_skip_trends():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import skip_reason_trend_export
+    hours = request.args.get("hours", 24, type=float)
+    return jsonify(skip_reason_trend_export(hours=hours))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ppp-cached", methods=["GET"])
+def profit_daemon_ppp_cached():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ppp_24h_snapshot_cached
+    hours = request.args.get("hours", 24, type=float)
+    return jsonify(ppp_24h_snapshot_cached(hours=hours))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ppp-redacted", methods=["GET"])
+def profit_daemon_ppp_redacted():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ppp_export_redacted
+    hours = request.args.get("hours", 24, type=float)
+    return jsonify(ppp_export_redacted(hours=hours))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/iceberg-plan", methods=["GET"])
+def profit_daemon_iceberg_plan():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import plan_iceberg_splits
+    return jsonify(plan_iceberg_splits(
+        notional_usd=request.args.get("notional_usd", 200.0, type=float),
+        max_chunk_usd=request.args.get("max_chunk_usd", 75.0, type=float),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/metrics-public", methods=["GET"])
+def profit_daemon_metrics_public():
+    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot_public
+    return jsonify(daemon_metrics_snapshot_public())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/venue-balances-parallel", methods=["GET"])
+def profit_daemon_venue_balances_parallel():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import parallel_venue_balances
+    raw = request.args.get("venues", "binance,nonkyc,xeggex")
+    ids = [v.strip() for v in raw.split(",") if v.strip()]
+    return jsonify(parallel_venue_balances(ids))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/heartbeat-preflight", methods=["GET"])
+def profit_daemon_heartbeat_preflight():
+    from backend.services.profit_daemon_ops_service import heartbeat_host_preflight
+    return jsonify(heartbeat_host_preflight())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/tax-id-validation", methods=["GET"])
+def profit_daemon_tax_id_validation():
+    from backend.services.profit_daemon_ops_service import validate_payout_tax_id
+    return jsonify(validate_payout_tax_id())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/post-deploy-verify", methods=["GET"])
+def profit_daemon_post_deploy_verify():
+    from backend.services.profit_daemon_ops_service import post_deploy_verify_hook
+    return jsonify(post_deploy_verify_hook())
 
 
 @profit_daemon_bp.route("/api/profit-daemon/status", methods=["GET"])
