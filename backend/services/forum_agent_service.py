@@ -82,11 +82,56 @@ def public_persona(p: dict) -> dict:
         "id": p.get("id"),
         "display_name": p.get("display_name"),
         "avatar": p.get("avatar"),
+        "bio": p.get("bio"),
+        "badge": p.get("badge"),
+        "reputation": persona_reputation(p.get("id")),
     }
 
 
-def public_thread(t: dict) -> dict:
+def _normalize_thread(t: dict) -> dict:
+    """Backfill new schema fields on threads created before the upgrade."""
+    t.setdefault("tags", [])
+    t.setdefault("kind", (t.get("posts") or [{}])[0].get("kind", "question"))
+    t.setdefault("views", 0)
+    t.setdefault("votes", 0)
+    t.setdefault("voters", [])
+    t.setdefault("pinned", False)
+    t.setdefault("locked", False)
+    t.setdefault("solved", False)
+    t.setdefault("accepted_post_id", None)
+    for post in t.get("posts") or []:
+        post.setdefault("edited_at", None)
+        post.setdefault("is_accepted", False)
+        r = post.get("reactions")
+        if not isinstance(r, dict):
+            post["reactions"] = _empty_reactions()
+        else:
+            for k in REACTION_KEYS:
+                r.setdefault(k, 0)
+    return t
+
+
+def thread_score(t: dict) -> float:
+    """Hotness score — votes, reactions, replies decayed by age."""
+    votes = t.get("votes", 0) or 0
+    reacts = sum(
+        sum((p.get("reactions") or {}).values()) for p in (t.get("posts") or [])
+    )
+    replies = max(0, len(t.get("posts") or []) - 1)
+    views = t.get("views", 0) or 0
+    base = votes * 4 + reacts * 2 + replies * 3 + views * 0.2
+    # Recency boost
+    try:
+        updated = datetime.fromisoformat((t.get("updated_at") or "").replace("Z", "+00:00"))
+        age_h = max(1.0, (datetime.now(timezone.utc) - updated).total_seconds() / 3600.0)
+    except Exception:
+        age_h = 48.0
+    return base / (age_h ** 0.35)
+
+
+def public_thread(t: dict, *, detail: bool = True) -> dict:
     """Thread safe for API — no agent_seeded flag."""
+    t = _normalize_thread(t)
     posts = []
     for post in t.get("posts") or []:
         posts.append({
@@ -96,19 +141,40 @@ def public_thread(t: dict) -> dict:
             "body": post.get("body"),
             "kind": post.get("kind"),
             "created_at": post.get("created_at"),
+            "edited_at": post.get("edited_at"),
+            "reactions": post.get("reactions") or _empty_reactions(),
+            "reaction_total": sum((post.get("reactions") or {}).values()),
+            "is_accepted": bool(post.get("is_accepted")),
         })
-    return {
+    out = {
         "id": t.get("id"),
         "topic_id": t.get("topic_id"),
         "subforum_id": t.get("subforum_id"),
         "theme_title": t.get("theme_title"),
         "subforum_title": t.get("subforum_title"),
         "title": t.get("title"),
-        "posts": posts,
+        "kind": t.get("kind"),
+        "tags": t.get("tags") or [],
         "post_count": len(posts),
+        "reply_count": max(0, len(posts) - 1),
+        "views": t.get("views", 0),
+        "votes": t.get("votes", 0),
+        "pinned": bool(t.get("pinned")),
+        "locked": bool(t.get("locked")),
+        "solved": bool(t.get("solved")),
+        "accepted_post_id": t.get("accepted_post_id"),
+        "score": round(thread_score(t), 2),
         "created_at": t.get("created_at"),
         "updated_at": t.get("updated_at"),
     }
+    if detail:
+        out["posts"] = posts
+    else:
+        op = posts[0] if posts else {}
+        out["excerpt"] = (op.get("body") or "")[:200]
+        out["author_name"] = op.get("author_name")
+        out["avatar"] = op.get("avatar")
+    return out
 
 
 def pick_persona(exclude_ids: Optional[List[str]] = None) -> dict:
@@ -190,6 +256,13 @@ def _generate_title(body: str, kind: str) -> str:
     return f"{prefixes.get(kind, 'Discussion')} — {uuid.uuid4().hex[:6]}"
 
 
+REACTION_KEYS = ("like", "helpful", "insightful", "celebrate")
+
+
+def _empty_reactions() -> Dict[str, int]:
+    return {k: 0 for k in REACTION_KEYS}
+
+
 def _make_post(persona: dict, body: str, kind: str) -> dict:
     return {
         "id": str(uuid.uuid4()),
@@ -199,7 +272,50 @@ def _make_post(persona: dict, body: str, kind: str) -> dict:
         "body": body,
         "kind": kind,
         "created_at": _iso_now(),
+        "edited_at": None,
+        "reactions": _empty_reactions(),
+        "is_accepted": False,
     }
+
+
+# ---------------------------------------------------------------------------
+# Tags
+# ---------------------------------------------------------------------------
+_TAG_KEYWORDS = {
+    "mn2": "mn2",
+    "staking": "staking",
+    "stake": "staking",
+    "reward": "rewards",
+    "battle": "battle",
+    "generator": "generator",
+    "compendium": "compendium",
+    "rulebook": "rulebooks",
+    "podcast": "podcast",
+    "casino": "casino",
+    "wallet": "wallet",
+    "economy": "economy",
+    "guide": "guides",
+    "walkthrough": "guides",
+    "story": "lore",
+    "lore": "lore",
+    "paragraph": "paragraphs",
+    "support": "support",
+    "bug": "bugs",
+    "video": "video",
+    "gallery": "gallery",
+}
+
+
+def suggest_tags(text: str, limit: int = 4) -> List[str]:
+    """Derive lightweight tags from post text (camouflage-friendly)."""
+    low = (text or "").lower()
+    found: List[str] = []
+    for kw, tag in _TAG_KEYWORDS.items():
+        if kw in low and tag not in found:
+            found.append(tag)
+        if len(found) >= limit:
+            break
+    return found
 
 
 def create_thread(
@@ -210,6 +326,7 @@ def create_thread(
     body: Optional[str] = None,
     author_name: Optional[str] = None,
     agent_authored: bool = False,
+    tags: Optional[List[str]] = None,
 ) -> dict:
     """Create a thread with opening post."""
     if topic_id and subforum_id:
@@ -233,6 +350,9 @@ def create_thread(
     if not title:
         title = _generate_title(body, kind)
 
+    if tags is None:
+        tags = suggest_tags(f"{title} {body}")
+
     now = _iso_now()
     thread = {
         "id": str(uuid.uuid4()),
@@ -241,15 +361,28 @@ def create_thread(
         "theme_title": theme.get("title"),
         "subforum_title": sub.get("title"),
         "title": title[:200],
+        "kind": kind,
+        "tags": tags[:6],
         "posts": [_make_post(persona, body, kind)],
         "created_at": now,
         "updated_at": now,
+        "views": 0,
+        "votes": 0,
+        "voters": [],
+        "pinned": False,
+        "locked": False,
+        "solved": False,
+        "accepted_post_id": None,
         "agent_seeded": agent_authored,
     }
     threads = load_threads()
     threads.insert(0, thread)
     save_threads(threads)
     return thread
+
+
+class ThreadLockedError(Exception):
+    """Raised when replying to a locked thread."""
 
 
 def reply_to_thread(
@@ -263,6 +396,8 @@ def reply_to_thread(
     thread = next((t for t in threads if t.get("id") == thread_id), None)
     if not thread:
         return None
+    if thread.get("locked"):
+        raise ThreadLockedError("thread is locked")
 
     used_personas = [p.get("persona_id") for p in thread.get("posts") or [] if p.get("persona_id")]
     persona = pick_persona(exclude_ids=used_personas if agent_authored else None)
@@ -280,6 +415,265 @@ def reply_to_thread(
     thread["updated_at"] = _iso_now()
     save_threads(threads)
     return post
+
+
+# ---------------------------------------------------------------------------
+# Interaction engine — views, votes, reactions, accept, pin, lock, edit
+# ---------------------------------------------------------------------------
+def _mutate_thread(thread_id: str, fn):
+    threads = load_threads()
+    for i, t in enumerate(threads):
+        if t.get("id") == thread_id:
+            threads[i] = _normalize_thread(t)
+            result = fn(threads[i])
+            save_threads(threads)
+            return result
+    return None
+
+
+def register_view(thread_id: str) -> Optional[int]:
+    def _fn(t):
+        t["views"] = (t.get("views", 0) or 0) + 1
+        return t["views"]
+    return _mutate_thread(thread_id, _fn)
+
+
+def vote_thread(thread_id: str, voter: str, direction: int = 1) -> Optional[dict]:
+    """Up/down vote a thread. One vote per voter id; re-voting toggles."""
+    def _fn(t):
+        voters = t.setdefault("voters", [])
+        vid = str(voter or "anon")
+        already = vid in voters
+        if direction > 0 and not already:
+            voters.append(vid)
+            t["votes"] = (t.get("votes", 0) or 0) + 1
+        elif direction <= 0 and already:
+            voters.remove(vid)
+            t["votes"] = max(0, (t.get("votes", 0) or 0) - 1)
+        return {"votes": t.get("votes", 0), "voted": vid in voters}
+    return _mutate_thread(thread_id, _fn)
+
+
+def react_to_post(thread_id: str, post_id: str, reaction: str) -> Optional[dict]:
+    reaction = (reaction or "").lower()
+    if reaction not in REACTION_KEYS:
+        return None
+
+    def _fn(t):
+        for p in t.get("posts") or []:
+            if p.get("id") == post_id:
+                r = p.setdefault("reactions", _empty_reactions())
+                r[reaction] = (r.get(reaction, 0) or 0) + 1
+                return {"post_id": post_id, "reactions": r}
+        return None
+    return _mutate_thread(thread_id, _fn)
+
+
+def accept_answer(thread_id: str, post_id: str) -> Optional[dict]:
+    def _fn(t):
+        found = False
+        for p in t.get("posts") or []:
+            is_it = p.get("id") == post_id
+            p["is_accepted"] = is_it
+            found = found or is_it
+        if not found:
+            return None
+        t["accepted_post_id"] = post_id
+        t["solved"] = True
+        return {"solved": True, "accepted_post_id": post_id}
+    return _mutate_thread(thread_id, _fn)
+
+
+def set_pinned(thread_id: str, pinned: bool = True) -> Optional[dict]:
+    return _mutate_thread(thread_id, lambda t: t.update({"pinned": bool(pinned)}) or {"pinned": bool(pinned)})
+
+
+def set_locked(thread_id: str, locked: bool = True) -> Optional[dict]:
+    return _mutate_thread(thread_id, lambda t: t.update({"locked": bool(locked)}) or {"locked": bool(locked)})
+
+
+def edit_post(thread_id: str, post_id: str, new_body: str) -> Optional[dict]:
+    def _fn(t):
+        for p in t.get("posts") or []:
+            if p.get("id") == post_id:
+                p["body"] = (new_body or "").strip()[:50000]
+                p["edited_at"] = _iso_now()
+                t["updated_at"] = _iso_now()
+                return {"post_id": post_id, "edited_at": p["edited_at"]}
+        return None
+    return _mutate_thread(thread_id, _fn)
+
+
+def set_thread_tags(thread_id: str, tags: List[str]) -> Optional[dict]:
+    clean = [str(x).strip().lower()[:24] for x in (tags or []) if str(x).strip()][:6]
+    return _mutate_thread(thread_id, lambda t: t.update({"tags": clean}) or {"tags": clean})
+
+
+# ---------------------------------------------------------------------------
+# Discovery — search, tags, trending, related, stats, leaderboard
+# ---------------------------------------------------------------------------
+def list_threads_sorted(
+    topic_id: str = "",
+    subforum_id: str = "",
+    tag: str = "",
+    kind: str = "",
+    sort: str = "new",
+    query: str = "",
+    offset: int = 0,
+    limit: int = 20,
+) -> Tuple[List[dict], int]:
+    threads = [_normalize_thread(t) for t in load_threads()]
+    if topic_id:
+        threads = [t for t in threads if t.get("topic_id") == topic_id]
+    if subforum_id:
+        threads = [t for t in threads if t.get("subforum_id") == subforum_id]
+    if tag:
+        threads = [t for t in threads if tag.lower() in [x.lower() for x in (t.get("tags") or [])]]
+    if kind:
+        threads = [t for t in threads if t.get("kind") == kind]
+    if query:
+        q = query.lower()
+        threads = [
+            t for t in threads
+            if q in (t.get("title") or "").lower()
+            or any(q in (p.get("body") or "").lower() for p in (t.get("posts") or []))
+            or any(q in tg.lower() for tg in (t.get("tags") or []))
+        ]
+
+    if sort == "top":
+        threads.sort(key=lambda t: t.get("votes", 0), reverse=True)
+    elif sort == "hot":
+        threads.sort(key=thread_score, reverse=True)
+    elif sort == "active":
+        threads.sort(key=lambda t: len(t.get("posts") or []), reverse=True)
+    elif sort == "unanswered":
+        threads = [t for t in threads if len(t.get("posts") or []) <= 1]
+        threads.sort(key=lambda t: t.get("created_at") or "", reverse=True)
+    elif sort == "views":
+        threads.sort(key=lambda t: t.get("views", 0), reverse=True)
+    else:  # new
+        threads.sort(key=lambda t: t.get("updated_at") or "", reverse=True)
+
+    # Pinned always float to top (except in explicit sort views that override)
+    threads.sort(key=lambda t: 0 if t.get("pinned") else 1)
+
+    total = len(threads)
+    if limit and limit > 0:
+        threads = threads[offset:offset + limit]
+    return threads, total
+
+
+def tag_cloud() -> List[dict]:
+    counts: Dict[str, int] = {}
+    for t in load_threads():
+        for tg in t.get("tags") or []:
+            counts[tg] = counts.get(tg, 0) + 1
+    return sorted(
+        [{"tag": k, "count": v} for k, v in counts.items()],
+        key=lambda x: x["count"],
+        reverse=True,
+    )
+
+
+def trending_threads(limit: int = 5) -> List[dict]:
+    threads = [_normalize_thread(t) for t in load_threads()]
+    threads.sort(key=thread_score, reverse=True)
+    return threads[:limit]
+
+
+def related_threads(thread_id: str, limit: int = 4) -> List[dict]:
+    threads = [_normalize_thread(t) for t in load_threads()]
+    base = next((t for t in threads if t.get("id") == thread_id), None)
+    if not base:
+        return []
+    base_tags = set(t.lower() for t in base.get("tags") or [])
+    scored = []
+    for t in threads:
+        if t.get("id") == thread_id:
+            continue
+        shared = len(base_tags & set(x.lower() for x in t.get("tags") or []))
+        same_topic = 1 if t.get("topic_id") == base.get("topic_id") else 0
+        rank = shared * 2 + same_topic
+        if rank > 0:
+            scored.append((rank, t))
+    scored.sort(key=lambda x: (x[0], x[1].get("updated_at") or ""), reverse=True)
+    return [t for _, t in scored[:limit]]
+
+
+def forum_stats() -> dict:
+    threads = load_threads()
+    posts = sum(len(t.get("posts") or []) for t in threads)
+    solved = sum(1 for t in threads if t.get("solved"))
+    questions = sum(1 for t in threads if t.get("kind") == "question")
+    contributors = set()
+    for t in threads:
+        for p in t.get("posts") or []:
+            contributors.add(p.get("author_name"))
+    return {
+        "threads": len(threads),
+        "posts": posts,
+        "replies": max(0, posts - len(threads)),
+        "solved": solved,
+        "questions": questions,
+        "solved_rate": round(solved / questions, 3) if questions else 0.0,
+        "contributors": len(contributors),
+        "tags": len(tag_cloud()),
+        "personas": len(load_personas()),
+    }
+
+
+def persona_reputation(persona_id: Optional[str]) -> int:
+    """Reputation from posts authored, replies, accepted answers, reactions."""
+    if not persona_id:
+        return 0
+    rep = 0
+    for t in load_threads():
+        for i, p in enumerate(t.get("posts") or []):
+            if p.get("persona_id") != persona_id:
+                continue
+            rep += 10 if i == 0 else 5
+            rep += sum((p.get("reactions") or {}).values()) * 2
+            if p.get("is_accepted"):
+                rep += 25
+    return rep
+
+
+def leaderboard(limit: int = 10) -> List[dict]:
+    tally: Dict[str, dict] = {}
+    for t in load_threads():
+        for i, p in enumerate(t.get("posts") or []):
+            key = p.get("author_name") or "anon"
+            row = tally.setdefault(key, {
+                "author_name": key,
+                "avatar": p.get("avatar"),
+                "threads": 0,
+                "replies": 0,
+                "reactions": 0,
+                "accepted": 0,
+            })
+            if i == 0:
+                row["threads"] += 1
+            else:
+                row["replies"] += 1
+            row["reactions"] += sum((p.get("reactions") or {}).values())
+            if p.get("is_accepted"):
+                row["accepted"] += 1
+    for row in tally.values():
+        row["reputation"] = (
+            row["threads"] * 10 + row["replies"] * 5
+            + row["reactions"] * 2 + row["accepted"] * 25
+        )
+    ranked = sorted(tally.values(), key=lambda r: r["reputation"], reverse=True)
+    return ranked[:limit]
+
+
+def threads_by_author(author_name: str, limit: int = 20) -> List[dict]:
+    out = []
+    for t in load_threads():
+        posts = t.get("posts") or []
+        if posts and posts[0].get("author_name") == author_name:
+            out.append(_normalize_thread(t))
+    return out[:limit]
 
 
 def run_agent_cycle(
@@ -312,6 +706,12 @@ def run_agent_cycle(
         except Exception as e:
             results["errors"].append(str(e))
 
+    # Simulate organic engagement — votes, reactions, occasional accepted answer.
+    try:
+        results["engagement"] = _simulate_engagement(candidates)
+    except Exception as e:
+        results["errors"].append(str(e))
+
     # Mirror one interpretation as a forum article occasionally
     if results["threads_created"] and random.random() < 0.4:
         try:
@@ -322,6 +722,33 @@ def run_agent_cycle(
 
     results["success"] = not results["errors"] or bool(results["threads_created"] or results["replies"])
     return results
+
+
+def _simulate_engagement(candidate_threads: List[dict]) -> dict:
+    """Give recent threads believable votes/reactions so the forum looks alive."""
+    summary = {"votes": 0, "reactions": 0, "accepted": 0}
+    for t in candidate_threads:
+        tid = t.get("id")
+        if not tid:
+            continue
+        # A few phantom voters
+        for n in range(random.randint(0, 4)):
+            vote_thread(tid, voter=f"sim_{uuid.uuid4().hex[:8]}", direction=1)
+            summary["votes"] += 1
+        # Reactions on replies
+        fresh = next((x for x in load_threads() if x.get("id") == tid), None)
+        if not fresh:
+            continue
+        posts = fresh.get("posts") or []
+        for p in posts[1:]:
+            if random.random() < 0.6:
+                react_to_post(tid, p.get("id"), random.choice(REACTION_KEYS))
+                summary["reactions"] += 1
+        # Occasionally accept an answer for question threads
+        if fresh.get("kind") == "question" and len(posts) > 1 and random.random() < 0.35:
+            accept_answer(tid, posts[-1].get("id"))
+            summary["accepted"] += 1
+    return summary
 
 
 def _mirror_thread_to_article(thread: Optional[dict]) -> None:

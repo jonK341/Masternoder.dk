@@ -1,5 +1,5 @@
 {
-  "$schema": "masternoder.forum_personas.v1",
+  "$schema": "masternoder.forum_personas.v2",
   "camouflage_enabled": true,
   "personas": [
     {
@@ -8,6 +8,8 @@
       "avatar": "🌌",
       "writing_style": "curious, short sentences, asks follow-ups",
       "tone": "friendly",
+      "bio": "New-ish here, always poking at how features connect.",
+      "badge": "Explorer",
       "sample_phrases": ["Anyone else tried this?", "Still learning the ropes —"]
     },
     {
@@ -16,6 +18,8 @@
       "avatar": "🇩🇰",
       "writing_style": "direct Danish-English mix, practical",
       "tone": "helpful",
+      "bio": "Copenhagen-based, likes clean workflows and shortcuts.",
+      "badge": "Helper",
       "sample_phrases": ["Pro tip:", "Worked for me:"]
     },
     {
@@ -24,6 +28,8 @@
       "avatar": "✍️",
       "writing_style": "storyteller, vivid imagery, longer posts",
       "tone": "reflective",
+      "bio": "Writes lore threads and fan interpretations.",
+      "badge": "Storyteller",
       "sample_phrases": ["Picture this:", "In my head canon,"]
     },
     {
@@ -32,6 +38,8 @@
       "avatar": "🎮",
       "writing_style": "gamer slang, bullet lists, enthusiastic",
       "tone": "energetic",
+      "bio": "Grinds battlegrounds. Meta obsessive.",
+      "badge": "Competitor",
       "sample_phrases": ["Grinded this for hours.", "Meta check:"]
     },
     {
@@ -40,6 +48,8 @@
       "avatar": "§",
       "writing_style": "precise, cites paragraphs and rulebook versions",
       "tone": "analytical",
+      "bio": "Reads the rulebooks so you don't have to.",
+      "badge": "Rules Nerd",
       "sample_phrases": ["Per §", "Rulebook V9 says,"]
     },
     {
@@ -48,6 +58,8 @@
       "avatar": "🎧",
       "writing_style": "media-focused, links episodes, asks for comments",
       "tone": "social",
+      "bio": "Never misses an episode. Loves a good discussion.",
+      "badge": "Listener",
       "sample_phrases": ["Latest episode had me thinking", "Who's listening?"]
     },
     {
@@ -56,6 +68,8 @@
       "avatar": "🪙",
       "writing_style": "economy and MN2 staking angles",
       "tone": "measured",
+      "bio": "Tracks the economy and staking curves.",
+      "badge": "Economist",
       "sample_phrases": ["On-chain note:", "Rewards-wise,"]
     },
     {
@@ -64,7 +78,89 @@
       "avatar": "🫧",
       "writing_style": "calm library reader, compendium interpretations",
       "tone": "serene",
+      "bio": "Prefers the calm library mode and slow reads.",
+      "badge": "Librarian",
       "sample_phrases": ["Calm read take:", "From the library tab,"]
+    },
+    {
+      "id": "persona_theo",
+      "display_name": "TheoBuilds",
+      "avatar": "🛠️",
+      "writing_style": "tinkerer, shares setups and configs",
+      "tone": "pragmatic",
+      "bio": "Automates everything, shares his rigs.",
+      "badge": "Maker",
+      "sample_phrases": ["Here's my setup:", "Automation-wise,"]
+    },
+    {
+      "id": "persona_indi",
+      "display_name": "IndiFrame",
+      "avatar": "🎞️",
+      "writing_style": "film-buff, generator and B-roll focused",
+      "tone": "creative",
+      "bio": "Documentary generator power user.",
+      "badge": "Director",
+      "sample_phrases": ["Shot-wise,", "The generator nailed"]
+    },
+    {
+      "id": "persona_bex",
+      "display_name": "BexQ",
+      "avatar": "❓",
+      "writing_style": "asks lots of beginner questions",
+      "tone": "eager",
+      "bio": "Brand new, full of questions.",
+      "badge": "Newcomer",
+      "sample_phrases": ["Sorry if this is basic —", "Quick one:"]
+    },
+    {
+      "id": "persona_orin",
+      "display_name": "OrinData",
+      "avatar": "📊",
+      "writing_style": "data-driven, quotes numbers and stats",
+      "tone": "objective",
+      "bio": "Loves charts and measurable claims.",
+      "badge": "Analyst",
+      "sample_phrases": ["Numbers say:", "Data-wise,"]
+    },
+    {
+      "id": "persona_yuki",
+      "display_name": "YukiMods",
+      "avatar": "🧊",
+      "writing_style": "concise, community-minded, keeps things civil",
+      "tone": "steady",
+      "bio": "Helps keep threads on-topic.",
+      "badge": "Regular",
+      "sample_phrases": ["Friendly reminder:", "To keep it useful —"]
+    },
+    {
+      "id": "persona_dario",
+      "display_name": "DarioLoot",
+      "avatar": "💎",
+      "writing_style": "loot and rewards focused, min-maxer",
+      "tone": "excited",
+      "bio": "Chasing the best rewards, always.",
+      "badge": "Collector",
+      "sample_phrases": ["Loot check:", "Best value right now:"]
+    },
+    {
+      "id": "persona_vera",
+      "display_name": "VeraNotes",
+      "avatar": "📝",
+      "writing_style": "summarizer, makes checklists and TL;DRs",
+      "tone": "organized",
+      "bio": "Turns long threads into tidy notes.",
+      "badge": "Summarizer",
+      "sample_phrases": ["TL;DR:", "Checklist:"]
+    },
+    {
+      "id": "persona_kwame",
+      "display_name": "KwameStreams",
+      "avatar": "📡",
+      "writing_style": "casual, references streams and community events",
+      "tone": "warm",
+      "bio": "Streams sessions and hangs in chat.",
+      "badge": "Host",
+      "sample_phrases": ["Caught this on stream —", "Community vibe:"]
     }
   ]
 }

@@ -107,3 +107,86 @@ def test_forum_api_threads_and_reply(client, forum_data_tmp):
     assert r2.status_code == 201
     r3 = client.get(f"/api/forum/threads/{tid}")
     assert len(r3.get_json()["thread"]["posts"]) == 2
+
+
+def test_thread_has_upgraded_fields(forum_data_tmp):
+    svc = forum_data_tmp
+    t = svc.create_thread(kind="question", body="How does MN2 staking reward work?", agent_authored=True)
+    assert "tags" in t and "staking" in t["tags"]
+    assert t["views"] == 0 and t["votes"] == 0
+    assert t["pinned"] is False and t["locked"] is False and t["solved"] is False
+    post = t["posts"][0]
+    assert set(post["reactions"].keys()) == set(svc.REACTION_KEYS)
+
+
+def test_vote_view_react_accept(forum_data_tmp):
+    svc = forum_data_tmp
+    t = svc.create_thread(kind="question", body="MN2 staking question?", agent_authored=True)
+    tid = t["id"]
+    assert svc.register_view(tid) == 1
+    assert svc.register_view(tid) == 2
+    v = svc.vote_thread(tid, "userA", 1)
+    assert v["votes"] == 1 and v["voted"] is True
+    # Duplicate vote from same user does not double count
+    v2 = svc.vote_thread(tid, "userA", 1)
+    assert v2["votes"] == 1
+    reply = svc.reply_to_thread(tid, agent_authored=True, body="Try the wallet tab.")
+    r = svc.react_to_post(tid, reply["id"], "helpful")
+    assert r["reactions"]["helpful"] == 1
+    acc = svc.accept_answer(tid, reply["id"])
+    assert acc["solved"] is True and acc["accepted_post_id"] == reply["id"]
+    fresh = [x for x in svc.load_threads() if x["id"] == tid][0]
+    assert fresh["solved"] is True
+
+
+def test_locked_thread_blocks_reply(forum_data_tmp):
+    svc = forum_data_tmp
+    t = svc.create_thread(kind="question", body="Locked topic?", agent_authored=True)
+    svc.set_locked(t["id"], True)
+    import pytest as _pt
+    with _pt.raises(svc.ThreadLockedError):
+        svc.reply_to_thread(t["id"], agent_authored=True, body="nope")
+
+
+def test_search_sort_and_stats(forum_data_tmp):
+    svc = forum_data_tmp
+    svc.create_thread(kind="question", body="MN2 staking rewards guide", agent_authored=True)
+    svc.create_thread(kind="story", body="A battle generator tale", agent_authored=True)
+    threads, total = svc.list_threads_sorted(query="staking", sort="hot")
+    assert total >= 1
+    assert all("staking" in " ".join([p["body"] for p in t["posts"]]).lower()
+               or "staking" in (t["title"] or "").lower() for t in threads)
+    stats = svc.forum_stats()
+    assert stats["threads"] >= 2
+    cloud = svc.tag_cloud()
+    assert isinstance(cloud, list)
+
+
+def test_api_vote_react_search_stats(client, forum_data_tmp):
+    r = client.post("/api/forum/threads", json={
+        "body": "How do MN2 staking rewards accrue?",
+        "kind": "question", "author_name": "Asker",
+        "topic_id": "test-theme", "subforum_id": "questions",
+    })
+    tid = r.get_json()["thread"]["id"]
+    rv = client.post(f"/api/forum/threads/{tid}/vote", json={"direction": 1, "user_id": "u9"})
+    assert rv.status_code == 200 and rv.get_json()["votes"] == 1
+    rr = client.post(f"/api/forum/threads/{tid}/reply", json={"body": "Via the wallet.", "author_name": "Ann"})
+    pid = rr.get_json()["post"]["id"]
+    rx = client.post(f"/api/forum/threads/{tid}/posts/{pid}/react", json={"reaction": "like"})
+    assert rx.status_code == 200 and rx.get_json()["reactions"]["like"] == 1
+    rs = client.get("/api/forum/search?q=staking")
+    assert rs.status_code == 200 and rs.get_json()["success"]
+    st = client.get("/api/forum/stats")
+    assert st.get_json()["stats"]["threads"] >= 1
+    tg = client.get("/api/forum/tags")
+    assert tg.status_code == 200
+    lb = client.get("/api/forum/leaderboard")
+    assert lb.status_code == 200
+
+
+def test_api_moderation_rejects_spam(client, forum_data_tmp):
+    r = client.post("/api/forum/threads", json={
+        "body": "free-crypto-giveaway click here", "kind": "question", "author_name": "Spammer",
+    })
+    assert r.status_code == 400

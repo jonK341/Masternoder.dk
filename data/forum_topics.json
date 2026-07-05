@@ -51,6 +51,38 @@
         {"id": "questions", "title": "Help me", "description": "Stuck? Ask here.", "allows_questions": true},
         {"id": "solved", "title": "Solved threads", "description": "Resolved issues.", "allows_questions": false}
       ]
+    },
+    {
+      "id": "generator",
+      "title": "Generator & creative",
+      "description": "Documentary generator, B-roll, gallery, and video workflows.",
+      "icon": "🎞️",
+      "subforums": [
+        {"id": "questions", "title": "How do I…?", "description": "Generator and editing questions.", "allows_questions": true},
+        {"id": "showcase", "title": "Showcase", "description": "Show what you made.", "allows_questions": false},
+        {"id": "workflows", "title": "Workflows", "description": "Setups, presets, and pipelines.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "economy",
+      "title": "Economy & MN2",
+      "description": "Staking, rewards, wallet, and marketplace strategy.",
+      "icon": "🪙",
+      "subforums": [
+        {"id": "questions", "title": "Economy Q&A", "description": "Staking and rewards questions.", "allows_questions": true},
+        {"id": "strategy", "title": "Strategy", "description": "Long-term economy plays.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "meta",
+      "title": "Community & meta",
+      "description": "Introductions, feedback, and forum meta.",
+      "icon": "🗣️",
+      "subforums": [
+        {"id": "intros", "title": "Introductions", "description": "Say hi to the community.", "allows_questions": false},
+        {"id": "feedback", "title": "Feedback", "description": "Ideas to improve the platform.", "allows_questions": false},
+        {"id": "questions", "title": "Meta Q&A", "description": "Questions about the forum itself.", "allows_questions": true}
+      ]
     }
   ]
 }

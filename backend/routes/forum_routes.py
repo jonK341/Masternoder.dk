@@ -59,16 +59,49 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+# --- Lightweight in-memory rate limiter (per-IP, per-action) --------------
+_RATE_BUCKET: dict = {}
+
+
+def _rate_limited(action: str, limit: int = 12, window_s: int = 60) -> bool:
+    import time
+    ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "anon").split(",")[0].strip()
+    key = f"{action}:{ip}"
+    now = time.time()
+    hits = [t for t in _RATE_BUCKET.get(key, []) if now - t < window_s]
+    if len(hits) >= limit:
+        _RATE_BUCKET[key] = hits
+        return True
+    hits.append(now)
+    _RATE_BUCKET[key] = hits
+    return False
+
+
+_BANNED_WORDS = {"viagra", "casino-spam", "free-crypto-giveaway", "porn", "click-here-now"}
+
+
+def _moderate(text: str) -> tuple:
+    """Return (ok, cleaned). Rejects obvious spam, trims control chars."""
+    if not text:
+        return True, ""
+    low = text.lower()
+    for w in _BANNED_WORDS:
+        if w in low:
+            return False, text
+    cleaned = "".join(ch for ch in text if ch == "\n" or ch == "\t" or ord(ch) >= 32)
+    return True, cleaned.strip()
+
+
 @forum_bp.route("/api/forum/overview", methods=["GET"])
 def forum_overview():
     """Hub metadata for Forum UI tabs."""
     articles = _load_articles()
     news = _load_json(_PLATFORM_NEWS_PATH, {"items": []}).get("items") or []
     try:
-        from backend.services.forum_agent_service import load_threads
-        thread_count = len(load_threads())
+        from backend.services.forum_agent_service import forum_stats
+        stats = forum_stats()
     except Exception:
-        thread_count = 0
+        stats = {"threads": 0}
     return jsonify({
         "success": True,
         "tabs": [
@@ -88,8 +121,9 @@ def forum_overview():
         "counts": {
             "articles": len(articles),
             "news": len(news),
-            "threads": thread_count,
+            "threads": stats.get("threads", 0),
         },
+        "stats": stats,
         "discussions_url": "/api/forum/threads",
         "topics_url": "/api/forum/topics",
         "writing_rules_url": "/api/forum/rules",
@@ -105,33 +139,49 @@ def forum_topics():
 
 @forum_bp.route("/api/forum/threads", methods=["GET"])
 def forum_list_threads():
-    from backend.services.forum_agent_service import load_threads, public_thread
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
     topic_id = (request.args.get("topic_id") or "").strip()
     subforum_id = (request.args.get("subforum_id") or "").strip()
-    limit = request.args.get("limit", 40, type=int)
-    threads = load_threads()
-    if topic_id:
-        threads = [t for t in threads if t.get("topic_id") == topic_id]
-    if subforum_id:
-        threads = [t for t in threads if t.get("subforum_id") == subforum_id]
-    threads = sorted(threads, key=lambda t: t.get("updated_at") or "", reverse=True)
-    if limit > 0:
-        threads = threads[:limit]
+    tag = (request.args.get("tag") or "").strip()
+    kind = (request.args.get("kind") or "").strip()
+    sort = (request.args.get("sort") or "new").strip().lower()
+    query = (request.args.get("q") or "").strip()
+    offset = max(0, request.args.get("offset", 0, type=int))
+    limit = request.args.get("limit", 20, type=int)
+    threads, total = list_threads_sorted(
+        topic_id=topic_id, subforum_id=subforum_id, tag=tag, kind=kind,
+        sort=sort, query=query, offset=offset, limit=limit,
+    )
     return jsonify({
         "success": True,
-        "threads": [public_thread(t) for t in threads],
+        "threads": [public_thread(t, detail=False) for t in threads],
         "count": len(threads),
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "has_more": offset + len(threads) < total,
+        "sort": sort,
     }), 200
 
 
 @forum_bp.route("/api/forum/threads", methods=["POST"])
 def forum_create_thread():
     from backend.services.forum_agent_service import create_thread, public_thread
+    if _rate_limited("create_thread", limit=8, window_s=60):
+        return jsonify({"success": False, "error": "rate limited — slow down"}), 429
     body = request.get_json(silent=True) or {}
     title = (body.get("title") or "").strip() or None
     content = (body.get("body") or "").strip() or None
+    if not content:
+        return jsonify({"success": False, "error": "body required"}), 400
+    if len(content) > 50000:
+        return jsonify({"success": False, "error": "body too long (max 50000)"}), 400
+    ok, content = _moderate(content)
+    if not ok:
+        return jsonify({"success": False, "error": "content rejected by moderation"}), 400
     kind = (body.get("kind") or "question").strip()[:20]
     author_name = (body.get("author_name") or _resolve_uid()).strip()[:80]
+    tags = body.get("tags") if isinstance(body.get("tags"), list) else None
     thread = create_thread(
         topic_id=body.get("topic_id"),
         subforum_id=body.get("subforum_id"),
@@ -140,37 +190,254 @@ def forum_create_thread():
         body=content,
         author_name=author_name,
         agent_authored=False,
+        tags=tags,
     )
     return jsonify({"success": True, "thread": public_thread(thread)}), 201
 
 
 @forum_bp.route("/api/forum/threads/<thread_id>", methods=["GET"])
 def forum_get_thread(thread_id: str):
-    from backend.services.forum_agent_service import load_threads, public_thread
+    from backend.services.forum_agent_service import (
+        load_threads, public_thread, register_view, related_threads,
+    )
+    if request.args.get("count_view", "1") != "0":
+        register_view(thread_id)
     for t in load_threads():
         if t.get("id") == thread_id:
-            return jsonify({"success": True, "thread": public_thread(t)}), 200
+            related = [public_thread(r, detail=False) for r in related_threads(thread_id)]
+            return jsonify({
+                "success": True,
+                "thread": public_thread(t),
+                "related": related,
+            }), 200
     return jsonify({"success": False, "error": "not found"}), 404
 
 
 @forum_bp.route("/api/forum/threads/<thread_id>/reply", methods=["POST"])
 def forum_reply_thread(thread_id: str):
-    from backend.services.forum_agent_service import reply_to_thread, public_thread, load_threads
+    from backend.services.forum_agent_service import (
+        reply_to_thread, public_thread, load_threads, ThreadLockedError,
+    )
+    if _rate_limited("reply", limit=20, window_s=60):
+        return jsonify({"success": False, "error": "rate limited — slow down"}), 429
     body = request.get_json(silent=True) or {}
     content = (body.get("body") or "").strip() or None
+    if not content:
+        return jsonify({"success": False, "error": "body required"}), 400
+    ok, content = _moderate(content)
+    if not ok:
+        return jsonify({"success": False, "error": "content rejected by moderation"}), 400
     kind = (body.get("kind") or "answer").strip()[:20]
     author_name = (body.get("author_name") or _resolve_uid()).strip()[:80]
-    post = reply_to_thread(
-        thread_id,
-        body=content,
-        kind=kind,
-        author_name=author_name,
-        agent_authored=False,
-    )
+    try:
+        post = reply_to_thread(
+            thread_id,
+            body=content,
+            kind=kind,
+            author_name=author_name,
+            agent_authored=False,
+        )
+    except ThreadLockedError:
+        return jsonify({"success": False, "error": "thread is locked"}), 423
     if not post:
         return jsonify({"success": False, "error": "thread not found"}), 404
     thread = next((t for t in load_threads() if t.get("id") == thread_id), None)
     return jsonify({"success": True, "post": post, "thread": public_thread(thread) if thread else None}), 201
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/vote", methods=["POST"])
+def forum_vote_thread(thread_id: str):
+    from backend.services.forum_agent_service import vote_thread
+    if _rate_limited("vote", limit=40, window_s=60):
+        return jsonify({"success": False, "error": "rate limited"}), 429
+    body = request.get_json(silent=True) or {}
+    direction = int(body.get("direction", 1))
+    result = vote_thread(thread_id, voter=_resolve_uid(), direction=direction)
+    if result is None:
+        return jsonify({"success": False, "error": "thread not found"}), 404
+    return jsonify({"success": True, **result}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/posts/<post_id>/react", methods=["POST"])
+def forum_react_post(thread_id: str, post_id: str):
+    from backend.services.forum_agent_service import react_to_post
+    if _rate_limited("react", limit=60, window_s=60):
+        return jsonify({"success": False, "error": "rate limited"}), 429
+    body = request.get_json(silent=True) or {}
+    reaction = (body.get("reaction") or "like").strip().lower()
+    result = react_to_post(thread_id, post_id, reaction)
+    if result is None:
+        return jsonify({"success": False, "error": "invalid reaction or not found"}), 400
+    return jsonify({"success": True, **result}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/accept", methods=["POST"])
+def forum_accept_answer(thread_id: str):
+    from backend.services.forum_agent_service import accept_answer
+    body = request.get_json(silent=True) or {}
+    post_id = (body.get("post_id") or "").strip()
+    result = accept_answer(thread_id, post_id)
+    if result is None:
+        return jsonify({"success": False, "error": "post not found"}), 404
+    return jsonify({"success": True, **result}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/posts/<post_id>", methods=["PATCH"])
+def forum_edit_post(thread_id: str, post_id: str):
+    from backend.services.forum_agent_service import edit_post
+    body = request.get_json(silent=True) or {}
+    new_body = (body.get("body") or "").strip()
+    if not new_body:
+        return jsonify({"success": False, "error": "body required"}), 400
+    ok, new_body = _moderate(new_body)
+    if not ok:
+        return jsonify({"success": False, "error": "content rejected"}), 400
+    result = edit_post(thread_id, post_id, new_body)
+    if result is None:
+        return jsonify({"success": False, "error": "post not found"}), 404
+    return jsonify({"success": True, **result}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/moderate", methods=["POST"])
+def forum_moderate_thread(thread_id: str):
+    """Pin/lock/tag — requires AGENT_CRON_SECRET when set."""
+    from backend.services.forum_agent_service import set_pinned, set_locked, set_thread_tags
+    secret = (os.environ.get("AGENT_CRON_SECRET") or "").strip()
+    tok = (request.headers.get("X-Agent-Cron-Token") or request.args.get("token") or "").strip()
+    if secret and tok != secret:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    body = request.get_json(silent=True) or {}
+    out = {}
+    if "pinned" in body:
+        r = set_pinned(thread_id, bool(body["pinned"]))
+        if r:
+            out.update(r)
+    if "locked" in body:
+        r = set_locked(thread_id, bool(body["locked"]))
+        if r:
+            out.update(r)
+    if isinstance(body.get("tags"), list):
+        r = set_thread_tags(thread_id, body["tags"])
+        if r:
+            out.update(r)
+    if not out:
+        return jsonify({"success": False, "error": "nothing to update or thread not found"}), 400
+    return jsonify({"success": True, **out}), 200
+
+
+@forum_bp.route("/api/forum/search", methods=["GET"])
+def forum_search():
+    """Search threads + articles."""
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"success": False, "error": "q required"}), 400
+    limit = request.args.get("limit", 20, type=int)
+    threads, total = list_threads_sorted(query=q, sort="hot", limit=limit)
+    articles = [
+        a for a in _load_articles()
+        if q.lower() in (a.get("title") or "").lower()
+        or q.lower() in (a.get("body_markdown") or "").lower()
+    ][:limit]
+    return jsonify({
+        "success": True,
+        "query": q,
+        "threads": [public_thread(t, detail=False) for t in threads],
+        "articles": articles,
+        "thread_total": total,
+        "counts": {"threads": len(threads), "articles": len(articles)},
+    }), 200
+
+
+@forum_bp.route("/api/forum/tags", methods=["GET"])
+def forum_tags():
+    from backend.services.forum_agent_service import tag_cloud
+    tags = tag_cloud()
+    return jsonify({"success": True, "tags": tags, "count": len(tags)}), 200
+
+
+@forum_bp.route("/api/forum/trending", methods=["GET"])
+def forum_trending():
+    from backend.services.forum_agent_service import trending_threads, public_thread
+    limit = request.args.get("limit", 5, type=int)
+    threads = trending_threads(limit=limit)
+    return jsonify({
+        "success": True,
+        "threads": [public_thread(t, detail=False) for t in threads],
+    }), 200
+
+
+@forum_bp.route("/api/forum/stats", methods=["GET"])
+def forum_stats_route():
+    from backend.services.forum_agent_service import forum_stats
+    return jsonify({"success": True, "stats": forum_stats()}), 200
+
+
+@forum_bp.route("/api/forum/leaderboard", methods=["GET"])
+def forum_leaderboard():
+    from backend.services.forum_agent_service import leaderboard
+    limit = request.args.get("limit", 10, type=int)
+    return jsonify({"success": True, "leaderboard": leaderboard(limit=limit)}), 200
+
+
+@forum_bp.route("/api/forum/report", methods=["POST"])
+def forum_report():
+    """Flag a thread/post for review — appended to a moderation log."""
+    if _rate_limited("report", limit=10, window_s=60):
+        return jsonify({"success": False, "error": "rate limited"}), 429
+    body = request.get_json(silent=True) or {}
+    entry = {
+        "at": _iso_now(),
+        "reporter": _resolve_uid(),
+        "thread_id": (body.get("thread_id") or "").strip()[:64],
+        "post_id": (body.get("post_id") or "").strip()[:64],
+        "reason": (body.get("reason") or "").strip()[:280],
+    }
+    if not entry["thread_id"]:
+        return jsonify({"success": False, "error": "thread_id required"}), 400
+    log_dir = os.path.join(_BASE_DIR, "logs", "forum")
+    os.makedirs(log_dir, exist_ok=True)
+    with open(os.path.join(log_dir, "reports.jsonl"), "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return jsonify({"success": True, "reported": True}), 201
+
+
+@forum_bp.route("/api/forum/rss", methods=["GET"])
+def forum_rss():
+    """Minimal RSS 2.0 feed of latest threads + articles."""
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
+    from xml.sax.saxutils import escape
+    threads, _ = list_threads_sorted(sort="new", limit=25)
+    base = request.host_url.rstrip("/")
+    items = []
+    for t in threads:
+        pt = public_thread(t, detail=False)
+        link = f"{base}/forum#discussions/{pt.get('id')}"
+        items.append(
+            f"<item><title>{escape(pt.get('title') or 'Thread')}</title>"
+            f"<link>{escape(link)}</link>"
+            f"<description>{escape(pt.get('excerpt') or '')}</description>"
+            f"<pubDate>{escape(pt.get('updated_at') or '')}</pubDate>"
+            f"<guid isPermaLink=\"false\">{escape(pt.get('id') or '')}</guid></item>"
+        )
+    for a in _load_articles()[:15]:
+        link = f"{base}/forum#articles/{a.get('slug') or a.get('id')}"
+        items.append(
+            f"<item><title>{escape(a.get('title') or 'Article')}</title>"
+            f"<link>{escape(link)}</link>"
+            f"<description>{escape(a.get('summary') or '')}</description>"
+            f"<guid isPermaLink=\"false\">{escape(a.get('id') or '')}</guid></item>"
+        )
+    rss = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel>'
+        "<title>MasterNoder Forum</title>"
+        f"<link>{escape(base)}/forum/</link>"
+        "<description>Latest forum discussions and articles</description>"
+        + "".join(items) +
+        "</channel></rss>"
+    )
+    return rss, 200, {"Content-Type": "application/rss+xml; charset=utf-8"}
 
 
 @forum_bp.route("/api/forum/agent/run", methods=["POST"])
@@ -206,7 +473,26 @@ def forum_personas_public():
     """Public persona list (camouflage — no agent flags)."""
     from backend.services.forum_agent_service import load_personas, public_persona
     personas = [public_persona(p) for p in load_personas()]
+    personas.sort(key=lambda p: p.get("reputation", 0), reverse=True)
     return jsonify({"success": True, "personas": personas, "count": len(personas)}), 200
+
+
+@forum_bp.route("/api/forum/personas/<persona_id>", methods=["GET"])
+def forum_persona_detail(persona_id: str):
+    """Public member profile with their recent threads."""
+    from backend.services.forum_agent_service import (
+        load_personas, public_persona, threads_by_author, public_thread,
+    )
+    p = next((x for x in load_personas() if x.get("id") == persona_id), None)
+    if not p:
+        return jsonify({"success": False, "error": "not found"}), 404
+    pub = public_persona(p)
+    threads = threads_by_author(p.get("display_name"))
+    return jsonify({
+        "success": True,
+        "persona": pub,
+        "threads": [public_thread(t, detail=False) for t in threads],
+    }), 200
 
 
 @forum_bp.route("/api/forum/rules", methods=["GET"])
