@@ -5,11 +5,25 @@ Corrects paths on-demand across the system
 import os
 import json
 import re
+import threading
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from collections import defaultdict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Reentrancy guard: correct_path -> ai_enhanced_paths.intelligent_path_correction -> correct_path
+# would otherwise recurse until RecursionError, running expensive AI + JSON work at every frame.
+# The guard runs the AI-enhanced pass at most once per top-level call; nested calls use the
+# cheap mapping/pattern logic only.
+_reentry = threading.local()
+
+# Short-lived in-memory cache of correction results keyed by (path, method, expected_type).
+# The same unresolved paths (e.g. repeated 404s) are corrected over and over; caching avoids
+# re-running the AI pipeline and disk writes for identical inputs.
+_CORRECTION_CACHE: "dict[tuple, Tuple[str, Dict]]" = {}
+_CORRECTION_CACHE_LOCK = threading.RLock()
+_CORRECTION_CACHE_MAX = 4096
 
 
 class PathCorrector:
@@ -74,25 +88,60 @@ class PathCorrector:
             else:
                 print(f"Error saving path correction data: {e}")
     
+    def _cache_key(self, path: str, context: Dict) -> tuple:
+        return (path, context.get('method', 'GET'), context.get('expected_type', 'unknown'))
+
+    def _cache_get(self, key: tuple):
+        with _CORRECTION_CACHE_LOCK:
+            return _CORRECTION_CACHE.get(key)
+
+    def _cache_put(self, key: tuple, value: Tuple[str, Dict]) -> None:
+        with _CORRECTION_CACHE_LOCK:
+            if len(_CORRECTION_CACHE) >= _CORRECTION_CACHE_MAX:
+                _CORRECTION_CACHE.clear()
+            _CORRECTION_CACHE[key] = value
+
     def correct_path(self, path: str, context: Optional[Dict] = None) -> Tuple[str, Dict]:
-        """Correct a path on-demand with AI enhancement"""
+        """Correct a path on-demand with AI enhancement.
+
+        Cached by (path, method, expected_type) and protected by a reentrancy guard so the
+        AI-enhanced pass runs at most once per top-level call (it calls back into correct_path).
+        """
         original_path = path
         context = context or {}
-        
-        # Try AI-enhanced correction first
-        try:
-            from backend.services.ai_enhanced_paths import ai_enhanced_paths
-            corrected_path, correction_info = ai_enhanced_paths.intelligent_path_correction(path, context)
-            return corrected_path, correction_info
-        except RecursionError:
-            # AI path correction can recurse via agent_ai_intelligence; fall back silently
-            pass
-        except Exception as e:
-            if "recursion" in str(e).lower():
+
+        cache_key = self._cache_key(path, context)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        # Only attempt the AI-enhanced pass on the outermost call. Nested calls (triggered by
+        # ai_enhanced_paths.intelligent_path_correction) fall through to mapping/pattern logic.
+        if not getattr(_reentry, "active", False):
+            _reentry.active = True
+            try:
+                from backend.services.ai_enhanced_paths import ai_enhanced_paths
+                corrected_path, correction_info = ai_enhanced_paths.intelligent_path_correction(path, context)
+                result = (corrected_path, correction_info)
+                self._cache_put(cache_key, result)
+                return result
+            except RecursionError:
+                # AI path correction can recurse via agent_ai_intelligence; fall back silently
                 pass
-            else:
-                print(f"Error in AI path correction, falling back to standard: {e}")
-        
+            except Exception as e:
+                if "recursion" in str(e).lower():
+                    pass
+                else:
+                    print(f"Error in AI path correction, falling back to standard: {e}")
+            finally:
+                _reentry.active = False
+
+        result = self._correct_path_basic(original_path, path, context)
+        self._cache_put(cache_key, result)
+        return result
+
+    def _correct_path_basic(self, original_path: str, path: str, context: Dict) -> Tuple[str, Dict]:
+        """Non-AI correction: exact mapping, then pattern, then no-op. Never re-enters AI."""
         # Check if we have a mapping for this path
         if path in self.path_mappings:
             corrected_path = self.path_mappings[path]['correct_path']

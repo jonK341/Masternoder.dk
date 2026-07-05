@@ -8,6 +8,7 @@ Runs on every API request to automatically:
   - Auto-save user state snapshots after meaningful activity
   - Attach lifecycle metadata to Flask g for downstream use
 """
+import threading
 import time
 from datetime import datetime, timedelta
 from flask import request, session, g
@@ -244,8 +245,13 @@ def _auto_save_snapshot():
 
     _last_save_times[user_id] = now
 
-    try:
-        from backend.services.ai_user_state_manager import save_user_snapshot
-        save_user_snapshot(user_id)
-    except Exception:
-        pass
+    # Snapshot building aggregates points/battle stats (DB heavy). Run it off the request thread
+    # so it never adds latency/CPU to the response path.
+    def _save(uid):
+        try:
+            from backend.services.ai_user_state_manager import save_user_snapshot
+            save_user_snapshot(uid)
+        except Exception:
+            pass
+
+    threading.Thread(target=_save, args=(user_id,), daemon=True).start()
