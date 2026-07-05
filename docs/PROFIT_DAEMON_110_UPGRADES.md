@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-04 · Branch `feat/casino-mega-expansion`_
 
-Master checklist for making the Masternoder.dk profit daemon best-in-class. **32 shipped** in session (P0/P1); **78 planned**. Wired into existing services — no parallel daemon processes.
+Master checklist for making the Masternoder.dk profit daemon best-in-class. **42 shipped** in session (P0/P1/P2); **68 planned**. Wired into existing services — no parallel daemon processes.
 
 **Related:** [PROFIT_DAEMON_ACTIVITY.md](./PROFIT_DAEMON_ACTIVITY.md) · [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) · [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md)
 
@@ -37,9 +37,9 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | 5 | P1 | done | Notional scaling buffer tuned by venue latency tier |
 | 6 | P1 | done | Triangular arb live gate (paper-only until SPORK) |
 | 7 | P1 | done | Slippage guard: abort leg if book depth < 2× notional |
-| 8 | P2 | planned | Cross-venue prefund batch (single rotation tick, multi-leg) |
-| 9 | P2 | planned | Force-attempt budget per hour (cap runaway retries) |
-| 10 | P2 | planned | Venue-specific min notional floors in connectors config |
+| 8 | P2 | done | Cross-venue prefund batch (single rotation tick, multi-leg) |
+| 9 | P2 | done | Force-attempt budget per hour (cap runaway retries) |
+| 10 | P2 | done | Venue-specific min notional floors in connectors config |
 | 11 | P3 | planned | Iceberg-style split orders for large arb notionals |
 
 ## Search (12–22)
@@ -91,13 +91,13 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | # | P | Status | Description |
 |---|-----|--------|-------------|
 | 41 | P0 | done | Sweep `min_sweep_usd` auto-tune when live stash crosses tiers |
-| 42 | P1 | planned | PayPal tier presets (micro / standard / whale) |
-| 43 | P1 | planned | Auto-threshold lowering when paper unswept grows (display only) |
-| 44 | P1 | planned | Tax export CSV from sweep + stash ledger |
+| 42 | P1 | done | PayPal tier presets (micro / standard / whale) |
+| 43 | P1 | done | Auto-threshold lowering when paper unswept grows (display only) |
+| 44 | P1 | done | Tax export CSV from sweep + stash ledger |
 | 45 | P2 | planned | Binance withdraw rail preflight in daemon tick |
 | 46 | P2 | planned | Sweep dry-run line in daemon stdout |
 | 47 | P2 | planned | Partial sweep when above min but below full pool |
-| 48 | P2 | planned | Payout share_pct env validation on startup |
+| 48 | P2 | done | Payout share_pct env validation on startup |
 | 49 | P3 | planned | Multi-recipient PayPal split (requires gates) |
 | 50 | P3 | planned | Sweep success Discord celebration embed |
 
@@ -112,7 +112,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | 55 | P1 | done | Grafana-style 24h PPP time series export |
 | 56 | P1 | done | Heartbeat stale Discord alert (>5 min) |
 | 57 | P1 | done | Fast-loop near_threshold banner on monitor |
-| 58 | P2 | planned | Per-loop sparkline from heartbeat history |
+| 58 | P2 | done | Per-loop sparkline from heartbeat history |
 | 59 | P2 | planned | Blocker deep-link to Top25 runbook anchors |
 | 60 | P2 | planned | Mobile-friendly monitor stat cards |
 | 61 | P3 | planned | Public read-only monitor token URL |
@@ -140,7 +140,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | 73 | P0 | done | Kill switch blocks sweep execution |
 | 74 | P1 | done | Alert webhook cooldown (900s default) anti-spam |
 | 75 | P1 | planned | Rate limit on profit-daemon API routes |
-| 76 | P1 | planned | SPORK gate audit line in daemon startup banner |
+| 76 | P1 | done | SPORK gate audit line in daemon startup banner |
 | 77 | P2 | planned | Admin key required for reload-config POST |
 | 78 | P2 | planned | Mask venue balances in metrics export |
 | 79 | P2 | planned | Signed heartbeat file optional HMAC |
@@ -167,7 +167,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | # | P | Status | Description |
 |---|-----|--------|-------------|
 | 92 | P2 | planned | Profit-linked MN2 bonus on arb fill streak |
-| 93 | P2 | planned | Casino agent tick skip when profit kill active |
+| 93 | P2 | done | Casino agent tick skip when profit kill active |
 | 94 | P2 | planned | Discord share wins when live stash milestone |
 | 95 | P3 | planned | Exchange tab CTA when monitor readiness >75% |
 | 96 | P3 | planned | Rental agent trial tied to PPP fill count |
@@ -191,7 +191,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | # | P | Status | Description |
 |---|-----|--------|-------------|
 | 106 | P1 | done | Audit trail row on every kill-switch activation |
-| 107 | P1 | planned | Paper/live separation banner on `/profit/` |
+| 107 | P1 | done | Paper/live separation banner on `/profit/` |
 | 108 | P2 | planned | PPP export redaction mode for sharing |
 | 109 | P2 | planned | Sweep tax ID field in payout config (optional) |
 | 110 | P3 | planned | GDPR-style payout history purge tool |
@@ -213,4 +213,4 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **32
 | 62–66 | Hot-reload, daily PPP, log rotation, healthcheck |
 | 73–74 | Kill on sweep + alert cooldown |
 
-**Counts:** 32 done · 78 planned · 110 total
+**Counts:** 42 done · 68 planned · 110 total

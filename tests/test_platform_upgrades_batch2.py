@@ -36,7 +36,8 @@ class TestPlatformBatch2Roadmap(unittest.TestCase):
         self.assertTrue(data.get("success"))
         self.assertEqual(data.get("total"), 200)
         self.assertEqual(data.get("done") + data.get("planned"), 200)
-        self.assertGreaterEqual(data.get("done"), 40)
+        self.assertEqual(data.get("planned"), 0)
+        self.assertEqual(data.get("done"), 200)
 
     def test_batch2_area_filter(self):
         r = self.client.get("/api/platform/upgrades/batch2?area=casino")
@@ -118,13 +119,14 @@ class TestBatch2Service(unittest.TestCase):
 
     def test_all_areas_widgets(self):
         from backend.services.platform_upgrades_batch2_service import get_batch2_widgets
-        for area in (
-            "explorer", "exchange", "profile", "shop", "casino",
-            "generator", "command-center", "game", "quest", "battle",
-        ):
-            data = get_batch2_widgets(area, user_id="test_user")
-            self.assertTrue(data.get("success"), area)
-            self.assertEqual(data.get("area"), area)
+        with patch("backend.services.mn2_chainz.network_overview", return_value={}):
+            for area in (
+                "explorer", "exchange", "profile", "shop", "casino",
+                "generator", "command-center", "game", "quest", "battle",
+            ):
+                data = get_batch2_widgets(area, user_id="test_user")
+                self.assertTrue(data.get("success"), area)
+                self.assertEqual(data.get("area"), area)
 
 
 if __name__ == "__main__":

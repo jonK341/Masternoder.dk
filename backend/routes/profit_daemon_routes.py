@@ -44,6 +44,67 @@ def profit_daemon_triangular_gate():
     return jsonify(triangular_live_allowed())
 
 
+@profit_daemon_bp.route("/api/profit-daemon/force-attempt-budget", methods=["GET"])
+def profit_daemon_force_attempt_budget():
+    from backend.services.profit_daemon_ops_service import force_attempt_budget_state
+    return jsonify(force_attempt_budget_state())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/venue-floors", methods=["GET"])
+def profit_daemon_venue_floors():
+    from backend.services.profit_daemon_ops_service import venue_min_notional_floors
+    return jsonify(venue_min_notional_floors())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/paypal-tiers", methods=["GET"])
+def profit_daemon_paypal_tiers():
+    from backend.services.profit_daemon_ops_service import paypal_tier_presets
+    return jsonify(paypal_tier_presets())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/paper-threshold", methods=["GET"])
+def profit_daemon_paper_threshold():
+    from backend.services.profit_daemon_ops_service import paper_unswept_threshold_display
+    return jsonify(paper_unswept_threshold_display())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/tax-export", methods=["GET"])
+def profit_daemon_tax_export():
+    from backend.services.profit_daemon_ops_service import tax_export_csv
+    season = request.args.get("season")
+    return jsonify(tax_export_csv(season=season))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/loop-sparkline", methods=["GET"])
+def profit_daemon_loop_sparkline():
+    from backend.services.profit_daemon_ops_service import loop_sparkline_from_heartbeat
+    return jsonify(loop_sparkline_from_heartbeat())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/spork-audit", methods=["GET"])
+def profit_daemon_spork_audit():
+    from backend.services.profit_daemon_ops_service import spork_gate_startup_audit
+    return jsonify(spork_gate_startup_audit())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/casino-skip", methods=["GET"])
+def profit_daemon_casino_skip():
+    from backend.services.profit_daemon_ops_service import casino_agent_tick_skip_on_kill
+    return jsonify(casino_agent_tick_skip_on_kill())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/paper-live-banner", methods=["GET"])
+def profit_daemon_paper_live_banner():
+    from backend.services.profit_daemon_ops_service import paper_live_separation_banner
+    return jsonify(paper_live_separation_banner())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/payout-validation", methods=["GET"])
+def profit_daemon_payout_validation():
+    from backend.services.profit_daemon_ops_service import validate_payout_share_pct
+    return jsonify(validate_payout_share_pct())
+
+
 @profit_daemon_bp.route("/api/profit-daemon/status", methods=["GET"])
 def profit_daemon_status():
     from backend.services.profit_daemon_monitor_service import monitor_status

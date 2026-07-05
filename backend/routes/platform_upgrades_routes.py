@@ -87,6 +87,32 @@ def platform_batch2_extras(area: str):
     return jsonify(base), 200
 
 
+@platform_upgrades_bp.route("/api/platform/batch2/explorer/wallet-qr", methods=["GET"])
+def platform_batch2_explorer_wallet_qr():
+    from backend.services.platform_batch2_remaining_service import wallet_qr_payload
+    address = request.args.get("address")
+    return jsonify(wallet_qr_payload(address)), 200
+
+
+@platform_upgrades_bp.route("/api/platform/generator/reorder-queue", methods=["POST"])
+def platform_generator_reorder_queue():
+    data = request.get_json(silent=True) or {}
+    job_ids = data.get("job_ids") or request.args.getlist("job_id")
+    from backend.services.platform_batch2_remaining_service import reorder_generator_queue
+    return jsonify(reorder_generator_queue(job_ids)), 200
+
+
+@platform_upgrades_bp.route("/api/platform/generator/export-inventory", methods=["POST", "GET"])
+def platform_generator_export_inventory():
+    data = request.get_json(silent=True) or {}
+    uid = (request.args.get("user_id") or data.get("user_id") or "").strip()
+    if not uid:
+        return jsonify({"success": False, "error": "user_id required"}), 400
+    job_id = request.args.get("job_id") or data.get("job_id")
+    from backend.services.platform_batch2_remaining_service import export_generator_to_inventory
+    return jsonify(export_generator_to_inventory(uid, job_id=job_id)), 200
+
+
 @platform_upgrades_bp.route("/api/platform/upgrades/combined", methods=["GET"])
 @cached_response(ttl=60)
 def platform_upgrades_combined():

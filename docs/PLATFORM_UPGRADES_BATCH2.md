@@ -6,7 +6,7 @@ Second wave: 10 areas × 20 upgrades each. Builds on [PLATFORM_100_UPGRADES.md](
 
 ## Summary
 
-- **155 done** / **45 planned** / **200 total** (batch 2)
+- **200 done** / **0 planned** / **200 total** (batch 2)
 - **Batch 1 reference:** see [PLATFORM_100_UPGRADES.md](PLATFORM_100_UPGRADES.md)
 
 ## Explorer (`/explorer`)
@@ -22,17 +22,17 @@ _Extends batch 1 items 1-10_
 | 106 | P2 | Chainz search deep-link from hash route | ✅ done | #7 |
 | 107 | P2 | Cache staleness warning over 60s | ✅ done | #2 |
 | 108 | P2 | Masternode rank sort by active time | ✅ done | #9 |
-| 109 | P3 | Market activity delta tiles | 📋 planned | #10 |
+| 109 | P3 | Market activity delta tiles | ✅ done | #10 |
 | 110 | P3 | Explorer cross-link to exchange MN2 price | ✅ done | — |
-| 111 | P3 | Wallet address QR export | 📋 planned | — |
-| 112 | P3 | Block confirmation countdown | 📋 planned | — |
-| 113 | P3 | Peer count history chip | 📋 planned | — |
-| 114 | P2 | Tx mempool size estimator | 📋 planned | — |
-| 115 | P2 | Difficulty retarget ETA | 📋 planned | — |
+| 111 | P3 | Wallet address QR export | ✅ done | — |
+| 112 | P3 | Block confirmation countdown | ✅ done | — |
+| 113 | P3 | Peer count history chip | ✅ done | — |
+| 114 | P2 | Tx mempool size estimator | ✅ done | — |
+| 115 | P2 | Difficulty retarget ETA | ✅ done | — |
 | 116 | P1 | Explorer hub-pages UX toolbar | ✅ done | — |
 | 117 | P1 | Block list pagination controls | ✅ done | — |
 | 118 | P2 | Address book recent lookups | ✅ done | — |
-| 119 | P3 | Network fee suggestion strip | 📋 planned | — |
+| 119 | P3 | Network fee suggestion strip | ✅ done | — |
 | 120 | P3 | Explorer PPP quest cross-link | ✅ done | — |
 
 ## Exchange (`/exchange`)
@@ -56,8 +56,8 @@ _Extends batch 1 items 11-20_
 | 134 | P1 | Stash history recent 5 entries | ✅ done | #12 |
 | 135 | P2 | Profit daemon hot symbols strip | ✅ done | #13 |
 | 136 | P2 | MN2 swap fee estimator | ✅ done | — |
-| 137 | P3 | Tax report season selector | 📋 planned | — |
-| 138 | P3 | Venue rotation countdown | 📋 planned | — |
+| 137 | P3 | Tax report season selector | ✅ done | — |
+| 138 | P3 | Venue rotation countdown | ✅ done | — |
 | 139 | P3 | Paper/live mode toggle badge | ✅ done | — |
 | 140 | P3 | Exchange PPP agent level chip | ✅ done | #22 |
 
@@ -79,13 +79,13 @@ _Extends batch 1 items 21-30_
 | 151 | P1 | Quest claimable count badge | ✅ done | — |
 | 152 | P2 | Generator credit balance chip | ✅ done | — |
 | 153 | P2 | Casino RG limits summary | ✅ done | #41 |
-| 154 | P3 | Exchange bot rental count | 📋 planned | — |
-| 155 | P3 | Podcast portal status | 📋 planned | — |
-| 156 | P3 | Theme unlock progress | 📋 planned | — |
+| 154 | P3 | Exchange bot rental count | ✅ done | — |
+| 155 | P3 | Podcast portal status | ✅ done | — |
+| 156 | P3 | Theme unlock progress | ✅ done | — |
 | 157 | P2 | Unified points sync timestamp | ✅ done | — |
 | 158 | P1 | Profile hub refresh enhancements | ✅ done | #21 |
 | 159 | P2 | PPP profit stack sparkline | ✅ done | — |
-| 160 | P3 | Cross-area MN2 total | 📋 planned | #70 |
+| 160 | P3 | Cross-area MN2 total | ✅ done | #70 |
 
 ## Shop (`/shop`)
 _Extends batch 1 items 31-40_
@@ -98,7 +98,7 @@ _Extends batch 1 items 31-40_
 | 164 | P2 | VIP tier badge on header | ✅ done | #37 |
 | 165 | P3 | Auction house quick link | ✅ done | #38 |
 | 166 | P3 | Flash sale countdown | ✅ done | #39 |
-| 167 | P3 | Shop analytics panel | 📋 planned | #40 |
+| 167 | P3 | Shop analytics panel | ✅ done | #40 |
 | 168 | P1 | Cart item count badge | ✅ done | #33 |
 | 169 | P1 | MN2 fulfillment status chip | ✅ done | #32 |
 | 170 | P2 | Category filter persistence | ✅ done | #31 |
@@ -123,7 +123,7 @@ _Extends batch 1 items 41-50_
 | 183 | P2 | Progressive jackpot bar | ✅ done | #46 |
 | 184 | P2 | Camgirls lounge status | ✅ done | #47 |
 | 185 | P3 | Tournament countdown widget | ✅ done | #48 |
-| 186 | P3 | Discord fanout status | 📋 planned | #49 |
+| 186 | P3 | Discord fanout status | ✅ done | #49 |
 | 187 | P3 | House edge transparency card | ✅ done | #50 |
 | 188 | P1 | RG session timer chip | ✅ done | #41 |
 | 189 | P1 | Agent tick summary cockpit | ✅ done | #42 |
@@ -131,8 +131,8 @@ _Extends batch 1 items 41-50_
 | 191 | P2 | Competition leaderboard mini | ✅ done | — |
 | 192 | P1 | Casino hub refresh bar | ✅ done | — |
 | 193 | P2 | MN2 stake conversion hint | ✅ done | — |
-| 194 | P3 | Mobile swipe tab nav | 📋 planned | — |
-| 195 | P3 | Fan club join CTA | 📋 planned | — |
+| 194 | P3 | Mobile swipe tab nav | ✅ done | — |
+| 195 | P3 | Fan club join CTA | ✅ done | — |
 | 196 | P2 | Profit oracle cross-link | ✅ done | #43 |
 | 197 | P3 | Table games availability | ✅ done | — |
 | 198 | P2 | Coin/MN2 currency toggle badge | ✅ done | — |
@@ -150,7 +150,7 @@ _Extends batch 1 items 51-60_
 | 204 | P2 | AI magic generate shortcut strip | ✅ done | #57 |
 | 205 | P3 | Thumbnail preview gallery | ✅ done | #58 |
 | 206 | P3 | Entitlement reservation status | ✅ done | #59 |
-| 207 | P3 | Runway-style preset browser | 📋 planned | #60 |
+| 207 | P3 | Runway-style preset browser | ✅ done | #60 |
 | 208 | P1 | Generation progress percent label | ✅ done | #51 |
 | 209 | P1 | API health pulse animation | ✅ done | #53 |
 | 210 | P2 | Job cancel/retry actions | ✅ done | — |
@@ -160,8 +160,8 @@ _Extends batch 1 items 51-60_
 | 214 | P2 | Theme timeline integration badge | ✅ done | — |
 | 215 | P3 | Generation cost estimator | ✅ done | — |
 | 216 | P3 | Provider latency chip | ✅ done | — |
-| 217 | P2 | Batch job queue reorder | 📋 planned | — |
-| 218 | P3 | Export to game inventory | 📋 planned | — |
+| 217 | P2 | Batch job queue reorder | ✅ done | — |
+| 218 | P3 | Export to game inventory | ✅ done | — |
 | 219 | P3 | MN2 pay for generation CTA | ✅ done | — |
 | 220 | P3 | History filter by status | ✅ done | #52 |
 
@@ -174,17 +174,17 @@ _Extends batch 1 items 61-70_
 | 222 | P2 | Exchange monitor panel | ✅ done | #65 |
 | 223 | P2 | Casino monitor panel | ✅ done | #66 |
 | 224 | P3 | Agent support status | ✅ done | #67 |
-| 225 | P3 | Podcast strip integration | 📋 planned | #68 |
-| 226 | P3 | Battlegrounds zone alert | 📋 planned | #69 |
-| 227 | P3 | Cross-area MN2 reward totals | 📋 planned | #70 |
+| 225 | P3 | Podcast strip integration | ✅ done | #68 |
+| 226 | P3 | Battlegrounds zone alert | ✅ done | #69 |
+| 227 | P3 | Cross-area MN2 reward totals | ✅ done | #70 |
 | 228 | P1 | Daemon connection sparkline | ✅ done | #61 |
 | 229 | P2 | Top25 priority filter chips | ✅ done | #62 |
 | 230 | P2 | Profit daemon kill-switch status | ✅ done | — |
 | 231 | P1 | Quick action: start quick battle | ✅ done | — |
-| 232 | P2 | Register intelligence 404 count | 📋 planned | — |
+| 232 | P2 | Register intelligence 404 count | ✅ done | — |
 | 233 | P2 | Unified sync lag badge | ✅ done | — |
-| 234 | P3 | CEO agent profile link | 📋 planned | — |
-| 235 | P3 | Agent skillset coverage | 📋 planned | — |
+| 234 | P3 | CEO agent profile link | ✅ done | — |
+| 235 | P3 | Agent skillset coverage | ✅ done | — |
 | 236 | P2 | Exchange treasury alert threshold | ✅ done | — |
 | 237 | P1 | CC hub refresh all | ✅ done | #63 |
 | 238 | P2 | Casino RG violations count | ✅ done | — |
@@ -198,23 +198,23 @@ _Extends batch 1 items 71-80_
 |---|----------|---------|--------|-------------|
 | 241 | P1 | Champion pulse timestamps | ✅ done | #74 |
 | 242 | P2 | Nexus campaign arc link | ✅ done | #75 |
-| 243 | P2 | Aggregator fulfill status | 📋 planned | #76 |
+| 243 | P2 | Aggregator fulfill status | ✅ done | #76 |
 | 244 | P2 | Star Map 25 cross-link | ✅ done | #77 |
-| 245 | P3 | Walkthrough guide drawer | 📋 planned | #78 |
-| 246 | P3 | Geo-ref profiling chip | 📋 planned | #79 |
-| 247 | P3 | Competitive loops dashboard | 📋 planned | #80 |
+| 245 | P3 | Walkthrough guide drawer | ✅ done | #78 |
+| 246 | P3 | Geo-ref profiling chip | ✅ done | #79 |
+| 247 | P3 | Competitive loops dashboard | ✅ done | #80 |
 | 248 | P1 | Daily login streak chip | ✅ done | — |
-| 249 | P2 | Trophy hunt progress | 📋 planned | — |
+| 249 | P2 | Trophy hunt progress | ✅ done | — |
 | 250 | P2 | Battle points trend | ✅ done | — |
 | 251 | P1 | Game hub champion refresh | ✅ done | #73 |
 | 252 | P2 | Quest claimable inline | ✅ done | — |
 | 253 | P2 | MN2 wallet inline | ✅ done | — |
-| 254 | P3 | Season pass progress | 📋 planned | — |
-| 255 | P3 | Crew invite CTA | 📋 planned | — |
+| 254 | P3 | Season pass progress | ✅ done | — |
+| 255 | P3 | Crew invite CTA | ✅ done | — |
 | 256 | P2 | Profit daemon game hook | ✅ done | — |
-| 257 | P3 | Pixel clan status | 📋 planned | — |
+| 257 | P3 | Pixel clan status | ✅ done | — |
 | 258 | P2 | Load time measurement badge | ✅ done | — |
-| 259 | P3 | Featured game rotation | 📋 planned | #71 |
+| 259 | P3 | Featured game rotation | ✅ done | #71 |
 | 260 | P3 | Game PPP sync indicator | ✅ done | — |
 
 ## Quest (`/quests`)
@@ -227,7 +227,7 @@ _Extends batch 1 items 81-90_
 | 263 | P2 | Quest completion confetti | ✅ done | #86 |
 | 264 | P2 | Level progression claim panel | ✅ done | #87 |
 | 265 | P3 | Quest filter by type | ✅ done | #88 |
-| 266 | P3 | Shared quest crew board | 📋 planned | #89 |
+| 266 | P3 | Shared quest crew board | ✅ done | #89 |
 | 267 | P3 | Quest MN2 reward estimator | ✅ done | #90 |
 | 268 | P1 | PPP sync timestamp badge | ✅ done | #83 |
 | 269 | P2 | Trophy quest inline progress | ✅ done | — |
@@ -235,12 +235,12 @@ _Extends batch 1 items 81-90_
 | 271 | P1 | Quest hub refresh enhancements | ✅ done | — |
 | 272 | P2 | Daily reset countdown | ✅ done | — |
 | 273 | P2 | Profit-linked quest badge | ✅ done | — |
-| 274 | P3 | Quest share link | 📋 planned | — |
-| 275 | P3 | Quest difficulty tags | 📋 planned | — |
+| 274 | P3 | Quest share link | ✅ done | — |
+| 275 | P3 | Quest difficulty tags | ✅ done | — |
 | 276 | P2 | Auto-claim all button | ✅ done | — |
-| 277 | P3 | Quest leaderboard mini | 📋 planned | — |
+| 277 | P3 | Quest leaderboard mini | ✅ done | — |
 | 278 | P2 | Exchange trade quest hook | ✅ done | — |
-| 279 | P3 | Casino spin quest hook | 📋 planned | — |
+| 279 | P3 | Casino spin quest hook | ✅ done | — |
 | 280 | P3 | Generator job quest hook | ✅ done | — |
 
 ## Battle (`/battle`)
@@ -251,9 +251,9 @@ _Extends batch 1 items 91-100_
 | 281 | P1 | Quick battle one-click | ✅ done | #94 |
 | 282 | P2 | Battle stats summary cards | ✅ done | #95 |
 | 283 | P2 | Female agent spotlight | ✅ done | #96 |
-| 284 | P3 | Lab tech forge integration | 📋 planned | #97 |
-| 285 | P3 | Champion league season link | 📋 planned | #98 |
-| 286 | P3 | Battle chart analytics | 📋 planned | #99 |
+| 284 | P3 | Lab tech forge integration | ✅ done | #97 |
+| 285 | P3 | Champion league season link | ✅ done | #98 |
+| 286 | P3 | Battle chart analytics | ✅ done | #99 |
 | 287 | P3 | MN2 reward per win display | ✅ done | #100 |
 | 288 | P1 | Matchmaking queue status chip | ✅ done | — |
 | 289 | P2 | Opponent type selector persist | ✅ done | — |
@@ -261,11 +261,11 @@ _Extends batch 1 items 91-100_
 | 291 | P1 | Battle hub quick-battle deep link | ✅ done | #93 |
 | 292 | P2 | Win streak flame indicator | ✅ done | — |
 | 293 | P2 | Season rank chip | ✅ done | — |
-| 294 | P3 | PVP trophy gallery link | 📋 planned | — |
+| 294 | P3 | PVP trophy gallery link | ✅ done | — |
 | 295 | P3 | Battle intelligence summary | ✅ done | — |
 | 296 | P2 | Difficulty recommend chip | ✅ done | — |
 | 297 | P3 | Battle replay list | ✅ done | — |
 | 298 | P2 | MN2 prize pool estimate | ✅ done | — |
-| 299 | P3 | Crew battle invite | 📋 planned | — |
+| 299 | P3 | Crew battle invite | ✅ done | — |
 | 300 | P3 | Cross-hub battle CTA strip | ✅ done | — |
 

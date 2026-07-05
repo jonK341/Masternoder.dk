@@ -586,7 +586,7 @@ def battle_matchmaking_status():
         stats = _get_battle_stats(user_id)
         total = int(stats.get('total_battles') or 0)
         wins = int(stats.get('wins') or 0)
-        difficulty = 'easy' if total < 3 else ('hard' if wins > total * 0.6 else 'normal')
+        difficulty = 'easy' if total < 3 else ('hard' if wins >= total * 0.6 else 'normal')
         return jsonify({
             'success': True,
             'user_id': user_id,

@@ -323,4 +323,6 @@ def enrich_area_widgets(area: str, widgets: Dict[str, Any], user_id: Optional[st
     extra_fn = fn_map.get(area)
     if extra_fn:
         widgets["batch2_extras"] = extra_fn()
+    from backend.services.platform_batch2_remaining_service import merge_remaining
+    merge_remaining(area, widgets, user_id)
     return widgets

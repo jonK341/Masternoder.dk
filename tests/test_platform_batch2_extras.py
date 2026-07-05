@@ -34,8 +34,31 @@ class TestPlatformBatch2Extras(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertTrue(data.get("success"))
-        self.assertGreaterEqual(data["batch2"]["done"], 150)
+        self.assertGreaterEqual(data["batch2"]["done"], 200)
+        self.assertEqual(data["batch2"]["planned"], 0)
         self.assertEqual(data["batch2"]["done"] + data["batch2"]["planned"], 200)
+
+    def test_explorer_remaining_extras(self):
+        r = self.client.get("/api/platform/batch2/explorer/widgets")
+        self.assertEqual(r.status_code, 200)
+        rem = ((r.get_json() or {}).get("batch2_extras") or {}).get("remaining") or {}
+        self.assertIn("market_activity_deltas", rem)
+        self.assertIn("fee_suggestion_strip", rem)
+
+    def test_generator_reorder_queue(self):
+        r = self.client.post(
+            "/api/platform/generator/reorder-queue",
+            json={"job_ids": ["j1", "j2"]},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json().get("success"))
+
+    def test_wallet_qr(self):
+        r = self.client.get("/api/platform/batch2/explorer/wallet-qr?address=MN2TEST")
+        self.assertEqual(r.status_code, 200)
+        data = r.get_json()
+        self.assertTrue(data.get("success"))
+        self.assertIn("qr_url", data)
 
     def test_exchange_widgets_has_extras(self):
         r = self.client.get("/api/platform/batch2/exchange/widgets")
@@ -112,6 +135,40 @@ class TestProfitDaemonSessionUpgrades(unittest.TestCase):
         ):
             out = _apply_meme_coin_filter(["BTC", "DOGE", "ETH"])
         self.assertNotIn("DOGE", out)
+
+    def test_force_attempt_budget(self):
+        from backend.services.profit_daemon_ops_service import force_attempt_budget_state, record_force_attempt
+        st = force_attempt_budget_state()
+        self.assertTrue(st.get("success"))
+        self.assertIn("cap", st)
+        record_force_attempt()
+
+    def test_venue_min_notional_floors(self):
+        from backend.services.profit_daemon_ops_service import venue_min_notional_floors
+        floors = venue_min_notional_floors()
+        self.assertTrue(floors.get("success"))
+        self.assertIn("binance", floors.get("floors_usd", {}))
+
+    def test_tax_export_csv(self):
+        from backend.services.profit_daemon_ops_service import tax_export_csv
+        data = tax_export_csv(season="2026")
+        self.assertTrue(data.get("success"))
+        self.assertIn("csv", data)
+
+    def test_casino_skip_on_kill(self):
+        from backend.services.profit_daemon_ops_service import casino_agent_tick_skip_on_kill
+        out = casino_agent_tick_skip_on_kill()
+        self.assertIn("skip_casino_agent_tick", out)
+
+    def test_paper_live_banner(self):
+        r = self.client.get("/api/profit-daemon/paper-live-banner")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json().get("success"))
+
+    def test_spork_audit(self):
+        r = self.client.get("/api/profit-daemon/spork-audit")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("banner_line", r.get_json())
 
 
 if __name__ == "__main__":

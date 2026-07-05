@@ -361,6 +361,40 @@
       html = '🛟 Support queue ' + esc(ex.agent_support_open) +
         ' · Daemon ages ' + (ex.daemon_connection_sparkline || []).join(',');
     }
+    var rem = ex.remaining || {};
+    if (rem.market_activity_deltas) {
+      html += ' · 📊 Blocks ' + esc(rem.market_activity_deltas.blocks_24h_delta);
+    }
+    if (rem.fee_suggestion_strip) {
+      html += ' · ⛽ Fee fast ' + esc(rem.fee_suggestion_strip.fast_sat) + ' sat';
+    }
+    if (rem.tax_report_seasons) {
+      html += ' · 📑 Tax ' + esc((rem.tax_report_seasons[0] || {}).label);
+    }
+    if (rem.shop_analytics) {
+      html += ' · 📈 Catalog ' + esc(rem.shop_analytics.catalog_size);
+    }
+    if (rem.discord_fanout) {
+      html += ' · Discord ' + esc(rem.discord_fanout.enabled ? 'on' : 'off');
+    }
+    if (rem.preset_browser) {
+      html += ' · 🎬 Presets ' + (rem.preset_browser.presets || []).length;
+    }
+    if (rem.register_intelligence_404_count != null) {
+      html += ' · 404s ' + esc(rem.register_intelligence_404_count);
+    }
+    if (rem.trophy_hunt_progress) {
+      html += ' · 🏆 Trophy ' + esc(rem.trophy_hunt_progress.pct) + '%';
+    }
+    if (rem.shared_crew_board) {
+      html += ' · 👥 Crew board ' + (rem.shared_crew_board || []).length;
+    }
+    if (rem.champion_league_season) {
+      html += ' · 🏅 Season ' + esc(rem.champion_league_season.season_id);
+    }
+    if (rem.cross_area_mn2_total != null) {
+      html += ' · MN2 total ' + esc(rem.cross_area_mn2_total);
+    }
     if (html) slot.innerHTML = html;
   }
 

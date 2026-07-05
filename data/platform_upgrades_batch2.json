@@ -69,7 +69,7 @@
           "id": 109,
           "title": "Market activity delta tiles",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#10"
         },
         {
@@ -82,31 +82,31 @@
           "id": 111,
           "title": "Wallet address QR export",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 112,
           "title": "Block confirmation countdown",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 113,
           "title": "Peer count history chip",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 114,
           "title": "Tx mempool size estimator",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 115,
           "title": "Difficulty retarget ETA",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 116,
@@ -130,7 +130,7 @@
           "id": 119,
           "title": "Network fee suggestion strip",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 120,
@@ -257,13 +257,13 @@
           "id": 137,
           "title": "Tax report season selector",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 138,
           "title": "Venue rotation countdown",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 139,
@@ -377,19 +377,19 @@
           "id": 154,
           "title": "Exchange bot rental count",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 155,
           "title": "Podcast portal status",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 156,
           "title": "Theme unlock progress",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 157,
@@ -414,7 +414,7 @@
           "id": 160,
           "title": "Cross-area MN2 total",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#70"
         }
       ]
@@ -471,7 +471,7 @@
           "id": 167,
           "title": "Shop analytics panel",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#40"
         },
         {
@@ -602,7 +602,7 @@
           "id": 186,
           "title": "Discord fanout status",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#49"
         },
         {
@@ -654,13 +654,13 @@
           "id": 194,
           "title": "Mobile swipe tab nav",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 195,
           "title": "Fan club join CTA",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 196,
@@ -747,7 +747,7 @@
           "id": 207,
           "title": "Runway-style preset browser",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#60"
         },
         {
@@ -810,13 +810,13 @@
           "id": 217,
           "title": "Batch job queue reorder",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 218,
           "title": "Export to game inventory",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 219,
@@ -871,21 +871,21 @@
           "id": 225,
           "title": "Podcast strip integration",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#68"
         },
         {
           "id": 226,
           "title": "Battlegrounds zone alert",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#69"
         },
         {
           "id": 227,
           "title": "Cross-area MN2 reward totals",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#70"
         },
         {
@@ -918,7 +918,7 @@
           "id": 232,
           "title": "Register intelligence 404 count",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 233,
@@ -930,13 +930,13 @@
           "id": 234,
           "title": "CEO agent profile link",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 235,
           "title": "Agent skillset coverage",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 236,
@@ -995,7 +995,7 @@
           "id": 243,
           "title": "Aggregator fulfill status",
           "priority": "P2",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#76"
         },
         {
@@ -1009,21 +1009,21 @@
           "id": 245,
           "title": "Walkthrough guide drawer",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#78"
         },
         {
           "id": 246,
           "title": "Geo-ref profiling chip",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#79"
         },
         {
           "id": 247,
           "title": "Competitive loops dashboard",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#80"
         },
         {
@@ -1036,7 +1036,7 @@
           "id": 249,
           "title": "Trophy hunt progress",
           "priority": "P2",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 250,
@@ -1067,13 +1067,13 @@
           "id": 254,
           "title": "Season pass progress",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 255,
           "title": "Crew invite CTA",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 256,
@@ -1085,7 +1085,7 @@
           "id": 257,
           "title": "Pixel clan status",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 258,
@@ -1097,7 +1097,7 @@
           "id": 259,
           "title": "Featured game rotation",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#71"
         },
         {
@@ -1153,7 +1153,7 @@
           "id": 266,
           "title": "Shared quest crew board",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#89"
         },
         {
@@ -1204,13 +1204,13 @@
           "id": 274,
           "title": "Quest share link",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 275,
           "title": "Quest difficulty tags",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 276,
@@ -1222,7 +1222,7 @@
           "id": 277,
           "title": "Quest leaderboard mini",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 278,
@@ -1234,7 +1234,7 @@
           "id": 279,
           "title": "Casino spin quest hook",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 280,
@@ -1275,21 +1275,21 @@
           "id": 284,
           "title": "Lab tech forge integration",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#97"
         },
         {
           "id": 285,
           "title": "Champion league season link",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#98"
         },
         {
           "id": 286,
           "title": "Battle chart analytics",
           "priority": "P3",
-          "status": "planned",
+          "status": "done",
           "ref_batch1": "#99"
         },
         {
@@ -1340,7 +1340,7 @@
           "id": 294,
           "title": "PVP trophy gallery link",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 295,
@@ -1370,7 +1370,7 @@
           "id": 299,
           "title": "Crew battle invite",
           "priority": "P3",
-          "status": "planned"
+          "status": "done"
         },
         {
           "id": 300,
