@@ -64,10 +64,16 @@ def forum_overview():
     """Hub metadata for Forum UI tabs."""
     articles = _load_articles()
     news = _load_json(_PLATFORM_NEWS_PATH, {"items": []}).get("items") or []
+    try:
+        from backend.services.forum_agent_service import load_threads
+        thread_count = len(load_threads())
+    except Exception:
+        thread_count = 0
     return jsonify({
         "success": True,
         "tabs": [
             {"id": "home", "label": "Home", "icon": "🏠"},
+            {"id": "discussions", "label": "Discussions", "icon": "💭"},
             {"id": "news", "label": "News", "icon": "📰"},
             {"id": "articles", "label": "Articles", "icon": "✍️"},
             {"id": "chat", "label": "Chat", "icon": "💬"},
@@ -82,9 +88,125 @@ def forum_overview():
         "counts": {
             "articles": len(articles),
             "news": len(news),
+            "threads": thread_count,
         },
+        "discussions_url": "/api/forum/threads",
+        "topics_url": "/api/forum/topics",
         "writing_rules_url": "/api/forum/rules",
     }), 200
+
+
+@forum_bp.route("/api/forum/topics", methods=["GET"])
+def forum_topics():
+    from backend.services.forum_agent_service import load_topics
+    themes = load_topics()
+    return jsonify({"success": True, "themes": themes, "count": len(themes)}), 200
+
+
+@forum_bp.route("/api/forum/threads", methods=["GET"])
+def forum_list_threads():
+    from backend.services.forum_agent_service import load_threads, public_thread
+    topic_id = (request.args.get("topic_id") or "").strip()
+    subforum_id = (request.args.get("subforum_id") or "").strip()
+    limit = request.args.get("limit", 40, type=int)
+    threads = load_threads()
+    if topic_id:
+        threads = [t for t in threads if t.get("topic_id") == topic_id]
+    if subforum_id:
+        threads = [t for t in threads if t.get("subforum_id") == subforum_id]
+    threads = sorted(threads, key=lambda t: t.get("updated_at") or "", reverse=True)
+    if limit > 0:
+        threads = threads[:limit]
+    return jsonify({
+        "success": True,
+        "threads": [public_thread(t) for t in threads],
+        "count": len(threads),
+    }), 200
+
+
+@forum_bp.route("/api/forum/threads", methods=["POST"])
+def forum_create_thread():
+    from backend.services.forum_agent_service import create_thread, public_thread
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip() or None
+    content = (body.get("body") or "").strip() or None
+    kind = (body.get("kind") or "question").strip()[:20]
+    author_name = (body.get("author_name") or _resolve_uid()).strip()[:80]
+    thread = create_thread(
+        topic_id=body.get("topic_id"),
+        subforum_id=body.get("subforum_id"),
+        kind=kind,
+        title=title,
+        body=content,
+        author_name=author_name,
+        agent_authored=False,
+    )
+    return jsonify({"success": True, "thread": public_thread(thread)}), 201
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>", methods=["GET"])
+def forum_get_thread(thread_id: str):
+    from backend.services.forum_agent_service import load_threads, public_thread
+    for t in load_threads():
+        if t.get("id") == thread_id:
+            return jsonify({"success": True, "thread": public_thread(t)}), 200
+    return jsonify({"success": False, "error": "not found"}), 404
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/reply", methods=["POST"])
+def forum_reply_thread(thread_id: str):
+    from backend.services.forum_agent_service import reply_to_thread, public_thread, load_threads
+    body = request.get_json(silent=True) or {}
+    content = (body.get("body") or "").strip() or None
+    kind = (body.get("kind") or "answer").strip()[:20]
+    author_name = (body.get("author_name") or _resolve_uid()).strip()[:80]
+    post = reply_to_thread(
+        thread_id,
+        body=content,
+        kind=kind,
+        author_name=author_name,
+        agent_authored=False,
+    )
+    if not post:
+        return jsonify({"success": False, "error": "thread not found"}), 404
+    thread = next((t for t in load_threads() if t.get("id") == thread_id), None)
+    return jsonify({"success": True, "post": post, "thread": public_thread(thread) if thread else None}), 201
+
+
+@forum_bp.route("/api/forum/agent/run", methods=["POST"])
+def forum_agent_run():
+    """Run camouflage agent cycle (requires AGENT_CRON_SECRET when set)."""
+    import os
+    secret = (os.environ.get("AGENT_CRON_SECRET") or "").strip()
+    tok = (request.headers.get("X-Agent-Cron-Token") or request.args.get("token") or "").strip()
+    if secret and tok != secret:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    body = request.get_json(silent=True) or {}
+    max_threads = int(body.get("max_new_threads") or request.args.get("max_new_threads") or 2)
+    max_replies = int(body.get("max_replies") or request.args.get("max_replies") or 3)
+    from backend.services.forum_agent_service import run_agent_cycle
+    result = run_agent_cycle(max_new_threads=max_threads, max_replies=max_replies)
+    return jsonify({"success": result.get("success", True), **result}), 200
+
+
+@forum_bp.route("/api/forum/agent/seed", methods=["POST"])
+def forum_agent_seed():
+    """Bootstrap initial forum threads if empty."""
+    import os
+    secret = (os.environ.get("AGENT_CRON_SECRET") or "").strip()
+    tok = (request.headers.get("X-Agent-Cron-Token") or request.args.get("token") or "").strip()
+    if secret and tok != secret:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.forum_agent_service import seed_initial_content
+    return jsonify(seed_initial_content()), 200
+
+
+@forum_bp.route("/api/forum/personas", methods=["GET"])
+def forum_personas_public():
+    """Public persona list (camouflage — no agent flags)."""
+    from backend.services.forum_agent_service import load_personas, public_persona
+    personas = [public_persona(p) for p in load_personas()]
+    return jsonify({"success": True, "personas": personas, "count": len(personas)}), 200
 
 
 @forum_bp.route("/api/forum/rules", methods=["GET"])
@@ -187,11 +309,26 @@ def get_article(article_id: str):
 
 @forum_bp.route("/api/forum/feed", methods=["GET"])
 def forum_feed():
-    """Mixed feed: articles + recent news headlines."""
+    """Mixed feed: threads, articles + recent news headlines."""
     limit = request.args.get("limit", 25, type=int)
+    from backend.services.forum_agent_service import load_threads, public_thread
+    threads = load_threads()[:10]
     articles = _load_articles()[:limit]
     news = (_load_json(_PLATFORM_NEWS_PATH, {"items": []}).get("items") or [])[:10]
     feed = []
+    for t in threads:
+        pt = public_thread(t)
+        opening = (pt.get("posts") or [{}])[0]
+        feed.append({
+            "type": "thread",
+            "id": pt.get("id"),
+            "title": pt.get("title"),
+            "summary": (opening.get("body") or "")[:200],
+            "author_name": opening.get("author_name"),
+            "theme_title": pt.get("theme_title"),
+            "created_at": pt.get("updated_at"),
+            "href": f"/forum#discussions/{pt.get('id')}",
+        })
     for a in articles:
         feed.append({
             "type": "article",

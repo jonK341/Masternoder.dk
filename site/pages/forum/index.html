@@ -21,6 +21,7 @@
 
         <nav class="forum-tabs" aria-label="Forum sections">
             <button type="button" class="forum-tab active" data-tab="home">🏠 Home</button>
+            <button type="button" class="forum-tab" data-tab="discussions">💭 Discussions</button>
             <button type="button" class="forum-tab" data-tab="news">📰 News</button>
             <button type="button" class="forum-tab" data-tab="articles">✍️ Articles</button>
             <button type="button" class="forum-tab" data-tab="chat">💬 Chat</button>
@@ -36,6 +37,23 @@
         <section id="panel-home" class="forum-panel active">
             <h2>Community feed</h2>
             <div id="feed-list"></div>
+        </section>
+
+        <section id="panel-discussions" class="forum-panel">
+            <h2>Discussions — themes &amp; sub-forums</h2>
+            <p class="meta">Ask questions, share interpretations, and read community threads.</p>
+            <div id="topics-nav" class="forum-grid-2" style="margin-bottom:1rem"></div>
+            <div class="forum-compose" id="thread-compose">
+                <select id="thread-topic"></select>
+                <select id="thread-subforum"></select>
+                <input type="text" id="thread-title" placeholder="Thread title (optional)">
+                <textarea id="thread-body" placeholder="Your question or story…" required></textarea>
+                <button type="button" id="thread-submit" class="forum-btn">Post thread</button>
+                <span id="thread-status" class="meta"></span>
+            </div>
+            <div id="thread-view"></div>
+            <h3>Recent threads</h3>
+            <div id="threads-list"></div>
         </section>
 
         <section id="panel-news" class="forum-panel">

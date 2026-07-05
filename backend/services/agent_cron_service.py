@@ -127,6 +127,12 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'forum_agent':
+                from backend.services.forum_agent_service import run_agent_cycle
+                out['results'][job] = run_agent_cycle(max_new_threads=2, max_replies=3)
+            elif job == 'forum_seed':
+                from backend.services.forum_agent_service import seed_initial_content
+                out['results'][job] = seed_initial_content()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -165,4 +171,8 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
+    if n == 'forum':
+        return ['forum_agent']
+    if n == 'forum_bootstrap':
+        return ['forum_seed']
     return []

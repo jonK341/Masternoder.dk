@@ -8,9 +8,14 @@
   const uid = () => localStorage.getItem('user_id') || 'default_user';
 
   const TAB_IDS = [
-    'home', 'news', 'articles', 'chat', 'podcast', 'rulebooks',
+    'home', 'discussions', 'news', 'articles', 'chat', 'podcast', 'rulebooks',
     'paragraphs', 'docs', 'support', 'social', 'wikipedia',
   ];
+
+  let topicsCache = [];
+  let selectedTopicId = '';
+  let selectedSubforumId = '';
+  let openThreadId = '';
 
   function $(sel) { return document.querySelector(sel); }
   function esc(s) {
@@ -29,15 +34,18 @@
   }
 
   function setTab(tabId) {
-    const id = TAB_IDS.includes(tabId) ? tabId : 'home';
+    const parts = (location.hash || '#home').replace(/^#/, '').split('/');
+    const base = parts[0] || 'home';
+    const id = TAB_IDS.includes(tabId) ? tabId : (TAB_IDS.includes(base) ? base : 'home');
+    if (parts[1] && id === 'discussions') openThreadId = parts[1];
     document.querySelectorAll('.forum-tab').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.tab === id);
     });
     document.querySelectorAll('.forum-panel').forEach((p) => {
       p.classList.toggle('active', p.id === 'panel-' + id);
     });
-    if (location.hash !== '#' + id) {
-      history.replaceState(null, '', '#'+ id);
+    if (!location.hash.startsWith('#' + id)) {
+      history.replaceState(null, '', '#' + id + (openThreadId && id === 'discussions' ? '/' + openThreadId : ''));
     }
     loadPanel(id);
   }
@@ -50,6 +58,7 @@
   async function loadPanel(tab) {
     switch (tab) {
       case 'home': return loadFeed();
+      case 'discussions': return loadDiscussions();
       case 'news': return loadNews();
       case 'articles': return loadArticles();
       case 'chat': return loadChat();
@@ -298,6 +307,151 @@
     </div>`;
   }
 
+  async function loadTopicsNav() {
+    const nav = $('#topics-nav');
+    const topicSel = $('#thread-topic');
+    const subSel = $('#thread-subforum');
+    if (!nav) return;
+    const data = await api('/api/forum/topics');
+    topicsCache = data.themes || [];
+    nav.innerHTML = topicsCache.map((th) => `
+      <div class="forum-card topic-card" data-topic="${esc(th.id)}" style="cursor:pointer">
+        <h3>${esc(th.icon || '')} ${esc(th.title)}</h3>
+        <p>${esc(th.description || '')}</p>
+        <p class="meta">${(th.subforums || []).map((s) => esc(s.title)).join(' · ')}</p>
+      </div>
+    `).join('');
+    nav.querySelectorAll('.topic-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        selectedTopicId = card.dataset.topic;
+        loadThreadsList();
+        fillTopicSelects();
+      });
+    });
+    if (topicSel) {
+      topicSel.innerHTML = '<option value="">Theme…</option>' + topicsCache.map((th) =>
+        `<option value="${esc(th.id)}">${esc(th.title)}</option>`
+      ).join('');
+      topicSel.onchange = () => { selectedTopicId = topicSel.value; fillSubforumSelect(); };
+    }
+    fillTopicSelects();
+  }
+
+  function fillTopicSelects() {
+    const topicSel = $('#thread-topic');
+    const subSel = $('#thread-subforum');
+    if (topicSel && selectedTopicId) topicSel.value = selectedTopicId;
+    fillSubforumSelect();
+  }
+
+  function fillSubforumSelect() {
+    const subSel = $('#thread-subforum');
+    const th = topicsCache.find((t) => t.id === (selectedTopicId || $('#thread-topic')?.value));
+    if (!subSel) return;
+    const subs = th?.subforums || [];
+    subSel.innerHTML = '<option value="">Sub-forum…</option>' + subs.map((s) =>
+      `<option value="${esc(s.id)}">${esc(s.title)}</option>`
+    ).join('');
+  }
+
+  async function loadThreadsList() {
+    const el = $('#threads-list');
+    if (!el) return;
+    let path = '/api/forum/threads?limit=30';
+    if (selectedTopicId) path += '&topic_id=' + encodeURIComponent(selectedTopicId);
+    if (selectedSubforumId) path += '&subforum_id=' + encodeURIComponent(selectedSubforumId);
+    const data = await api(path);
+    el.innerHTML = (data.threads || []).map((t) => {
+      const op = (t.posts || [])[0] || {};
+      return `<div class="forum-card thread-card" data-id="${esc(t.id)}">
+        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · ${esc(t.post_count)} posts</div>
+        <h3>${esc(t.title)}</h3>
+        <p>${esc((op.body || '').slice(0, 180))}</p>
+        <span class="meta">${esc(op.avatar || '')} ${esc(op.author_name || '')}</span>
+      </div>`;
+    }).join('') || '<div class="forum-status">No threads yet — be the first!</div>';
+    el.querySelectorAll('.thread-card').forEach((card) => {
+      card.addEventListener('click', () => openThread(card.dataset.id));
+    });
+  }
+
+  async function openThread(id) {
+    openThreadId = id;
+    history.replaceState(null, '', '#discussions/' + id);
+    const view = $('#thread-view');
+    if (!view) return;
+    const data = await api('/api/forum/threads/' + encodeURIComponent(id));
+    if (!data.thread) {
+      view.innerHTML = '<div class="forum-status">Thread not found.</div>';
+      return;
+    }
+    const t = data.thread;
+    view.innerHTML = `
+      <div class="forum-card">
+        <h3>${esc(t.title)}</h3>
+        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)}</div>
+      </div>
+      ${(t.posts || []).map((p) => `
+        <div class="forum-card">
+          <div class="meta">${esc(p.avatar || '')} <strong>${esc(p.author_name)}</strong> · ${esc(p.kind)} · ${esc(p.created_at)}</div>
+          <p>${esc(p.body)}</p>
+        </div>
+      `).join('')}
+      <div class="forum-compose">
+        <textarea id="reply-body" placeholder="Write a reply…"></textarea>
+        <button type="button" id="reply-submit" class="forum-btn secondary">Reply</button>
+      </div>`;
+    $('#reply-submit')?.addEventListener('click', async () => {
+      const body = ($('#reply-body') || {}).value.trim();
+      if (!body) return;
+      await api('/api/forum/threads/' + encodeURIComponent(id) + '/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uid(), author_name: uid(), body }),
+      });
+      openThread(id);
+      loadThreadsList();
+      loadFeed();
+    });
+  }
+
+  async function submitThread() {
+    const status = $('#thread-status');
+    const body = ($('#thread-body') || {}).value.trim();
+    const title = ($('#thread-title') || {}).value.trim();
+    const topic_id = ($('#thread-topic') || {}).value;
+    const subforum_id = ($('#thread-subforum') || {}).value;
+    if (!body) return;
+    status.textContent = 'Posting…';
+    const data = await api('/api/forum/threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: uid(),
+        author_name: uid(),
+        body,
+        title: title || undefined,
+        topic_id: topic_id || undefined,
+        subforum_id: subforum_id || undefined,
+        kind: 'question',
+      }),
+    });
+    status.textContent = data.success ? 'Posted!' : (data.error || 'Failed');
+    if (data.success) {
+      $('#thread-body').value = '';
+      $('#thread-title').value = '';
+      loadThreadsList();
+      loadFeed();
+      if (data.thread?.id) openThread(data.thread.id);
+    }
+  }
+
+  async function loadDiscussions() {
+    await loadTopicsNav();
+    await loadThreadsList();
+    if (openThreadId) openThread(openThreadId);
+  }
+
   async function loadRules() {
     const el = $('#rules-list');
     if (!el) return;
@@ -321,6 +475,7 @@
     $('#chat-send')?.addEventListener('click', sendChat);
     $('#ai-chat-send')?.addEventListener('click', sendAiChat);
     $('#wiki-search')?.addEventListener('click', searchWiki);
+    $('#thread-submit')?.addEventListener('click', submitThread);
     loadRules();
   }
 

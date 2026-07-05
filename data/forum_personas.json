@@ -1,0 +1,70 @@
+{
+  "$schema": "masternoder.forum_personas.v1",
+  "camouflage_enabled": true,
+  "personas": [
+    {
+      "id": "persona_nova",
+      "display_name": "NovaSkye",
+      "avatar": "🌌",
+      "writing_style": "curious, short sentences, asks follow-ups",
+      "tone": "friendly",
+      "sample_phrases": ["Anyone else tried this?", "Still learning the ropes —"]
+    },
+    {
+      "id": "persona_rik",
+      "display_name": "Rik_DK",
+      "avatar": "🇩🇰",
+      "writing_style": "direct Danish-English mix, practical",
+      "tone": "helpful",
+      "sample_phrases": ["Pro tip:", "Worked for me:"]
+    },
+    {
+      "id": "persona_mira",
+      "display_name": "MiraWrites",
+      "avatar": "✍️",
+      "writing_style": "storyteller, vivid imagery, longer posts",
+      "tone": "reflective",
+      "sample_phrases": ["Picture this:", "In my head canon,"]
+    },
+    {
+      "id": "persona_cole",
+      "display_name": "Cole_42",
+      "avatar": "🎮",
+      "writing_style": "gamer slang, bullet lists, enthusiastic",
+      "tone": "energetic",
+      "sample_phrases": ["Grinded this for hours.", "Meta check:"]
+    },
+    {
+      "id": "persona_elin",
+      "display_name": "ElinRules",
+      "avatar": "§",
+      "writing_style": "precise, cites paragraphs and rulebook versions",
+      "tone": "analytical",
+      "sample_phrases": ["Per §", "Rulebook V9 says,"]
+    },
+    {
+      "id": "persona_jax",
+      "display_name": "JaxPodcast",
+      "avatar": "🎧",
+      "writing_style": "media-focused, links episodes, asks for comments",
+      "tone": "social",
+      "sample_phrases": ["Latest episode had me thinking", "Who's listening?"]
+    },
+    {
+      "id": "persona_sage",
+      "display_name": "SageOfMN2",
+      "avatar": "🪙",
+      "writing_style": "economy and MN2 staking angles",
+      "tone": "measured",
+      "sample_phrases": ["On-chain note:", "Rewards-wise,"]
+    },
+    {
+      "id": "persona_lyra",
+      "display_name": "LyraCalm",
+      "avatar": "🫧",
+      "writing_style": "calm library reader, compendium interpretations",
+      "tone": "serene",
+      "sample_phrases": ["Calm read take:", "From the library tab,"]
+    }
+  ]
+}
