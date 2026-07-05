@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260705">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260705">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260705">
-    <link rel="stylesheet" href="/static/css/forum-hub.css?v=20260706">
+    <link rel="stylesheet" href="/static/css/forum-hub.css?v=20260706b">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
 <body>
@@ -184,9 +184,17 @@
         </section>
 
         <section id="panel-social" class="forum-panel">
-            <h2>Share to social media</h2>
-            <p class="meta">Discord, Facebook, Instagram, Snapchat, X, LinkedIn, WhatsApp</p>
-            <div id="social-networks" class="forum-social-row"></div>
+            <h2>Share &amp; connect</h2>
+            <p class="meta">Share MasterNoder anywhere and follow the community across every major network.</p>
+            <div class="forum-share-controls">
+                <input type="text" id="share-text" placeholder="Share message…" aria-label="Share message">
+                <input type="url" id="share-url" placeholder="URL to share (defaults to this page)" aria-label="URL to share">
+                <div class="forum-share-actions">
+                    <button type="button" id="native-share" class="forum-btn" hidden>📲 Share…</button>
+                    <button type="button" id="copy-share-link" class="forum-btn secondary">🔗 Copy link</button>
+                </div>
+            </div>
+            <div id="social-networks"></div>
         </section>
 
         <section id="panel-wikipedia" class="forum-panel">
@@ -207,7 +215,7 @@
     <div id="forum-toast" class="forum-toast" role="status" aria-live="polite"></div>
 
     <script src="/static/js/navigation-toolbar.js"></script>
-    <script src="/static/js/forum-hub.js?v=20260706b" defer></script>
+    <script src="/static/js/forum-hub.js?v=20260706c" defer></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
 </body>
 </html>

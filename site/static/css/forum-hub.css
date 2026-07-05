@@ -411,6 +411,42 @@
 .forum-toast.err { border-color: rgba(255, 107, 107, 0.6); }
 .forum-toast.ok { border-color: rgba(0, 255, 136, 0.6); }
 
+/* ===== Social share & connect ===== */
+.forum-share-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.forum-share-controls input {
+  flex: 1 1 240px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-family: inherit;
+}
+.forum-share-actions { display: flex; gap: 8px; align-items: center; }
+.forum-social-group { margin-bottom: 16px; }
+.forum-social-group h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin: 0 0 8px;
+  color: #9fe8ff;
+}
+.forum-social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-left-width: 3px;
+}
+.forum-social-btn .social-ic { font-weight: 800; min-width: 1.1em; text-align: center; }
+.social-follow { opacity: 0.6; font-size: 0.75em; }
+body.forum-light .forum-share-controls input { color: #14202e; background: #fff; }
+
 /* ===== Grammar assistant ===== */
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;

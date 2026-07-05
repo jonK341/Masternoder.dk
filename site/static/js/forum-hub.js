@@ -473,22 +473,65 @@
     }
   }
 
+  function shareUrlValue() {
+    const v = ($('#share-url') || {}).value;
+    return (v && v.trim()) || (location.origin + '/forum/');
+  }
+  function shareTextValue() {
+    const v = ($('#share-text') || {}).value;
+    return (v && v.trim()) || 'MasterNoder — AI video, game, battle & community forum';
+  }
+
   async function loadSocial() {
     const el = $('#social-networks');
     if (!el) return;
+    el.innerHTML = skeleton(2);
     const data = await api('/api/forum/social-networks');
-    el.innerHTML = (data.networks || []).map((n) => `
-      <button type="button" class="forum-social-btn share-net" data-net="${esc(n.id)}" style="border-color:${esc(n.color || '#666')}">${esc(n.icon)} ${esc(n.name)}</button>
-    `).join('');
+    const nets = data.networks || [];
+    const cats = data.categories || [{ id: '', label: 'Networks' }];
+    if ($('#share-text') && !$('#share-text').value) $('#share-text').value = data.default_share_text || '';
+
+    const groups = {};
+    nets.forEach((n) => { const c = n.category || 'other'; (groups[c] = groups[c] || []).push(n); });
+
+    el.innerHTML = cats.filter((c) => groups[c.id] && groups[c.id].length).map((c) => `
+      <div class="forum-social-group">
+        <h3>${esc(c.label)}</h3>
+        <div class="forum-social-row">
+          ${groups[c.id].map((n) => `
+            <button type="button" class="forum-social-btn share-net" data-net="${esc(n.id)}" data-type="${esc(n.type || 'share')}" style="border-color:${esc(n.color || '#666')}" title="${esc(n.type === 'follow' ? 'Open ' + n.name : 'Share to ' + n.name)}">
+              <span class="social-ic" aria-hidden="true">${esc(n.icon)}</span> ${esc(n.name)}${n.type === 'follow' ? ' <span class="social-follow">↗</span>' : ''}
+            </button>`).join('')}
+        </div>
+      </div>`).join('') || '<div class="forum-status">No networks configured.</div>';
+
     el.querySelectorAll('.share-net').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const d = await api('/api/forum/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ network: btn.dataset.net, url: location.origin + '/forum/', text: 'MasterNoder Forum' }),
+          body: JSON.stringify({ network: btn.dataset.net, url: shareUrlValue(), text: shareTextValue() }),
         });
-        if (d.share_url) window.open(d.share_url, '_blank', 'noopener');
+        if (d.share_url) { window.open(d.share_url, '_blank', 'noopener'); sonic('navigate'); }
+        else toast(d.error || 'Could not build share link', 'err');
       });
+    });
+  }
+
+  function wireShareControls() {
+    const nativeBtn = $('#native-share');
+    if (nativeBtn && navigator.share) {
+      nativeBtn.hidden = false;
+      nativeBtn.addEventListener('click', async () => {
+        try {
+          await navigator.share({ title: 'MasterNoder', text: shareTextValue(), url: shareUrlValue() });
+          sonic('success');
+        } catch (_) {}
+      });
+    }
+    $('#copy-share-link')?.addEventListener('click', () => {
+      const url = shareUrlValue();
+      (navigator.clipboard?.writeText(url) || Promise.reject()).then(() => toast('Link copied', 'ok')).catch(() => toast(url));
     });
   }
 
@@ -870,6 +913,7 @@
 
     attachGrammar($('#thread-body'));
     attachGrammar($('#article-body'));
+    wireShareControls();
 
     loadRules();
   }

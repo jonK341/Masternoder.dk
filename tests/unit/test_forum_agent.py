@@ -215,3 +215,37 @@ def test_api_grammar_fallback(client):
 def test_api_grammar_requires_text(client):
     r = client.post("/api/forum/grammar", json={"text": "  ", "language": "da"})
     assert r.status_code == 400
+
+
+def test_api_social_networks_comprehensive(client):
+    r = client.get("/api/forum/social-networks")
+    assert r.status_code == 200
+    d = r.get_json()
+    ids = [n["id"] for n in d["networks"]]
+    assert d["count"] >= 20
+    for expected in ("x", "facebook", "linkedin", "reddit", "telegram", "discord",
+                     "instagram", "tiktok", "youtube", "whatsapp", "mastodon", "bluesky"):
+        assert expected in ids, expected
+    assert {c["id"] for c in d["categories"]} >= {"social", "messaging", "community"}
+
+
+def test_api_social_networks_category_filter(client):
+    r = client.get("/api/forum/social-networks?category=community")
+    ids = [n["id"] for n in r.get_json()["networks"]]
+    assert "youtube" in ids and "discord" in ids
+    assert "x" not in ids
+
+
+def test_api_social_share_builds_url(client):
+    r = client.post("/api/forum/share", json={
+        "network": "reddit", "url": "https://example.com/x", "text": "Hello world",
+    })
+    assert r.status_code == 200
+    d = r.get_json()
+    assert d["success"] and "reddit.com/submit" in d["share_url"]
+    assert "example.com" in d["share_url"] and "Hello%20world" in d["share_url"]
+
+
+def test_api_social_share_unknown_network(client):
+    r = client.post("/api/forum/share", json={"network": "nope"})
+    assert r.status_code == 400

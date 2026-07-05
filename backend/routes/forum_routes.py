@@ -639,48 +639,56 @@ def forum_feed():
     return jsonify({"success": True, "feed": feed[:limit], "count": len(feed)}), 200
 
 
+# Built-in fallback used only if data/social_networks.json is missing/corrupt.
+_SOCIAL_FALLBACK = {
+    "default_share_text": "MasterNoder — AI video, game, battle & community forum",
+    "categories": [
+        {"id": "social", "label": "Social"},
+        {"id": "messaging", "label": "Messaging"},
+        {"id": "community", "label": "Community & video"},
+        {"id": "save", "label": "Save & bookmark"},
+    ],
+    "networks": [
+        {"id": "x", "name": "X (Twitter)", "icon": "𝕏", "color": "#000000", "category": "social", "type": "share",
+         "share_url": "https://twitter.com/intent/tweet?text={text}&url={url}", "encode_text": True},
+        {"id": "facebook", "name": "Facebook", "icon": "f", "color": "#1877f2", "category": "social", "type": "share",
+         "share_url": "https://www.facebook.com/sharer/sharer.php?u={url}", "encode_text": False},
+        {"id": "linkedin", "name": "LinkedIn", "icon": "in", "color": "#0a66c2", "category": "social", "type": "share",
+         "share_url": "https://www.linkedin.com/sharing/share-offsite/?url={url}", "encode_text": False},
+        {"id": "whatsapp", "name": "WhatsApp", "icon": "💬", "color": "#25d366", "category": "messaging", "type": "share",
+         "share_url": "https://wa.me/?text={text}%20{url}", "encode_text": True},
+    ],
+}
+
+
 @forum_bp.route("/api/forum/social-networks", methods=["GET"])
 def forum_social_networks():
-    """Share targets including Discord, Facebook, Instagram, Snapchat."""
-    base = _load_json(_SOCIAL_NETWORKS_PATH, {})
-    extra = [
-        {
-            "id": "discord",
-            "name": "Discord",
-            "icon": "💬",
-            "color": "#5865F2",
-            "share_url": "https://discord.com/channels/@me",
-            "content_url": "/api/discord/link",
-            "encode_text": False,
-        },
-        {
-            "id": "instagram",
-            "name": "Instagram",
-            "icon": "📷",
-            "color": "#E4405F",
-            "share_url": "https://www.instagram.com/",
-            "encode_text": False,
-        },
-        {
-            "id": "snapchat",
-            "name": "Snapchat",
-            "icon": "👻",
-            "color": "#FFFC00",
-            "share_url": "https://www.snapchat.com/scan?attachmentUrl={url}",
-            "encode_text": False,
-        },
-    ]
-    networks = list(base.get("networks") or []) + extra
+    """Comprehensive share/follow targets, grouped by category (from data file)."""
+    data = _load_json(_SOCIAL_NETWORKS_PATH, {})
+    networks = data.get("networks")
+    if not networks:
+        data = _SOCIAL_FALLBACK
+        networks = data["networks"]
+    category = (request.args.get("category") or "").strip().lower()
+    if category:
+        networks = [n for n in networks if (n.get("category") or "").lower() == category]
     return jsonify({
         "success": True,
         "networks": networks,
-        "default_share_text": base.get("default_share_text"),
+        "count": len(networks),
+        "categories": data.get("categories") or _SOCIAL_FALLBACK["categories"],
+        "default_share_text": data.get("default_share_text") or _SOCIAL_FALLBACK["default_share_text"],
         "integrations": {
             "discord_api": "/api/discord/link",
             "facebook_oauth": "/api/auth/facebook/start",
             "podcast_channels": "/api/podcast/channels",
         },
     }), 200
+
+
+def _all_social_networks() -> list:
+    data = _load_json(_SOCIAL_NETWORKS_PATH, {})
+    return data.get("networks") or _SOCIAL_FALLBACK["networks"]
 
 
 @forum_bp.route("/api/forum/share", methods=["POST"])
@@ -690,9 +698,7 @@ def forum_share():
     network_id = (body.get("network") or "").strip().lower()
     text = (body.get("text") or "Check out MasterNoder Forum").strip()
     url = (body.get("url") or request.host_url.rstrip("/") + "/forum/").strip()
-    resp = forum_social_networks()
-    networks = resp[0].get_json().get("networks") or []
-    net = next((n for n in networks if n.get("id") == network_id), None)
+    net = next((n for n in _all_social_networks() if n.get("id") == network_id), None)
     if not net:
         return jsonify({"success": False, "error": "unknown network"}), 400
     from urllib.parse import quote
@@ -700,7 +706,12 @@ def forum_share():
     share_url = share_tpl.replace("{url}", quote(url, safe=""))
     if "{text}" in share_tpl:
         share_url = share_url.replace("{text}", quote(text, safe=""))
-    return jsonify({"success": True, "share_url": share_url, "network": network_id}), 200
+    return jsonify({
+        "success": True,
+        "share_url": share_url,
+        "network": network_id,
+        "type": net.get("type", "share"),
+    }), 200
 
 
 # ---------------------------------------------------------------------------
