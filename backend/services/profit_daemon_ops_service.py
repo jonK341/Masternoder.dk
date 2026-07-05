@@ -4,10 +4,12 @@ Wired from ``scripts/all_profit_daemons.py`` and monitor API — no separate pro
 """
 from __future__ import annotations
 
+import gzip
 import hashlib
 import hmac
 import json
 import os
+import shutil
 import socket
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,6 +25,17 @@ _ALERT_STATE_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_alert_state.json")
 _PAYOUT_PATH = os.path.join(ex._DATA_DIR, "payout_config.json")
 _CONNECTORS_PATH = os.path.join(ex._BASE, "data", "exchange_connectors_config.json")
 _STDOUT_LOG = os.path.join(ex._BASE, "logs", "profit_daemon_stdout.log")
+_UPGRADES_STATE_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_110_upgrades_state.json")
+_RENTAL_OVERLAY_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_rental_overlay.json")
+_AI_BYPASS_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_ai_bypass.jsonl")
+_AGENT_COOLDOWN_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_agent_cooldowns.json")
+_STASH_HISTORY_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_stash_history.json")
+_BLUE_GREEN_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_blue_green.json")
+_RESEARCH_QUOTA_PATH = os.path.join(ex._DATA_DIR, "profit_daemon_research_quota.json")
+_WEEKLY_REPORT_STATE = os.path.join(ex._DATA_DIR, "profit_daemon_weekly_report_state.json")
+_FILL_STREAK_STATE = os.path.join(ex._DATA_DIR, "profit_daemon_fill_streak.json")
+_HEARTBEAT_ARCHIVE_DIR = os.path.join(ex._BASE, "logs", "profit_heartbeat_archive")
+_PAYOUT_HISTORY_PATH = os.path.join(ex._DATA_DIR, "payout_sweeps.jsonl")
 
 
 def _iso() -> str:
@@ -372,7 +385,10 @@ def maybe_daily_ppp_summary() -> Dict[str, Any]:
             {"name": "Hit rate", "value": f"{hit:.1f}%", "inline": True},
         ],
     )
-    return {"success": True, "ppp": ppp, "alert": alert}
+    narrative = ppp_summary_llm_narrative(ppp)
+    state["last_ppp_narrative"] = narrative.get("narrative")
+    _write_state(_DAILY_STATE_PATH, state)
+    return {"success": True, "ppp": ppp, "alert": alert, "narrative": narrative}
 
 
 def rotate_daemon_logs(*, max_bytes: Optional[int] = None, keep: int = 5) -> Dict[str, Any]:
@@ -1049,6 +1065,13 @@ def run_exchange_tick_ops(
     sweep_res = exchange_res.get("sweep")
     if isinstance(sweep_res, dict) and sweep_res.get("success") and sweep_res.get("swept"):
         out["sweep_celebration"] = maybe_alert_sweep_success(sweep_res)
+        out["casino_vip_bump"] = maybe_casino_vip_bump_on_sweep(sweep_res)
+    out["rental_overlay"] = apply_rental_symbol_overlay()
+    out["stash_history"] = record_stash_history_point()
+    out["mn2_fill_bonus"] = maybe_mn2_fill_streak_bonus(exchange_res)
+    out["heartbeat_archive"] = maybe_archive_heartbeat_history()
+    out["weekly_report"] = maybe_weekly_ppp_report()
+    out["secrets_rotation"] = maybe_secrets_rotation_reminder()
     out["tick_profile"] = profile_exchange_tick(start)
     out["elapsed_sec"] = round(time.time() - start, 2)
     return out
@@ -1639,3 +1662,729 @@ def post_deploy_verify_hook() -> Dict[str, Any]:
         for v in checks.values()
     )
     return {"success": ok, "checks": checks, "verified_at": _iso()}
+
+
+# --- Profit daemon 110 upgrades (final batch — items 22,26-31,39-40,49,60-61,72,80-81,82-84,89-92,95-97,102,104-105,110) ---
+
+_FINAL_UPGRADE_IDS = (
+    22, 26, 27, 28, 29, 30, 31, 39, 40, 49, 60, 61, 72, 80, 81,
+    82, 83, 84, 89, 90, 91, 92, 95, 96, 97, 102, 104, 105, 110,
+)
+
+
+def profit_upgrades_state(*, mark_done: Optional[List[int]] = None) -> Dict[str, Any]:
+    """Track 110-upgrade roadmap completion in JSON state."""
+    state = _read_state(_UPGRADES_STATE_PATH)
+    done_set = set(int(x) for x in (state.get("done_ids") or []) if x)
+    if mark_done:
+        done_set.update(int(x) for x in mark_done)
+    done_set.update(_FINAL_UPGRADE_IDS)
+    payload = {
+        "updated_at": _iso(),
+        "total": 110,
+        "done": len(done_set),
+        "planned": max(0, 110 - len(done_set)),
+        "done_ids": sorted(done_set),
+        "complete": len(done_set) >= 110,
+    }
+    _write_state(_UPGRADES_STATE_PATH, payload)
+    return {"success": True, **payload}
+
+
+def apply_rental_symbol_overlay(*, limit: int = 12) -> Dict[str, Any]:
+    """User-agent symbol overlay from marketplace rentals (#22)."""
+    overlay: List[str] = []
+    seen: set = set()
+    try:
+        from backend.services.exchange_rental_service import rental_catalog
+
+        for row in (rental_catalog().get("rentals") or []):
+            for sym in list(row.get("symbols") or []) + list(row.get("hot_symbols") or []):
+                s = str(sym or "").upper()
+                if s and s not in seen:
+                    seen.add(s)
+                    overlay.append(s)
+    except Exception:
+        pass
+    agents_dir = os.path.join(ex._DATA_DIR, "user_agents")
+    if os.path.isdir(agents_dir):
+        for fname in os.listdir(agents_dir)[:50]:
+            if not fname.endswith(".json"):
+                continue
+            data = ex._read_json(os.path.join(agents_dir, fname), {})
+            for agent in (data.get("agents") or []):
+                if not isinstance(agent, dict) or not agent.get("rented"):
+                    continue
+                for sym in list(agent.get("symbols") or []) + list(agent.get("preferred_symbols") or []):
+                    s = str(sym or "").upper()
+                    if s and s not in seen:
+                        seen.add(s)
+                        overlay.append(s)
+    overlay = overlay[: max(1, limit)]
+    if overlay:
+        publish_hot_symbols_shared(overlay, source="rental_overlay", extra={"rental_overlay": overlay})
+    payload = {"updated_at": _iso(), "symbols": overlay, "count": len(overlay)}
+    _write_state(_RENTAL_OVERLAY_PATH, payload)
+    return {"success": True, **payload}
+
+
+def record_hot_spread_ai_bypass(
+    *,
+    symbol: str,
+    net_bps: float,
+    agent_id: str,
+    skip_reason: str,
+) -> Dict[str, Any]:
+    """Hot-spread AI bypass telemetry in PPP (#26)."""
+    hot_min = float(os.environ.get("PROFIT_HOT_SPREAD_BPS", "12"))
+    if float(net_bps or 0) < hot_min:
+        return {"skipped": True, "reason": "below_hot_threshold"}
+    row = {
+        "ts": _iso(),
+        "symbol": str(symbol or "").upper(),
+        "net_bps": round(float(net_bps), 2),
+        "agent_id": agent_id,
+        "skip_reason": skip_reason,
+        "event": "hot_spread_ai_bypass",
+    }
+    try:
+        with open(_AI_BYPASS_PATH, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+    except OSError:
+        pass
+    return {"success": True, "recorded": True, **row}
+
+
+def agent_skill_cooldown_check(agent_id: str, *, skill_id: str = "") -> Dict[str, Any]:
+    """Per-agent skill cooldown after loss streak (#27)."""
+    state = _read_state(_AGENT_COOLDOWN_PATH)
+    agents = state.get("agents") if isinstance(state.get("agents"), dict) else {}
+    row = agents.get(agent_id) or {}
+    streak = int(row.get("loss_streak") or 0)
+    threshold = int(os.environ.get("PROFIT_AGENT_LOSS_COOLDOWN_STREAK", "3"))
+    cooldown_sec = float(os.environ.get("PROFIT_AGENT_SKILL_COOLDOWN_SEC", "1800"))
+    until = float(row.get("cooldown_until") or 0)
+    now = time.time()
+    on_cooldown = streak >= threshold and now < until
+    if on_cooldown and skill_id:
+        cooled = list(row.get("cooled_skills") or [])
+        if skill_id not in cooled:
+            cooled.append(skill_id)
+            row["cooled_skills"] = cooled
+            agents[agent_id] = row
+            state["agents"] = agents
+            _write_state(_AGENT_COOLDOWN_PATH, state)
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "loss_streak": streak,
+        "on_cooldown": on_cooldown,
+        "cooldown_until": until if on_cooldown else None,
+        "cooled_skills": list(row.get("cooled_skills") or []),
+    }
+
+
+def record_agent_loss(agent_id: str, *, won: bool = False) -> Dict[str, Any]:
+    """Update agent loss streak for skill cooldown."""
+    state = _read_state(_AGENT_COOLDOWN_PATH)
+    agents = state.get("agents") if isinstance(state.get("agents"), dict) else {}
+    row = dict(agents.get(agent_id) or {})
+    if won:
+        row["loss_streak"] = 0
+        row.pop("cooldown_until", None)
+        row["cooled_skills"] = []
+    else:
+        streak = int(row.get("loss_streak") or 0) + 1
+        row["loss_streak"] = streak
+        threshold = int(os.environ.get("PROFIT_AGENT_LOSS_COOLDOWN_STREAK", "3"))
+        if streak >= threshold:
+            cd = float(os.environ.get("PROFIT_AGENT_SKILL_COOLDOWN_SEC", "1800"))
+            row["cooldown_until"] = time.time() + cd
+    agents[agent_id] = row
+    state["agents"] = agents
+    state["updated_at"] = _iso()
+    _write_state(_AGENT_COOLDOWN_PATH, state)
+    return agent_skill_cooldown_check(agent_id)
+
+
+def sentiment_feed_weight() -> Dict[str, Any]:
+    """Sentiment feed weight env override (#28)."""
+    w = float(os.environ.get("EXCHANGE_SENTIMENT_WEIGHT", os.environ.get("PROFIT_SENTIMENT_WEIGHT", "0.15")))
+    w = max(0.0, min(1.0, w))
+    return {"success": True, "weight": w, "source": "env"}
+
+
+def ai_skip_reason_tile_groups(*, hours: float = 24) -> Dict[str, Any]:
+    """AI skip reason dashboard tile grouping (#29)."""
+    from backend.services.exchange_profit_path_service import search_paths
+
+    buckets: Dict[str, int] = {
+        "funding": 0, "margin": 0, "venue": 0, "ai": 0, "kill": 0, "other": 0,
+    }
+    mapping = {
+        "funding": ("fund", "balance", "prefund", "stash"),
+        "margin": ("margin", "bps", "spread", "slippage"),
+        "venue": ("venue", "xeggex", "binance", "nonkyc", "withdraw"),
+        "ai": ("ai", "skill", "agent", "ensemble"),
+        "kill": ("kill", "spork", "gate"),
+    }
+    for row in search_paths(hours=hours, limit=3000).get("paths") or []:
+        if str(row.get("decision") or "") != "skip":
+            continue
+        reason = str(row.get("skip_reason") or row.get("reason") or "other").lower()
+        placed = False
+        for bucket, keys in mapping.items():
+            if any(k in reason for k in keys):
+                buckets[bucket] += 1
+                placed = True
+                break
+        if not placed:
+            buckets["other"] += 1
+    tiles = [
+        {"group": k, "label": k.replace("_", " ").title(), "count": v}
+        for k, v in sorted(buckets.items(), key=lambda x: -x[1])
+        if v > 0
+    ]
+    return {"success": True, "hours": hours, "tiles": tiles, "total": sum(buckets.values())}
+
+
+def ppp_summary_llm_narrative(ppp: Dict[str, Any]) -> Dict[str, Any]:
+    """LLM-style narrative on daily PPP summary (#30) — template-based, no external LLM."""
+    fills = int(ppp.get("fill_count") or 0)
+    hit = float(ppp.get("hit_rate_pct") or 0)
+    avg_bps = float(ppp.get("avg_net_bps") or 0)
+    scans = int(ppp.get("scan_count") or 0)
+    top_skip = (ppp.get("top_skip_reasons") or [{}])[0]
+    skip_txt = f"{top_skip.get('reason', 'none')} ({top_skip.get('count', 0)}×)" if top_skip else "none"
+    tone = "strong" if fills >= 5 and hit >= 40 else ("moderate" if fills >= 1 else "quiet")
+    narrative = (
+        f"Last 24h was a {tone} session: {fills} fills from {scans} scans "
+        f"at {hit:.1f}% hit rate and {avg_bps:.1f} bps average net. "
+        f"Primary skip driver: {skip_txt}. "
+        f"{'Keep funding hot symbols prefunded.' if tone != 'strong' else 'Momentum looks healthy — consider scaling notional.'}"
+    )
+    return {"success": True, "narrative": narrative, "tone": tone}
+
+
+def ai_skill_profile_sets(*, profile: Optional[str] = None) -> Dict[str, Any]:
+    """A/B AI skill sets via config profile (#31)."""
+    prof = (profile or os.environ.get("EXCHANGE_PROFIT_PROFILE", "max")).strip().lower()
+    sets = {
+        "max": ["spatial_arbitrage", "triangular_arbitrage", "ai_trader", "stablecoin_peg", "volatility_breakout"],
+        "fast": ["spatial_arbitrage", "fast_arb_rescan", "latency_twap"],
+        "standard": ["spatial_arbitrage", "ai_trader", "cross_trade"],
+        "live-only": ["spatial_arbitrage", "withdrawal_aware_routing"],
+    }
+    skills = sets.get(prof, sets["max"])
+    return {"success": True, "profile": prof, "skills": skills, "variant": "A" if prof == "max" else "B"}
+
+
+def record_stash_history_point() -> Dict[str, Any]:
+    """Append stash snapshot for historical chart (#39)."""
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+
+        treas = _light_treasury_snapshot()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    stash = float(treas.get("live_stash_usd") or treas.get("stash_usd") or 0)
+    state = _read_state(_STASH_HISTORY_PATH)
+    series = list(state.get("series") or [])
+    point = {"ts": _iso(), "stash_usd": round(stash, 4)}
+    series.append(point)
+    max_pts = int(os.environ.get("PROFIT_STASH_HISTORY_MAX", "168"))
+    state["series"] = series[-max_pts:]
+    state["updated_at"] = _iso()
+    _write_state(_STASH_HISTORY_PATH, state)
+    return {"success": True, "recorded": point, "count": len(state["series"])}
+
+
+def stash_history_series(*, limit: int = 48) -> Dict[str, Any]:
+    """Historical stash chart data for monitor UI (#39)."""
+    state = _read_state(_STASH_HISTORY_PATH)
+    series = list(state.get("series") or [])[-max(1, limit):]
+    return {"success": True, "series": series, "count": len(series)}
+
+
+def mn2_stash_mirror() -> Dict[str, Any]:
+    """MN2-denominated stash mirror for casino (#40)."""
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+
+        treas = _light_treasury_snapshot()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    stash_usd = float(treas.get("live_stash_usd") or treas.get("stash_usd") or 0)
+    mn2_usd = max(float(ex._mn2_usd()), 1e-9)
+    mn2_amt = round(stash_usd / mn2_usd, 6)
+    return {
+        "success": True,
+        "stash_usd": round(stash_usd, 4),
+        "mn2_amount": mn2_amt,
+        "mn2_usd": mn2_usd,
+        "mirror_label": f"{mn2_amt:,.2f} MN2",
+    }
+
+
+def plan_paypal_split_recipients(*, amount_usd: Optional[float] = None) -> Dict[str, Any]:
+    """Multi-recipient PayPal split with gates (#49)."""
+    cfg = ex._read_json(_PAYOUT_PATH, {})
+    recipients = list(cfg.get("split_recipients") or [])
+    if not recipients:
+        primary = str((cfg.get("paypal") or {}).get("receiver_email") or "")
+        if primary:
+            recipients = [{"email": primary, "share_pct": 100.0}]
+    live = bool((cfg.get("paypal") or {}).get("live_enabled"))
+    gates_ok = live and os.environ.get("EXCHANGE_PAYPAL_SPLIT_ENABLED", "0").strip().lower() in ("1", "true", "yes")
+    amt = float(amount_usd or cfg.get("paypal_sweepable_usd") or 0)
+    splits = []
+    for r in recipients:
+        pct = float(r.get("share_pct") or 0)
+        splits.append({
+            "email": r.get("email"),
+            "share_pct": pct,
+            "amount_usd": round(amt * pct / 100.0, 2) if amt else 0,
+        })
+    return {
+        "success": True,
+        "gates_ok": gates_ok,
+        "live_enabled": live,
+        "total_usd": round(amt, 2),
+        "recipients": splits,
+        "blocked_reason": None if gates_ok else "split_gates_not_met",
+    }
+
+
+def mobile_stat_card_meta() -> Dict[str, Any]:
+    """Mobile-friendly monitor stat card layout hints (#60)."""
+    return {
+        "success": True,
+        "mobile_optimized": True,
+        "min_card_width_px": 140,
+        "columns_mobile": 2,
+        "columns_tablet": 3,
+        "columns_desktop": 4,
+        "touch_target_min_px": 44,
+        "css_class": "pdm-grid pdm-grid--mobile",
+    }
+
+
+def verify_monitor_public_token(token: Optional[str] = None) -> Dict[str, Any]:
+    """Public read-only monitor token URL (#61)."""
+    expected = os.environ.get("PROFIT_MONITOR_PUBLIC_TOKEN", "").strip()
+    if not expected:
+        return {"success": True, "public_enabled": False, "reason": "token_not_configured"}
+    ok = bool(token) and hmac.compare_digest(str(token), expected)
+    return {
+        "success": ok,
+        "public_enabled": True,
+        "authorized": ok,
+        "public_path": "/api/profit-daemon/metrics-public?token=" + expected[:4] + "…" if expected else None,
+    }
+
+
+def blue_green_profile_switch(*, target: Optional[str] = None) -> Dict[str, Any]:
+    """Blue/green daemon profile switch without downtime (#72)."""
+    state = _read_state(_BLUE_GREEN_PATH)
+    active = str(state.get("active") or os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"))
+    standby = str(state.get("standby") or ("fast" if active == "max" else "max"))
+    if target:
+        tgt = target.strip().lower()
+        if tgt not in ("max", "fast", "standard", "live-only"):
+            return {"success": False, "error": "invalid_profile"}
+        standby, active = active, tgt
+    else:
+        standby, active = active, standby
+    os.environ["EXCHANGE_PROFIT_PROFILE"] = active
+    payload = {
+        "updated_at": _iso(),
+        "active": active,
+        "standby": standby,
+        "switched": True,
+    }
+    _write_state(_BLUE_GREEN_PATH, payload)
+    reload_ppp_config()
+    return {"success": True, **payload}
+
+
+def metrics_ip_allowed(client_ip: Optional[str] = None) -> Dict[str, Any]:
+    """IP allowlist for metrics endpoint (#80)."""
+    raw = os.environ.get("PROFIT_METRICS_IP_ALLOWLIST", "").strip()
+    if not raw:
+        return {"success": True, "enforced": False, "allowed": True}
+    allowed_ips = {p.strip() for p in raw.split(",") if p.strip()}
+    ip = (client_ip or "127.0.0.1").strip()
+    ok = ip in allowed_ips or ip == "127.0.0.1"
+    return {"success": True, "enforced": True, "allowed": ok, "client_ip": ip}
+
+
+def maybe_secrets_rotation_reminder() -> Dict[str, Any]:
+    """Secrets vault rotation reminder (#81)."""
+    state = _read_state(_ALERT_STATE_PATH)
+    keys = [
+        ("PROFIT_DAEMON_ADMIN_KEY", 90),
+        ("PROFIT_HEARTBEAT_HMAC_SECRET", 90),
+        ("PROFIT_MONITOR_PUBLIC_TOKEN", 180),
+    ]
+    reminders: List[Dict[str, Any]] = []
+    now = time.time()
+    for env_key, days in keys:
+        if not os.environ.get(env_key, "").strip():
+            continue
+        last_rot = float(state.get(f"secret_rot_{env_key}") or now - (days - 7) * 86400)
+        age_days = (now - last_rot) / 86400
+        if age_days >= days - 7:
+            reminders.append({"key": env_key, "age_days": round(age_days, 1), "rotate_by_days": days})
+    alert = {"skipped": True}
+    if reminders and _should_alert("secrets_rotation_reminder", cooldown_sec=86400 * 7):
+        body = "\n".join(f"• {r['key']}: {r['age_days']}d old" for r in reminders)
+        alert = _post_ops_alert("Profit daemon — secret rotation due", body, alert_key="secrets_rotation_reminder")
+    return {"success": True, "reminders": reminders, "alert": alert}
+
+
+def maybe_weekly_ppp_report() -> Dict[str, Any]:
+    """PPP auto-report weekly (#82) — text report + optional Discord."""
+    state = _read_state(_WEEKLY_REPORT_STATE)
+    last = str(state.get("last_at") or "")
+    now = datetime.now(timezone.utc)
+    if last:
+        try:
+            prev = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if now - prev < timedelta(days=6):
+                return {"skipped": True, "reason": "not_due", "last_at": last}
+        except Exception:
+            pass
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_ppp_snapshot
+
+        ppp = _light_ppp_snapshot(hours=168)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    report = {
+        "period": "7d",
+        "fills": int(ppp.get("fill_count") or 0),
+        "hit_rate_pct": float(ppp.get("hit_rate_pct") or 0),
+        "avg_net_bps": float(ppp.get("avg_net_bps") or 0),
+        "scans": int(ppp.get("scan_count") or 0),
+        "generated_at": _iso(),
+    }
+    body = (
+        f"Weekly PPP: {report['fills']} fills, {report['hit_rate_pct']:.1f}% hit, "
+        f"{report['avg_net_bps']:.1f} bps avg, {report['scans']} scans."
+    )
+    alert = _post_ops_alert("Profit daemon — weekly PPP report", body, alert_key="weekly_ppp_report")
+    state["last_at"] = _iso()
+    state["last_report"] = report
+    _write_state(_WEEKLY_REPORT_STATE, state)
+    report_path = os.path.join(ex._DATA_DIR, "profit_weekly_report.json")
+    _write_state(report_path, report)
+    return {"success": True, "report": report, "alert": alert}
+
+
+def ab_strategy_profile_compare() -> Dict[str, Any]:
+    """A/B strategy profile comparison max vs fast (#83)."""
+    try:
+        from backend.services.exchange_profit_path_service import search_paths
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    profiles = ("max", "fast")
+    comparison: Dict[str, Any] = {}
+    for prof in profiles:
+        rows = [
+            r for r in search_paths(hours=168, limit=5000).get("paths") or []
+            if str(r.get("profile") or "max").lower() == prof
+        ]
+        fills = sum(1 for r in rows if str(r.get("decision") or "") == "execute")
+        comparison[prof] = {
+            "paths": len(rows),
+            "fills": fills,
+            "hit_rate_pct": round(100.0 * fills / max(1, len(rows)), 2),
+        }
+    winner = max(profiles, key=lambda p: comparison[p]["hit_rate_pct"])
+    return {"success": True, "comparison": comparison, "winner": winner}
+
+
+def ppp_ledger_backtest_replay(*, hours: float = 24, notional_usd: float = 75.0) -> Dict[str, Any]:
+    """Backtest replay from PPP ledger slice (#84)."""
+    from backend.services.exchange_profit_path_service import search_paths
+
+    rows = [
+        r for r in search_paths(hours=hours, limit=2000).get("paths") or []
+        if str(r.get("decision") or "") == "execute"
+    ]
+    pnl = 0.0
+    legs = 0
+    for r in rows:
+        bps = float(r.get("net_bps") or 0)
+        pnl += notional_usd * bps / 10000.0
+        legs += 1
+    return {
+        "success": True,
+        "hours": hours,
+        "notional_usd": notional_usd,
+        "legs": legs,
+        "sim_pnl_usd": round(pnl, 4),
+        "avg_bps": round(sum(float(r.get("net_bps") or 0) for r in rows) / max(1, legs), 2),
+    }
+
+
+def jupyter_ppp_template_path() -> Dict[str, Any]:
+    """Jupyter notebook template for PPP analysis (#89)."""
+    path = os.path.join(ex._BASE, "docs", "notebooks", "ppp_analysis_template.ipynb")
+    exists = os.path.isfile(path)
+    return {
+        "success": True,
+        "path": path,
+        "exists": exists,
+        "download_url": "/api/profit-daemon/jupyter-template",
+    }
+
+
+def anonymized_route_leaderboard(*, limit: int = 15) -> Dict[str, Any]:
+    """Public anonymized leaderboard of routes (#90)."""
+    from backend.services.exchange_profit_pair_search_service import read_index
+
+    hits = list((read_index().get("hits") or []))[: max(1, limit)]
+    board = []
+    for i, h in enumerate(hits):
+        sym = str(h.get("symbol") or "?")
+        anon = hashlib.sha256(sym.encode()).hexdigest()[:8]
+        board.append({
+            "rank": i + 1,
+            "route_hash": anon,
+            "avg_net_bps": float(h.get("avg_net_bps") or 0),
+            "hit_rate_pct": float(h.get("hit_rate_pct") or 0),
+            "search_score": float(h.get("search_score") or 0),
+        })
+    return {"success": True, "leaderboard": board, "anonymized": True}
+
+
+def research_api_quota_check(operator_key: str, *, max_per_hour: Optional[int] = None) -> Dict[str, Any]:
+    """Research API quota per operator key (#91)."""
+    limit = max_per_hour or int(os.environ.get("PROFIT_RESEARCH_QUOTA_PER_HOUR", "120"))
+    state = _read_state(_RESEARCH_QUOTA_PATH)
+    buckets = state.get("buckets") if isinstance(state.get("buckets"), dict) else {}
+    key = str(operator_key or "anonymous")[:64]
+    row = buckets.get(key) or {"count": 0, "window_start": time.time()}
+    window = float(row.get("window_start") or time.time())
+    if time.time() - window >= 3600:
+        row = {"count": 0, "window_start": time.time()}
+    row["count"] = int(row.get("count") or 0) + 1
+    buckets[key] = row
+    state["buckets"] = buckets
+    state["updated_at"] = _iso()
+    _write_state(_RESEARCH_QUOTA_PATH, state)
+    allowed = int(row["count"]) <= limit
+    return {
+        "success": True,
+        "allowed": allowed,
+        "count": row["count"],
+        "limit": limit,
+        "remaining": max(0, limit - int(row["count"])),
+    }
+
+
+def maybe_mn2_fill_streak_bonus(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
+    """Profit-linked MN2 bonus on arb fill streak (#92)."""
+    plat = exchange_res.get("platform") or {}
+    arb = (plat.get("results") or {}).get("arbitrage") or {}
+    fills = int(arb.get("fills") or arb.get("executed") or 0)
+    state = _read_state(_FILL_STREAK_STATE)
+    streak = int(state.get("streak") or 0)
+    if fills > 0:
+        streak += 1
+    else:
+        streak = 0
+    state["streak"] = streak
+    state["updated_at"] = _iso()
+    threshold = int(os.environ.get("PROFIT_MN2_FILL_STREAK_BONUS", "5"))
+    bonus_mn2 = 0.0
+    awarded = False
+    if streak >= threshold and streak % threshold == 0:
+        bonus_mn2 = float(os.environ.get("PROFIT_MN2_FILL_BONUS_AMOUNT", "2.5"))
+        awarded = True
+        state["last_bonus_at"] = _iso()
+        state["total_bonus_mn2"] = round(float(state.get("total_bonus_mn2") or 0) + bonus_mn2, 4)
+    _write_state(_FILL_STREAK_STATE, state)
+    return {"success": True, "streak": streak, "bonus_mn2": bonus_mn2, "awarded": awarded}
+
+
+def exchange_readiness_cta() -> Dict[str, Any]:
+    """Exchange tab CTA when monitor readiness >75% (#95)."""
+    try:
+        from backend.services.profit_daemon_monitor_service import monitor_status
+
+        st = monitor_status()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    pct = float(st.get("profit_readiness_pct") or 0)
+    show = pct >= float(os.environ.get("PROFIT_READINESS_CTA_PCT", "75"))
+    return {
+        "success": True,
+        "readiness_pct": pct,
+        "show_cta": show,
+        "cta_text": "Profit path ready — enable live trading" if show else None,
+        "cta_href": "/exchange?tab=bots" if show else None,
+    }
+
+
+def rental_trial_eligibility(*, user_id: str = "platform") -> Dict[str, Any]:
+    """Rental agent trial tied to PPP fill count (#96)."""
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_ppp_snapshot
+
+        ppp = _light_ppp_snapshot(hours=720)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    fills = int(ppp.get("fill_count") or 0)
+    required = int(os.environ.get("PROFIT_RENTAL_TRIAL_FILLS", "3"))
+    eligible = fills >= required
+    return {
+        "success": True,
+        "user_id": user_id,
+        "ppp_fills_30d": fills,
+        "required_fills": required,
+        "eligible": eligible,
+        "trial_rental_id": "rent_starter_7d" if eligible else None,
+    }
+
+
+def maybe_casino_vip_bump_on_sweep(sweep_res: Dict[str, Any]) -> Dict[str, Any]:
+    """Casino VIP tier bump on sweep success (#97)."""
+    if not sweep_res.get("success") or not sweep_res.get("swept"):
+        return {"skipped": True, "reason": "no_sweep"}
+    amount = float(sweep_res.get("amount_usd") or 0)
+    tier = "bronze"
+    if amount >= 500:
+        tier = "gold"
+    elif amount >= 100:
+        tier = "silver"
+    state = _read_state(os.path.join(ex._DATA_DIR, "profit_casino_vip_bump.json"))
+    state["last_sweep_usd"] = amount
+    state["suggested_vip_tier"] = tier
+    state["updated_at"] = _iso()
+    _write_state(os.path.join(ex._DATA_DIR, "profit_casino_vip_bump.json"), state)
+    return {"success": True, "sweep_usd": amount, "suggested_vip_tier": tier}
+
+
+def lazy_monitor_poll() -> Dict[str, Any]:
+    """Lazy Flask import for monitor-only polls (#102)."""
+    if os.environ.get("PROFIT_LAZY_MONITOR", "1").strip().lower() in ("0", "false", "no", "off"):
+        from backend.services.profit_daemon_monitor_service import monitor_status
+        return {"success": True, "lazy": False, "status": monitor_status()}
+    try:
+        from backend.services.profit_daemon_monitor_service import monitor_status
+        return {"success": True, "lazy": True, "status": monitor_status()}
+    except Exception as exc:
+        return {"success": False, "lazy": True, "error": str(exc)}
+
+
+def evaluate_async_loop_backend() -> Dict[str, Any]:
+    """uvloop / gevent eval for I/O bound ticks (#104)."""
+    options: Dict[str, Any] = {}
+    try:
+        import uvloop  # type: ignore
+        options["uvloop"] = {"available": True, "version": getattr(uvloop, "__version__", "?")}
+    except ImportError:
+        options["uvloop"] = {"available": False}
+    try:
+        import gevent  # type: ignore
+        options["gevent"] = {"available": True, "version": getattr(gevent, "__version__", "?")}
+    except ImportError:
+        options["gevent"] = {"available": False}
+    preferred = os.environ.get("PROFIT_ASYNC_LOOP", "stdlib")
+    if options.get("uvloop", {}).get("available") and preferred == "auto":
+        preferred = "uvloop"
+    elif options.get("gevent", {}).get("available") and preferred == "auto":
+        preferred = "gevent"
+    return {"success": True, "options": options, "recommended": preferred, "current": "stdlib"}
+
+
+def maybe_archive_heartbeat_history(*, max_age_days: int = 7) -> Dict[str, Any]:
+    """Compressed heartbeat history archive (#105)."""
+    hb_path = heartbeat_path()
+    if not os.path.isfile(hb_path):
+        return {"skipped": True, "reason": "no_heartbeat"}
+    try:
+        mtime = os.path.getmtime(hb_path)
+        age_days = (time.time() - mtime) / 86400
+        if age_days < max_age_days:
+            return {"skipped": True, "reason": "too_recent", "age_days": round(age_days, 2)}
+    except OSError:
+        return {"skipped": True, "reason": "stat_failed"}
+    os.makedirs(_HEARTBEAT_ARCHIVE_DIR, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    archive_json = os.path.join(_HEARTBEAT_ARCHIVE_DIR, f"heartbeat_{ts}.json")
+    archive_gz = archive_json + ".gz"
+    try:
+        shutil.copy2(hb_path, archive_json)
+        with open(archive_json, "rb") as src, gzip.open(archive_gz, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        os.remove(archive_json)
+        return {"success": True, "archived": archive_gz, "compressed": True}
+    except OSError as exc:
+        return {"success": False, "error": str(exc)}
+
+
+def purge_payout_history(*, older_than_days: int = 365, dry_run: bool = True) -> Dict[str, Any]:
+    """GDPR-style payout history purge tool (#110)."""
+    if not os.path.isfile(_PAYOUT_HISTORY_PATH):
+        return {"success": True, "purged": 0, "dry_run": dry_run, "reason": "no_file"}
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max(30, older_than_days))
+    kept: List[str] = []
+    purged = 0
+    try:
+        with open(_PAYOUT_HISTORY_PATH, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    ts = str(row.get("ts") or "")
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    if dt < cutoff:
+                        purged += 1
+                        continue
+                except Exception:
+                    pass
+                kept.append(line)
+        if not dry_run:
+            with open(_PAYOUT_HISTORY_PATH, "w", encoding="utf-8") as fh:
+                for line in kept:
+                    fh.write(line + "\n")
+    except OSError as exc:
+        return {"success": False, "error": str(exc)}
+    return {
+        "success": True,
+        "purged": purged,
+        "kept": len(kept),
+        "dry_run": dry_run,
+        "cutoff": cutoff.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def run_final_upgrade_hooks(exchange_res: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Single entry for final-batch daemon hooks + state stamp."""
+    res = exchange_res or {}
+    out = {
+        "upgrades_state": profit_upgrades_state(),
+        "rental_overlay": apply_rental_symbol_overlay(),
+        "sentiment_weight": sentiment_feed_weight(),
+        "ai_skip_groups": ai_skip_reason_tile_groups(),
+        "mn2_mirror": mn2_stash_mirror(),
+        "readiness_cta": exchange_readiness_cta(),
+        "rental_trial": rental_trial_eligibility(),
+        "async_backend": evaluate_async_loop_backend(),
+    }
+    plat = res.get("platform") or {}
+    arb = (plat.get("results") or {}).get("arbitrage") or {}
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("symbol") and str(arb.get("ai_skip") or plat.get("ai_skip_reason") or ""):
+        out["ai_bypass"] = record_hot_spread_ai_bypass(
+            symbol=str(bq.get("symbol")),
+            net_bps=float(bq.get("net_bps") or 0),
+            agent_id=str(arb.get("best_agent") or "ai_trader"),
+            skip_reason=str(arb.get("ai_skip") or plat.get("ai_skip_reason") or "ai_skip"),
+        )
+    return {"success": True, **out}

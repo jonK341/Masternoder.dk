@@ -8,7 +8,11 @@ profit_daemon_bp = Blueprint("profit_daemon", __name__)
 
 @profit_daemon_bp.route("/api/profit-daemon/metrics", methods=["GET"])
 def profit_daemon_metrics():
-    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot
+    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot, metrics_ip_allowed
+    from flask import request
+    ip_check = metrics_ip_allowed(request.remote_addr)
+    if ip_check.get("enforced") and not ip_check.get("allowed"):
+        return jsonify({"success": False, "error": "ip_not_allowed", **ip_check}), 403
     return jsonify(daemon_metrics_snapshot())
 
 
@@ -308,7 +312,12 @@ def profit_daemon_iceberg_plan():
 
 @profit_daemon_bp.route("/api/profit-daemon/metrics-public", methods=["GET"])
 def profit_daemon_metrics_public():
-    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot_public
+    from backend.services.profit_daemon_ops_service import daemon_metrics_snapshot_public, verify_monitor_public_token
+    from flask import request
+    token = request.args.get("token")
+    auth = verify_monitor_public_token(token)
+    if auth.get("public_enabled") and not auth.get("authorized"):
+        return jsonify({"success": False, "error": "invalid_token"}), 403
     return jsonify(daemon_metrics_snapshot_public())
 
 
@@ -374,3 +383,196 @@ def profit_daemon_rentals():
         "rentals": rentals,
         "shop_href": "/exchange?tab=marketplace",
     })
+
+
+@profit_daemon_bp.route("/api/profit-daemon/rental-overlay", methods=["GET"])
+def profit_daemon_rental_overlay():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import apply_rental_symbol_overlay
+    return jsonify(apply_rental_symbol_overlay())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ai-skip-groups", methods=["GET"])
+def profit_daemon_ai_skip_groups():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ai_skip_reason_tile_groups
+    hours = request.args.get("hours", 24, type=float)
+    return jsonify(ai_skip_reason_tile_groups(hours=hours))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/agent-cooldown", methods=["GET"])
+def profit_daemon_agent_cooldown():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import agent_skill_cooldown_check
+    agent_id = request.args.get("agent_id", "ai_trader")
+    skill_id = request.args.get("skill_id", "")
+    return jsonify(agent_skill_cooldown_check(agent_id, skill_id=skill_id))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/sentiment-weight", methods=["GET"])
+def profit_daemon_sentiment_weight():
+    from backend.services.profit_daemon_ops_service import sentiment_feed_weight
+    return jsonify(sentiment_feed_weight())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ai-skill-profiles", methods=["GET"])
+def profit_daemon_ai_skill_profiles():
+    from backend.services.profit_daemon_ops_service import ai_skill_profile_sets
+    profile = request.args.get("profile")
+    return jsonify(ai_skill_profile_sets(profile=profile))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/stash-history", methods=["GET"])
+def profit_daemon_stash_history():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import stash_history_series
+    limit = request.args.get("limit", 48, type=int)
+    return jsonify(stash_history_series(limit=limit))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/mn2-stash-mirror", methods=["GET"])
+def profit_daemon_mn2_stash_mirror():
+    from backend.services.profit_daemon_ops_service import mn2_stash_mirror
+    return jsonify(mn2_stash_mirror())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/paypal-split", methods=["GET"])
+def profit_daemon_paypal_split():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import plan_paypal_split_recipients
+    amount = request.args.get("amount_usd", type=float)
+    return jsonify(plan_paypal_split_recipients(amount_usd=amount))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/mobile-layout", methods=["GET"])
+def profit_daemon_mobile_layout():
+    from backend.services.profit_daemon_ops_service import mobile_stat_card_meta
+    return jsonify(mobile_stat_card_meta())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/blue-green", methods=["POST"])
+def profit_daemon_blue_green():
+    from backend.services.profit_daemon_ops_service import blue_green_profile_switch, require_profit_daemon_admin
+    ok, reason = require_profit_daemon_admin(dict(request.headers))
+    if not ok:
+        return jsonify({"success": False, "error": reason}), 403
+    body = request.get_json(silent=True) or {}
+    return jsonify(blue_green_profile_switch(target=body.get("profile")))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/weekly-report", methods=["GET"])
+def profit_daemon_weekly_report():
+    from backend.services.profit_daemon_ops_service import maybe_weekly_ppp_report
+    return jsonify(maybe_weekly_ppp_report())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ab-compare", methods=["GET"])
+def profit_daemon_ab_compare():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ab_strategy_profile_compare
+    return jsonify(ab_strategy_profile_compare())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/backtest-replay", methods=["GET"])
+def profit_daemon_backtest_replay():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import ppp_ledger_backtest_replay
+    return jsonify(ppp_ledger_backtest_replay(
+        hours=request.args.get("hours", 24, type=float),
+        notional_usd=request.args.get("notional_usd", 75.0, type=float),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/jupyter-template", methods=["GET"])
+def profit_daemon_jupyter_template():
+    from backend.services.profit_daemon_ops_service import jupyter_ppp_template_path
+    from flask import send_file
+    info = jupyter_ppp_template_path()
+    if info.get("exists"):
+        return send_file(info["path"], mimetype="application/json", as_attachment=True,
+                        download_name="ppp_analysis_template.ipynb")
+    return jsonify(info)
+
+
+@profit_daemon_bp.route("/api/profit-daemon/route-leaderboard", methods=["GET"])
+def profit_daemon_route_leaderboard():
+    from backend.services.profit_daemon_ops_service import anonymized_route_leaderboard, research_api_quota_check
+    key = request.headers.get("X-Research-Key") or request.args.get("operator_key") or request.remote_addr
+    quota = research_api_quota_check(key)
+    if not quota.get("allowed"):
+        return jsonify({"success": False, "error": "quota_exceeded", **quota}), 429
+    limit = request.args.get("limit", 15, type=int)
+    out = anonymized_route_leaderboard(limit=limit)
+    out["quota"] = quota
+    return jsonify(out)
+
+
+@profit_daemon_bp.route("/api/profit-daemon/fill-streak-bonus", methods=["GET"])
+def profit_daemon_fill_streak_bonus():
+    from backend.services.profit_daemon_ops_service import maybe_mn2_fill_streak_bonus
+    return jsonify(maybe_mn2_fill_streak_bonus({"platform": {"results": {"arbitrage": {}}}}))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/readiness-cta", methods=["GET"])
+def profit_daemon_readiness_cta():
+    from backend.services.profit_daemon_ops_service import exchange_readiness_cta
+    return jsonify(exchange_readiness_cta())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/rental-trial", methods=["GET"])
+def profit_daemon_rental_trial():
+    from backend.services.profit_daemon_ops_service import rental_trial_eligibility
+    user_id = request.args.get("user_id", "platform")
+    return jsonify(rental_trial_eligibility(user_id=user_id))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/lazy-monitor", methods=["GET"])
+def profit_daemon_lazy_monitor():
+    from backend.services.profit_daemon_ops_service import lazy_monitor_poll
+    return jsonify(lazy_monitor_poll())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/async-backend", methods=["GET"])
+def profit_daemon_async_backend():
+    from backend.services.profit_daemon_ops_service import evaluate_async_loop_backend
+    return jsonify(evaluate_async_loop_backend())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/purge-payout-history", methods=["POST"])
+def profit_daemon_purge_payout_history():
+    from backend.services.profit_daemon_ops_service import purge_payout_history, require_profit_daemon_admin
+    ok, reason = require_profit_daemon_admin(dict(request.headers))
+    if not ok:
+        return jsonify({"success": False, "error": reason}), 403
+    body = request.get_json(silent=True) or {}
+    return jsonify(purge_payout_history(
+        older_than_days=int(body.get("older_than_days") or 365),
+        dry_run=body.get("dry_run", True),
+    ))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/upgrades-state", methods=["GET"])
+def profit_daemon_upgrades_state():
+    from backend.services.profit_daemon_ops_service import profit_upgrades_state
+    return jsonify(profit_upgrades_state())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/ppp-narrative", methods=["GET"])
+def profit_daemon_ppp_narrative():
+    from backend.services.profit_daemon_ops_service import ppp_summary_llm_narrative
+    from backend.services.profit_daemon_monitor_service import _light_ppp_snapshot
+    return jsonify(ppp_summary_llm_narrative(_light_ppp_snapshot(hours=24)))

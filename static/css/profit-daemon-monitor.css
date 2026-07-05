@@ -65,6 +65,42 @@
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 0.65rem;
 }
+.pdm-grid--mobile {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .pdm-grid--mobile { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 960px) {
+  .pdm-grid--mobile { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+.pdm-stash-chart-wrap { margin: 1.25rem 0; }
+.pdm-stash-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 72px;
+  padding: 0.5rem 0;
+}
+.pdm-stash-bar {
+  flex: 1;
+  min-width: 4px;
+  background: linear-gradient(180deg, #00ff88, rgba(0,255,136,0.35));
+  border-radius: 2px 2px 0 0;
+}
+.pdm-skip-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1.25rem;
+}
+.pdm-skip-chip {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,136,0.25);
+  background: rgba(0,255,136,0.06);
+}
 .pdm-card {
   background: rgba(10, 14, 28, 0.85);
   border: 1px solid rgba(0, 255, 136, 0.18);

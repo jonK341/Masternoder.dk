@@ -60,6 +60,7 @@
         });
 
         const order = ['ops', 'daemon', 'search', 'arb', 'fast', 'funding', 'treasury', 'ppp', 'payout', 'casino', 'venues'];
+        const mobileCls = 'pdm-grid pdm-grid--mobile';
         root.innerHTML = order.filter((c) => byCat[c]).map((cat) => {
             const cards = byCat[cat].map((s) => {
                 const unit = s.unit && s.unit !== 'USD' && s.unit !== '%'
@@ -69,8 +70,30 @@
                     '<span class="pdm-label">' + s.label + '</span>' +
                     '<strong>' + fmtVal(s) + unit + '</strong>' + hint + '</div>';
             }).join('');
-            return '<div class="pdm-stat-section"><h3>' + (CATEGORY_LABELS[cat] || cat) + '</h3><div class="pdm-grid">' + cards + '</div></div>';
+            return '<div class="pdm-stat-section"><h3>' + (CATEGORY_LABELS[cat] || cat) + '</h3><div class="' + mobileCls + '">' + cards + '</div></div>';
         }).join('');
+    }
+
+    function renderStashChart(series) {
+        const wrap = $('pdm-stash-chart-wrap');
+        const chart = $('pdm-stash-chart');
+        if (!wrap || !chart || !Array.isArray(series) || !series.length) return;
+        wrap.hidden = false;
+        const vals = series.map((p) => Number(p.stash_usd) || 0);
+        const max = Math.max.apply(null, vals.concat([1]));
+        chart.innerHTML = series.map((p) => {
+            const h = Math.max(4, Math.round((Number(p.stash_usd) || 0) / max * 64));
+            return '<div class="pdm-stash-bar" style="height:' + h + 'px" title="' + (p.ts || '') + ': $' + (p.stash_usd || 0) + '"></div>';
+        }).join('');
+    }
+
+    function renderSkipGroups(groups) {
+        const el = $('pdm-skip-groups');
+        if (!el || !groups || !groups.tiles || !groups.tiles.length) return;
+        el.hidden = false;
+        el.innerHTML = '<span class="pdm-muted">AI skip groups · </span>' + groups.tiles.map((t) =>
+            '<span class="pdm-skip-chip">' + t.label + ' ' + t.count + '</span>'
+        ).join('');
     }
 
     function renderBlockers(blockers) {
@@ -115,6 +138,15 @@
 
             renderStats(data.stats || []);
             renderBlockers(data.blockers || []);
+            if (data.stash_history && data.stash_history.series) {
+                renderStashChart(data.stash_history.series);
+            }
+            if (data.ai_skip_groups) renderSkipGroups(data.ai_skip_groups);
+            const mirror = $('pdm-mn2-mirror');
+            if (mirror && data.mn2_mirror && data.mn2_mirror.mirror_label) {
+                mirror.textContent = 'Casino MN2 mirror: ' + data.mn2_mirror.mirror_label;
+                $('pdm-stash-chart-wrap').hidden = false;
+            }
 
             const loopsEl = $('pdm-loops');
             if (loopsEl && Array.isArray(data.loops)) {

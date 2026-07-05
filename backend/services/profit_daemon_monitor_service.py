@@ -657,6 +657,21 @@ def monitor_status() -> Dict[str, Any]:
 
     readiness_stat = next((s for s in stats if s["id"] == "profit_readiness"), {})
 
+    extras: Dict[str, Any] = {}
+    try:
+        from backend.services.profit_daemon_ops_service import (
+            ai_skip_reason_tile_groups,
+            mobile_stat_card_meta,
+            mn2_stash_mirror,
+            stash_history_series,
+        )
+        extras["stash_history"] = stash_history_series(limit=24)
+        extras["ai_skip_groups"] = ai_skip_reason_tile_groups(hours=24)
+        extras["mn2_mirror"] = mn2_stash_mirror()
+        extras["mobile_layout"] = mobile_stat_card_meta()
+    except Exception:
+        pass
+
     health = "online" if exchange_recent else ("degraded" if any_recent else "offline")
 
     return {
@@ -715,6 +730,7 @@ def monitor_status() -> Dict[str, Any]:
         "hot_symbols": hb.get("hot_symbols") or [],
         "server": server_state,
         "checked_at": _iso(),
+        **extras,
     }
 
 

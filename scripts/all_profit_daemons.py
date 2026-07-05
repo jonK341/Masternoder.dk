@@ -576,8 +576,11 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             maybe_alert_heartbeat_stale()
             maybe_auto_enable_xeggex_live_farm()
             try:
-                from backend.services.profit_daemon_ops_service import run_exchange_tick_ops
+                from backend.services.profit_daemon_ops_service import run_exchange_tick_ops, run_final_upgrade_hooks
                 tick_ops = run_exchange_tick_ops(res, tick_start=time.time())
+                final_hooks = run_final_upgrade_hooks(res)
+                if final_hooks.get("readiness_cta", {}).get("show_cta"):
+                    print("[all-profit] readiness CTA active — live trading path open", flush=True)
                 if tick_ops.get("prefund_batch", {}).get("prefund_executed"):
                     print("[all-profit] prefund_batch executed", flush=True)
                 if tick_ops.get("sweep_dry_run"):

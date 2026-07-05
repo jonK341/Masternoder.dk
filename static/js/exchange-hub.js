@@ -226,6 +226,23 @@
       });
   }
 
+  function loadProfitReadinessCta() {
+    return fetchJson('/api/profit-daemon/readiness-cta', { timeout: 6000 })
+      .then(function (data) {
+        var box = q('cex-profit-readiness-cta');
+        if (!box || !data || !data.show_cta) {
+          if (box) box.hidden = true;
+          return;
+        }
+        box.hidden = false;
+        var txt = q('cex-profit-readiness-cta-text');
+        if (txt) txt.textContent = (data.cta_text || 'Profit path ready') + ' (' + (data.readiness_pct || 0) + '%)';
+        var link = q('cex-profit-readiness-cta-link');
+        if (link && data.cta_href) link.setAttribute('href', data.cta_href);
+      })
+      .catch(function () {});
+  }
+
   function renderHealth(data) {
     var el = q('cex-health-summary');
     if (!el) return;
@@ -446,6 +463,7 @@
 
   onTab('overview', loadOverviewHealth);
   onTab('overview', loadProfitBlockers);
+  onTab('overview', loadProfitReadinessCta);
   onTab('liquidity', loadLiquidityTab);
   onTab('treasury', loadTreasuryTab);
   onTab('venues', loadVenuesTab);

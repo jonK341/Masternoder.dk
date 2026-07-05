@@ -6,7 +6,7 @@
     <title>Profit Daemon — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
-    <link rel="stylesheet" href="/static/css/profit-daemon-monitor.css?v=20260705a">
+    <link rel="stylesheet" href="/static/css/profit-daemon-monitor.css?v=20260705b">
 </head>
 <body>
     <div class="pdm-page">
@@ -34,6 +34,12 @@
         <section class="pdm-panel active" data-pdm-panel="monitor" id="pdm-panel-monitor">
             <p class="pdm-muted" id="pdm-stat-count">Loading stats…</p>
             <div id="pdm-stats-sections"></div>
+            <div class="pdm-stash-chart-wrap" id="pdm-stash-chart-wrap" hidden>
+                <h3>Stash history (USD)</h3>
+                <div id="pdm-stash-chart" class="pdm-stash-chart" aria-label="Historical stash chart"></div>
+                <p class="pdm-muted" id="pdm-mn2-mirror">—</p>
+            </div>
+            <div id="pdm-skip-groups" class="pdm-skip-groups" hidden></div>
             <h2>Loop heartbeats</h2>
             <div id="pdm-loops" class="pdm-loops">Loading…</div>
             <p class="pdm-muted">Auto-refresh every 30s · <a href="/exchange?tab=bots">Exchange bot control</a> · <a href="/shop">Shop</a></p>
@@ -71,6 +77,6 @@
         </section>
     </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
-    <script src="/static/js/profit-daemon-monitor.js?v=20260705a" defer></script>
+    <script src="/static/js/profit-daemon-monitor.js?v=20260705b" defer></script>
 </body>
 </html>
