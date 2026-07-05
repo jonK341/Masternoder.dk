@@ -10,7 +10,7 @@
         funding: 'Venue funding',
         treasury: 'Treasury',
         ppp: 'Profit path (24h)',
-        payout: 'PayPal sweep',
+        payout: 'PayPal / bank wire',
         venues: 'Venues',
         ops: 'Ops readiness',
         search: 'Pair search',

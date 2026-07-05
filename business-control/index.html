@@ -99,7 +99,7 @@
         <div class="tab active" data-tab="overview">Overview</div>
         <div class="tab" data-tab="predictions">Predictions</div>
         <div class="tab" data-tab="boost">Profit Boost</div>
-        <div class="tab" data-tab="payout">Payout · PayPal</div>
+        <div class="tab" data-tab="payout">Payout · PayPal / Bank</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
@@ -171,7 +171,23 @@
             </div>
             <button class="btn small" id="binSave" style="margin-top:8px">Save Binance config</button>
           </details>
-          <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
+          <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app. Binance does not pay out to PayPal — use bank wire below.</p>
+        </div>
+        <div class="section" id="bankWireSection">
+          <h2>Payout via Binance bank wire (SEPA / fiat)</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">When PayPal is blocked, sweep live stash to your registered bank via Binance Fiat API. Fee ~2 EUR / 20 DKK (configurable). Live requires <code>EXCHANGE_PAYOUT_BINANCE_LIVE=1</code> + SPORK + verified bank on Binance.</p>
+          <div id="bankWireStatus" class="muted">Loading…</div>
+          <div class="grid2" style="margin-top:12px">
+            <label class="field">Bank IBAN / account<input type="text" id="bwIban" placeholder="Registered on Binance" /></label>
+            <label class="field">Currency<input type="text" id="bwCurrency" value="EUR" /></label>
+            <label class="field">Withdraw amount (USD/EUR)<input type="number" id="bwAmount" placeholder="min 50" /></label>
+          </div>
+          <div class="bar">
+            <button class="btn small" id="bwSave">Save bank beneficiary</button>
+            <button class="btn small" id="bwEstimate">Estimate fee</button>
+            <button class="btn small primary" id="bwWithdraw">Bank wire withdraw</button>
+          </div>
+          <div id="bankWireResult" class="muted" style="margin-top:10px"></div>
         </div>
       </div>
 

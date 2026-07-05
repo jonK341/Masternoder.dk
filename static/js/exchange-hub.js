@@ -265,6 +265,23 @@
       ' · wallet assets: ' + Object.keys(data.exchange_assets || {}).length + '</div>';
   }
 
+  function renderBankWireTile(payout) {
+    var el = q('cex-bank-wire-detail');
+    if (!el) return;
+    var bw = (payout && payout.binance_bank_wire) || {};
+    if (!bw.enabled) {
+      el.textContent = 'Binance bank wire disabled in payout_config.';
+      return;
+    }
+    el.innerHTML =
+      '<div class="cex-mon-kpi"><b>' + (bw.ready_to_withdraw ? 'Ready' : 'Not ready') + '</b> · ' +
+      (bw.mode || 'paper') + ' · ' + (bw.currency || 'EUR') + '</div>' +
+      '<div class="cex-muted">Fee ~' + (bw.fee_eur != null ? bw.fee_eur : 2) + ' EUR · min $' +
+      Number(bw.min_withdraw_usd || 50).toFixed(0) + ' · bank ' +
+      (bw.bank_configured ? 'configured' : 'not set') + '</div>' +
+      '<div class="cex-muted">PayPal blocked? Use <a href="/business-control" class="cex-mini-link">Business Control</a> bank wire.</div>';
+  }
+
   function renderVenues(data) {
     var el = q('cex-venues-summary');
     if (!el) return;
@@ -284,7 +301,12 @@
   }
 
   function loadTreasuryTab() {
-    return fetchJson('/api/exchange/treasury/status', { timeout: 8000 }).then(renderTreasury);
+    return Promise.all([
+      fetchJson('/api/exchange/treasury/status', { timeout: 8000 }).then(renderTreasury),
+      fetchJson('/api/profit-daemon/status', { timeout: 8000 }).then(function (d) {
+        renderBankWireTile(d && d.payout);
+      }).catch(function () { renderBankWireTile(null); }),
+    ]);
   }
 
   function loadVenuesTab() {

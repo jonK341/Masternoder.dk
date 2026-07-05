@@ -161,6 +161,7 @@
     var el = $("payoutStatus");
     if (!el || !st || !st.success) { if (el) el.textContent = "Failed to load payout status."; return; }
     var pp = st.paypal || {};
+    var bw = st.binance_bank_wire || {};
     el.innerHTML =
       "<div class='big'>" + money(st.paypal_sweepable_usd || st.net_unswept_usd) + " <span class='muted'>→ PayPal</span></div>" +
       "<div class='muted'>PayPal: " + (pp.email || "not set") + " · share " + (pp.share_pct || 100) + "% · mode: " + st.mode + "</div>" +
@@ -169,6 +170,58 @@
     if ($("ppEmail") && pp.email) $("ppEmail").value = pp.email;
     if ($("ppShare") && pp.share_pct) $("ppShare").value = pp.share_pct;
     if ($("ppMin") && st.min_sweep_usd) $("ppMin").value = st.min_sweep_usd;
+    renderBankWire(bw);
+  }
+
+  function renderBankWire(bw) {
+    var el = $("bankWireStatus");
+    if (!el) return;
+    if (!bw || !bw.success && bw.enabled === undefined) { el.textContent = "Bank wire status unavailable."; return; }
+    el.innerHTML =
+      "<div class='big'>" + (bw.ready_to_withdraw ? "Ready" : "Not ready") +
+      " <span class='muted'>· " + (bw.mode || "paper") + " · " + (bw.currency || "EUR") + "</span></div>" +
+      "<div class='muted'>Fee ~" + (bw.fee != null ? bw.fee : "2") + " " + (bw.fee_currency || "EUR") +
+      " · min " + money(bw.min_withdraw_usd || 50) + " · live stash " + money(bw.live_stash_usd || 0) +
+      " · bank " + (bw.bank_configured ? (bw.account_number_masked || "configured") : "not set") + "</div>";
+    if ($("bwCurrency") && bw.currency) $("bwCurrency").value = bw.currency;
+  }
+
+  function loadBankWireMethods() {
+    return api("/api/exchange/payout/binance/methods");
+  }
+
+  function saveBankWire() {
+    api("/api/exchange/payout/binance/configure-bank", { method: "POST", body: {
+      bank_account_id: ($("bwIban").value || "").trim(),
+      currency: ($("bwCurrency").value || "EUR").trim(),
+    } }).then(function (r) {
+      $("bankWireResult").textContent = r && r.success ? "Bank beneficiary saved." : ("Save failed: " + ((r && r.error) || "error"));
+      loadPayout();
+    });
+  }
+
+  function estimateBankWire() {
+    var cur = ($("bwCurrency").value || "EUR").trim();
+    api("/api/exchange/payout/binance/estimate?currency=" + encodeURIComponent(cur)).then(function (r) {
+      $("bankWireResult").textContent = r && r.success
+        ? ("Estimated fee: " + r.fee + " " + r.currency + " (" + r.source + ")")
+        : ("Estimate failed: " + ((r && r.error) || "error"));
+    });
+  }
+
+  function doBankWireWithdraw() {
+    var amt = Number(($("bwAmount") || {}).value || 0);
+    if (!amt || amt <= 0) { $("bankWireResult").textContent = "Enter a positive amount."; return; }
+    api("/api/exchange/payout/binance/withdraw", { method: "POST", body: {
+      amount: amt,
+      currency: ($("bwCurrency").value || "EUR").trim(),
+      bank_account_id: ($("bwIban").value || "").trim() || undefined,
+    } }).then(function (r) {
+      $("bankWireResult").textContent = (r && r.success)
+        ? ("Bank wire " + (r.withdrawn.mode || "paper") + " " + r.withdrawn.amount + " " + r.withdrawn.currency + ". " + (r.note || ""))
+        : ("Withdraw failed: " + ((r && r.error) || "error"));
+      loadPayout();
+    });
   }
 
   function loadPayout() { api("/api/exchange/payout/status").then(renderPayout); }
@@ -281,6 +334,9 @@
     var pp = $("ppPlan"); if (pp) pp.addEventListener("click", planSweep);
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
+    var bws = $("bwSave"); if (bws) bws.addEventListener("click", saveBankWire);
+    var bwe = $("bwEstimate"); if (bwe) bwe.addEventListener("click", estimateBankWire);
+    var bww = $("bwWithdraw"); if (bww) bww.addEventListener("click", doBankWireWithdraw);
 
     if (getKey()) { showApp(); load(); } else { showGate(); }
   }

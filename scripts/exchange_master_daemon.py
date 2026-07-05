@@ -88,8 +88,14 @@ def run_once(auto_sweep: bool = False) -> dict:
     if auto_sweep:
         try:
             from backend.services.exchange_payout_service import execute_sweep, payout_status
-            if payout_status().get("ready_to_sweep"):
+            st = payout_status(light=True)
+            if st.get("ready_to_sweep"):
                 out["sweep"] = execute_sweep()
+            else:
+                from backend.services.exchange_binance_payout_service import maybe_auto_sweep_bank_wire
+                bw = maybe_auto_sweep_bank_wire()
+                if not bw.get("skipped"):
+                    out["bank_wire_sweep"] = bw
         except Exception as exc:
             out["sweep"] = {"success": False, "error": str(exc)}
 

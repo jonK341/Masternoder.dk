@@ -11,7 +11,7 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - [x] **#7** [engine] Spatial arb 0/11 executions — scan vs fund vs threshold chain (`arb_exec_zero`) — _5894176 profit-first + force_attempt + balance refresh; pytest 2026-07-04; restart daemon for arb_exec≥1_
 - [x] **#8** [engine] Extended profit strategies reporting 0 executions (`ext_profit_zero`) — _fast rescan 2026-07-04: ext_exec=1 on threshold_
 - [x] **#9** [engine] Casino profit agents ran 0/3 on recent ticks (`casino_agents_idle`) — _profit_agent_overrides: max_loss_coins=50000 max_bets/day=500 (2026-07-04) — restart daemon to pick up; session RG may need reset if still capped_
-- [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _2026-07-04: mode=paper last_sweep=paper $1132; SPORK_114 blocked (spork_payout_live_off); EXCHANGE_AUTO_PAYPAL_SWEEP=0; live_stash=$11.92 → sweepable=$5.96 (paper pool $566 unswept — not real PayPal); creds+email+EXCHANGE_PAYOUT_PAYPAL_LIVE=1 OK locally_
+- [ ] **#10** [payout] PayPal payout mode still paper — $572+ unswept ledger (`paypal_sweep_paper`) — _2026-07-04: mode=paper; **alternate rail:** Binance bank wire (SEPA EUR, ~2€ fee) via `exchange_binance_payout_service` + Business Control; Binance does not pay out to PayPal_
 - [x] **#11** [payout] Auto sweep disabled (min $500) — manual sweep required (`auto_sweep_off`) — _auto_sweep=true min=$100 (2026-07-04)_
 - [x] **#12** [ppp] PPP ledger rows tagged paper while live gates are on (`ledger_mode_paper`) — _PPP 24h fill_count=1814; recent ledger mostly mode=live (2026-07-03)_
 - [x] **#13** [ppp] Profit agent skill sets must sync from ledger on each stack (`ppp_skill_sync`) — _sync_critical_reality + sync_from_ledger on stack (2026-07-03)_
@@ -50,7 +50,11 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - Exchange loop now reads `arb_threshold_state` — when `ready=yes` and `best_net >= min_margin`, `arb_live_dual_farm` runs global scan even if per-agent scans are below threshold.
 - Heartbeat shows `ai_skip=no_signal|below_threshold|no_creds` when AI trader skips; `ai_exec=True` when hot spread (net_bps >= min_net) executes despite low ai_score.
 
-### PayPal sweep (#10, #11)
+### PayPal sweep (#10, #11) — or Binance bank wire
+
+Binance does **not** pay out to PayPal. Owner rails: **PayPal Payouts API** (paper/live) **or** **Binance fiat bank wire** (SEPA EUR ~2€ / DK ~20 kr).
+
+**PayPal path**
 
 - Preflight: `python scripts/enable_live_paypal_sweep.py` (checklist + exact `.env` lines; does not write `.env`)
 - Dry-run next sweep: `python scripts/enable_live_paypal_sweep.py --dry-run`
@@ -59,3 +63,13 @@ _Updated: 2026-07-04T14:50:01.101716Z_
 - Activate chain gate: `python scripts/mn2_activate_spork_remote.py SPORK_114_PAYOUT_LIVE 1703122560` (requires MN2 sporkkey on server)
 - Only **live_stash_usd** counts for real PayPal — paper unswept is ledger-only; live pool must exceed `min_sweep_usd`
 - Restart: `run_all_profit_daemons.cmd --auto-sweep` — daemon logs `sweep=yes mode=live amount=$X` or `mode=paper`
+
+**Binance bank wire path** (when PayPal blocked or preferred)
+
+1. Register bank on Binance: Wallet → Withdraw Fiat → verify with small inbound transfer (SEPA EUR).
+2. Store API keys in vault (`configure-binance` or existing `binance_api_key` / `binance_api_secret`).
+3. `POST /api/exchange/payout/binance/configure-bank` with IBAN / account number.
+4. Set `EXCHANGE_PAYOUT_BINANCE_LIVE=1` + `EXCHANGE_ARBITRAGE_LIVE=1` + SPORK payout live.
+5. Optional auto: `EXCHANGE_AUTO_BINANCE_BANK_SWEEP=1` when PayPal not ready.
+6. API: `GET /api/exchange/payout/binance/methods`, `/estimate`, `POST /withdraw` (admin-gated).
+7. Config: `payout_config.json` → `binance_bank_wire` (`fee_eur`: 2, `fee_dkk`: 20, `min_withdraw_usd`: 50).

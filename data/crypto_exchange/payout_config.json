@@ -30,5 +30,16 @@
     "mode": "paper",
     "payout_batch_id": null
   },
-  "swept_total_usd_paper": 2363702.2563
+  "swept_total_usd_paper": 2363702.2563,
+  "binance_bank_wire": {
+    "enabled": true,
+    "fee_eur": 2.0,
+    "fee_dkk": 20.0,
+    "min_withdraw_usd": 50,
+    "currency": "EUR",
+    "payment_method": "bank_transfer",
+    "region": "SEPA",
+    "bank_account_id": "",
+    "account_number_masked": ""
+  }
 }

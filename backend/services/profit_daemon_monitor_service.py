@@ -361,6 +361,12 @@ def _build_stats(
     stats.append(_stat("sweepable_usd", "Sweepable", round(float(payout.get("paypal_sweepable_usd") or 0), 2),
                        unit="USD", category="payout"))
     stats.append(_stat("min_sweep", "Sweep minimum", payout.get("min_sweep_usd", 100), unit="USD", category="payout"))
+    bbw = payout.get("binance_bank_wire") or {}
+    stats.append(_stat("bank_wire", "Binance bank wire",
+                       "ready" if bbw.get("ready_to_withdraw") else ("paper" if bbw.get("enabled") else "off"),
+                       category="payout",
+                       status="good" if bbw.get("live_enabled") and bbw.get("ready_to_withdraw") else "warn",
+                       hint=f"Fee ~{bbw.get('fee', '—')} {bbw.get('fee_currency', 'EUR')}"))
 
     xeggex = "live" if conn.get("xeggex_live_trading") else "blocked (401)"
     stats.append(_stat("xeggex", "XeggeX venue", xeggex, category="venues",
@@ -448,6 +454,11 @@ def _light_payout_snapshot() -> Dict[str, Any]:
     net = round(max(0.0, pool - swept), 4)
     sweepable = round(net * share, 4) if email else net
     ready = bool(email and sweepable >= min_usd) if dest == "paypal" else False
+    bbw_cfg = cfg.get("binance_bank_wire") if isinstance(cfg.get("binance_bank_wire"), dict) else {}
+    bbw_enabled = bool(bbw_cfg.get("enabled", True))
+    bbw_min = float(bbw_cfg.get("min_withdraw_usd") or 50)
+    bbw_acct = bool(bbw_cfg.get("bank_account_id") or os.environ.get("EXCHANGE_PAYOUT_BINANCE_BANK_ACCOUNT"))
+    live_stash = sums["ledger_stashed_usd_live"]
     return {
         "success": True,
         "destination": dest,
@@ -459,8 +470,20 @@ def _light_payout_snapshot() -> Dict[str, Any]:
             "connected": bool(email),
             "live_enabled": paypal_live,
         },
+        "binance_bank_wire": {
+            "enabled": bbw_enabled,
+            "currency": bbw_cfg.get("currency") or "EUR",
+            "fee_eur": bbw_cfg.get("fee_eur", 2.0),
+            "fee_dkk": bbw_cfg.get("fee_dkk", 20.0),
+            "min_withdraw_usd": bbw_min,
+            "bank_configured": bbw_acct,
+            "live_stash_usd": round(live_stash, 4),
+            "ready_to_withdraw": bool(bbw_enabled and bbw_acct and live_stash >= bbw_min),
+            "mode": "live" if os.environ.get("EXCHANGE_PAYOUT_BINANCE_LIVE", "").strip().lower() in ("1", "true", "yes") else "paper",
+        },
         "paypal_sweepable_usd": sweepable,
         "ready_to_sweep": ready,
+        "ready_to_bank_wire": bool(bbw_enabled and bbw_acct and live_stash >= bbw_min),
         "light_snapshot": True,
     }
 
@@ -670,6 +693,8 @@ def monitor_status() -> Dict[str, Any]:
             "paypal_live": (payout.get("paypal") or {}).get("live_enabled"),
             "paypal_sweepable_usd": payout.get("paypal_sweepable_usd"),
             "ready_to_sweep": payout.get("ready_to_sweep"),
+            "binance_bank_wire": payout.get("binance_bank_wire"),
+            "ready_to_bank_wire": payout.get("ready_to_bank_wire"),
         },
         "treasury": {
             "live_stash_usd": treasury.get("ledger_stashed_usd_live") or treasury.get("live_stash_usd"),

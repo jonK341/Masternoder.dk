@@ -366,6 +366,7 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         f"user_agents={res.get('user_agent_ticks', 0)}",
     ])
     sweep_res = res.get("sweep")
+    bw_res = res.get("bank_wire_sweep")
     if isinstance(sweep_res, dict) and sweep_res.get("success"):
         swept = sweep_res.get("swept") or {}
         mode = swept.get("mode") or ("live" if sweep_res.get("live") else "paper")
@@ -374,6 +375,15 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
             parts.append(f"sweep=yes mode={mode} amount=${float(amt):.2f}")
         else:
             parts.append(f"sweep=yes mode={mode}")
+    elif isinstance(bw_res, dict) and bw_res.get("success"):
+        w = bw_res.get("withdrawn") or {}
+        mode = w.get("mode") or ("live" if bw_res.get("live") else "paper")
+        cur = w.get("currency") or "EUR"
+        amt = w.get("amount")
+        if amt is not None:
+            parts.append(f"bank_wire=yes mode={mode} amount={cur} {float(amt):.2f}")
+        else:
+            parts.append(f"bank_wire=yes mode={mode}")
     else:
         parts.append(f"sweep={'yes' if sweep_res else 'no'}")
     return " ".join(parts)

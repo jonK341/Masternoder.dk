@@ -1350,6 +1350,57 @@ def exchange_payout_history():
     return jsonify(sweep_history(limit=int(request.args.get("limit") or 20)))
 
 
+@crypto_exchange_bp.route("/api/exchange/payout/binance/methods", methods=["GET"])
+def exchange_payout_binance_methods():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_payout_service import get_withdraw_methods
+
+    return jsonify(get_withdraw_methods())
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/binance/estimate", methods=["GET"])
+def exchange_payout_binance_estimate():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_payout_service import estimate_bank_wire_fee
+
+    cur = request.args.get("currency")
+    return jsonify(estimate_bank_wire_fee(currency=cur))
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/binance/withdraw", methods=["POST"])
+def exchange_payout_binance_withdraw():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_payout_service import initiate_bank_withdraw
+
+    data = request.get_json(silent=True) or {}
+    amt = data.get("amount") or data.get("amount_usd")
+    if amt is None:
+        return jsonify({"success": False, "error": "amount_required"}), 400
+    return jsonify(initiate_bank_withdraw(
+        float(amt),
+        currency=(data.get("currency") or "").strip() or None,
+        bank_account_id=(data.get("bank_account_id") or "").strip() or None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/binance/configure-bank", methods=["POST"])
+def exchange_payout_binance_configure_bank():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_payout_service import configure_bank_beneficiary
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(configure_bank_beneficiary(
+        (data.get("bank_account_id") or data.get("iban") or "").strip(),
+        currency=(data.get("currency") or "").strip() or None,
+        account_type=(data.get("account_type") or "current").strip(),
+        region=(data.get("region") or "").strip() or None,
+    ))
+
+
 @crypto_exchange_bp.route("/api/exchange/paypal/crypto-quote", methods=["POST"])
 def exchange_paypal_crypto_quote():
     data = request.get_json(silent=True) or {}

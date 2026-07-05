@@ -130,6 +130,23 @@ def _load() -> Dict[str, Any]:
     cfg.setdefault("swept_total_usd", 0.0)
     cfg.setdefault("stash_asset", "USDT")
     cfg.setdefault("min_sweep_usd", 5.0)
+    bbw = cfg.setdefault("binance_bank_wire", {
+        "enabled": True,
+        "fee_eur": 2.0,
+        "fee_dkk": 20.0,
+        "min_withdraw_usd": 50.0,
+        "currency": "EUR",
+        "payment_method": "bank_transfer",
+        "region": "SEPA",
+        "bank_account_id": "",
+        "account_number_masked": "",
+    })
+    for k, v in {
+        "enabled": True, "fee_eur": 2.0, "fee_dkk": 20.0, "min_withdraw_usd": 50.0,
+        "currency": "EUR", "payment_method": "bank_transfer", "region": "SEPA",
+        "bank_account_id": "", "account_number_masked": "",
+    }.items():
+        bbw.setdefault(k, v)
     env_addr = _binance_withdraw_address(cfg)
     if env_addr:
         b["withdraw_address"] = env_addr
@@ -357,6 +374,12 @@ def payout_monitor_snapshot() -> Dict[str, Any]:
     min_usd = _min_sweep_usd(cfg)
     paypal_live = _paypal_live_enabled(skip_spork=True)
     pay_mode = "live" if (paypal_live if dest == "paypal" else False) else "paper"
+    bank_wire: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_binance_payout_service import bank_wire_status
+        bank_wire = bank_wire_status(light=True)
+    except Exception:
+        pass
     return {
         "success": True,
         "destination": dest,
@@ -369,11 +392,13 @@ def payout_monitor_snapshot() -> Dict[str, Any]:
             "share_pct": round(share * 100, 2),
             "live_enabled": paypal_live,
         },
+        "binance_bank_wire": bank_wire,
         "sweep_ledger_mode": ledger_mode,
         "sweep_pool_usd": round(pool, 4),
         "net_unswept_usd": net,
         "paypal_sweepable_usd": sweepable,
         "ready_to_sweep": bool(paypal_email and sweepable >= min_usd),
+        "ready_to_bank_wire": bool(bank_wire.get("ready_to_withdraw")),
     }
 
 
@@ -425,6 +450,12 @@ def payout_status(*, light: bool = False) -> Dict[str, Any]:
             "required_spot_usdt": pf.get("required_spot_usdt"),
             "blockers": pf.get("blockers") or [],
         }
+    bank_wire: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_binance_payout_service import bank_wire_status
+        bank_wire = bank_wire_status(light=light)
+    except Exception:
+        pass
     return {
         "success": True,
         "destination": dest,
@@ -464,6 +495,8 @@ def payout_status(*, light: bool = False) -> Dict[str, Any]:
         "net_unswept_usd": net,
         "paypal_sweepable_usd": sweepable,
         "ready_to_sweep": paypal_ready if dest == "paypal" else binance_ready,
+        "binance_bank_wire": bank_wire,
+        "ready_to_bank_wire": bool(bank_wire.get("ready_to_withdraw")),
         "mode": "live" if (_paypal_live_enabled() if dest == "paypal" else binance_withdraw_live_enabled()) else "paper",
     }
 

@@ -30,7 +30,7 @@ Full checklist: [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) (21/25 do
 |---|------|--------|-------------|
 | **#2** | XeggeX API 401 — keys or IP whitelist | Open | `python scripts/refresh_xeggex_server.py --probe-only` → fix `.env` keys + dashboard IP whitelist → `python scripts/remote_vault_import.py` |
 | **#3** | Arb spreads mostly below 18 bps min_margin | Open (market) | Wait for volatility; optional `EXCHANGE_FAST_MIN_BPS=10` before restart when `near_threshold=yes`; watch `arb_skip=below_threshold` |
-| **#10** | PayPal sweep still paper — unswept ledger | Open | Preflight: `python scripts/enable_live_paypal_sweep.py`; set `EXCHANGE_PAYOUT_PAYPAL_LIVE=1` + creds; restart with `--auto-sweep` |
+| **#10** | PayPal sweep still paper — unswept ledger | Open | Preflight PayPal **or** use **Binance bank wire** when PayPal blocked: register bank on Binance app → `POST /api/exchange/payout/binance/configure-bank` → `EXCHANGE_PAYOUT_BINANCE_LIVE=1` + SPORK; optional `EXCHANGE_AUTO_BINANCE_BANK_SWEEP=1` |
 | **#20** | `arb_live_dual_farm` limited to binance+nonkyc | Blocked by #2 | After XeggeX probe OK: `python scripts/configure_live_profit_max.py` (enables xeggex in dual-farm) |
 
 ### Server deploy (from PROFIT_DAEMON_SERVER.md)
@@ -102,6 +102,9 @@ See [DAEMONS_AND_AGENTS.md](./DAEMONS_AND_AGENTS.md) — unset `EXCHANGE_ARBITRA
 | `EXCHANGE_FORCE_IPV4` | Avoid venue 401 on dual-stack VPS | `1` on server |
 | `EXCHANGE_PAYOUT_PAYPAL_LIVE` | Real PayPal sweeps (not paper) | `1` when ready (#10) |
 | `EXCHANGE_AUTO_PAYPAL_SWEEP` | Auto-sweep on tick when above min | `1` with live PayPal |
+| `EXCHANGE_PAYOUT_BINANCE_LIVE` | Real Binance crypto + **fiat bank wire** withdraw | `1` + SPORK + verified bank |
+| `EXCHANGE_AUTO_BINANCE_BANK_SWEEP` | Auto bank wire when PayPal blocked + stash ≥ min | `0` default; `1` to enable |
+| `EXCHANGE_PAYOUT_BINANCE_BANK_ACCOUNT` | IBAN / account override (optional) | registered on Binance |
 | `EXCHANGE_PAYOUT_PAYPAL_EMAIL` | PayPal recipient | operator email |
 | `EXCHANGE_ROTATION_AUTO` | Auto-execute top rotation action | `1` (local max); `0` prod unless opted in |
 | `EXCHANGE_ROTATION_LIVE` | Live rotation orders | `1` (local max); `0` prod unless opted in |
@@ -122,7 +125,7 @@ See [DAEMONS_AND_AGENTS.md](./DAEMONS_AND_AGENTS.md) — unset `EXCHANGE_ARBITRA
 |------|------|
 | `data/crypto_exchange/profit_path_protocol.json` | PPP + rotation auto defaults |
 | `data/exchange_connectors_config.json` | Per-venue `live_trading` (xeggex=false until probe OK) |
-| `data/crypto_exchange/payout_config.json` | `auto_sweep`, `min_sweep_usd` (100) |
+| `data/crypto_exchange/payout_config.json` | `auto_sweep`, `min_sweep_usd`, `binance_bank_wire` (fee_eur 2, fee_dkk 20, min_withdraw_usd 50) |
 | `data/exchange_extended_profit_config.json` | Extended strategies, dual-farm venue list |
 
 ---
@@ -173,6 +176,14 @@ arb_exec=0/12 best_bps=7.0 min_margin=18 arb_skip=below_thresholdx6 ai_skip=belo
 ```
 sweep=yes mode=live amount=$125.00
 ```
+
+**Binance bank wire** (when PayPal blocked; optional `EXCHANGE_AUTO_BINANCE_BANK_SWEEP=1`):
+
+```
+bank_wire=yes mode=paper amount=EUR 75.00
+```
+
+Register bank on Binance app first (Wallet → Withdraw Fiat → SEPA). Fee ~2 EUR / 20 DKK from `payout_config.json` → `binance_bank_wire`.
 
 **Warning signs**
 
