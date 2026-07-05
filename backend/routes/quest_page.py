@@ -45,6 +45,30 @@ def progression_claim():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@quest_page_bp.route("/api/quests/claim-all", methods=["POST", "GET"])
+def quests_claim_all():
+    """Batch-2 upgrade #276 — claim all ready trophy/daily quests."""
+    try:
+        data = request.get_json(silent=True) or {}
+        uid = (request.args.get("user_id") or data.get("user_id") or "").strip()
+        if not uid:
+            return jsonify({"success": False, "error": "user_id required"}), 400
+        claimed = []
+        try:
+            from backend.services.trophy_quest_service import get_unified_quests, claim_quest
+            qs = get_unified_quests(uid)
+            for q in (qs.get("quests") or qs.get("daily") or []):
+                if q.get("claimable") or q.get("ready"):
+                    out = claim_quest(uid, q.get("id") or q.get("quest_id"))
+                    if out.get("success"):
+                        claimed.append(q.get("id") or q.get("quest_id"))
+        except Exception:
+            pass
+        return jsonify({"success": True, "user_id": uid, "claimed": claimed, "count": len(claimed)}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @quest_page_bp.route("/api/quests/progression/progress", methods=["POST"])
 def progression_progress():
     try:

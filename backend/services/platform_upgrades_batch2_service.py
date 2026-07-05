@@ -331,4 +331,6 @@ def get_batch2_widgets(area: str, user_id: Optional[str] = None) -> Dict[str, An
             "recommended_difficulty": stats.get("recommended_difficulty") or "normal",
         })
 
+    from backend.services.platform_batch2_extras_service import enrich_area_widgets
+    enrich_area_widgets(area, widgets, uid)
     return widgets

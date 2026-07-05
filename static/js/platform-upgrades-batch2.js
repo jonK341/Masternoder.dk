@@ -309,17 +309,79 @@
     pulse.textContent = 'Champion pulse: ' + (d.champion_pulse ? new Date(d.champion_pulse).toLocaleTimeString() : 'live');
   }
 
+  function renderExtras(area, d) {
+    var ex = d.batch2_extras;
+    if (!ex) return;
+    var slot = document.getElementById('pu-batch2-extras-' + area);
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.id = 'pu-batch2-extras-' + area;
+      slot.className = 'pu-batch2-extras pu-batch2-widget';
+      var mount = document.getElementById('platform-area-widget') ||
+        document.querySelector('[data-platform-area="' + area + '"]') ||
+        document.querySelector('.mn2-hub-wrap');
+      if (mount) mount.appendChild(slot);
+      else return;
+    }
+    var html = '';
+    if (area === 'exchange') {
+      html = '💧 Liquidity ' + JSON.stringify(ex.liquidity_heatmap || {}) +
+        ' · Treasury spark ' + (ex.treasury_sparkline || []).join(',') +
+        ' · Arb ' + esc(ex.arb_feed_status) +
+        (ex.bot_heartbeat_at ? ' · Bot ♥ ' + esc(ex.bot_heartbeat_at) : '') +
+        (ex.mn2_swap_fee_hint ? ' · ' + esc(ex.mn2_swap_fee_hint) : '');
+    } else if (area === 'generator') {
+      html = '🎬 Gallery ' + (ex.thumbnail_gallery || []).length +
+        ' · Failover ' + (ex.failover_active ? 'on' : 'off') +
+        ' · ~' + esc((ex.cost_estimator || {}).credits_per_job) + ' credits/job';
+    } else if (area === 'shop') {
+      html = '🏛 <a href="' + esc(ex.auction_href || '/shop') + '">Auction</a>' +
+        (ex.flash_sale_ends_at ? ' · Flash ends ' + esc(ex.flash_sale_ends_at) : '') +
+        ' · Bundles ' + (ex.bundle_calculator || []).length;
+    } else if (area === 'quest') {
+      html = '🤖 <a href="' + esc(ex.ai_quest_cta || '#') + '">AI quest</a>' +
+        ' · Trophy ' + esc(ex.trophy_quest_progress) +
+        ' · <a href="' + esc(ex.auto_claim_endpoint || '#') + '">Claim all</a>';
+    } else if (area === 'battle') {
+      html = '⭐ ' + esc((ex.female_agent_spotlight || {}).name || 'Agent') +
+        ' · Rank ' + esc(ex.season_rank) +
+        ' · Replays ' + (ex.battle_replays || []).length;
+    } else if (area === 'casino') {
+      html = '🎰 Lounge ' + esc(ex.lounge_status) +
+        ' · Tables ' + esc(ex.table_games_available) +
+        (ex.tournament_ends_at ? ' · Tourney ' + esc(ex.tournament_ends_at) : '');
+    } else if (area === 'explorer') {
+      html = '↕ Auto-scroll · 🔍 <a href="' + esc(ex.chainz_hash_route || '#') + '">Chainz search</a>' +
+        ' · Mempool ~' + esc(ex.mempool_est || '—');
+    } else if (area === 'profile') {
+      var ach = ex.achievement_progress || {};
+      html = '👥 Crew ' + esc(ex.crew_status) +
+        ' · Achievements ' + esc(ach.pct) + '%';
+    } else if (area === 'command-center') {
+      html = '🛟 Support queue ' + esc(ex.agent_support_open) +
+        ' · Daemon ages ' + (ex.daemon_connection_sparkline || []).join(',');
+    }
+    if (html) slot.innerHTML = html;
+  }
+
+  function wrapRenderer(area, fn) {
+    return function (d) {
+      if (fn) fn(d);
+      renderExtras(area, d);
+    };
+  }
+
   var RENDERERS = {
-    explorer: renderExplorer,
-    exchange: renderExchange,
-    shop: renderShop,
-    casino: renderCasino,
-    generator: renderGenerator,
-    quest: renderQuest,
-    battle: renderBattle,
-    profile: renderProfile,
-    'command-center': renderCommandCenter,
-    game: renderGame
+    explorer: wrapRenderer('explorer', renderExplorer),
+    exchange: wrapRenderer('exchange', renderExchange),
+    shop: wrapRenderer('shop', renderShop),
+    casino: wrapRenderer('casino', renderCasino),
+    generator: wrapRenderer('generator', renderGenerator),
+    quest: wrapRenderer('quest', renderQuest),
+    battle: wrapRenderer('battle', renderBattle),
+    profile: wrapRenderer('profile', renderProfile),
+    'command-center': wrapRenderer('command-center', renderCommandCenter),
+    game: wrapRenderer('game', renderGame)
   };
 
   function initArea(area) {

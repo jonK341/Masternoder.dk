@@ -18,6 +18,32 @@ def profit_daemon_reload_config():
     return jsonify(reload_ppp_config())
 
 
+@profit_daemon_bp.route("/api/profit-daemon/ppp/timeseries", methods=["GET"])
+def profit_daemon_ppp_timeseries():
+    from backend.services.profit_daemon_ops_service import ppp_timeseries_export
+    hours = request.args.get("hours", 24, type=float)
+    return jsonify(ppp_timeseries_export(hours=hours))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/search/volatility-windows", methods=["GET"])
+def profit_daemon_volatility_windows():
+    from backend.services.exchange_profit_pair_search_service import volatility_window_scores
+    symbol = (request.args.get("symbol") or "DOGE").upper()
+    return jsonify({"success": True, "symbol": symbol, "windows": volatility_window_scores(symbol)})
+
+
+@profit_daemon_bp.route("/api/profit-daemon/reload-connectors", methods=["POST"])
+def profit_daemon_reload_connectors():
+    from backend.services.profit_daemon_ops_service import reload_connectors_config
+    return jsonify(reload_connectors_config())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/triangular-gate", methods=["GET"])
+def profit_daemon_triangular_gate():
+    from backend.services.profit_daemon_ops_service import triangular_live_allowed
+    return jsonify(triangular_live_allowed())
+
+
 @profit_daemon_bp.route("/api/profit-daemon/status", methods=["GET"])
 def profit_daemon_status():
     from backend.services.profit_daemon_monitor_service import monitor_status

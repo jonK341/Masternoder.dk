@@ -504,9 +504,12 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
     while not stop.is_set():
         try:
             from backend.services.profit_daemon_ops_service import (
+                audit_kill_switch_activation,
                 check_profit_kill,
+                maybe_alert_heartbeat_stale,
                 maybe_alert_venue_balance_low,
                 maybe_alert_zero_fill_streak,
+                maybe_auto_enable_xeggex_live_farm,
                 maybe_auto_tune_sweep_min,
                 maybe_daily_ppp_summary,
                 maybe_prefund_queue,
@@ -516,6 +519,8 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             )
 
             kill = check_profit_kill(action="exchange_tick")
+            if kill:
+                audit_kill_switch_activation(source="exchange_tick")
             if kill:
                 print(f"[all-profit] KILL-SWITCH active — skipping exchange tick ({kill['reason']})", flush=True)
                 _write_heartbeat("exchange", f"kill_switch=yes reason={kill['reason']}", extra={"profit_kill": True})
@@ -544,6 +549,8 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             _maybe_auto_rotation(res)
             maybe_auto_tune_sweep_min()
             maybe_alert_venue_balance_low()
+            maybe_alert_heartbeat_stale()
+            maybe_auto_enable_xeggex_live_farm()
             tick_n += 1
             if tick_n == 1 or tick_n % 48 == 0:
                 maybe_daily_ppp_summary()

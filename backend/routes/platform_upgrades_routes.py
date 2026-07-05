@@ -55,6 +55,38 @@ def platform_batch2_widgets(area: str):
     return jsonify(data), code
 
 
+@platform_upgrades_bp.route("/api/platform/quests/claim-all", methods=["POST", "GET"])
+def platform_quests_claim_all():
+    """Batch-2 #276 — claim all ready quests."""
+    data = request.get_json(silent=True) or {}
+    uid = (request.args.get("user_id") or data.get("user_id") or "").strip()
+    if not uid:
+        return jsonify({"success": False, "error": "user_id required"}), 400
+    claimed = []
+    try:
+        from backend.services.trophy_quest_service import get_unified_quests, claim_quest
+        qs = get_unified_quests(uid)
+        pool = qs if isinstance(qs, list) else (qs.get("quests") or qs.get("daily") or [])
+        for q in pool:
+            if isinstance(q, dict) and (q.get("claimable") or q.get("ready")):
+                out = claim_quest(uid, q.get("id") or q.get("quest_id"))
+                if out.get("success"):
+                    claimed.append(q.get("id") or q.get("quest_id"))
+    except Exception:
+        pass
+    return jsonify({"success": True, "user_id": uid, "claimed": claimed, "count": len(claimed)}), 200
+
+
+@platform_upgrades_bp.route("/api/platform/batch2/<area>/extras", methods=["GET"])
+def platform_batch2_extras(area: str):
+    user_id = request.args.get("user_id")
+    from backend.services.platform_batch2_extras_service import enrich_area_widgets
+    base = get_batch2_widgets(area, user_id=user_id)
+    if not base.get("success"):
+        return jsonify(base), 404
+    return jsonify(base), 200
+
+
 @platform_upgrades_bp.route("/api/platform/upgrades/combined", methods=["GET"])
 @cached_response(ttl=60)
 def platform_upgrades_combined():

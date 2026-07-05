@@ -1580,6 +1580,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [ERROR] Error registering platform_upgrades: {e}")
 
     try:
+        from backend.routes.profit_daemon_routes import profit_daemon_bp
+        if "profit_daemon" not in app.blueprints:
+            app.register_blueprint(profit_daemon_bp)
+            registered_count += 1
+            print("  [OK] Registered profit_daemon blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import profit_daemon: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering profit_daemon: {e}")
+
+    try:
         from backend.routes.discord_routes import discord_bp
         if "discord" not in app.blueprints:
             app.register_blueprint(discord_bp)

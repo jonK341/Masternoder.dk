@@ -37,6 +37,9 @@ def search_config() -> Dict[str, Any]:
     cfg.setdefault("min_live_net_bps", 8.0)
     cfg.setdefault("volatility_weight", 0.12)
     cfg.setdefault("triangular_bonus", 4.0)
+    cfg.setdefault("volatility_windows_hours", [1, 6, 24])
+    cfg.setdefault("meme_coin_symbols", ["DOGE", "SHIB", "PEPE", "FLOKI", "BONK", "WIF"])
+    cfg.setdefault("exclude_meme_coins", False)
     return cfg
 
 
@@ -333,7 +336,28 @@ def catalog_intersection(
         priced = {s for s in probe if conn.fetch_ticker(vid, s, timeout=4.0)}
         if priced:
             out &= priced
-    return sorted(out) if out else sorted(fallback)
+    result = sorted(out) if out else sorted(fallback)
+    return _apply_meme_coin_filter(result)
+
+
+def _apply_meme_coin_filter(symbols: List[str]) -> List[str]:
+    """Optional meme-coin class filter from profit_pair_search config."""
+    cfg = search_config()
+    if not cfg.get("exclude_meme_coins"):
+        return symbols
+    meme = {str(s).upper() for s in (cfg.get("meme_coin_symbols") or [])}
+    return [s for s in symbols if str(s).upper() not in meme]
+
+
+def volatility_window_scores(symbol: str) -> Dict[str, float]:
+    """Volatility spread score at 1h / 6h / 24h presets."""
+    cfg = search_config()
+    windows = cfg.get("volatility_windows_hours") or [1, 6, 24]
+    out: Dict[str, float] = {}
+    for h in windows:
+        key = f"{int(h)}h"
+        out[key] = volatility_spread_score(symbol, hours=float(h))
+    return out
 
 
 def live_spread_rank(
@@ -492,10 +516,12 @@ def _merge_rankings(
         if sym in tri_bonus:
             score += tri_bonus[sym]
             row["triangular"] = True
+        vol_windows = volatility_window_scores(sym) if sym else {}
         ranked.append({
             **row,
             "route": key,
             "volatility_score": vol,
+            "volatility_windows": vol_windows,
             "search_score": round(score, 2),
         })
     ranked.sort(key=lambda r: (r["search_score"], r["fill_count"], r["live_score"]), reverse=True)

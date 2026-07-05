@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-04 · Branch `feat/casino-mega-expansion`_
 
-Master checklist for making the Masternoder.dk profit daemon best-in-class. **22 shipped** in session (P0/P1); **88 planned**. Wired into existing services — no parallel daemon processes.
+Master checklist for making the Masternoder.dk profit daemon best-in-class. **32 shipped** in session (P0/P1); **78 planned**. Wired into existing services — no parallel daemon processes.
 
 **Related:** [PROFIT_DAEMON_ACTIVITY.md](./PROFIT_DAEMON_ACTIVITY.md) · [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) · [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md)
 
@@ -33,10 +33,10 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 | 1 | P0 | done | `EXCHANGE_PROFIT_KILL=1` kill-switch respected in arb, extended, payout |
 | 2 | P0 | done | Prefund queue for top 3 pair-search hits (`maybe_prefund_queue`) |
 | 3 | P0 | done | Auto-scale `paper_trade_usd` from `max_funded_usd` per tick |
-| 4 | P1 | planned | Multi-venue live farm auto-enable when XeggeX probe OK |
-| 5 | P1 | planned | Notional scaling buffer tuned by venue latency tier |
-| 6 | P1 | planned | Triangular arb live gate (paper-only until SPORK) |
-| 7 | P1 | planned | Slippage guard: abort leg if book depth < 2× notional |
+| 4 | P1 | done | Multi-venue live farm auto-enable when XeggeX probe OK |
+| 5 | P1 | done | Notional scaling buffer tuned by venue latency tier |
+| 6 | P1 | done | Triangular arb live gate (paper-only until SPORK) |
+| 7 | P1 | done | Slippage guard: abort leg if book depth < 2× notional |
 | 8 | P2 | planned | Cross-venue prefund batch (single rotation tick, multi-leg) |
 | 9 | P2 | planned | Force-attempt budget per hour (cap runaway retries) |
 | 10 | P2 | planned | Venue-specific min notional floors in connectors config |
@@ -50,8 +50,8 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 | 13 | P0 | done | Triangular loop symbol bonus in search index |
 | 14 | P1 | done | Fast ↔ exchange shared hot-symbol state file |
 | 15 | P1 | planned | ML ranker hook (ledger features → score blend) |
-| 16 | P1 | planned | Volatility window presets (1h / 6h / 24h) |
-| 17 | P1 | planned | Meme coin class filter in catalog intersection |
+| 16 | P1 | done | Volatility window presets (1h / 6h / 24h) |
+| 17 | P1 | done | Meme coin class filter in catalog intersection |
 | 18 | P1 | planned | DeFi router class in catalog expansion |
 | 19 | P2 | planned | Catalog auto-refresh cron independent of ticks |
 | 20 | P2 | planned | Cross-venue symbol alias map (1000SHIB ↔ SHIB) |
@@ -109,9 +109,9 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 | 52 | P0 | done | Monitor UI tiles: pair_search, hot_prefund, zero_fill |
 | 53 | P0 | done | Discord/webhook alert on zero_fill_streak + hot spread |
 | 54 | P0 | done | Venue balance low webhook (USDC / DOGE thresholds) |
-| 55 | P1 | planned | Grafana-style 24h PPP time series export |
-| 56 | P1 | planned | Heartbeat stale Discord alert (>5 min) |
-| 57 | P1 | planned | Fast-loop near_threshold banner on monitor |
+| 55 | P1 | done | Grafana-style 24h PPP time series export |
+| 56 | P1 | done | Heartbeat stale Discord alert (>5 min) |
+| 57 | P1 | done | Fast-loop near_threshold banner on monitor |
 | 58 | P2 | planned | Per-loop sparkline from heartbeat history |
 | 59 | P2 | planned | Blocker deep-link to Top25 runbook anchors |
 | 60 | P2 | planned | Mobile-friendly monitor stat cards |
@@ -128,7 +128,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 | 66 | P0 | done | systemd healthcheck script (`profit_daemon_healthcheck.sh`) |
 | 67 | P1 | planned | Auto-restart wrapper on unhandled thread death |
 | 68 | P1 | planned | Deploy hook post-push in `deploy_profit_daemon_server.py` |
-| 69 | P1 | planned | Config hot-reload for `exchange_connectors_config.json` |
+| 69 | P1 | done | Config hot-reload for `exchange_connectors_config.json` |
 | 70 | P2 | planned | Tick budget profiler (warn when exchange tick >60s) |
 | 71 | P2 | planned | Preflight gate: block start if heartbeat owned by other host |
 | 72 | P3 | planned | Blue/green daemon profile switch without downtime |
@@ -190,7 +190,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 
 | # | P | Status | Description |
 |---|-----|--------|-------------|
-| 106 | P1 | planned | Audit trail row on every kill-switch activation |
+| 106 | P1 | done | Audit trail row on every kill-switch activation |
 | 107 | P1 | planned | Paper/live separation banner on `/profit/` |
 | 108 | P2 | planned | PPP export redaction mode for sharing |
 | 109 | P2 | planned | Sweep tax ID field in payout config (optional) |
@@ -213,4 +213,4 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **22
 | 62–66 | Hot-reload, daily PPP, log rotation, healthcheck |
 | 73–74 | Kill on sweep + alert cooldown |
 
-**Counts:** 22 done · 88 planned · 110 total
+**Counts:** 32 done · 78 planned · 110 total

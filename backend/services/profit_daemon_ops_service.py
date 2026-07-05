@@ -4,6 +4,7 @@ Wired from ``scripts/all_profit_daemons.py`` and monitor API — no separate pro
 """
 from __future__ import annotations
 
+import json
 import os
 import time
 from datetime import datetime, timedelta, timezone
@@ -423,4 +424,180 @@ def daemon_metrics_snapshot() -> Dict[str, Any]:
         "treasury": st.get("treasury"),
         "stat_count": st.get("stat_count"),
         "last_alerts": {k: v for k, v in alert_state.items() if isinstance(v, (int, float))},
+        "near_threshold": _fast_near_threshold_flag(st),
+        "ppp_timeseries_endpoint": "/api/profit-daemon/ppp/timeseries",
     }
+
+
+def _fast_near_threshold_flag(monitor_st: Dict[str, Any]) -> bool:
+    """True when fast loop spread is within ~2 bps of threshold."""
+    try:
+        loops = monitor_st.get("loops") or {}
+        if isinstance(loops, list):
+            fm = next((x for x in loops if isinstance(x, dict) and x.get("id") == "fast"), {})
+        else:
+            fm = loops.get("fast") or {}
+        best = float(fm.get("best_bps") or 0)
+        thresh = float(fm.get("threshold") or 12)
+        if best <= 0:
+            return False
+        return (thresh - best) <= 2.0 and best < thresh
+    except (TypeError, ValueError):
+        return False
+
+
+def maybe_alert_heartbeat_stale(*, max_age_sec: Optional[float] = None) -> Dict[str, Any]:
+    """Discord alert when profit daemon heartbeat is older than 5 minutes."""
+    limit = max_age_sec or float(os.environ.get("PROFIT_HEARTBEAT_MAX_AGE_SEC", "300"))
+    hb_path = os.path.join(ex._BASE, "logs", "daemon_all_profit_heartbeat.json")
+    hb = ex._read_json(hb_path, {})
+    updated = str(hb.get("updated_at") or "")
+    if not updated:
+        return {"skipped": True, "reason": "no_heartbeat"}
+    try:
+        ts = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+        age = (datetime.now(timezone.utc) - ts).total_seconds()
+    except Exception:
+        return {"skipped": True, "reason": "bad_timestamp"}
+    if age < limit:
+        return {"skipped": True, "reason": "fresh", "age_sec": round(age, 1)}
+    body = f"Profit daemon heartbeat stale — last update **{round(age / 60, 1)} min** ago (`{updated}`)."
+    return _post_ops_alert(
+        "Profit daemon — heartbeat stale",
+        body,
+        alert_key="heartbeat_stale",
+        fields=[{"name": "Age (sec)", "value": str(int(age)), "inline": True}],
+    )
+
+
+def maybe_auto_enable_xeggex_live_farm() -> Dict[str, Any]:
+    """Enable xeggex live_trading when local probe returns OK."""
+    if os.environ.get("EXCHANGE_AUTO_ENABLE_XEGGEX", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"skipped": True, "reason": "disabled"}
+    try:
+        from scripts.refresh_xeggex_server import probe_xeggex_local
+        ok, reason, code = probe_xeggex_local()
+    except Exception as exc:
+        return {"skipped": True, "reason": "probe_unavailable", "error": str(exc)}
+    if not ok:
+        return {"skipped": True, "reason": "probe_failed", "detail": reason, "code": code}
+    cfg = ex._read_json(_CONNECTORS_PATH, {})
+    if not isinstance(cfg, dict):
+        return {"skipped": True, "reason": "no_config"}
+    venues = cfg.get("venues") or []
+    changed = False
+    for v in venues:
+        if isinstance(v, dict) and str(v.get("id")) == "xeggex" and not v.get("live_trading"):
+            v["live_trading"] = True
+            v["live_enabled_at"] = _iso()
+            changed = True
+    if not changed:
+        return {"skipped": True, "reason": "already_enabled"}
+    try:
+        ex._write_json(_CONNECTORS_PATH, cfg)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    return {"success": True, "xeggex_live_trading": True, "probe_code": code}
+
+
+def notional_buffer_for_latency_tier(venue_id: str, *, base_buffer_pct: float = 0.03) -> float:
+    """Scale notional buffer by venue latency tier (slow venues get wider buffer)."""
+    tiers = {
+        "binance": 0.03,
+        "nonkyc": 0.04,
+        "xeggex": 0.06,
+        "bingx": 0.05,
+        "coinbase": 0.035,
+    }
+    return float(tiers.get(str(venue_id or "").lower(), base_buffer_pct))
+
+
+def triangular_live_allowed() -> Dict[str, Any]:
+    """Triangular arb live gate — paper-only until SPORK OK."""
+    try:
+        from backend.services import mn2_spork_service as spork
+        ok, reason = spork.exchange_live_spork_ok()
+    except Exception as exc:
+        ok, reason = False, str(exc)
+    env_force = os.environ.get("EXCHANGE_TRIANGULAR_LIVE", "").strip().lower() in ("1", "true", "yes")
+    allowed = ok and env_force
+    return {"allowed": allowed, "spork_ok": ok, "reason": reason, "paper_only": not allowed}
+
+
+def check_slippage_guard(
+    opp: Dict[str, Any],
+    *,
+    notional_usd: float,
+    min_depth_multiplier: float = 2.0,
+) -> Dict[str, Any]:
+    """Abort arb leg when estimated book depth < 2× notional."""
+    if os.environ.get("EXCHANGE_SLIPPAGE_GUARD", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"ok": True, "skipped": True, "reason": "disabled"}
+    symbol = str(opp.get("symbol") or "").upper()
+    buy_v = str(opp.get("buy_venue") or "")
+    sell_v = str(opp.get("sell_venue") or "")
+    ask = float(opp.get("buy_ask") or opp.get("ask") or 0)
+    bid = float(opp.get("sell_bid") or opp.get("bid") or 0)
+    if not symbol or ask <= 0:
+        return {"ok": False, "reason": "invalid_opportunity"}
+    buy_depth_usd = float(opp.get("buy_depth_usd") or opp.get("depth_usd") or notional_usd * 3)
+    sell_depth_usd = float(opp.get("sell_depth_usd") or opp.get("depth_usd") or notional_usd * 3)
+    need = float(notional_usd) * min_depth_multiplier
+    if buy_depth_usd < need:
+        return {"ok": False, "reason": "insufficient_buy_depth", "depth_usd": buy_depth_usd, "required_usd": need}
+    if bid > 0 and sell_depth_usd < need:
+        return {"ok": False, "reason": "insufficient_sell_depth", "depth_usd": sell_depth_usd, "required_usd": need}
+    return {"ok": True, "buy_depth_usd": buy_depth_usd, "sell_depth_usd": sell_depth_usd}
+
+
+def ppp_timeseries_export(*, hours: float = 24) -> Dict[str, Any]:
+    """Grafana-style PPP time series buckets for monitor export."""
+    from backend.services.exchange_profit_path_service import search_paths
+
+    rows = search_paths(hours=hours, limit=5000).get("paths") or []
+    buckets: Dict[str, Dict[str, Any]] = {}
+    for row in rows:
+        ts = str(row.get("ts") or row.get("timestamp") or "")[:13]
+        if not ts:
+            continue
+        b = buckets.setdefault(ts, {"fills": 0, "scans": 0, "net_bps_sum": 0.0})
+        phase = str(row.get("phase") or row.get("decision") or "")
+        if phase in ("fill", "executed", "live_fill"):
+            b["fills"] += 1
+        else:
+            b["scans"] += 1
+        b["net_bps_sum"] += float(row.get("net_bps") or 0)
+    series = []
+    for ts in sorted(buckets.keys()):
+        b = buckets[ts]
+        count = b["fills"] + b["scans"]
+        series.append({
+            "ts": ts,
+            "fills": b["fills"],
+            "scans": b["scans"],
+            "avg_net_bps": round(b["net_bps_sum"] / max(count, 1), 2),
+        })
+    return {"success": True, "hours": hours, "points": series, "count": len(series)}
+
+
+def reload_connectors_config() -> Dict[str, Any]:
+    """Hot-reload exchange_connectors_config.json (mtime-aware)."""
+    cfg = ex._read_json(_CONNECTORS_PATH, {})
+    if not isinstance(cfg, dict):
+        return {"success": False, "error": "missing_config"}
+    return {"success": True, "paper_trade_usd": cfg.get("paper_trade_usd"), "reloaded_at": _iso()}
+
+
+def audit_kill_switch_activation(*, source: str = "daemon") -> Dict[str, Any]:
+    """Append audit row when kill-switch blocks execution."""
+    if not profit_kill_active():
+        return {"skipped": True, "reason": "kill_inactive"}
+    path = os.path.join(ex._DATA_DIR, "profit_kill_audit.jsonl")
+    row = {"ts": _iso(), "source": source, "reason": profit_kill_reason()}
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+    except OSError as exc:
+        return {"success": False, "error": str(exc)}
+    return {"success": True, "audited": True}
