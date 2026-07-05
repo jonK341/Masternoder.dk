@@ -6,7 +6,7 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 
 ## Summary
 
-- **59 done** / **41 planned** / **100 total**
+- **100 done** / **0 planned** / **100 total**
 
 ## Explorer (`/explorer`)
 
@@ -21,7 +21,7 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 7 | P2 | Search opens Chainz tx/address detail | ✅ done |
 | 8 | P2 | Daemon health banner with staking status | ✅ done |
 | 9 | P3 | Masternode rank table with active time | ✅ done |
-| 10 | P3 | Market activity tiles from overview API | 📋 planned |
+| 10 | P3 | Market activity tiles from overview API | ✅ done |
 
 ## Exchange (`/exchange`)
 
@@ -35,8 +35,8 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 16 | P2 | MN2 balance strip on trade tab | ✅ done |
 | 17 | P2 | PayPal onramp shortcut nav | ✅ done |
 | 18 | P2 | Profit Oracle deep link | ✅ done |
-| 19 | P3 | Agent marketplace cross-link | 📋 planned |
-| 20 | P3 | Venue liquidity heatmap | 📋 planned |
+| 19 | P3 | Agent marketplace cross-link | ✅ done |
+| 20 | P3 | Venue liquidity heatmap | ✅ done |
 
 ## Profile (`/profile`)
 
@@ -46,12 +46,12 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 22 | P0 | Agent level from PPP profit stack | ✅ done |
 | 23 | P1 | MN2 wallet summary widget | ✅ done |
 | 24 | P1 | PPP quest sync indicator | ✅ done |
-| 25 | P2 | Stats route deep links | 📋 planned |
-| 26 | P2 | Leaderboard tab shortcut | 📋 planned |
-| 27 | P2 | Shop inventory preview | 📋 planned |
-| 28 | P3 | Social crew status chip | 📋 planned |
-| 29 | P3 | Trophy income estimate | 📋 planned |
-| 30 | P3 | Profile load time badge | 📋 planned |
+| 25 | P2 | Stats route deep links | ✅ done |
+| 26 | P2 | Leaderboard tab shortcut | ✅ done |
+| 27 | P2 | Shop inventory preview | ✅ done |
+| 28 | P3 | Social crew status chip | ✅ done |
+| 29 | P3 | Trophy income estimate | ✅ done |
+| 30 | P3 | Profile load time badge | ✅ done |
 
 ## Shop (`/shop`)
 
@@ -62,11 +62,11 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 33 | P1 | Cart persistence in localStorage | ✅ done |
 | 34 | P1 | Daily deal highlight strip | ✅ done |
 | 35 | P2 | Sort by category and price | ✅ done |
-| 36 | P2 | MN2 on-chain pay modal | 📋 planned |
-| 37 | P2 | VIP tier badge on header | 📋 planned |
-| 38 | P3 | Auction house quick link | 📋 planned |
-| 39 | P3 | Flash sale countdown | 📋 planned |
-| 40 | P3 | Shop analytics panel | 📋 planned |
+| 36 | P2 | MN2 on-chain pay modal | ✅ done |
+| 37 | P2 | VIP tier badge on header | ✅ done |
+| 38 | P3 | Auction house quick link | ✅ done |
+| 39 | P3 | Flash sale countdown | ✅ done |
+| 40 | P3 | Shop analytics panel | ✅ done |
 
 ## Casino (`/casino`)
 
@@ -79,9 +79,9 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 45 | P2 | Live wins ticker | ✅ done |
 | 46 | P2 | Progressive jackpot bar | ✅ done |
 | 47 | P2 | Camgirls lounge status | ✅ done |
-| 48 | P3 | Tournament countdown widget | 📋 planned |
-| 49 | P3 | Discord fanout status | 📋 planned |
-| 50 | P3 | House edge transparency card | 📋 planned |
+| 48 | P3 | Tournament countdown widget | ✅ done |
+| 49 | P3 | Discord fanout status | ✅ done |
+| 50 | P3 | House edge transparency card | ✅ done |
 
 ## Generator (`/generator`)
 
@@ -92,11 +92,11 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 53 | P1 | API health status chip | ✅ done |
 | 54 | P1 | Queue depth display | ✅ done |
 | 55 | P2 | Credit balance display | ✅ done |
-| 56 | P2 | Provider availability grid | 📋 planned |
-| 57 | P2 | AI magic generate shortcut | 📋 planned |
-| 58 | P3 | Thumbnail preview gallery | 📋 planned |
-| 59 | P3 | Entitlement reservation status | 📋 planned |
-| 60 | P3 | Runway-style preset browser | 📋 planned |
+| 56 | P2 | Provider availability grid | ✅ done |
+| 57 | P2 | AI magic generate shortcut | ✅ done |
+| 58 | P3 | Thumbnail preview gallery | ✅ done |
+| 59 | P3 | Entitlement reservation status | ✅ done |
+| 60 | P3 | Runway-style preset browser | ✅ done |
 
 ## Command Center (`/command-center`)
 
@@ -108,10 +108,10 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 64 | P1 | Power monitor bar | ✅ done |
 | 65 | P2 | Exchange monitor panel | ✅ done |
 | 66 | P2 | Casino monitor panel | ✅ done |
-| 67 | P3 | Agent support status | 📋 planned |
-| 68 | P3 | Podcast strip integration | 📋 planned |
-| 69 | P3 | Battlegrounds zone alert | 📋 planned |
-| 70 | P3 | Cross-area MN2 reward totals | 📋 planned |
+| 67 | P3 | Agent support status | ✅ done |
+| 68 | P3 | Podcast strip integration | ✅ done |
+| 69 | P3 | Battlegrounds zone alert | ✅ done |
+| 70 | P3 | Cross-area MN2 reward totals | ✅ done |
 
 ## Game Hub (`/game`)
 
@@ -122,11 +122,11 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 73 | P1 | At-a-glance progress strip | ✅ done |
 | 74 | P1 | Champion pulse timestamps | ✅ done |
 | 75 | P2 | Nexus campaign arc link | ✅ done |
-| 76 | P2 | Aggregator fulfill status | 📋 planned |
-| 77 | P2 | Star Map 25 cross-link | 📋 planned |
-| 78 | P3 | Walkthrough guide drawer | 📋 planned |
-| 79 | P3 | Geo-ref profiling chip | 📋 planned |
-| 80 | P3 | Competitive loops dashboard | 📋 planned |
+| 76 | P2 | Aggregator fulfill status | ✅ done |
+| 77 | P2 | Star Map 25 cross-link | ✅ done |
+| 78 | P3 | Walkthrough guide drawer | ✅ done |
+| 79 | P3 | Geo-ref profiling chip | ✅ done |
+| 80 | P3 | Competitive loops dashboard | ✅ done |
 
 ## Quest (`/quests`)
 
@@ -136,12 +136,12 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 82 | P0 | Claim button states (ready/claimed) | ✅ done |
 | 83 | P1 | PPP quest sync badge | ✅ done |
 | 84 | P1 | Daily quest streak display | ✅ done |
-| 85 | P2 | AI quest generation CTA | 📋 planned |
-| 86 | P2 | Quest completion confetti | 📋 planned |
-| 87 | P2 | Level progression claim panel | 📋 planned |
-| 88 | P3 | Quest filter by type | 📋 planned |
-| 89 | P3 | Shared quest crew board | 📋 planned |
-| 90 | P3 | Quest MN2 reward estimator | 📋 planned |
+| 85 | P2 | AI quest generation CTA | ✅ done |
+| 86 | P2 | Quest completion confetti | ✅ done |
+| 87 | P2 | Level progression claim panel | ✅ done |
+| 88 | P3 | Quest filter by type | ✅ done |
+| 89 | P3 | Shared quest crew board | ✅ done |
+| 90 | P3 | Quest MN2 reward estimator | ✅ done |
 
 ## Battle (`/battle`)
 
@@ -153,8 +153,8 @@ Cross-area UX roadmap for Masternoder.dk — 10 areas × 10 upgrades each.
 | 94 | P1 | Quick battle one-click | ✅ done |
 | 95 | P2 | Battle stats summary cards | ✅ done |
 | 96 | P2 | Female agent spotlight | ✅ done |
-| 97 | P3 | Lab tech forge integration | 📋 planned |
-| 98 | P3 | Champion league season link | 📋 planned |
-| 99 | P3 | Battle chart analytics | 📋 planned |
-| 100 | P3 | MN2 reward per win display | 📋 planned |
+| 97 | P3 | Lab tech forge integration | ✅ done |
+| 98 | P3 | Champion league season link | ✅ done |
+| 99 | P3 | Battle chart analytics | ✅ done |
+| 100 | P3 | MN2 reward per win display | ✅ done |
 

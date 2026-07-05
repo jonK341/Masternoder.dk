@@ -567,6 +567,17 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             maybe_alert_venue_balance_low()
             maybe_alert_heartbeat_stale()
             maybe_auto_enable_xeggex_live_farm()
+            try:
+                from backend.services.profit_daemon_ops_service import run_exchange_tick_ops
+                tick_ops = run_exchange_tick_ops(res, tick_start=time.time())
+                if tick_ops.get("prefund_batch", {}).get("prefund_executed"):
+                    print("[all-profit] prefund_batch executed", flush=True)
+                if tick_ops.get("sweep_dry_run"):
+                    print(f"[all-profit] {tick_ops['sweep_dry_run']}", flush=True)
+                if tick_ops.get("early_exit"):
+                    print("[all-profit] exchange tick early exit — budget exceeded", flush=True)
+            except Exception as tick_exc:
+                print(f"[all-profit] tick_ops error: {tick_exc}", flush=True)
             tick_n += 1
             if tick_n == 1 or tick_n % 48 == 0:
                 maybe_daily_ppp_summary()

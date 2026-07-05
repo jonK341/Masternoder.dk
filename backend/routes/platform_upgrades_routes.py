@@ -113,6 +113,15 @@ def platform_generator_export_inventory():
     return jsonify(export_generator_to_inventory(uid, job_id=job_id)), 200
 
 
+@platform_upgrades_bp.route("/api/platform/batch1/<area>/widgets", methods=["GET"])
+def platform_batch1_widgets(area: str):
+    user_id = request.args.get("user_id")
+    from backend.services.platform_batch1_service import get_batch1_widgets
+    data = get_batch1_widgets(area, user_id=user_id)
+    code = 200 if data.get("success") is not False else 404
+    return jsonify(data), code
+
+
 @platform_upgrades_bp.route("/api/platform/upgrades/combined", methods=["GET"])
 @cached_response(ttl=60)
 def platform_upgrades_combined():

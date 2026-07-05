@@ -337,7 +337,16 @@ def catalog_intersection(
         if priced:
             out &= priced
     result = sorted(out) if out else sorted(fallback)
-    return _apply_meme_coin_filter(result)
+    filtered = _apply_meme_coin_filter(result)
+    if os.environ.get("EXCHANGE_DEFI_CATALOG", "1").strip().lower() not in ("0", "false", "no", "off"):
+        try:
+            from backend.services.profit_daemon_ops_service import defi_router_symbols
+            defi = defi_router_symbols()
+            merged = sorted(set(filtered) | set(defi))
+            return merged
+        except Exception:
+            pass
+    return filtered
 
 
 def _apply_meme_coin_filter(symbols: List[str]) -> List[str]:
@@ -503,14 +512,31 @@ def _merge_rankings(
 
     tri_bonus = triangular_symbol_bonus()
     vw = float(cfg.get("volatility_weight") or 0.12)
+    ml_enabled = os.environ.get("EXCHANGE_ML_RANKER", "1").strip().lower() not in ("0", "false", "no", "off")
 
     ranked: List[Dict[str, Any]] = []
     for key, row in combined.items():
         sym = str(row.get("symbol") or "").upper()
+        try:
+            from backend.services.profit_daemon_ops_service import normalize_symbol_alias
+            sym = normalize_symbol_alias(sym)
+            row["symbol"] = sym
+        except Exception:
+            pass
         ledger_part = float(row.get("avg_net_bps") or 0) * (0.5 + float(row.get("hit_rate_pct") or 0) / 200.0)
         live_part = float(row.get("live_score") or 0)
         vol = volatility_spread_score(sym) if sym else 0.0
         score = lw * ledger_part + sw * live_part + vw * vol
+        if ml_enabled:
+            try:
+                from backend.services.profit_daemon_ops_service import ml_ranker_blend
+                score = ml_ranker_blend(
+                    ledger_score=ledger_part,
+                    volatility_score=vol,
+                    hit_rate_pct=float(row.get("hit_rate_pct") or 0),
+                )
+            except Exception:
+                pass
         if row.get("fill_count"):
             score += min(15.0, float(row["fill_count"]) * 3.0)
         if sym in tri_bonus:

@@ -1,8 +1,8 @@
 # Profit Daemon — 110 Upgrades Roadmap
 
-_Last updated: 2026-07-04 · Branch `feat/casino-mega-expansion`_
+_Last updated: 2026-07-05 · Branch `feat/casino-mega-expansion`_
 
-Master checklist for making the Masternoder.dk profit daemon best-in-class. **42 shipped** in session (P0/P1/P2); **68 planned**. Wired into existing services — no parallel daemon processes.
+Master checklist for making the Masternoder.dk profit daemon best-in-class. **57 shipped** in tree (P0/P1/P2); **53 planned**. Wired into existing services — no parallel daemon processes.
 
 **Related:** [PROFIT_DAEMON_ACTIVITY.md](./PROFIT_DAEMON_ACTIVITY.md) · [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) · [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md)
 
@@ -49,12 +49,12 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 | 12 | P0 | done | Spread volatility score in pair-search ranking |
 | 13 | P0 | done | Triangular loop symbol bonus in search index |
 | 14 | P1 | done | Fast ↔ exchange shared hot-symbol state file |
-| 15 | P1 | planned | ML ranker hook (ledger features → score blend) |
+| 15 | P1 | done | ML ranker hook (ledger features → score blend) |
 | 16 | P1 | done | Volatility window presets (1h / 6h / 24h) |
 | 17 | P1 | done | Meme coin class filter in catalog intersection |
-| 18 | P1 | planned | DeFi router class in catalog expansion |
+| 18 | P1 | done | DeFi router class in catalog expansion |
 | 19 | P2 | planned | Catalog auto-refresh cron independent of ticks |
-| 20 | P2 | planned | Cross-venue symbol alias map (1000SHIB ↔ SHIB) |
+| 20 | P2 | done | Cross-venue symbol alias map (1000SHIB ↔ SHIB) |
 | 21 | P2 | planned | Search index export API for research notebooks |
 | 22 | P3 | planned | User-agent symbol overlay from marketplace rentals |
 
@@ -76,13 +76,13 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 
 | # | P | Status | Description |
 |---|-----|--------|-------------|
-| 32 | P1 | planned | Live compound streak bonus tiers |
+| 32 | P1 | done | Live compound streak bonus tiers |
 | 33 | P1 | planned | Multi-currency stash buckets (USD/EUR stable) |
 | 34 | P1 | planned | Fee optimization: prefer USDC vs USDT route |
 | 35 | P2 | planned | Treasury liquidity ledger reconciliation job |
-| 36 | P2 | planned | Stash cap alert before sweep |
+| 36 | P2 | done | Stash cap alert before sweep |
 | 37 | P2 | planned | Internal sales-pool ↔ treasury transfer automation |
-| 38 | P2 | planned | Compound pause when kill-switch active |
+| 38 | P2 | done | Compound pause when kill-switch active |
 | 39 | P3 | planned | Historical stash chart on monitor UI |
 | 40 | P3 | planned | MN2-denominated stash mirror for casino |
 
@@ -94,9 +94,9 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 | 42 | P1 | done | PayPal tier presets (micro / standard / whale) |
 | 43 | P1 | done | Auto-threshold lowering when paper unswept grows (display only) |
 | 44 | P1 | done | Tax export CSV from sweep + stash ledger |
-| 45 | P2 | planned | Binance withdraw rail preflight in daemon tick |
-| 46 | P2 | planned | Sweep dry-run line in daemon stdout |
-| 47 | P2 | planned | Partial sweep when above min but below full pool |
+| 45 | P2 | done | Binance withdraw rail preflight in daemon tick |
+| 46 | P2 | done | Sweep dry-run line in daemon stdout |
+| 47 | P2 | done | Partial sweep when above min but below full pool |
 | 48 | P2 | done | Payout share_pct env validation on startup |
 | 49 | P3 | planned | Multi-recipient PayPal split (requires gates) |
 | 50 | P3 | planned | Sweep success Discord celebration embed |
@@ -113,7 +113,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 | 56 | P1 | done | Heartbeat stale Discord alert (>5 min) |
 | 57 | P1 | done | Fast-loop near_threshold banner on monitor |
 | 58 | P2 | done | Per-loop sparkline from heartbeat history |
-| 59 | P2 | planned | Blocker deep-link to Top25 runbook anchors |
+| 59 | P2 | done | Blocker deep-link to Top25 runbook anchors |
 | 60 | P2 | planned | Mobile-friendly monitor stat cards |
 | 61 | P3 | planned | Public read-only monitor token URL |
 
@@ -139,7 +139,7 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 |---|-----|--------|-------------|
 | 73 | P0 | done | Kill switch blocks sweep execution |
 | 74 | P1 | done | Alert webhook cooldown (900s default) anti-spam |
-| 75 | P1 | planned | Rate limit on profit-daemon API routes |
+| 75 | P1 | done | Rate limit on profit-daemon API routes |
 | 76 | P1 | done | SPORK gate audit line in daemon startup banner |
 | 77 | P2 | planned | Admin key required for reload-config POST |
 | 78 | P2 | planned | Mask venue balances in metrics export |
@@ -154,10 +154,10 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 | 82 | P1 | planned | PPP auto-report PDF/email weekly |
 | 83 | P1 | planned | A/B strategy profile comparison (max vs fast) |
 | 84 | P1 | planned | Backtest replay from PPP ledger slice |
-| 85 | P2 | planned | Hit-rate regression alert per route |
+| 85 | P2 | done | Hit-rate regression alert per route |
 | 86 | P2 | planned | Skip-reason trend chart export |
 | 87 | P2 | planned | Pair-search score decomposition export |
-| 88 | P2 | planned | Critical Top25 auto-sync on daemon tick |
+| 88 | P2 | done | Critical Top25 auto-sync on daemon tick |
 | 89 | P3 | planned | Jupyter notebook template for PPP analysis |
 | 90 | P3 | planned | Public anonymized leaderboard of routes |
 | 91 | P3 | planned | Research API quota per operator key |
@@ -177,9 +177,9 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 
 | # | P | Status | Description |
 |---|-----|--------|-------------|
-| 98 | P1 | planned | Venue balance cache TTL env per venue |
+| 98 | P1 | done | Venue balance cache TTL env per venue |
 | 99 | P1 | planned | Parallel venue fetch (3+ workers) in monitor |
-| 100 | P1 | planned | Exchange tick time budget with early exit |
+| 100 | P1 | done | Exchange tick time budget with early exit |
 | 101 | P2 | planned | Pair-search catalog cache shared across workers |
 | 102 | P2 | planned | Lazy Flask import for monitor-only polls |
 | 103 | P2 | planned | JSONL tail cache for PPP 24h snapshot |
@@ -213,4 +213,4 @@ Master checklist for making the Masternoder.dk profit daemon best-in-class. **42
 | 62–66 | Hot-reload, daily PPP, log rotation, healthcheck |
 | 73–74 | Kill on sweep + alert cooldown |
 
-**Counts:** 42 done · 68 planned · 110 total
+**Counts:** 57 done · 53 planned · 110 total

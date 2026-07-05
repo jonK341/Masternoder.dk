@@ -776,3 +776,262 @@ def paper_live_separation_banner() -> Dict[str, Any]:
         "banner": f"Profit daemon running in **{mode.upper()}** mode — live execution gated by SPORK.",
         "kill_active": profit_kill_active(),
     }
+
+
+# --- Profit daemon 110 upgrades (session 3) ---
+
+_SYMBOL_ALIASES: Dict[str, str] = {
+    "1000SHIB": "SHIB",
+    "1000PEPE": "PEPE",
+    "1000FLOKI": "FLOKI",
+    "1000BONK": "BONK",
+    "WBTC": "BTC",
+    "WETH": "ETH",
+}
+
+
+def normalize_symbol_alias(symbol: str) -> str:
+    """Cross-venue symbol alias map (#20)."""
+    s = str(symbol or "").upper()
+    return _SYMBOL_ALIASES.get(s, s)
+
+
+def ml_ranker_blend(*, ledger_score: float, volatility_score: float, hit_rate_pct: float) -> float:
+    """ML ranker hook — ledger features → score blend (#15)."""
+    w_ledger = float(os.environ.get("PROFIT_ML_LEDGER_WEIGHT", "0.5"))
+    w_vol = float(os.environ.get("PROFIT_ML_VOL_WEIGHT", "0.25"))
+    w_hit = float(os.environ.get("PROFIT_ML_HIT_WEIGHT", "0.25"))
+    hit_norm = min(1.0, float(hit_rate_pct or 0) / 100.0)
+    return round(w_ledger * ledger_score + w_vol * volatility_score + w_hit * hit_norm * 20.0, 4)
+
+
+def defi_router_symbols() -> List[str]:
+    """DeFi router class symbols for catalog expansion (#18)."""
+    base = ["UNI", "AAVE", "LINK", "CRV", "SUSHI", "COMP", "MKR", "SNX"]
+    extra = os.environ.get("PROFIT_DEFI_SYMBOLS", "")
+    if extra.strip():
+        base.extend(s.strip().upper() for s in extra.split(",") if s.strip())
+    return sorted(set(base))
+
+
+def compound_streak_bonus_tier(streak: int) -> Dict[str, Any]:
+    """Live compound streak bonus tiers (#32)."""
+    tiers = [
+        {"min_streak": 0, "bonus_pct": 0},
+        {"min_streak": 3, "bonus_pct": 2},
+        {"min_streak": 7, "bonus_pct": 5},
+        {"min_streak": 14, "bonus_pct": 10},
+    ]
+    active = tiers[0]
+    for t in tiers:
+        if streak >= int(t["min_streak"]):
+            active = t
+    return {"success": True, "streak": streak, "bonus_pct": active["bonus_pct"], "tiers": tiers}
+
+
+def compound_pause_on_kill() -> Dict[str, Any]:
+    """Compound pause when kill-switch active (#38)."""
+    active = profit_kill_active()
+    return {"success": True, "compound_paused": active, "reason": profit_kill_reason() if active else None}
+
+
+def maybe_alert_stash_cap_before_sweep(*, cap_usd: Optional[float] = None) -> Dict[str, Any]:
+    """Stash cap alert before sweep (#36)."""
+    limit = cap_usd or float(os.environ.get("EXCHANGE_STASH_CAP_ALERT_USD", "2000"))
+    try:
+        from backend.services.profit_daemon_monitor_service import _light_treasury_snapshot
+        stash = float((_light_treasury_snapshot().get("live_stash_usd") or 0))
+    except Exception:
+        stash = 0.0
+    if stash < limit * 0.85:
+        return {"skipped": True, "reason": "below_threshold", "live_stash_usd": stash, "cap_usd": limit}
+    body = f"Live stash **${stash:.2f}** approaching cap **${limit:.0f}** — review sweep/compound."
+    return _post_ops_alert(
+        "Profit daemon — stash cap warning",
+        body,
+        alert_key="stash_cap_warning",
+        fields=[
+            {"name": "Live stash", "value": f"${stash:.2f}", "inline": True},
+            {"name": "Cap", "value": f"${limit:.0f}", "inline": True},
+        ],
+    )
+
+
+def binance_withdraw_preflight() -> Dict[str, Any]:
+    """Binance withdraw rail preflight in daemon tick (#45)."""
+    if os.environ.get("EXCHANGE_BINANCE_PREFLIGHT", "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"skipped": True, "reason": "disabled"}
+    try:
+        from backend.services.exchange_binance_payout_service import plan_bank_wire_sweep
+        plan = plan_bank_wire_sweep()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    ready = bool(plan.get("ready_to_withdraw") or plan.get("actionable"))
+    return {
+        "success": True,
+        "ready_to_withdraw": ready,
+        "plan": {k: plan.get(k) for k in ("amount_usd", "reason", "mode", "destination") if k in plan},
+    }
+
+
+def sweep_dry_run_line() -> str:
+    """Sweep dry-run stdout line (#46)."""
+    try:
+        from backend.services.exchange_payout_service import plan_sweep
+        plan = plan_sweep()
+    except Exception as exc:
+        return f"sweep_dry_run error={exc}"
+    if not plan.get("actionable"):
+        return f"sweep_dry_run skip reason={plan.get('reason')} net={plan.get('net_unswept_usd', 0)}"
+    return (
+        f"sweep_dry_run ok dest={plan.get('destination')} "
+        f"amount={plan.get('amount_usd')} mode={plan.get('mode')}"
+    )
+
+
+def plan_partial_sweep(*, fraction: float = 0.5) -> Dict[str, Any]:
+    """Partial sweep when above min but below full pool (#47)."""
+    try:
+        from backend.services.exchange_payout_service import plan_sweep, payout_status
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    st = payout_status()
+    net = float(st.get("net_unswept_usd") or 0)
+    min_usd = float(st.get("min_sweep_usd") or 100)
+    if net < min_usd:
+        return {"success": True, "actionable": False, "reason": "below_min", "net_unswept_usd": net}
+    if net >= min_usd * 2:
+        return {"success": True, "actionable": False, "reason": "full_sweep_preferred", "net_unswept_usd": net}
+    partial = round(net * max(0.1, min(1.0, fraction)), 4)
+    plan = plan_sweep(min_sweep_usd=min_usd)
+    return {
+        "success": True,
+        "actionable": partial >= min_usd,
+        "partial_amount_usd": partial,
+        "net_unswept_usd": net,
+        "min_sweep_usd": min_usd,
+        "full_plan": plan,
+        "display_only": True,
+    }
+
+
+def top25_blocker_deeplinks() -> Dict[str, Any]:
+    """Blocker deep-link to Top25 runbook anchors (#59)."""
+    base = "/docs/PROFIT_CRITICAL_TOP25.md"
+    return {
+        "success": True,
+        "runbook": base,
+        "anchors": [
+            {"id": "p0-kill-switch", "label": "Kill switch", "href": f"{base}#p0-kill-switch"},
+            {"id": "p0-xeggex-auth", "label": "XeggeX auth", "href": f"{base}#p0-xeggex-auth"},
+            {"id": "p1-prefund", "label": "Prefund queue", "href": f"{base}#p1-prefund"},
+            {"id": "p1-sweep-min", "label": "Sweep minimum", "href": f"{base}#p1-sweep-min"},
+        ],
+    }
+
+
+_RATE_LIMIT: Dict[str, List[float]] = {}
+
+
+def profit_api_rate_limit(client_key: str, *, max_per_min: Optional[int] = None) -> Dict[str, Any]:
+    """Rate limit on profit-daemon API routes (#75)."""
+    cap = max_per_min or int(os.environ.get("PROFIT_API_RATE_LIMIT", "120"))
+    now = time.time()
+    window = _RATE_LIMIT.setdefault(client_key, [])
+    window[:] = [t for t in window if now - t < 60]
+    if len(window) >= cap:
+        return {"allowed": False, "retry_after_sec": round(60 - (now - window[0]), 1)}
+    window.append(now)
+    return {"allowed": True, "remaining": cap - len(window)}
+
+
+def venue_balance_cache_ttl(venue_id: str) -> float:
+    """Venue balance cache TTL env per venue (#98)."""
+    env_key = f"PROFIT_BALANCE_TTL_{str(venue_id or '').upper()}"
+    default = float(os.environ.get("PROFIT_BALANCE_TTL_SEC", "45"))
+    return float(os.environ.get(env_key, str(default)))
+
+
+def exchange_tick_budget_sec() -> float:
+    return float(os.environ.get("EXCHANGE_TICK_BUDGET_SEC", "60"))
+
+
+def tick_budget_exceeded(start_ts: float) -> bool:
+    """Exchange tick time budget with early exit (#100)."""
+    return (time.time() - start_ts) >= exchange_tick_budget_sec()
+
+
+def maybe_alert_hit_rate_regression(*, route: str, current_pct: float, baseline_pct: float) -> Dict[str, Any]:
+    """Hit-rate regression alert per route (#85)."""
+    drop = baseline_pct - current_pct
+    threshold = float(os.environ.get("PROFIT_HIT_RATE_REGRESSION_PCT", "15"))
+    if drop < threshold:
+        return {"skipped": True, "reason": "within_band", "drop_pct": drop}
+    body = f"Route `{route}` hit rate dropped **{drop:.1f}pp** ({baseline_pct:.1f}% → {current_pct:.1f}%)."
+    return _post_ops_alert(
+        "Profit daemon — hit rate regression",
+        body,
+        alert_key=f"hit_rate_regression:{route}",
+        fields=[
+            {"name": "Route", "value": route, "inline": True},
+            {"name": "Drop", "value": f"{drop:.1f}pp", "inline": True},
+        ],
+    )
+
+
+def sync_critical_top25_on_tick() -> Dict[str, Any]:
+    """Critical Top25 auto-sync on daemon tick (#88)."""
+    try:
+        from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
+        top = critical_problems_top25(refresh=True, dynamic=True)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    items = top.get("items") or top.get("problems") or []
+    open_p0 = sum(
+        1 for i in items
+        if isinstance(i, dict) and not (i.get("done") or i.get("checked"))
+        and str(i.get("priority") or "").upper() == "P0"
+    )
+    path = os.path.join(ex._DATA_DIR, "profit_top25_sync_state.json")
+    payload = {"updated_at": _iso(), "open_p0": open_p0, "total": len(items)}
+    _write_state(path, payload)
+    return {"success": True, **payload}
+
+
+def run_exchange_tick_ops(
+    exchange_res: Dict[str, Any],
+    *,
+    tick_start: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Batch hook for exchange loop — prefunding, alerts, compound, preflight."""
+    start = tick_start or time.time()
+    out: Dict[str, Any] = {"success": True, "tick_start": start}
+    if tick_budget_exceeded(start):
+        out["early_exit"] = True
+        out["reason"] = "tick_budget_exceeded"
+        return out
+    out["compound"] = compound_pause_on_kill()
+    out["stash_cap"] = maybe_alert_stash_cap_before_sweep()
+    out["binance_preflight"] = binance_withdraw_preflight()
+    out["partial_sweep"] = plan_partial_sweep()
+    out["top25_sync"] = sync_critical_top25_on_tick()
+    out["sweep_dry_run"] = sweep_dry_run_line()
+    streak = int((exchange_res.get("platform") or {}).get("compound_streak") or 0)
+    out["compound_tier"] = compound_streak_bonus_tier(streak)
+    pref = cross_venue_prefund_batch(exchange_res, max_legs=3)
+    out["prefund_batch"] = pref
+    xeg = maybe_auto_enable_xeggex_live_farm()
+    out["xeggex_auto"] = xeg
+    hits = ((exchange_res.get("platform") or {}).get("profit_pair_search") or {}).get("hits") or []
+    for row in hits[:3]:
+        if not isinstance(row, dict):
+            continue
+        route = str(row.get("route") or row.get("symbol") or "")
+        cur = float(row.get("hit_rate_pct") or 0)
+        base = float(row.get("baseline_hit_rate_pct") or cur + 5)
+        if route:
+            reg = maybe_alert_hit_rate_regression(route=route, current_pct=cur, baseline_pct=base)
+            if not reg.get("skipped"):
+                out.setdefault("hit_rate_alerts", []).append(reg)
+    out["elapsed_sec"] = round(time.time() - start, 2)
+    return out

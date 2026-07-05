@@ -105,6 +105,74 @@ def profit_daemon_payout_validation():
     return jsonify(validate_payout_share_pct())
 
 
+def _rate_limit_check():
+    from backend.services.profit_daemon_ops_service import profit_api_rate_limit
+    key = request.remote_addr or "local"
+    rl = profit_api_rate_limit(key)
+    if not rl.get("allowed"):
+        return jsonify({"success": False, "error": "rate_limited", **rl}), 429
+    return None
+
+
+@profit_daemon_bp.route("/api/profit-daemon/symbol-aliases", methods=["GET"])
+def profit_daemon_symbol_aliases():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import _SYMBOL_ALIASES, normalize_symbol_alias
+    sym = request.args.get("symbol")
+    if sym:
+        return jsonify({"success": True, "symbol": sym.upper(), "normalized": normalize_symbol_alias(sym)})
+    return jsonify({"success": True, "aliases": _SYMBOL_ALIASES})
+
+
+@profit_daemon_bp.route("/api/profit-daemon/compound-tier", methods=["GET"])
+def profit_daemon_compound_tier():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import compound_streak_bonus_tier
+    streak = request.args.get("streak", 0, type=int)
+    return jsonify(compound_streak_bonus_tier(streak))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/top25-links", methods=["GET"])
+def profit_daemon_top25_links():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import top25_blocker_deeplinks
+    return jsonify(top25_blocker_deeplinks())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/partial-sweep", methods=["GET"])
+def profit_daemon_partial_sweep():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import plan_partial_sweep
+    frac = request.args.get("fraction", 0.5, type=float)
+    return jsonify(plan_partial_sweep(fraction=frac))
+
+
+@profit_daemon_bp.route("/api/profit-daemon/binance-preflight", methods=["GET"])
+def profit_daemon_binance_preflight():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import binance_withdraw_preflight
+    return jsonify(binance_withdraw_preflight())
+
+
+@profit_daemon_bp.route("/api/profit-daemon/defi-symbols", methods=["GET"])
+def profit_daemon_defi_symbols():
+    blocked = _rate_limit_check()
+    if blocked:
+        return blocked
+    from backend.services.profit_daemon_ops_service import defi_router_symbols
+    return jsonify({"success": True, "symbols": defi_router_symbols()})
+
+
 @profit_daemon_bp.route("/api/profit-daemon/status", methods=["GET"])
 def profit_daemon_status():
     from backend.services.profit_daemon_monitor_service import monitor_status

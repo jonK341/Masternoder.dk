@@ -36,6 +36,7 @@
     if (!area) return;
     initStrip(el, area);
     initArea(area);
+    initBatch1(area);
   }
 
   function initStrip(el, area) {
@@ -350,6 +351,63 @@
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;font-size:0.82rem;">' +
       '<div><strong>Leaderboard</strong><ul style="margin:6px 0 0;padding-left:18px;">' + lb + '</ul></div>' +
       '<div><strong>Recent matches</strong><ul style="margin:6px 0 0;padding-left:18px;">' + hist + '</ul></div></div>');
+  }
+
+  function initBatch1(area) {
+    fetchJson('/api/platform/batch1/' + encodeURIComponent(area) + '/widgets?user_id=' + encodeURIComponent(uid()))
+      .then(function (d) {
+        if (!d || d.success === false) return;
+        renderBatch1(area, d.batch1 || {});
+      })
+      .catch(function () {});
+  }
+
+  function renderBatch1(area, b1) {
+    if (!b1 || !Object.keys(b1).length) return;
+    var slot = document.getElementById('pu-batch1-extras');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.id = 'pu-batch1-extras';
+      slot.className = 'pu-batch1-extras platform-upgrade-widget';
+      var mount = document.getElementById('platform-area-widget');
+      if (mount) mount.appendChild(slot);
+      else return;
+    }
+    var html = '<h3>Batch 1 upgrades</h3><div class="platform-upgrade-metrics">';
+    if (area === 'exchange' && b1.venue_liquidity_heatmap) {
+      html += '<div><span>Liquidity heatmap</span><strong>' + esc(JSON.stringify(b1.venue_liquidity_heatmap)) + '</strong></div>';
+      if (b1.agent_marketplace_link) {
+        html += '<div class="platform-upgrade-actions"><a href="' + esc(b1.agent_marketplace_link.href) + '">' + esc(b1.agent_marketplace_link.label) + '</a></div>';
+      }
+    } else if (area === 'shop') {
+      if (b1.flash_sale_countdown && b1.flash_sale_countdown.ends_at) {
+        html += '<div><span>Flash sale ends</span><strong id="pu-flash-countdown">' + esc(b1.flash_sale_countdown.ends_at) + '</strong></div>';
+      }
+      if (b1.vip_tier_badge) html += '<div><span>VIP</span><strong>' + esc(b1.vip_tier_badge.label) + '</strong></div>';
+      if (b1.auction_quick_link) html += '<div class="platform-upgrade-actions"><a href="' + esc(b1.auction_quick_link.href) + '">Auction house</a></div>';
+    } else if (area === 'casino') {
+      if (b1.tournament_countdown) html += '<div><span>Tournament ends</span><strong>' + esc(b1.tournament_countdown.ends_at) + '</strong></div>';
+      if (b1.house_edge_card) html += '<div><span>House edge</span><strong>' + esc(b1.house_edge_card.house_edge_pct) + '%</strong></div>';
+    } else if (area === 'generator') {
+      if (b1.provider_availability_grid) html += '<div><span>Providers</span><strong>' + esc(b1.provider_availability_grid.count) + '</strong></div>';
+      if (b1.ai_magic_shortcut) html += '<div class="platform-upgrade-actions"><a href="' + esc(b1.ai_magic_shortcut.href) + '">' + esc(b1.ai_magic_shortcut.label) + '</a></div>';
+    } else if (area === 'profile') {
+      if (b1.load_time_badge_ms != null) html += '<div><span>Load time</span><strong>' + esc(b1.load_time_badge_ms) + ' ms</strong></div>';
+      if (b1.trophy_income_estimate) html += '<div><span>Trophy income est.</span><strong>' + esc(b1.trophy_income_estimate.mn2_per_day) + ' MN2/day</strong></div>';
+    } else if (area === 'quest') {
+      if (b1.mn2_reward_estimator) html += '<div><span>Est. MN2 rewards</span><strong>' + esc(b1.mn2_reward_estimator.estimated_mn2) + '</strong></div>';
+      if (b1.ai_quest_cta) html += '<div class="platform-upgrade-actions"><a href="' + esc(b1.ai_quest_cta) + '">Generate AI quest</a></div>';
+    } else if (area === 'battle') {
+      if (b1.mn2_per_win != null) html += '<div><span>MN2 per win</span><strong>' + esc(b1.mn2_per_win) + '</strong></div>';
+    } else if (area === 'explorer' && b1.market_activity_tiles) {
+      b1.market_activity_tiles.forEach(function (t) {
+        html += '<div><span>' + esc(t.label) + '</span><strong>' + esc(t.value) + '</strong></div>';
+      });
+    } else {
+      html += '<div><span>Upgrades</span><strong>' + esc((b1.upgrade_ids || []).length) + ' shipped</strong></div>';
+    }
+    html += '</div>';
+    slot.innerHTML = html;
   }
 
   if (document.readyState === 'loading') {
