@@ -1,6 +1,6 @@
 # Second uWSGI instance (port 5001)
 
-**Policy (what to keep / retire / 5002):** see **`docs/BACKEND_PORTS_DECISION.md`**.
+**Policy (what to keep / retire / 5002):** see **`docs/archive/BACKEND_PORTS_DECISION.md`**.
 
 ## Why it failed before
 

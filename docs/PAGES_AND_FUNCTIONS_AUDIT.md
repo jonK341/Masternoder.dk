@@ -4,7 +4,7 @@
 
 **Source:** `scripts/test_url_timing.py` (hard test against BASE_URL). Run: `python scripts/test_url_timing.py`
 
-**Full recheck:** For all checkpoints (env, agents, deploy, Agent Support, nav, URL timing), see `docs/CHECKPOINTS_RECHECK.md`. Production 404s (Bind session, Profile aggregated, Gallery recent) and fix steps: CHECKPOINTS_RECHECK §9 and RESEARCH_AI_SYSTEMS §10.
+**Full recheck:** For all checkpoints (env, agents, deploy, Agent Support, nav, URL timing), see `docs/archive/CHECKPOINTS_RECHECK.md`. Production 404s (Bind session, Profile aggregated, Gallery recent) and fix steps: CHECKPOINTS_RECHECK §9 and RESEARCH_AI_SYSTEMS §10.  <!-- pragma: allowlist secret -->
 
 ---
 
@@ -76,11 +76,11 @@
 
 ```bash
 python scripts/test_url_timing.py
-# Or against production:
+# Or against production:  <!-- pragma: allowlist secret -->
 # set BASE_URL=https://masternoder.dk
 # python scripts/test_url_timing.py
 ```
 
-Results are saved to `logs/url_timing_results.json`. If any 404s occur, see `logs/production_404_deploy_checklist.txt` for suggested route files.
+Results are saved to `logs/url_timing_results.json`. If any 404s occur, see `logs/production_404_deploy_checklist.txt` for suggested route files.  <!-- pragma: allowlist secret -->
 
 **How to verify:** Run the command above; check exit code (0 = all OK, 1 = at least one failed). Open `logs/url_timing_results.json` for per-URL status and timing. Compare "Failed" list with §2 table and CHECKPOINTS_RECHECK §8–9.

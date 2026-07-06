@@ -4,13 +4,13 @@
 
 **Contents:** [§0 Single metric](#0-single-metric-north-star) · [§1–5 Revenue models](#1-coin--credit-packs-one-time) · [§6 Cross-cutting](#6-cross-cutting-all-models) · [§7 Checklist](#7-checklist-product--engineering) · [§8 Playbook](#8-execution-playbook-step-by-step) · [§9 Deploy](#9-deploy-checklist) · [§10 Status](#10-implementation-status--next-steps)
 
-**Related:** [REFERENCE_JOB_COGS.md](./REFERENCE_JOB_COGS.md) (unit economics), [PAYPAL_INTEGRATION_GUIDE.md](./PAYPAL_INTEGRATION_GUIDE.md) (credentials and routes), [VIDEO_STORAGE_STRATEGY.md](./VIDEO_STORAGE_STRATEGY.md) (storage path and margin), [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./MONETIZATION_INVESTIGATION_CLOSEOUT.md) (closeout + deploy). See also [MONETIZATION_CONTENT_CRYPTO_PLAN.md](./MONETIZATION_CONTENT_CRYPTO_PLAN.md) (lawful digital goods + MN2 vs PayPal rails).
+**Related:** [REFERENCE_JOB_COGS.md](./REFERENCE_JOB_COGS.md) (unit economics), [PAYPAL_INTEGRATION_GUIDE.md](./PAYPAL_INTEGRATION_GUIDE.md) (credentials and routes), [VIDEO_STORAGE_STRATEGY.md](./VIDEO_STORAGE_STRATEGY.md) (storage path and margin), [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md) (closeout + deploy). See also [MONETIZATION_CONTENT_CRYPTO_PLAN.md](./MONETIZATION_CONTENT_CRYPTO_PLAN.md) (lawful digital goods + MN2 vs PayPal rails).
 
 ---
 
 ## 0. Single metric (north star)
 
-*(Same block as [MONETIZATION_INVESTIGATION_CLOSEOUT.md §0](./MONETIZATION_INVESTIGATION_CLOSEOUT.md#0-single-metric-north-star) — edit both when changing.)*
+*(Same block as [MONETIZATION_INVESTIGATION_CLOSEOUT.md §0](./archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md#0-single-metric-north-star) — edit both when changing.)*
 
 Review **one** headline number each week so the rest of this doc does not sprawl into dozens of KPIs.
 
@@ -137,7 +137,7 @@ Plans, billing cycles, failed payment retries, and **webhooks** for subscription
 1. **Config:** `data/monetization_config.json` → **`subscriptions.plans`**: keys are PayPal **billing plan ids** (`P-…`), values include **`monthly_generation_credits`**, optional **`monthly_coins_granted`**, optional **`price_usd_monthly`** (display), optional **`tier`** (`creator` \| `pro`).
 2. **Start checkout:** `POST /api/monetization/subscription/create` with JSON `{ "plan_id": "P-…", "user_id": "…" }` (omit **`plan_id`** if exactly one plan exists). Returns **`approve_url`** — same PayPal OAuth app as coin packs. **Shop → PayPal & coins** lists plans from **`GET /api/monetization/config`**.
 3. **Bind after return:** PayPal redirects to **`/shop?paypal_subscription=success&subscription_id=…&plan_id=…&user_id=…`**; the page calls **`POST /api/monetization/subscription/bind`**. Writes **`logs/monetization/subscription_bindings.json`** ( **`custom_id`** on the subscription is also **`user_id`** for webhook auto-bind).
-4. **Webhook URL (PayPal dashboard):** `POST /api/monetization/webhooks/paypal-subscription`. Set **`PAYPAL_WEBHOOK_ID`** from the same app as **`PAYPAL_CLIENT_ID`** / **`PAYPAL_CLIENT_SECRET`**. Optional **`PAYPAL_WEBHOOK_BYPASS=1`** for local testing only (never in production).
+4. **Webhook URL (PayPal dashboard):** `POST /api/monetization/webhooks/paypal-subscription`. Set **`PAYPAL_WEBHOOK_ID`** from the same app as **`PAYPAL_CLIENT_ID`** / **`PAYPAL_CLIENT_SECRET`**. Optional **`PAYPAL_WEBHOOK_BYPASS=1`** for local testing only (never in production).  <!-- pragma: allowlist secret -->
 5. **Events:** **`PAYMENT.SALE.COMPLETED`** grants monthly coins + ledger row + optional **profile `monetization_tier`** when **`tier`** is set. **`BILLING.SUBSCRIPTION.ACTIVATED`** can auto-bind if **`custom_id`** on the subscription equals **`user_id`**. **`BILLING.SUBSCRIPTION.CANCELLED`** sets tier back to **creator** (best effort).
 6. **Idempotency:** webhook event ids in **`logs/monetization/paypal_webhook_processed_ids.jsonl`**.
 
@@ -245,7 +245,7 @@ Concrete steps that sit **on top of** the revenue models above: instrumentation,
 | Step | Action |
 |------|--------|
 | 1 | **Wire real LLM usage.** ✅ *Shipped:* `video_ai_bridge` accumulates `LLMResponse.usage` into `config["_llm_usage_totals"]`; rich-video completion merges **`llm_tokens_actual`** into `_video_cogs_metrics`; `record_completed_video_job` writes **`llm_tokens_source`** (`actual` \| `heuristic`) and **`llm_tokens_for_cogs`** to `metering.jsonl`. Code: `llm_service.accumulate_llm_usage_from_response`, `video_generator_service._run_video_generation_impl`. |
-| 2 | **Dashboard from `metering.jsonl`.** ✅ *Shipped:* `python scripts/cogs_metering_report.py` and `summarize_metering_jsonl()`; optional **`GET /api/system/cogs/metering-stats`** with **`COGS_ADMIN_REPORT_KEY`** + header **`X-Cogs-Admin-Key`**. Reports **p50 / p90** totals, line items, **`ratio_vs_reference_job`**. Use **p90** for subscription caps. See [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./MONETIZATION_INVESTIGATION_CLOSEOUT.md). |
+| 2 | **Dashboard from `metering.jsonl`.** ✅ *Shipped:* `python scripts/cogs_metering_report.py` and `summarize_metering_jsonl()`; optional **`GET /api/system/cogs/metering-stats`** with **`COGS_ADMIN_REPORT_KEY`** + header **`X-Cogs-Admin-Key`**. Reports **p50 / p90** totals, line items, **`ratio_vs_reference_job`**. Use **p90** for subscription caps. See [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md). |
 | 3 | **Tiered limits.** Map product names (e.g. **Creator / Pro**) to **hard caps**: max **Runway** output seconds per job or per month, max **output MB/month**, max **LLM tokens** per job or per billing period. **Enforce before starting jobs** (reject or upsell). Same mental model as [REFERENCE_JOB_COGS.md](./REFERENCE_JOB_COGS.md); caps are the retail side of COGS. |
 
 ### 8.2 Product and retention
@@ -308,7 +308,7 @@ Same **COGS** and **same jobs** as retail; difference is **ticket size**, **invo
 
 ## 9. Deploy checklist
 
-*(Duplicated from [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./MONETIZATION_INVESTIGATION_CLOSEOUT.md) — keep both sections in sync when editing.)*
+*(Duplicated from [MONETIZATION_INVESTIGATION_CLOSEOUT.md](./archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md) — keep both sections in sync when editing.)*
 
 ### Minimum (required for COGS + LLM metering + monetization commits)
 
@@ -336,8 +336,8 @@ Then **restart** the Python/uWSGI stack so routes and services reload.
 | `scripts/cogs_metering_report.py` | Run **p50/p90** reports on the server via SSH (`python scripts/cogs_metering_report.py`). Not required for the web app to serve traffic. |
 | `scripts/scr_usage_export.py` | **SCR (§4):** CSV export joining **`payment_ledger.jsonl`** and **`metering.jsonl`** (`exports/` by default). Not required at runtime. |
 | `scripts/monetization_scr_export.py` | **Phase C sanity check:** JSON blended revenue vs metering COGS (`--since-days`, `--scr-only`); logic in **`backend/services/monetization_scr_blend_service.py`**. |
-| `docs/SHOP_MONETIZATION_AUTOMATION_CLOSEOUT.md` | **Conclusion:** Shop v4 automation (`DEPLOY_POST_VERIFY`, `post_deploy_verify.py`), migration plan status, cheat sheet. |
-| `docs/MONETIZATION_PAYPAL.md`, `docs/MONETIZATION_INVESTIGATION_CLOSEOUT.md`, `docs/REFERENCE_JOB_COGS.md`, other `docs/*.md` | Documentation only; no runtime dependency. |
+| `docs/archive/SHOP_MONETIZATION_AUTOMATION_CLOSEOUT.md` | **Conclusion:** Shop v4 automation (`DEPLOY_POST_VERIFY`, `post_deploy_verify.py`), migration plan status, cheat sheet. |
+| `docs/MONETIZATION_PAYPAL.md`, `docs/archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md`, `docs/REFERENCE_JOB_COGS.md`, other `docs/*.md` | Documentation only; no runtime dependency. |
 
 ### Metering stats API (optional)
 
@@ -375,7 +375,7 @@ High-level **where the doc vs code is** (see also [§0 two-line lens](#two-line-
 | §3 | Subscriptions | **Shipped (ops + product):** **`POST /api/monetization/subscription/create`** → PayPal approve URL; return → **`POST /api/monetization/subscription/bind`**; webhook **`POST /api/monetization/webhooks/paypal-subscription`**; shop **Pro subscription** block on **PayPal & coins**. Replace **`P-PLACEHOLDER-PRO`**, set **`PAYPAL_WEBHOOK_ID`**, live plans. |
 | §4 | Lion’s share / B2B (**Studio Cash Rail**) | **Shipped (ops + flags)** — SKUs + ledger + **`record-payment`**; **export** + **org pool** enforcement + **`org_label`** on metering when org is set (see §4 table and `.env.example`). |
 | §5 | Marketplace | **Deferred** — explicit in doc. |
-| **Shop V.9** | Single shop surface + regression checks | **`SHOP_UI_VERSION`** = **`9.0.0`** in **`backend/routes/shop_routes.py`** (exposed as **`shop_ui_version`** on **`GET /api/shop/config`**); **`shop/index.html`** maps sections 1–5 to PayPal packs, tiers, subscriptions, SCR/B2B, and catalog/MN2 purchases. **API line test** (`ShopV9.runProductLineChecks`; **`ShopV4`** alias) mirrors **`scripts/shop_v4_production_smoke.py`** GET coverage. |
+| **Shop V.9** | Single shop surface + regression checks | **`SHOP_UI_VERSION`** = **`9.0.0`** in **`backend/routes/shop_routes.py`** (exposed as **`shop_ui_version`** on **`GET /api/shop/config`**); **`shop/index.html`** maps sections 1–5 to PayPal packs, tiers, subscriptions, SCR/B2B, and catalog/MN2 purchases. **API line test** (`ShopV9.runProductLineChecks`; **`ShopV4`** alias) mirrors **`scripts/shop_v4_production_smoke.py`** GET coverage. |  <!-- pragma: allowlist secret -->
 | §8.1 | LLM + metering dashboard | **Shipped** — see §8.1 table; tier caps are §2. |
 | §8.2–8.5 | Retention, infra, B2B API, growth | **Playbook (expanded):** §8.2–8.5 tables; **habit loops** = no **automated** nudges; **paid queue** = no **separate** subsystem (**`priority_tier`** future); **metered API keys** roadmap; **SCR** + **growth** mix of shipped and process. |
 | **Attribution** | Revenue ↔ jobs (phase **C** margin) | **Partial** — **`payment_ledger.jsonl`** + **`metering.jsonl`** ship (**COGS** per **`job_id`**, payments/grants on ledger). **Gap:** **revenue ↔ `job_id`** (or billing-period allocation) **beyond** raw metering — i.e. which **capture/subscription/SCR line** funded **which** billable jobs — for **blended gross margin**; no single shipped end-to-end report. |

@@ -74,7 +74,7 @@ def main():
     else:
         print("  env DATABASE_URL already in uwsgi.ini")
 
-    # 4. Restart uwsgi-vidgenerator (single service, see docs/DEPLOYMENT_PLAN.md)
+    # 4. Restart uwsgi-vidgenerator (single service, see docs/archive/DEPLOYMENT_PLAN.md)
     print("\n[4] Restart uwsgi-vidgenerator")
     run(ssh, "systemctl stop uwsgi-vidgenerator 2>/dev/null; systemctl stop uwsgi 2>/dev/null || true", timeout=10)
     time.sleep(3)

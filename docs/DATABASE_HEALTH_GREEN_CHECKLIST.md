@@ -107,4 +107,4 @@ Dette påvirker **ikke** SQL `SELECT 1`, men påvirker **tillid**, **compliance*
 - [ ] Rettigheder og backup verificeret på server.
 - [ ] Juridiske noter (GDPR/vilkår) ajour for de data I gemmer.
 
-Opdater `docs/MASTERNODES_UDREDNING_SESSION_REPORT.md` med dato og resultat når I har kørt testene.
+Opdater `docs/archive/MASTERNODES_UDREDNING_SESSION_REPORT.md` med dato og resultat når I har kørt testene.

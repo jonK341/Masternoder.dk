@@ -175,7 +175,7 @@ if 'active' not in status:
             if err:
                 for line in err.splitlines()[:30]:
                     print('   ', line)
-# We use only uwsgi-vidgenerator (direct unit); no emperor. See docs/DEPLOYMENT_PLAN.md.
+# We use only uwsgi-vidgenerator (direct unit); no emperor. See docs/archive/DEPLOYMENT_PLAN.md.
 # With lazy-apps=false, workers load 126 blueprints – can take 60–90s. Poll until :5000 responds (30s curl, short loop).
 print('Waiting for workers to finish loading (polling :5000 every 15s, 30s curl timeout, up to ~2.5 min)...')
 port_code = ''

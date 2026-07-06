@@ -13,16 +13,16 @@ Run:
 python scripts/test_url_timing.py
 ```
 
-With production: `set BASE_URL=https://masternoder.dk` then run again (or use default if .env points to production).
+With production: `set BASE_URL=https://masternoder.dk` then run again (or use default if .env points to production).  <!-- pragma: allowlist secret -->
 
-**Typical current state (production):**
+**Typical current state (production):**  <!-- pragma: allowlist secret -->
 
 | Result | Endpoints |
 |--------|-----------|
 | **OK (200)** | Stats summary, Points all, Aggregator frontend, Bind session, Geo ref, PayPal control panel, Agents activity feed, My agents, Game achievements |
 | **Failed (404)** | Front page init, Battle stats, Agent skillset all, Profile aggregated, User identity, Account summary points, Gallery recent, Trophies list, Battle PVP trophies |
 
-Details: `logs/url_timing_results.json`, `logs/production_404_deploy_checklist.txt`.
+Details: `logs/url_timing_results.json`, `logs/production_404_deploy_checklist.txt`.  <!-- pragma: allowlist secret -->
 
 ---
 
@@ -105,7 +105,7 @@ set BASE_URL=https://masternoder.dk
 .venv\Scripts\python.exe scripts\test_url_timing.py
 ```
 
-Check that Failed count is 0 or reduced. If 404s remain, ensure the app process (uwsgi) was restarted and that `APPLICATION_ROOT` / blueprint prefix matches `/vidgenerator` (see docs/CHECKPOINTS_RECHECK.md §9).
+Check that Failed count is 0 or reduced. If 404s remain, ensure the app process (uwsgi) was restarted and that `APPLICATION_ROOT` / blueprint prefix matches `/vidgenerator` (see docs/archive/CHECKPOINTS_RECHECK.md §9).
 
 ---
 
@@ -117,5 +117,5 @@ Check that Failed count is 0 or reduced. If 404s remain, ensure the app process 
 | Deploy fix_404 + restart uwsgi | `python scripts/deploy_all_and_restart_uwsgi.py --manifest fix_404` |
 | Deploy everything + restart | `python scripts/deploy_all_and_restart_uwsgi.py` |
 | Deploy only fallbacks file | `python scripts/deploy_404_fallbacks.py` |
-| 404 checklist | `logs/production_404_deploy_checklist.txt` |
-| Full checkpoints | `docs/CHECKPOINTS_RECHECK.md` |
+| 404 checklist | `logs/production_404_deploy_checklist.txt` |  <!-- pragma: allowlist secret -->
+| Full checkpoints | `docs/archive/CHECKPOINTS_RECHECK.md` |

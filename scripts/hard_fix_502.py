@@ -48,7 +48,7 @@ def main():
     else:
         print("  Timeouts already present")
 
-    # 3. Start uwsgi-vidgenerator (single service, see docs/DEPLOYMENT_PLAN.md)
+    # 3. Start uwsgi-vidgenerator (single service, see docs/archive/DEPLOYMENT_PLAN.md)
     print("\n[3] Starting uwsgi-vidgenerator")
     run(ssh, "systemctl start uwsgi-vidgenerator", timeout=15)
     time.sleep(12)

@@ -2,7 +2,7 @@
 
 **Purpose:** A single checklist of **25 tasks** for the Star Map 25 (Imperium Investigation Grid) feature. Use as a roadmap and assignment list.
 
-**References:** `STARMAP_25_WARHAMMER40K_RESEARCH.md`, `HUNTERS_STAR_MAP_IMPLEMENTATION_SUMMARY.md` (sect. 10), `STARMAP_25_TOP10_IDEAS.md`, `data/star_map_25.json`.
+**References:** `STARMAP_25_WARHAMMER40K_RESEARCH.md`, `archive/HUNTERS_STAR_MAP_IMPLEMENTATION_SUMMARY.md` (sect. 10), `STARMAP_25_TOP10_IDEAS.md`, `data/star_map_25.json`.
 
 ---
 

@@ -10,7 +10,7 @@ Does:
   2. fix_502_nginx_only.py (proxy to :5000, 300s timeouts, reload nginx)
   3. Optional: quick HTTPS check
 
-See docs/DEPLOYMENT_PLAN.md.
+See docs/archive/DEPLOYMENT_PLAN.md.
 """
 import os
 import subprocess

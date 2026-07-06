@@ -35,7 +35,7 @@
 ### Revenue & unit economics
 - **[Monetization (PayPal)](./MONETIZATION_PAYPAL.md)** — packs, tiers, subscriptions, B2B, marketplace (phased), checklist  
 - **[Reference job & COGS](./REFERENCE_JOB_COGS.md)** — pricing anchor and `metering.jsonl`
-- **[Monetization investigation closeout](./MONETIZATION_INVESTIGATION_CLOSEOUT.md)** — conclusion, ref table, button notes, deploy list
+- **[Monetization investigation closeout](./archive/MONETIZATION_INVESTIGATION_CLOSEOUT.md)** — conclusion, ref table, button notes, deploy list
 
 ### Problem Solving
 - **Troubleshooting** - Common problems and solutions

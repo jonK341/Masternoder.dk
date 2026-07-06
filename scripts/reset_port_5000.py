@@ -84,7 +84,7 @@ def main():
         print("Done. Start app with: python scripts/ensure_site_up.py  or  python fix_502.py")
         return
 
-    # 6. Start uwsgi-vidgenerator (single service; see docs/DEPLOYMENT_PLAN.md)
+    # 6. Start uwsgi-vidgenerator (single service; see docs/archive/DEPLOYMENT_PLAN.md)
     print("=== Starting uwsgi-vidgenerator-5001 ===\n")
     run(ssh, "systemctl start uwsgi-vidgenerator-5001", timeout=25)
     time.sleep(5)

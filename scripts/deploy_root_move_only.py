@@ -35,7 +35,7 @@ ROOT_MOVE_FIXED = [
     "scripts/investigate_502.py",
     "scripts/fix_nginx_root_proxy.py",
     "scripts/test_and_debug_urls.py",
-    "docs/DEPLOYMENT_PLAN.md",
+    "docs/archive/DEPLOYMENT_PLAN.md",
     "docs/SERVER_QUICK_REFERENCE.md",
 ]
 

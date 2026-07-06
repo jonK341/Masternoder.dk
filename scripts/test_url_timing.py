@@ -11,7 +11,7 @@ Endpoints tested (see FRONT_PAGE_URLS and PROFILE_PAGE_URLS below):
   Profile: user/bind-session, user/profile/<id>/aggregated, user/identity, account-summary/points,
            gallery/recent-temp, game/hunters/geo-ref, shop/paypal/control-panel, agents/activity-feed,
            agents/my-agents, trophies/list, game/achievements, battle/pvp/trophies
-Output: logs/url_timing_results.json, logs/production_404_deploy_checklist.txt (if 404s). See docs/CHECKPOINTS_RECHECK.md.
+Output: logs/url_timing_results.json, logs/production_404_deploy_checklist.txt (if 404s). See docs/archive/CHECKPOINTS_RECHECK.md.  <!-- pragma: allowlist secret -->
 """
 import os
 import sys

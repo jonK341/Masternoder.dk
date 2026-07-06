@@ -153,9 +153,9 @@ MANIFESTS = {
         "backend/services/user_engagement.py",
         "backend/services/agent_db_service.py",
         "backend/routes/missing_endpoints_routes.py",
-        "docs/SYNC_AND_AGENT_KNOWLEDGE.md",
+        "docs/archive/SYNC_AND_AGENT_KNOWLEDGE.md",
         "docs/TSS_AI_IMPLEMENTATION_GUIDE.md",
-        "docs/LOADING_AND_VIDGENERATOR_STATE.md",
+        "docs/archive/LOADING_AND_VIDGENERATOR_STATE.md",
         "data/rulebook_v16_sync.json",
     ],
     "loading": [
@@ -169,7 +169,7 @@ MANIFESTS = {
         "vidgenerator/battle/index.html",
         "vidgenerator/shop/index.html",
         "backend/routes/missing_endpoints_routes.py",
-        "docs/LOADING_AND_VIDGENERATOR_STATE.md",
+        "docs/archive/LOADING_AND_VIDGENERATOR_STATE.md",
     ],
     # TTS (Piper/ElevenLabs/gTTS) + Audio Enhancement (DeepFilterNet/loudnorm) — pipeline + system overview
     "tts": [
@@ -276,9 +276,9 @@ MANIFESTS = {
         "backend/routes/system_overview_routes.py",
         "backend/routes/ai_providers_routes.py",
         "vidgenerator/debugger/index.html",
-        "docs/SYNC_AND_AGENT_KNOWLEDGE.md",
+        "docs/archive/SYNC_AND_AGENT_KNOWLEDGE.md",
         "docs/TSS_AI_IMPLEMENTATION_GUIDE.md",
-        "docs/LOADING_AND_VIDGENERATOR_STATE.md",
+        "docs/archive/LOADING_AND_VIDGENERATOR_STATE.md",
         "docs/ENCODER_FREE_TIER.md",
         "data/rulebook_v16_sync.json",
     ],
@@ -771,7 +771,7 @@ MANIFESTS = {
         "backend/routes/leaderboard_routes.py",
         "backend/services/unified_points_database.py",
         "scripts/service_check_all_components.py",
-        "docs/SERVICE_CHECK_LEADERBOARD_AGENTS_FIX.md",
+        "docs/archive/SERVICE_CHECK_LEADERBOARD_AGENTS_FIX.md",
     ],
     # Investigate + remove leftover/outdated files on server (no uwsgi restart)
     "server_prune": [

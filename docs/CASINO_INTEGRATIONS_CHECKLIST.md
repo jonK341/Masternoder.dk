@@ -4,9 +4,9 @@ Audit date: **2026-06-26** · Branch: `feat/casino-mega-expansion`
 
 MasterNoder2 Casino is an **entertainment platform**: social lounge, virtual coins, tournaments, and community loops — built for engagement and sustainable monetization (MN2 packs, optional fiat where licensed), not unrealistic gambling claims.
 
-Discord is **done** — this doc covers Facebook/Meta, other social, mobile stores, casino AI agents, deploy gaps, global sync, revenue reports, and production verification.
+Discord is **done** — this doc covers Facebook/Meta, other social, mobile stores, casino AI agents, deploy gaps, global sync, revenue reports, and production verification.  <!-- pragma: allowlist secret -->
 
-Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) · [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) · [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) · [CASINO_IDEAS.md](CASINO_IDEAS.md)
+Related: [CASINO_EXPANSION_REPORT.md](archive/CASINO_EXPANSION_REPORT.md) · [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) · [CASINO_DEPLOY_OPS.md](CASINO_DEPLOY_OPS.md) · [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) · [CASINO_IDEAS.md](CASINO_IDEAS.md)
 
 ---
 
@@ -40,7 +40,7 @@ Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLA
 | **Capacitor iOS project** | **Done** — Associated Domains in entitlements | Set Xcode Team when account exists | [mobile/casino-app/README.md](../mobile/casino-app/README.md) |
 | **Casino AI agent docs** | **Done** | — | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
 | **Casino AI agent routes** | **Done (prod)** — `GET /api/agent/casino/models` **200** (3 models) | Run `run_casino_agent_daemon.cmd`; spectator at `/api/casino/agents/spectate` | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
-| **Agent seed data** | **Done** — `data/casino_agents.json`, `data/casino_agent_models.json` (Kelly, Safe Grinder, Meta Oracle) | Deploy with casino manifest | [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) |
+| **Agent seed data** | **Done** — `data/casino_agents.json`, `data/casino_agent_models.json` (Kelly, Safe Grinder, Meta Oracle) | Deploy with casino manifest | [CASINO_EXPANSION_REPORT.md](archive/CASINO_EXPANSION_REPORT.md) |
 | **Wave 3 PvP duels** | **Code done** — plinko battle + mines duel escrow | Deploy + smoke-test Compete/Social tabs | [CASINO_IDEAS.md](CASINO_IDEAS.md) |
 | **Wave 3 spectator** | **Code done** — agent JSONL feed + UI panels | Deploy + start agent daemon | [CASINO_TODO.md](CASINO_TODO.md) |
 | **`AGENT_CASINO_SECRET` + LLM keys** | **Server env** — user uploaded `.env` | Verify dry-run `run-all` after deploy | [CASINO_AGENT_AI_SETUP.md](CASINO_AGENT_AI_SETUP.md) |
@@ -48,7 +48,7 @@ Related: [CASINO_EXPANSION_REPORT.md](CASINO_EXPANSION_REPORT.md) · [CASINO_PLA
 
 ---
 
-## Production curl results (2026-06-24)
+## Production curl results (2026-06-24)  <!-- pragma: allowlist secret -->
 
 | Check | Result |
 | ----- | ------ |
@@ -146,7 +146,7 @@ curl -sS -X POST https://masternoder.dk/api/agent/casino/run-all \
   -d '{"dry_run": true}' | jq .
 ```
 
-### 6. Production verification bundle
+### 6. Production verification bundle  <!-- pragma: allowlist secret -->
 
 ```bash
 BASE=https://masternoder.dk

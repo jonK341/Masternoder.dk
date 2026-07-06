@@ -112,7 +112,7 @@ class AgentSupportService:
                     {'label': 'PayPal developer dashboard', 'url': 'https://developer.paypal.com/dashboard/'},
                     {'label': 'GitHub OAuth apps', 'url': 'https://github.com/settings/developers'},
                     {'label': 'arXiv API (intelligence aggregator)', 'url': 'https://info.arxiv.org/help/api/'},
-                    {'label': 'Project: Checkpoints recheck (docs/CHECKPOINTS_RECHECK.md)', 'url': '#'},
+                    {'label': 'Project: Checkpoints recheck (docs/archive/CHECKPOINTS_RECHECK.md)', 'url': '#'},
                     {'label': 'Project: AI systems & env links (docs/RESEARCH_AI_SYSTEMS.md)', 'url': '#'},
                 ],
                 'api_endpoints': [

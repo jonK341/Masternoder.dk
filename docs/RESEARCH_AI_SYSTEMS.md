@@ -13,10 +13,10 @@ Oversigt over alle AI-relaterede tjenester, agents og providers i projektet. **C
 | Valgfrie nøgler (nem) | §11 (copy-paste blok) |
 | Profile ↔ API keys / agents | §12 (tabel + flow) |
 | **Agent cron jobs** (scheduled) | **§Agent cron** — `AGENT_CRON_SECRET`, `POST /api/agents/cron/run`, `cron/agents_cron_*.sh` |
-| Production & 404-fix | §10; også `docs/CHECKPOINTS_RECHECK.md` §9 |
+| Production & 404-fix | §10; også `docs/archive/CHECKPOINTS_RECHECK.md` §9 |  <!-- pragma: allowlist secret -->
 | Videre udvikling | §13 |
 
-**Verifikation:** Kør `python scripts/test_url_timing.py` for front/profile URLs. Se `docs/CHECKPOINTS_RECHECK.md` for alle checkpoints og "How to verify".
+**Verifikation:** Kør `python scripts/test_url_timing.py` for front/profile URLs. Se `docs/archive/CHECKPOINTS_RECHECK.md` for alle checkpoints og "How to verify".
 
 ---
 
@@ -269,7 +269,7 @@ Denne fil kan opdateres når nye AI-systemer tilføjes eller env-var ændres.
 
 ---
 
-## 10. Production & loading
+## 10. Production & loading  <!-- pragma: allowlist secret -->
 
 **URL timing:** Kør `python scripts/test_url_timing.py` (eller `BASE_URL=https://masternoder.dk python scripts/test_url_timing.py`) for at tjekke front page og profile page endpoints. Resultater gemmes i `logs/url_timing_results.json`.
 
@@ -277,17 +277,17 @@ Denne fil kan opdateres når nye AI-systemer tilføjes eller env-var ændres.
 - **Front page:** Front page init kan timeout (60s) eller være langsom; Stats summary ofte 20–30s. Points all, Battle stats, Agent skillset all, Aggregator frontend bør være 200.
 - **Profile page:** Bind session, Profile aggregated, Gallery recent kan give 404 hvis routes ikke er deployet eller blueprints ikke registreret.
 
-**404 deploy checklist:** Ved 404s skrives `logs/production_404_deploy_checklist.txt` med anbefalede route-filer. Tjek:
+**404 deploy checklist:** Ved 404s skrives `logs/production_404_deploy_checklist.txt` med anbefalede route-filer. Tjek:  <!-- pragma: allowlist secret -->
 - Bind session / Profile aggregated → `user_profile_routes.py`, `user_account_routes.py`, og at blueprints er registreret i `register_blueprints.py`.
 - Gallery recent → `backend/routes/gallery_routes.py` (fx `/api/gallery/recent-temp`).
 
-**For at få production op at køre:**
+**For at få production op at køre:**  <!-- pragma: allowlist secret -->
 1. Sørg for at alle API-nøgler i §8 er sat i `.env` (mindst OPENAI eller GROQ for LLM).
 2. Registrér alle relevante blueprints i `register_blueprints.py` så front page init, bind-session, profile/aggregated og gallery/recent-temp svarer.
 3. Overvej at forkorte timeout eller cache for stats/summary og front page init for bedre load time.
 4. Kør `scripts/add_agent_skill_sets_to_pages.py` for at tilføje agent-skill-sets CSS/JS til alle HTML-sider (inkl. alle vidgenerator-undermapper).
 
-**Troubleshooting:** Hvis front page init timeout: tjek at missing_endpoints eller frontpage-routes svarer hurtigt; overvej cache. Hvis profile 404: se `docs/CHECKPOINTS_RECHECK.md` §9 (Bind session, Profile aggregated, Gallery recent) og `register_blueprints.py`. Resultater fra URL timing: `logs/url_timing_results.json` og `logs/production_404_deploy_checklist.txt`.
+**Troubleshooting:** Hvis front page init timeout: tjek at missing_endpoints eller frontpage-routes svarer hurtigt; overvej cache. Hvis profile 404: se `docs/archive/CHECKPOINTS_RECHECK.md` §9 (Bind session, Profile aggregated, Gallery recent) og `register_blueprints.py`. Resultater fra URL timing: `logs/url_timing_results.json` og `logs/production_404_deploy_checklist.txt`.  <!-- pragma: allowlist secret -->
 
 ---
 
@@ -338,6 +338,6 @@ I UI: **Agent Support** → fanen **Resources** viser alle provider-links (inkl.
 - **Video/Image:** Pollinations kræver ingen nøgle; evt. fal.ai for Pika; flere image-backends.
 - **Profile ↔ agents:** Brugerens tildelte agents og skills synkroniseres via `user_agent_skills` og `agent_skillset`; UI-forbindelser er på plads (Profile → Agent Support, Agents → Profile & API keys).
 
-**Enchantments:** (1) Tilføj ny LLM-provider: env i §8 og .env.example, adapter i llm_service.py, evt. i Agent Support ai_api_providers. (2) Tilføj ny optional: §8-tabel + .env.example Optional-blok + evt. agent_support_service ai_api_providers. (3) Verifikation: brug `docs/CHECKPOINTS_RECHECK.md` og `python scripts/test_url_timing.py`.
+**Enchantments:** (1) Tilføj ny LLM-provider: env i §8 og .env.example, adapter i llm_service.py, evt. i Agent Support ai_api_providers. (2) Tilføj ny optional: §8-tabel + .env.example Optional-blok + evt. agent_support_service ai_api_providers. (3) Verifikation: brug `docs/archive/CHECKPOINTS_RECHECK.md` og `python scripts/test_url_timing.py`.
 
 Opdater denne sektion når nye AI-systemer tilføjes eller env-var ændres.

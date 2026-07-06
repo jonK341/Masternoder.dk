@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Deploy all files to server and restart uwsgi-vidgenerator on port 5000.
-Single service (no emperor). See docs/DEPLOYMENT_PLAN.md.
+Single service (no emperor). See docs/archive/DEPLOYMENT_PLAN.md.
 
 Usage:
   python scripts/deploy_all_and_restart_uwsgi.py [--dry-run] [--no-upload]
   python scripts/deploy_all_and_restart_uwsgi.py --manifest profile loading  # deploy only those manifests then restart
   python scripts/deploy_all_and_restart_uwsgi.py --no-upload                 # restart uwsgi-vidgenerator only (e.g. after config change)
 
-After deploy: run python scripts/test_url_timing.py (with BASE_URL to production) to verify. See docs/CHECKPOINTS_RECHECK.md.
+After deploy: run python scripts/test_url_timing.py (with BASE_URL to production) to verify. See docs/archive/CHECKPOINTS_RECHECK.md.  <!-- pragma: allowlist secret -->
 SSH: tries DEPLOY_KEY_PATH / ~/.ssh keys first, then DEPLOY_PASS (.env or --ask-pass).
 Server: masternoder.dk, REMOTE_BASE /var/www/html.
 """
@@ -314,7 +314,7 @@ def run(
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Deploy all files and restart uwsgi-vidgenerator on port 5000; single service (see docs/DEPLOYMENT_PLAN.md)")
+    ap = argparse.ArgumentParser(description="Deploy all files and restart uwsgi-vidgenerator on port 5000; single service (see docs/archive/DEPLOYMENT_PLAN.md)")
     ap.add_argument("--dry-run", action="store_true", help="Do not upload or restart; show planned steps")
     ap.add_argument("--no-upload", action="store_true", help="Do not upload files; only restart uwsgi-vidgenerator (still stop, clear port, start)")
     ap.add_argument("--skip-gunicorn-check", action="store_true", help="Do not kill gunicorn / free port 5000 (not recommended)")

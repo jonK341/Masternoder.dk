@@ -15,14 +15,14 @@
 
 - **Deploy code** — From your PC: `python scripts/deploy_all_and_restart_uwsgi.py` (starts uwsgi-vidgenerator, not emperor).
 
-- **Production requirements (slim, when disk is tight):**  
-  Upload: `python scripts/upload_requirements_production.py`  
-  Then install: `python scripts/install_requirements_on_server.py --production -y`  
-  (Uses `requirements-production.txt`; no torch/transformers; ~500MB–1GB.)
+- **Production requirements (slim, when disk is tight):**    <!-- pragma: allowlist secret -->
+  Upload: `python scripts/upload_requirements_production.py`    <!-- pragma: allowlist secret -->
+  Then install: `python scripts/install_requirements_on_server.py --production -y`    <!-- pragma: allowlist secret -->
+  (Uses `requirements-production.txt`; no torch/transformers; ~500MB–1GB.)  <!-- pragma: allowlist secret -->
 
-Full plan: **docs/DEPLOYMENT_PLAN.md** (single service, eager load, no emperor).
+Full plan: **docs/archive/DEPLOYMENT_PLAN.md** (single service, eager load, no emperor).
 
-- **Generator jobs not persisting / lost on restart:** Run the generator DB migration once per environment: **`python scripts/generator_migration.py --standalone`** (creates `video_generation_jobs`, `job_artifacts`). See **docs/DEPLOYMENT_PLAN.md** and **docs/GENERATOR_AND_AI_OVERVIEW.md**. Ensure **VIDEOS_DIR** (or `vidgenerator/videos`) has at least **100 MB free** for encoding.
+- **Generator jobs not persisting / lost on restart:** Run the generator DB migration once per environment: **`python scripts/generator_migration.py --standalone`** (creates `video_generation_jobs`, `job_artifacts`). See **docs/archive/DEPLOYMENT_PLAN.md** and **docs/GENERATOR_AND_AI_OVERVIEW.md**. Ensure **VIDEOS_DIR** (or `vidgenerator/videos`) has at least **100 MB free** for encoding.
 
 - **Generator: clear stuck jobs** — In-memory only: **`GET /api/generator/reset-for-test?confirm=test`**. To clear disk state: delete `<doc_id>.status.json` and `<doc_id>.job.json` (and optionally `<doc_id>.mp4`) in **VIDEOS_DIR** for the stuck job.
 
@@ -35,11 +35,11 @@ Full plan: **docs/DEPLOYMENT_PLAN.md** (single service, eager load, no emperor).
   ```
   If that log file does not exist, use **`tail -100 /var/www/html/uwsgi.log`** and look for `[VideoGenerator]` or tracebacks.
 
-## Stability: disable path correction in production (migration plan Phase 1)
+## Stability: disable path correction in production (migration plan Phase 1)  <!-- pragma: allowlist secret -->
 
-To avoid worker death from recursion/OOM, path correction is **disabled** when the app runs in production. Set one of these in the uWSGI/systemd environment (e.g. `/etc/systemd/system/uwsgi-vidgenerator.service.d/environment.conf`):
+To avoid worker death from recursion/OOM, path correction is **disabled** when the app runs in production. Set one of these in the uWSGI/systemd environment (e.g. `/etc/systemd/system/uwsgi-vidgenerator.service.d/environment.conf`):  <!-- pragma: allowlist secret -->
 
-- **`PRODUCTION=true`** or **`FLASK_ENV=production`** — path correction is off; front page and links stay up.
+- **`PRODUCTION=true`** or **`FLASK_ENV=production`** — path correction is off; front page and links stay up.  <!-- pragma: allowlist secret -->
 - **`DISABLE_PATH_CORRECTION=1`** — same effect (path correction off).
 
 Optional: **`LITE_APP=1`** — register only ~25 critical+core blueprints (faster startup, lower memory); same pages/static/APIs. See **docs** migration plan Phase 1.2.
@@ -82,7 +82,7 @@ Deploy the full project with `python scripts/deploy_all_and_restart_uwsgi.py`. T
 
 - **Common causes after deploy:**  
   - `index.html` not at root: ensure `/var/www/html/index.html` exists (or redeploy).  
-  - Missing Python package: if you use `requirements-production.txt`, a route may import a package that was omitted (e.g. `torch`). Install it or guard the import.  
+  - Missing Python package: if you use `requirements-production.txt`, a route may import a package that was omitted (e.g. `torch`). Install it or guard the import.    <!-- pragma: allowlist secret -->
   - Wrong path in code: e.g. still pointing at `vidgenerator/` when files were moved to root.
 
 ## All live URLs timeout from your PC (test_and_debug_urls / test_url_timing)
@@ -177,7 +177,7 @@ From your PC: **`python scripts/test_url_and_screenshot.py`**
 
 - **"Could not create database tables: (sqlite3.OperationalError) unable to open database file"** – The app wants to write SQLite to `instance/database.db`. Ensure the directory exists and is writable by www-data. `fix_502.py` Step 1b now creates `mkdir -p /var/www/html/instance` and `chown www-data:www-data /var/www/html/instance`.
 - **"NameError: name 'OK' is not defined"** – Occurs in one of the app-load test workers; the app still finishes (124 blueprints, "Done."). If you need to fix it, run the app load test and check the full traceback for the file and line.
-- **"Could not import agent_automation: ... circular import"** – One worker may skip it; another often loads it later ([OK] Registered agent_automation). Safe to ignore unless that blueprint is missing in production.
+- **"Could not import agent_automation: ... circular import"** – One worker may skip it; another often loads it later ([OK] Registered agent_automation). Safe to ignore unless that blueprint is missing in production.  <!-- pragma: allowlist secret -->
 
 ## Nginx errors: recv() failed (104), connect() failed (111)
 

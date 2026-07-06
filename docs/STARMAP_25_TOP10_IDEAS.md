@@ -66,4 +66,4 @@ Future: Three.js scene with 25 points as spheres in a galactic layout; orbit/rot
 
 ---
 
-*See also: STARMAP_25_WARHAMMER40K_RESEARCH.md, HUNTERS_STAR_MAP_IMPLEMENTATION_SUMMARY.md (sect. 10).*
+*See also: STARMAP_25_WARHAMMER40K_RESEARCH.md, archive/HUNTERS_STAR_MAP_IMPLEMENTATION_SUMMARY.md (sect. 10).*
