@@ -66,3 +66,9 @@ tools/mn2-daemon/
 # MN2 verified users list (Phase 10); maintain on server or via ops API
 data/mn2_verified_users.json
 
+
+# PyInstaller build output (trader_app)
+/build/
+/dist/
+/MN2PrivateControl.spec
+/data/crypto_exchange_PAPER/

@@ -1,50 +1,56 @@
-# MN2 Laptop Trader
+# MN2 Private Control (laptop app)
 
-A standalone dashboard + trading loop you run **on your own machine** (whose IP can reach the
-exchanges — unlike the geo-blocked cloud sandbox). It pulls cross-trade **signals** from the
-site's profit daemon, shows your **balances** (per venue / per pair) and grid **PnL**, and runs
-the grid/market-maker bot locally so trades execute from your IP.
+A **private, passcode-gated** control panel + trading cockpit you run **on your own machine**
+(whose IP can reach the exchanges — unlike the geo-blocked cloud host). It centralizes owner
+controls and stats behind a lock screen, in a tabbed UI.
 
-## Run
+## Tabs
+- **Overview** — balances per venue/pair, grid positions & PnL, cross-trade signals.
+- **Trading** — bot enable/tick + **AI recommendations** (signals ranked by expected profit, nudged by forum-intelligence sentiment) with strong/consider/skip labels and reasons.
+- **Profit Monitor (AI)** — an AI summary of *where your profit is*, realized + projected/day + projected/month, and a **profit-sources** table combining trades + signals.
+- **Controls** — run/pause the site daemon & bots, agents (Live Watch) — proxied to the site admin API.
+- **Shop** — shop-flow snapshot/controls (proxied to the site admin API).
+- **Accounting** — grid realized PnL, payout/treasury/fiat valuation.
+- **Security** — passcode-lock status, live-gate on/off, vault status, hardening tips.
 
+## Run (from source)
 ```bash
-# from the repo root
-pip install -r requirements.txt          # Flask, requests, cryptography already included
-export SITE_URL=https://your-site.example    # where signals come from (omit to compute locally)
+pip install -r requirements.txt
+export TRADER_PASSCODE='choose-a-strong-passcode'   # required to unlock (owner-only)
+export SITE_URL=https://your-site.example            # site admin API for controls/signals
 export SITE_ADMIN_KEY=<your exchange admin key>
-# venue API keys (same as the main app):
-export BINANCE_API_KEY=...  BINANCE_API_SECRET=...
-export EXCHANGE_VAULT_KEY=...              # if NonKYC keys are in the encrypted vault
-python trader_app/app.py                   # -> http://127.0.0.1:8800
+export BINANCE_API_KEY=...  BINANCE_API_SECRET=...   # venue keys (or use the encrypted vault)
+python trader_app/app.py                             # -> http://127.0.0.1:8800
 ```
+Open http://127.0.0.1:8800, unlock with your passcode.
 
-Open http://127.0.0.1:8800 for the dashboard.
+## Build a standalone executable
+```bash
+pip install pyinstaller
+python trader_app/build_exe.py        # -> dist/MN2PrivateControl/
+```
+Run `dist/MN2PrivateControl/MN2PrivateControl` (`.exe` on Windows), then open http://127.0.0.1:8800.
 
-## What it shows
-- **Total balance** and **realized PnL** headline KPIs, plus open-order count and mode (paper/LIVE).
-- **Account balances** per venue and per asset/pair with USD value.
-- **Grid positions & PnL**: inventory, avg cost, realized PnL, open orders, and halt state per market.
-- **Cross-trade signals** from the site daemon (arbitrage spreads + grid candidates), flagged
-  `actionable` when both legs are real venues (internal/simulated legs are info-only).
+> A **Windows `.exe` must be built on Windows** — PyInstaller does not cross-compile. Run the
+> same `build_exe.py` on each target OS (verified on Linux; identical steps on Windows/macOS).
 
-## Controls
-- **Enable / Disable** the grid bot.
-- **Run tick** — one grid cycle (paper by default).
+## Privacy / security
+- The whole app is behind a **passcode** (`TRADER_PASSCODE`); set a strong one — the default
+  `mn2-owner` is flagged insecure in the Security tab.
+- All control/accounting data lives **in the app** and is fetched with your admin key; nothing
+  private is exposed publicly by the app itself.
+- Venue API keys should live in the encrypted vault (`EXCHANGE_VAULT_KEY`), not plaintext.
 
 ## Going live (real money)
-Paper by default — nothing trades for real until you set **both**:
-```bash
-export EXCHANGE_ARBITRAGE_LIVE=1
-export EXCHANGE_GRID_LIVE=1
-```
-and fund the venue spot wallets in the quote assets (USDC on Binance, USDT on NonKYC).
-Risk is bounded by the grid config (`data/exchange_grid_bot_config.json`): per-asset
-`max_inventory_usd` and a global `hard_loss_cap_usd` that auto-halts and cancels all orders.
-Grid/market-making books small wins in ranging markets and **loses in trends** — it is
-risk-capped, not guaranteed profit.
+Paper by default — nothing trades for real until you set **both** `EXCHANGE_ARBITRAGE_LIVE=1`
+and `EXCHANGE_GRID_LIVE=1` and fund venue spot wallets. Risk is bounded by the grid config
+(`data/exchange_grid_bot_config.json`): per-asset `max_inventory_usd` + global
+`hard_loss_cap_usd` (auto-halts). Grid/MM books small wins in ranging markets and **loses in
+trends** — risk-capped, not guaranteed profit; and cross-venue arbitrage is fee-dead at retail
+size on these venues.
 
-## Config file (optional)
-Instead of env vars you can create `trader_app/config.json`:
+## Config file (optional, instead of env)
+`trader_app/config.json`:
 ```json
 { "site_url": "https://your-site.example", "admin_key": "..." }
 ```
