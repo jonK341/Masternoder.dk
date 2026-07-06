@@ -38,6 +38,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
+    'forum',
     'gallery', 'battle', 'shop', 'chat', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',

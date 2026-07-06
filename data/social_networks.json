@@ -1,47 +1,274 @@
 {
-  "share_base_url": "https://masternoder.dk",
+  "$schema": "masternoder.social_networks.v2",
+  "default_share_text": "MasterNoder — AI video generation, game, battle & community forum",
+  "default_share_hashtags": "MasterNoder,HuntersGame",
+  "categories": [
+    {"id": "social", "label": "Social"},
+    {"id": "messaging", "label": "Messaging"},
+    {"id": "community", "label": "Community & video"},
+    {"id": "save", "label": "Save & bookmark"}
+  ],
   "networks": [
     {
       "id": "x",
       "name": "X (Twitter)",
       "icon": "𝕏",
       "color": "#000000",
+      "category": "social",
+      "type": "share",
       "share_url": "https://twitter.com/intent/tweet?text={text}&url={url}&hashtags=MasterNoder,HuntersGame",
       "encode_text": true
-    },
-    {
-      "id": "linkedin",
-      "name": "LinkedIn",
-      "icon": "in",
-      "color": "#0a66c2",
-      "share_url": "https://www.linkedin.com/sharing/share-offsite/?url={url}",
-      "encode_text": false
     },
     {
       "id": "facebook",
       "name": "Facebook",
       "icon": "f",
       "color": "#1877f2",
+      "category": "social",
+      "type": "share",
       "share_url": "https://www.facebook.com/sharer/sharer.php?u={url}",
       "encode_text": false
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn",
+      "icon": "in",
+      "color": "#0a66c2",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://www.linkedin.com/sharing/share-offsite/?url={url}",
+      "encode_text": false
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit",
+      "icon": "🤖",
+      "color": "#ff4500",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://www.reddit.com/submit?url={url}&title={text}",
+      "encode_text": true
+    },
+    {
+      "id": "pinterest",
+      "name": "Pinterest",
+      "icon": "📌",
+      "color": "#e60023",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://pinterest.com/pin/create/button/?url={url}&description={text}",
+      "encode_text": true
+    },
+    {
+      "id": "tumblr",
+      "name": "Tumblr",
+      "icon": "t",
+      "color": "#36465d",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://www.tumblr.com/widgets/share/tool?canonicalUrl={url}&caption={text}",
+      "encode_text": true
+    },
+    {
+      "id": "bluesky",
+      "name": "Bluesky",
+      "icon": "🦋",
+      "color": "#0085ff",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://bsky.app/intent/compose?text={text}%20{url}",
+      "encode_text": true
+    },
+    {
+      "id": "threads",
+      "name": "Threads",
+      "icon": "@",
+      "color": "#000000",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://www.threads.net/intent/post?text={text}%20{url}",
+      "encode_text": true
+    },
+    {
+      "id": "mastodon",
+      "name": "Mastodon",
+      "icon": "🐘",
+      "color": "#6364ff",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://mastodon.social/share?text={text}%20{url}",
+      "encode_text": true
+    },
+    {
+      "id": "vk",
+      "name": "VK",
+      "icon": "vk",
+      "color": "#0077ff",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://vk.com/share.php?url={url}&title={text}",
+      "encode_text": true
+    },
+    {
+      "id": "weibo",
+      "name": "Weibo",
+      "icon": "微",
+      "color": "#e6162d",
+      "category": "social",
+      "type": "share",
+      "share_url": "https://service.weibo.com/share/share.php?url={url}&title={text}",
+      "encode_text": true
     },
     {
       "id": "whatsapp",
       "name": "WhatsApp",
       "icon": "💬",
       "color": "#25d366",
+      "category": "messaging",
+      "type": "share",
       "share_url": "https://wa.me/?text={text}%20{url}",
       "encode_text": true
     },
     {
-      "id": "x_thread",
-      "name": "X thread",
-      "icon": "𝕏",
-      "color": "#000000",
-      "share_url": "https://twitter.com/intent/tweet?text={text}&url={url}&hashtags=MasterNoder,Casino",
+      "id": "telegram",
+      "name": "Telegram",
+      "icon": "✈️",
+      "color": "#26a5e4",
+      "category": "messaging",
+      "type": "share",
+      "share_url": "https://t.me/share/url?url={url}&text={text}",
       "encode_text": true
     },
-  ],
-  "default_share_text": "MasterNoder — AI video generation + casino lounge",
-  "default_share_hashtags": "MasterNoder,HuntersGame"
+    {
+      "id": "messenger",
+      "name": "Messenger",
+      "icon": "💠",
+      "color": "#0084ff",
+      "category": "messaging",
+      "type": "share",
+      "share_url": "https://www.facebook.com/sharer/sharer.php?u={url}",
+      "encode_text": false
+    },
+    {
+      "id": "viber",
+      "name": "Viber",
+      "icon": "🟣",
+      "color": "#7360f2",
+      "category": "messaging",
+      "type": "share",
+      "share_url": "viber://forward?text={text}%20{url}",
+      "encode_text": true
+    },
+    {
+      "id": "line",
+      "name": "LINE",
+      "icon": "🟢",
+      "color": "#06c755",
+      "category": "messaging",
+      "type": "share",
+      "share_url": "https://social-plugins.line.me/lineit/share?url={url}",
+      "encode_text": false
+    },
+    {
+      "id": "email",
+      "name": "Email",
+      "icon": "✉️",
+      "color": "#6b7280",
+      "category": "messaging",
+      "type": "share",
+      "share_url": "mailto:?subject={text}&body={url}",
+      "encode_text": true
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "icon": "🎮",
+      "color": "#5865f2",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://discord.com/channels/@me",
+      "content_url": "/api/discord/link",
+      "encode_text": false
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram",
+      "icon": "📷",
+      "color": "#e4405f",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://www.instagram.com/",
+      "encode_text": false
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "icon": "🎵",
+      "color": "#010101",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://www.tiktok.com/",
+      "encode_text": false
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "icon": "▶️",
+      "color": "#ff0000",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://www.youtube.com/",
+      "encode_text": false
+    },
+    {
+      "id": "twitch",
+      "name": "Twitch",
+      "icon": "🎥",
+      "color": "#9146ff",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://www.twitch.tv/",
+      "encode_text": false
+    },
+    {
+      "id": "kick",
+      "name": "Kick",
+      "icon": "🟩",
+      "color": "#53fc18",
+      "category": "community",
+      "type": "follow",
+      "share_url": "https://kick.com/",
+      "encode_text": false
+    },
+    {
+      "id": "snapchat",
+      "name": "Snapchat",
+      "icon": "👻",
+      "color": "#fffc00",
+      "category": "community",
+      "type": "share",
+      "share_url": "https://www.snapchat.com/scan?attachmentUrl={url}",
+      "encode_text": false
+    },
+    {
+      "id": "pocket",
+      "name": "Pocket",
+      "icon": "🅿️",
+      "color": "#ef3f56",
+      "category": "save",
+      "type": "share",
+      "share_url": "https://getpocket.com/save?url={url}&title={text}",
+      "encode_text": true
+    },
+    {
+      "id": "hackernews",
+      "name": "Hacker News",
+      "icon": "Y",
+      "color": "#ff6600",
+      "category": "save",
+      "type": "share",
+      "share_url": "https://news.ycombinator.com/submitlink?u={url}&t={text}",
+      "encode_text": true
+    }
+  ]
 }

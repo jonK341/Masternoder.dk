@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Forum — MasterNoder</title>
+    <link rel="canonical" href="/forum/">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/forum-hub.css?v=20260706v2">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <div class="forum-page">
+        <header class="forum-hero">
+            <div class="forum-hero-top">
+                <h1>💬 MasterNoder Forum</h1>
+                <div class="forum-hero-actions">
+                    <button type="button" id="notif-btn" class="forum-icon-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">🔔<span id="notif-badge" class="notif-badge" hidden>0</span></button>
+                    <button type="button" id="theme-toggle" class="forum-icon-btn" title="Toggle light / dark" aria-label="Toggle theme">🌙</button>
+                </div>
+            </div>
+            <div id="notif-panel" class="forum-notif-panel" hidden aria-label="Notifications"></div>
+            <p>News · articles · chat · podcast · rulebooks · docs · support · social · Wikipedia — all in one place.</p>
+            <div class="forum-global-search">
+                <input type="search" id="global-search" placeholder="Search discussions & articles…" aria-label="Search the forum">
+                <button type="button" id="global-search-btn" class="forum-btn">Search</button>
+            </div>
+            <div id="stats-bar" class="forum-stats-bar" aria-live="polite"></div>
+        </header>
+
+        <nav class="forum-tabs" aria-label="Forum sections">
+            <button type="button" class="forum-tab active" data-tab="home" role="tab" aria-selected="true">🏠 Home</button>
+            <button type="button" class="forum-tab" data-tab="discussions" role="tab" aria-selected="false">💭 Discussions</button>
+            <button type="button" class="forum-tab" data-tab="news" role="tab" aria-selected="false">📰 News</button>
+            <button type="button" class="forum-tab" data-tab="articles" role="tab" aria-selected="false">✍️ Articles</button>
+            <button type="button" class="forum-tab" data-tab="chat" role="tab" aria-selected="false">💬 Chat</button>
+            <button type="button" class="forum-tab" data-tab="podcast" role="tab" aria-selected="false">🎙️ Podcast</button>
+            <button type="button" class="forum-tab" data-tab="rulebooks" role="tab" aria-selected="false">📖 Rulebooks</button>
+            <button type="button" class="forum-tab" data-tab="paragraphs" role="tab" aria-selected="false">§ Paragraphs</button>
+            <button type="button" class="forum-tab" data-tab="docs" role="tab" aria-selected="false">📚 Docs</button>
+            <button type="button" class="forum-tab" data-tab="support" role="tab" aria-selected="false">🛠️ Support</button>
+            <button type="button" class="forum-tab" data-tab="social" role="tab" aria-selected="false">🌐 Social</button>
+            <button type="button" class="forum-tab" data-tab="wikipedia" role="tab" aria-selected="false">🔍 Wikipedia</button>
+        </nav>
+
+        <section id="panel-home" class="forum-panel active">
+            <div class="forum-home-grid">
+                <div>
+                    <h2>Community feed</h2>
+                    <div id="feed-list"></div>
+                </div>
+                <aside class="forum-sidebar">
+                    <div class="forum-card forum-side-card">
+                        <h3>🔥 Trending</h3>
+                        <div id="trending-list"></div>
+                    </div>
+                    <div class="forum-card forum-side-card">
+                        <h3>🏆 Top members</h3>
+                        <div id="leaderboard-list"></div>
+                    </div>
+                    <div class="forum-card forum-side-card">
+                        <h3>🏷️ Popular tags</h3>
+                        <div id="tag-cloud" class="forum-tag-row"></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="panel-discussions" class="forum-panel">
+            <h2>Discussions — themes &amp; sub-forums</h2>
+            <p class="meta">Ask questions, share interpretations, and read community threads.</p>
+            <div id="topics-nav" class="forum-grid-2" style="margin-bottom:1rem"></div>
+            <details class="forum-compose-wrap" id="thread-compose-wrap">
+                <summary class="forum-btn">➕ Start a new thread</summary>
+                <div class="forum-compose" id="thread-compose">
+                    <div class="forum-compose-row">
+                        <select id="thread-topic" aria-label="Theme"></select>
+                        <select id="thread-subforum" aria-label="Sub-forum"></select>
+                        <select id="thread-kind" aria-label="Post type">
+                            <option value="question">❓ Question</option>
+                            <option value="story">📖 Story</option>
+                            <option value="interpretation">💡 Interpretation</option>
+                            <option value="discussion">💬 Discussion</option>
+                        </select>
+                    </div>
+                    <input type="text" id="thread-title" placeholder="Thread title (optional)">
+                    <div id="thread-similar" class="forum-similar" hidden></div>
+                    <input type="text" id="thread-tags" placeholder="Tags, comma separated (optional)">
+                    <textarea id="thread-body" placeholder="Your question or story… (Markdown supported)" required></textarea>
+                    <div id="thread-preview" class="forum-preview" hidden></div>
+                    <div class="forum-compose-row">
+                        <button type="button" id="thread-preview-btn" class="forum-btn secondary">Preview</button>
+                        <button type="button" id="thread-submit" class="forum-btn">Post thread</button>
+                        <span id="thread-status" class="meta"></span>
+                    </div>
+                </div>
+            </details>
+            <div class="forum-toolbar">
+                <div class="forum-sort" role="group" aria-label="Sort threads">
+                    <button type="button" class="forum-chip active" data-sort="new">🆕 New</button>
+                    <button type="button" class="forum-chip" data-sort="hot">🔥 Hot</button>
+                    <button type="button" class="forum-chip" data-sort="top">⬆️ Top</button>
+                    <button type="button" class="forum-chip" data-sort="active">💬 Active</button>
+                    <button type="button" class="forum-chip" data-sort="unanswered">❔ Unanswered</button>
+                    <button type="button" class="forum-chip" data-sort="unsolved">🟡 Unsolved</button>
+                    <button type="button" class="forum-chip" data-sort="solved">✅ Solved</button>
+                    <button type="button" class="forum-chip" data-sort="oldest">🕰️ Oldest</button>
+                </div>
+                <div class="forum-filter">
+                    <input type="search" id="thread-search" placeholder="Filter threads…" aria-label="Filter threads">
+                    <span id="active-tag-filter" class="forum-tag-active" hidden></span>
+                    <button type="button" id="my-bookmarks-btn" class="forum-chip" title="Show my bookmarks">🔖 Saved</button>
+                    <button type="button" id="my-following-btn" class="forum-chip" title="Show threads I follow">🔔 Following</button>
+                </div>
+            </div>
+            <div id="thread-view"></div>
+            <div id="threads-list"></div>
+            <div class="forum-loadmore-wrap">
+                <button type="button" id="threads-loadmore" class="forum-btn secondary" hidden>Load more</button>
+            </div>
+        </section>
+
+        <section id="panel-news" class="forum-panel">
+            <h2>Platform news</h2>
+            <p class="meta">Merged from the former News portal and podcast announcements.</p>
+            <div id="news-list"></div>
+        </section>
+
+        <section id="panel-articles" class="forum-panel">
+            <h2>Write an article</h2>
+            <ul id="rules-list" class="forum-rules-list" style="margin-bottom:1rem"></ul>
+            <form id="article-form" class="forum-compose">
+                <input type="text" id="article-title" placeholder="Article title" required maxlength="200">
+                <textarea id="article-body" placeholder="Write your article (Markdown supported)" required></textarea>
+                <button type="submit" class="forum-btn">Publish article</button>
+                <span id="article-status" class="meta"></span>
+            </form>
+            <div id="article-reader"></div>
+            <h3>Published articles</h3>
+            <div id="articles-list"></div>
+        </section>
+
+        <section id="panel-chat" class="forum-panel">
+            <h2>Chat</h2>
+            <div class="forum-grid-2">
+                <div>
+                    <h3>Community room</h3>
+                    <div id="chat-messages" class="forum-chat-box"></div>
+                    <div class="forum-compose" style="flex-direction:row">
+                        <input type="text" id="chat-input" placeholder="Message the community…" style="flex:1">
+                        <button type="button" id="chat-send" class="forum-btn">Send</button>
+                    </div>
+                </div>
+                <div>
+                    <h3>AI assistant</h3>
+                    <div class="forum-compose" style="flex-direction:row">
+                        <input type="text" id="ai-chat-input" placeholder="Ask the AI…" style="flex:1">
+                        <button type="button" id="ai-chat-send" class="forum-btn secondary">Ask</button>
+                    </div>
+                    <div id="ai-chat-reply" class="forum-card" style="margin-top:10px;min-height:80px"></div>
+                    <p class="meta"><a href="/lab#discussion">Lab roundtable →</a></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="panel-podcast" class="forum-panel">
+            <h2>Podcast &amp; iPod-style player</h2>
+            <p class="meta">YouTube, Facebook, Discord channels — crypto rewards &amp; episodes.</p>
+            <div id="podcast-panel-body"></div>
+        </section>
+
+        <section id="panel-rulebooks" class="forum-panel">
+            <h2>Rulebooks &amp; compendium</h2>
+            <p class="meta">Official V1–V16 rulebooks. Deep links open the full compendium reader.</p>
+            <div id="rulebooks-list"></div>
+        </section>
+
+        <section id="panel-paragraphs" class="forum-panel">
+            <h2>Paragraphs &amp; rights</h2>
+            <div id="paragraphs-list"></div>
+        </section>
+
+        <section id="panel-docs" class="forum-panel">
+            <h2>Documentation</h2>
+            <div id="docs-list"></div>
+        </section>
+
+        <section id="panel-support" class="forum-panel">
+            <h2>Support</h2>
+            <div id="support-panel-body"></div>
+        </section>
+
+        <section id="panel-social" class="forum-panel">
+            <h2>Share &amp; connect</h2>
+            <p class="meta">Share MasterNoder anywhere and follow the community across every major network.</p>
+            <div class="forum-share-controls">
+                <input type="text" id="share-text" placeholder="Share message…" aria-label="Share message">
+                <input type="url" id="share-url" placeholder="URL to share (defaults to this page)" aria-label="URL to share">
+                <div class="forum-share-actions">
+                    <button type="button" id="native-share" class="forum-btn" hidden>📲 Share…</button>
+                    <button type="button" id="copy-share-link" class="forum-btn secondary">🔗 Copy link</button>
+                </div>
+            </div>
+            <div id="social-networks"></div>
+        </section>
+
+        <section id="panel-wikipedia" class="forum-panel">
+            <h2>Wikipedia research</h2>
+            <div class="forum-compose" style="flex-direction:row">
+                <input type="search" id="wiki-query" placeholder="Search topic (e.g. Documentary film)">
+                <button type="button" id="wiki-search" class="forum-btn">Search</button>
+            </div>
+            <div id="wiki-result"></div>
+        </section>
+        <section id="panel-search" class="forum-panel">
+            <h2>Search results</h2>
+            <div id="search-results"></div>
+        </section>
+    </div>
+
+    <button type="button" id="back-to-top" class="forum-fab" title="Back to top" aria-label="Back to top" hidden>↑</button>
+    <div id="forum-toast" class="forum-toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/forum-hub.js?v=20260706v2" defer></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+</body>
+</html>

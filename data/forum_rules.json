@@ -1,0 +1,37 @@
+{
+  "$schema": "masternoder.forum_rules.v1",
+  "title": "MasterNoder Forum — writing rules",
+  "updated": "2026-07-05",
+  "sections": [
+    {
+      "id": "respect",
+      "title": "Be respectful",
+      "body": "No harassment, hate speech, or personal attacks. Debate ideas, not people."
+    },
+    {
+      "id": "original",
+      "title": "Original articles",
+      "body": "Posts should be your own writing or clearly credited. Do not copy entire rulebooks or Wikipedia articles without attribution."
+    },
+    {
+      "id": "spoilers",
+      "title": "Spoilers & NSFW",
+      "body": "Mark spoilers for Hunters stories and compendium lore. Adult content belongs in marked channels only."
+    },
+    {
+      "id": "mn2",
+      "title": "MN2 & crypto claims",
+      "body": "Do not promise guaranteed returns. Reward claims must link to official platform APIs."
+    },
+    {
+      "id": "moderation",
+      "title": "Moderation",
+      "body": "Staff may hide posts, issue warnings, or ban repeat offenders. Report abuse via Support tab or Agent Support tickets."
+    },
+    {
+      "id": "paragraphs",
+      "title": "Paragraphs & rights-law",
+      "body": "Legal paragraphs in the Rights tab are reference material — not legal advice. Cite paragraph numbers when discussing rules."
+    }
+  ]
+}

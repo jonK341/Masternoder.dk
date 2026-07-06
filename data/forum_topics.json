@@ -1,0 +1,88 @@
+{
+  "$schema": "masternoder.forum_topics.v1",
+  "themes": [
+    {
+      "id": "platform",
+      "title": "Platform & features",
+      "description": "Generator, gallery, battle, casino, and MN2 economy.",
+      "icon": "🎬",
+      "subforums": [
+        {"id": "questions", "title": "Ask anything", "description": "Quick questions about how things work.", "allows_questions": true},
+        {"id": "tips", "title": "Tips & tricks", "description": "Share what you learned.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "hunters-lore",
+      "title": "Hunters & lore",
+      "description": "Stories, walkthroughs, compendium interpretations.",
+      "icon": "📜",
+      "subforums": [
+        {"id": "stories", "title": "Stories", "description": "Fan interpretations and short fiction.", "allows_questions": false},
+        {"id": "questions", "title": "Lore Q&A", "description": "Ask about rulebooks and timelines.", "allows_questions": true},
+        {"id": "theories", "title": "Theories", "description": "Speculation and connections.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "rulebooks",
+      "title": "Rulebooks & paragraphs",
+      "description": "V1–V16 discussion, rights-law paragraphs, citations.",
+      "icon": "📖",
+      "subforums": [
+        {"id": "interpretations", "title": "Interpretations", "description": "How you read a rule.", "allows_questions": false},
+        {"id": "questions", "title": "Rule questions", "description": "What does §X mean?", "allows_questions": true}
+      ]
+    },
+    {
+      "id": "podcast-news",
+      "title": "Podcast & news",
+      "description": "Episodes, platform news, comments.",
+      "icon": "🎙️",
+      "subforums": [
+        {"id": "episodes", "title": "Episode talk", "description": "Discuss latest episodes.", "allows_questions": false},
+        {"id": "questions", "title": "News Q&A", "description": "Ask about announcements.", "allows_questions": true}
+      ]
+    },
+    {
+      "id": "support",
+      "title": "Help & support",
+      "description": "Tickets, bugs, how-to.",
+      "icon": "🛠️",
+      "subforums": [
+        {"id": "questions", "title": "Help me", "description": "Stuck? Ask here.", "allows_questions": true},
+        {"id": "solved", "title": "Solved threads", "description": "Resolved issues.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "generator",
+      "title": "Generator & creative",
+      "description": "Documentary generator, B-roll, gallery, and video workflows.",
+      "icon": "🎞️",
+      "subforums": [
+        {"id": "questions", "title": "How do I…?", "description": "Generator and editing questions.", "allows_questions": true},
+        {"id": "showcase", "title": "Showcase", "description": "Show what you made.", "allows_questions": false},
+        {"id": "workflows", "title": "Workflows", "description": "Setups, presets, and pipelines.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "economy",
+      "title": "Economy & MN2",
+      "description": "Staking, rewards, wallet, and marketplace strategy.",
+      "icon": "🪙",
+      "subforums": [
+        {"id": "questions", "title": "Economy Q&A", "description": "Staking and rewards questions.", "allows_questions": true},
+        {"id": "strategy", "title": "Strategy", "description": "Long-term economy plays.", "allows_questions": false}
+      ]
+    },
+    {
+      "id": "meta",
+      "title": "Community & meta",
+      "description": "Introductions, feedback, and forum meta.",
+      "icon": "🗣️",
+      "subforums": [
+        {"id": "intros", "title": "Introductions", "description": "Say hi to the community.", "allows_questions": false},
+        {"id": "feedback", "title": "Feedback", "description": "Ideas to improve the platform.", "allows_questions": false},
+        {"id": "questions", "title": "Meta Q&A", "description": "Questions about the forum itself.", "allows_questions": true}
+      ]
+    }
+  ]
+}

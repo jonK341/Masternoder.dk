@@ -512,6 +512,14 @@ def register_lite_blueprints(app):
         except Exception as e:
             print(f"  [WARN] LITE_APP debugger {_bp_attr}: {e}")
 
+    try:
+        if 'forum' not in app.blueprints:
+            from backend.routes.forum_routes import forum_bp
+            app.register_blueprint(forum_bp)
+            n += 1
+            print("  [OK] Registered forum blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP forum: {e}")
     print(f"  [LITE_APP] Registered {n} blueprints")
     return n
 
@@ -2242,6 +2250,15 @@ def _register_all_blueprints_impl(app):
                     pass  # Silent - many may fail (vidgenerator paths etc)
     except Exception:
         pass
+
+    try:
+        if 'forum' not in app.blueprints:
+            from backend.routes.forum_routes import forum_bp
+            app.register_blueprint(forum_bp)
+            registered_count += 1
+            print("  [OK] Registered forum blueprint")
+    except Exception as e:
+        print(f"  [WARN] Could not register forum: {e}")
 
     print(f"\n  [SUMMARY] Registered {registered_count} blueprints")
     app._blueprints_full_registration_done = True
