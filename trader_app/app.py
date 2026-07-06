@@ -358,12 +358,14 @@ def api_controls_action():
 @app.route("/api/shop")
 @login_required
 def api_shop():
-    # Best-effort shop flow snapshot from the site admin API.
+    # Shop flow snapshot from real site endpoints.
     return jsonify({
         "success": True,
-        "revenue": site_get("/api/exchange/control-board/overview"),
-        "shop_health": site_get("/api/shop/admin/summary"),
-        "note": "Shop flow controls proxy the site admin API; configure SITE_URL + admin key.",
+        "analytics": site_get("/api/shop/analytics"),
+        "payment_health": site_get("/api/shop/payment-health"),
+        "integration_health": site_get("/api/shop/integration-health"),
+        "note": "Shop flow snapshot (analytics + payment/integration health) from the site. "
+                "Set SITE_URL + admin key to populate.",
     })
 
 

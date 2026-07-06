@@ -222,7 +222,11 @@ loaders.controls=function(){getJSON('/api/controls').then(function(d){var b=d.co
   el('co_board').innerHTML=b.available===false?('<span class="muted">Site unreachable: '+(b.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((b.totals)||b.data||{}).slice(0,300)+'</div>');
   var a=d.agents||{};el('co_agents').innerHTML=a.available===false?('<span class="muted">Site unreachable: '+(a.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((a.totals)||{}).slice(0,300)+'</div>');});refreshAlerts();};
 document.querySelectorAll('#p_controls button[data-act]').forEach(function(b){b.onclick=function(){var body={action:b.dataset.act};if(b.dataset.on)body.on=b.dataset.on==='true';postJSON('/api/controls/action',body).then(function(){loaders.controls();});};});
-loaders.shop=function(){getJSON('/api/shop').then(function(d){el('sh_body').innerHTML='<div class="muted">'+(d.note||'')+'</div><pre class="muted" style="white-space:pre-wrap;font-size:12px">'+JSON.stringify(d.shop_health||{},null,1).slice(0,600)+'</pre>';});};
+loaders.shop=function(){getJSON('/api/shop').then(function(d){
+  function blk(title,o){var un=o&&o.available===false;return '<div style="margin-bottom:10px"><b>'+title+'</b> '+(un?'<span class="pill no">unreachable</span>':'<span class="pill">ok</span>')+
+    '<pre class="muted" style="white-space:pre-wrap;font-size:12px;margin:4px 0">'+JSON.stringify(un?{error:o.error}:o,null,1).slice(0,500)+'</pre></div>';}
+  el('sh_body').innerHTML='<div class="muted" style="margin-bottom:8px">'+(d.note||'')+'</div>'+blk('Analytics',d.analytics)+blk('Payment health',d.payment_health)+blk('Integration health',d.integration_health);
+});};
 loaders.accounting=function(){getJSON('/api/accounting').then(function(d){el('ac_body').innerHTML='<div>Grid realized: <b>'+money((d.grid_realized||{}).realized_pnl_usd)+'</b></div><pre class="muted" style="white-space:pre-wrap;font-size:12px">payout: '+JSON.stringify(d.payout||{}).slice(0,300)+'\ntreasury: '+JSON.stringify(d.treasury||{}).slice(0,300)+'</pre>';});};
 loaders.security=function(){getJSON('/api/security').then(function(d){var g=d.live_gates||{};var h='<table><tbody>';
   h+='<tr><td>App passcode lock</td><td><span class="pill strong">on</span></td></tr>';
