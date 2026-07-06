@@ -22,6 +22,7 @@ DEFAULT_CREDS = ROOT / "config" / "youtube_client_secrets.json"
 DEFAULT_TOKEN = ROOT / "config" / "youtube_token.json"
 DEFAULT_CATEGORY_ID = "28"  # Science & Technology
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
+DEFAULT_REDIRECT_URI = os.environ.get("YOUTUBE_OAUTH_REDIRECT_URI", "http://localhost")
 
 
 @dataclass
@@ -355,15 +356,21 @@ def bootstrap_oauth(client_secrets: Path, token_path: Path, use_local_server: bo
         }
 
     flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+    flow.redirect_uri = DEFAULT_REDIRECT_URI
     if use_local_server:
         creds = flow.run_local_server(host="127.0.0.1", port=0, open_browser=False)
     else:
-        auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline", include_granted_scopes="true")
+        auth_url, _ = flow.authorization_url(
+            prompt="consent",
+            access_type="offline",
+            include_granted_scopes="true",
+        )
         if not sys.stdin.isatty():
             return {
                 "success": False,
                 "error": "Authorization code required.",
                 "auth_url": auth_url,
+                "redirect_uri": flow.redirect_uri,
                 "next_step": "Open auth_url, approve access, then rerun with --auth-code '<code>'.",
             }
         print("Open this URL in your browser and approve access:")
@@ -391,6 +398,7 @@ def bootstrap_oauth_with_code(client_secrets: Path, token_path: Path, auth_code:
             "next_step": "Create OAuth desktop app creds in Google Cloud and save the JSON file.",
         }
     flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+    flow.redirect_uri = DEFAULT_REDIRECT_URI
     flow.fetch_token(code=auth_code)
     creds = flow.credentials
     token_path.parent.mkdir(parents=True, exist_ok=True)
