@@ -25,14 +25,28 @@ python trader_app/app.py                             # -> http://127.0.0.1:8800
 Open http://127.0.0.1:8800, unlock with your passcode.
 
 ## Build a standalone executable
-```bash
-pip install pyinstaller
-python trader_app/build_exe.py        # -> dist/MN2PrivateControl/
-```
-Run `dist/MN2PrivateControl/MN2PrivateControl` (`.exe` on Windows), then open http://127.0.0.1:8800.
 
+Use the bootstrap script — it creates a dedicated build venv, so it works even on
+"externally-managed" systems (Debian/Ubuntu PEP 668, the `error: externally-managed-environment`):
+
+```bash
+# Linux / macOS
+bash trader_app/build_exe.sh
+```
+```bat
+REM Windows
+trader_app\build_exe.bat
+```
+
+Output: `dist/MN2PrivateControl/`. Run `MN2PrivateControl` (`.exe` on Windows), open http://127.0.0.1:8800.
+
+> **Do NOT `pip install pyinstaller` system-wide** on Debian/Ubuntu — that triggers
+> `error: externally-managed-environment`. The scripts above avoid it by building inside
+> `.build-venv`. If `python3 -m venv` fails, first run `sudo apt install -y python3-venv python3-full`.
+> (Manual override alternative: `pip install --break-system-packages pyinstaller`, not recommended.)
+>
 > A **Windows `.exe` must be built on Windows** — PyInstaller does not cross-compile. Run the
-> same `build_exe.py` on each target OS (verified on Linux; identical steps on Windows/macOS).
+> matching script on each target OS (verified on Linux; identical steps on Windows/macOS).
 
 ## Privacy / security
 - The whole app is behind a **passcode** (`TRADER_PASSCODE`); set a strong one — the default

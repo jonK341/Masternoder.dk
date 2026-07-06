@@ -72,3 +72,5 @@ data/mn2_verified_users.json
 /dist/
 /MN2PrivateControl.spec
 /data/crypto_exchange_PAPER/
+/.build-venv/
+/trader_app/.state/
