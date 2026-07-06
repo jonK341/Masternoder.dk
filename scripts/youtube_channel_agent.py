@@ -326,7 +326,7 @@ def create_livestream_event(
     }
 
 
-def bootstrap_oauth(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
+def bootstrap_oauth(client_secrets: Path, token_path: Path, use_local_server: bool = False) -> Dict[str, Any]:
     try:
         from google_auth_oauthlib.flow import InstalledAppFlow
         from google.oauth2.credentials import Credentials
@@ -355,11 +355,17 @@ def bootstrap_oauth(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
         }
 
     flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
-    # Prefer local callback flow; fallback to copy/paste code flow for headless environments.
-    try:
+    if use_local_server:
         creds = flow.run_local_server(host="127.0.0.1", port=0, open_browser=False)
-    except Exception:
+    else:
         auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline", include_granted_scopes="true")
+        if not sys.stdin.isatty():
+            return {
+                "success": False,
+                "error": "Authorization code required.",
+                "auth_url": auth_url,
+                "next_step": "Open auth_url, approve access, then rerun with --auth-code '<code>'.",
+            }
         print("Open this URL in your browser and approve access:")
         print(auth_url)
         code = input("Paste the authorization code here: ").strip()
@@ -369,6 +375,27 @@ def bootstrap_oauth(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_text(creds.to_json(), encoding="utf-8")
     return {"success": True, "message": "OAuth complete; token stored.", "token_file": str(token_path)}
+
+
+def bootstrap_oauth_with_code(client_secrets: Path, token_path: Path, auth_code: str) -> Dict[str, Any]:
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+    except Exception as exc:
+        raise RuntimeError(
+            "OAuth dependencies missing. Install: pip install google-api-python-client google-auth-oauthlib"
+        ) from exc
+    if not client_secrets.is_file():
+        return {
+            "success": False,
+            "error": f"Missing OAuth client secrets file: {client_secrets}",
+            "next_step": "Create OAuth desktop app creds in Google Cloud and save the JSON file.",
+        }
+    flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+    flow.fetch_token(code=auth_code)
+    creds = flow.credentials
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_text(creds.to_json(), encoding="utf-8")
+    return {"success": True, "message": "OAuth complete via auth code; token stored.", "token_file": str(token_path)}
 
 
 def verify_channel(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
@@ -409,6 +436,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--create-live", action="store_true", help="Create a scheduled livestream event.")
     p.add_argument("--live-start-hours", type=int, default=24, help="Hours from now when scheduling live event.")
     p.add_argument("--bootstrap-auth", action="store_true", help="Run OAuth bootstrap and save token file.")
+    p.add_argument("--auth-code", default="", help="Authorization code from Google OAuth consent flow.")
+    p.add_argument("--auth-local-server", action="store_true", help="Use local callback server for OAuth (interactive).")
     p.add_argument("--verify-channel", action="store_true", help="Call YouTube API and return authenticated channel info.")
     p.add_argument("--dry-run", action="store_true", help="Generate/check everything except external API writes.")
     p.add_argument("--print-json", action="store_true", help="Print machine-readable result JSON.")
@@ -508,7 +537,13 @@ def main() -> int:
             }
         else:
             try:
-                result["actions"]["bootstrap_auth"] = bootstrap_oauth(client_secrets, token_path)
+                code = (args.auth_code or "").strip()
+                if code:
+                    result["actions"]["bootstrap_auth"] = bootstrap_oauth_with_code(client_secrets, token_path, code)
+                else:
+                    result["actions"]["bootstrap_auth"] = bootstrap_oauth(
+                        client_secrets, token_path, use_local_server=bool(args.auth_local_server)
+                    )
             except Exception as exc:
                 result["actions"]["bootstrap_auth"] = {"success": False, "error": str(exc)}
 

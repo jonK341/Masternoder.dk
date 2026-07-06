@@ -45,6 +45,14 @@ This will:
 - create/update `config/youtube_token.json`
 - return your authenticated channel id/title/stats
 
+Headless/non-interactive option:
+
+1. Get auth URL:
+   - `python3 scripts/youtube_channel_agent.py --bootstrap-auth --print-json`
+2. Open `auth_url`, approve access, copy code.
+3. Exchange code + verify:
+   - `python3 scripts/youtube_channel_agent.py --bootstrap-auth --auth-code '<PASTE_CODE>' --verify-channel --print-json`
+
 Outputs include:
 
 - `reports/youtube_agent/latest/youtube_upload_metadata.json`

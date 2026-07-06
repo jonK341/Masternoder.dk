@@ -59,6 +59,8 @@ ny.txt
 
 # MN2 daemon config (contains rpcpassword); use config/masternoder2.conf.example as template
 config/masternoder2.conf
+config/youtube_client_secrets.json
+config/youtube_token.json
 
 # Downloaded MN2 daemon/wallet binaries (see docs/MN2_DAEMON_SETUP.md)
 tools/mn2-daemon/
