@@ -248,11 +248,11 @@ def build_content_pack(data: Dict[str, Any]) -> Dict[str, str]:
         "Stack is now SQL-backed for faster reporting and content publishing. #trading #analytics"
     )
     linkedin = (
-        f"Trading performance snapshot ({window_label})\\n\\n"
-        f"- Volume: {trades:,} trades / {notional} notional\\n"
-        f"- Revenue signal: {fees} fees\\n"
-        f"- Market focus: {top_symbol}\\n"
-        f"- Ops signal: {top_event}\\n\\n"
+        f"Trading performance snapshot ({window_label})\n\n"
+        f"- Volume: {trades:,} trades / {notional} notional\n"
+        f"- Revenue signal: {fees} fees\n"
+        f"- Market focus: {top_symbol}\n"
+        f"- Ops signal: {top_event}\n\n"
         "We now run the report from structured SQL tables, which makes recurring publishing workflows "
         "faster, cleaner, and easier to verify."
     )
@@ -263,10 +263,10 @@ def build_content_pack(data: Dict[str, Any]) -> Dict[str, str]:
         "Reporting now runs directly from SQL records and logs, improving reliability for weekly recaps."
     )
     video_script = (
-        "Hook: Here is the latest trading pulse in under 30 seconds.\\n"
+        "Hook: Here is the latest trading pulse in under 30 seconds.\n"
         f"Body: Over the {window_label}, we recorded {trades:,} trades and {notional} in volume. "
         f"Estimated fee generation came in at {fees}. {top_symbol} was the most active symbol. "
-        f"On the operations side, {top_event} was the most frequent event.\\n"
+        f"On the operations side, {top_event} was the most frequent event.\n"
         "Close: The data now comes from a SQL reporting layer, so this update can be generated on demand."
     )
 
@@ -399,7 +399,7 @@ def main() -> int:
         print(json.dumps(payload, indent=2, ensure_ascii=True))
 
     if args.save:
-        stamp = datetime.utcnow().strftime("trading_content_report_%Y%m%d_%H%M%S")
+        stamp = _now_utc().strftime("trading_content_report_%Y%m%d_%H%M%S")
         md_path, json_path = save_outputs(args.output_dir, stamp, markdown, payload)
         print(f"\nSaved markdown: {md_path}")
         print(f"Saved json: {json_path}")
