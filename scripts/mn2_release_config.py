@@ -4,6 +4,7 @@ from __future__ import annotations
 REPO = "jonK341/MasterNoder2"
 TARGET_VERSION = "v1.3.1.0"
 BASE_TAG = "v1.2.3.0"
+RELEASE_BRANCH = "release/v1.3.1.0-exchange-sporks"
 PATCH_REL = "docs/patches/mn2-daemon-v1.3.0-multi-ping.patch"
 EXTRA_PATCH_REL = "docs/patches/mn2-daemon-v1.3.1-exchange-sporks.patch"
 # Populated from RELEASE_MANIFEST.json after build; fallback for tag-only releases.

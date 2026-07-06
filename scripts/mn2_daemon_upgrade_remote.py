@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -22,7 +23,7 @@ except Exception:
 
 import paramiko
 from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
-from mn2_release_config import MANIFEST_URL, RELEASE_URL, TARGET_VERSION
+from mn2_release_config import EXTRA_PATCH_REL, MANIFEST_URL, PATCH_REL, RELEASE_URL, TARGET_VERSION
 
 
 def release_asset_available(url: str = RELEASE_URL) -> bool:
@@ -32,6 +33,25 @@ def release_asset_available(url: str = RELEASE_URL) -> bool:
             return 200 <= resp.status < 400
     except (urllib.error.URLError, OSError):
         return False
+
+
+def patched_source_version() -> str | None:
+    """Return final configure.ac version implied by the local release patches."""
+    values: dict[str, str] = {}
+    pattern = re.compile(r"^[ +]define\(_CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD),\s*([0-9]+)\)")
+    for rel in (PATCH_REL, EXTRA_PATCH_REL):
+        path = os.path.join(ROOT, rel.replace("/", os.sep))
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                match = pattern.match(line.rstrip())
+                if match:
+                    values[match.group(1)] = match.group(2)
+    keys = ("MAJOR", "MINOR", "REVISION", "BUILD")
+    if not all(k in values for k in keys):
+        return None
+    return ".".join(values[k] for k in keys)
 
 
 def sh(ssh, cmd: str, timeout: int = 180) -> str:
@@ -131,10 +151,14 @@ def main() -> int:
 
     asset_ok = release_asset_available()
     manifest_ok = release_asset_available(MANIFEST_URL)
+    source_version = patched_source_version()
     print(f"Release asset {TARGET_VERSION}: {'available' if asset_ok else 'NOT FOUND'}")
     print(f"  {RELEASE_URL}")
     print(f"Manifest asset: {'available' if manifest_ok else 'optional / not uploaded'}")
     print(f"  {MANIFEST_URL}\n")
+    if source_version:
+        source_ok = source_version == TARGET_VERSION.removeprefix("v")
+        print(f"Patched source version: {source_version} ({'matches target' if source_ok else 'MISMATCH'})\n")
 
     if args.check_release:
         if not asset_ok:
