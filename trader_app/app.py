@@ -171,6 +171,27 @@ def index():
 
 # ------------------------- tab data -------------------------
 
+import threading
+import time as _time
+
+# Non-blocking cache: a background thread refreshes the slow calls (signals scan ~seconds,
+# venue balances), and all request handlers read the cache instantly so the UI never waits.
+_cache: dict = {}
+_cache_lock = threading.Lock()
+_REFRESH_INTERVAL = 30.0
+
+
+def _cache_get(key: str):
+    with _cache_lock:
+        ent = _cache.get(key)
+    return ent[1] if ent else None
+
+
+def _cache_set(key: str, val) -> None:
+    with _cache_lock:
+        _cache[key] = (_time.time(), val)
+
+
 def _local_signals():
     cfg = _cfg()
     if cfg.get("site_url"):
@@ -181,19 +202,56 @@ def _local_signals():
     return get_signals()
 
 
+def _balances_cached():
+    return _cache_get("balances") or {"success": True, "venues": {}, "total_usd": 0.0, "warming": True}
+
+
+def _signals_cached():
+    return _cache_get("signals") or {"success": True, "signals": [], "warming": True}
+
+
+def _health_cached():
+    return _cache_get("health") or {"available": None}
+
+
+def _refresh_once() -> None:
+    from backend.services.exchange_signals_service import account_balances
+    try:
+        _cache_set("balances", account_balances())
+    except Exception:
+        pass
+    try:
+        _cache_set("signals", _local_signals())
+    except Exception:
+        pass
+    try:
+        if _cfg().get("site_url"):
+            _cache_set("health", site_get("/api/exchange/health"))
+    except Exception:
+        pass
+
+
+def _refresher() -> None:
+    while True:
+        _refresh_once()
+        _time.sleep(_REFRESH_INTERVAL)
+
+
+threading.Thread(target=_refresher, daemon=True).start()
+
+
 _prev_halts = set()
 
 
 @app.route("/api/overview")
 @login_required
 def api_overview():
-    from backend.services.exchange_signals_service import account_balances
     from backend.services.exchange_grid_bot_service import grid_status, grid_profit, grid_live_enabled
     from trader_app.intelligence import combine_profit
-    bals = account_balances()
+    bals = _balances_cached()
     grid = grid_status()
     profit = grid_profit()
-    sig = _local_signals()
+    sig = _signals_cached()
     pmap = combine_profit(sig.get("signals") or [], grid.get("state") or {})
     # Record equity/PnL snapshot for sparkline/history; raise alerts on new halts.
     try:
@@ -233,8 +291,8 @@ def api_health():
     cfg = _cfg()
     site_ok = None
     if cfg.get("site_url"):
-        h = site_get("/api/exchange/health")
-        site_ok = bool(h.get("available"))
+        h = _health_cached()
+        site_ok = h.get("available")
     return jsonify({"success": True, "site_reachable": site_ok, "site_url": cfg.get("site_url") or "(local)",
                     "live": grid_live_enabled(), "checked_at": store._iso()})
 
@@ -293,7 +351,7 @@ def api_trading():
     from backend.services.exchange_grid_bot_service import load_config
     from trader_app.intelligence import recommend
     cfg = load_config()
-    sig = _local_signals()
+    sig = _signals_cached()
     recs = recommend(sig.get("signals") or [], order_size_usd=float(cfg.get("order_size_usd") or 10.0))
     return jsonify({"success": True, "signals": sig.get("signals") or [], "recommendations": recs,
                     "grid_config": {k: cfg.get(k) for k in ("venue", "assets", "grid_levels",
@@ -306,7 +364,7 @@ def api_profit_monitor():
     from backend.services.exchange_grid_bot_service import grid_status, load_config
     from trader_app.intelligence import recommend, combine_profit, ai_summary
     cfg = load_config()
-    sig = _local_signals()
+    sig = _signals_cached()
     state = (grid_status().get("state") or {})
     recs = recommend(sig.get("signals") or [], order_size_usd=float(cfg.get("order_size_usd") or 10.0))
     pmap = combine_profit(sig.get("signals") or [], state,
