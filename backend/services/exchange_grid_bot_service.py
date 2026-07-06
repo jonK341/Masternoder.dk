@@ -195,13 +195,11 @@ def _paper_fills(open_orders: List[Dict[str, Any]], mid: float) -> (List[Dict[st
 
 
 def grid_live_enabled() -> bool:
-    if os.environ.get("EXCHANGE_GRID_LIVE", "").strip() not in ("1", "true", "yes"):
-        return False
-    try:
-        from backend.services.exchange_arbitrage_service import live_enabled
-        return bool(live_enabled())
-    except Exception:
-        return False
+    """Live grid trading requires BOTH owner flags. Standalone (laptop) bot — deliberately
+    does NOT depend on the site's MN2 chain spork, which isn't reachable off the server."""
+    def _on(k: str) -> bool:
+        return str(os.environ.get(k, "")).strip().lower() in ("1", "true", "yes")
+    return _on("EXCHANGE_GRID_LIVE") and _on("EXCHANGE_ARBITRAGE_LIVE")
 
 
 # ----------------------------- orchestrator -----------------------------
