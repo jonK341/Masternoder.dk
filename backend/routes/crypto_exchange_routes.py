@@ -1282,6 +1282,16 @@ def exchange_payout_withdraw_targets():
     return jsonify(withdraw_targets_status())
 
 
+@crypto_exchange_bp.route("/api/exchange/payout/real-cash-readiness", methods=["GET"])
+def exchange_payout_real_cash_readiness():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import real_cash_readiness
+
+    probe = str(request.args.get("probe") or "").strip().lower() in ("1", "true", "yes")
+    return jsonify(real_cash_readiness(probe=probe))
+
+
 @crypto_exchange_bp.route("/api/exchange/payout/configure-venue-withdraw", methods=["POST"])
 def exchange_payout_configure_venue_withdraw():
     if not _admin_authorized():

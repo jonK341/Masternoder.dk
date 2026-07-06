@@ -1063,6 +1063,112 @@ def withdraw_pool_asset(coin: str, amount: Optional[float] = None, *,
     }
 
 
+def real_cash_readiness(*, probe: bool = False) -> Dict[str, Any]:
+    """Read-only report: how much of the sales-pool ledger is backed by REAL venue funds.
+
+    Moves no money. ``probe=True`` reads live venue spot balances (account reads only) and
+    reconciles them against the internal ledger so the gap between paper P&L and withdrawable
+    cash is explicit. Run with ``probe=True`` where the API keys are valid/whitelisted.
+    """
+    from backend.services import exchange_secrets_vault_service as vault
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services.exchange_fiat_converter_service import pool_valuation
+
+    try:
+        from backend.services.exchange_arbitrage_service import live_enabled as _arb_live
+        arb_live = bool(_arb_live())
+    except Exception:
+        arb_live = False
+    try:
+        from backend.services.exchange_fiat_converter_service import fiat_convert_live_enabled
+        fiat_live = bool(fiat_convert_live_enabled())
+    except Exception:
+        fiat_live = False
+
+    bcreds = binance_credentials()
+    gates = {
+        "arbitrage_live": arb_live,
+        "binance_withdraw_live": binance_withdraw_live_enabled(),
+        "nonkyc_withdraw_live": _venue_withdraw_live_enabled("nonkyc"),
+        "fiat_convert_live": fiat_live,
+        "paypal_live": _paypal_live_enabled(),
+    }
+    credentials = {
+        "binance": bool(bcreds.get("api_key") and bcreds.get("api_secret")),
+        "nonkyc": vapi.venue_has_credentials("nonkyc"),
+        "vault_encryption": vault.encryption_available(),
+    }
+
+    ledger = pool_valuation()
+    ledger_by_asset = {r["symbol"]: r for r in ledger.get("assets") or []}
+
+    venues: Dict[str, Any] = {}
+    real_by_asset: Dict[str, float] = {}
+    probe_errors: Dict[str, str] = {}
+    if probe:
+        for venue in _SUPPORTED_WITHDRAW_VENUES:
+            has = (credentials["binance"] if venue == "binance" else credentials["nonkyc"])
+            if not has:
+                venues[venue] = {"probed": False, "reason": "no_credentials"}
+                continue
+            try:
+                bals = vapi.parse_spot_balances(venue, dry_run=False) or {}
+                bals = {str(k).upper(): float(v) for k, v in bals.items() if float(v or 0) > 0}
+                venues[venue] = {"probed": True, "real_balances": bals}
+                for sym, amt in bals.items():
+                    real_by_asset[sym] = round(real_by_asset.get(sym, 0.0) + amt, 12)
+            except Exception as exc:
+                probe_errors[venue] = str(exc)
+                venues[venue] = {"probed": False, "error": str(exc)}
+
+    reconciliation: List[Dict[str, Any]] = []
+    materializable_usd = 0.0
+    for sym, row in ledger_by_asset.items():
+        ledger_amt = float(row.get("amount") or 0)
+        real_amt = float(real_by_asset.get(sym, 0.0))
+        matr = min(ledger_amt, real_amt) if probe else 0.0
+        price = float(row.get("price_usd") or 0)
+        matr_usd = round(matr * price, 4)
+        materializable_usd += matr_usd
+        reconciliation.append({
+            "symbol": sym,
+            "ledger_amount": round(ledger_amt, 8),
+            "ledger_usd": row.get("usd_value"),
+            "real_on_venue": round(real_amt, 8) if probe else None,
+            "materializable_amount": round(matr, 8) if probe else None,
+            "materializable_usd": matr_usd if probe else None,
+        })
+
+    all_creds = credentials["binance"] and credentials["nonkyc"]
+    verdict = "unknown_run_probe_on_prod"
+    if probe:
+        if materializable_usd <= 0:
+            verdict = "no_real_funds_backing_ledger"
+        elif materializable_usd < float(ledger.get("total_usd") or 0):
+            verdict = "partially_backed"
+        else:
+            verdict = "fully_backed"
+
+    return {
+        "success": True,
+        "probe": probe,
+        "gates": gates,
+        "credentials": credentials,
+        "ledger_total_usd": ledger.get("total_usd"),
+        "ledger_asset_count": ledger.get("asset_count"),
+        "venues": venues,
+        "reconciliation": reconciliation,
+        "real_materializable_usd": round(materializable_usd, 4) if probe else None,
+        "probe_errors": probe_errors or None,
+        "verdict": verdict,
+        "note": (
+            "Ledger balances are internal accounting until matched by real venue balances. "
+            "Paper P&L is not withdrawable. Deposit real capital to the venue and trade it live "
+            "to accumulate real, withdrawable funds."
+        ),
+    }
+
+
 def sweep_history(limit: int = 20) -> Dict[str, Any]:
     rows: List[Dict[str, Any]] = []
     if os.path.isfile(_SWEEPS_PATH):

@@ -130,6 +130,42 @@ def test_binance_multi_asset_preflight_success(env, monkeypatch):
     assert pf["network_fee"] == pytest.approx(0.0002)
 
 
+def test_real_cash_readiness_no_probe(env):
+    ex, pay, pool = env["ex"], env["pay"], env["pool"]
+    ex._adjust_balance(pool.sales_pool_user_id(), "BTC", 0.05)
+    r = pay.real_cash_readiness(probe=False)
+    assert r["success"] is True
+    assert r["probe"] is False
+    assert r["credentials"]["binance"] is True
+    assert r["verdict"] == "unknown_run_probe_on_prod"
+    btc = next(x for x in r["reconciliation"] if x["symbol"] == "BTC")
+    assert btc["real_on_venue"] is None
+
+
+def test_real_cash_readiness_probe_no_real_funds(env, monkeypatch):
+    ex, pay, pool = env["ex"], env["pay"], env["pool"]
+    from backend.services import exchange_venue_api_service as vapi
+    ex._adjust_balance(pool.sales_pool_user_id(), "BTC", 0.05)
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda v: False)
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, dry_run=None: {})
+    r = pay.real_cash_readiness(probe=True)
+    assert r["probe"] is True
+    assert r["real_materializable_usd"] == 0
+    assert r["verdict"] == "no_real_funds_backing_ledger"
+
+
+def test_real_cash_readiness_probe_partial(env, monkeypatch):
+    ex, pay, pool = env["ex"], env["pay"], env["pool"]
+    from backend.services import exchange_venue_api_service as vapi
+    ex._adjust_balance(pool.sales_pool_user_id(), "BTC", 0.05)  # ledger 0.05 ($3000)
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda v: v == "binance")
+    monkeypatch.setattr(vapi, "parse_spot_balances",
+                        lambda v, dry_run=None: {"BTC": 0.02} if v == "binance" else {})
+    r = pay.real_cash_readiness(probe=True)
+    assert r["real_materializable_usd"] == pytest.approx(1200.0)  # min(0.05,0.02)*60000
+    assert r["verdict"] == "partially_backed"
+
+
 def test_asset_preflight_status_via_payout(env, monkeypatch):
     ex, pay, pool, bwd = env["ex"], env["pay"], env["pool"], env["bwd"]
     ex._adjust_balance(pool.sales_pool_user_id(), "BTC", 0.02)
