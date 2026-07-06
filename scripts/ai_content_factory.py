@@ -290,6 +290,17 @@ def main() -> int:
                 generate_live_event=bool(args.create_live_on_gate),
                 live_start_hours=args.live_start_hours,
             )
+            dispatch = payload["dispatch"] or {}
+            failed = 0
+            for row in dispatch.get("long_jobs") or []:
+                if not (row.get("response") or {}).get("success"):
+                    failed += 1
+            for row in dispatch.get("short_jobs") or []:
+                if not (row.get("response") or {}).get("success"):
+                    failed += 1
+            if failed > 0:
+                payload["success"] = False
+                payload["dispatch_errors"] = failed
 
     paths = save_outputs(Path(args.outdir), payload)
     payload["paths"] = paths
@@ -300,7 +311,7 @@ def main() -> int:
         print(f"AI content factory complete. Output: {paths['run_dir']}")
         print(f"Latest output: {paths['latest']}")
         print(f"Dry run: {payload['dry_run']}")
-    return 0
+    return 0 if payload.get("success") else 2
 
 
 if __name__ == "__main__":

@@ -53,6 +53,22 @@ Schedule:
 
 - `10 */10 * * *` (every 10 hours)
 
+## Master wired pipeline (recommended)
+
+Use one orchestrator job to run all stages in sequence:
+
+- `cron/content_pipeline_master.sh`
+- `cron/masternoder-content-pipeline.cron.d`
+
+Order:
+
+1. trading content report + platform news
+2. AI content factory
+3. YouTube content agent
+
+Default behavior: continue even if one stage fails, but return non-zero when any stage failed.
+Set `CONTENT_PIPELINE_FAIL_FAST=1` to stop on first failure.
+
 ## Env tuning
 
 - `CONTENT_FACTORY_DRY_RUN=1` (plan-only mode)
