@@ -19,11 +19,57 @@ os.environ.setdefault("DAEMON_QUIET", "1")
 os.environ.setdefault("LITE_APP", "1")
 
 
+def _load_config_env() -> None:
+    """Load trader_app/config.json into env so the daemon uses the same single config as the app."""
+    import json
+    for p in (os.path.join(ROOT, "trader_app", "config.json"), os.path.join(os.getcwd(), "config.json")):
+        if os.path.isfile(p):
+            try:
+                cfg = json.load(open(p, encoding="utf-8"))
+            except Exception:
+                return
+            for k in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "EXCHANGE_VAULT_KEY",
+                      "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE", "SITE_URL", "SITE_ADMIN_KEY"):
+                v = cfg.get(k)
+                if v not in (None, "") and not os.environ.get(k):
+                    os.environ[k] = str(v)
+            print(f"[grid-daemon] loaded config: {p}")
+            return
+    print("[grid-daemon] no config.json found (looked in trader_app/ and CWD)")
+
+
+def _diagnose() -> None:
+    print("[diag] EXCHANGE_ARBITRAGE_LIVE=" + str(os.environ.get("EXCHANGE_ARBITRAGE_LIVE")))
+    print("[diag] EXCHANGE_GRID_LIVE=" + str(os.environ.get("EXCHANGE_GRID_LIVE")))
+    try:
+        from backend.services.exchange_binance_withdraw_service import binance_credentials
+        c = binance_credentials()
+        print("[diag] binance credentials present: " + str(bool(c.get("api_key") and c.get("api_secret"))))
+    except Exception as e:
+        print("[diag] creds check error: " + repr(e))
+    try:
+        from backend.services import mn2_spork_service as spork
+        print("[diag] exchange_live_spork_ok: " + str(spork.exchange_live_spork_ok()))
+    except Exception as e:
+        print("[diag] spork check error: " + repr(e))
+    try:
+        from backend.services.exchange_arbitrage_service import live_enabled
+        print("[diag] arbitrage live_enabled: " + str(live_enabled()))
+    except Exception as e:
+        print("[diag] live_enabled error: " + repr(e))
+    try:
+        from backend.services.exchange_grid_bot_service import grid_live_enabled
+        print("[diag] grid_live_enabled (paper if False): " + str(grid_live_enabled()))
+    except Exception as e:
+        print("[diag] grid_live_enabled error: " + repr(e))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Grid/market-maker bot daemon")
     parser.add_argument("--once", action="store_true", help="Run one tick cycle and exit")
     parser.add_argument("--interval", type=int, default=30, help="Seconds between tick cycles")
     parser.add_argument("--paper", action="store_true", help="Force paper mode (no real orders)")
+    parser.add_argument("--enable", action="store_true", help="Enable the grid bot config before running")
     args = parser.parse_args()
 
     try:
@@ -31,8 +77,13 @@ def main() -> int:
         load_dotenv()
     except Exception:
         pass
+    _load_config_env()
+    _diagnose()
 
-    from backend.services.exchange_grid_bot_service import run_all, grid_live_enabled
+    from backend.services.exchange_grid_bot_service import run_all, grid_live_enabled, set_enabled
+    if args.enable:
+        set_enabled(True)
+        print("[grid-daemon] grid bot enabled in config")
 
     dry = True if args.paper else None
     mode = "paper" if (args.paper or not grid_live_enabled()) else "LIVE"
