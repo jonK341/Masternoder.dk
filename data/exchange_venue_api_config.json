@@ -37,7 +37,9 @@
       "live_supported": true,
       "endpoints": {
         "account": {"method": "GET", "path": "/balances"},
-        "order_market": {"method": "POST", "path": "/createorder"}
+        "order_market": {"method": "POST", "path": "/createorder"},
+        "withdraw": {"method": "POST", "path": "/createwithdrawal"},
+        "withdraw_history": {"method": "GET", "path": "/getwithdrawals"}
       }
     },
     "kucoin": {
@@ -100,7 +102,9 @@
       "live_supported": true,
       "endpoints": {
         "account": {"method": "GET", "path": "/balances"},
-        "order_market": {"method": "POST", "path": "/createorder"}
+        "order_market": {"method": "POST", "path": "/createorder"},
+        "withdraw": {"method": "POST", "path": "/createwithdrawal"},
+        "withdraw_history": {"method": "GET", "path": "/getwithdrawals"}
       }
     }
   }
