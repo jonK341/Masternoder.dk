@@ -159,6 +159,27 @@
     ).join('');
   }
 
+  // Normalize for comparison: lowercase, collapse whitespace, drop trailing punctuation.
+  function _normText(s) {
+    return String(s || '').toLowerCase().replace(/\s+/g, ' ').replace(/[?!.…]+$/, '').trim();
+  }
+
+  // Only render a preview paragraph when it adds information beyond the title.
+  // Seeded threads often set summary/excerpt ≈ title, which would otherwise
+  // show the same text twice (title + preview).
+  function previewP(title, text, limit) {
+    const body = String(text || '').trim();
+    if (!body) return '';
+    const nt = _normText(title);
+    const nb = _normText(body);
+    if (!nb || nb === nt || nb.startsWith(nt) || nt.startsWith(nb)) return '';
+    return `<p>${esc(body.slice(0, limit || 180))}</p>`;
+  }
+
+  function excerptHtml(t) {
+    return previewP(t.title, t.excerpt);
+  }
+
   function threadCard(t) {
     return `<div class="forum-card thread-card" data-id="${esc(t.id)}" tabindex="0" role="button" aria-label="Open thread ${esc(t.title)}">
       <div class="thread-stats">
@@ -169,7 +190,7 @@
       <div class="thread-body">
         <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · ${timeAgo(t.updated_at)}</div>
         <h3>${badges(t)} ${esc(t.title)}</h3>
-        <p>${esc((t.excerpt || '').slice(0, 180))}</p>
+        ${excerptHtml(t)}
         <div class="thread-foot">
           <span class="meta">${esc(t.avatar || '')} ${esc(t.author_name || '')}</span>
           <span class="forum-tag-row">${tagChips(t.tags)}</span>
@@ -284,7 +305,7 @@
       <div class="forum-card feed-item feed-${esc(item.type)}">
         <div class="meta"><span class="feed-tag">${esc(item.type)}</span> · ${timeAgo(item.created_at)}${item.author_name ? ' · ' + esc(item.author_name) : ''}</div>
         <h3>${esc(item.title)}</h3>
-        <p>${esc(item.summary || '')}</p>
+        ${previewP(item.title, item.summary)}
         ${item.href ? `<a href="${esc(item.href)}" class="forum-btn secondary feed-open">Open</a>` : ''}
       </div>
     `).join('') || '<div class="forum-status">No posts yet. Write an article!</div>';
@@ -299,7 +320,7 @@
       <div class="forum-card">
         <div class="meta">${timeAgo(n.date) || esc(n.date)} · ${esc(n.channel || n.category || 'platform')}</div>
         <h3>${n.href ? `<a href="${esc(n.href)}" style="color:inherit">${esc(n.title)}</a>` : esc(n.title)}</h3>
-        <p>${esc(n.summary || '')}</p>
+        ${previewP(n.title, n.summary)}
       </div>
     `).join('') || '<div class="forum-status">No news items.</div>';
   }
