@@ -11,28 +11,28 @@ sys.path.insert(0, ROOT)
 
 REMOTE_ROOT = "/var/www/html"
 
-    UPLOAD = [
-        "scripts/all_profit_daemons.py",
-        "scripts/run_profit_daemon_server.sh",
-        "scripts/install_profit_daemon_server.sh",
-        "scripts/exchange_master_daemon.py",
-        "scripts/daemon_env.py",
-        "scripts/_daemon_env.cmd",
-        "systemd/masternoder-profit-daemon.service",
-        "backend/services/profit_daemon_monitor_service.py",
-        "backend/services/profit_daemon_news_service.py",
-        "backend/routes/profit_daemon_routes.py",
-        "backend/register_blueprints.py",
-        "backend/routes/all_page_routes.py",
-        "profit/index.html",
-        "static/js/profit-daemon-monitor.js",
-        "static/css/profit-daemon-monitor.css",
-        "static/js/frontpage-home.js",
-        "static/js/navigation-toolbar.js",
-        "data/exchange_shop_catalog.json",
-        "data/crypto_exchange/payout_config.json",
-        "cron/exchange_master_tick.sh",
-    ]
+UPLOAD = [
+    "scripts/all_profit_daemons.py",
+    "scripts/run_profit_daemon_server.sh",
+    "scripts/install_profit_daemon_server.sh",
+    "scripts/exchange_master_daemon.py",
+    "scripts/daemon_env.py",
+    "scripts/_daemon_env.cmd",
+    "systemd/masternoder-profit-daemon.service",
+    "backend/services/profit_daemon_monitor_service.py",
+    "backend/services/profit_daemon_news_service.py",
+    "backend/routes/profit_daemon_routes.py",
+    "backend/register_blueprints.py",
+    "backend/routes/all_page_routes.py",
+    "profit/index.html",
+    "static/js/profit-daemon-monitor.js",
+    "static/css/profit-daemon-monitor.css",
+    "static/js/frontpage-home.js",
+    "static/js/navigation-toolbar.js",
+    "data/exchange_shop_catalog.json",
+    "data/crypto_exchange/payout_config.json",
+    "cron/exchange_master_tick.sh",
+]
 
 
 def main() -> int:
@@ -83,7 +83,7 @@ def main() -> int:
 
         verify = (
             f"cd {REMOTE_ROOT} && set -a && . ./.env && set +a && "
-            "LITE_APP=1 DAEMON_QUIET=1 python3 -c "
+            "LITE_APP=1 DAEMON_QUIET=1 .venv/bin/python -c "
             "\"from backend.services.profit_daemon_monitor_service import monitor_status; "
             "import json; print(json.dumps(monitor_status(), indent=2)[:2000])\""
         )

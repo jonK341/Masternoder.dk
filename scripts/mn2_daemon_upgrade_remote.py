@@ -116,6 +116,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Audit daemon version on server; optional binary upgrade.")
     p.add_argument("--ask-pass", action="store_true")
     p.add_argument("--check-release", action="store_true", help="Only verify GitHub release asset (no SSH)")
+    p.add_argument(
+        "--require-release",
+        action="store_true",
+        help="With --check-release, fail when the release asset is missing",
+    )
     p.add_argument("--apply", action="store_true", help=f"Download and install {TARGET_VERSION} binary (maintenance window)")
     p.add_argument(
         "--verify-post",
@@ -139,7 +144,8 @@ def main() -> int:
                 "  python scripts/mn2_publish_release.py --tarball dist/masternoder2d.tar.gz "
                 "--manifest dist/RELEASE_MANIFEST.json --draft --skip-tag"
             )
-            return 1
+            print("\nRelease check completed: asset is not published yet.")
+            return 1 if args.require_release else 0
         return 0
 
     if args.apply and not asset_ok:
