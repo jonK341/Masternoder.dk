@@ -25,6 +25,9 @@ def _load_config_env() -> None:
     import re
 
     def _loose(text):
+        text = (text.replace("\u201c", '"').replace("\u201d", '"')
+                    .replace("\u2018", "'").replace("\u2019", "'")
+                    .replace("\u00a0", " ").replace("\ufeff", ""))
         out = []
         for line in text.splitlines():
             res, in_str, esc, i = [], False, False, 0

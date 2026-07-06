@@ -104,8 +104,12 @@ def _config_paths() -> list:
 
 def _strip_jsonc(text: str) -> str:
     """Tolerantly strip // line comments (outside strings) and trailing commas so a
-    lightly-commented config.json still parses. URLs like https:// inside quotes are kept."""
+    lightly-commented config.json still parses. URLs like https:// inside quotes are kept.
+    Also normalizes smart/curly quotes and non-breaking spaces that editors sometimes insert."""
     import re
+    text = (text.replace("\u201c", '"').replace("\u201d", '"')
+                .replace("\u2018", "'").replace("\u2019", "'")
+                .replace("\u00a0", " ").replace("\ufeff", ""))
     out = []
     for line in text.splitlines():
         res, in_str, esc, i = [], False, False, 0
@@ -139,9 +143,15 @@ def _load_config_file() -> dict:
             except Exception:
                 try:
                     cfg = json.loads(_strip_jsonc(raw))  # tolerate // comments / trailing commas
-                    print(f"[config] {p} had comments/trailing commas — parsed leniently")
+                    print(f"[config] {p} had comments/quirks — parsed leniently")
                 except Exception as exc:
-                    print(f"[config] found {p} but could not parse even leniently: {exc}")
+                    ln = getattr(exc, "lineno", None)
+                    hint = ""
+                    if ln:
+                        lines = raw.splitlines()
+                        if 1 <= ln <= len(lines):
+                            hint = f"  <<< offending line {ln}: {lines[ln - 1]!r}"
+                    print(f"[config] found {p} but could not parse even leniently: {exc}{hint}")
                     continue
             _CONFIG_SOURCE = p
             return cfg if isinstance(cfg, dict) else {}
