@@ -700,6 +700,101 @@ def place_market_order(
     return res
 
 
+def place_limit_order(
+    venue_id: str,
+    symbol: str,
+    side: str,
+    quantity: float,
+    price: float,
+    *,
+    dry_run: Optional[bool] = None,
+    quote: Optional[str] = None,
+    market: Optional[str] = None,
+    client_order_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Place a spot LIMIT (maker) order on a venue (paper-simulated unless live + credentialed)."""
+    resolved = resolve_market(venue_id, symbol.upper(), quote)
+    if not resolved.get("ok"):
+        return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
+    pair = str(market or resolved.get("market") or "")
+    side_u = str(side or "buy").upper()
+    qty = round(max(0.0, float(quantity or 0)), 8)
+    px = round(max(0.0, float(price or 0)), 8)
+    if qty <= 0 or px <= 0:
+        return {"success": False, "error": "invalid_quantity_or_price"}
+    coid = client_order_id or f"grid-{int(time.time()*1000)}"
+
+    if venue_id == "binance":
+        params: Dict[str, Any] = {
+            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
+            "quantity": qty, "price": px, "newClientOrderId": coid,
+        }
+    elif venue_id in ("nonkyc", "xeggex"):
+        params = {
+            "symbol": pair, "side": side_u.lower(), "type": "limit",
+            "quantity": str(qty), "price": str(px), "userProvidedId": coid, "strictValidate": False,
+        }
+    else:
+        params = {"symbol": pair, "side": side_u.lower(), "type": "limit",
+                  "quantity": str(qty), "price": str(px)}
+
+    res = venue_api_request(venue_id, "order_limit", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("symbol", symbol.upper())
+    res.setdefault("side", side_u.lower())
+    res.setdefault("quantity", qty)
+    res.setdefault("price", px)
+    res.setdefault("pair", pair)
+    res.setdefault("client_order_id", coid)
+    if res.get("simulated"):
+        res.setdefault("order_id", f"paper-{venue_id}-{coid}")
+    else:
+        body = res.get("body")
+        if isinstance(body, dict):
+            res["order_id"] = body.get("orderId") or body.get("id") or body.get("_id")
+        if res.get("success"):
+            res.setdefault("mode", "live")
+        elif not res.get("error"):
+            res["error"] = extract_order_error(res) or "limit_order_failed"
+    return res
+
+
+def cancel_order(venue_id: str, symbol: str, order_id: str, *,
+                 dry_run: Optional[bool] = None, market: Optional[str] = None,
+                 quote: Optional[str] = None) -> Dict[str, Any]:
+    """Cancel an open order by id."""
+    pair = str(market or "")
+    if not pair:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"symbol": pair, "id": order_id}
+    res = venue_api_request(venue_id, "cancel_order", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    return res
+
+
+def get_open_orders(venue_id: str, symbol: str = "", *,
+                    dry_run: Optional[bool] = None, market: Optional[str] = None,
+                    quote: Optional[str] = None) -> Dict[str, Any]:
+    """List open orders for a venue/symbol."""
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    params: Dict[str, Any] = {}
+    if pair:
+        params["symbol"] = pair
+    res = venue_api_request(venue_id, "open_orders", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    if res.get("simulated"):
+        res.setdefault("orders", [])
+    return res
+
+
 def get_account_balance(venue_id: str, asset: str = "", *, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     params: Dict[str, Any] = {}
     if venue_id == "bybit":
