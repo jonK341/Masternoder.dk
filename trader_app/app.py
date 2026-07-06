@@ -65,33 +65,55 @@ def _login_locked(ip: str) -> bool:
     return ent[0] >= _LOCK_MAX
 
 
+_CONFIG_SOURCE = None  # path config.json was actually loaded from (or None)
+
+
 def _config_paths() -> list:
-    """Config search order: next to the exe (override) -> bundled-in exe -> CWD -> source dir."""
+    """Config search order (first hit wins):
+      0) TRADER_CONFIG env (explicit path)
+      1) next to the .exe   2) folder of argv[0]   3) bundled into the exe (_MEIPASS)
+      4) current working dir  5) source dir
+    """
     paths = []
+    envp = (os.environ.get("TRADER_CONFIG") or "").strip()
+    if envp:
+        paths.append(envp)
     if getattr(sys, "frozen", False):
-        # 1) config.json placed next to the .exe lets you change settings without rebuilding.
-        paths.append(os.path.join(os.path.dirname(sys.executable), "config.json"))
-        # 2) config.json embedded into the build (compiled in) — sys._MEIPASS bundle dir.
-        meipass = getattr(sys, "_MEIPASS", "")
-        if meipass:
-            paths.append(os.path.join(meipass, "config.json"))
+        try:
+            paths.append(os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "config.json"))
+        except Exception:
+            pass
+    try:
+        if sys.argv and sys.argv[0]:
+            paths.append(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "config.json"))
+    except Exception:
+        pass
+    meipass = getattr(sys, "_MEIPASS", "")
+    if meipass:
+        paths.append(os.path.join(meipass, "config.json"))
     paths.append(os.path.join(os.getcwd(), "config.json"))
     paths.append(os.path.join(APP_DIR, "config.json"))
     seen, out = set(), []
     for p in paths:
-        if p not in seen:
-            seen.add(p)
-            out.append(p)
+        rp = os.path.abspath(p)
+        if rp not in seen:
+            seen.add(rp)
+            out.append(rp)
     return out
 
 
 def _load_config_file() -> dict:
+    global _CONFIG_SOURCE
     for p in _config_paths():
         if os.path.isfile(p):
             try:
-                return json.load(open(p, encoding="utf-8"))
-            except Exception:
+                cfg = json.load(open(p, encoding="utf-8"))
+                _CONFIG_SOURCE = p
+                return cfg
+            except Exception as exc:
+                print(f"[config] found {p} but failed to parse: {exc}")
                 return {}
+    _CONFIG_SOURCE = None
     return {}
 
 
@@ -115,6 +137,13 @@ def _bootstrap_env_from_config() -> None:
         v = filecfg.get(k)
         if v is not None and str(v) != "" and not os.environ.get(k):
             os.environ[k] = str(v)
+    if _CONFIG_SOURCE:
+        default_pc = (os.environ.get("TRADER_PASSCODE") or "mn2-owner") == "mn2-owner"
+        print(f"[config] loaded config.json from: {_CONFIG_SOURCE} "
+              f"(passcode {'DEFAULT' if default_pc else 'set from config'})")
+    else:
+        print("[config] no config.json found — using DEFAULTS (passcode 'mn2-owner'). "
+              "Searched: " + " | ".join(_config_paths()))
 
 
 _bootstrap_env_from_config()
@@ -533,6 +562,7 @@ def api_security():
         "success": True,
         "app_locked_by_passcode": True,
         "passcode_is_default": _passcode() == "mn2-owner",
+        "config_loaded_from": _CONFIG_SOURCE or "(none — using defaults)",
         "site_admin_key_set": bool(_cfg().get("admin_key")),
         "live_gates": live_gates,
         "vault": vstat,

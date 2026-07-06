@@ -257,6 +257,7 @@ loaders.accounting=function(){getJSON('/api/accounting').then(function(d){el('ac
 loaders.security=function(){getJSON('/api/security').then(function(d){var g=d.live_gates||{};var h='<table><tbody>';
   h+='<tr><td>App passcode lock</td><td><span class="pill strong">on</span></td></tr>';
   h+='<tr><td>Passcode is default</td><td>'+(d.passcode_is_default?'<span class="pill neg">yes — change it</span>':'<span class="pill strong">no</span>')+'</td></tr>';
+  h+='<tr><td>Config loaded from</td><td class="muted" style="font-size:11px">'+(d.config_loaded_from||'?')+'</td></tr>';
   h+='<tr><td>Site admin key set</td><td>'+(d.site_admin_key_set?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td></tr>';
   Object.keys(g).forEach(function(k){h+='<tr><td>'+k+'</td><td>'+(g[k]?'<span class="pill neg">LIVE</span>':'<span class="pill no">off</span>')+'</td></tr>';});
   h+='</tbody></table><div class="muted" style="margin-top:8px">'+(d.recommendations||[]).map(function(r){return '• '+r;}).join('<br>')+'</div>';el('se_body').innerHTML=h;});};
