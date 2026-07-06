@@ -1399,6 +1399,60 @@ def exchange_fiat_history():
     return jsonify(conversion_history(limit=int(request.args.get("limit") or 20)))
 
 
+@crypto_exchange_bp.route("/api/exchange/grid/status", methods=["GET"])
+def exchange_grid_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_grid_bot_service import grid_status
+
+    return jsonify(grid_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/grid/profit", methods=["GET"])
+def exchange_grid_profit():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_grid_bot_service import grid_profit
+
+    return jsonify(grid_profit())
+
+
+@crypto_exchange_bp.route("/api/exchange/grid/config", methods=["POST"])
+def exchange_grid_config():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_grid_bot_service import save_config
+
+    data = request.get_json(silent=True) or {}
+    return jsonify({"success": True, "config": save_config(data)})
+
+
+@crypto_exchange_bp.route("/api/exchange/grid/enable", methods=["POST"])
+def exchange_grid_enable():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_grid_bot_service import set_enabled
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(set_enabled(bool(data.get("enabled"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/grid/run", methods=["POST"])
+def exchange_grid_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_grid_bot_service import run_all, run_grid_tick
+
+    data = request.get_json(silent=True) or {}
+    dry = data.get("dry_run")
+    dry = bool(dry) if dry is not None else None
+    if data.get("asset"):
+        return jsonify(run_grid_tick(
+            str(data.get("venue") or "binance"), str(data.get("asset")), dry_run=dry,
+        ))
+    return jsonify(run_all(dry_run=dry))
+
+
 @crypto_exchange_bp.route("/api/exchange/paypal/crypto-quote", methods=["POST"])
 def exchange_paypal_crypto_quote():
     data = request.get_json(silent=True) or {}
