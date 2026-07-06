@@ -27,7 +27,9 @@ if ROOT not in sys.path:
 os.environ.setdefault("LITE_APP", "1")
 os.environ.setdefault("DAEMON_QUIET", "1")
 
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, Response, jsonify, redirect, render_template, request, session, url_for
+
+from trader_app import store
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, "frozen", False):
@@ -138,19 +140,110 @@ def _local_signals():
     return get_signals()
 
 
+_prev_halts = set()
+
+
 @app.route("/api/overview")
 @login_required
 def api_overview():
     from backend.services.exchange_signals_service import account_balances
     from backend.services.exchange_grid_bot_service import grid_status, grid_profit, grid_live_enabled
+    from trader_app.intelligence import combine_profit
+    bals = account_balances()
+    grid = grid_status()
+    profit = grid_profit()
+    sig = _local_signals()
+    pmap = combine_profit(sig.get("signals") or [], grid.get("state") or {})
+    # Record equity/PnL snapshot for sparkline/history; raise alerts on new halts.
+    try:
+        store.record_snapshot(bals.get("total_usd"), profit.get("realized_pnl_usd"),
+                              pmap.get("projected_daily_usd"))
+        halted_now = {k for k, s in (grid.get("state") or {}).items() if s.get("halted")}
+        for k in halted_now - _prev_halts:
+            reason = (grid["state"][k] or {}).get("halt_reason")
+            store.record_alert("halt", f"{k} halted: {reason}", "warn")
+        _prev_halts.clear(); _prev_halts.update(halted_now)
+    except Exception:
+        pass
     return jsonify({
         "mode": "LIVE" if grid_live_enabled() else "paper",
         "site_url": _cfg().get("site_url") or "(local)",
-        "balances": account_balances(),
-        "grid": grid_status(),
-        "profit": grid_profit(),
-        "signals": _local_signals(),
+        "balances": bals, "grid": grid, "profit": profit, "signals": sig,
+        "projected_daily_usd": pmap.get("projected_daily_usd"),
     })
+
+
+@app.route("/api/history")
+@login_required
+def api_history():
+    return jsonify({"success": True, "history": store.history(int(request.args.get("limit") or 200))})
+
+
+@app.route("/api/alerts")
+@login_required
+def api_alerts():
+    return jsonify({"success": True, "alerts": store.alerts(int(request.args.get("limit") or 50))})
+
+
+@app.route("/api/health")
+@login_required
+def api_health():
+    from backend.services.exchange_grid_bot_service import grid_live_enabled
+    cfg = _cfg()
+    site_ok = None
+    if cfg.get("site_url"):
+        h = site_get("/api/exchange/health")
+        site_ok = bool(h.get("available"))
+    return jsonify({"success": True, "site_reachable": site_ok, "site_url": cfg.get("site_url") or "(local)",
+                    "live": grid_live_enabled(), "checked_at": store._iso()})
+
+
+@app.route("/api/config/save", methods=["POST"])
+@login_required
+def api_config_save():
+    from backend.services.exchange_grid_bot_service import save_config
+    return jsonify({"success": True, "config": save_config(request.get_json(silent=True) or {})})
+
+
+_PRESETS = {
+    "conservative": {"grid_levels": 2, "grid_step_pct": 0.008, "order_size_usd": 5.0,
+                     "max_inventory_usd": 10.0, "hard_loss_cap_usd": 3.0},
+    "balanced": {"grid_levels": 3, "grid_step_pct": 0.004, "order_size_usd": 6.0,
+                 "max_inventory_usd": 15.0, "hard_loss_cap_usd": 5.0},
+    "aggressive": {"grid_levels": 5, "grid_step_pct": 0.0025, "order_size_usd": 8.0,
+                   "max_inventory_usd": 30.0, "hard_loss_cap_usd": 10.0},
+}
+
+
+@app.route("/api/config/preset", methods=["POST"])
+@login_required
+def api_config_preset():
+    from backend.services.exchange_grid_bot_service import save_config
+    name = str((request.get_json(silent=True) or {}).get("preset") or "")
+    if name not in _PRESETS:
+        return jsonify({"success": False, "error": "unknown_preset", "presets": list(_PRESETS)})
+    store.record_alert("config", f"Applied '{name}' grid preset", "info")
+    return jsonify({"success": True, "preset": name, "config": save_config(_PRESETS[name])})
+
+
+@app.route("/api/export/<what>.csv")
+@login_required
+def api_export(what):
+    from backend.services.exchange_grid_bot_service import grid_status
+    if what == "history":
+        rows = store.history(1000)
+        csv_txt = store.to_csv(rows, ["ts", "total_usd", "realized", "projected_daily"])
+    elif what == "positions":
+        rows = []
+        for k, s in (grid_status().get("state") or {}).items():
+            rows.append({"market": k, "inventory_base": s.get("inventory_base"),
+                         "avg_cost_usd": s.get("avg_cost_usd"), "realized_pnl_usd": s.get("realized_pnl_usd"),
+                         "open_orders": s.get("open_orders"), "halted": s.get("halted")})
+        csv_txt = store.to_csv(rows, ["market", "inventory_base", "avg_cost_usd", "realized_pnl_usd", "open_orders", "halted"])
+    else:
+        return jsonify({"success": False, "error": "unknown_export"}), 400
+    return Response(csv_txt, mimetype="text/csv",
+                    headers={"Content-Disposition": f"attachment; filename={what}.csv"})
 
 
 @app.route("/api/trading")
@@ -204,6 +297,10 @@ def api_controls_action():
     if action == "grid_tick":
         from backend.services.exchange_grid_bot_service import run_all
         return jsonify(run_all(dry_run=True))
+    if action == "grid_kill":
+        from backend.services.exchange_grid_bot_service import set_enabled
+        store.record_alert("kill", "Kill switch: grid bot disabled", "warn")
+        return jsonify(set_enabled(False))
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),
