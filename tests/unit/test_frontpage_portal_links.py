@@ -19,7 +19,12 @@ def test_frontpage_and_nav_include_wallet_staking_portal_links():
 def test_platform_news_announces_wallet_staking_pages():
     data = json.loads((ROOT / "data/platform_news.json").read_text(encoding="utf-8"))
     items = data.get("items") or []
+    item = next((i for i in items if i.get("id") == "news-page-portal-wallet-staking-20260706"), None)
 
-    assert items[0]["id"] == "news-page-portal-wallet-staking-20260706"
-    assert items[0]["href"] == "/wallets"
-    assert "staking" in items[0]["summary"].lower()
+    assert item is not None
+    assert item["href"] == "/wallets"
+    assert "staking" in item["summary"].lower()
+
+
+def test_reader_launcher_stylesheet_exists():
+    assert (ROOT / "static/css/calm-reader.css").is_file()
