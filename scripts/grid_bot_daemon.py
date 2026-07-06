@@ -28,8 +28,10 @@ def _load_config_env() -> None:
                 cfg = json.load(open(p, encoding="utf-8"))
             except Exception:
                 return
-            for k in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "EXCHANGE_VAULT_KEY",
-                      "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE", "SITE_URL", "SITE_ADMIN_KEY"):
+            for k in ("BINANCE_API_KEY", "BINANCE_API_SECRET",
+                      "NONKYC_API_KEY", "NONKYC_API_SECRET", "NONKYC_API_PASSPHRASE",
+                      "EXCHANGE_VAULT_KEY", "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE",
+                      "SITE_URL", "SITE_ADMIN_KEY"):
                 v = cfg.get(k)
                 if v not in (None, "") and not os.environ.get(k):
                     os.environ[k] = str(v)
