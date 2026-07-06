@@ -1399,6 +1399,31 @@ def exchange_fiat_history():
     return jsonify(conversion_history(limit=int(request.args.get("limit") or 20)))
 
 
+@crypto_exchange_bp.route("/api/exchange/signals", methods=["GET"])
+def exchange_signals():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_signals_service import get_signals
+
+    mn = request.args.get("min_net_bps")
+    lim = request.args.get("limit")
+    return jsonify(get_signals(
+        min_net_bps=float(mn) if mn is not None and str(mn).strip() != "" else 5.0,
+        limit=int(lim) if lim is not None and str(lim).strip() != "" else 25,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/balances", methods=["GET"])
+def exchange_balances_agg():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_signals_service import account_balances
+
+    vs = request.args.get("venues")
+    venues = [s.strip() for s in vs.split(",")] if vs else None
+    return jsonify(account_balances(venues))
+
+
 @crypto_exchange_bp.route("/api/exchange/grid/status", methods=["GET"])
 def exchange_grid_status():
     if not _admin_authorized():
