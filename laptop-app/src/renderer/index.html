@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Profit Daemon Control</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Connection gate -->
+  <section id="gate" class="gate">
+    <div class="gate-card">
+      <h1>Profit Daemon Control</h1>
+      <p class="muted">Owner console for the MasterNoder profit daemon. Your admin key is stored in the OS keychain and sent only as a header over HTTPS.</p>
+      <label>Server URL
+        <input id="gate-url" type="text" placeholder="https://your-server.example" autocomplete="off" />
+      </label>
+      <label>Owner admin key
+        <input id="gate-key" type="password" placeholder="EXCHANGE_ADMIN_KEY" autocomplete="off" />
+      </label>
+      <p id="gate-enc" class="enc-note muted"></p>
+      <p id="gate-err" class="err" hidden></p>
+      <button id="gate-connect" class="btn primary">Connect</button>
+    </div>
+  </section>
+
+  <!-- Main app -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot" id="conn-dot"></span>
+        <strong>Profit Daemon Control</strong>
+      </div>
+      <div class="topbar-right">
+        <span id="server-label" class="muted"></span>
+        <span id="status-pill" class="pill">…</span>
+        <button id="refresh-btn" class="btn small">Refresh</button>
+        <button id="disconnect-btn" class="btn small ghost">Disconnect</button>
+      </div>
+    </header>
+
+    <div id="conflict-bar" class="conflict-bar" hidden></div>
+
+    <main class="grid">
+      <!-- Status -->
+      <section class="panel">
+        <h2>Daemon status</h2>
+        <div class="kpis" id="status-kpis"></div>
+        <div class="loops" id="status-loops"></div>
+      </section>
+
+      <!-- Instances -->
+      <section class="panel">
+        <h2>Instances <span class="muted" id="inst-count"></span></h2>
+        <div id="instances"></div>
+      </section>
+
+      <!-- Controls -->
+      <section class="panel">
+        <h2>Controls</h2>
+        <div class="control-row">
+          <span>Kill-switch (pause all trading)</span>
+          <label class="switch">
+            <input type="checkbox" id="kill-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="control-row">
+          <span>Run all bots once</span>
+          <button id="run-all-btn" class="btn small">Run tick</button>
+        </div>
+        <p id="control-msg" class="muted small"></p>
+      </section>
+
+      <!-- Payout -->
+      <section class="panel">
+        <h2>Payout</h2>
+        <div class="kpis" id="payout-kpis"></div>
+        <div class="control-row">
+          <span>Manual PayPal sweep</span>
+          <button id="sweep-btn" class="btn small warn">Sweep…</button>
+        </div>
+        <p id="payout-msg" class="muted small"></p>
+      </section>
+
+      <!-- Local daemon runner -->
+      <section class="panel wide">
+        <h2>Local daemon runner</h2>
+        <div class="runner-config">
+          <label>Repo root
+            <input id="repo-root" type="text" placeholder="/path/to/repo/checkout" autocomplete="off" />
+          </label>
+          <label>Profile
+            <select id="daemon-profile">
+              <option value="max">max</option>
+              <option value="standard">standard</option>
+              <option value="fast">fast</option>
+              <option value="live-only">live-only</option>
+            </select>
+          </label>
+          <label>Mode
+            <select id="daemon-mode">
+              <option value="paper">paper</option>
+              <option value="live">live</option>
+            </select>
+          </label>
+        </div>
+        <div class="control-row">
+          <span id="runner-state" class="muted">Stopped</span>
+          <span>
+            <button id="daemon-start-btn" class="btn small primary">Start</button>
+            <button id="daemon-stop-btn" class="btn small ghost" disabled>Stop</button>
+          </span>
+        </div>
+        <pre id="daemon-logs" class="logs"></pre>
+      </section>
+    </main>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <h3 id="modal-title">Confirm</h3>
+      <p id="modal-body"></p>
+      <label id="modal-input-wrap" hidden>Minimum sweep USD (optional)
+        <input id="modal-input" type="number" min="0" step="1" placeholder="server default" />
+      </label>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn small ghost">Cancel</button>
+        <button id="modal-confirm" class="btn small warn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

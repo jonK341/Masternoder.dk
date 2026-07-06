@@ -106,6 +106,22 @@ Migration checklist (server → laptop, or laptop → server):
 6. Secrets: admin key in OS keychain; venue keys stay in the encrypted vault
    on whichever machine runs the daemon.
 
+### Status: shipped (v1)
+
+The v1 app lives in `laptop-app/` (Electron). All six items above are
+implemented:
+
+- Connection gate validates the admin key against the owner API before
+  entering; key stored via `safeStorage` (OS keychain), header-only transport,
+  kept in the main process (never in the renderer).
+- Status dashboard, instances panel with conflict banner, kill-switch + run
+  tick, payout status + confirmed sweep, and a local daemon runner that refuses
+  to start live while a live instance is active on the server.
+- `contextIsolation` on, `nodeIntegration` off, strict CSP, minimal
+  `contextBridge` surface. See `laptop-app/README.md` to run it.
+- Not yet done: signed installers (add `electron-builder`), packaging, and
+  auto-update. Tracked as follow-ups.
+
 ## 6. Security changes shipped with this plan
 
 - `GET /api/profit-daemon/status` is now split: public = sanitized
