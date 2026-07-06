@@ -38,7 +38,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
+    'gallery', 'battle', 'shop', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
@@ -56,6 +56,7 @@ PAGES = [
 # Legacy page aliases that no longer have standalone index.html files.
 _PAGE_REDIRECTS = {
     'achievements': '/trophies',
+    'chat': '/lab#discussion',
 }
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes

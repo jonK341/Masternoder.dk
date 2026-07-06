@@ -41,6 +41,7 @@ def test_retired_page_aliases_redirect_to_served_pages():
 
     expected = {
         "/achievements": "/trophies",
+        "/chat": "/lab#discussion",
     }
     for path, target in expected.items():
         response = client.get(path)
