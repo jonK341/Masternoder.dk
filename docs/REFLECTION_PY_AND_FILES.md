@@ -83,3 +83,7 @@ If you want to proceed incrementally, a good order is: (A) archive or remove scr
 - **Added `scripts/deploy.py`:** Generic deploy with manifests `profile`, `sync`, `loading`; optional `--files path1 path2 ...`. Use instead of deploy_profile_and_auth, deploy_sync_changes, deploy_loading_optimizations for these sets.
 - **Added `scripts/check.py`:** Subcommands `server`, `routes`, `uwsgi`, `disk` for quick checks without full server_cleanup_scan.
 - **`scripts/archive/README.md`:** Documents what was archived and which canonical script to use.
+
+### 2026-07-06: repo-root sprawl (this doc's §1 pattern, applied at the repo root)
+
+The same "many one-off deploy/check/fix/debug scripts" pattern this doc describes for `scripts/` had also built up at the **repo root** — 133 `.py` files, including several of the exact duplicates named in the table above (`reload_uwsgi.py` was one of the "same purpose, different names" uwsgi-reload scripts). Archived 124 of them to `scripts/archive/` (see that folder's README for the verification method and full rationale); kept only the 9 still-live entry points/helpers at root (`run.py`, `wsgi.py`, `deploy.py`, `deploy_ssh_env.py`, `fix_502.py`, `restart_uwsgi.py`, `restart_flask_app.py`, `restart_ncixg.py`, `performance_monitor.py`).
