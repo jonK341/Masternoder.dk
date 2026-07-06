@@ -9,4 +9,9 @@ export EXCHANGE_LIVE_PROFIT_MAX=1
 export BINANCE_QUOTE=USDC
 export EXCHANGE_AUTO_PAYPAL_SWEEP="${EXCHANGE_AUTO_PAYPAL_SWEEP:-1}"
 export EXCHANGE_FORCE_IPV4=1
-python3 scripts/exchange_master_daemon.py --once
+# flock (-n, non-blocking) prevents overlapping ticks from piling up: on a small
+# box a tick can exceed the 2-min cron interval, and without this guard each cron
+# run spawns another daemon, stacking to 5+ processes that exhaust RAM/CPU and
+# take the whole box down. If a tick is still running, skip this cron cycle.
+exec flock -n /run/lock/masternoder-exchange-master.lock \
+    python3 scripts/exchange_master_daemon.py --once
