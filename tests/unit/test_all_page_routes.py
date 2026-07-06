@@ -41,11 +41,22 @@ def test_retired_page_aliases_redirect_to_served_pages():
 
     expected = {
         "/achievements": "/trophies",
-        "/wallets": "/profile#profile-mn2-wallet-card",
-        "/staking-leaderboard": "/profile#profile-mn2-staking-card",
-        "/staking-teams": "/profile#profile-mn2-staking-card",
     }
     for path, target in expected.items():
         response = client.get(path)
         assert response.status_code == 301, path
         assert response.headers["Location"].endswith(target), path
+
+
+def test_wallet_and_staking_pages_are_first_class():
+    client = _app().test_client()
+
+    expected = {
+        "/wallets/": "Wallets",
+        "/staking-leaderboard/": "Staking leaderboard",
+        "/staking-teams/": "Staking teams",
+    }
+    for path, marker in expected.items():
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert marker in response.get_data(as_text=True), path

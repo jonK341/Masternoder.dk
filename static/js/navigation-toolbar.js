@@ -35,7 +35,10 @@
         starmap25: APP_BASE + '/static/img/nav/starmap.svg',
         explorer: APP_BASE + '/static/img/nav/explorer.svg',
         news: APP_BASE + '/static/img/nav/news.svg',
-        library: APP_BASE + '/static/img/nav/stories.svg'
+        library: APP_BASE + '/static/img/nav/stories.svg',
+        wallets: APP_BASE + '/static/img/nav/profile.svg',
+        staking_leaderboard: APP_BASE + '/static/img/nav/trophy.svg',
+        staking_teams: APP_BASE + '/static/img/agents/social_engagement_agent.svg'
     };
 
     // Navigation configuration — Purple bg, light neon green. Favorites: Battle, Trophies, Game, Generator.
@@ -78,7 +81,9 @@
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
-            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'Download MN2 daemon and Qt wallet' },
+            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
+            { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
+            { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
             { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
         ],
         apiBase: window.location.origin + APP_BASE

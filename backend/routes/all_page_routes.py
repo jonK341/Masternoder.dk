@@ -46,18 +46,16 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'social-monitor', 'explorer', 'proof-of-reserves',
+    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
+    'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'podcast', 'business-control',
+    'wallets', 'podcast', 'business-control',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.
 _PAGE_REDIRECTS = {
     'achievements': '/trophies',
-    'staking-leaderboard': '/profile#profile-mn2-staking-card',
-    'staking-teams': '/profile#profile-mn2-staking-card',
-    'wallets': '/profile#profile-mn2-wallet-card',
 }
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
