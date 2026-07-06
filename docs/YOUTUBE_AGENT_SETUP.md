@@ -34,6 +34,17 @@ Run:
 
 - `python3 scripts/youtube_channel_agent.py --print-json`
 
+## 2b) Bootstrap OAuth + verify your channel (required for upload/live)
+
+Run (interactive):
+
+- `python3 scripts/youtube_channel_agent.py --bootstrap-auth --verify-channel --print-json`
+
+This will:
+
+- create/update `config/youtube_token.json`
+- return your authenticated channel id/title/stats
+
 Outputs include:
 
 - `reports/youtube_agent/latest/youtube_upload_metadata.json`

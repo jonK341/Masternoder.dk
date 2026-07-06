@@ -326,6 +326,77 @@ def create_livestream_event(
     }
 
 
+def bootstrap_oauth(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+    except Exception as exc:
+        raise RuntimeError(
+            "OAuth dependencies missing. Install: pip install google-api-python-client google-auth-oauthlib"
+        ) from exc
+
+    creds = None
+    if token_path.is_file():
+        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+        if creds and creds.valid:
+            return {"success": True, "message": "Token already valid.", "token_file": str(token_path)}
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            token_path.parent.mkdir(parents=True, exist_ok=True)
+            token_path.write_text(creds.to_json(), encoding="utf-8")
+            return {"success": True, "message": "Token refreshed.", "token_file": str(token_path)}
+
+    if not client_secrets.is_file():
+        return {
+            "success": False,
+            "error": f"Missing OAuth client secrets file: {client_secrets}",
+            "next_step": "Create OAuth desktop app creds in Google Cloud and save the JSON file.",
+        }
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+    # Prefer local callback flow; fallback to copy/paste code flow for headless environments.
+    try:
+        creds = flow.run_local_server(host="127.0.0.1", port=0, open_browser=False)
+    except Exception:
+        auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline", include_granted_scopes="true")
+        print("Open this URL in your browser and approve access:")
+        print(auth_url)
+        code = input("Paste the authorization code here: ").strip()
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_text(creds.to_json(), encoding="utf-8")
+    return {"success": True, "message": "OAuth complete; token stored.", "token_file": str(token_path)}
+
+
+def verify_channel(client_secrets: Path, token_path: Path) -> Dict[str, Any]:
+    youtube = _youtube_client(client_secrets, token_path)
+    resp = youtube.channels().list(part="id,snippet,statistics,status,brandingSettings", mine=True).execute()
+    items = resp.get("items") or []
+    if not items:
+        return {"success": False, "error": "No channels returned for authorized account."}
+    ch = items[0]
+    snippet = ch.get("snippet") or {}
+    stats = ch.get("statistics") or {}
+    status = ch.get("status") or {}
+    return {
+        "success": True,
+        "channel_id": ch.get("id"),
+        "title": snippet.get("title"),
+        "custom_url": snippet.get("customUrl"),
+        "country": snippet.get("country"),
+        "published_at": snippet.get("publishedAt"),
+        "subscriber_count": stats.get("subscriberCount"),
+        "video_count": stats.get("videoCount"),
+        "view_count": stats.get("viewCount"),
+        "privacy_status": status.get("privacyStatus"),
+        "made_for_kids": status.get("madeForKids"),
+        "self_declared_mfk": status.get("selfDeclaredMadeForKids"),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="YouTube channel/content agent for trading content.")
     p.add_argument("--report-json", default=str(DEFAULT_REPORT_JSON), help="Path to trading_content report JSON.")
@@ -337,6 +408,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--upload", action="store_true", help="Upload generated metadata + video to YouTube.")
     p.add_argument("--create-live", action="store_true", help="Create a scheduled livestream event.")
     p.add_argument("--live-start-hours", type=int, default=24, help="Hours from now when scheduling live event.")
+    p.add_argument("--bootstrap-auth", action="store_true", help="Run OAuth bootstrap and save token file.")
+    p.add_argument("--verify-channel", action="store_true", help="Call YouTube API and return authenticated channel info.")
     p.add_argument("--dry-run", action="store_true", help="Generate/check everything except external API writes.")
     p.add_argument("--print-json", action="store_true", help="Print machine-readable result JSON.")
     return p.parse_args()
@@ -424,6 +497,33 @@ def main() -> int:
                 result["actions"]["livestream"] = live
             except Exception as exc:
                 result["actions"]["livestream"] = {"success": False, "error": str(exc)}
+
+    if args.bootstrap_auth:
+        if args.dry_run:
+            result["actions"]["bootstrap_auth"] = {
+                "success": True,
+                "dry_run": True,
+                "message": "OAuth bootstrap skipped due to --dry-run.",
+                "token_file": str(token_path),
+            }
+        else:
+            try:
+                result["actions"]["bootstrap_auth"] = bootstrap_oauth(client_secrets, token_path)
+            except Exception as exc:
+                result["actions"]["bootstrap_auth"] = {"success": False, "error": str(exc)}
+
+    if args.verify_channel:
+        if args.dry_run:
+            result["actions"]["verify_channel"] = {
+                "success": True,
+                "dry_run": True,
+                "message": "Channel verification skipped due to --dry-run.",
+            }
+        else:
+            try:
+                result["actions"]["verify_channel"] = verify_channel(client_secrets, token_path)
+            except Exception as exc:
+                result["actions"]["verify_channel"] = {"success": False, "error": str(exc)}
 
     if args.print_json:
         print(json.dumps(result, indent=2, ensure_ascii=True))
