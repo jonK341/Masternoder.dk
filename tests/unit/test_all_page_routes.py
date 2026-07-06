@@ -1,0 +1,51 @@
+import os
+
+from flask import Flask
+
+
+def _app():
+    from backend.middleware.auto_fix_404_middleware import register_auto_fix_middleware
+    from backend.routes.all_page_routes import all_page_bp
+
+    app = Flask(__name__)
+    app.register_blueprint(all_page_bp)
+    register_auto_fix_middleware(app)
+    return app
+
+
+def test_registered_pages_have_backing_index_files():
+    from backend.routes.all_page_routes import PAGES, _base_path
+
+    missing = [
+        page for page in PAGES
+        if not os.path.isfile(os.path.join(_base_path(), page, "index.html"))
+    ]
+
+    assert missing == []
+
+
+def test_served_pages_include_content_version_header():
+    from backend.routes.all_page_routes import CONTENT_VERSION, PAGES
+
+    client = _app().test_client()
+
+    for page in PAGES + ["agents"]:
+        response = client.get(f"/{page}/")
+        assert response.status_code == 200, page
+        assert response.headers.get("X-Content-Version") == CONTENT_VERSION, page
+        assert "Page Not Found" not in response.get_data(as_text=True), page
+
+
+def test_retired_page_aliases_redirect_to_served_pages():
+    client = _app().test_client()
+
+    expected = {
+        "/achievements": "/trophies",
+        "/wallets": "/profile#profile-mn2-wallet-card",
+        "/staking-leaderboard": "/profile#profile-mn2-staking-card",
+        "/staking-teams": "/profile#profile-mn2-staking-card",
+    }
+    for path, target in expected.items():
+        response = client.get(path)
+        assert response.status_code == 301, path
+        assert response.headers["Location"].endswith(target), path
