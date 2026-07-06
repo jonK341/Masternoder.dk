@@ -97,6 +97,67 @@ def _heartbeat_path() -> str:
     return os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
 
 
+_INSTANCE_STARTED_AT = _iso()
+_INSTANCE_REPORT_MIN_SEC = 60.0
+_last_instance_report = 0.0
+_instance_report_lock = threading.Lock()
+
+
+def _instance_payload() -> Dict[str, Any]:
+    import socket
+
+    host = socket.gethostname()
+    return {
+        "instance_id": f"{host}-{os.getpid()}",
+        "host": host,
+        "platform": sys.platform,
+        "pid": os.getpid(),
+        "mode": daemon_mode_label(),
+        "profile": os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"),
+        "started_at": _INSTANCE_STARTED_AT,
+    }
+
+
+def _report_instance() -> None:
+    """Register this daemon instance so the monitor can detect double-tick.
+
+    - Local registry write always (server daemon shares the filesystem with
+      the web app).
+    - Optional remote report when PROFIT_DAEMON_REPORT_URL is set (laptop
+      instance reporting to the server). Requires EXCHANGE_ADMIN_KEY.
+    Throttled and fail-safe: reporting must never break a trading tick.
+    """
+    global _last_instance_report
+    with _instance_report_lock:
+        now = time.time()
+        if now - _last_instance_report < _INSTANCE_REPORT_MIN_SEC:
+            return
+        _last_instance_report = now
+
+    payload = _instance_payload()
+    try:
+        from backend.services.profit_daemon_instance_service import report_instance
+        report_instance({**payload, "source": "local"})
+    except Exception:
+        pass
+
+    report_url = (os.environ.get("PROFIT_DAEMON_REPORT_URL") or "").strip().rstrip("/")
+    admin_key = (os.environ.get("EXCHANGE_ADMIN_KEY") or "").strip()
+    if not report_url or not admin_key:
+        return
+    try:
+        import requests
+
+        requests.post(
+            f"{report_url}/api/profit-daemon/heartbeat",
+            json={**payload, "source": "remote"},
+            headers={"X-Exchange-Admin-Key": admin_key},
+            timeout=8,
+        )
+    except Exception as exc:
+        print(f"[all-profit] instance report failed: {exc}", flush=True)
+
+
 def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = None) -> None:
     path = _heartbeat_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -124,6 +185,7 @@ def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = 
             json.dump(payload, f, indent=2)
     except OSError:
         pass
+    _report_instance()
 
 
 def _best_arb_bps(arb: Dict[str, Any]) -> Optional[float]:
