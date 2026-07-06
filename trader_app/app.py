@@ -102,17 +102,49 @@ def _config_paths() -> list:
     return out
 
 
+def _strip_jsonc(text: str) -> str:
+    """Tolerantly strip // line comments (outside strings) and trailing commas so a
+    lightly-commented config.json still parses. URLs like https:// inside quotes are kept."""
+    import re
+    out = []
+    for line in text.splitlines():
+        res, in_str, esc, i = [], False, False, 0
+        while i < len(line):
+            ch = line[i]
+            if esc:
+                res.append(ch); esc = False; i += 1; continue
+            if ch == "\\":
+                res.append(ch); esc = True; i += 1; continue
+            if ch == '"':
+                in_str = not in_str; res.append(ch); i += 1; continue
+            if (not in_str) and ch == "/" and i + 1 < len(line) and line[i + 1] == "/":
+                break  # rest of line is a comment
+            res.append(ch); i += 1
+        out.append("".join(res))
+    joined = "\n".join(out)
+    return re.sub(r",(\s*[}\]])", r"\1", joined)  # drop trailing commas
+
+
 def _load_config_file() -> dict:
     global _CONFIG_SOURCE
     for p in _config_paths():
         if os.path.isfile(p):
             try:
-                cfg = json.load(open(p, encoding="utf-8"))
-                _CONFIG_SOURCE = p
-                return cfg
+                raw = open(p, encoding="utf-8").read()
             except Exception as exc:
-                print(f"[config] found {p} but failed to parse: {exc}")
-                return {}
+                print(f"[config] could not read {p}: {exc}")
+                continue
+            try:
+                cfg = json.loads(raw)
+            except Exception:
+                try:
+                    cfg = json.loads(_strip_jsonc(raw))  # tolerate // comments / trailing commas
+                    print(f"[config] {p} had comments/trailing commas — parsed leniently")
+                except Exception as exc:
+                    print(f"[config] found {p} but could not parse even leniently: {exc}")
+                    continue
+            _CONFIG_SOURCE = p
+            return cfg if isinstance(cfg, dict) else {}
     _CONFIG_SOURCE = None
     return {}
 

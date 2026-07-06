@@ -22,10 +22,34 @@ os.environ.setdefault("LITE_APP", "1")
 def _load_config_env() -> None:
     """Load trader_app/config.json into env so the daemon uses the same single config as the app."""
     import json
+    import re
+
+    def _loose(text):
+        out = []
+        for line in text.splitlines():
+            res, in_str, esc, i = [], False, False, 0
+            while i < len(line):
+                ch = line[i]
+                if esc:
+                    res.append(ch); esc = False; i += 1; continue
+                if ch == "\\":
+                    res.append(ch); esc = True; i += 1; continue
+                if ch == '"':
+                    in_str = not in_str; res.append(ch); i += 1; continue
+                if (not in_str) and ch == "/" and i + 1 < len(line) and line[i + 1] == "/":
+                    break
+                res.append(ch); i += 1
+            out.append("".join(res))
+        return re.sub(r",(\s*[}\]])", r"\1", "\n".join(out))
+
     for p in (os.path.join(ROOT, "trader_app", "config.json"), os.path.join(os.getcwd(), "config.json")):
         if os.path.isfile(p):
             try:
-                cfg = json.load(open(p, encoding="utf-8"))
+                raw = open(p, encoding="utf-8").read()
+                try:
+                    cfg = json.loads(raw)
+                except Exception:
+                    cfg = json.loads(_loose(raw))
             except Exception:
                 return
             for k in ("BINANCE_API_KEY", "BINANCE_API_SECRET",
