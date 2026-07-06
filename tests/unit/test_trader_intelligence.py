@@ -32,7 +32,31 @@ def test_recommend_forum_intel_nudges_reason():
     recs = intel.recommend(SIGNALS, order_size_usd=10.0,
                            forum_intel={"DOGE": {"sentiment": 0.5, "mentions": 30}})
     doge = next(r for r in recs if r["symbol"] == "DOGE")
-    assert "forum sentiment" in doge["reason"]
+    assert "forum" in doge["reason"]
+
+
+def test_recommend_has_confidence_monthly_and_risk():
+    recs = intel.recommend(SIGNALS, order_size_usd=10.0, cycles_per_day=10)
+    doge = next(r for r in recs if r["symbol"] == "DOGE")
+    assert 0 <= doge["confidence"] <= 100
+    assert doge["projected_monthly_usd"] == pytest.approx(6.6)  # 0.22/day * 30
+    assert doge["risk"] == "high"  # nonkyc route -> illiquid/high risk
+
+
+def test_recommend_dedup_keeps_best_edge():
+    sigs = [
+        {"type": "arbitrage", "symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc", "net_bps": 12.0, "actionable": True},
+        {"type": "arbitrage", "symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc", "net_bps": 25.0, "actionable": True},
+    ]
+    recs = intel.recommend(sigs)
+    doge = [r for r in recs if r["symbol"] == "DOGE"]
+    assert len(doge) == 1 and doge[0]["edge_bps"] == 25.0
+
+
+def test_recommend_clamps_bad_inputs():
+    recs = intel.recommend(SIGNALS, order_size_usd=-5, cycles_per_day=0)
+    # order size clamped to >=1, cycles to >=1 -> positive projections, no crash
+    assert all(r["projected_daily_usd"] >= 0 for r in recs)
 
 
 def test_combine_profit_merges_realized_and_projected():

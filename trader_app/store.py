@@ -84,6 +84,25 @@ def alerts(limit: int = 50) -> List[Dict[str, Any]]:
     return _read(_ALERTS_PATH)[-int(limit or 50):][::-1]
 
 
+def equity_stats(limit: int = 500) -> Dict[str, Any]:
+    """Peak equity, max drawdown, and range from the recorded history."""
+    rows = _read(_HISTORY_PATH)[-int(limit or 500):]
+    vals = [float(r.get("total_usd") or 0) for r in rows if r.get("total_usd") is not None]
+    if not vals:
+        return {"points": 0}
+    peak = vals[0]
+    max_dd = 0.0
+    for v in vals:
+        peak = max(peak, v)
+        max_dd = max(max_dd, peak - v)
+    return {
+        "points": len(vals), "first": round(vals[0], 2), "last": round(vals[-1], 2),
+        "min": round(min(vals), 2), "max": round(max(vals), 2),
+        "peak": round(peak, 2), "max_drawdown": round(max_dd, 2),
+        "change": round(vals[-1] - vals[0], 2),
+    }
+
+
 def to_csv(rows: List[Dict[str, Any]], columns: List[str]) -> str:
     buf = io.StringIO()
     w = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore")

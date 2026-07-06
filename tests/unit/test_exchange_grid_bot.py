@@ -26,6 +26,33 @@ def grid(tmp_path, monkeypatch):
     return g
 
 
+def test_load_config_clamps_bad_values(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "bad.json"
+    p.write_text(json.dumps({"grid_levels": 0, "grid_step_pct": 0, "order_size_usd": -3,
+                             "hard_loss_cap_usd": -1, "min_notional_usd": -2}), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    cfg = grid.load_config()
+    assert cfg["grid_levels"] >= 1
+    assert cfg["grid_step_pct"] > 0
+    assert cfg["order_size_usd"] >= 1.0
+    assert cfg["hard_loss_cap_usd"] >= 0.0
+    assert cfg["min_notional_usd"] >= 0.0
+
+
+def test_min_notional_skips_dust_orders(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "mn.json"
+    # order size $6 but min notional $50 -> every grid order is below min -> none placed
+    p.write_text(json.dumps({"enabled": True, "venue": "binance", "assets": ["DOGE"],
+                             "grid_levels": 2, "grid_step_pct": 0.01, "order_size_usd": 6.0,
+                             "max_inventory_usd": 100.0, "hard_loss_cap_usd": 50.0,
+                             "min_notional_usd": 50.0}), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    r = grid.run_grid_tick("binance", "DOGE", mid=100.0, dry_run=True)
+    assert r["open_orders"] == 0  # all below the $50 min notional
+
+
 def test_compute_grid_orders(grid):
     cfg = grid.load_config()
     orders = grid.compute_grid_orders(100.0, cfg)

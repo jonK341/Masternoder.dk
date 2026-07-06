@@ -40,10 +40,18 @@ def _default_config() -> Dict[str, Any]:
         "hard_loss_cap_usd": 5.0,       # halt bot when total PnL <= -cap
         "min_spread_bps": 8.0,          # asset selection: min quoted spread
         "min_vol_pct": 0.5,             # asset selection: min recent volatility %
+        "min_notional_usd": 5.0,        # skip orders below the venue minimum notional
         "taker_fee_bps": 10.0,
         "maker_fee_bps": 10.0,
         "tick_cooldown_seconds": 20,
     }
+
+
+def _clampf(v, lo, hi, default):
+    try:
+        return max(lo, min(hi, float(v)))
+    except (TypeError, ValueError):
+        return default
 
 
 def load_config() -> Dict[str, Any]:
@@ -53,6 +61,14 @@ def load_config() -> Dict[str, Any]:
         ex._write_json(_CFG_PATH, cfg)
     base = _default_config()
     base.update({k: v for k, v in cfg.items() if v is not None})
+    # Validate/clamp numeric settings so a bad edit can't produce nonsensical orders.
+    base["grid_levels"] = int(_clampf(base.get("grid_levels"), 1, 20, 3))
+    base["grid_step_pct"] = _clampf(base.get("grid_step_pct"), 0.0005, 0.2, 0.004)
+    base["order_size_usd"] = _clampf(base.get("order_size_usd"), 1.0, 100000.0, 6.0)
+    base["max_inventory_usd"] = _clampf(base.get("max_inventory_usd"), 0.0, 1e9, 15.0)
+    base["hard_loss_cap_usd"] = _clampf(base.get("hard_loss_cap_usd"), 0.0, 1e9, 5.0)
+    base["min_notional_usd"] = _clampf(base.get("min_notional_usd"), 0.0, 1e6, 5.0)
+    base["maker_fee_bps"] = _clampf(base.get("maker_fee_bps"), 0.0, 100.0, 10.0)
     return base
 
 
@@ -266,6 +282,12 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             "realized_delta_usd": rd, "mode": "live" if live else "paper",
         })
 
+    # Track peak realized PnL + max drawdown for the accounting/monitor views.
+    _realized_now = float(st.get("realized_pnl_usd") or 0)
+    _peak = max(float(st.get("peak_realized_usd") or 0), _realized_now)
+    st["peak_realized_usd"] = round(_peak, 8)
+    st["max_drawdown_usd"] = round(max(float(st.get("max_drawdown_usd") or 0), _peak - _realized_now), 8)
+
     # 2) Risk check -> halt + cancel all if breached
     rc = risk_check(st, cfg, mid)
     if rc["halt"]:
@@ -294,6 +316,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     step = float(cfg.get("grid_step_pct") or 0.004)
     size_usd = float(cfg.get("order_size_usd") or 5.0)
     max_inv = float(cfg.get("max_inventory_usd") or 0)
+    min_notional = float(cfg.get("min_notional_usd") or 0)
     st_open: List[Dict[str, Any]] = list(st.get("open_orders") or [])
     _seq = [0]
 
@@ -301,6 +324,9 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         price = round(float(price), 8)
         size_base = round(float(size_base), 8)
         if price <= 0 or size_base <= 0:
+            return
+        # Skip dust orders the venue would reject (below min notional).
+        if min_notional > 0 and price * size_base < min_notional:
             return
         if side == "buy" and max_inv > 0:
             inv_usd_now = float(st.get("inventory_base") or 0) * mid + sum(
@@ -373,6 +399,7 @@ def grid_status() -> Dict[str, Any]:
             "halted": s.get("halted"), "halt_reason": s.get("halt_reason"),
             "inventory_base": s.get("inventory_base"), "avg_cost_usd": s.get("avg_cost_usd"),
             "realized_pnl_usd": s.get("realized_pnl_usd"), "fills": s.get("fills"),
+            "peak_realized_usd": s.get("peak_realized_usd"), "max_drawdown_usd": s.get("max_drawdown_usd"),
             "open_orders": len(s.get("open_orders") or []), "last_mid": s.get("last_mid"),
         }
     return {
