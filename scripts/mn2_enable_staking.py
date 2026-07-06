@@ -22,10 +22,9 @@ import os
 import sys
 import json
 
-import paramiko
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 APPLY = "--apply" in sys.argv
 UNLOCK = "--unlock" in sys.argv
@@ -63,10 +62,8 @@ def sh(ssh, cmd, timeout=30):
 
 def main():
     host, user = deploy_host(), deploy_user()
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=user, password=require_deploy_pass(), timeout=30)
-    print(f"== Connected {user}@{host} ==\n")
+    ssh, auth_method, _ = connect_deploy_ssh()
+    print(f"== Connected {user}@{host} (auth={auth_method}) ==\n")
 
     # 1) Find the running daemon + how it was launched
     print("-- running daemon (ps) --")
