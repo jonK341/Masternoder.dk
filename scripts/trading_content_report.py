@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sqlite3
+import sys
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -14,6 +16,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_DB = os.path.join(ROOT, "instance", "database.db")
 DEFAULT_OUTDIR = os.path.join(ROOT, "reports", "trading_content")
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
 
 def _now_utc() -> datetime:
@@ -279,6 +283,36 @@ def build_content_pack(data: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
+def publish_news_item(data: Dict[str, Any], content: Dict[str, str], channel: str, href: str) -> Dict[str, Any]:
+    window_hours = int(data.get("window_hours") or 24)
+    window_end = str(data.get("window_end") or "")
+    metrics = data.get("metrics_window") or {}
+    top_symbols = data.get("top_symbols_window") or []
+    top_symbol = top_symbols[0]["symbol"] if top_symbols else "N/A"
+    item_id = "trading_content_" + hashlib.sha256(
+        f"{window_end}|{window_hours}|{top_symbol}".encode("utf-8")
+    ).hexdigest()[:12]
+    title = (
+        f"Trading pulse ({window_hours}h): "
+        f"{int(metrics.get('trade_count') or 0):,} trades · "
+        f"{_fmt_money(float(metrics.get('notional_usd') or 0))}"
+    )
+    summary = (
+        f"Top symbol {top_symbol} · fees {_fmt_money(float(metrics.get('fee_usd') or 0))}. "
+        f"Content pack ready: X, LinkedIn, newsletter, and 30s video script."
+    )
+    from backend.services.platform_news_publish import publish
+
+    return publish(
+        item_id=item_id,
+        title=title,
+        summary=summary,
+        channel=channel,
+        href=href,
+        featured=bool(metrics.get("trade_count")),
+    )
+
+
 def to_markdown(data: Dict[str, Any], content: Dict[str, str]) -> str:
     m_all = data["metrics_all_time"]
     m_win = data["metrics_window"]
@@ -374,6 +408,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--save", action="store_true", help="Write markdown/json files to reports/trading_content.")
     parser.add_argument("--output-dir", default=DEFAULT_OUTDIR, help="Directory used when --save is set.")
+    parser.add_argument("--publish-news", action="store_true", help="Publish a summary item to platform news feed.")
+    parser.add_argument("--news-channel", default="exchange", help="Platform news channel when publishing.")
+    parser.add_argument("--news-href", default="/news/", help="News link target when publishing.")
     return parser.parse_args()
 
 
@@ -403,6 +440,15 @@ def main() -> int:
         md_path, json_path = save_outputs(args.output_dir, stamp, markdown, payload)
         print(f"\nSaved markdown: {md_path}")
         print(f"Saved json: {json_path}")
+    if args.publish_news:
+        try:
+            result = publish_news_item(data, content, channel=args.news_channel, href=args.news_href)
+            if result.get("success"):
+                print(f"Published platform news item: {result.get('item', {}).get('id')}")
+            else:
+                print(f"News publish failed: {result.get('error', 'unknown error')}")
+        except Exception as exc:
+            print(f"News publish failed: {exc}")
     return 0
 
 
