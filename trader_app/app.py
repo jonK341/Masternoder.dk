@@ -41,14 +41,55 @@ app = Flask(__name__, template_folder=_TEMPLATES)
 app.secret_key = os.environ.get("TRADER_SECRET_KEY") or os.urandom(24)
 
 
+def _config_paths() -> list:
+    """Look for config.json next to the executable (frozen), the CWD, then the source dir."""
+    paths = []
+    if getattr(sys, "frozen", False):
+        paths.append(os.path.join(os.path.dirname(sys.executable), "config.json"))
+    paths.append(os.path.join(os.getcwd(), "config.json"))
+    paths.append(os.path.join(APP_DIR, "config.json"))
+    seen, out = set(), []
+    for p in paths:
+        if p not in seen:
+            seen.add(p)
+            out.append(p)
+    return out
+
+
+def _load_config_file() -> dict:
+    for p in _config_paths():
+        if os.path.isfile(p):
+            try:
+                return json.load(open(p, encoding="utf-8"))
+            except Exception:
+                return {}
+    return {}
+
+
+# Env keys the app + backend services read; config.json may supply any of them.
+_CONFIG_ENV_KEYS = (
+    "TRADER_PASSCODE", "SITE_URL", "SITE_ADMIN_KEY",
+    "BINANCE_API_KEY", "BINANCE_API_SECRET", "EXCHANGE_VAULT_KEY",
+    "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE",
+    "EXCHANGE_PAYOUT_BINANCE_LIVE", "EXCHANGE_PAYOUT_NONKYC_LIVE",
+)
+
+
+def _bootstrap_env_from_config() -> None:
+    """Populate os.environ from config.json so keys/passcode work without exporting env vars.
+    Env vars already set take precedence over the file."""
+    filecfg = _load_config_file()
+    for k in _CONFIG_ENV_KEYS:
+        v = filecfg.get(k)
+        if v is not None and str(v) != "" and not os.environ.get(k):
+            os.environ[k] = str(v)
+
+
+_bootstrap_env_from_config()
+
+
 def _cfg() -> dict:
-    cfg = {}
-    path = os.path.join(APP_DIR, "config.json")
-    if os.path.isfile(path):
-        try:
-            cfg = json.load(open(path, encoding="utf-8"))
-        except Exception:
-            cfg = {}
+    cfg = _load_config_file()
     cfg["site_url"] = (os.environ.get("SITE_URL") or cfg.get("site_url") or "").rstrip("/")
     cfg["admin_key"] = os.environ.get("SITE_ADMIN_KEY") or cfg.get("admin_key") or ""
     return cfg

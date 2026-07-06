@@ -63,8 +63,26 @@ and `EXCHANGE_GRID_LIVE=1` and fund venue spot wallets. Risk is bounded by the g
 trends** — risk-capped, not guaranteed profit; and cross-venue arbitrage is fee-dead at retail
 size on these venues.
 
-## Config file (optional, instead of env)
-`trader_app/config.json`:
+## Config file (recommended — no env vars needed)
+Create a `config.json` and put **all** settings in it. The app loads it from (in order):
+next to the executable (for the built `.exe`), the current directory, then `trader_app/`.
+Anything in `config.json` is applied unless the same env var is already set.
+
 ```json
-{ "site_url": "https://your-site.example", "admin_key": "..." }
+{
+  "TRADER_PASSCODE": "choose-a-strong-passcode",
+  "site_url": "https://your-site.example",
+  "admin_key": "your-exchange-admin-key",
+  "BINANCE_API_KEY": "",
+  "BINANCE_API_SECRET": "",
+  "EXCHANGE_VAULT_KEY": "",
+  "EXCHANGE_ARBITRAGE_LIVE": "0",
+  "EXCHANGE_GRID_LIVE": "0"
+}
 ```
+
+- **Running the built exe:** drop `config.json` **in the same folder as `MN2PrivateControl.exe`**
+  (`dist/MN2PrivateControl/`). No env vars required.
+- **Running from source:** put it at `trader_app/config.json` (copy `config.example.json`).
+- Env vars still work and override the file, e.g. `set TRADER_PASSCODE=...` (cmd) /
+  `export TRADER_PASSCODE=...` (bash) before launching.
