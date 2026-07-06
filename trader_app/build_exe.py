@@ -51,6 +51,14 @@ def main() -> int:
     for df in data_files:
         if os.path.isfile(os.path.join(ROOT, df)):
             args += ["--add-data", _data(df, os.path.dirname(df) or ".")]
+    # Embed the user's config.json into the build if present, so the exe "compiles with your
+    # settings" (passcode + keys). A config.json next to the exe still overrides this at runtime.
+    if os.path.isfile(os.path.join(ROOT, "trader_app", "config.json")):
+        args += ["--add-data", _data("trader_app/config.json", ".")]
+        print("[build] embedding trader_app/config.json into the executable")
+    else:
+        print("[build] NOTE: no trader_app/config.json found — exe will use defaults "
+              "(passcode 'mn2-owner'). Create it from config.example.json to embed your settings.")
     for mod in (
         "backend.services.exchange_grid_bot_service",
         "backend.services.exchange_signals_service",

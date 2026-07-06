@@ -42,10 +42,15 @@ app.secret_key = os.environ.get("TRADER_SECRET_KEY") or os.urandom(24)
 
 
 def _config_paths() -> list:
-    """Look for config.json next to the executable (frozen), the CWD, then the source dir."""
+    """Config search order: next to the exe (override) -> bundled-in exe -> CWD -> source dir."""
     paths = []
     if getattr(sys, "frozen", False):
+        # 1) config.json placed next to the .exe lets you change settings without rebuilding.
         paths.append(os.path.join(os.path.dirname(sys.executable), "config.json"))
+        # 2) config.json embedded into the build (compiled in) — sys._MEIPASS bundle dir.
+        meipass = getattr(sys, "_MEIPASS", "")
+        if meipass:
+            paths.append(os.path.join(meipass, "config.json"))
     paths.append(os.path.join(os.getcwd(), "config.json"))
     paths.append(os.path.join(APP_DIR, "config.json"))
     seen, out = set(), []
