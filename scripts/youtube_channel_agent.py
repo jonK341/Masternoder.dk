@@ -5,7 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import sys
+import urllib.parse
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -23,6 +25,16 @@ DEFAULT_TOKEN = ROOT / "config" / "youtube_token.json"
 DEFAULT_CATEGORY_ID = "28"  # Science & Technology
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
 DEFAULT_REDIRECT_URI = os.environ.get("YOUTUBE_OAUTH_REDIRECT_URI", "http://localhost")
+
+
+def _load_oauth_installed_config(client_secrets: Path) -> Dict[str, Any]:
+    if not client_secrets.is_file():
+        raise RuntimeError(f"Missing OAuth client secrets file: {client_secrets}")
+    data = json.loads(client_secrets.read_text(encoding="utf-8"))
+    installed = data.get("installed") or data.get("web")
+    if not isinstance(installed, dict):
+        raise RuntimeError("Invalid OAuth client secret format: expected 'installed' or 'web' section.")
+    return installed
 
 
 @dataclass
@@ -360,24 +372,30 @@ def bootstrap_oauth(client_secrets: Path, token_path: Path, use_local_server: bo
     if use_local_server:
         creds = flow.run_local_server(host="127.0.0.1", port=0, open_browser=False)
     else:
-        auth_url, _ = flow.authorization_url(
-            prompt="consent",
-            access_type="offline",
-            include_granted_scopes="true",
-        )
+        conf = _load_oauth_installed_config(client_secrets)
+        auth_uri = conf.get("auth_uri") or "https://accounts.google.com/o/oauth2/auth"
+        query = {
+            "response_type": "code",
+            "client_id": conf.get("client_id"),
+            "redirect_uri": DEFAULT_REDIRECT_URI,
+            "scope": " ".join(SCOPES),
+            "access_type": "offline",
+            "prompt": "consent",
+            "state": secrets.token_urlsafe(24),
+        }
+        auth_url = auth_uri + "?" + urllib.parse.urlencode(query)
         if not sys.stdin.isatty():
             return {
                 "success": False,
                 "error": "Authorization code required.",
                 "auth_url": auth_url,
-                "redirect_uri": flow.redirect_uri,
+                "redirect_uri": DEFAULT_REDIRECT_URI,
                 "next_step": "Open auth_url, approve access, then rerun with --auth-code '<code>'.",
             }
         print("Open this URL in your browser and approve access:")
         print(auth_url)
         code = input("Paste the authorization code here: ").strip()
-        flow.fetch_token(code=code)
-        creds = flow.credentials
+        return bootstrap_oauth_with_code(client_secrets, token_path, code)
 
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_text(creds.to_json(), encoding="utf-8")
@@ -385,24 +403,36 @@ def bootstrap_oauth(client_secrets: Path, token_path: Path, use_local_server: bo
 
 
 def bootstrap_oauth_with_code(client_secrets: Path, token_path: Path, auth_code: str) -> Dict[str, Any]:
-    try:
-        from google_auth_oauthlib.flow import InstalledAppFlow
-    except Exception as exc:
-        raise RuntimeError(
-            "OAuth dependencies missing. Install: pip install google-api-python-client google-auth-oauthlib"
-        ) from exc
-    if not client_secrets.is_file():
-        return {
-            "success": False,
-            "error": f"Missing OAuth client secrets file: {client_secrets}",
-            "next_step": "Create OAuth desktop app creds in Google Cloud and save the JSON file.",
-        }
-    flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
-    flow.redirect_uri = DEFAULT_REDIRECT_URI
-    flow.fetch_token(code=auth_code)
-    creds = flow.credentials
+    import requests
+    conf = _load_oauth_installed_config(client_secrets)
+    token_uri = conf.get("token_uri") or "https://oauth2.googleapis.com/token"
+    payload = {
+        "code": auth_code,
+        "client_id": conf.get("client_id"),
+        "client_secret": conf.get("client_secret"),
+        "redirect_uri": DEFAULT_REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }
+    resp = requests.post(token_uri, data=payload, timeout=30)
+    if resp.status_code != 200:
+        try:
+            detail = resp.json()
+        except Exception:
+            detail = {"error": resp.text[:500]}
+        return {"success": False, "error": f"token_exchange_failed: {detail}"}
+    tok = resp.json()
+    expires_at = _now_utc() + timedelta(seconds=int(tok.get("expires_in") or 3600))
+    creds = {
+        "token": tok.get("access_token"),
+        "refresh_token": tok.get("refresh_token"),
+        "token_uri": token_uri,
+        "client_id": conf.get("client_id"),
+        "client_secret": conf.get("client_secret"),
+        "scopes": SCOPES,
+        "expiry": expires_at.isoformat().replace("+00:00", "Z"),
+    }
     token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_text(creds.to_json(), encoding="utf-8")
+    token_path.write_text(json.dumps(creds, indent=2), encoding="utf-8")
     return {"success": True, "message": "OAuth complete via auth code; token stored.", "token_file": str(token_path)}
 
 
