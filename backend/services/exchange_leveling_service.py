@@ -151,11 +151,30 @@ def award_xp(user_id: str, amount: float, source: str, **meta) -> Dict[str, Any]
     lc = cfg.get("level_base_cost") or 100
     lg = cfg.get("level_growth") or 1.22
     before = level_for_xp(data.get("xp", 0), base=lc, growth=lg)["level"]
+    # Snapshot trust tier before XP changes (for change detection after save).
+    prev_tier: Optional[str] = None
+    try:
+        from backend.services.exchange_trust_service import compute_user_trust as _cut
+        prev_tier = (_cut(user_id).get("tier") or {}).get("name")
+    except Exception:
+        pass
     data["xp"] = round(float(data.get("xp") or 0) + float(amount or 0), 2)
     after = level_for_xp(data["xp"], base=lc, growth=lg)["level"]
     newly = _evaluate_achievements(user_id, data, cfg)
     _save_state(user_id, data)
-    return {"success": True, "xp": data["xp"], "level": after, "leveled_up": after > before,
+    leveled_up = after > before
+    # On level-up: fire trust tier alerts and auto-activate Gold-tier agents.
+    if leveled_up:
+        try:
+            from backend.services.exchange_trust_service import (
+                check_and_emit_trust_alerts,
+                auto_activate_gold,
+            )
+            check_and_emit_trust_alerts(user_id, previous_tier=prev_tier)
+            auto_activate_gold(user_id)
+        except Exception:
+            pass
+    return {"success": True, "xp": data["xp"], "level": after, "leveled_up": leveled_up,
             "gained": float(amount or 0), "new_achievements": newly}
 
 

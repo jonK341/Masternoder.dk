@@ -864,6 +864,24 @@ def exchange_trust_agent_activate():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/trust/check-alerts", methods=["POST"])
+def exchange_trust_check_alerts():
+    """Manually trigger a trust-tier check and emit Discord/email alerts if the tier changed."""
+    from backend.services.exchange_trust_service import check_and_emit_trust_alerts
+
+    data = request.get_json(silent=True) or {}
+    previous_tier = (data.get("previous_tier") or "").strip() or None
+    return jsonify(check_and_emit_trust_alerts(_uid(from_body=True), previous_tier=previous_tier))
+
+
+@crypto_exchange_bp.route("/api/exchange/trust/auto-activate", methods=["POST"])
+def exchange_trust_auto_activate():
+    """Auto-activate pending agents for users who are Gold tier or above."""
+    from backend.services.exchange_trust_service import auto_activate_gold
+
+    return jsonify(auto_activate_gold(_uid(from_body=True)))
+
+
 @crypto_exchange_bp.route("/api/exchange/live-watch", methods=["GET"])
 def exchange_live_watch_user():
     try:
