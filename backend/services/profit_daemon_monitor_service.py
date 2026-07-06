@@ -464,6 +464,15 @@ def monitor_status() -> Dict[str, Any]:
 
     readiness_stat = next((s for s in stats if s["id"] == "profit_readiness"), {})
 
+    def _load_instances() -> Dict[str, Any]:
+        try:
+            from backend.services.profit_daemon_instance_service import instances_summary
+            return instances_summary()
+        except Exception as exc:
+            return {"instances": [], "active_count": 0, "conflict": False, "error": str(exc)}
+
+    inst = _load_instances()
+
     return {
         "success": True,
         "host": os.environ.get("DEPLOY_HOST", "masternoder.dk"),
@@ -511,8 +520,60 @@ def monitor_status() -> Dict[str, Any]:
         "config": conn,
         "critical": {"open": open_count, "done": done_count},
         "server": server_state,
+        "daemon_instances": inst,
         "checked_at": _iso(),
     }
+
+
+# Stat categories that expose funding balances, payout amounts, or treasury
+# holdings. They are owner-only: shown in Business Control and the laptop
+# control app (admin key), stripped from the public /profit/ monitor.
+_SENSITIVE_STAT_CATEGORIES = {"funding", "treasury", "payout"}
+_SENSITIVE_STAT_IDS = {"live_stash", "sweepable_usd", "binance_usdc", "nonkyc_usdt", "nonkyc_doge_usd"}
+
+
+def sanitize_status_public(full: Dict[str, Any]) -> Dict[str, Any]:
+    """Public view of monitor_status(): operational health only.
+
+    Removes venue balances, payout/sweep amounts, treasury stash, host name,
+    and server install metadata. Keeps daemon liveness, loop ages, readiness,
+    blockers, and non-financial engine stats so /profit/ stays useful.
+    """
+    out = dict(full)
+    out.pop("host", None)
+    out.pop("server", None)
+    out.pop("venues", None)
+
+    # Public gets the conflict flag (operational health) but not host names,
+    # PIDs, or per-instance detail.
+    inst = full.get("daemon_instances") or {}
+    out["daemon_instances"] = {
+        "active_count": inst.get("active_count"),
+        "conflict": inst.get("conflict"),
+        "conflict_reason": inst.get("conflict_reason"),
+    }
+
+    stats = [
+        s for s in (full.get("stats") or [])
+        if s.get("category") not in _SENSITIVE_STAT_CATEGORIES
+        and s.get("id") not in _SENSITIVE_STAT_IDS
+    ]
+    out["stats"] = stats
+    out["stat_count"] = len(stats)
+
+    payout = full.get("payout") or {}
+    out["payout"] = {
+        "mode": payout.get("mode"),
+        "auto_sweep": payout.get("auto_sweep"),
+    }
+    treasury = full.get("treasury") or {}
+    out["treasury"] = {"compound_enabled": treasury.get("compound_enabled")}
+
+    highlights = dict(full.get("highlights") or {})
+    highlights.pop("sweep", None)
+    out["highlights"] = highlights
+    out["view"] = "public"
+    return out
 
 
 def record_server_install(*, profile: str = "max", mode: str = "live") -> Dict[str, Any]:

@@ -1,6 +1,17 @@
 (function () {
     'use strict';
     const BASE = window.location.origin || '';
+    // Owner key (same store as Business Control). When present the status API
+    // returns the full owner view (balances, payout, treasury); without it
+    // the public sanitized view is shown.
+    const KEY_STORE = 'mn_exchange_admin_key';
+    function adminKey() {
+        try { return sessionStorage.getItem(KEY_STORE) || ''; } catch (_) { return ''; }
+    }
+    function authHeaders() {
+        const k = adminKey();
+        return k ? { 'X-Exchange-Admin-Key': k } : {};
+    }
 
     const CATEGORY_LABELS = {
         daemon: 'Daemon health',
@@ -85,16 +96,37 @@
         ).join('');
     }
 
+    function renderConflict(data) {
+        const inst = data.daemon_instances || {};
+        let bar = $('pdm-conflict-bar');
+        if (!inst.conflict) {
+            if (bar) bar.remove();
+            return;
+        }
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'pdm-conflict-bar';
+            bar.style.cssText = 'background:#7a1f1f;color:#ffd9d9;padding:10px 14px;border-radius:8px;margin:10px 0;font-weight:600;';
+            const anchor = $('pdm-stats-sections');
+            if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor);
+            else document.body.prepend(bar);
+        }
+        bar.textContent = '⚠ ' + (inst.conflict_reason || 'Multiple daemon instances active') +
+            ' (' + (inst.active_count || '?') + ' active)';
+    }
+
     async function loadStatus() {
         try {
-            const res = await fetch(BASE + '/api/profit-daemon/status');
+            const res = await fetch(BASE + '/api/profit-daemon/status', { headers: authHeaders() });
             const data = await res.json();
             const pill = $('pdm-running-pill');
             if (pill) {
-                pill.textContent = data.running ? 'Daemon online · ' + (data.mode || 'live') : 'Daemon stale / offline';
+                const view = data.view === 'owner' ? ' · owner view' : '';
+                pill.textContent = (data.running ? 'Daemon online · ' + (data.mode || 'live') : 'Daemon stale / offline') + view;
                 pill.classList.toggle('on', !!data.running);
                 pill.classList.toggle('off', !data.running);
             }
+            renderConflict(data);
             const pct = data.profit_readiness_pct;
             const fill = $('pdm-readiness-fill');
             const pctEl = $('pdm-readiness-pct');
