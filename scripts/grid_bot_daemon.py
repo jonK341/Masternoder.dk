@@ -30,6 +30,7 @@ def _load_config_env() -> None:
                 return
             for k in ("BINANCE_API_KEY", "BINANCE_API_SECRET",
                       "NONKYC_API_KEY", "NONKYC_API_SECRET", "NONKYC_API_PASSPHRASE",
+                      "XEGGEX_API_KEY", "XEGGEX_API_SECRET", "XEGGEX_API_PASSPHRASE",
                       "EXCHANGE_VAULT_KEY", "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE",
                       "SITE_URL", "SITE_ADMIN_KEY"):
                 v = cfg.get(k)

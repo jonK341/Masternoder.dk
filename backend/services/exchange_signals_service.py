@@ -87,7 +87,17 @@ def account_balances(venues: Optional[List[str]] = None) -> Dict[str, Any]:
     from backend.services import crypto_exchange_service as ex
     from backend.services import exchange_venue_api_service as vapi
 
-    venues = [str(v).lower() for v in (venues or ["binance", "nonkyc"])]
+    # Default set includes venues the app supports; a venue with no creds is shown as such.
+    # Auto-include XeggeX only when it has credentials, to avoid noise for users who don't use it.
+    if not venues:
+        from backend.services import exchange_venue_api_service as vapi
+        venues = ["binance", "nonkyc"]
+        try:
+            if vapi.venue_has_credentials("xeggex"):
+                venues.append("xeggex")
+        except Exception:
+            pass
+    venues = [str(v).lower() for v in venues]
     out: Dict[str, Any] = {"success": True, "generated_at": _iso(), "venues": {}, "total_usd": 0.0}
     grand = 0.0
     for v in venues:

@@ -123,6 +123,9 @@
   </div>
 
   <div class="pane" id="p_controls">
+    <div class="card"><h2>Pre-trade analyst — last check before auto-trading</h2>
+      <div id="an_verdict" class="ai muted">Loading…</div>
+      <div id="an_checks"></div></div>
     <div class="card"><h2>Site daemon &amp; bots</h2><div class="row" style="margin-bottom:8px">
       <button data-act="run_all_bots">Run all bots</button>
       <button class="ghost" data-act="daemon_tick">Daemon tick</button>
@@ -226,7 +229,17 @@ loaders.monitor=function(){getJSON('/api/profit-monitor').then(function(d){var p
   var src=pm.sources||[];var h=src.length?'<table><thead><tr><th>Source</th><th>Route</th><th class=r>Proj/day</th><th>Rec</th></tr></thead><tbody>':'';
   src.forEach(function(s){h+='<tr><td>'+s.source+'</td><td class=muted>'+(s.route||'')+'</td><td class=r>'+money(s.projected_daily_usd)+'</td><td><span class="pill '+s.recommendation+'">'+s.recommendation+'</span></td></tr>';});
   el('mo_src').innerHTML=src.length?(h+'</tbody></table>'):'<span class="muted">No actionable profit sources right now.</span>';});};
-loaders.controls=function(){getJSON('/api/controls').then(function(d){var b=d.control_board||{};
+loaders.controls=function(){
+  getJSON('/api/analyst').then(function(a){
+    if(!a||!a.success){el('an_verdict').textContent='Analyst unavailable.';return;}
+    var v=a.ready?'<span class="pill strong">READY to auto-trade</span>':'<span class="pill halt">BLOCKED ('+a.blocker_count+')</span>';
+    el('an_verdict').innerHTML='<div style="margin-bottom:6px">'+v+' &nbsp; <b>Next:</b> '+a.next_step+'</div><div class="muted" style="font-size:12px">'+a.note+'</div>';
+    var rows=(a.checks||[]).map(function(c){var p=c.ok?'<span class="pill strong">pass</span>':(c.severity==='info'?'<span class="pill">info</span>':'<span class="pill neg">fix</span>');
+      return '<tr><td>'+c.name+'</td><td>'+p+'</td><td class="muted">'+c.detail+'</td></tr>';}).join('');
+    var acts=(a.actions||[]).slice(0,6).map(function(x){return '<li>'+x.action+'</li>';}).join('');
+    el('an_checks').innerHTML='<table><tbody>'+rows+'</tbody></table>'+(acts?('<div style="margin-top:8px"><b>What to do:</b><ul style="margin:6px 0 0 18px">'+acts+'</ul></div>'):'');
+  }).catch(function(){el('an_verdict').textContent='Analyst error.';});
+  getJSON('/api/controls').then(function(d){var b=d.control_board||{};
   el('co_board').innerHTML=b.available===false?('<span class="muted">Site unreachable: '+(b.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((b.totals)||b.data||{}).slice(0,300)+'</div>');
   var a=d.agents||{};el('co_agents').innerHTML=a.available===false?('<span class="muted">Site unreachable: '+(a.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((a.totals)||{}).slice(0,300)+'</div>');});refreshAlerts();};
 document.querySelectorAll('#p_controls button[data-act]').forEach(function(b){b.onclick=function(){

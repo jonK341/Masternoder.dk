@@ -100,6 +100,7 @@ _CONFIG_ENV_KEYS = (
     "TRADER_PASSCODE", "SITE_URL", "SITE_ADMIN_KEY",
     "BINANCE_API_KEY", "BINANCE_API_SECRET",
     "NONKYC_API_KEY", "NONKYC_API_SECRET", "NONKYC_API_PASSPHRASE",
+    "XEGGEX_API_KEY", "XEGGEX_API_SECRET", "XEGGEX_API_PASSPHRASE",
     "EXCHANGE_VAULT_KEY",
     "EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_GRID_LIVE",
     "EXCHANGE_PAYOUT_BINANCE_LIVE", "EXCHANGE_PAYOUT_NONKYC_LIVE",
@@ -441,6 +442,21 @@ def api_controls():
         "agents": site_get("/api/exchange/live-watch/owner", {"limit": 40}),
         "payout": site_get("/api/exchange/payout/status"),
     })
+
+
+@app.route("/api/analyst")
+@login_required
+def api_analyst():
+    from backend.services.exchange_grid_bot_service import grid_status, load_config, grid_live_enabled
+    from trader_app.analyst import analyze
+    gs = grid_status()
+    return jsonify(analyze(
+        gates={"grid_live": grid_live_enabled()},
+        balances=_balances_cached(),
+        signals=_signals_cached(),
+        grid_status_data=gs,
+        grid_config=load_config(),
+    ))
 
 
 @app.route("/api/controls/action", methods=["POST"])
