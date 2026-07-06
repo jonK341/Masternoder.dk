@@ -16,7 +16,15 @@
     <h1>MN2 Private Control</h1>
     <div class="sub">Owner-only. Enter your passcode.</div>
     {% if error %}<div class="err">{{ error }}</div>{% endif %}
-    <input type="password" name="passcode" placeholder="Passcode" autofocus autocomplete="current-password"/>
+    <input type="password" id="pc" name="passcode" placeholder="Passcode" autofocus autocomplete="current-password"/>
+    <label style="display:flex;align-items:center;gap:6px;color:#8a97a8;font-size:12px;margin:-4px 0 12px;cursor:pointer">
+      <input type="checkbox" id="showpc" style="width:auto"/> Show passcode
+    </label>
     <button type="submit">Unlock</button>
   </form>
+  <script>
+    document.getElementById('showpc').addEventListener('change',function(){
+      document.getElementById('pc').type=this.checked?'text':'password';
+    });
+  </script>
 </body></html>

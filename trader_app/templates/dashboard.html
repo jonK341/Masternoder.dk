@@ -129,7 +129,7 @@
       <button class="danger" data-act="kill_switch" data-on="true">Kill switch ON</button></div>
       <div id="co_board" class="muted">Loading…</div></div>
     <div class="card"><h2>Agents (Live Watch)</h2><div id="co_agents" class="muted">Loading…</div></div>
-    <div class="card"><h2>Recent alerts</h2><div id="co_alerts" class="muted">Loading…</div></div>
+    <div class="card"><h2>Recent alerts <button class="ghost" style="margin-left:auto" onclick="exp('alerts')">Export CSV</button></h2><div id="co_alerts" class="muted">Loading…</div></div>
   </div>
 
   <div class="pane" id="p_shop"><div class="card"><h2>Shop flow control</h2><div id="sh_body" class="muted">Loading…</div></div></div>
@@ -168,11 +168,16 @@ function makeSortable(table){table.querySelectorAll('th[data-k]').forEach(functi
 /* sparkline */
 var lastHist=[];
 function drawSpark(hist){lastHist=hist||[];var c=el('spark');if(!c)return;var w=c.clientWidth||600,h=70;c.width=w;c.height=h;var ctx=c.getContext('2d');ctx.clearRect(0,0,w,h);
-  var pts=(hist||[]).map(function(r){return Number(r.total_usd||0);});if(pts.length<2){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--mut');ctx.font='12px sans-serif';ctx.fillText('collecting history…',8,40);return;}
-  var mn=Math.min.apply(null,pts),mx=Math.max.apply(null,pts),rng=(mx-mn)||1;ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--acc');ctx.lineWidth=2;ctx.beginPath();
-  pts.forEach(function(p,i){var x=i/(pts.length-1)*(w-8)+4,y=h-6-((p-mn)/rng)*(h-16);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();}
+  var cs=getComputedStyle(document.documentElement);
+  var pts=(hist||[]).map(function(r){return Number(r.total_usd||0);});if(pts.length<2){ctx.fillStyle=cs.getPropertyValue('--mut');ctx.font='12px sans-serif';ctx.fillText('collecting history…',8,40);return;}
+  var mn=Math.min.apply(null,pts),mx=Math.max.apply(null,pts),rng=(mx-mn)||1;
+  var up=pts[pts.length-1]>=pts[0];ctx.strokeStyle=cs.getPropertyValue(up?'--pos':'--neg');ctx.lineWidth=2;ctx.beginPath();
+  pts.forEach(function(p,i){var x=i/(pts.length-1)*(w-8)+4,y=h-6-((p-mn)/rng)*(h-16);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+  ctx.fillStyle=cs.getPropertyValue('--mut');ctx.font='10px sans-serif';ctx.fillText('max '+money(mx),6,12);ctx.fillText('min '+money(mn),6,h-4);
+  ctx.fillStyle=cs.getPropertyValue(up?'--pos':'--neg');ctx.font='11px sans-serif';ctx.fillText(money(pts[pts.length-1]),w-70,12);}
 
 function balTable(b){if(!b||!b.success)return '<span class="muted">Unavailable.</span>';var h='';
+  if(b.warming)h+='<div class="muted" style="margin-bottom:6px">⏳ warming up — balances load shortly…</div>';
   Object.keys(b.venues||{}).forEach(function(v){var row=b.venues[v];h+='<div style="margin-bottom:10px"><div class="row"><b>'+v+'</b><span class="muted" style="margin-left:auto">'+money(row.usd_total)+'</span></div>';
     if(row.error)h+='<div class="muted">'+row.error+'</div>';else{h+='<table><thead><tr><th data-k=s>Asset</th><th data-k=a data-num=1 class=r>Amount</th><th data-k=u data-num=1 class=r>USD</th></tr></thead><tbody>';
       (row.assets||[]).slice(0,8).forEach(function(a){h+='<tr><td>'+a.symbol+'</td><td class=r>'+Number(a.amount).toFixed(6)+'</td><td class=r>'+money(a.usd_value)+'</td></tr>';});
@@ -200,7 +205,8 @@ loaders.overview=function(){getJSON('/api/overview').then(function(d){
   el('ov_bal').innerHTML=balTable(d.balances);el('ov_pos').innerHTML=posTable(d.grid);el('ov_sig').innerHTML=sigTable(d.signals);
   el('ts_bal').textContent=now();document.querySelectorAll('#p_overview table').forEach(makeSortable);
 });
-  getJSON('/api/history?limit=200').then(function(h){drawSpark((h&&h.history)||[]);el('ts_spark').textContent=now();});
+  getJSON('/api/history?limit=200').then(function(h){drawSpark((h&&h.history)||[]);var st=(h&&h.stats)||{};
+    el('ts_spark').innerHTML=(st.points?('Δ <b class="'+cls(st.change)+'">'+money(st.change)+'</b> · peak '+money(st.peak)+' · maxDD '+money(st.max_drawdown)+' · '):'')+now();});
   getJSON('/api/health').then(function(h){el('hdot').className='dot '+(h.site_reachable===false?'bad':(h.site_reachable?'ok':''));});
   refreshAlerts();
 };
@@ -212,7 +218,9 @@ function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||''
   var h='<table><thead><tr><th data-k=s>Symbol</th><th>Type</th><th>Route</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-k=p data-num=1 class=r>Proj/day</th><th>Rec</th><th>Reason</th></tr></thead><tbody>';
   recs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td>'+r.type+'</td><td class=muted>'+r.route+'</td><td class=r>'+r.edge_bps+'</td><td class=r>'+money(r.projected_daily_usd)+'</td><td><span class="pill '+r.recommendation+'">'+r.recommendation+'</span></td><td class=muted>'+r.reason+'</td></tr>';});
   el('tr_recs').innerHTML=h+'</tbody></table>';makeSortable(el('tr_recs').querySelector('table'));}
-el('tr_search').oninput=renderRecs;el('tr_minbps').oninput=renderRecs;
+try{el('tr_search').value=localStorage.getItem('mn2search')||'';el('tr_minbps').value=localStorage.getItem('mn2minbps')||'0';}catch(e){}
+el('tr_search').oninput=function(){try{localStorage.setItem('mn2search',el('tr_search').value);}catch(e){}renderRecs();};
+el('tr_minbps').oninput=function(){try{localStorage.setItem('mn2minbps',el('tr_minbps').value);}catch(e){}renderRecs();};
 loaders.monitor=function(){getJSON('/api/profit-monitor').then(function(d){var pm=d.profit_map||{};el('mo_ai').textContent=(d.ai||{}).summary||'—';el('mo_ai').classList.remove('muted');
   el('mo_real').textContent=money(pm.realized_pnl_usd);el('mo_real').className='big '+cls(pm.realized_pnl_usd);el('mo_proj').textContent=money(pm.projected_daily_usd);el('mo_month').textContent=money(pm.projected_monthly_usd);
   var src=pm.sources||[];var h=src.length?'<table><thead><tr><th>Source</th><th>Route</th><th class=r>Proj/day</th><th>Rec</th></tr></thead><tbody>':'';
@@ -221,7 +229,12 @@ loaders.monitor=function(){getJSON('/api/profit-monitor').then(function(d){var p
 loaders.controls=function(){getJSON('/api/controls').then(function(d){var b=d.control_board||{};
   el('co_board').innerHTML=b.available===false?('<span class="muted">Site unreachable: '+(b.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((b.totals)||b.data||{}).slice(0,300)+'</div>');
   var a=d.agents||{};el('co_agents').innerHTML=a.available===false?('<span class="muted">Site unreachable: '+(a.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((a.totals)||{}).slice(0,300)+'</div>');});refreshAlerts();};
-document.querySelectorAll('#p_controls button[data-act]').forEach(function(b){b.onclick=function(){var body={action:b.dataset.act};if(b.dataset.on)body.on=b.dataset.on==='true';postJSON('/api/controls/action',body).then(function(){loaders.controls();});};});
+document.querySelectorAll('#p_controls button[data-act]').forEach(function(b){b.onclick=function(){
+  if(/kill|run_all/.test(b.dataset.act)&&!confirm('Confirm site action: '+b.dataset.act.replace(/_/g,' ')+'?'))return;
+  var body={action:b.dataset.act};if(b.dataset.on)body.on=b.dataset.on==='true';
+  b.disabled=true;b.style.opacity='0.6';
+  postJSON('/api/controls/action',body).then(function(){loaders.controls();b.disabled=false;b.style.opacity='';});
+};});
 loaders.shop=function(){getJSON('/api/shop').then(function(d){
   function blk(title,o){var un=o&&o.available===false;return '<div style="margin-bottom:10px"><b>'+title+'</b> '+(un?'<span class="pill no">unreachable</span>':'<span class="pill">ok</span>')+
     '<pre class="muted" style="white-space:pre-wrap;font-size:12px;margin:4px 0">'+JSON.stringify(un?{error:o.error}:o,null,1).slice(0,500)+'</pre></div>';}
@@ -243,9 +256,10 @@ function refreshAlerts(){getJSON('/api/alerts?limit=30').then(function(d){var a=
 if(window.Notification&&Notification.permission==='default')Notification.requestPermission();
 
 /* actions */
-el('tr_toggle').onclick=function(){postJSON('/api/controls/action',{action:'grid_enable',enabled:!enabled}).then(loaders.overview);};
-el('tr_tick').onclick=function(){el('tr_msg').textContent='running…';postJSON('/api/controls/action',{action:'grid_tick'}).then(function(x){el('tr_msg').textContent='tick: realized '+money((x||{}).realized_pnl_usd);loaders.overview();});};
-el('tr_kill').onclick=function(){if(confirm('Kill switch: disable the grid bot?'))postJSON('/api/controls/action',{action:'grid_kill'}).then(loaders.overview);};
+function busy(btn,on){if(!btn)return;btn.disabled=on;btn.style.opacity=on?'0.6':'';}
+el('tr_toggle').onclick=function(){busy(el('tr_toggle'),true);postJSON('/api/controls/action',{action:'grid_enable',enabled:!enabled}).then(function(){loaders.overview();busy(el('tr_toggle'),false);});};
+el('tr_tick').onclick=function(){busy(el('tr_tick'),true);el('tr_msg').textContent='running…';postJSON('/api/controls/action',{action:'grid_tick'}).then(function(x){el('tr_msg').textContent='tick: realized '+money((x||{}).realized_pnl_usd);loaders.overview();busy(el('tr_tick'),false);});};
+el('tr_kill').onclick=function(){if(!confirm('Kill switch: disable the grid bot?'))return;busy(el('tr_kill'),true);postJSON('/api/controls/action',{action:'grid_kill'}).then(function(){loaders.overview();busy(el('tr_kill'),false);});};
 el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
 window.preset=function(n){postJSON('/api/config/preset',{preset:n}).then(function(){loaders.trading();el('cf_msg').textContent='applied '+n;});};
 el('goal').onchange=loaders.overview;
@@ -253,7 +267,8 @@ el('goal').onchange=loaders.overview;
 /* auto-refresh */
 var timer=null;
 function setRefresh(){if(timer)clearInterval(timer);var ms=Number(el('refsel').value||5000);if(ms>0)timer=setInterval(function(){var a=document.querySelector('.tab.active');if(a&&loaders[a.dataset.tab])loaders[a.dataset.tab]();},ms);}
-el('refsel').onchange=setRefresh;
+try{var sr=localStorage.getItem('mn2ref');if(sr!==null)el('refsel').value=sr;}catch(e){}
+el('refsel').onchange=function(){try{localStorage.setItem('mn2ref',el('refsel').value);}catch(e){}setRefresh();};
 loaders.overview();setRefresh();
 </script>
 </body>

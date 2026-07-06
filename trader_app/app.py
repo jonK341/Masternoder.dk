@@ -31,6 +31,8 @@ from flask import Flask, Response, jsonify, redirect, render_template, request, 
 
 from trader_app import store
 
+from datetime import timedelta
+
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, "frozen", False):
     # PyInstaller bundle: templates are added under <_MEIPASS>/trader_app/templates
@@ -39,6 +41,28 @@ else:
     _TEMPLATES = os.path.join(APP_DIR, "templates")
 app = Flask(__name__, template_folder=_TEMPLATES)
 app.secret_key = os.environ.get("TRADER_SECRET_KEY") or os.urandom(24)
+# Session/cookie hardening + auto-lock after inactivity.
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+)
+
+# Brute-force protection: lock out an IP after repeated failed passcodes.
+_LOGIN_FAILS: dict = {}
+_LOCK_MAX = 5
+_LOCK_WINDOW = 300  # seconds
+
+
+def _login_locked(ip: str) -> bool:
+    ent = _LOGIN_FAILS.get(ip)
+    if not ent:
+        return False
+    import time as _t
+    if _t.time() - ent[1] > _LOCK_WINDOW:
+        _LOGIN_FAILS.pop(ip, None)
+        return False
+    return ent[0] >= _LOCK_MAX
 
 
 def _config_paths() -> list:
@@ -155,12 +179,33 @@ def site_post(path: str, body: dict = None) -> dict:
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    import time as _t
+    ip = request.remote_addr or "?"
     if request.method == "POST":
+        if _login_locked(ip):
+            return render_template("login.html", error="Too many attempts — wait a few minutes.")
         code = (request.form.get("passcode") or "").strip()
         if code and code == _passcode():
+            _LOGIN_FAILS.pop(ip, None)
+            session.permanent = True
             session["auth"] = True
+            try:
+                store.record_alert("login", "Owner unlocked the app", "info")
+            except Exception:
+                pass
             return redirect(url_for("index"))
-        return render_template("login.html", error="Incorrect passcode.")
+        ent = _LOGIN_FAILS.get(ip)
+        if not ent or _t.time() - ent[1] > _LOCK_WINDOW:
+            ent = [0, _t.time()]
+        ent[0] += 1
+        _LOGIN_FAILS[ip] = ent
+        try:
+            store.record_alert("login_fail", f"Failed unlock attempt from {ip}", "warn")
+        except Exception:
+            pass
+        left = max(0, _LOCK_MAX - ent[0])
+        msg = "Incorrect passcode." + (f" {left} attempt(s) left." if left <= 2 else "")
+        return render_template("login.html", error=msg)
     return render_template("login.html", error=None)
 
 
@@ -282,7 +327,9 @@ def api_overview():
 @app.route("/api/history")
 @login_required
 def api_history():
-    return jsonify({"success": True, "history": store.history(int(request.args.get("limit") or 200))})
+    return jsonify({"success": True,
+                    "history": store.history(int(request.args.get("limit") or 200)),
+                    "stats": store.equity_stats()})
 
 
 @app.route("/api/alerts")
@@ -344,8 +391,13 @@ def api_export(what):
         for k, s in (grid_status().get("state") or {}).items():
             rows.append({"market": k, "inventory_base": s.get("inventory_base"),
                          "avg_cost_usd": s.get("avg_cost_usd"), "realized_pnl_usd": s.get("realized_pnl_usd"),
+                         "max_drawdown_usd": s.get("max_drawdown_usd"),
                          "open_orders": s.get("open_orders"), "halted": s.get("halted")})
-        csv_txt = store.to_csv(rows, ["market", "inventory_base", "avg_cost_usd", "realized_pnl_usd", "open_orders", "halted"])
+        csv_txt = store.to_csv(rows, ["market", "inventory_base", "avg_cost_usd", "realized_pnl_usd",
+                                      "max_drawdown_usd", "open_orders", "halted"])
+    elif what == "alerts":
+        rows = store.alerts(500)
+        csv_txt = store.to_csv(rows, ["ts", "level", "kind", "message"])
     else:
         return jsonify({"success": False, "error": "unknown_export"}), 400
     return Response(csv_txt, mimetype="text/csv",
