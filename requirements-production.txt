@@ -17,11 +17,13 @@ python-dotenv>=1.2.2,<2.0
 configparser>=7.2.0,<8.0
 
 # Deploy/SSH helpers used by deploy.py and server maintenance scripts.
-paramiko>=4.0.0,<5.0
+# paramiko>=5.0 required: CVE-2026-44405 (SHA-1 allowed in RSA key handling in <=4.0.0).
+paramiko>=5.0.0,<6.0
 scp>=0.15.0,<1.0
 
 # Lightweight runtime helpers.
-Pillow>=11.3.0,<12.0
+# Pillow>=12.2 required: CVE-2026-25990, CVE-2026-40192, CVE-2026-42309..42311, PYSEC-2026-165.
+Pillow>=12.2.0,<13.0
 numpy>=2.4.2,<3.0
 beautifulsoup4>=4.14.3,<5.0
 duckduckgo-search>=8.1.1,<9.0
@@ -30,6 +32,7 @@ psutil>=7.2.2,<8.0
 tenacity>=9.1.4,<10.0
 
 # Security / migrations.
-cryptography>=46.0.3,<48.0
+# cryptography>=48.0.1 required: GHSA-537c-gmf6-5ccf (fixed in 48.0.1).
+cryptography>=48.0.1,<50.0
 alembic>=1.18.4,<2.0
 sqlalchemy-utils>=0.42.1,<1.0

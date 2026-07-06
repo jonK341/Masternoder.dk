@@ -15,7 +15,15 @@ gTTS>=2.5.4,<3.0
 # piper-tts>=1.4.2,<2.0
 
 # Video / image generation pipeline
-moviepy>=1.0.3,<3.0
+# moviepy 2.2.1 still declares Pillow<12.0, which conflicts with the
+# security-patched Pillow>=12.2 pin (CVE-2026-42309..42311, CVE-2026-40192).
+# moviepy works fine with Pillow 12 at runtime (verified); until moviepy ships
+# the metadata fix (Zulko/moviepy#2562), install it without deps:
+#   python -m pip install --no-deps "moviepy>=2.1.2,<3.0"
+# moviepy's runtime deps are kept installable below (decorator, proglog,
+# imageio, imageio-ffmpeg; numpy and python-dotenv come from the base set).
+decorator>=4.0.2,<6.0
+proglog<=1.0.0
 ffmpeg-python>=0.2.0,<1.0
 opencv-python>=4.8.0,<5.0
 imageio>=2.33.1,<3.0
