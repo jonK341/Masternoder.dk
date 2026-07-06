@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window.APP_BASE = '';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder MN2 staking leaderboard portal.">
+    <title>Staking Leaderboard - MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #071015, #10172a 55%, #05070d); color: #fff; }
+        .staking-page { max-width: 1120px; margin: 0 auto; padding: 42px 18px 64px; }
+        .staking-hero, .staking-card { border: 1px solid rgba(0,255,136,0.28); background: rgba(255,255,255,0.055); border-radius: 20px; }
+        .staking-hero { padding: 34px; margin-bottom: 18px; }
+        .staking-hero h1 { margin: 0 0 10px; color: #00ff88; font-size: clamp(2rem, 5vw, 3.4rem); }
+        .staking-muted { color: rgba(255,255,255,0.76); line-height: 1.55; }
+        .staking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+        .staking-card { padding: 22px; }
+        .staking-card h2 { margin: 0 0 10px; color: #00d4ff; font-size: 1.2rem; }
+        .staking-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .staking-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
+        .staking-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
+    </style>
+</head>
+<body class="layout-standard">
+    <main class="staking-page">
+        <section class="staking-hero">
+            <p class="staking-muted">MN2 staking portal</p>
+            <h1>Staking leaderboard</h1>
+            <p class="staking-muted">Track opt-in staking performance, leaderboard standing, reward routes, and public explorer context from a dedicated page.</p>
+            <div class="staking-actions">
+                <a class="staking-btn" href="/profile#profile-mn2-staking-card">Open staking controls</a>
+                <a class="staking-btn secondary" href="/staking-monitor">Open staking monitor</a>
+                <a class="staking-btn secondary" href="/staking-teams">Team leaderboard</a>
+            </div>
+        </section>
+        <section class="staking-grid" aria-label="Staking leaderboard shortcuts">
+            <article class="staking-card">
+                <h2>Your rank</h2>
+                <p class="staking-muted">Use the profile staking card to opt in, review reward intervals, and see the same leaderboard data from your wallet context.</p>
+                <a class="staking-btn" href="/profile#profile-mn2-staking-card">View my stake</a>
+            </article>
+            <article class="staking-card">
+                <h2>Network monitor</h2>
+                <p class="staking-muted">Check pool health, public reserve status, and staking safety notes before increasing exposure.</p>
+                <a class="staking-btn secondary" href="/explorer">Open explorer</a>
+            </article>
+            <article class="staking-card">
+                <h2>Teams</h2>
+                <p class="staking-muted">Teams combine longevity for capped reward multipliers when two or more active stakers participate.</p>
+                <a class="staking-btn secondary" href="/staking-teams">Open teams</a>
+            </article>
+        </section>
+    </main>
+    <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+</body>
+</html>

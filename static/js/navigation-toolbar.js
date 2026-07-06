@@ -35,10 +35,13 @@
         starmap25: APP_BASE + '/static/img/nav/starmap.svg',
         explorer: APP_BASE + '/static/img/nav/explorer.svg',
         news: APP_BASE + '/static/img/nav/news.svg',
-        library: APP_BASE + '/static/img/nav/stories.svg'
+        library: APP_BASE + '/static/img/nav/stories.svg',
+        wallets: APP_BASE + '/static/img/nav/profile.svg',
+        staking_leaderboard: APP_BASE + '/static/img/nav/trophy.svg',
+        staking_teams: APP_BASE + '/static/img/agents/social_engagement_agent.svg'
     };
 
-    // Navigation configuration — Purple bg, light neon green. Favorites: Battle, Trophies, Game, Generator.
+        // Navigation configuration — primary product loop first, deep portals later.
     const NAV_CONFIG = {
         brand: {
             name: 'MasterNoder',
@@ -46,40 +49,40 @@
             iconImg: APP_BASE + '/static/img/nav/brand.svg',
             url: APP_BASE + '/'
         },
-        favorites: ['battle', 'trophies', 'game', 'generator'],
+        favorites: ['generator', 'game', 'battle', 'trophies'],
         links: [
             { name: 'Home', icon: '🏠', url: APP_BASE + '/', id: 'home' },
+            { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
+            { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
             { name: 'Battle', icon: '⚔️', url: APP_BASE + '/battle', id: 'battle', favorite: true },
             { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
-            { name: 'Stories', icon: '📜', url: APP_BASE + '/trophies#stories', id: 'stories', title: 'Hunters Stories: Winter Wedding, time reversal, medieval' },
-            { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
-            { name: 'Command Center', icon: '🎯', url: APP_BASE + '/command-center', id: 'command-center', title: 'Battle, trophies, game, quests — unified hub' },
-            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
-            { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
-            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
-            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
-            { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
-            { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
-            { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
-            { name: 'BattleGrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
-            { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
-            { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
-            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
-            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
-            { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },
-            { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
-            { name: 'Agents', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
-            { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' },
-            { name: 'Chat', icon: '💬', url: APP_BASE + '/lab#discussion', id: 'chat', title: 'Lab discussion room (was chat)' },
-            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
-            { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab' },
-            { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
-            { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
-            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'Download MN2 daemon and Qt wallet' },
-            { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' }
+            { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
+            { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
+            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
+            { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' },
+            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
+            { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab', title: 'Discussion, experiments, and system lab' },
+            { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
+            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
+            { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
+            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
+            { name: 'Battlegrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
+            { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
+            { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
+            { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
+            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
+            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
+            { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
+            { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
+            { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },
+            { name: 'Agents Control', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
+            { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
+            { name: 'Hosting', icon: '🖥️', url: APP_BASE + '/hosting', id: 'hosting', title: 'Masternode hosting' },
+            { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' }
         ],
         apiBase: window.location.origin + APP_BASE
     };
