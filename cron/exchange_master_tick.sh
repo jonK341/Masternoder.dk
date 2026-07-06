@@ -13,5 +13,8 @@ export EXCHANGE_FORCE_IPV4=1
 # box a tick can exceed the 2-min cron interval, and without this guard each cron
 # run spawns another daemon, stacking to 5+ processes that exhaust RAM/CPU and
 # take the whole box down. If a tick is still running, skip this cron cycle.
-exec flock -n /run/lock/masternoder-exchange-master.lock \
+# nice/ionice: the tick is CPU/IO heavy and must yield to the web app on the
+# 2-core box, so page/API requests stay responsive while a tick runs.
+exec nice -n 15 ionice -c3 \
+    flock -n /run/lock/masternoder-exchange-master.lock \
     python3 scripts/exchange_master_daemon.py --once
