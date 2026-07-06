@@ -28,3 +28,16 @@ def test_platform_news_announces_wallet_staking_pages():
 
 def test_reader_launcher_stylesheet_exists():
     assert (ROOT / "static/css/calm-reader.css").is_file()
+
+
+def test_lite_app_registers_frontpage_game_hub_api(monkeypatch):
+    monkeypatch.setenv("LITE_APP", "1")
+    monkeypatch.setenv("DAEMON_QUIET", "1")
+
+    from src.app import create_app
+
+    client = create_app().test_client()
+    response = client.get("/api/game-hub/overview?user_id=default_user")
+
+    assert response.status_code == 200
+    assert response.get_json()["success"] is True
