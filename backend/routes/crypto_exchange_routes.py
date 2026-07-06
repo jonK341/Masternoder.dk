@@ -171,20 +171,10 @@ def exchange_gateway_status():
 
 
 def _admin_authorized() -> bool:
-    secret = (
-        os.environ.get("EXCHANGE_ADMIN_KEY")
-        or os.environ.get("COGS_ADMIN_REPORT_KEY")
-        or ""
-    ).strip()
-    if not secret:
-        return False
-    got = (
-        request.headers.get("X-Exchange-Admin-Key")
-        or request.headers.get("X-Admin-Key")
-        or request.args.get("admin_key")
-        or ""
-    ).strip()
-    return bool(got) and got == secret
+    # Header-only shared-secret check (query-string keys leak into logs).
+    from backend.services.exchange_admin_auth import admin_authorized
+
+    return admin_authorized()
 
 
 @crypto_exchange_bp.route("/api/exchange/admin/board", methods=["GET"])
@@ -791,6 +781,9 @@ def exchange_profit_path_hit_rate():
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/critical-top25/check", methods=["POST"])
 def exchange_profit_path_critical_check():
+    # Owner-only: the critical checklist gates the profit readiness score.
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
     data = request.get_json(silent=True) or {}
     problem_id = str(data.get("id") or data.get("problem_id") or "").strip()
     if not problem_id:
