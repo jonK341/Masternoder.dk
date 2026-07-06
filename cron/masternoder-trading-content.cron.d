@@ -1,5 +1,6 @@
 # Trading content report + platform news publish
 # Copy to /etc/cron.d/masternoder-trading-content
+# Optional env (set in shell/env file): TRADING_CONTENT_KEEP_FILES=30
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
