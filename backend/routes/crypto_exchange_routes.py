@@ -1273,6 +1273,122 @@ def exchange_payout_history():
     return jsonify(sweep_history(limit=int(request.args.get("limit") or 20)))
 
 
+@crypto_exchange_bp.route("/api/exchange/payout/withdraw-targets", methods=["GET"])
+def exchange_payout_withdraw_targets():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import withdraw_targets_status
+
+    return jsonify(withdraw_targets_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/configure-venue-withdraw", methods=["POST"])
+def exchange_payout_configure_venue_withdraw():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import configure_venue_withdraw
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(configure_venue_withdraw(
+        str(data.get("venue") or "").strip().lower(),
+        data.get("targets") or {},
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/asset-preflight", methods=["GET"])
+def exchange_payout_asset_preflight():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import asset_preflight_status
+
+    amt = request.args.get("amount")
+    return jsonify(asset_preflight_status(
+        (request.args.get("coin") or "USDT").strip().upper(),
+        venue=(request.args.get("venue") or "binance").strip().lower(),
+        amount=float(amt) if amt is not None and str(amt).strip() != "" else None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/withdraw-asset", methods=["POST"])
+def exchange_payout_withdraw_asset():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import withdraw_pool_asset
+
+    data = request.get_json(silent=True) or {}
+    amt = data.get("amount")
+    mn = data.get("min_amount")
+    return jsonify(withdraw_pool_asset(
+        (data.get("coin") or "").strip().upper(),
+        float(amt) if amt is not None else None,
+        venue=(data.get("venue") or "binance").strip().lower(),
+        min_amount=float(mn) if mn is not None else None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/fiat/valuation", methods=["GET"])
+def exchange_fiat_valuation():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_fiat_converter_service import pool_valuation
+
+    return jsonify(pool_valuation())
+
+
+@crypto_exchange_bp.route("/api/exchange/fiat/status", methods=["GET"])
+def exchange_fiat_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_fiat_converter_service import fiat_converter_status
+
+    return jsonify(fiat_converter_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/fiat/plan", methods=["POST"])
+def exchange_fiat_plan():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_fiat_converter_service import plan_fiat_conversion
+
+    data = request.get_json(silent=True) or {}
+    mn = data.get("min_usd")
+    dust = data.get("dust_usd")
+    return jsonify(plan_fiat_conversion(
+        venue=(data.get("venue") or "binance").strip().lower(),
+        target=(data.get("target") or "USD").strip().upper(),
+        min_usd=float(mn) if mn is not None else None,
+        dust_usd=float(dust) if dust is not None else None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/fiat/convert", methods=["POST"])
+def exchange_fiat_convert():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_fiat_converter_service import execute_fiat_conversion
+
+    data = request.get_json(silent=True) or {}
+    mn = data.get("min_usd")
+    dust = data.get("dust_usd")
+    dry = data.get("dry_run")
+    return jsonify(execute_fiat_conversion(
+        venue=(data.get("venue") or "binance").strip().lower(),
+        target=(data.get("target") or "USD").strip().upper(),
+        min_usd=float(mn) if mn is not None else None,
+        dust_usd=float(dust) if dust is not None else None,
+        dry_run=bool(dry) if dry is not None else None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/fiat/history", methods=["GET"])
+def exchange_fiat_history():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_fiat_converter_service import conversion_history
+
+    return jsonify(conversion_history(limit=int(request.args.get("limit") or 20)))
+
+
 @crypto_exchange_bp.route("/api/exchange/paypal/crypto-quote", methods=["POST"])
 def exchange_paypal_crypto_quote():
     data = request.get_json(silent=True) or {}
