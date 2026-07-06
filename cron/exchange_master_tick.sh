@@ -15,6 +15,10 @@ export EXCHANGE_FORCE_IPV4=1
 # take the whole box down. If a tick is still running, skip this cron cycle.
 # nice/ionice: the tick is CPU/IO heavy and must yield to the web app on the
 # 2-core box, so page/API requests stay responsive while a tick runs.
+# timeout: a healthy tick is ~15s, but a hung outbound venue fetch can leave the
+# --once process stuck for many minutes, holding the lock and dragging the whole
+# box down (observed 350s+). Kill any tick that exceeds 90s so it can't wedge.
 exec nice -n 15 ionice -c3 \
     flock -n /run/lock/masternoder-exchange-master.lock \
+    timeout --signal=KILL 90 \
     python3 scripts/exchange_master_daemon.py --once
