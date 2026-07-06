@@ -17,8 +17,12 @@
         <header class="forum-hero">
             <div class="forum-hero-top">
                 <h1>💬 MasterNoder Forum</h1>
-                <button type="button" id="theme-toggle" class="forum-icon-btn" title="Toggle light / dark" aria-label="Toggle theme">🌙</button>
+                <div class="forum-hero-actions">
+                    <button type="button" id="notif-btn" class="forum-icon-btn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">🔔<span id="notif-badge" class="notif-badge" hidden>0</span></button>
+                    <button type="button" id="theme-toggle" class="forum-icon-btn" title="Toggle light / dark" aria-label="Toggle theme">🌙</button>
+                </div>
             </div>
+            <div id="notif-panel" class="forum-notif-panel" hidden aria-label="Notifications"></div>
             <p>News · articles · chat · podcast · rulebooks · docs · support · social · Wikipedia — all in one place.</p>
             <div class="forum-global-search">
                 <input type="search" id="global-search" placeholder="Search discussions & articles…" aria-label="Search the forum">
@@ -83,6 +87,7 @@
                         </select>
                     </div>
                     <input type="text" id="thread-title" placeholder="Thread title (optional)">
+                    <div id="thread-similar" class="forum-similar" hidden></div>
                     <input type="text" id="thread-tags" placeholder="Tags, comma separated (optional)">
                     <textarea id="thread-body" placeholder="Your question or story… (Markdown supported)" required></textarea>
                     <div id="thread-preview" class="forum-preview" hidden></div>
@@ -100,10 +105,15 @@
                     <button type="button" class="forum-chip" data-sort="top">⬆️ Top</button>
                     <button type="button" class="forum-chip" data-sort="active">💬 Active</button>
                     <button type="button" class="forum-chip" data-sort="unanswered">❔ Unanswered</button>
+                    <button type="button" class="forum-chip" data-sort="unsolved">🟡 Unsolved</button>
+                    <button type="button" class="forum-chip" data-sort="solved">✅ Solved</button>
+                    <button type="button" class="forum-chip" data-sort="oldest">🕰️ Oldest</button>
                 </div>
                 <div class="forum-filter">
                     <input type="search" id="thread-search" placeholder="Filter threads…" aria-label="Filter threads">
                     <span id="active-tag-filter" class="forum-tag-active" hidden></span>
+                    <button type="button" id="my-bookmarks-btn" class="forum-chip" title="Show my bookmarks">🔖 Saved</button>
+                    <button type="button" id="my-following-btn" class="forum-chip" title="Show threads I follow">🔔 Following</button>
                 </div>
             </div>
             <div id="thread-view"></div>

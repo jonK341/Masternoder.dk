@@ -182,6 +182,11 @@ def forum_create_thread():
     kind = (body.get("kind") or "question").strip()[:20]
     author_name = (body.get("author_name") or _resolve_uid()).strip()[:80]
     tags = body.get("tags") if isinstance(body.get("tags"), list) else None
+    # Merge inline #hashtags into tags.
+    from backend.services import forum_features_service as ff
+    hashtags = ff.extract_hashtags(f"{title or ''} {content}")
+    if hashtags:
+        tags = list(dict.fromkeys((tags or []) + hashtags))
     thread = create_thread(
         topic_id=body.get("topic_id"),
         subforum_id=body.get("subforum_id"),
@@ -192,6 +197,12 @@ def forum_create_thread():
         agent_authored=False,
         tags=tags,
     )
+    # Follower/mention notifications + optional poll.
+    ff.notify_mentions(content, thread.get("id"), actor=author_name,
+                       post_id=(thread.get("posts") or [{}])[0].get("id", ""))
+    poll = body.get("poll") or {}
+    if isinstance(poll, dict) and poll.get("options"):
+        ff.create_poll(thread.get("id"), poll.get("question", title or ""), poll.get("options"))
     return jsonify({"success": True, "thread": public_thread(thread)}), 201
 
 
@@ -202,13 +213,19 @@ def forum_get_thread(thread_id: str):
     )
     if request.args.get("count_view", "1") != "0":
         register_view(thread_id)
+    from backend.services import forum_features_service as ff
+    uid = _resolve_uid()
     for t in load_threads():
         if t.get("id") == thread_id:
             related = [public_thread(r, detail=False) for r in related_threads(thread_id)]
+            ff.mark_read(uid, thread_id)
             return jsonify({
                 "success": True,
-                "thread": public_thread(t),
+                "thread": public_thread(t, float_accepted=True),
                 "related": related,
+                "poll": ff.get_poll(thread_id, uid),
+                "bookmarked": thread_id in (ff.get_user_state(uid).get("bookmarks") or []),
+                "following": thread_id in (ff.get_user_state(uid).get("follows") or []),
             }), 200
     return jsonify({"success": False, "error": "not found"}), 404
 
@@ -242,6 +259,12 @@ def forum_reply_thread(thread_id: str):
     if not post:
         return jsonify({"success": False, "error": "thread not found"}), 404
     thread = next((t for t in load_threads() if t.get("id") == thread_id), None)
+    # Notify thread followers and any @mentioned users; auto-follow on reply.
+    from backend.services import forum_features_service as ff
+    snippet = (content or "")[:120]
+    ff.notify_thread_followers(thread_id, actor=author_name, text=f"{author_name} replied: {snippet}",
+                               exclude=author_name, post_id=post.get("id"), ntype="reply")
+    ff.notify_mentions(content, thread_id, actor=author_name, post_id=post.get("id"))
     return jsonify({"success": True, "post": post, "thread": public_thread(thread) if thread else None}), 201
 
 
@@ -378,6 +401,214 @@ def forum_leaderboard():
     from backend.services.forum_agent_service import leaderboard
     limit = request.args.get("limit", 10, type=int)
     return jsonify({"success": True, "leaderboard": leaderboard(limit=limit)}), 200
+
+
+# ===========================================================================
+# V2: personalization, notifications, polls, badges, discovery
+# ===========================================================================
+@forum_bp.route("/api/forum/me", methods=["GET"])
+def forum_me():
+    """Current user's forum state: bookmarks, follows, unread notifications."""
+    from backend.services import forum_features_service as ff
+    uid = _resolve_uid()
+    ff.touch_last_seen(uid)
+    st = ff.get_user_state(uid)
+    st["unread_notifications"] = ff.unread_count(uid)
+    return jsonify({"success": True, "me": st}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/bookmark", methods=["POST"])
+def forum_bookmark(thread_id: str):
+    from backend.services import forum_features_service as ff
+    return jsonify({"success": True, **ff.toggle_bookmark(_resolve_uid(), thread_id)}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/follow", methods=["POST"])
+def forum_follow(thread_id: str):
+    from backend.services import forum_features_service as ff
+    return jsonify({"success": True, **ff.toggle_follow(_resolve_uid(), thread_id)}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/read", methods=["POST"])
+def forum_mark_read(thread_id: str):
+    from backend.services import forum_features_service as ff
+    return jsonify({"success": True, **ff.mark_read(_resolve_uid(), thread_id)}), 200
+
+
+@forum_bp.route("/api/forum/tags/<tag>/follow", methods=["POST"])
+def forum_follow_tag(tag: str):
+    from backend.services import forum_features_service as ff
+    return jsonify({"success": True, **ff.toggle_tag_follow(_resolve_uid(), tag)}), 200
+
+
+@forum_bp.route("/api/forum/bookmarks", methods=["GET"])
+def forum_bookmarks():
+    from backend.services import forum_features_service as ff
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
+    uid = _resolve_uid()
+    ids = ff.get_user_state(uid).get("bookmarks") or []
+    threads, total = list_threads_sorted(ids=ids, sort="new", limit=100)
+    return jsonify({"success": True, "threads": [public_thread(t, detail=False) for t in threads], "total": total}), 200
+
+
+@forum_bp.route("/api/forum/following", methods=["GET"])
+def forum_following():
+    from backend.services import forum_features_service as ff
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
+    uid = _resolve_uid()
+    ids = ff.get_user_state(uid).get("follows") or []
+    threads, total = list_threads_sorted(ids=ids, sort="new", limit=100)
+    return jsonify({"success": True, "threads": [public_thread(t, detail=False) for t in threads], "total": total}), 200
+
+
+@forum_bp.route("/api/forum/notifications", methods=["GET"])
+def forum_notifications():
+    from backend.services import forum_features_service as ff
+    uid = _resolve_uid()
+    only_unread = request.args.get("unread") == "1"
+    return jsonify({
+        "success": True,
+        "notifications": ff.list_notifications(uid, only_unread=only_unread, limit=request.args.get("limit", 50, type=int)),
+        "unread": ff.unread_count(uid),
+    }), 200
+
+
+@forum_bp.route("/api/forum/notifications/read", methods=["POST"])
+def forum_notifications_read():
+    from backend.services import forum_features_service as ff
+    body = request.get_json(silent=True) or {}
+    ids = body.get("ids") if isinstance(body.get("ids"), list) else None
+    return jsonify({"success": True, **ff.mark_notifications_read(_resolve_uid(), ids)}), 200
+
+
+@forum_bp.route("/api/forum/saved-searches", methods=["GET", "POST"])
+def forum_saved_searches():
+    from backend.services import forum_features_service as ff
+    uid = _resolve_uid()
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        q = (body.get("q") or "").strip()
+        if not q:
+            return jsonify({"success": False, "error": "q required"}), 400
+        return jsonify({"success": True, "search": ff.save_search(uid, q, body.get("filters"))}), 201
+    return jsonify({"success": True, "searches": ff.get_user_state(uid).get("saved_searches") or []}), 200
+
+
+@forum_bp.route("/api/forum/saved-searches/<search_id>", methods=["DELETE"])
+def forum_delete_saved_search(search_id: str):
+    from backend.services import forum_features_service as ff
+    return jsonify({"success": True, **ff.delete_saved_search(_resolve_uid(), search_id)}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/poll", methods=["GET", "POST"])
+def forum_poll(thread_id: str):
+    from backend.services import forum_features_service as ff
+    uid = _resolve_uid()
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        poll = ff.create_poll(thread_id, body.get("question", ""), body.get("options") or [],
+                              closes_in_hours=int(body.get("closes_in_hours", 168)))
+        if not poll:
+            return jsonify({"success": False, "error": "need a question and >=2 options"}), 400
+        return jsonify({"success": True, "poll": ff.get_poll(thread_id, uid)}), 201
+    poll = ff.get_poll(thread_id, uid)
+    if not poll:
+        return jsonify({"success": False, "error": "no poll"}), 404
+    return jsonify({"success": True, "poll": poll}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/poll/vote", methods=["POST"])
+def forum_poll_vote(thread_id: str):
+    from backend.services import forum_features_service as ff
+    if _rate_limited("poll_vote", limit=30, window_s=60):
+        return jsonify({"success": False, "error": "rate limited"}), 429
+    body = request.get_json(silent=True) or {}
+    res = ff.vote_poll(thread_id, _resolve_uid(), (body.get("option_id") or "").strip())
+    if res is None:
+        return jsonify({"success": False, "error": "no poll"}), 404
+    if res.get("error"):
+        return jsonify({"success": False, "error": res["error"]}), 400
+    return jsonify({"success": True, "poll": res}), 200
+
+
+@forum_bp.route("/api/forum/threads/similar", methods=["GET"])
+def forum_similar():
+    """Duplicate/related detection by title — used by the composer."""
+    from backend.services.forum_agent_service import similar_threads
+    title = (request.args.get("title") or "").strip()
+    if len(title) < 6:
+        return jsonify({"success": True, "threads": []}), 200
+    return jsonify({"success": True, "threads": similar_threads(title, limit=request.args.get("limit", 5, type=int))}), 200
+
+
+@forum_bp.route("/api/forum/authors/<author_name>", methods=["GET"])
+def forum_author_profile(author_name: str):
+    """Public author profile: stats, badges, level, per-tag reputation, recent threads."""
+    from backend.services.forum_agent_service import (
+        load_threads, threads_by_author, public_thread, tag_reputation, leaderboard,
+    )
+    from backend.services import forum_features_service as ff
+    threads = load_threads()
+    stats = ff.author_stats(author_name, threads)
+    rep = stats["threads"] * 10 + stats["replies"] * 5 + stats["reactions"] * 2 + stats["accepted"] * 25
+    recent = [public_thread(t, detail=False) for t in threads_by_author(author_name, limit=10)]
+    return jsonify({
+        "success": True,
+        "author": {
+            "author_name": author_name,
+            "stats": stats,
+            "reputation": rep,
+            "level": ff.reputation_level(rep),
+            "badges": ff.compute_badges(author_name, threads),
+            "tag_reputation": tag_reputation(author_name),
+            "recent_threads": recent,
+        },
+    }), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/posts/<post_id>/delete", methods=["POST"])
+def forum_delete_post(thread_id: str, post_id: str):
+    from backend.services.forum_agent_service import delete_post
+    body = request.get_json(silent=True) or {}
+    res = delete_post(thread_id, post_id, bool(body.get("deleted", True)))
+    if res is None:
+        return jsonify({"success": False, "error": "post not found"}), 404
+    return jsonify({"success": True, **res}), 200
+
+
+@forum_bp.route("/api/forum/threads/<thread_id>/posts/<post_id>/history", methods=["GET"])
+def forum_post_history(thread_id: str, post_id: str):
+    from backend.services.forum_agent_service import post_history
+    hist = post_history(thread_id, post_id)
+    if hist is None:
+        return jsonify({"success": False, "error": "post not found"}), 404
+    return jsonify({"success": True, "history": hist}), 200
+
+
+@forum_bp.route("/api/forum/digest", methods=["GET"])
+def forum_digest():
+    """Personalized digest: new threads, replies on followed threads, unread notifications."""
+    from backend.services import forum_features_service as ff
+    from backend.services.forum_agent_service import list_threads_sorted, public_thread
+    uid = _resolve_uid()
+    st = ff.get_user_state(uid)
+    follows = st.get("follows") or []
+    tag_follows = st.get("tag_follows") or []
+    new_threads, _ = list_threads_sorted(sort="new", limit=8)
+    followed, _ = list_threads_sorted(ids=follows, sort="new", limit=10) if follows else ([], 0)
+    tag_threads = []
+    for tg in tag_follows[:5]:
+        tt, _ = list_threads_sorted(tag=tg, sort="new", limit=3)
+        tag_threads.extend(tt)
+    return jsonify({
+        "success": True,
+        "digest": {
+            "new_threads": [public_thread(t, detail=False) for t in new_threads],
+            "followed_updates": [public_thread(t, detail=False) for t in followed],
+            "tag_updates": [public_thread(t, detail=False) for t in tag_threads[:8]],
+            "unread_notifications": ff.unread_count(uid),
+        },
+    }), 200
 
 
 @forum_bp.route("/api/forum/report", methods=["POST"])

@@ -181,14 +181,16 @@
   }
 
   function threadCard(t) {
-    return `<div class="forum-card thread-card" data-id="${esc(t.id)}" tabindex="0" role="button" aria-label="Open thread ${esc(t.title)}">
+    const net = (t.net_votes != null) ? t.net_votes : (t.votes || 0);
+    const rt = t.reading_time_min ? ` · ⏱ ${esc(t.reading_time_min)}m` : '';
+    return `<div class="forum-card thread-card${t.solved ? ' is-solved' : ''}" data-id="${esc(t.id)}" tabindex="0" role="button" aria-label="Open thread ${esc(t.title)}">
       <div class="thread-stats">
-        <span class="ts-vote" title="Votes">⬆ ${esc(t.votes || 0)}</span>
+        <span class="ts-vote${net < 0 ? ' neg' : ''}" title="Net votes">⬆ ${esc(net)}</span>
         <span class="ts-reply" title="Replies">💬 ${esc(t.reply_count || 0)}</span>
         <span class="ts-view" title="Views">👁 ${esc(t.views || 0)}</span>
       </div>
       <div class="thread-body">
-        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · ${timeAgo(t.updated_at)}</div>
+        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · ${timeAgo(t.updated_at)}${rt}</div>
         <h3>${badges(t)} ${esc(t.title)}</h3>
         ${excerptHtml(t)}
         <div class="thread-foot">
@@ -706,27 +708,52 @@
     }
     const t = data.thread;
     const related = data.related || [];
+    const net = (t.net_votes != null) ? t.net_votes : (t.votes || 0);
+    const following = !!data.following;
+    const bookmarked = !!data.bookmarked;
     view.innerHTML = `
       <div class="forum-card thread-head">
         <button type="button" id="thread-close" class="forum-btn secondary sm">← Back</button>
         <h3>${badges(t)} ${esc(t.title)}</h3>
-        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · 👁 ${esc(t.views)} views</div>
+        <div class="meta">${esc(t.theme_title)} → ${esc(t.subforum_title)} · 👁 ${esc(t.views)} views · ⏱ ${esc(t.reading_time_min || 1)} min read</div>
         <div class="forum-tag-row">${tagChips(t.tags)}</div>
         <div class="thread-actions">
-          <button type="button" id="vote-btn" class="forum-btn secondary sm">⬆ Vote (${esc(t.votes)})</button>
+          <div class="vote-stack" role="group" aria-label="Vote on thread">
+            <button type="button" id="vote-up" class="vote-arrow" aria-label="Upvote" aria-pressed="false">▲</button>
+            <span id="vote-net" class="vote-net">${esc(net)}</span>
+            <button type="button" id="vote-down" class="vote-arrow" aria-label="Downvote" aria-pressed="false">▼</button>
+          </div>
+          <button type="button" id="bookmark-btn" class="forum-btn secondary sm" aria-pressed="${bookmarked}">${bookmarked ? '🔖 Saved' : '🔖 Save'}</button>
+          <button type="button" id="follow-btn" class="forum-btn secondary sm" aria-pressed="${following}">${following ? '🔔 Following' : '🔔 Follow'}</button>
           <button type="button" id="copy-link" class="forum-btn secondary sm">🔗 Copy link</button>
           <button type="button" id="report-btn" class="forum-btn secondary sm">🚩 Report</button>
         </div>
       </div>
+      ${pollCard(data.poll)}
       ${(t.posts || []).map((p, i) => postCard(t, p, i)).join('')}
       ${t.locked ? '<div class="forum-status">🔒 This thread is locked.</div>' : `
       <div class="forum-compose">
-        <textarea id="reply-body" placeholder="Write a reply… (Markdown supported)"></textarea>
+        <textarea id="reply-body" placeholder="Write a reply… (Markdown, @mentions & #tags supported)"></textarea>
         <button type="button" id="reply-submit" class="forum-btn secondary">Reply</button>
       </div>`}
       ${related.length ? `<div class="forum-related"><h4>Related threads</h4>${related.map((r) => `<a href="#discussions/${esc(r.id)}" class="side-link">${esc(r.title)}</a>`).join('')}</div>` : ''}
     `;
-    bindThreadView(id, t);
+    bindThreadView(id, t, { following, bookmarked });
+  }
+
+  function pollCard(poll) {
+    if (!poll) return '';
+    const opts = (poll.options || []).map((o) => `
+      <button type="button" class="poll-option${poll.your_vote === o.id ? ' voted' : ''}" data-opt="${esc(o.id)}" ${poll.closed ? 'disabled' : ''}>
+        <span class="poll-bar" style="width:${esc(o.pct || 0)}%"></span>
+        <span class="poll-label">${esc(o.text)}</span>
+        <span class="poll-pct">${esc(o.pct || 0)}% · ${esc(o.votes || 0)}</span>
+      </button>`).join('');
+    return `<div class="forum-card poll-card" id="poll-card">
+      <div class="poll-q">📊 ${esc(poll.question || 'Poll')}</div>
+      <div class="poll-options">${opts}</div>
+      <div class="meta">${esc(poll.total_votes || 0)} votes${poll.closed ? ' · closed' : ''}</div>
+    </div>`;
   }
 
   function postCard(t, p, i) {
@@ -747,20 +774,45 @@
     </div>`;
   }
 
-  function bindThreadView(id, t) {
+  function bindThreadView(id, t, state) {
+    state = state || {};
+    let voteState = 0;
     if (!t.locked) attachGrammar($('#reply-body'));
     $('#thread-close')?.addEventListener('click', () => {
       openThreadId = '';
       $('#thread-view').innerHTML = '';
       history.replaceState(null, '', '#discussions');
     });
-    $('#vote-btn')?.addEventListener('click', async () => {
+    async function castVote(direction) {
       const d = await api('/api/forum/threads/' + id + '/vote', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: uid(), direction: 1 }),
+        body: JSON.stringify({ user_id: uid(), direction }),
       });
-      if (d.success) { $('#vote-btn').textContent = `⬆ Vote (${d.votes})`; toast(d.voted ? 'Voted' : 'Vote removed', 'ok'); sonic('vote'); }
+      if (d.success) {
+        voteState = d.vote_state != null ? d.vote_state : (d.voted ? 1 : 0);
+        if ($('#vote-net')) $('#vote-net').textContent = d.net_votes != null ? d.net_votes : d.votes;
+        $('#vote-up')?.setAttribute('aria-pressed', String(voteState === 1));
+        $('#vote-down')?.setAttribute('aria-pressed', String(voteState === -1));
+        $('#vote-up')?.classList.toggle('on', voteState === 1);
+        $('#vote-down')?.classList.toggle('on', voteState === -1);
+        sonic('vote');
+      }
+    }
+    $('#vote-up')?.addEventListener('click', () => castVote(voteState === 1 ? 0 : 1));
+    $('#vote-down')?.addEventListener('click', () => castVote(voteState === -1 ? 0 : -1));
+    $('#bookmark-btn')?.addEventListener('click', async () => {
+      const d = await api('/api/forum/threads/' + id + '/bookmark', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid() }) });
+      if (d.success) { const b = d.bookmarked; $('#bookmark-btn').textContent = b ? '🔖 Saved' : '🔖 Save'; $('#bookmark-btn').setAttribute('aria-pressed', String(b)); toast(b ? 'Saved to bookmarks' : 'Removed bookmark', 'ok'); sonic('click'); }
     });
+    $('#follow-btn')?.addEventListener('click', async () => {
+      const d = await api('/api/forum/threads/' + id + '/follow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid() }) });
+      if (d.success) { const f = d.following; $('#follow-btn').textContent = f ? '🔔 Following' : '🔔 Follow'; $('#follow-btn').setAttribute('aria-pressed', String(f)); toast(f ? 'Following — you\'ll get replies' : 'Unfollowed', 'ok'); sonic('click'); }
+    });
+    document.querySelectorAll('.poll-option').forEach((b) => b.addEventListener('click', async () => {
+      const d = await api('/api/forum/threads/' + id + '/poll/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid(), option_id: b.dataset.opt }) });
+      if (d.success && d.poll) { const card = $('#poll-card'); if (card) card.outerHTML = pollCard(d.poll); document.querySelectorAll('.poll-option').forEach((x) => x.addEventListener('click', () => openThread(id))); toast('Vote counted', 'ok'); sonic('vote'); }
+      else toast(d.error || 'Poll vote failed', 'err');
+    }));
     $('#copy-link')?.addEventListener('click', () => {
       const url = location.origin + '/forum#discussions/' + id;
       (navigator.clipboard?.writeText(url) || Promise.reject()).then(() => toast('Link copied', 'ok')).catch(() => toast(url));
@@ -870,6 +922,72 @@
     });
   }
 
+  // ---- Notifications ----
+  async function refreshNotifBadge() {
+    try {
+      const d = await api('/api/forum/notifications?limit=1');
+      const badge = $('#notif-badge');
+      if (badge) {
+        const n = d.unread || 0;
+        badge.textContent = n > 99 ? '99+' : n;
+        badge.hidden = n === 0;
+      }
+    } catch (_) {}
+  }
+  async function toggleNotifPanel() {
+    const panel = $('#notif-panel');
+    const btn = $('#notif-btn');
+    if (!panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn?.setAttribute('aria-expanded', String(open));
+    if (!open) return;
+    panel.innerHTML = '<div class="forum-status">Loading…</div>';
+    const d = await api('/api/forum/notifications?limit=30');
+    const items = d.notifications || [];
+    const icon = { reply: '💬', mention: '@', accepted: '✅', system: '🔔' };
+    panel.innerHTML = `
+      <div class="notif-head"><strong>Notifications</strong>${items.some((n) => !n.read) ? '<button type="button" id="notif-read-all" class="forum-btn secondary sm">Mark all read</button>' : ''}</div>
+      ${items.length ? items.map((n) => `
+        <a class="notif-item${n.read ? '' : ' unread'}" href="#discussions/${esc(n.thread_id)}" data-tid="${esc(n.thread_id)}">
+          <span class="notif-ic">${icon[n.type] || '🔔'}</span>
+          <span class="notif-txt">${esc(n.text || n.type)}<span class="meta"> · ${timeAgo(n.at)}</span></span>
+        </a>`).join('') : '<div class="forum-status">No notifications yet.</div>'}`;
+    $('#notif-read-all')?.addEventListener('click', async () => {
+      await api('/api/forum/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid() }) });
+      refreshNotifBadge(); toggleNotifPanel(); toggleNotifPanel();
+    });
+    panel.querySelectorAll('.notif-item').forEach((a) => a.addEventListener('click', () => {
+      panel.hidden = true; setTab('discussions'); if (a.dataset.tid) openThread(a.dataset.tid);
+      api('/api/forum/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid() }) }).then(refreshNotifBadge);
+    }));
+  }
+
+  // ---- Composer: live duplicate detection ----
+  let simT;
+  async function checkSimilar(title) {
+    const box = $('#thread-similar');
+    if (!box) return;
+    if (!title || title.length < 6) { box.hidden = true; return; }
+    const d = await api('/api/forum/threads/similar?title=' + encodeURIComponent(title));
+    const items = d.threads || [];
+    if (!items.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = `<div class="meta">Similar existing threads — maybe join one?</div>` +
+      items.map((t) => `<a href="#discussions/${esc(t.id)}" class="side-link">${esc(t.title)} <span class="meta">· ${Math.round((t.similarity || 0) * 100)}% match</span></a>`).join('');
+  }
+
+  async function loadMyThreads(kind) {
+    const el = $('#threads-list');
+    if (!el) return;
+    el.innerHTML = skeleton(3);
+    const d = await api('/api/forum/' + (kind === 'following' ? 'following' : 'bookmarks'));
+    const cards = (d.threads || []).map(threadCard).join('');
+    el.innerHTML = cards || `<div class="forum-status">${kind === 'following' ? 'You are not following any threads yet.' : 'No bookmarks yet — tap 🔖 Save on a thread.'}</div>`;
+    bindThreadCards(el);
+    const more = $('#threads-loadmore'); if (more) more.hidden = true;
+  }
+
   function init() {
     initTheme();
     document.querySelectorAll('.forum-tab').forEach((btn) => {
@@ -935,6 +1053,25 @@
     attachGrammar($('#thread-body'));
     attachGrammar($('#article-body'));
     wireShareControls();
+
+    // Notifications bell
+    $('#notif-btn')?.addEventListener('click', toggleNotifPanel);
+    document.addEventListener('click', (e) => {
+      const panel = $('#notif-panel');
+      if (panel && !panel.hidden && !panel.contains(e.target) && e.target.id !== 'notif-btn' && !$('#notif-btn')?.contains(e.target)) panel.hidden = true;
+    });
+    refreshNotifBadge();
+    setInterval(refreshNotifBadge, 60000);
+
+    // Composer duplicate detection
+    $('#thread-title')?.addEventListener('input', (e) => {
+      clearTimeout(simT);
+      simT = setTimeout(() => checkSimilar(e.target.value.trim()), 400);
+    });
+
+    // Saved / Following quick views
+    $('#my-bookmarks-btn')?.addEventListener('click', () => { setTab('discussions'); loadMyThreads('bookmarks'); });
+    $('#my-following-btn')?.addEventListener('click', () => { setTab('discussions'); loadMyThreads('following'); });
 
     loadRules();
   }

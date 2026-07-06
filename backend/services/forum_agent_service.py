@@ -88,6 +88,11 @@ def public_persona(p: dict) -> dict:
     }
 
 
+def _slugify(text: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
+    return (s or "thread")[:60]
+
+
 def _normalize_thread(t: dict) -> dict:
     """Backfill new schema fields on threads created before the upgrade."""
     t.setdefault("tags", [])
@@ -95,12 +100,19 @@ def _normalize_thread(t: dict) -> dict:
     t.setdefault("views", 0)
     t.setdefault("votes", 0)
     t.setdefault("voters", [])
+    t.setdefault("downvoters", [])
     t.setdefault("pinned", False)
     t.setdefault("locked", False)
     t.setdefault("solved", False)
+    t.setdefault("deleted", False)
     t.setdefault("accepted_post_id", None)
+    if not t.get("slug"):
+        t["slug"] = _slugify(t.get("title") or "")
     for post in t.get("posts") or []:
         post.setdefault("edited_at", None)
+        post.setdefault("edit_count", 0)
+        post.setdefault("history", [])
+        post.setdefault("deleted", False)
         post.setdefault("is_accepted", False)
         r = post.get("reactions")
         if not isinstance(r, dict):
@@ -109,6 +121,14 @@ def _normalize_thread(t: dict) -> dict:
             for k in REACTION_KEYS:
                 r.setdefault(k, 0)
     return t
+
+
+def word_count(text: str) -> int:
+    return len((text or "").split())
+
+
+def reading_time_min(text: str) -> int:
+    return max(1, round(word_count(text) / 200.0))
 
 
 def thread_score(t: dict) -> float:
@@ -129,25 +149,35 @@ def thread_score(t: dict) -> float:
     return base / (age_h ** 0.35)
 
 
-def public_thread(t: dict, *, detail: bool = True) -> dict:
+def public_thread(t: dict, *, detail: bool = True, float_accepted: bool = False) -> dict:
     """Thread safe for API — no agent_seeded flag."""
     t = _normalize_thread(t)
     posts = []
     for post in t.get("posts") or []:
+        deleted = bool(post.get("deleted"))
         posts.append({
             "id": post.get("id"),
             "author_name": post.get("author_name"),
             "avatar": post.get("avatar"),
-            "body": post.get("body"),
+            "body": "[deleted]" if deleted else post.get("body"),
             "kind": post.get("kind"),
             "created_at": post.get("created_at"),
             "edited_at": post.get("edited_at"),
+            "edit_count": post.get("edit_count", 0),
+            "deleted": deleted,
             "reactions": post.get("reactions") or _empty_reactions(),
             "reaction_total": sum((post.get("reactions") or {}).values()),
             "is_accepted": bool(post.get("is_accepted")),
+            "word_count": word_count(post.get("body") or ""),
         })
+    if float_accepted and len(posts) > 1:
+        head, tail = posts[0], posts[1:]
+        tail.sort(key=lambda p: (not p.get("is_accepted"), p.get("created_at") or ""))
+        posts = [head] + tail
+    op_body = ((t.get("posts") or [{}])[0].get("body")) or ""
     out = {
         "id": t.get("id"),
+        "slug": t.get("slug") or _slugify(t.get("title") or ""),
         "topic_id": t.get("topic_id"),
         "subforum_id": t.get("subforum_id"),
         "theme_title": t.get("theme_title"),
@@ -159,11 +189,16 @@ def public_thread(t: dict, *, detail: bool = True) -> dict:
         "reply_count": max(0, len(posts) - 1),
         "views": t.get("views", 0),
         "votes": t.get("votes", 0),
+        "downvotes": len(t.get("downvoters") or []),
+        "net_votes": (t.get("votes", 0) or 0) - len(t.get("downvoters") or []),
         "pinned": bool(t.get("pinned")),
         "locked": bool(t.get("locked")),
         "solved": bool(t.get("solved")),
+        "deleted": bool(t.get("deleted")),
         "accepted_post_id": t.get("accepted_post_id"),
         "score": round(thread_score(t), 2),
+        "word_count": word_count(op_body),
+        "reading_time_min": reading_time_min(op_body),
         "created_at": t.get("created_at"),
         "updated_at": t.get("updated_at"),
     }
@@ -361,6 +396,7 @@ def create_thread(
         "theme_title": theme.get("title"),
         "subforum_title": sub.get("title"),
         "title": title[:200],
+        "slug": _slugify(title[:200]),
         "kind": kind,
         "tags": tags[:6],
         "posts": [_make_post(persona, body, kind)],
@@ -369,9 +405,11 @@ def create_thread(
         "views": 0,
         "votes": 0,
         "voters": [],
+        "downvoters": [],
         "pinned": False,
         "locked": False,
         "solved": False,
+        "deleted": False,
         "accepted_post_id": None,
         "agent_seeded": agent_authored,
     }
@@ -439,18 +477,38 @@ def register_view(thread_id: str) -> Optional[int]:
 
 
 def vote_thread(thread_id: str, voter: str, direction: int = 1) -> Optional[dict]:
-    """Up/down vote a thread. One vote per voter id; re-voting toggles."""
+    """Up/down vote a thread. One up + one down slot per voter; re-voting toggles.
+
+    direction > 0 = upvote, direction < 0 = downvote, direction 0 = clear.
+    """
     def _fn(t):
-        voters = t.setdefault("voters", [])
+        up = t.setdefault("voters", [])
+        down = t.setdefault("downvoters", [])
         vid = str(voter or "anon")
-        already = vid in voters
-        if direction > 0 and not already:
-            voters.append(vid)
-            t["votes"] = (t.get("votes", 0) or 0) + 1
-        elif direction <= 0 and already:
-            voters.remove(vid)
-            t["votes"] = max(0, (t.get("votes", 0) or 0) - 1)
-        return {"votes": t.get("votes", 0), "voted": vid in voters}
+        if direction > 0:
+            if vid not in up:
+                up.append(vid)
+            if vid in down:
+                down.remove(vid)
+        elif direction < 0:
+            if vid not in down:
+                down.append(vid)
+            if vid in up:
+                up.remove(vid)
+        else:
+            if vid in up:
+                up.remove(vid)
+            if vid in down:
+                down.remove(vid)
+        t["votes"] = len(up)
+        state = 1 if vid in up else (-1 if vid in down else 0)
+        return {
+            "votes": len(up),
+            "downvotes": len(down),
+            "net_votes": len(up) - len(down),
+            "voted": vid in up,
+            "vote_state": state,
+        }
     return _mutate_thread(thread_id, _fn)
 
 
@@ -496,10 +554,37 @@ def edit_post(thread_id: str, post_id: str, new_body: str) -> Optional[dict]:
     def _fn(t):
         for p in t.get("posts") or []:
             if p.get("id") == post_id:
+                hist = p.setdefault("history", [])
+                hist.append({"body": p.get("body"), "at": p.get("edited_at") or p.get("created_at")})
+                p["history"] = hist[-10:]
                 p["body"] = (new_body or "").strip()[:50000]
                 p["edited_at"] = _iso_now()
+                p["edit_count"] = (p.get("edit_count", 0) or 0) + 1
                 t["updated_at"] = _iso_now()
-                return {"post_id": post_id, "edited_at": p["edited_at"]}
+                return {"post_id": post_id, "edited_at": p["edited_at"], "edit_count": p["edit_count"]}
+        return None
+    return _mutate_thread(thread_id, _fn)
+
+
+def post_history(thread_id: str, post_id: str) -> Optional[List[dict]]:
+    for t in load_threads():
+        if t.get("id") == thread_id:
+            for p in t.get("posts") or []:
+                if p.get("id") == post_id:
+                    return p.get("history") or []
+    return None
+
+
+def delete_thread(thread_id: str, deleted: bool = True) -> Optional[dict]:
+    return _mutate_thread(thread_id, lambda t: t.update({"deleted": bool(deleted)}) or {"deleted": bool(deleted)})
+
+
+def delete_post(thread_id: str, post_id: str, deleted: bool = True) -> Optional[dict]:
+    def _fn(t):
+        for p in t.get("posts") or []:
+            if p.get("id") == post_id:
+                p["deleted"] = bool(deleted)
+                return {"post_id": post_id, "deleted": bool(deleted)}
         return None
     return _mutate_thread(thread_id, _fn)
 
@@ -507,6 +592,48 @@ def edit_post(thread_id: str, post_id: str, new_body: str) -> Optional[dict]:
 def set_thread_tags(thread_id: str, tags: List[str]) -> Optional[dict]:
     clean = [str(x).strip().lower()[:24] for x in (tags or []) if str(x).strip()][:6]
     return _mutate_thread(thread_id, lambda t: t.update({"tags": clean}) or {"tags": clean})
+
+
+# ---------------------------------------------------------------------------
+# Duplicate detection + per-tag reputation
+# ---------------------------------------------------------------------------
+def _title_tokens(title: str) -> set:
+    return set(re.findall(r"[a-z0-9]{3,}", (title or "").lower()))
+
+
+def similar_threads(title: str, *, exclude_id: str = "", limit: int = 5, min_overlap: float = 0.35) -> List[dict]:
+    """Find threads with similar titles (Jaccard on word tokens) — dedupe helper."""
+    base = _title_tokens(title)
+    if not base:
+        return []
+    out = []
+    for t in load_threads():
+        if t.get("id") == exclude_id or t.get("deleted"):
+            continue
+        toks = _title_tokens(t.get("title") or "")
+        if not toks:
+            continue
+        sim = len(base & toks) / len(base | toks)
+        if sim >= min_overlap:
+            out.append((sim, _normalize_thread(t)))
+    out.sort(key=lambda x: x[0], reverse=True)
+    return [{"similarity": round(s, 2), **public_thread(t, detail=False)} for s, t in out[:limit]]
+
+
+def tag_reputation(author_name: str) -> Dict[str, int]:
+    """Reputation broken down per tag for an author."""
+    per_tag: Dict[str, int] = {}
+    for t in load_threads():
+        tags = t.get("tags") or []
+        for i, p in enumerate(t.get("posts") or []):
+            if p.get("author_name") != author_name:
+                continue
+            pts = (10 if i == 0 else 5) + sum((p.get("reactions") or {}).values()) * 2
+            if p.get("is_accepted"):
+                pts += 25
+            for tag in tags:
+                per_tag[tag] = per_tag.get(tag, 0) + pts
+    return dict(sorted(per_tag.items(), key=lambda x: x[1], reverse=True))
 
 
 # ---------------------------------------------------------------------------
@@ -521,8 +648,15 @@ def list_threads_sorted(
     query: str = "",
     offset: int = 0,
     limit: int = 20,
+    ids: Optional[List[str]] = None,
+    include_deleted: bool = False,
 ) -> Tuple[List[dict], int]:
     threads = [_normalize_thread(t) for t in load_threads()]
+    if not include_deleted:
+        threads = [t for t in threads if not t.get("deleted")]
+    if ids is not None:
+        idset = set(ids)
+        threads = [t for t in threads if t.get("id") in idset]
     if topic_id:
         threads = [t for t in threads if t.get("topic_id") == topic_id]
     if subforum_id:
@@ -551,6 +685,14 @@ def list_threads_sorted(
         threads.sort(key=lambda t: t.get("created_at") or "", reverse=True)
     elif sort == "views":
         threads.sort(key=lambda t: t.get("views", 0), reverse=True)
+    elif sort == "solved":
+        threads = [t for t in threads if t.get("solved")]
+        threads.sort(key=lambda t: t.get("updated_at") or "", reverse=True)
+    elif sort == "unsolved":
+        threads = [t for t in threads if t.get("kind") == "question" and not t.get("solved")]
+        threads.sort(key=lambda t: t.get("created_at") or "", reverse=True)
+    elif sort == "oldest":
+        threads.sort(key=lambda t: t.get("created_at") or "")
     else:  # new
         threads.sort(key=lambda t: t.get("updated_at") or "", reverse=True)
 
