@@ -16,6 +16,28 @@ def test_frontpage_and_nav_include_wallet_staking_portal_links():
         assert href in nav
 
 
+def test_navigation_primary_order_and_removed_duplicates():
+    nav = (ROOT / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
+    expected_order = [
+        "id: 'home'",
+        "id: 'generator'",
+        "id: 'game'",
+        "id: 'battle'",
+        "id: 'trophies'",
+        "id: 'quests'",
+        "id: 'shop'",
+        "id: 'explorer'",
+        "id: 'profile'",
+        "id: 'agents'",
+    ]
+    positions = [nav.index(marker) for marker in expected_order]
+
+    assert positions == sorted(positions)
+    assert "id: 'stories'" not in nav
+    assert "id: 'command-center'" not in nav
+    assert "id: 'chat'" not in nav
+
+
 def test_platform_news_announces_wallet_staking_pages():
     data = json.loads((ROOT / "data/platform_news.json").read_text(encoding="utf-8"))
     items = data.get("items") or []
