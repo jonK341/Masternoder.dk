@@ -63,11 +63,19 @@ Use one orchestrator job to run all stages in sequence:
 Order:
 
 1. trading content report + platform news
-2. AI content factory
-3. YouTube content agent
+2. ensure content API readiness (`cron/ensure_content_api.sh`)
+3. AI content factory
+4. YouTube content agent
 
 Default behavior: continue even if one stage fails, but return non-zero when any stage failed.
 Set `CONTENT_PIPELINE_FAIL_FAST=1` to stop on first failure.
+
+API preflight tuning:
+
+- `CONTENT_API_SYSTEMD_UNIT` (optional systemd unit to restart, e.g. your web app service)
+- `CONTENT_API_START_CMD` (fallback tmux start command; default `python3 <repo>/run.py`)
+- `CONTENT_API_TMUX_SESSION` (default `content-api-server`)
+- `CONTENT_API_WAIT_SEC` (default `45`)
 
 ## Env tuning
 

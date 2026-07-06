@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Master content pipeline:
 # 1) Trading content report + platform news
-# 2) AI content factory (new long-form + shorts plans/jobs)
-# 3) YouTube agent package/upload/live actions
+# 2) Ensure API readiness for generator endpoints
+# 3) AI content factory (new long-form + shorts plans/jobs)
+# 4) YouTube agent package/upload/live actions
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -53,10 +54,13 @@ run_stage() {
 # Stage 1: refresh trading report + publish news
 run_stage "trading_content_news" bash "$ROOT/cron/trading_content_news.sh" || true
 
-# Stage 2: build new AI content plans/jobs (and optional live-gate trigger)
+# Stage 2: ensure generator/content API is reachable
+run_stage "ensure_content_api" bash "$ROOT/cron/ensure_content_api.sh" || true
+
+# Stage 3: build new AI content plans/jobs (and optional live-gate trigger)
 run_stage "ai_content_factory" bash "$ROOT/cron/ai_content_factory.sh" || true
 
-# Stage 3: package/upload/live operations for YouTube
+# Stage 4: package/upload/live operations for YouTube
 run_stage "youtube_content_agent" bash "$ROOT/cron/youtube_content_agent.sh" || true
 
 echo "" | tee -a "$RUN_LOG"
