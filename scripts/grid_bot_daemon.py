@@ -43,7 +43,18 @@ def _load_config_env() -> None:
                     break
                 res.append(ch); i += 1
             out.append("".join(res))
-        return re.sub(r",(\s*[}\]])", r"\1", "\n".join(out))
+        repaired = []
+        for line in out:
+            m = re.match(r'^(\s*"[^"]*"\s*:\s*)(.+?)(,?)\s*$', line)
+            if m:
+                prefix, val, comma = m.groups()
+                v = val.strip()
+                if v and v[0] not in '"{[-0123456789' and v not in ("true", "false", "null"):
+                    core = v.strip('"')
+                    if re.match(r'^[A-Za-z0-9_.\-/:+=@]+$', core):
+                        line = prefix + '"' + core + '"' + comma
+            repaired.append(line)
+        return re.sub(r",(\s*[}\]])", r"\1", "\n".join(repaired))
 
     for p in (os.path.join(ROOT, "trader_app", "config.json"), os.path.join(os.getcwd(), "config.json")):
         if os.path.isfile(p):

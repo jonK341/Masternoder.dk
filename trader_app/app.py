@@ -125,7 +125,19 @@ def _strip_jsonc(text: str) -> str:
                 break  # rest of line is a comment
             res.append(ch); i += 1
         out.append("".join(res))
-    joined = "\n".join(out)
+    # Repair malformed string values: `"KEY": bareword"` or `"KEY": bareword` -> `"KEY": "bareword"`.
+    repaired = []
+    for line in out:
+        m = re.match(r'^(\s*"[^"]*"\s*:\s*)(.+?)(,?)\s*$', line)
+        if m:
+            prefix, val, comma = m.groups()
+            v = val.strip()
+            if v and v[0] not in '"{[-0123456789' and v not in ("true", "false", "null"):
+                core = v.strip('"')
+                if re.match(r'^[A-Za-z0-9_.\-/:+=@]+$', core):
+                    line = prefix + '"' + core + '"' + comma
+        repaired.append(line)
+    joined = "\n".join(repaired)
     return re.sub(r",(\s*[}\]])", r"\1", joined)  # drop trailing commas
 
 
