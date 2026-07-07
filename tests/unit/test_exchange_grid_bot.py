@@ -617,6 +617,46 @@ def test_circuit_breaker_auto_resume_after_cooldown(grid, tmp_path, monkeypatch)
     assert any(e["action"] == "auto_resume" and e["venue"] == "nonkyc" for e in r["events"])
 
 
+def test_go_live_preflight_blocks_when_unreachable(grid, tmp_path, monkeypatch):
+    import json as _json
+    import backend.services.exchange_venue_api_service as vapi
+    p = tmp_path / "pf.json"
+    p.write_text(_json.dumps({"enabled": True, "venue": "binance", "assets": ["DOGE"],
+                              "venues": {"nonkyc": ["DOGE"]}}), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    monkeypatch.setattr(vapi, "get_account_balance",
+                        lambda v, **k: {"success": False, "status_code": 451, "error": "geo-blocked"})
+    monkeypatch.setattr(vapi, "extract_order_error", lambda r: r.get("error"))
+    monkeypatch.setattr(vapi, "venue_quote_asset", lambda v: "USDC" if v == "binance" else "USDT")
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, **k: {})
+    r = grid.go_live_preflight()
+    assert r["ready_to_flip_live"] is False
+    assert "at least one venue funded" in r["blockers"]
+    assert any(c["name"].endswith("balance read") and c["status"] == "fail" for c in r["checks"])
+
+
+def test_go_live_preflight_ready_when_funded(grid, tmp_path, monkeypatch):
+    import json as _json
+    import backend.services.exchange_venue_api_service as vapi
+    p = tmp_path / "pf2.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "venue_overrides": {"binance": {"grid_step_pct": 0.003, "grid_levels": 4,
+                            "order_size_usd": 6.0, "maker_fee_bps": 10.0,
+                            "require_spread_over_fee": False}},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    monkeypatch.setattr(vapi, "get_account_balance", lambda v, **k: {"success": True, "body": {}})
+    monkeypatch.setattr(vapi, "extract_order_error", lambda r: None)
+    monkeypatch.setattr(vapi, "venue_quote_asset", lambda v: "USDC")
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, **k: {"USDC": 100.0})
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: False)
+    r = grid.go_live_preflight()
+    assert r["ready_to_flip_live"] is True and r["blockers"] == []
+    assert r["verdict"].startswith("READY")
+    assert any("EXCHANGE_GRID_LIVE=1" in a for a in r["actions"])
+
+
 def test_daily_digest_summarizes_window(grid):
     import json as _json
     from datetime import datetime, timezone

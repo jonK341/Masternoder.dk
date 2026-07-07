@@ -522,6 +522,14 @@ def api_grid_rank():
     return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
 
 
+@app.route("/api/grid/preflight")
+@login_required
+def api_grid_preflight():
+    """Go-live preflight: gates, per-venue reachability, funded legs, fee-positive config."""
+    from backend.services.exchange_grid_bot_service import go_live_preflight
+    return jsonify(go_live_preflight())
+
+
 @app.route("/api/digest")
 @login_required
 def api_digest():

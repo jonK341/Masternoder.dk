@@ -112,6 +112,12 @@
         <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin." style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;color:var(--txt);font-size:13px"><input id="cf_sellexist" type="checkbox" style="width:auto;flex:none"/> Sell existing coin — trade the base coin you already hold (e.g. DOGE)</label>
       </div>
       <button id="cf_save">Save config</button><span class="muted" id="cf_msg" style="margin-left:8px"></span></div>
+    <div class="card"><h2>Go-live preflight <span class="muted" style="font-size:12px">(check before flipping live)</span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <button id="pf_run" class="ghost">Run preflight</button>
+        <span id="pf_verdict" class="pill">not run</span>
+        <span class="muted" id="pf_msg" style="margin-left:8px"></span></div>
+      <div id="pf_body" class="muted">Verifies live gates, per-venue reachability, funded legs, and fee-positive config — and lists exactly what's missing before you flip live.</div></div>
     <div class="card"><h2>Profit-ranked pairs</h2>
       <div class="muted" style="margin-bottom:8px;font-size:12px">Ranks candidate pairs by measured edge (ledger history + live arb), net of fees. "Add profitable" writes the winners into the multi-venue grid config.</div>
       <div class="row" style="margin-bottom:8px">
@@ -338,6 +344,16 @@ function loadSpecialization(){getJSON('/api/grid/status').then(function(d){
   document.querySelectorAll('.sp_pause').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_pause_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
   document.querySelectorAll('.sp_resume').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_resume_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
 });}
+function loadPreflight(){busy(el('pf_run'),true);el('pf_msg').textContent='checking…';getJSON('/api/grid/preflight').then(function(d){
+  var v=el('pf_verdict');v.textContent=d.verdict||'?';v.className='pill '+(d.ready_to_flip_live?(d.grid_live?'neg':'strong'):'halt');
+  var ch=(d.checks||[]);
+  var h='<table><tbody>';
+  ch.forEach(function(c){var p=c.status==='pass'?'<span class="pill strong">pass</span>':(c.status==='info'?'<span class="pill">info</span>':(c.status==='warn'?'<span class="pill">warn</span>':'<span class="pill neg">fix</span>'));
+    h+='<tr><td>'+c.name+'</td><td>'+p+'</td><td class="muted">'+(c.detail||'')+'</td></tr>';});
+  h+='</tbody></table>';
+  var acts=(d.actions||[]);if(acts.length)h+='<div style="margin-top:8px"><b>What to do:</b><ul style="margin:6px 0 0 18px">'+acts.map(function(a){return '<li>'+a+'</li>';}).join('')+'</ul></div>';
+  el('pf_body').innerHTML=h;el('pf_msg').textContent=(d.blockers&&d.blockers.length)?(d.blockers.length+' blocker(s)'):'';busy(el('pf_run'),false);});}
+el('pf_run').onclick=loadPreflight;
 function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
   var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';
   pairs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td class=r>'+r.edge_bps+'</td><td class=r>'+r.net_edge_bps+'</td><td class=r>'+r.hit_rate_pct+'</td><td class=r>'+r.fill_count+'</td><td class=r><b>'+r.score+'</b></td><td class=muted>'+(r.venues||[]).join(', ')+'</td><td class=muted>'+r.source+'</td></tr>';});

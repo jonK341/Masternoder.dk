@@ -856,6 +856,99 @@ def check_circuit_breakers() -> Dict[str, Any]:
             "window_hours": window, "loss_threshold_usd": loss_thr, "cooldown_hours": cooldown}
 
 
+def go_live_preflight(*, venues: Optional[List[str]] = None,
+                      include_cross_trade: bool = True) -> Dict[str, Any]:
+    """The 'last check before flipping live' — verifies gates, per-venue reachability, funded
+    legs, and fee-positive config, and returns a checklist + blockers so you know exactly what's
+    missing. Read-only (uses real balance reads); places no orders."""
+    from backend.services import exchange_venue_api_service as vapi
+    cfg = load_config()
+    venue_assets: Dict[str, List[str]] = {}
+    for v, a in grid_targets(cfg):
+        venue_assets.setdefault(v, []).append(a)
+    if venues:
+        venue_assets = {v: venue_assets.get(v, []) for v in [x.lower() for x in venues]}
+
+    checks: List[Dict[str, Any]] = []
+    blockers: List[str] = []
+
+    def add(name: str, ok: bool, detail: str, severity: str = "fail") -> None:
+        checks.append({"name": name, "status": "pass" if ok else severity, "detail": detail})
+        if not ok and severity == "fail":
+            blockers.append(name)
+
+    # --- gates (informational; these are the switches you flip to go live) ---
+    grid_live = grid_live_enabled()
+    checks.append({"name": "grid live gate", "status": "pass" if grid_live else "info",
+                   "detail": "ON" if grid_live else
+                   "OFF — set EXCHANGE_GRID_LIVE=1 (+ EXCHANGE_ARBITRAGE_LIVE=1) to trade real"})
+    if include_cross_trade:
+        try:
+            from backend.services import exchange_cross_trade_service as ct
+            ctl = ct.cross_trade_live_enabled()
+            checks.append({"name": "cross-trade live gate", "status": "pass" if ctl else "info",
+                           "detail": "ON" if ctl else
+                           "OFF — set EXCHANGE_CROSS_TRADE_LIVE=1 to auto-execute cross-trades"})
+        except Exception:
+            pass
+
+    # --- per-venue reachability + funding + fee-positive config ---
+    funded_any = False
+    for v, assets in venue_assets.items():
+        e = effective_config(v, cfg)
+        try:
+            quote = str(vapi.venue_quote_asset(v)).upper()
+        except Exception:
+            quote = "USDT"
+        raw = vapi.get_account_balance(v, dry_run=False)
+        reachable = bool(raw.get("success")) and not raw.get("simulated")
+        add(f"{v}: balance read", reachable,
+            "reachable" if reachable else (vapi.extract_order_error(raw) or "unreachable (auth/IP/region)"))
+        if not reachable:
+            continue
+        bals = vapi.parse_spot_balances(v, dry_run=False) or {}
+        free_quote = float(bals.get(quote) or 0)
+        one_level = float(e["order_size_usd"])
+        full_grid = one_level * int(e["grid_levels"])
+        quote_ok = free_quote >= one_level
+        add(f"{v}: {quote} funded (buys)", quote_ok,
+            f"free {free_quote:.2f} {quote} — need >= {one_level:.2f} for 1 level, "
+            f"{full_grid:.2f} for the full grid", severity="warn")
+        held = {a: float(bals.get(a.upper()) or 0) for a in assets if float(bals.get(a.upper()) or 0) > 0}
+        checks.append({"name": f"{v}: coin held (sell-from-existing)",
+                       "status": "pass" if held else "info",
+                       "detail": (", ".join(f"{k}:{amt:.4f}" for k, amt in list(held.items())[:5])
+                                  if held else "none — sells seed only after buys fill")})
+        if quote_ok or held:
+            funded_any = True
+        step_bps = float(e["grid_step_pct"]) * 1e4
+        rt_fee = 2.0 * float(e["maker_fee_bps"])
+        add(f"{v}: fee-positive step", step_bps > rt_fee,
+            f"step {step_bps:.0f}bps vs round-trip fees {rt_fee:.0f}bps")
+
+    add("at least one venue funded", funded_any,
+        "fund quote for buys or hold coin for sells on >= 1 reachable venue")
+
+    cb = cfg.get("circuit_breaker") or {}
+    checks.append({"name": "circuit breaker", "status": "pass" if cb.get("enabled") else "warn",
+                   "detail": (f"loss cap ${cb.get('loss_threshold_usd')} / {cb.get('window_hours')}h, "
+                              f"resume {cb.get('cooldown_hours')}h" if cb.get("enabled") else "disabled")})
+
+    ready = len(blockers) == 0
+    actions: List[str] = []
+    for b in blockers:
+        actions.append("Fix: " + b)
+    if ready and not grid_live:
+        actions.append("Prerequisites met — set EXCHANGE_GRID_LIVE=1 in config.json to flip the grid live")
+    verdict = ("READY — set the live gate to trade" if (ready and not grid_live)
+               else "LIVE — trading real" if (ready and grid_live)
+               else f"BLOCKED — {len(blockers)} issue(s) to fix")
+    return {"success": True, "ready_to_flip_live": ready, "grid_live": grid_live,
+            "verdict": verdict, "blockers": blockers, "checks": checks, "actions": actions,
+            "note": "'Ready' means prerequisites (reachability, funding, fee-positive config) are "
+                    "met; flipping the live gate is the final manual step."}
+
+
 def daily_digest(window_hours: float = 24.0) -> Dict[str, Any]:
     """Passive summary of the trailing window: per-venue realized + fills, totals, currently
     paused venues, and the day's circuit-breaker pause/resume counts."""
