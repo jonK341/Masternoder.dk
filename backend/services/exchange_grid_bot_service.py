@@ -97,7 +97,61 @@ def load_config() -> Dict[str, Any]:
 
 # Per-venue fields that may be overridden (illiquid vs liquid venues want different grids).
 _OVERRIDABLE = ("grid_step_pct", "order_size_usd", "grid_levels", "max_inventory_usd",
-                "hard_loss_cap_usd", "min_notional_usd", "maker_fee_bps", "taker_fee_bps")
+                "hard_loss_cap_usd", "min_notional_usd", "maker_fee_bps", "taker_fee_bps",
+                "min_spread_bps", "min_edge_over_fee_bps")
+_OVERRIDABLE_FLAGS = ("require_spread_over_fee", "enforce_fee_positive_step")
+
+# Exchange specialization profiles — each exchange runs as its own tuned market-maker.
+_VENUE_PROFILES: Dict[str, Dict[str, Any]] = {
+    # Tight-spread, deep-liquidity venues (e.g. Binance): dense grid, profit from oscillation
+    # across many small fee-positive steps; no spread gate (the book is always tight).
+    "liquid_dense": {
+        "grid_step_pct": 0.003, "grid_levels": 6, "order_size_usd": 6.0,
+        "max_inventory_usd": 60.0, "hard_loss_cap_usd": 8.0, "min_notional_usd": 5.0,
+        "min_spread_bps": 1.0, "require_spread_over_fee": False, "enforce_fee_positive_step": True,
+    },
+    # Wide-spread, thin venues (e.g. NonKYC): patient passive maker — post only when the live
+    # spread is genuinely fat, wide steps, small size, tight inventory.
+    "illiquid_wide": {
+        "grid_step_pct": 0.010, "grid_levels": 3, "order_size_usd": 6.0,
+        "max_inventory_usd": 30.0, "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0,
+        "min_spread_bps": 40.0, "require_spread_over_fee": True, "enforce_fee_positive_step": True,
+    },
+    # Very thin / unproven book (e.g. XeggeX): most conservative — widest steps, fewest levels,
+    # smallest size, demands the widest spread before it posts anything.
+    "thin_conservative": {
+        "grid_step_pct": 0.012, "grid_levels": 2, "order_size_usd": 5.0,
+        "max_inventory_usd": 15.0, "hard_loss_cap_usd": 3.0, "min_notional_usd": 5.0,
+        "min_spread_bps": 60.0, "require_spread_over_fee": True, "enforce_fee_positive_step": True,
+    },
+}
+_DEFAULT_VENUE_PROFILE = {"binance": "liquid_dense", "nonkyc": "illiquid_wide",
+                          "xeggex": "thin_conservative"}
+
+
+def list_venue_profiles() -> Dict[str, Any]:
+    return {"success": True, "profiles": _VENUE_PROFILES,
+            "recommended": _DEFAULT_VENUE_PROFILE}
+
+
+def apply_venue_profile(venue: str, profile: str) -> Dict[str, Any]:
+    """Specialize one exchange by applying a named profile to its per-venue overrides."""
+    venue = str(venue or "").lower()
+    profile = str(profile or "")
+    if profile not in _VENUE_PROFILES:
+        return {"success": False, "error": "unknown_profile", "profiles": list(_VENUE_PROFILES)}
+    cfg = load_config()
+    overrides = dict(cfg.get("venue_overrides") or {})
+    block = dict(_VENUE_PROFILES[profile])
+    block["_profile"] = profile
+    overrides[venue] = block
+    cfg["venue_overrides"] = overrides
+    ex._write_json(_CFG_PATH, cfg)
+    return {"success": True, "venue": venue, "profile": profile,
+            "effective": {k: effective_config(venue, cfg).get(k)
+                          for k in ("grid_step_pct", "grid_levels", "order_size_usd",
+                                    "max_inventory_usd", "hard_loss_cap_usd", "min_spread_bps",
+                                    "require_spread_over_fee")}}
 
 
 def effective_config(venue: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -110,6 +164,11 @@ def effective_config(venue: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[s
         for k in _OVERRIDABLE:
             if ov.get(k) is not None:
                 base[k] = ov[k]
+        for k in _OVERRIDABLE_FLAGS:
+            if ov.get(k) is not None:
+                base[k] = bool(ov[k])
+        if ov.get("_profile"):
+            base["_profile"] = ov["_profile"]
     # Re-clamp the (possibly overridden) numeric fields.
     base["grid_levels"] = int(_clampf(base.get("grid_levels"), 1, 20, 3))
     base["grid_step_pct"] = _clampf(base.get("grid_step_pct"), 0.0005, 0.2, 0.004)
@@ -118,6 +177,7 @@ def effective_config(venue: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[s
     base["hard_loss_cap_usd"] = _clampf(base.get("hard_loss_cap_usd"), 0.0, 1e9, 5.0)
     base["min_notional_usd"] = _clampf(base.get("min_notional_usd"), 0.0, 1e6, 5.0)
     base["maker_fee_bps"] = _clampf(base.get("maker_fee_bps"), 0.0, 100.0, 10.0)
+    base["min_spread_bps"] = _clampf(base.get("min_spread_bps"), 0.0, 1e5, 8.0)
     # Fee-positive step: step_bps must exceed a round trip of maker fees plus the margin.
     if base.get("enforce_fee_positive_step"):
         maker = float(base.get("maker_fee_bps") or 0)
@@ -481,9 +541,11 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     # round trip of maker fees — i.e. the venue is actually worth market-making right now.
     # (Paired replacement of already-established levels is unaffected.) Unknown spread = pass.
     maker_bps = float(cfg.get("maker_fee_bps") or 0)
+    # Threshold = a round trip of fees, but at least the venue's specialized min_spread_bps.
+    gate_threshold = max(2.0 * maker_bps, float(cfg.get("min_spread_bps") or 0))
     spread_gate_ok = True
     if cfg.get("require_spread_over_fee") and spread_bps is not None:
-        spread_gate_ok = float(spread_bps) >= 2.0 * maker_bps
+        spread_gate_ok = float(spread_bps) >= gate_threshold
     if not spread_gate_ok:
         reconcile_note = reconcile_note or "spread_below_fee"
 
@@ -527,6 +589,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         "spread_bps": round(float(spread_bps), 2) if spread_bps is not None else None,
         "grid_step_pct": cfg.get("grid_step_pct"),
         "spread_gate_ok": spread_gate_ok,
+        "profile": cfg.get("_profile"),
         "mode": "live" if live else "paper",
     }
 
@@ -596,11 +659,17 @@ def grid_status() -> Dict[str, Any]:
                                            "enforce_fee_positive_step", "require_spread_over_fee",
                                            "min_edge_over_fee_bps", "venue_overrides")},
         "effective_by_venue": {
-            v: {"grid_step_pct": effective_config(v, cfg).get("grid_step_pct"),
+            v: {"profile": effective_config(v, cfg).get("_profile"),
+                "grid_step_pct": effective_config(v, cfg).get("grid_step_pct"),
+                "grid_levels": effective_config(v, cfg).get("grid_levels"),
                 "order_size_usd": effective_config(v, cfg).get("order_size_usd"),
-                "maker_fee_bps": effective_config(v, cfg).get("maker_fee_bps")}
+                "max_inventory_usd": effective_config(v, cfg).get("max_inventory_usd"),
+                "maker_fee_bps": effective_config(v, cfg).get("maker_fee_bps"),
+                "min_spread_bps": effective_config(v, cfg).get("min_spread_bps"),
+                "require_spread_over_fee": effective_config(v, cfg).get("require_spread_over_fee")}
             for v in venues_map
         },
+        "venue_profiles_available": list(_VENUE_PROFILES),
         "state": assets,
     }
 

@@ -516,6 +516,14 @@ def api_grid_rank():
     return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
 
 
+@app.route("/api/grid/status")
+@login_required
+def api_grid_status():
+    """Full grid status incl. per-venue effective specialization profiles."""
+    from backend.services.exchange_grid_bot_service import grid_status
+    return jsonify(grid_status())
+
+
 @app.route("/api/grid/venue-performance")
 @login_required
 def api_grid_venue_performance():
@@ -648,6 +656,12 @@ def api_controls_action():
         from backend.services.exchange_cross_trade_service import run_once
         # Manual one-shot search+execute. Paper unless both live gates are on.
         return jsonify(run_once(force=True))
+    if action == "grid_set_venue_profile":
+        from backend.services.exchange_grid_bot_service import apply_venue_profile
+        r = apply_venue_profile(str(data.get("venue") or ""), str(data.get("profile") or ""))
+        if r.get("success"):
+            store.record_alert("grid", f"Specialized {r.get('venue')} -> {r.get('profile')}", "info")
+        return jsonify(r)
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),

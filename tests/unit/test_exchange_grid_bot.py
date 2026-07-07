@@ -486,6 +486,57 @@ def test_spread_gate_disabled_allows_any_spread(grid, tmp_path, monkeypatch):
     assert r["open_orders"] > 0  # gate off -> seeds regardless of thin spread
 
 
+def test_apply_venue_profile_specializes_exchange(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "spec.json"
+    p.write_text(json.dumps({"enabled": True, "venue": "binance", "assets": ["DOGE"],
+                             "venue_overrides": {}}), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    r = grid.apply_venue_profile("nonkyc", "illiquid_wide")
+    assert r["success"] and r["profile"] == "illiquid_wide"
+    e = grid.effective_config("nonkyc", grid.load_config())
+    assert e["_profile"] == "illiquid_wide"
+    assert e["require_spread_over_fee"] is True
+    assert e["min_spread_bps"] == 40.0
+    assert grid.apply_venue_profile("nonkyc", "bogus")["success"] is False
+
+
+def test_liquid_dense_profile_ignores_spread_gate(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "dense.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"], "maker_fee_bps": 10.0,
+        "venue_overrides": {"binance": {"_profile": "liquid_dense", "grid_step_pct": 0.003,
+                            "grid_levels": 4, "require_spread_over_fee": False,
+                            "min_spread_bps": 1.0, "maker_fee_bps": 10.0}},
+        "require_spread_over_fee": True,  # base on, but venue overrides OFF
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # Tiny 2 bps spread would fail a gate, but liquid_dense has the gate OFF -> still seeds.
+    r = grid.run_grid_tick("binance", "DOGE", mid=100.0, dry_run=True, spot_free_base=100.0, spread_bps=2.0)
+    assert r["spread_gate_ok"] is True and r["open_orders"] > 0
+    assert r["profile"] == "liquid_dense"
+
+
+def test_illiquid_profile_gates_on_min_spread(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "illiq.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"], "maker_fee_bps": 10.0,
+        "venue_overrides": {"nonkyc": {"_profile": "illiquid_wide", "grid_step_pct": 0.010,
+                            "grid_levels": 3, "require_spread_over_fee": True,
+                            "min_spread_bps": 40.0, "maker_fee_bps": 20.0}},
+        "allow_sell_existing_inventory": True, "min_notional_usd": 5.0,
+        "order_size_usd": 6.0, "max_inventory_usd": 40.0,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # min_spread 40 (> 2*maker=40 tie) -> 30 bps blocked, 50 bps seeds.
+    blocked = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0, spread_bps=30.0)
+    seeds = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0, spread_bps=50.0)
+    assert blocked["open_orders"] == 0 and blocked["spread_gate_ok"] is False
+    assert seeds["open_orders"] > 0 and seeds["spread_gate_ok"] is True
+
+
 def test_venue_performance_aggregates_from_ledger(grid):
     import json as _json
     from datetime import datetime, timezone, timedelta

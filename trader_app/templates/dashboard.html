@@ -126,6 +126,9 @@
         <button id="vp_refresh" class="ghost">Refresh</button>
         <span class="muted" id="vp_msg" style="margin-left:8px"></span></div>
       <div id="vp_body" class="muted">Real fills + realized PnL per venue, from the grid ledger. Shift size toward the winners.</div></div>
+    <div class="card"><h2>Exchange specialization <span class="muted" style="font-size:12px">(one tuned market-maker per exchange)</span></h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Cross-trading is off, so each exchange runs its own profile: liquid venues dense (profit from oscillation), thin venues wide + spread-gated. Every grid step is fee-positive.</div>
+      <div id="sp_body" class="muted">Loading…</div></div>
     <div class="card"><h2>Cross-venue price differences</h2>
       <div class="muted" style="margin-bottom:8px;font-size:12px">Searches the same pair's price across Binance / NonKYC / XeggeX and shows the buy-low/sell-high gap (net of both venues' fees). "Add cross-venue pairs" lists the profitable ones on each exchange for the grid.</div>
       <div class="row" style="margin-bottom:8px">
@@ -249,7 +252,7 @@ loaders.overview=function(){getJSON('/api/overview').then(function(d){
   refreshAlerts();
 };
 loaders.trading=function(){getJSON('/api/trading').then(function(d){window._recs=d.recommendations||[];renderRecs();
-  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();if(window.loadVenuePerf)loadVenuePerf();};
+  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();if(window.loadVenuePerf)loadVenuePerf();if(window.loadSpecialization)loadSpecialization();};
 function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||'').toUpperCase();var mn=Number(el('tr_minbps').value||0);
   recs=recs.filter(function(r){return (!q||r.symbol.indexOf(q)>=0)&&r.edge_bps>=mn;});
   if(!recs.length){el('tr_recs').innerHTML='<span class="muted">No matching recommendations.</span>';return;}
@@ -319,6 +322,15 @@ function renderVenuePerf(d){if(!d||!d.success){el('vp_body').innerHTML='<span cl
   el('vp_body').innerHTML=h;makeSortable(el('vp_body').querySelector('table'));}
 function loadVenuePerf(){var hrs=Number(el('vp_hours').value||24);el('vp_msg').textContent='loading…';getJSON('/api/grid/venue-performance?hours='+hrs).then(function(d){el('vp_msg').textContent=d.focus_suggestion?('focus: '+d.focus_suggestion):'';renderVenuePerf(d);});}
 el('vp_refresh').onclick=loadVenuePerf;el('vp_hours').onchange=loadVenuePerf;
+function loadSpecialization(){getJSON('/api/grid/status').then(function(d){
+  var ev=(d.effective_by_venue)||{};var profs=(d.venue_profiles_available)||[];var vs=Object.keys(ev);
+  if(!vs.length){el('sp_body').innerHTML='<span class="muted">No venues configured.</span>';return;}
+  var h='<table><thead><tr><th>Exchange</th><th>Profile</th><th class=r>Step</th><th class=r>Levels</th><th class=r>Size $</th><th class=r>Max inv $</th><th class=r>Min spread</th><th>Spread gate</th></tr></thead><tbody>';
+  vs.forEach(function(v){var e=ev[v];var sel='<select data-venue="'+v+'" class="sp_sel">';profs.forEach(function(p){sel+='<option value="'+p+'"'+(e.profile===p?' selected':'')+'>'+p+'</option>';});sel+='</select>';
+    h+='<tr><td><b>'+v+'</b></td><td>'+sel+'</td><td class=r>'+(e.grid_step_pct*1e4).toFixed(0)+'bps</td><td class=r>'+e.grid_levels+'</td><td class=r>'+e.order_size_usd+'</td><td class=r>'+e.max_inventory_usd+'</td><td class=r>'+e.min_spread_bps+'bps</td><td>'+(e.require_spread_over_fee?'<span class="pill">on</span>':'<span class="pill no">off</span>')+'</td></tr>';});
+  el('sp_body').innerHTML=h+'</tbody></table><span class="muted" id="sp_msg" style="font-size:12px"></span>';
+  document.querySelectorAll('.sp_sel').forEach(function(s){s.onchange=function(){var v=s.dataset.venue,p=s.value;postJSON('/api/controls/action',{action:'grid_set_venue_profile',venue:v,profile:p}).then(function(r){if(el('sp_msg'))el('sp_msg').textContent=r.success?(v+' -> '+p):'failed';loadSpecialization();});};});
+});}
 function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
   var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';
   pairs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td class=r>'+r.edge_bps+'</td><td class=r>'+r.net_edge_bps+'</td><td class=r>'+r.hit_rate_pct+'</td><td class=r>'+r.fill_count+'</td><td class=r><b>'+r.score+'</b></td><td class=muted>'+(r.venues||[]).join(', ')+'</td><td class=muted>'+r.source+'</td></tr>';});
