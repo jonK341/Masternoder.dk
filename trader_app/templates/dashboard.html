@@ -182,9 +182,9 @@ function drawSpark(hist){lastHist=hist||[];var c=el('spark');if(!c)return;var w=
 function balTable(b){if(!b||!b.success)return '<span class="muted">Unavailable.</span>';var h='';
   if(b.warming)h+='<div class="muted" style="margin-bottom:6px">⏳ warming up — balances load shortly…</div>';
   Object.keys(b.venues||{}).forEach(function(v){var row=b.venues[v];h+='<div style="margin-bottom:10px"><div class="row"><b>'+v+'</b><span class="muted" style="margin-left:auto">'+money(row.usd_total)+'</span></div>';
-    if(row.error)h+='<div class="muted">'+row.error+'</div>';else{h+='<table><thead><tr><th data-k=s>Asset</th><th data-k=a data-num=1 class=r>Amount</th><th data-k=u data-num=1 class=r>USD</th></tr></thead><tbody>';
+    if(row.error)h+='<div class="neg" style="font-size:12px">'+row.error+'</div>';else{h+='<table><thead><tr><th data-k=s>Asset</th><th data-k=a data-num=1 class=r>Amount</th><th data-k=u data-num=1 class=r>USD</th></tr></thead><tbody>';
       (row.assets||[]).slice(0,8).forEach(function(a){h+='<tr><td>'+a.symbol+'</td><td class=r>'+Number(a.amount).toFixed(6)+'</td><td class=r>'+money(a.usd_value)+'</td></tr>';});
-      if(!(row.assets||[]).length)h+='<tr><td colspan=3 class=muted>no balances</td></tr>';h+='</tbody></table>';}h+='</div>';});
+      if(!(row.assets||[]).length)h+='<tr><td colspan=3 class="'+(row.read_ok===false?'neg':'muted')+'">'+(row.note||'no balances')+(row.http_status?(' (HTTP '+row.http_status+')'):'')+'</td></tr>';h+='</tbody></table>';}h+='</div>';});
   return h+'<div class="row"><span class="muted">Total</span><b style="margin-left:auto">'+money(b.total_usd)+'</b></div>';}
 function posTable(g){var st=(g&&g.state)||{};var keys=Object.keys(st);if(!keys.length)return '<span class="muted">No positions. Configured: '+((g&&g.assets_configured)||[]).join(', ')+'</span>';
   var h='<table><thead><tr><th data-k=m>Market</th><th data-k=i data-num=1 class=r>Inv</th><th data-k=v data-num=1 class=r>Avg</th><th data-k=p data-num=1 class=r>Realized</th><th class=r>Ord</th><th>State</th></tr></thead><tbody>';

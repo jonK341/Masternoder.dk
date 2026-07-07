@@ -118,6 +118,18 @@ def account_balances(venues: Optional[List[str]] = None) -> Dict[str, Any]:
                 out["venues"][v] = row
                 continue
             bals = vapi.parse_spot_balances(v, dry_run=False) or {}
+            if not bals:
+                # Distinguish "read failed" (auth/IP/region) from "genuinely empty" so a $0
+                # balance is never silent. parse_spot_balances swallows API errors -> re-read raw.
+                raw = vapi.get_account_balance(v, dry_run=False)
+                if raw.get("simulated"):
+                    row["note"] = "paper mode (no live credentials/gate)"
+                elif not raw.get("success"):
+                    row["note"] = vapi.extract_order_error(raw) or "balance read failed"
+                    row["http_status"] = raw.get("status_code")
+                    row["read_ok"] = False
+                else:
+                    row["note"] = "no positive spot balances on this account/wallet"
             vtot = 0.0
             for sym, amt in bals.items():
                 amount = float(amt or 0)
