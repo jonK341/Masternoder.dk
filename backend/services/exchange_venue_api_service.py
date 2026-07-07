@@ -438,7 +438,8 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0,
+                                 "min_notional": 0.0, "tick_size": 0.0}
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -449,6 +450,8 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["max_qty"] = float(filt.get("maxQty") or 0)
         elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
             filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
+        elif ftype == "PRICE_FILTER":
+            filters["tick_size"] = float(filt.get("tickSize") or 0)
 
     out = {"ok": True, "market": pair, **filters}
     _BINANCE_FILTER_CACHE[pair] = out
@@ -735,10 +738,28 @@ def place_limit_order(
         return {"success": False, "error": "invalid_quantity_or_price"}
     coid = client_order_id or f"grid-{int(time.time()*1000)}"
 
+    def _plain(x: float) -> str:
+        s = ("%.8f" % float(x))
+        return s.rstrip("0").rstrip(".") if "." in s else s
+
     if venue_id == "binance":
+        # Normalize to Binance LOT_SIZE (qty step) + PRICE_FILTER (tick) or the order is rejected.
+        norm = normalize_order_qty(venue_id, symbol.upper(), side_u.lower(), qty, price=px,
+                                   quote=quote, market=pair)
+        if norm.get("ok"):
+            qty = float(norm.get("quantity") or qty)
+        elif norm.get("error"):
+            return {"success": False, "error": norm.get("error"), "venue_id": venue_id,
+                    "symbol": symbol.upper(), "pair": pair, "normalize": norm}
+        filt = fetch_binance_symbol_filters(pair)
+        tick = float(filt.get("tick_size") or 0)
+        if tick > 0:
+            px = _quantize_down(px, tick)
+        if qty <= 0 or px <= 0:
+            return {"success": False, "error": "invalid_after_normalize", "venue_id": venue_id}
         params: Dict[str, Any] = {
             "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
-            "quantity": qty, "price": px, "newClientOrderId": coid,
+            "quantity": _plain(qty), "price": _plain(px), "newClientOrderId": coid,
         }
     elif venue_id in ("nonkyc", "xeggex"):
         params = {

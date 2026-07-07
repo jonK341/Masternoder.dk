@@ -318,6 +318,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     max_inv = float(cfg.get("max_inventory_usd") or 0)
     min_notional = float(cfg.get("min_notional_usd") or 0)
     st_open: List[Dict[str, Any]] = list(st.get("open_orders") or [])
+    place_errors: List[Dict[str, Any]] = []
     _seq = [0]
 
     def _place(side: str, price: float, size_base: float) -> None:
@@ -337,6 +338,8 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             from backend.services import exchange_venue_api_service as vapi
             r = vapi.place_limit_order(venue, asset, side, size_base, price, dry_run=False)
             if not r.get("success"):
+                place_errors.append({"side": side, "price": round(float(price), 8),
+                                     "error": vapi.extract_order_error(r) or r.get("error") or "place_failed"})
                 return
             oid = r.get("order_id")
         else:
@@ -381,7 +384,8 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         "realized_pnl_usd": st["realized_pnl_usd"],
         "unrealized_pnl_usd": unrealized_pnl(st, mid),
         "inventory_base": st["inventory_base"], "inventory_usd": round(inv_usd, 4),
-        "open_orders": len(new_open), "mode": "live" if live else "paper",
+        "open_orders": len(new_open), "place_errors": place_errors[:6],
+        "mode": "live" if live else "paper",
     }
 
 
