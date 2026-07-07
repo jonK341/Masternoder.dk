@@ -111,6 +111,10 @@
       "endpoints": {
         "account": {"method": "GET", "path": "/balances"},
         "order_market": {"method": "POST", "path": "/createorder"},
+        "order_limit": {"method": "POST", "path": "/createorder"},
+        "cancel_order": {"method": "POST", "path": "/cancelorder"},
+        "open_orders": {"method": "GET", "path": "/getorders"},
+        "order_status": {"method": "GET", "path": "/getorder"},
         "withdraw": {"method": "POST", "path": "/createwithdrawal"},
         "withdraw_history": {"method": "GET", "path": "/getwithdrawals"}
       }

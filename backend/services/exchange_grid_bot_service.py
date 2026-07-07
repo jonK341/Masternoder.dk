@@ -417,7 +417,8 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         oo = vapi.get_open_orders(venue, asset, dry_run=False)
         if not oo.get("success"):
             # Can't see the order book -> skip reconciliation (do not infer fills this tick).
-            reconcile_note = "open_orders_read_failed"
+            _why = vapi.extract_order_error(oo) or (str(oo.get("status_code")) if oo.get("status_code") else "") or "unknown"
+            reconcile_note = "open_orders_read_failed:" + str(_why)[:40]
         else:
             rows = oo.get("orders")
             if not isinstance(rows, list):
@@ -494,21 +495,36 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     max_inv = float(cfg.get("max_inventory_usd") or 0)
     min_notional = float(cfg.get("min_notional_usd") or 0)
     allow_sell_existing = bool(cfg.get("allow_sell_existing_inventory"))
-    # Free base-asset balance you already hold on the venue — seeds sells when the bot has no
-    # accumulated inventory yet ("sell-from-existing" mode). Live: read from the venue.
+    # One live balance read serves both: the free BASE (seeds sells in sell-from-existing) and
+    # the free QUOTE (gates buys so we never spam the venue with orders it will reject).
+    _spot_bals = None
+    if live:
+        try:
+            from backend.services import exchange_venue_api_service as vapi
+            _spot_bals = vapi.parse_spot_balances(venue, dry_run=False)
+        except Exception:
+            _spot_bals = None
     existing_free = 0.0
     if allow_sell_existing:
         if spot_free_base is not None:
             existing_free = max(0.0, float(spot_free_base or 0))
-        elif live:
-            try:
-                from backend.services import exchange_venue_api_service as vapi
-                existing_free = max(0.0, float(vapi.parse_spot_balances(venue, dry_run=False).get(asset) or 0))
-            except Exception:
-                existing_free = 0.0
+        elif _spot_bals:
+            existing_free = max(0.0, float(_spot_bals.get(asset) or 0))
+    # Known free quote (buy budget). None => unknown (read failed / paper) => don't gate buys.
+    quote_free: Optional[float] = None
+    if _spot_bals:
+        try:
+            from backend.services import exchange_venue_api_service as vapi
+            quote_asset = str(vapi.venue_quote_asset(venue)).upper()
+        except Exception:
+            quote_asset = ""
+        if quote_asset:
+            quote_free = float(_spot_bals.get(quote_asset) or 0)
     st_open: List[Dict[str, Any]] = list(st.get("open_orders") or [])
     place_errors: List[Dict[str, Any]] = []
     _seq = [0]
+    _quote_left = [quote_free]  # remaining buy budget (None => unknown, don't gate)
+    _buys_skipped = [0]
 
     def _place(side: str, price: float, size_base: float, *,
                from_existing: bool = False, ref_px: Optional[float] = None) -> None:
@@ -523,6 +539,12 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             inv_usd_now = float(st.get("inventory_base") or 0) * mid + sum(
                 o["size_base"] * o["price"] for o in st_open if o["side"] == "buy")
             if inv_usd_now + size_base * price > max_inv:
+                return
+        # Quote-balance gate: don't even send a buy the venue can't fund (avoids reject spam on
+        # a live account). Only when we actually read the quote balance.
+        if side == "buy" and _quote_left[0] is not None:
+            if _quote_left[0] < price * size_base:
+                _buys_skipped[0] += 1
                 return
         if live:
             from backend.services import exchange_venue_api_service as vapi
@@ -541,6 +563,8 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             # Mark so apply_fill books only the grid edge vs the reference mid, not principal.
             order["is_existing_inv_sell"] = True
             order["existing_ref_px"] = round(float(ref_px if ref_px is not None else mid), 8)
+        if side == "buy" and _quote_left[0] is not None:
+            _quote_left[0] -= price * size_base
         st_open.append(order)
 
     # Paired replacement for orders that filled this tick.
@@ -603,6 +627,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         "unrealized_pnl_usd": unrealized_pnl(st, mid),
         "inventory_base": st["inventory_base"], "inventory_usd": round(inv_usd, 4),
         "open_orders": len(new_open), "place_errors": place_errors[:6],
+        "buys_skipped_no_quote": _buys_skipped[0],
         "reconcile_note": reconcile_note,
         "spread_bps": round(float(spread_bps), 2) if spread_bps is not None else None,
         "grid_step_pct": cfg.get("grid_step_pct"),

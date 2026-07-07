@@ -260,7 +260,7 @@ def test_live_reconcile_skips_when_book_read_fails(grid, monkeypatch):
     monkeypatch.setattr(vapi, "place_limit_order", lambda *a, **k: {"success": True, "order_id": "new"})
     monkeypatch.setattr(vapi, "parse_spot_balances", lambda *a, **k: {})
     r = grid.run_grid_tick("binance", "DOGE", mid=0.10)
-    assert r["reconcile_note"] == "open_orders_read_failed"
+    assert r["reconcile_note"].startswith("open_orders_read_failed")
     assert r["fills_this_tick"] == 0  # no phantom fills
     assert r["realized_pnl_usd"] == 0.0
     assert len(grid._read_state()[key]["open_orders"]) == 3  # tracked orders preserved
@@ -719,6 +719,59 @@ def test_manual_pause_persists_through_cooldown(grid, tmp_path, monkeypatch):
     assert "nonkyc" in r["paused"]  # manual pause is NOT auto-resumed
     assert grid.resume_venue("nonkyc")["resumed"] is True
     assert "nonkyc" not in grid.paused_venues()
+
+
+def test_quote_gate_skips_unfundable_buys(grid, tmp_path, monkeypatch):
+    import json as _json
+    import backend.services.exchange_venue_api_service as vapi
+    p = tmp_path / "q.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"], "grid_levels": 3,
+        "grid_step_pct": 0.01, "order_size_usd": 6.0, "max_inventory_usd": 100.0,
+        "hard_loss_cap_usd": 50.0, "min_notional_usd": 5.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": False, "require_spread_over_fee": False,
+        "venue_overrides": {},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: True)
+    monkeypatch.setattr(vapi, "get_open_orders", lambda *a, **k: {"success": True, "orders": []})
+    monkeypatch.setattr(vapi, "venue_quote_asset", lambda v: "USDC")
+    # Only $7 USDC free -> at most one $6 buy fundable; the rest are skipped (not sent).
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, **k: {"USDC": 7.0})
+    placed = []
+    monkeypatch.setattr(vapi, "place_limit_order",
+                        lambda venue, asset, side, qty, price, **k: (placed.append((side, price)) or
+                        {"success": True, "order_id": f"o{len(placed)}"}))
+    r = grid.run_grid_tick("binance", "DOGE", mid=100.0)
+    buys_placed = [pp for pp in placed if pp[0] == "buy"]
+    assert len(buys_placed) == 1                 # only the fundable buy was sent
+    assert r["buys_skipped_no_quote"] >= 1       # the rest skipped, not rejected by the venue
+
+
+def test_quote_gate_off_when_balance_unknown(grid, tmp_path, monkeypatch):
+    import json as _json
+    import backend.services.exchange_venue_api_service as vapi
+    p = tmp_path / "q2.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"], "grid_levels": 2,
+        "grid_step_pct": 0.01, "order_size_usd": 6.0, "max_inventory_usd": 100.0,
+        "hard_loss_cap_usd": 50.0, "min_notional_usd": 5.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": False, "require_spread_over_fee": False,
+        "venue_overrides": {},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: True)
+    monkeypatch.setattr(vapi, "get_open_orders", lambda *a, **k: {"success": True, "orders": []})
+    monkeypatch.setattr(vapi, "venue_quote_asset", lambda v: "USDC")
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, **k: {})  # read failed/empty
+    placed = []
+    monkeypatch.setattr(vapi, "place_limit_order",
+                        lambda venue, asset, side, qty, price, **k: (placed.append((side, price)) or
+                        {"success": True, "order_id": f"o{len(placed)}"}))
+    r = grid.run_grid_tick("binance", "DOGE", mid=100.0)
+    # Unknown quote balance -> gate OFF -> buys attempted as before (no skip).
+    assert r["buys_skipped_no_quote"] == 0
+    assert any(pp[0] == "buy" for pp in placed)
 
 
 def test_run_grid_tick_halts_on_loss_cap(grid):
