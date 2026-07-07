@@ -228,7 +228,10 @@ def venue_api_request(
     if use_paper or not vcfg.get("live_supported", True):
         return _simulate_response(venue_id, endpoint_key, params)
 
-    if not gate_ok:
+    # An explicit dry_run=False means the caller (e.g. balance reads, or a bot with its own
+    # live gate) has already decided to go live — honor it and skip the shared arb/spork gate.
+    # Only enforce the shared gate when the caller left it to us (dry_run is None).
+    if not gate_ok and dry_run is None:
         hint = "Set EXCHANGE_ROTATION_LIVE=1" if rotation else "Set EXCHANGE_ARBITRAGE_LIVE=1"
         return {"success": False, "error": "live_gated", "hint": hint}
 
