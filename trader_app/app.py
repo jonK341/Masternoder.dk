@@ -516,6 +516,18 @@ def api_grid_rank():
     return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
 
 
+@app.route("/api/grid/cross-diff")
+@login_required
+def api_grid_cross_diff():
+    """Cross-venue price differences (spatial arb) across Binance/NonKYC/XeggeX for common pairs."""
+    from backend.services.exchange_grid_bot_service import scan_cross_venue_differences
+    try:
+        min_bps = float(request.args.get("min_bps") or 0.0)
+    except (TypeError, ValueError):
+        min_bps = 0.0
+    return jsonify(scan_cross_venue_differences(min_net_bps=min_bps))
+
+
 @app.route("/api/profit-monitor")
 @login_required
 def api_profit_monitor():
@@ -582,6 +594,16 @@ def api_controls_action():
         res = autoselect_profit_pairs(min_score=min_score, include_live=True, apply=True)
         if res.get("applied"):
             store.record_alert("grid", f"Added profit-ranked pairs ({res.get('targets_total')} targets)", "info")
+        return jsonify(res)
+    if action == "grid_add_cross":
+        from backend.services.exchange_grid_bot_service import autoselect_cross_venue_pairs
+        try:
+            min_bps = float(data.get("min_bps") or 5.0)
+        except (TypeError, ValueError):
+            min_bps = 5.0
+        res = autoselect_cross_venue_pairs(min_net_bps=min_bps, apply=True)
+        if res.get("applied"):
+            store.record_alert("grid", f"Added cross-venue pairs ({res.get('targets_total')} targets)", "info")
         return jsonify(res)
     # Site controls (proxied)
     routes = {

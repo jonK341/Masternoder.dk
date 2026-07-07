@@ -119,6 +119,14 @@
         <button id="pr_add">Add profitable pairs</button>
         <span class="muted" id="pr_msg" style="margin-left:8px"></span></div>
       <div id="pr_body" class="muted">Click "Scan &amp; rank" to find the pairs that actually make the difference.</div></div>
+    <div class="card"><h2>Cross-venue price differences</h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Searches the same pair's price across Binance / NonKYC / XeggeX and shows the buy-low/sell-high gap (net of both venues' fees). "Add cross-venue pairs" lists the profitable ones on each exchange for the grid.</div>
+      <div class="row" style="margin-bottom:8px">
+        <label class="muted">min net bps <input id="cx_min" type="number" value="5" style="width:70px"/></label>
+        <button id="cx_scan" class="ghost">Search differences</button>
+        <button id="cx_add">Add cross-venue pairs</button>
+        <span class="muted" id="cx_msg" style="margin-left:8px"></span></div>
+      <div id="cx_body" class="muted">Click "Search differences" to find cross-exchange price gaps.</div></div>
   </div>
 
   <div class="pane" id="p_monitor">
@@ -290,6 +298,12 @@ function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='
   el('pr_body').innerHTML=h+'</tbody></table>';makeSortable(el('pr_body').querySelector('table'));}
 el('pr_scan').onclick=function(){busy(el('pr_scan'),true);el('pr_msg').textContent='scanning…';getJSON('/api/grid/rank').then(function(d){el('pr_msg').textContent=(d.count||0)+' profitable';renderRanked(d.pairs);busy(el('pr_scan'),false);});};
 el('pr_add').onclick=function(){if(!confirm('Add profit-ranked pairs to the multi-venue grid config?'))return;busy(el('pr_add'),true);postJSON('/api/controls/action',{action:'grid_autoselect'}).then(function(d){el('pr_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderRanked(d.selected);loaders.trading();busy(el('pr_add'),false);});};
+function renderCross(diffs){if(!diffs||!diffs.length){el('cx_body').innerHTML='<span class="muted">No cross-venue differences above the threshold right now (needs live reachability to all venues). Lower "min net bps" or try when markets move.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Symbol</th><th>Route</th><th data-num=1 class=r>Gross bps</th><th data-num=1 class=r>Fees bps</th><th data-k=e data-num=1 class=r>Net bps</th><th data-num=1 class=r>~$/100</th><th>Lists on</th></tr></thead><tbody>';
+  diffs.forEach(function(d){h+='<tr><td><b>'+d.symbol+'</b></td><td class=muted>'+d.route+'</td><td class=r>'+d.gross_bps+'</td><td class=r>'+d.fee_bps+'</td><td class=r><b>'+d.net_bps+'</b></td><td class=r>'+money(d.est_profit_usd)+'</td><td class=muted>'+(d.venues||[]).join(', ')+'</td></tr>';});
+  el('cx_body').innerHTML=h+'</tbody></table>';makeSortable(el('cx_body').querySelector('table'));}
+el('cx_scan').onclick=function(){busy(el('cx_scan'),true);el('cx_msg').textContent='searching…';getJSON('/api/grid/cross-diff?min_bps='+(Number(el('cx_min').value)||0)).then(function(d){el('cx_msg').textContent=d.success?((d.count||0)+' differences'):('error: '+(d.error||''));renderCross(d.differences);busy(el('cx_scan'),false);});};
+el('cx_add').onclick=function(){if(!confirm('Add cross-venue difference pairs to the grid config?'))return;busy(el('cx_add'),true);postJSON('/api/controls/action',{action:'grid_add_cross',min_bps:(Number(el('cx_min').value)||5)}).then(function(d){el('cx_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderCross(d.differences);loaders.trading();busy(el('cx_add'),false);});};
 el('goal').onchange=loaders.overview;
 
 /* auto-refresh */

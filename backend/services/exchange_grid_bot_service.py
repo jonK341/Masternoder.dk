@@ -569,20 +569,102 @@ def _load_profit_history() -> Dict[str, Dict[str, Any]]:
     return hist
 
 
-def _live_arb_edges() -> Dict[str, float]:
-    """symbol -> best current cross-venue net edge (bps). Empty if unreachable."""
-    edges: Dict[str, float] = {}
+def _common_cross_symbols(venues: List[str], catalog: Optional[Dict[str, set]] = None) -> List[str]:
+    """Base symbols listed on >=2 of the target venues (a real cross-trade needs two venues)."""
+    catalog = catalog or _load_pair_catalog()
+    counts: Dict[str, int] = {}
+    for v in venues:
+        for s in catalog.get(v, set()):
+            counts[s] = counts.get(s, 0) + 1
+    return sorted([s for s, c in counts.items() if c >= 2])
+
+
+def scan_cross_venue_differences(*, venues: Optional[List[str]] = None,
+                                 symbols: Optional[List[str]] = None,
+                                 min_net_bps: float = 0.0,
+                                 notional_usd: float = 100.0) -> Dict[str, Any]:
+    """Search the price difference of each pair across the venues (cross-trade / spatial arb).
+
+    For every symbol listed on 2+ of the target venues, find the cheapest ask and the richest
+    bid across them; the gap (net of both venues' taker fees) is the cross-venue difference.
+    This is the 'difference in trading pair prices' created by trading across the three exchanges.
+    Returns them ranked; only real venue↔venue routes (no internal) are included.
+    """
+    venues = [str(v).lower() for v in (venues or list(_GRID_VENUES))]
+    catalog = _load_pair_catalog()
+    if symbols is None:
+        symbols = _common_cross_symbols(venues, catalog)
+    diffs: List[Dict[str, Any]] = []
     try:
         from backend.services.exchange_arbitrage_service import scan_opportunities
-        for o in (scan_opportunities().get("opportunities") or []):
+        scan = scan_opportunities(symbols=symbols, venues=venues, notional_usd=notional_usd)
+        for o in (scan.get("opportunities") or []):
             if not isinstance(o, dict):
                 continue
-            s = str(o.get("symbol") or "").upper()
-            if s:
-                edges[s] = max(edges.get(s, 0.0), float(o.get("net_bps") or 0))
-    except Exception:
-        pass
+            bv = str(o.get("buy_venue") or "").lower()
+            sv = str(o.get("sell_venue") or "").lower()
+            if bv not in venues or sv not in venues or bv == sv:
+                continue  # only real cross-venue routes between the target exchanges
+            nb = float(o.get("net_bps") or 0)
+            if nb < min_net_bps:
+                continue
+            sym = str(o.get("symbol") or "").upper()
+            diffs.append({
+                "symbol": sym, "buy_venue": bv, "sell_venue": sv,
+                "gross_bps": o.get("gross_bps"), "fee_bps": o.get("fee_bps"),
+                "net_bps": round(nb, 2), "buy_ask": o.get("buy_ask"), "sell_bid": o.get("sell_bid"),
+                "est_profit_usd": o.get("est_profit_usd"),
+                "route": f"{bv}\u2192{sv}",
+                "venues": [v for v in _GRID_VENUES if sym in catalog.get(v, set())],
+            })
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "venues": venues, "differences": []}
+    diffs.sort(key=lambda d: d["net_bps"], reverse=True)
+    return {"success": True, "venues": venues, "scanned_symbols": len(symbols),
+            "min_net_bps": min_net_bps, "count": len(diffs), "differences": diffs}
+
+
+def _live_arb_edges() -> Dict[str, float]:
+    """symbol -> best current cross-venue net edge (bps) among the grid venues. Empty if unreachable."""
+    edges: Dict[str, float] = {}
+    res = scan_cross_venue_differences(min_net_bps=-1e9)
+    for d in (res.get("differences") or []):
+        s = str(d.get("symbol") or "").upper()
+        if s:
+            edges[s] = max(edges.get(s, 0.0), float(d.get("net_bps") or 0))
     return edges
+
+
+def autoselect_cross_venue_pairs(*, min_net_bps: float = 5.0, notional_usd: float = 100.0,
+                                 apply: bool = False) -> Dict[str, Any]:
+    """Search cross-venue price differences and add the profitable pairs to the multi-venue config
+    (added on each venue where they're listed, so the grid posts spot orders there)."""
+    cfg = load_config()
+    scan = scan_cross_venue_differences(min_net_bps=min_net_bps, notional_usd=notional_usd)
+    diffs = scan.get("differences") or []
+    add: Dict[str, List[str]] = {}
+    for d in diffs:
+        for v in d.get("venues") or []:
+            add.setdefault(v, []).append(d["symbol"])
+    for v in add:
+        add[v] = sorted(set(add[v]))
+    result: Dict[str, Any] = {"success": scan.get("success", True), "differences": diffs,
+                              "venues_add": add, "applied": False, "min_net_bps": min_net_bps,
+                              "error": scan.get("error")}
+    if apply and add:
+        venues = {k: list(v) for k, v in (cfg.get("venues") or {}).items()}
+        legacy_assets = {str(a).upper() for a in (cfg.get("assets") or [])}
+        for v, syms in add.items():
+            existing = {str(x).upper() for x in (venues.get(v) or [])}
+            if v == "binance":
+                existing |= legacy_assets
+            venues[v] = sorted(existing | set(syms))
+        cfg["venues"] = venues
+        ex._write_json(_CFG_PATH, cfg)
+        result["applied"] = True
+        result["config_venues"] = venues
+        result["targets_total"] = len(grid_targets(cfg))
+    return result
 
 
 def rank_profit_pairs(*, include_live: bool = True, min_score: float = 3.0,

@@ -372,6 +372,53 @@ def test_autoselect_applies_to_multi_venue_config(profit_data, tmp_path, monkeyp
     assert "BTC" in (cfg2.get("venues") or {}).get("binance", [])
 
 
+@pytest.fixture
+def cross_scan(profit_data, monkeypatch):
+    """Stub the arbitrage scanner with known cross-venue opportunities."""
+    import backend.services.exchange_arbitrage_service as arb
+
+    def fake_scan(symbols=None, venues=None, **k):
+        return {"opportunities": [
+            {"symbol": "DOGE", "buy_venue": "binance", "buy_ask": 0.10, "sell_venue": "nonkyc",
+             "sell_bid": 0.102, "gross_bps": 200.0, "fee_bps": 30.0, "net_bps": 170.0, "est_profit_usd": 1.70},
+            {"symbol": "BTC", "buy_venue": "nonkyc", "sell_venue": "binance",
+             "gross_bps": 7.8, "fee_bps": 30.0, "net_bps": -22.2, "est_profit_usd": -0.22},
+            {"symbol": "ETH", "buy_venue": "internal", "sell_venue": "binance", "net_bps": 99.0},
+        ]}
+    monkeypatch.setattr(arb, "scan_opportunities", fake_scan)
+    return profit_data
+
+
+def test_scan_cross_venue_differences_filters(cross_scan):
+    res = cross_scan.scan_cross_venue_differences(min_net_bps=5.0)
+    assert res["success"] is True
+    syms = [d["symbol"] for d in res["differences"]]
+    assert syms == ["DOGE"]                 # only DOGE clears net>=5 and is a real cross-venue route
+    d = res["differences"][0]
+    assert d["route"] == "binance\u2192nonkyc"
+    assert d["net_bps"] == 170.0
+
+
+def test_scan_cross_excludes_internal_leg(cross_scan):
+    res = cross_scan.scan_cross_venue_differences(min_net_bps=-100.0)  # include even negatives
+    syms = [d["symbol"] for d in res["differences"]]
+    assert "ETH" not in syms                # internal leg is not a venue-to-venue cross-trade
+    assert "BTC" in syms                    # negative net still a real route, included at low threshold
+
+
+def test_autoselect_cross_venue_applies(cross_scan, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "cxcfg.json"
+    p.write_text(json.dumps({"enabled": True, "venue": "binance", "assets": [],
+                             "venues": {}, "maker_fee_bps": 10.0}), encoding="utf-8")
+    monkeypatch.setattr(cross_scan, "_CFG_PATH", str(p))
+    res = cross_scan.autoselect_cross_venue_pairs(min_net_bps=5.0, apply=True)
+    assert res["applied"] is True
+    v = res["config_venues"]
+    # DOGE is listed on all three (per profit_data catalog) -> added everywhere it lists
+    assert "DOGE" in v["binance"] and "DOGE" in v["nonkyc"]
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

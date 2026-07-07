@@ -141,6 +141,11 @@ def main() -> int:
                              "the winners to the multi-venue config before running")
     parser.add_argument("--autoselect-min-score", type=float, default=3.0,
                         help="Minimum profit score to add a pair with --autoselect (default 3.0)")
+    parser.add_argument("--cross-scan", action="store_true",
+                        help="Search cross-venue price differences across Binance/NonKYC/XeggeX and "
+                             "add the profitable pairs to the config before running")
+    parser.add_argument("--cross-min-bps", type=float, default=5.0,
+                        help="Minimum net cross-venue difference (bps) to add a pair (default 5.0)")
     args = parser.parse_args()
 
     try:
@@ -152,7 +157,8 @@ def main() -> int:
     _diagnose()
 
     from backend.services.exchange_grid_bot_service import (run_all, grid_live_enabled, set_enabled,
-                                                            reset_open_orders, autoselect_profit_pairs)
+                                                            reset_open_orders, autoselect_profit_pairs,
+                                                            autoselect_cross_venue_pairs)
     if args.enable:
         set_enabled(True)
         print("[grid-daemon] grid bot enabled in config")
@@ -162,6 +168,15 @@ def main() -> int:
         print(f"[grid-daemon] autoselect: profit-ranked pairs -> {chosen}")
         if sel.get("applied"):
             print(f"[grid-daemon] autoselect applied — {sel.get('targets_total')} total targets")
+    if args.cross_scan:
+        cx = autoselect_cross_venue_pairs(min_net_bps=args.cross_min_bps, apply=True)
+        diffs = cx.get("differences") or []
+        top = ", ".join(f"{d['symbol']}({d['net_bps']}bps {d['route']})" for d in diffs[:6]) or "(none above threshold)"
+        print(f"[grid-daemon] cross-venue differences (>= {args.cross_min_bps} bps): {top}")
+        if cx.get("applied"):
+            print(f"[grid-daemon] cross-scan applied — {cx.get('targets_total')} total targets")
+        elif cx.get("error"):
+            print(f"[grid-daemon] cross-scan error: {cx.get('error')}")
     if args.reseed:
         r = reset_open_orders()
         print(f"[grid-daemon] reseed: cleared {r.get('cleared_orders')} tracked orders — full grid will re-post")
