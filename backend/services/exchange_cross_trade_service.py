@@ -124,6 +124,81 @@ def find_opportunities(*, min_net_bps: Optional[float] = None,
     )
 
 
+def funding_status(diff: Dict[str, Any]) -> Dict[str, Any]:
+    """Can this cross-venue difference actually be executed RIGHT NOW?
+
+    There is no atomic trade that spans two exchanges — each leg settles on its own venue.
+    So a cross-venue arb is only executable when BOTH sides are pre-funded: the buy venue holds
+    enough quote (USDC/USDT) and the sell venue already holds enough of the coin. This reports
+    that readiness per leg (the honest 'is there a real trade here' check)."""
+    from backend.services import exchange_venue_api_service as vapi
+    cfg = load_config()
+    opp = {
+        "symbol": diff.get("symbol"), "buy_venue": diff.get("buy_venue"),
+        "sell_venue": diff.get("sell_venue"), "buy_ask": diff.get("buy_ask"),
+        "notional_usd": float(cfg["notional_usd"]),
+    }
+    try:
+        return vapi.opportunity_funded(opp)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def preview(*, min_net_bps: Optional[float] = None) -> Dict[str, Any]:
+    """Search differences and annotate each with real executability (both legs pre-funded).
+
+    ``executable_now_hedged`` = a genuine trade you can fire this instant against balances that
+    already sit on both venues (you bank the spread; your net coin exposure stays ~flat).
+    ``needs_funding_or_transfer`` = the edge exists but a side isn't funded — you'd have to move
+    money onto a venue first (the slow part that no 'wormhole' removes)."""
+    cfg = load_config()
+    scan = find_opportunities(min_net_bps=(min_net_bps if min_net_bps is not None else 0.0))
+    if not scan.get("success"):
+        return {"success": False, "error": scan.get("error"), "candidates": []}
+    out: List[Dict[str, Any]] = []
+    for d in (scan.get("differences") or []):
+        f = funding_status(d)
+        both = bool(f.get("ok"))
+        buy = f.get("buy") or {}
+        sell = f.get("sell") or {}
+        out.append({
+            "symbol": d.get("symbol"), "route": d.get("route"),
+            "buy_venue": d.get("buy_venue"), "sell_venue": d.get("sell_venue"),
+            "net_bps": d.get("net_bps"), "est_profit_usd": d.get("est_profit_usd"),
+            "buy_funded": bool(buy.get("ok")), "buy_need": buy.get("need"), "buy_free": buy.get("free"),
+            "sell_funded": bool(sell.get("ok")), "sell_need": sell.get("need"), "sell_free": sell.get("free"),
+            "executable_now": both,
+            "verdict": "executable_now_hedged" if both else "needs_funding_or_transfer",
+            "error": f.get("error"),
+        })
+    executable = sum(1 for c in out if c["executable_now"])
+    return {"success": True, "count": len(out), "executable_now": executable,
+            "min_net_bps": (min_net_bps if min_net_bps is not None else cfg["min_net_bps"]),
+            "candidates": out,
+            "note": "Cross-venue arb is pre-funded/hedged: both sides must hold inventory. "
+                    "There is no single atomic trade across two exchanges."}
+
+
+def rebalance_hint() -> Dict[str, Any]:
+    """Summarize accumulated inventory skew from hedged trades and suggest transfers.
+
+    Each hedged fill leaves the buy venue longer the coin and the sell venue shorter it; over
+    many fills you must move coin buy→sell (and quote back) to keep trading — the periodic
+    rebalance that replaces the impossible atomic cross-exchange trade."""
+    state = _read_state()
+    skew = state.get("skew") or {}
+    moves: List[Dict[str, Any]] = []
+    for venue, assets in skew.items():
+        for asset, amt in (assets or {}).items():
+            if abs(float(amt or 0)) > 1e-9:
+                moves.append({"venue": venue, "asset": asset, "net_base": round(float(amt), 8),
+                              "direction": "accumulating (move out)" if amt > 0 else "depleting (top up)"})
+    moves.sort(key=lambda m: abs(m["net_base"]), reverse=True)
+    return {"success": True, "skew": moves,
+            "note": "Positive = venue is accumulating that coin (transfer some out); "
+                    "negative = venue is running low (top it up)."}
+
+
 def execute_opportunity(diff: Dict[str, Any], *, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     """Fire both legs for one spotted difference and audit the result."""
     from backend.services.exchange_live_execution_service import execute_spatial_arbitrage
@@ -192,6 +267,16 @@ def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str
         profit = float(res.get("est_profit_usd") or 0) if res.get("success") else 0.0
         if profit < 0:
             state["realized_loss_usd"] = round(float(state.get("realized_loss_usd") or 0) - profit, 6)
+        # Track inventory skew: a hedged fill leaves the buy venue longer the coin and the sell
+        # venue shorter it. Accumulated skew tells us when to rebalance across venues.
+        if res.get("success"):
+            qty = float(res.get("quantity") or 0)
+            sym = str(d.get("symbol") or "").upper()
+            skew = state.setdefault("skew", {})
+            bv = skew.setdefault(str(d.get("buy_venue")), {})
+            sv = skew.setdefault(str(d.get("sell_venue")), {})
+            bv[sym] = round(float(bv.get(sym) or 0) + qty, 10)
+            sv[sym] = round(float(sv.get(sym) or 0) - qty, 10)
         executed.append({
             "route": key, "symbol": d.get("symbol"), "net_bps": d.get("net_bps"),
             "mode": res.get("mode"), "success": res.get("success"),
@@ -241,5 +326,6 @@ def status() -> Dict[str, Any]:
         "realized_loss_usd_today": state.get("realized_loss_usd"),
         "executed_fills": len(fills),
         "realized_pnl_usd": realized,
+        "rebalance": rebalance_hint().get("skew"),
         "recent": hist[:12],
     }

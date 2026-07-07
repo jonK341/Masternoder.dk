@@ -536,6 +536,18 @@ def api_grid_cross_trade():
     return jsonify(status())
 
 
+@app.route("/api/grid/cross-trade/preview")
+@login_required
+def api_grid_cross_trade_preview():
+    """Which cross-venue differences are actually executable now (both legs pre-funded)."""
+    from backend.services.exchange_cross_trade_service import preview
+    try:
+        min_bps = float(request.args.get("min_bps") or 0.0)
+    except (TypeError, ValueError):
+        min_bps = 0.0
+    return jsonify(preview(min_net_bps=min_bps))
+
+
 @app.route("/api/profit-monitor")
 @login_required
 def api_profit_monitor():

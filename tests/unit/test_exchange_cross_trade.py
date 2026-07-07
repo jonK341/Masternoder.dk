@@ -104,6 +104,47 @@ def test_daily_loss_cap_halts(ct, monkeypatch):
     assert r2.get("halted") and r2.get("reason") == "daily_loss_cap"
 
 
+def test_preview_marks_executable_when_both_legs_funded(ct, monkeypatch):
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "DOGE", "buy_venue": "xeggex", "sell_venue": "nonkyc",
+         "buy_ask": 0.1, "sell_bid": 0.102, "net_bps": 30.0, "route": "xeggex\u2192nonkyc"},
+        {"symbol": "LINK", "buy_venue": "xeggex", "sell_venue": "nonkyc",
+         "buy_ask": 7.8, "sell_bid": 7.9, "net_bps": 25.0, "route": "xeggex\u2192nonkyc"},
+    ])
+    import backend.services.exchange_venue_api_service as vapi
+
+    def fake_funded(opp, **k):
+        # DOGE fully funded on both legs; LINK missing the sell-side coin.
+        if str(opp.get("symbol")) == "DOGE":
+            return {"ok": True, "buy": {"ok": True, "free": 100, "need": 25},
+                    "sell": {"ok": True, "free": 300, "need": 250}}
+        return {"ok": False, "buy": {"ok": True, "free": 100, "need": 25},
+                "sell": {"ok": False, "free": 0, "need": 3}}
+    monkeypatch.setattr(vapi, "opportunity_funded", fake_funded)
+    pv = ct.preview()
+    assert pv["success"] and pv["count"] == 2 and pv["executable_now"] == 1
+    doge = next(c for c in pv["candidates"] if c["symbol"] == "DOGE")
+    link = next(c for c in pv["candidates"] if c["symbol"] == "LINK")
+    assert doge["executable_now"] and doge["verdict"] == "executable_now_hedged"
+    assert not link["executable_now"] and link["verdict"] == "needs_funding_or_transfer"
+
+
+def test_hedged_fill_tracks_inventory_skew(ct, monkeypatch):
+    _stub_diffs(ct, monkeypatch, [{"symbol": "DOGE", "buy_venue": "xeggex", "sell_venue": "nonkyc",
+                                   "buy_ask": 0.10, "sell_bid": 0.102, "net_bps": 30.0}])
+    import backend.services.exchange_live_execution_service as lx
+    # return a quantity so skew can be tracked (notional 25 / 0.10 = 250)
+    monkeypatch.setattr(lx, "execute_spatial_arbitrage",
+                        lambda opp, *, agent_id, dry_run=None: {"success": True, "mode": "paper",
+                        "est_profit_usd": 0.05, "quantity": 250.0,
+                        "buy_order": {"order_id": "b"}, "sell_order": {"order_id": "s"}})
+    ct.run_once(dry_run=True)
+    rb = ct.rebalance_hint()["skew"]
+    by = {(m["venue"], m["asset"]): m["net_base"] for m in rb}
+    assert by[("xeggex", "DOGE")] == pytest.approx(250.0)   # buy venue accumulates coin
+    assert by[("nonkyc", "DOGE")] == pytest.approx(-250.0)  # sell venue depletes coin
+
+
 def test_live_gate_requires_both_flags(ct, monkeypatch):
     assert ct.cross_trade_live_enabled() is False
     monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")

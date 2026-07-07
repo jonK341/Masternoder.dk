@@ -133,9 +133,11 @@
           <span class="pill" id="ct_state">off</span>
           <span class="pill" id="ct_mode">paper</span>
           <button id="ct_toggle" class="ghost">Enable auto-execute</button>
+          <button id="ct_check" class="ghost">Check executable</button>
           <button id="ct_run">Run now (paper)</button>
           <span class="muted" id="ct_msg" style="margin-left:8px"></span></div>
         <div class="muted" style="font-size:12px;margin:6px 0">Searches continuously and fires the cross-trade the instant an edge clears the threshold. Real orders need both live gates; every fire is written to the audit trail below.</div>
+        <div id="ct_preview"></div>
         <div id="ct_body" class="muted">No cross-trade executions yet.</div></div></div>
   </div>
 
@@ -327,6 +329,12 @@ function renderCrossTrade(d){if(!d||!d.success)return;ctEnabled=!!d.enabled;
 function loadCrossTrade(){getJSON('/api/grid/cross-trade').then(renderCrossTrade);}
 el('ct_toggle').onclick=function(){busy(el('ct_toggle'),true);postJSON('/api/controls/action',{action:'cross_trade_enable',enabled:!ctEnabled}).then(function(){loadCrossTrade();busy(el('ct_toggle'),false);});};
 el('ct_run').onclick=function(){busy(el('ct_run'),true);el('ct_msg').textContent='searching + executing…';postJSON('/api/controls/action',{action:'cross_trade_run'}).then(function(r){el('ct_msg').textContent=(r.executed&&r.executed.length)?(r.executed.length+' fired'):((r.candidates||0)+' candidates, none cleared '+ (r.min_net_bps||'')+'bps');loadCrossTrade();busy(el('ct_run'),false);});};
+el('ct_check').onclick=function(){busy(el('ct_check'),true);el('ct_msg').textContent='checking funding…';getJSON('/api/grid/cross-trade/preview').then(function(d){
+  var cs=(d.candidates||[]);el('ct_msg').textContent=(d.executable_now||0)+' executable now / '+(d.count||0)+' gaps';
+  if(!cs.length){el('ct_body').innerHTML='<span class="muted">No cross-venue gaps right now.</span>';busy(el('ct_check'),false);return;}
+  var h='<div class="muted" style="margin:6px 0 4px">Executability (both legs must be pre-funded — no atomic cross-exchange trade exists):</div><table><thead><tr><th>Symbol</th><th>Route</th><th class=r>Net bps</th><th>Buy funded</th><th>Sell funded</th><th>Verdict</th></tr></thead><tbody>';
+  cs.forEach(function(c){h+='<tr><td><b>'+c.symbol+'</b></td><td class=muted>'+(c.route||'')+'</td><td class=r>'+c.net_bps+'</td><td>'+(c.buy_funded?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td><td>'+(c.sell_funded?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td><td>'+(c.executable_now?'<span class="pill strong">execute now (hedged)</span>':'<span class="pill neg">needs funding/transfer</span>')+'</td></tr>';});
+  el('ct_preview').innerHTML=h+'</tbody></table>';makeSortable(el('ct_preview').querySelector('table'));busy(el('ct_check'),false);});};
 el('goal').onchange=loaders.overview;
 
 /* auto-refresh */
