@@ -470,12 +470,15 @@ def reset_open_orders(venue: Optional[str] = None) -> Dict[str, Any]:
     seeds a fresh full grid. Use after funding more capital to (re)place all levels. Inventory
     and realized PnL are preserved."""
     cfg = load_config()
-    venue = str(venue or cfg.get("venue") or "binance").lower()
     live = grid_live_enabled()
     all_state = _read_state()
     cleared = 0
-    for asset in (cfg.get("assets") or []):
-        key = _key(venue, str(asset))
+    # If a specific venue is passed, only reset that venue's targets; else reset all.
+    only_venue = str(venue).lower() if venue else None
+    for v, asset in grid_targets(cfg):
+        if only_venue and v != only_venue:
+            continue
+        key = _key(v, str(asset))
         st = all_state.get(key)
         if not st:
             continue
@@ -483,7 +486,7 @@ def reset_open_orders(venue: Optional[str] = None) -> Dict[str, Any]:
             if live:
                 try:
                     from backend.services import exchange_venue_api_service as vapi
-                    vapi.cancel_order(venue, str(asset), o.get("order_id"), dry_run=False)
+                    vapi.cancel_order(v, str(asset), o.get("order_id"), dry_run=False)
                 except Exception:
                     pass
             cleared += 1
@@ -492,7 +495,7 @@ def reset_open_orders(venue: Optional[str] = None) -> Dict[str, Any]:
         st["halt_reason"] = None
         all_state[key] = st
     _write_state(all_state)
-    return {"success": True, "venue": venue, "cleared_orders": cleared}
+    return {"success": True, "venue": only_venue or "all", "cleared_orders": cleared}
 
 
 def grid_status() -> Dict[str, Any]:
@@ -507,9 +510,14 @@ def grid_status() -> Dict[str, Any]:
             "peak_realized_usd": s.get("peak_realized_usd"), "max_drawdown_usd": s.get("max_drawdown_usd"),
             "open_orders": len(s.get("open_orders") or []), "last_mid": s.get("last_mid"),
         }
+    targets = grid_targets(cfg)
+    venues_map: Dict[str, List[str]] = {}
+    for v, a in targets:
+        venues_map.setdefault(v, []).append(a)
     return {
         "success": True, "enabled": cfg.get("enabled"), "live": grid_live_enabled(),
         "venue": cfg.get("venue"), "assets_configured": cfg.get("assets"),
+        "venues": venues_map, "targets_total": len(targets),
         "config": {k: cfg.get(k) for k in ("grid_levels", "grid_step_pct", "order_size_usd",
                                            "max_inventory_usd", "hard_loss_cap_usd",
                                            "min_spread_bps", "min_vol_pct",
@@ -526,17 +534,42 @@ def grid_profit() -> Dict[str, Any]:
             "assets": {k: round(float(s.get("realized_pnl_usd") or 0), 6) for k, s in st.items()}}
 
 
+def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
+    """Resolve the full (venue, asset) set to trade, merging the legacy single-venue
+    ``venue``+``assets`` with the optional multi-venue ``venues`` map. De-duplicated."""
+    cfg = cfg or load_config()
+    targets: List[tuple] = []
+    seen = set()
+
+    def _add(venue: Any, asset: Any) -> None:
+        v = str(venue or "binance").lower()
+        a = str(asset).upper().strip()
+        if a and (v, a) not in seen:
+            seen.add((v, a))
+            targets.append((v, a))
+
+    legacy_venue = str(cfg.get("venue") or "binance").lower()
+    for a in (cfg.get("assets") or []):
+        _add(legacy_venue, a)
+    venues = cfg.get("venues")
+    if isinstance(venues, dict):
+        for v, alist in venues.items():
+            if isinstance(alist, list):
+                for a in alist:
+                    _add(v, a)
+    return targets
+
+
 def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
-    """Daemon entry: tick every configured asset when enabled."""
+    """Daemon entry: tick every configured (venue, asset) when enabled."""
     cfg = load_config()
     if not cfg.get("enabled"):
         return {"success": True, "skipped": True, "reason": "disabled"}
-    venue = str(cfg.get("venue") or "binance").lower()
     results = []
-    for asset in (cfg.get("assets") or []):
+    for venue, asset in grid_targets(cfg):
         try:
-            results.append(run_grid_tick(venue, str(asset), dry_run=dry_run))
+            results.append(run_grid_tick(venue, asset, dry_run=dry_run))
         except Exception as exc:
-            results.append({"success": False, "asset": asset, "error": str(exc)})
+            results.append({"success": False, "venue": venue, "asset": asset, "error": str(exc)})
     return {"success": True, "ticks": results,
             "realized_pnl_usd": grid_profit()["realized_pnl_usd"]}

@@ -2,6 +2,10 @@
   "enabled": true,
   "venue": "binance",
   "assets": ["BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "ADA", "AVAX", "LINK", "DOT", "LTC", "BCH", "TRX", "NEAR", "ATOM", "UNI", "XLM", "SUI", "ARB", "OP", "INJ", "APT", "FIL", "ETC", "AAVE", "POL", "DASH", "SHIB", "PEPE"],
+  "venues": {
+    "nonkyc": ["ADA", "AVAX", "BNB", "BTC", "DOGE", "DOT", "ETH", "LINK", "LTC", "SHIB", "SOL", "TRX", "UNI", "XRP"],
+    "xeggex": ["ADA", "AVAX", "BNB", "BTC", "DOGE", "DOT", "ETH", "LINK", "LTC", "SHIB", "SOL", "TRX", "UNI", "XRP"]
+  },
   "grid_levels": 5,
   "grid_step_pct": 0.004,
   "order_size_usd": 6.0,

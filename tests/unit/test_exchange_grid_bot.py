@@ -289,6 +289,38 @@ def test_live_reconcile_drops_rejected_without_phantom_fill(grid, monkeypatch):
     assert "A" in oids and "C" not in oids
 
 
+def test_grid_targets_merges_multi_venue(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "multi.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["BTC", "DOGE"],
+        "venues": {"nonkyc": ["BTC", "XRP"], "xeggex": ["ETH"]},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    cfg = grid.load_config()
+    targets = grid.grid_targets(cfg)
+    # binance BTC/DOGE + nonkyc BTC/XRP + xeggex ETH; binance BTC != nonkyc BTC (venue-scoped)
+    assert ("binance", "BTC") in targets
+    assert ("nonkyc", "BTC") in targets
+    assert ("nonkyc", "XRP") in targets
+    assert ("xeggex", "ETH") in targets
+    assert len(targets) == 5
+    assert len(targets) == len(set(targets))  # de-duplicated
+
+
+def test_grid_targets_dedups_overlap(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "dup.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "venues": {"binance": ["DOGE", "BTC"]},  # DOGE overlaps legacy assets
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    targets = grid.grid_targets(grid.load_config())
+    assert targets.count(("binance", "DOGE")) == 1
+    assert ("binance", "BTC") in targets
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

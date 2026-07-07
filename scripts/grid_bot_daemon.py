@@ -99,18 +99,30 @@ def _diagnose() -> None:
     except Exception as e:
         print("[diag] live_enabled error: " + repr(e))
     try:
-        from backend.services.exchange_grid_bot_service import grid_live_enabled, load_config
+        from backend.services.exchange_grid_bot_service import grid_live_enabled, load_config, grid_targets
         print("[diag] grid_live_enabled (paper if False): " + str(grid_live_enabled()))
         cfg = load_config()
         allow = bool(cfg.get("allow_sell_existing_inventory"))
         print("[diag] allow_sell_existing_inventory: " + str(allow))
-        if allow and grid_live_enabled():
-            from backend.services import exchange_venue_api_service as vapi
-            venue = str(cfg.get("venue") or "binance").lower()
-            bals = vapi.parse_spot_balances(venue, dry_run=False)
-            for asset in (cfg.get("assets") or []):
-                free = float(bals.get(str(asset).upper()) or 0)
-                print(f"[diag] existing {asset} free on {venue}: {free}")
+        targets = grid_targets(cfg)
+        per_venue = {}
+        for v, a in targets:
+            per_venue.setdefault(v, []).append(a)
+        for v, alist in per_venue.items():
+            print(f"[diag] venue {v}: {len(alist)} pairs")
+        from backend.services import exchange_venue_api_service as vapi
+        for v in per_venue:
+            has = vapi.venue_has_credentials(v)
+            print(f"[diag] {v} credentials present: {has}")
+            if allow and grid_live_enabled() and has:
+                try:
+                    bals = vapi.parse_spot_balances(v, dry_run=False)
+                    held = {a: round(float(bals.get(a.upper()) or 0), 8) for a in per_venue[v]
+                            if float(bals.get(a.upper()) or 0) > 0}
+                    if held:
+                        print(f"[diag] {v} coins held (sellable): {held}")
+                except Exception as be:
+                    print(f"[diag] {v} balance read error: {be!r}")
     except Exception as e:
         print("[diag] grid_live_enabled error: " + repr(e))
 
