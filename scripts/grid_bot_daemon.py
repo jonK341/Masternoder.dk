@@ -156,9 +156,12 @@ def main() -> int:
             if not res.get("skipped"):
                 ticks = res.get("ticks") or []
                 errs = [e for t in ticks for e in (t.get("place_errors") or [])]
+                notes = [t.get("reconcile_note") for t in ticks if t.get("reconcile_note")]
                 oo = sum(int(t.get("open_orders") or 0) for t in ticks)
                 print(f"[grid-daemon] realized_pnl_usd={res.get('realized_pnl_usd')} "
                       f"ticks={len(ticks)} open_orders={oo}")
+                if notes:
+                    print(f"[grid-daemon] RECONCILE: {notes} (fills not inferred this tick)")
                 if errs:
                     print(f"[grid-daemon] ORDER PLACEMENT ISSUES: {errs[:4]}")
         except Exception as exc:

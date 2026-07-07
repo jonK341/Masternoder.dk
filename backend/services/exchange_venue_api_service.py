@@ -827,6 +827,51 @@ def get_open_orders(venue_id: str, symbol: str = "", *,
     return res
 
 
+def get_order_status(venue_id: str, symbol: str, order_id: Any, *,
+                     dry_run: Optional[bool] = None, market: Optional[str] = None,
+                     quote: Optional[str] = None) -> Dict[str, Any]:
+    """Look up a single order and normalize its state.
+
+    Returns the raw response plus normalized flags: ``filled`` (fully executed),
+    ``resting`` (still open on the book), ``order_status`` (venue status string) and
+    ``executed_qty``. Flags are only True when the request itself succeeded — a failed
+    lookup yields filled=resting=False so callers never infer a phantom fill.
+    """
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"id": order_id}
+        if pair:
+            params["symbol"] = pair
+    res = venue_api_request(venue_id, "order_status", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    body = res.get("body") if isinstance(res.get("body"), dict) else {}
+    status = str(body.get("status") or body.get("state") or "").upper()
+    try:
+        exec_qty = float(body.get("executedQty") or body.get("executedQuantity")
+                         or body.get("cumQty") or body.get("filledQuantity") or 0)
+    except (TypeError, ValueError):
+        exec_qty = 0.0
+    try:
+        orig_qty = float(body.get("origQty") or body.get("quantity")
+                         or body.get("origQuantity") or 0)
+    except (TypeError, ValueError):
+        orig_qty = 0.0
+    is_filled = status in ("FILLED",) or (orig_qty > 0 and exec_qty >= orig_qty * 0.999)
+    is_resting = status in ("NEW", "OPEN", "ACTIVE", "PARTIALLY_FILLED", "PARTIALLYFILLED", "PENDING")
+    ok = bool(res.get("success"))
+    res["order_status"] = status
+    res["executed_qty"] = exec_qty
+    res["filled"] = ok and is_filled
+    res["resting"] = ok and is_resting
+    return res
+
+
 def get_account_balance(venue_id: str, asset: str = "", *, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     params: Dict[str, Any] = {}
     if venue_id == "bybit":

@@ -237,6 +237,58 @@ def test_sell_from_existing_full_cycle_profit(grid, tmp_path, monkeypatch):
     assert len(buys) >= 1
 
 
+def _seed_live_state(grid, order_ids):
+    """Put resting orders into state as if placed live."""
+    all_state = {}
+    key = grid._key("binance", "DOGE")
+    st = grid._new_asset_state()
+    st["inventory_base"] = 10.0  # small, stays under the 15 USD inventory cap at these prices
+    st["avg_cost_usd"] = 0.10
+    st["open_orders"] = [{"order_id": oid, "side": "sell", "price": 0.11,
+                          "size_base": 10.0, "ts": grid._iso()} for oid in order_ids]
+    all_state[key] = st
+    grid._write_state(all_state)
+    return key
+
+
+def test_live_reconcile_skips_when_book_read_fails(grid, monkeypatch):
+    import backend.services.exchange_venue_api_service as vapi
+    key = _seed_live_state(grid, ["A", "B", "C"])
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: True)
+    # Order-book read fails -> must NOT infer any fills, must keep tracked orders.
+    monkeypatch.setattr(vapi, "get_open_orders", lambda *a, **k: {"success": False, "error": "timeout"})
+    monkeypatch.setattr(vapi, "place_limit_order", lambda *a, **k: {"success": True, "order_id": "new"})
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda *a, **k: {})
+    r = grid.run_grid_tick("binance", "DOGE", mid=0.10)
+    assert r["reconcile_note"] == "open_orders_read_failed"
+    assert r["fills_this_tick"] == 0  # no phantom fills
+    assert r["realized_pnl_usd"] == 0.0
+    assert len(grid._read_state()[key]["open_orders"]) == 3  # tracked orders preserved
+
+
+def test_live_reconcile_drops_rejected_without_phantom_fill(grid, monkeypatch):
+    import backend.services.exchange_venue_api_service as vapi
+    key = _seed_live_state(grid, ["A", "B", "C"])
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: True)
+    # Venue lists only order A as open; B & C disappeared.
+    monkeypatch.setattr(vapi, "get_open_orders",
+                        lambda *a, **k: {"success": True, "orders": [{"orderId": "A"}]})
+    # B was actually FILLED; C was REJECTED/never rested.
+    def _status(venue, asset, oid, **k):
+        if str(oid) == "B":
+            return {"success": True, "filled": True, "resting": False}
+        return {"success": True, "filled": False, "resting": False}  # C: gone, not filled
+    monkeypatch.setattr(vapi, "get_order_status", _status)
+    monkeypatch.setattr(vapi, "place_limit_order", lambda *a, **k: {"success": True, "order_id": "new"})
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda *a, **k: {})
+    r = grid.run_grid_tick("binance", "DOGE", mid=0.10)
+    # Only B books a fill; C is dropped silently (no phantom fill).
+    assert r["fills_this_tick"] == 1
+    # A stays resting; C dropped; B replaced by a paired buy -> A + paired buy tracked.
+    oids = [o["order_id"] for o in grid._read_state()[key]["open_orders"]]
+    assert "A" in oids and "C" not in oids
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

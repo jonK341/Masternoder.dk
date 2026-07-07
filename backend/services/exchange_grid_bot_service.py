@@ -271,18 +271,40 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
 
     # 1) Reconcile fills
     fills_applied: List[Dict[str, Any]] = []
+    reconcile_note: Optional[str] = None
     if live:
-        # Live: an order missing from the venue's open list since last tick is treated as filled.
+        # Live reconciliation. An order that has left the venue's open list is NOT assumed filled —
+        # it might have been rejected, canceled, or the book read may have failed. We confirm each
+        # disappeared order's real status before booking it, so we never invent a phantom fill or
+        # phantom inventory. If we can't read the book at all this tick, we leave state untouched.
         from backend.services import exchange_venue_api_service as vapi
         oo = vapi.get_open_orders(venue, asset, dry_run=False)
-        live_ids = {str(o.get("orderId") or o.get("id") or o.get("_id")) for o in (oo.get("orders") or oo.get("body") or []) if isinstance(o, dict)}
-        remaining = []
-        for o in st.get("open_orders", []):
-            if str(o.get("order_id")) not in live_ids:
-                fills_applied.append(o)
-            else:
-                remaining.append(o)
-        st["open_orders"] = remaining
+        if not oo.get("success"):
+            # Can't see the order book -> skip reconciliation (do not infer fills this tick).
+            reconcile_note = "open_orders_read_failed"
+        else:
+            rows = oo.get("orders")
+            if not isinstance(rows, list):
+                rows = oo.get("body") if isinstance(oo.get("body"), list) else []
+            live_ids = {str(o.get("orderId") or o.get("id") or o.get("_id"))
+                        for o in rows if isinstance(o, dict)}
+            remaining: List[Dict[str, Any]] = []
+            for o in st.get("open_orders", []):
+                oid = str(o.get("order_id"))
+                if oid in live_ids:
+                    remaining.append(o)
+                    continue
+                # Disappeared from the book — confirm what actually happened.
+                try:
+                    stt = vapi.get_order_status(venue, asset, o.get("order_id"), dry_run=False)
+                except Exception:
+                    stt = {}
+                if stt.get("filled"):
+                    fills_applied.append(o)
+                elif stt.get("resting"):
+                    remaining.append(o)  # book listing was stale/partial; keep it
+                # else: canceled / rejected / unconfirmable -> drop WITHOUT booking a fill
+            st["open_orders"] = remaining
     else:
         fill_mid = float(simulate_fill_mid if simulate_fill_mid is not None else mid)
         filled, remaining = _paper_fills(st.get("open_orders", []), fill_mid)
@@ -433,6 +455,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         "unrealized_pnl_usd": unrealized_pnl(st, mid),
         "inventory_base": st["inventory_base"], "inventory_usd": round(inv_usd, 4),
         "open_orders": len(new_open), "place_errors": place_errors[:6],
+        "reconcile_note": reconcile_note,
         "mode": "live" if live else "paper",
     }
 
