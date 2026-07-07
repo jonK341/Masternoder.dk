@@ -229,6 +229,11 @@ def main() -> int:
                     print(f"[grid-daemon] RECONCILE: {notes} (fills not inferred this tick)")
                 if errs:
                     print(f"[grid-daemon] ORDER PLACEMENT ISSUES: {errs[:4]}")
+                cbev = res.get("circuit_breaker_events") or []
+                if cbev:
+                    print(f"[grid-daemon] CIRCUIT BREAKER: {cbev}")
+                if res.get("paused_venues"):
+                    print(f"[grid-daemon] paused venues (skipped): {res.get('paused_venues')}")
             _cross_trade_pass()
         except Exception as exc:
             print(f"[grid-daemon] loop error: {exc}")

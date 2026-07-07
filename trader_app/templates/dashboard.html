@@ -324,12 +324,19 @@ function loadVenuePerf(){var hrs=Number(el('vp_hours').value||24);el('vp_msg').t
 el('vp_refresh').onclick=loadVenuePerf;el('vp_hours').onchange=loadVenuePerf;
 function loadSpecialization(){getJSON('/api/grid/status').then(function(d){
   var ev=(d.effective_by_venue)||{};var profs=(d.venue_profiles_available)||[];var vs=Object.keys(ev);
+  var paused=(d.paused_venues)||{};
   if(!vs.length){el('sp_body').innerHTML='<span class="muted">No venues configured.</span>';return;}
-  var h='<table><thead><tr><th>Exchange</th><th>Profile</th><th class=r>Step</th><th class=r>Levels</th><th class=r>Size $</th><th class=r>Max inv $</th><th class=r>Min spread</th><th>Spread gate</th></tr></thead><tbody>';
-  vs.forEach(function(v){var e=ev[v];var sel='<select data-venue="'+v+'" class="sp_sel">';profs.forEach(function(p){sel+='<option value="'+p+'"'+(e.profile===p?' selected':'')+'>'+p+'</option>';});sel+='</select>';
-    h+='<tr><td><b>'+v+'</b></td><td>'+sel+'</td><td class=r>'+(e.grid_step_pct*1e4).toFixed(0)+'bps</td><td class=r>'+e.grid_levels+'</td><td class=r>'+e.order_size_usd+'</td><td class=r>'+e.max_inventory_usd+'</td><td class=r>'+e.min_spread_bps+'bps</td><td>'+(e.require_spread_over_fee?'<span class="pill">on</span>':'<span class="pill no">off</span>')+'</td></tr>';});
+  var cb=(d.circuit_breaker)||{};
+  var h='<div class="muted" style="font-size:12px;margin-bottom:6px">Circuit breaker: '+(cb.enabled?('<span class="pill strong">on</span> auto-pause a venue if realized ≤ -$'+cb.loss_threshold_usd+' over '+cb.window_hours+'h; auto-resume after '+cb.cooldown_hours+'h'):'<span class="pill no">off</span>')+'</div>';
+  h+='<table><thead><tr><th>Exchange</th><th>Profile</th><th class=r>Step</th><th class=r>Levels</th><th class=r>Size $</th><th class=r>Min spread</th><th>Gate</th><th>State</th><th></th></tr></thead><tbody>';
+  vs.forEach(function(v){var e=ev[v];var pz=paused[v];var sel='<select data-venue="'+v+'" class="sp_sel">';profs.forEach(function(p){sel+='<option value="'+p+'"'+(e.profile===p?' selected':'')+'>'+p+'</option>';});sel+='</select>';
+    var stateCell=pz?('<span class="pill neg" title="'+(pz.reason||'')+(pz.realized_usd!=null?(' '+money(pz.realized_usd)):'')+'">paused'+(pz.manual?' (manual)':'')+'</span>'):'<span class="pill strong">active</span>';
+    var btn=pz?('<button class="ghost sp_resume" data-venue="'+v+'">Resume</button>'):('<button class="ghost sp_pause" data-venue="'+v+'">Pause</button>');
+    h+='<tr><td><b>'+v+'</b></td><td>'+sel+'</td><td class=r>'+(e.grid_step_pct*1e4).toFixed(0)+'bps</td><td class=r>'+e.grid_levels+'</td><td class=r>'+e.order_size_usd+'</td><td class=r>'+e.min_spread_bps+'bps</td><td>'+(e.require_spread_over_fee?'<span class="pill">on</span>':'<span class="pill no">off</span>')+'</td><td>'+stateCell+'</td><td>'+btn+'</td></tr>';});
   el('sp_body').innerHTML=h+'</tbody></table><span class="muted" id="sp_msg" style="font-size:12px"></span>';
   document.querySelectorAll('.sp_sel').forEach(function(s){s.onchange=function(){var v=s.dataset.venue,p=s.value;postJSON('/api/controls/action',{action:'grid_set_venue_profile',venue:v,profile:p}).then(function(r){if(el('sp_msg'))el('sp_msg').textContent=r.success?(v+' -> '+p):'failed';loadSpecialization();});};});
+  document.querySelectorAll('.sp_pause').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_pause_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
+  document.querySelectorAll('.sp_resume').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_resume_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
 });}
 function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
   var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';

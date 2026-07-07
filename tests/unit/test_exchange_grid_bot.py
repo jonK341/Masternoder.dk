@@ -569,6 +569,72 @@ def test_venue_performance_empty(grid):
     assert perf["success"] and perf["venues"] == [] and perf["focus_suggestion"] is None
 
 
+def test_circuit_breaker_pauses_losing_venue(grid, tmp_path, monkeypatch):
+    import json as _json
+    from datetime import datetime, timezone
+    p = tmp_path / "cb.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "venues": {"nonkyc": ["DOGE"]},
+        "circuit_breaker": {"enabled": True, "window_hours": 6.0,
+                            "loss_threshold_usd": 3.0, "cooldown_hours": 12.0},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    # nonkyc bleeding (-5 realized), binance fine (+1) in the window.
+    with open(grid._LEDGER_PATH, "w", encoding="utf-8") as fh:
+        fh.write(_json.dumps({"ts": now, "venue": "nonkyc", "asset": "DOGE", "side": "sell",
+                              "realized_delta_usd": -5.0}) + "\n")
+        fh.write(_json.dumps({"ts": now, "venue": "binance", "asset": "DOGE", "side": "sell",
+                              "realized_delta_usd": 1.0}) + "\n")
+    r = grid.check_circuit_breakers()
+    assert "nonkyc" in r["paused"] and "binance" not in r["paused"]
+    assert any(e["action"] == "pause" and e["venue"] == "nonkyc" for e in r["events"])
+    # run_all now skips the paused venue.
+    res = grid.run_all(dry_run=True)
+    skipped = [t for t in res["ticks"] if t.get("reason") == "venue_paused"]
+    assert any(t["venue"] == "nonkyc" for t in skipped)
+    assert "nonkyc" in res["paused_venues"]
+
+
+def test_circuit_breaker_auto_resume_after_cooldown(grid, tmp_path, monkeypatch):
+    import json as _json
+    from datetime import datetime, timezone, timedelta
+    p = tmp_path / "cb2.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+        "circuit_breaker": {"enabled": True, "window_hours": 6.0,
+                            "loss_threshold_usd": 3.0, "cooldown_hours": 12.0},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # Paused 13h ago (past the 12h cooldown), non-manual -> should auto-resume.
+    old = (datetime.now(timezone.utc) - timedelta(hours=13)).isoformat().replace("+00:00", "Z")
+    grid._write_state({"paused_venues": {"nonkyc": {"reason": "realized_loss", "manual": False,
+                                                    "paused_at": old, "realized_usd": -5.0}}})
+    # no recent losing fills -> nothing re-pauses
+    r = grid.check_circuit_breakers()
+    assert "nonkyc" not in r["paused"]
+    assert any(e["action"] == "auto_resume" and e["venue"] == "nonkyc" for e in r["events"])
+
+
+def test_manual_pause_persists_through_cooldown(grid, tmp_path, monkeypatch):
+    import json as _json
+    from datetime import datetime, timezone, timedelta
+    p = tmp_path / "cb3.json"
+    p.write_text(_json.dumps({"enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+                              "circuit_breaker": {"enabled": True, "cooldown_hours": 1.0,
+                                                  "window_hours": 1.0, "loss_threshold_usd": 3.0}}),
+                 encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    old = (datetime.now(timezone.utc) - timedelta(hours=99)).isoformat().replace("+00:00", "Z")
+    grid._write_state({"paused_venues": {"nonkyc": {"reason": "manual", "manual": True,
+                                                    "paused_at": old}}})
+    r = grid.check_circuit_breakers()
+    assert "nonkyc" in r["paused"]  # manual pause is NOT auto-resumed
+    assert grid.resume_venue("nonkyc")["resumed"] is True
+    assert "nonkyc" not in grid.paused_venues()
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

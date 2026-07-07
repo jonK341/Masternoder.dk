@@ -60,6 +60,14 @@ def _default_config() -> Dict[str, Any]:
         # Per-venue overrides (illiquid venues want WIDE steps to capture their fat spread;
         # liquid venues want DENSE steps for frequent small captures).
         "venue_overrides": {},
+        # Per-exchange circuit breaker: auto-pause a venue whose realized PnL stays negative
+        # over the window; auto-resume after the cooldown.
+        "circuit_breaker": {
+            "enabled": True,
+            "window_hours": 6.0,
+            "loss_threshold_usd": 3.0,   # pause when realized over window <= -this
+            "cooldown_hours": 12.0,      # auto-resume this long after pausing
+        },
         "tick_cooldown_seconds": 20,
     }
 
@@ -92,6 +100,16 @@ def load_config() -> Dict[str, Any]:
     base["require_spread_over_fee"] = bool(base.get("require_spread_over_fee"))
     if not isinstance(base.get("venue_overrides"), dict):
         base["venue_overrides"] = {}
+    # Normalize the circuit-breaker block (deep-merge with defaults + clamp).
+    cb = base.get("circuit_breaker") if isinstance(base.get("circuit_breaker"), dict) else {}
+    dcb = {"enabled": True, "window_hours": 6.0, "loss_threshold_usd": 3.0, "cooldown_hours": 12.0}
+    dcb.update({k: v for k, v in cb.items() if v is not None})
+    dcb["enabled"] = bool(dcb["enabled"])
+    dcb["window_hours"] = _clampf(dcb.get("window_hours"), 0.1, 720.0, 6.0)
+    dcb["loss_threshold_usd"] = _clampf(dcb.get("loss_threshold_usd"), 0.0, 1e6, 3.0)
+    # Cooldown must be >= window so a resumed venue's old losses fall outside the loss window.
+    dcb["cooldown_hours"] = _clampf(dcb.get("cooldown_hours"), dcb["window_hours"], 720.0, 12.0)
+    base["circuit_breaker"] = dcb
     return base
 
 
@@ -670,6 +688,8 @@ def grid_status() -> Dict[str, Any]:
             for v in venues_map
         },
         "venue_profiles_available": list(_VENUE_PROFILES),
+        "paused_venues": paused_venues(),
+        "circuit_breaker": cfg.get("circuit_breaker"),
         "state": assets,
     }
 
@@ -752,6 +772,81 @@ def venue_performance(window_hours: float = 24.0) -> Dict[str, Any]:
         "note": ("Shift size toward '%s' — best realized/day in the window." % focus) if focus
                 else "No fills recorded in this window yet.",
     }
+
+
+def paused_venues() -> Dict[str, Any]:
+    st = _read_state()
+    pv = st.get("paused_venues")
+    return pv if isinstance(pv, dict) else {}
+
+
+def pause_venue(venue: str, *, reason: str = "manual", manual: bool = True,
+                realized_usd: Optional[float] = None) -> Dict[str, Any]:
+    """Pause one exchange — its (venue, asset) targets are skipped until resumed."""
+    venue = str(venue or "").lower()
+    st = _read_state()
+    pv = st.get("paused_venues") if isinstance(st.get("paused_venues"), dict) else {}
+    pv[venue] = {"reason": reason, "manual": bool(manual), "paused_at": _iso(),
+                 "realized_usd": realized_usd}
+    st["paused_venues"] = pv
+    _write_state(st)
+    return {"success": True, "venue": venue, "paused": True, "reason": reason}
+
+
+def resume_venue(venue: str) -> Dict[str, Any]:
+    """Resume a paused exchange."""
+    venue = str(venue or "").lower()
+    st = _read_state()
+    pv = st.get("paused_venues") if isinstance(st.get("paused_venues"), dict) else {}
+    existed = pv.pop(venue, None) is not None
+    st["paused_venues"] = pv
+    _write_state(st)
+    return {"success": True, "venue": venue, "resumed": existed}
+
+
+def check_circuit_breakers() -> Dict[str, Any]:
+    """Auto-pause venues whose realized PnL over the window stays at/below the loss threshold;
+    auto-resume (non-manual) pauses after the cooldown. Manual pauses persist until resumed."""
+    cfg = load_config()
+    cb = cfg.get("circuit_breaker") or {}
+    events: List[Dict[str, Any]] = []
+    st = _read_state()
+    pv = st.get("paused_venues") if isinstance(st.get("paused_venues"), dict) else {}
+    if not cb.get("enabled", True):
+        return {"success": True, "enabled": False, "paused": pv, "events": events}
+
+    window = float(cb.get("window_hours") or 6.0)
+    loss_thr = float(cb.get("loss_threshold_usd") or 0.0)
+    cooldown = float(cb.get("cooldown_hours") or 12.0)
+    now = datetime.now(timezone.utc)
+
+    # Auto-resume expired (non-manual) pauses.
+    for v, info in list(pv.items()):
+        if info.get("manual"):
+            continue
+        pat = _parse_ts(info.get("paused_at"))
+        if pat is not None and (now - pat) >= timedelta(hours=cooldown):
+            pv.pop(v, None)
+            events.append({"venue": v, "action": "auto_resume"})
+
+    # Pause fresh losers (only venues actually configured to trade).
+    if loss_thr > 0:
+        target_venues = {v for v, _ in grid_targets(cfg)}
+        realized_by = {row["venue"]: float(row.get("realized_usd") or 0)
+                       for row in venue_performance(window_hours=window).get("venues", [])}
+        for v in target_venues:
+            if v in pv:
+                continue
+            realized = realized_by.get(v, 0.0)
+            if realized <= -loss_thr:
+                pv[v] = {"reason": "realized_loss", "manual": False, "paused_at": _iso(),
+                         "realized_usd": round(realized, 6), "window_hours": window}
+                events.append({"venue": v, "action": "pause", "realized_usd": round(realized, 6)})
+
+    st["paused_venues"] = pv
+    _write_state(st)
+    return {"success": True, "enabled": True, "paused": pv, "events": events,
+            "window_hours": window, "loss_threshold_usd": loss_thr, "cooldown_hours": cooldown}
 
 
 def grid_profit() -> Dict[str, Any]:
@@ -989,15 +1084,23 @@ def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
 
 
 def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
-    """Daemon entry: tick every configured (venue, asset) when enabled."""
+    """Daemon entry: tick every configured (venue, asset) when enabled. Venues tripped by the
+    circuit breaker (persistent realized loss) are skipped until they auto-resume."""
     cfg = load_config()
     if not cfg.get("enabled"):
         return {"success": True, "skipped": True, "reason": "disabled"}
+    cb = check_circuit_breakers()
+    paused = set((cb.get("paused") or {}).keys())
     results = []
     for venue, asset in grid_targets(cfg):
+        if venue in paused:
+            results.append({"success": True, "skipped": True, "venue": venue, "asset": asset,
+                            "reason": "venue_paused"})
+            continue
         try:
             results.append(run_grid_tick(venue, asset, dry_run=dry_run))
         except Exception as exc:
             results.append({"success": False, "venue": venue, "asset": asset, "error": str(exc)})
     return {"success": True, "ticks": results,
+            "paused_venues": sorted(paused), "circuit_breaker_events": cb.get("events") or [],
             "realized_pnl_usd": grid_profit()["realized_pnl_usd"]}

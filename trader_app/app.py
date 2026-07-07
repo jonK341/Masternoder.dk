@@ -662,6 +662,16 @@ def api_controls_action():
         if r.get("success"):
             store.record_alert("grid", f"Specialized {r.get('venue')} -> {r.get('profile')}", "info")
         return jsonify(r)
+    if action == "grid_pause_venue":
+        from backend.services.exchange_grid_bot_service import pause_venue
+        v = str(data.get("venue") or "")
+        store.record_alert("grid", f"Paused venue {v}", "warn")
+        return jsonify(pause_venue(v, reason="manual", manual=True))
+    if action == "grid_resume_venue":
+        from backend.services.exchange_grid_bot_service import resume_venue
+        v = str(data.get("venue") or "")
+        store.record_alert("grid", f"Resumed venue {v}", "info")
+        return jsonify(resume_venue(v))
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),
