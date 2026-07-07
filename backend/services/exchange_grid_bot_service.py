@@ -50,6 +50,16 @@ def _default_config() -> Dict[str, Any]:
         "allow_sell_existing_inventory": True,
         "taker_fee_bps": 10.0,
         "maker_fee_bps": 10.0,
+        # --- fee-positive market-making guards ---
+        # Every completed round trip earns the grid STEP and pays a round trip of maker fees.
+        # Keep the step above fees so each pair is guaranteed net-positive.
+        "min_edge_over_fee_bps": 2.0,        # required margin of step over round-trip fees
+        "enforce_fee_positive_step": True,   # auto-bump step so step_bps >= 2*maker + margin
+        "require_spread_over_fee": True,     # only seed a fresh grid when the venue's live
+                                             # spread clears a round trip of fees (worth MM'ing)
+        # Per-venue overrides (illiquid venues want WIDE steps to capture their fat spread;
+        # liquid venues want DENSE steps for frequent small captures).
+        "venue_overrides": {},
         "tick_cooldown_seconds": 20,
     }
 
@@ -77,6 +87,45 @@ def load_config() -> Dict[str, Any]:
     base["min_notional_usd"] = _clampf(base.get("min_notional_usd"), 0.0, 1e6, 5.0)
     base["maker_fee_bps"] = _clampf(base.get("maker_fee_bps"), 0.0, 100.0, 10.0)
     base["allow_sell_existing_inventory"] = bool(base.get("allow_sell_existing_inventory"))
+    base["min_edge_over_fee_bps"] = _clampf(base.get("min_edge_over_fee_bps"), 0.0, 1000.0, 2.0)
+    base["enforce_fee_positive_step"] = bool(base.get("enforce_fee_positive_step"))
+    base["require_spread_over_fee"] = bool(base.get("require_spread_over_fee"))
+    if not isinstance(base.get("venue_overrides"), dict):
+        base["venue_overrides"] = {}
+    return base
+
+
+# Per-venue fields that may be overridden (illiquid vs liquid venues want different grids).
+_OVERRIDABLE = ("grid_step_pct", "order_size_usd", "grid_levels", "max_inventory_usd",
+                "hard_loss_cap_usd", "min_notional_usd", "maker_fee_bps", "taker_fee_bps")
+
+
+def effective_config(venue: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Base config merged with any per-venue override, then re-clamped, with the step bumped so
+    each completed round trip clears a round trip of maker fees (fee-positive market-making)."""
+    base = dict(cfg or load_config())
+    venue = str(venue or "").lower()
+    ov = (base.get("venue_overrides") or {}).get(venue) or {}
+    if isinstance(ov, dict):
+        for k in _OVERRIDABLE:
+            if ov.get(k) is not None:
+                base[k] = ov[k]
+    # Re-clamp the (possibly overridden) numeric fields.
+    base["grid_levels"] = int(_clampf(base.get("grid_levels"), 1, 20, 3))
+    base["grid_step_pct"] = _clampf(base.get("grid_step_pct"), 0.0005, 0.2, 0.004)
+    base["order_size_usd"] = _clampf(base.get("order_size_usd"), 1.0, 100000.0, 6.0)
+    base["max_inventory_usd"] = _clampf(base.get("max_inventory_usd"), 0.0, 1e9, 15.0)
+    base["hard_loss_cap_usd"] = _clampf(base.get("hard_loss_cap_usd"), 0.0, 1e9, 5.0)
+    base["min_notional_usd"] = _clampf(base.get("min_notional_usd"), 0.0, 1e6, 5.0)
+    base["maker_fee_bps"] = _clampf(base.get("maker_fee_bps"), 0.0, 100.0, 10.0)
+    # Fee-positive step: step_bps must exceed a round trip of maker fees plus the margin.
+    if base.get("enforce_fee_positive_step"):
+        maker = float(base.get("maker_fee_bps") or 0)
+        margin = float(base.get("min_edge_over_fee_bps") or 0)
+        min_step = (2.0 * maker + margin) / 10000.0
+        if float(base.get("grid_step_pct") or 0) < min_step:
+            base["grid_step_pct"] = round(min_step, 8)
+            base["step_bumped_for_fees"] = True
     return base
 
 
@@ -240,16 +289,18 @@ def grid_live_enabled() -> bool:
 def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
                   dry_run: Optional[bool] = None,
                   simulate_fill_mid: Optional[float] = None,
-                  spot_free_base: Optional[float] = None) -> Dict[str, Any]:
+                  spot_free_base: Optional[float] = None,
+                  spread_bps: Optional[float] = None) -> Dict[str, Any]:
     """One grid tick: reconcile fills, enforce risk, refresh grid. Paper unless live gate on.
 
     ``mid`` overrides the market price (tests). ``simulate_fill_mid`` (paper) drives which open
     orders fill this tick before the grid is refreshed. ``spot_free_base`` overrides the free
-    balance of ``asset`` on the venue (tests); when omitted and live, it's read from the venue —
-    used by sell-from-existing mode to seed sells against coin you already hold.
+    balance of ``asset`` on the venue (tests). ``spread_bps`` overrides the measured venue spread
+    (tests) for the fee-positive spread gate. Config is resolved per-venue via effective_config.
     """
-    cfg = load_config()
-    venue = str(venue or cfg.get("venue") or "binance").lower()
+    base_cfg = load_config()
+    venue = str(venue or base_cfg.get("venue") or "binance").lower()
+    cfg = effective_config(venue, base_cfg)
     asset = str(asset).upper()
     live = grid_live_enabled() if dry_run is None else (not dry_run)
 
@@ -257,14 +308,19 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     key = _key(venue, asset)
     st = all_state.get(key) or _new_asset_state()
 
-    # Resolve current mid price
+    # Resolve current mid price (and the live spread, for the fee-positive gate)
     if mid is None:
         try:
             from backend.services import external_exchange_connector_service as conn
             tick = conn.fetch_ticker(venue, asset, timeout=5.0)
             if tick:
                 bid = float(tick.get("bid") or 0); askp = float(tick.get("ask") or 0)
-                mid = (bid + askp) / 2.0 if (bid > 0 and askp > 0) else float(tick.get("last") or 0)
+                if bid > 0 and askp > 0:
+                    mid = (bid + askp) / 2.0
+                    if spread_bps is None and mid > 0:
+                        spread_bps = (askp - bid) / mid * 10000.0
+                else:
+                    mid = float(tick.get("last") or 0)
         except Exception:
             mid = 0.0
     mid = float(mid or 0)
@@ -421,9 +477,19 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             if bp > 0:
                 _place("buy", bp, size_usd / bp)
 
+    # Fee-positive spread gate: only seed a fresh grid when the venue's live spread clears a
+    # round trip of maker fees — i.e. the venue is actually worth market-making right now.
+    # (Paired replacement of already-established levels is unaffected.) Unknown spread = pass.
+    maker_bps = float(cfg.get("maker_fee_bps") or 0)
+    spread_gate_ok = True
+    if cfg.get("require_spread_over_fee") and spread_bps is not None:
+        spread_gate_ok = float(spread_bps) >= 2.0 * maker_bps
+    if not spread_gate_ok:
+        reconcile_note = reconcile_note or "spread_below_fee"
+
     # Seed a fresh grid if we have no resting orders. Sells need something to sell: either
     # bot-accumulated inventory, or (sell-from-existing) the coin you already hold on the venue.
-    if not st_open:
+    if not st_open and spread_gate_ok:
         inv_base = float(st.get("inventory_base") or 0)
         remaining_existing = existing_free
         for od in compute_grid_orders(mid, cfg):
@@ -458,6 +524,9 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         "inventory_base": st["inventory_base"], "inventory_usd": round(inv_usd, 4),
         "open_orders": len(new_open), "place_errors": place_errors[:6],
         "reconcile_note": reconcile_note,
+        "spread_bps": round(float(spread_bps), 2) if spread_bps is not None else None,
+        "grid_step_pct": cfg.get("grid_step_pct"),
+        "spread_gate_ok": spread_gate_ok,
         "mode": "live" if live else "paper",
     }
 
@@ -523,7 +592,15 @@ def grid_status() -> Dict[str, Any]:
         "config": {k: cfg.get(k) for k in ("grid_levels", "grid_step_pct", "order_size_usd",
                                            "max_inventory_usd", "hard_loss_cap_usd",
                                            "min_spread_bps", "min_vol_pct",
-                                           "allow_sell_existing_inventory")},
+                                           "allow_sell_existing_inventory",
+                                           "enforce_fee_positive_step", "require_spread_over_fee",
+                                           "min_edge_over_fee_bps", "venue_overrides")},
+        "effective_by_venue": {
+            v: {"grid_step_pct": effective_config(v, cfg).get("grid_step_pct"),
+                "order_size_usd": effective_config(v, cfg).get("order_size_usd"),
+                "maker_fee_bps": effective_config(v, cfg).get("maker_fee_bps")}
+            for v in venues_map
+        },
         "state": assets,
     }
 

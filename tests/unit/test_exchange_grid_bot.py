@@ -419,6 +419,73 @@ def test_autoselect_cross_venue_applies(cross_scan, tmp_path, monkeypatch):
     assert "DOGE" in v["binance"] and "DOGE" in v["nonkyc"]
 
 
+def test_effective_config_applies_venue_override(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "ov.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "grid_step_pct": 0.004, "order_size_usd": 6.0, "maker_fee_bps": 10.0,
+        "enforce_fee_positive_step": True, "min_edge_over_fee_bps": 2.0,
+        "venue_overrides": {"nonkyc": {"grid_step_pct": 0.008, "maker_fee_bps": 20.0}},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    base = grid.load_config()
+    eb = grid.effective_config("binance", base)
+    en = grid.effective_config("nonkyc", base)
+    assert eb["grid_step_pct"] == pytest.approx(0.004)   # base
+    assert en["grid_step_pct"] == pytest.approx(0.008)   # override
+    assert en["maker_fee_bps"] == 20.0
+
+
+def test_effective_config_bumps_step_to_be_fee_positive(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "bump.json"
+    # step 10 bps but maker 20 bps -> round trip fee 40 bps; step must bump to >= 42 bps (0.0042)
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+        "grid_step_pct": 0.001, "maker_fee_bps": 20.0,
+        "enforce_fee_positive_step": True, "min_edge_over_fee_bps": 2.0,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    e = grid.effective_config("nonkyc", grid.load_config())
+    assert e["grid_step_pct"] == pytest.approx((2 * 20.0 + 2.0) / 10000.0)  # 0.0042
+    assert e.get("step_bumped_for_fees") is True
+    step_bps = e["grid_step_pct"] * 1e4
+    assert step_bps - 2 * e["maker_fee_bps"] >= 2.0  # net-positive per pair
+
+
+def test_spread_gate_blocks_thin_spread(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "gate.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+        "grid_step_pct": 0.008, "order_size_usd": 6.0, "max_inventory_usd": 40.0,
+        "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0, "maker_fee_bps": 20.0,
+        "allow_sell_existing_inventory": True, "require_spread_over_fee": True,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # spread 30 bps < 2*maker(40) -> no seeding; 60 bps >= 40 -> seeds.
+    thin = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0, spread_bps=30.0)
+    assert thin["open_orders"] == 0 and thin["spread_gate_ok"] is False
+    assert thin["reconcile_note"] == "spread_below_fee"
+    wide = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0, spread_bps=60.0)
+    assert wide["open_orders"] > 0 and wide["spread_gate_ok"] is True
+
+
+def test_spread_gate_disabled_allows_any_spread(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "nogate.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+        "grid_step_pct": 0.008, "order_size_usd": 6.0, "max_inventory_usd": 40.0,
+        "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0, "maker_fee_bps": 20.0,
+        "allow_sell_existing_inventory": True, "require_spread_over_fee": False,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    r = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0, spread_bps=1.0)
+    assert r["open_orders"] > 0  # gate off -> seeds regardless of thin spread
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}
