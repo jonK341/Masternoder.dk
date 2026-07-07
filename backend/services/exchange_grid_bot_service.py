@@ -567,17 +567,24 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             _quote_left[0] -= price * size_base
         st_open.append(order)
 
+    # SAFETY: if we could not read this venue's order book (e.g. 401 on the order endpoint),
+    # do NOT place any new orders here. Placing orders we can't reconcile would let sells fill
+    # untracked and never get rebought — a one-way liquidation of your holdings. Trade only where
+    # we can see the book.
+    skip_placement = live and bool(reconcile_note) and str(reconcile_note).startswith("open_orders_read_failed")
+
     # Paired replacement for orders that filled this tick.
-    for f in fills_applied:
-        fpx = float(f.get("price") or 0)
-        if fpx <= 0:
-            continue
-        if str(f.get("side")).lower() == "buy":
-            _place("sell", fpx * (1 + step), float(f.get("size_base") or 0))
-        else:
-            bp = fpx * (1 - step)
-            if bp > 0:
-                _place("buy", bp, size_usd / bp)
+    if not skip_placement:
+        for f in fills_applied:
+            fpx = float(f.get("price") or 0)
+            if fpx <= 0:
+                continue
+            if str(f.get("side")).lower() == "buy":
+                _place("sell", fpx * (1 + step), float(f.get("size_base") or 0))
+            else:
+                bp = fpx * (1 - step)
+                if bp > 0:
+                    _place("buy", bp, size_usd / bp)
 
     # Fee-positive spread gate: only seed a fresh grid when the venue's live spread clears a
     # round trip of maker fees — i.e. the venue is actually worth market-making right now.
@@ -593,7 +600,7 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
 
     # Seed a fresh grid if we have no resting orders. Sells need something to sell: either
     # bot-accumulated inventory, or (sell-from-existing) the coin you already hold on the venue.
-    if not st_open and spread_gate_ok:
+    if not st_open and spread_gate_ok and not skip_placement:
         inv_base = float(st.get("inventory_base") or 0)
         remaining_existing = existing_free
         for od in compute_grid_orders(mid, cfg):

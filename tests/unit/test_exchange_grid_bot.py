@@ -721,6 +721,33 @@ def test_manual_pause_persists_through_cooldown(grid, tmp_path, monkeypatch):
     assert "nonkyc" not in grid.paused_venues()
 
 
+def test_no_placement_when_book_read_fails(grid, tmp_path, monkeypatch):
+    import json as _json
+    import backend.services.exchange_venue_api_service as vapi
+    p = tmp_path / "noplace.json"
+    p.write_text(_json.dumps({
+        "enabled": True, "venue": "nonkyc", "assets": ["DOGE"], "grid_levels": 3,
+        "grid_step_pct": 0.01, "order_size_usd": 6.0, "max_inventory_usd": 100.0,
+        "hard_loss_cap_usd": 50.0, "min_notional_usd": 5.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": True, "require_spread_over_fee": False,
+        "venue_overrides": {},
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    monkeypatch.setattr(grid, "grid_live_enabled", lambda: True)
+    # Book read FAILS (401) -> must place nothing, even though we hold sellable coin.
+    monkeypatch.setattr(vapi, "get_open_orders", lambda *a, **k: {"success": False, "status_code": 401})
+    monkeypatch.setattr(vapi, "extract_order_error", lambda r: "http_401")
+    monkeypatch.setattr(vapi, "venue_quote_asset", lambda v: "USDT")
+    monkeypatch.setattr(vapi, "parse_spot_balances", lambda v, **k: {"DOGE": 100000.0})
+    placed = []
+    monkeypatch.setattr(vapi, "place_limit_order",
+                        lambda *a, **k: (placed.append(a) or {"success": True, "order_id": "x"}))
+    r = grid.run_grid_tick("nonkyc", "DOGE", mid=0.10, spread_bps=100.0)
+    assert placed == []                       # no orders sent to a venue we can't reconcile
+    assert r["open_orders"] == 0
+    assert str(r["reconcile_note"]).startswith("open_orders_read_failed")
+
+
 def test_quote_gate_skips_unfundable_buys(grid, tmp_path, monkeypatch):
     import json as _json
     import backend.services.exchange_venue_api_service as vapi
