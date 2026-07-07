@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from backend.services import crypto_exchange_service as ex
@@ -602,6 +602,86 @@ def grid_status() -> Dict[str, Any]:
             for v in venues_map
         },
         "state": assets,
+    }
+
+
+def _read_ledger_tail(max_lines: int = 20000) -> List[Dict[str, Any]]:
+    """Parse the grid fill ledger (jsonl), newest window. Tolerant of bad lines."""
+    import json as _json
+    rows: List[Dict[str, Any]] = []
+    try:
+        if not os.path.isfile(_LEDGER_PATH):
+            return rows
+        with open(_LEDGER_PATH, encoding="utf-8") as fh:
+            lines = fh.readlines()[-int(max_lines):]
+        for ln in lines:
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                rows.append(_json.loads(ln))
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return rows
+
+
+def _parse_ts(ts: Any) -> Optional[datetime]:
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def venue_performance(window_hours: float = 24.0) -> Dict[str, Any]:
+    """Which venue is actually paying? Aggregate real fills + realized PnL per venue over a
+    trailing window (from the fill ledger) so you can shift size toward the winners.
+
+    Returns per-venue fills, fills/day, realized $, realized/day, realized/fill, plus a ranked
+    focus suggestion (best realized/day, then realized/fill)."""
+    window_hours = max(0.1, float(window_hours or 24.0))
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+    scale = 24.0 / window_hours
+    agg: Dict[str, Dict[str, Any]] = {}
+    for r in _read_ledger_tail():
+        ts = _parse_ts(r.get("ts"))
+        if ts is None or ts < cutoff:
+            continue
+        v = str(r.get("venue") or "?").lower()
+        a = str(r.get("asset") or "?").upper()
+        rd = float(r.get("realized_delta_usd") or 0)
+        side = str(r.get("side") or "").lower()
+        row = agg.setdefault(v, {"venue": v, "fills": 0, "buys": 0, "sells": 0,
+                                 "realized_usd": 0.0, "by_asset": {}, "last_fill_ts": None})
+        row["fills"] += 1
+        row["buys"] += 1 if side == "buy" else 0
+        row["sells"] += 1 if side == "sell" else 0
+        row["realized_usd"] += rd
+        ass = row["by_asset"].setdefault(a, {"fills": 0, "realized_usd": 0.0})
+        ass["fills"] += 1
+        ass["realized_usd"] += rd
+        if row["last_fill_ts"] is None or str(r.get("ts")) > row["last_fill_ts"]:
+            row["last_fill_ts"] = str(r.get("ts"))
+    venues: List[Dict[str, Any]] = []
+    for v, row in agg.items():
+        fills = int(row["fills"])
+        realized = round(float(row["realized_usd"]), 6)
+        row["realized_usd"] = realized
+        row["fills_per_day"] = round(fills * scale, 2)
+        row["realized_per_day_usd"] = round(realized * scale, 4)
+        row["realized_per_fill_usd"] = round(realized / fills, 6) if fills else 0.0
+        for a, ass in row["by_asset"].items():
+            ass["realized_usd"] = round(float(ass["realized_usd"]), 6)
+        venues.append(row)
+    venues.sort(key=lambda r: (r["realized_per_day_usd"], r["realized_per_fill_usd"]), reverse=True)
+    focus = venues[0]["venue"] if venues else None
+    return {
+        "success": True, "window_hours": window_hours,
+        "venues": venues,
+        "focus_suggestion": focus,
+        "note": ("Shift size toward '%s' — best realized/day in the window." % focus) if focus
+                else "No fills recorded in this window yet.",
     }
 
 

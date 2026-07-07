@@ -486,6 +486,38 @@ def test_spread_gate_disabled_allows_any_spread(grid, tmp_path, monkeypatch):
     assert r["open_orders"] > 0  # gate off -> seeds regardless of thin spread
 
 
+def test_venue_performance_aggregates_from_ledger(grid):
+    import json as _json
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    recent = now.isoformat().replace("+00:00", "Z")
+    old = (now - timedelta(hours=48)).isoformat().replace("+00:00", "Z")
+    rows = [
+        {"ts": recent, "venue": "nonkyc", "asset": "DOGE", "side": "sell", "realized_delta_usd": 0.40},
+        {"ts": recent, "venue": "nonkyc", "asset": "LINK", "side": "sell", "realized_delta_usd": 0.20},
+        {"ts": recent, "venue": "binance", "asset": "DOGE", "side": "sell", "realized_delta_usd": 0.05},
+        {"ts": old,    "venue": "binance", "asset": "DOGE", "side": "sell", "realized_delta_usd": 9.99},  # outside window
+    ]
+    with open(grid._LEDGER_PATH, "w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(_json.dumps(r) + "\n")
+    perf = grid.venue_performance(window_hours=24.0)
+    assert perf["success"]
+    by = {v["venue"]: v for v in perf["venues"]}
+    assert "binance" in by and "nonkyc" in by
+    assert by["nonkyc"]["fills"] == 2                       # old binance row excluded
+    assert by["nonkyc"]["realized_usd"] == pytest.approx(0.60)
+    assert by["binance"]["fills"] == 1                      # 48h-old row filtered out
+    # nonkyc pays more/day -> it's the focus suggestion and sorts first
+    assert perf["focus_suggestion"] == "nonkyc"
+    assert perf["venues"][0]["venue"] == "nonkyc"
+
+
+def test_venue_performance_empty(grid):
+    perf = grid.venue_performance()
+    assert perf["success"] and perf["venues"] == [] and perf["focus_suggestion"] is None
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

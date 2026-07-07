@@ -119,6 +119,13 @@
         <button id="pr_add">Add profitable pairs</button>
         <span class="muted" id="pr_msg" style="margin-left:8px"></span></div>
       <div id="pr_body" class="muted">Click "Scan &amp; rank" to find the pairs that actually make the difference.</div></div>
+    <div class="card"><h2>Venue performance <span class="muted" style="font-size:12px">(which venue is paying)</span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <label class="muted">window
+          <select id="vp_hours"><option value="24">24h</option><option value="168">7d</option><option value="1">1h</option></select></label>
+        <button id="vp_refresh" class="ghost">Refresh</button>
+        <span class="muted" id="vp_msg" style="margin-left:8px"></span></div>
+      <div id="vp_body" class="muted">Real fills + realized PnL per venue, from the grid ledger. Shift size toward the winners.</div></div>
     <div class="card"><h2>Cross-venue price differences</h2>
       <div class="muted" style="margin-bottom:8px;font-size:12px">Searches the same pair's price across Binance / NonKYC / XeggeX and shows the buy-low/sell-high gap (net of both venues' fees). "Add cross-venue pairs" lists the profitable ones on each exchange for the grid.</div>
       <div class="row" style="margin-bottom:8px">
@@ -242,7 +249,7 @@ loaders.overview=function(){getJSON('/api/overview').then(function(d){
   refreshAlerts();
 };
 loaders.trading=function(){getJSON('/api/trading').then(function(d){window._recs=d.recommendations||[];renderRecs();
-  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();};
+  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();if(window.loadVenuePerf)loadVenuePerf();};
 function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||'').toUpperCase();var mn=Number(el('tr_minbps').value||0);
   recs=recs.filter(function(r){return (!q||r.symbol.indexOf(q)>=0)&&r.edge_bps>=mn;});
   if(!recs.length){el('tr_recs').innerHTML='<span class="muted">No matching recommendations.</span>';return;}
@@ -304,6 +311,14 @@ el('tr_tick').onclick=function(){busy(el('tr_tick'),true);el('tr_msg').textConte
 el('tr_kill').onclick=function(){if(!confirm('Kill switch: disable the grid bot?'))return;busy(el('tr_kill'),true);postJSON('/api/controls/action',{action:'grid_kill'}).then(function(){loaders.overview();busy(el('tr_kill'),false);});};
 el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,allow_sell_existing_inventory:el('cf_sellexist').checked,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
 window.preset=function(n){postJSON('/api/config/preset',{preset:n}).then(function(){loaders.trading();el('cf_msg').textContent='applied '+n;});};
+function renderVenuePerf(d){if(!d||!d.success){el('vp_body').innerHTML='<span class="muted">Unavailable.</span>';return;}
+  var vs=d.venues||[];if(!vs.length){el('vp_body').innerHTML='<span class="muted">No fills recorded in this window yet. Once the grid fills, per-venue results appear here.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Venue</th><th data-num=1 class=r>Fills/day</th><th data-num=1 class=r>Fills</th><th data-num=1 class=r>Realized/day</th><th data-k=p data-num=1 class=r>Realized</th><th data-num=1 class=r>Per fill</th><th>Last fill</th></tr></thead><tbody>';
+  vs.forEach(function(v){var win=(v.venue===d.focus_suggestion);h+='<tr'+(win?' style="font-weight:600"':'')+'><td>'+(win?'★ ':'')+v.venue+'</td><td class=r>'+v.fills_per_day+'</td><td class=r>'+v.fills+'</td><td class=r>'+money(v.realized_per_day_usd)+'</td><td class=r class="'+cls(v.realized_usd)+'">'+money(v.realized_usd)+'</td><td class=r>'+money(v.realized_per_fill_usd)+'</td><td class=muted>'+((v.last_fill_ts||'').slice(11,19))+'</td></tr>';});
+  h+='</tbody></table><div class="muted" style="margin-top:6px;font-size:12px">'+(d.note||'')+'</div>';
+  el('vp_body').innerHTML=h;makeSortable(el('vp_body').querySelector('table'));}
+function loadVenuePerf(){var hrs=Number(el('vp_hours').value||24);el('vp_msg').textContent='loading…';getJSON('/api/grid/venue-performance?hours='+hrs).then(function(d){el('vp_msg').textContent=d.focus_suggestion?('focus: '+d.focus_suggestion):'';renderVenuePerf(d);});}
+el('vp_refresh').onclick=loadVenuePerf;el('vp_hours').onchange=loadVenuePerf;
 function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
   var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';
   pairs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td class=r>'+r.edge_bps+'</td><td class=r>'+r.net_edge_bps+'</td><td class=r>'+r.hit_rate_pct+'</td><td class=r>'+r.fill_count+'</td><td class=r><b>'+r.score+'</b></td><td class=muted>'+(r.venues||[]).join(', ')+'</td><td class=muted>'+r.source+'</td></tr>';});

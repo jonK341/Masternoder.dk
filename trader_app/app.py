@@ -516,6 +516,18 @@ def api_grid_rank():
     return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
 
 
+@app.route("/api/grid/venue-performance")
+@login_required
+def api_grid_venue_performance():
+    """Per-venue fills/day + realized/day from the grid fill ledger (which venue is paying)."""
+    from backend.services.exchange_grid_bot_service import venue_performance
+    try:
+        hours = float(request.args.get("hours") or 24.0)
+    except (TypeError, ValueError):
+        hours = 24.0
+    return jsonify(venue_performance(window_hours=hours))
+
+
 @app.route("/api/grid/cross-diff")
 @login_required
 def api_grid_cross_diff():
