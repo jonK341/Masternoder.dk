@@ -109,7 +109,7 @@
         <label>Max inventory $<input id="cf_maxinv" type="number"/></label>
         <label>Hard loss cap $<input id="cf_loss" type="number"/></label>
         <label>Assets (csv)<input id="cf_assets"/></label>
-        <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin.">Sell existing coin<input id="cf_sellexist" type="checkbox"/></label>
+        <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin." style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;color:var(--txt);font-size:13px"><input id="cf_sellexist" type="checkbox" style="width:auto;flex:none"/> Sell existing coin — trade the base coin you already hold (e.g. DOGE)</label>
       </div>
       <button id="cf_save">Save config</button><span class="muted" id="cf_msg" style="margin-left:8px"></span></div>
   </div>

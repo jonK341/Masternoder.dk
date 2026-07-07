@@ -75,3 +75,7 @@ data/mn2_verified_users.json
 /.build-venv/
 /trader_app/.state/
 /trader_app/config.json
+
+# grid bot runtime state
+data/crypto_exchange/grid_bot_state.json
+data/crypto_exchange/grid_bot_ledger.jsonl
