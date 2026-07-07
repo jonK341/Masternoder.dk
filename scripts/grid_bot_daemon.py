@@ -111,6 +111,9 @@ def main() -> int:
     parser.add_argument("--interval", type=int, default=30, help="Seconds between tick cycles")
     parser.add_argument("--paper", action="store_true", help="Force paper mode (no real orders)")
     parser.add_argument("--enable", action="store_true", help="Enable the grid bot config before running")
+    parser.add_argument("--reseed", action="store_true",
+                        help="Cancel tracked open orders + clear them so a fresh full grid is placed "
+                             "(use after funding more capital)")
     args = parser.parse_args()
 
     try:
@@ -121,10 +124,13 @@ def main() -> int:
     _load_config_env()
     _diagnose()
 
-    from backend.services.exchange_grid_bot_service import run_all, grid_live_enabled, set_enabled
+    from backend.services.exchange_grid_bot_service import run_all, grid_live_enabled, set_enabled, reset_open_orders
     if args.enable:
         set_enabled(True)
         print("[grid-daemon] grid bot enabled in config")
+    if args.reseed:
+        r = reset_open_orders()
+        print(f"[grid-daemon] reseed: cleared {r.get('cleared_orders')} tracked orders — full grid will re-post")
 
     dry = True if args.paper else None
     mode = "paper" if (args.paper or not grid_live_enabled()) else "LIVE"

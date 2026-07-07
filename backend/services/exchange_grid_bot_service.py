@@ -390,6 +390,36 @@ def set_enabled(enabled: bool) -> Dict[str, Any]:
     return {"success": True, "enabled": cfg["enabled"]}
 
 
+def reset_open_orders(venue: Optional[str] = None) -> Dict[str, Any]:
+    """Cancel the bot's tracked open orders (live) and clear them from state, so the next tick
+    seeds a fresh full grid. Use after funding more capital to (re)place all levels. Inventory
+    and realized PnL are preserved."""
+    cfg = load_config()
+    venue = str(venue or cfg.get("venue") or "binance").lower()
+    live = grid_live_enabled()
+    all_state = _read_state()
+    cleared = 0
+    for asset in (cfg.get("assets") or []):
+        key = _key(venue, str(asset))
+        st = all_state.get(key)
+        if not st:
+            continue
+        for o in st.get("open_orders") or []:
+            if live:
+                try:
+                    from backend.services import exchange_venue_api_service as vapi
+                    vapi.cancel_order(venue, str(asset), o.get("order_id"), dry_run=False)
+                except Exception:
+                    pass
+            cleared += 1
+        st["open_orders"] = []
+        st["halted"] = False
+        st["halt_reason"] = None
+        all_state[key] = st
+    _write_state(all_state)
+    return {"success": True, "venue": venue, "cleared_orders": cleared}
+
+
 def grid_status() -> Dict[str, Any]:
     cfg = load_config()
     st = _read_state()
