@@ -321,6 +321,57 @@ def test_grid_targets_dedups_overlap(grid, tmp_path, monkeypatch):
     assert ("binance", "BTC") in targets
 
 
+@pytest.fixture
+def profit_data(grid, tmp_path, monkeypatch):
+    """Seed a ledger profit index + pair catalog for ranking tests."""
+    import json
+    idx = tmp_path / "idx.json"
+    idx.write_text(json.dumps({"hits": [
+        {"symbol": "BTC", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "avg_net_bps": 56.0, "hit_rate_pct": 100.0, "fill_count": 26},
+        {"symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "avg_net_bps": 34.0, "hit_rate_pct": 100.0, "fill_count": 1},
+        {"symbol": "LINK", "buy_venue": "nonkyc", "sell_venue": "binance",
+         "avg_net_bps": 11.8, "hit_rate_pct": 50.0, "fill_count": 0},  # net < fees -> filtered
+    ]}), encoding="utf-8")
+    cat = tmp_path / "cat.json"
+    cat.write_text(json.dumps({
+        "binance_usdc_bases": ["BTC", "DOGE", "LINK", "ETH"],
+        "nonkyc_usdt_bases": ["BTC", "DOGE", "LINK"],
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_PROFIT_INDEX_PATH", str(idx))
+    monkeypatch.setattr(grid, "_PAIR_CATALOG_PATH", str(cat))
+    return grid
+
+
+def test_rank_profit_pairs_ranks_by_measured_edge(profit_data):
+    ranked = profit_data.rank_profit_pairs(include_live=False, min_score=3.0)
+    syms = [r["symbol"] for r in ranked]
+    assert syms[0] == "BTC"           # highest measured edge + confidence
+    assert "LINK" not in syms          # net edge below fees -> dropped
+    btc = ranked[0]
+    assert btc["net_edge_bps"] == pytest.approx(56.0 - 20.0)  # minus round-trip maker fees
+    assert set(btc["venues"]) == {"binance", "nonkyc", "xeggex"}
+
+
+def test_autoselect_applies_to_multi_venue_config(profit_data, tmp_path, monkeypatch):
+    import json
+    # cfg with an existing venues map; autoselect should merge winners in (de-duped).
+    p = tmp_path / "cfg2.json"
+    p.write_text(json.dumps({"enabled": True, "venue": "binance", "assets": ["SOL"],
+                             "venues": {"nonkyc": ["XRP"]},
+                             "maker_fee_bps": 10.0}), encoding="utf-8")
+    monkeypatch.setattr(profit_data, "_CFG_PATH", str(p))
+    res = profit_data.autoselect_profit_pairs(min_score=3.0, include_live=False, apply=True)
+    assert res["applied"] is True
+    v = res["config_venues"]
+    assert "BTC" in v["binance"] and "SOL" in v["binance"]   # winners + legacy assets merged
+    assert "BTC" in v["nonkyc"] and "XRP" in v["nonkyc"]     # winners + existing merged
+    # persisted
+    cfg2 = profit_data.load_config()
+    assert "BTC" in (cfg2.get("venues") or {}).get("binance", [])
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

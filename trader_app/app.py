@@ -500,7 +500,20 @@ def api_trading():
     return jsonify({"success": True, "signals": sig.get("signals") or [], "recommendations": recs,
                     "grid_config": {k: cfg.get(k) for k in ("venue", "assets", "grid_levels",
                                     "grid_step_pct", "order_size_usd", "max_inventory_usd",
-                                    "hard_loss_cap_usd", "allow_sell_existing_inventory")}})
+                                    "hard_loss_cap_usd", "allow_sell_existing_inventory", "venues")}})
+
+
+@app.route("/api/grid/rank")
+@login_required
+def api_grid_rank():
+    """Profit-ranked candidate pairs (measured edge from ledger + live arb, net of fees)."""
+    from backend.services.exchange_grid_bot_service import rank_profit_pairs
+    try:
+        min_score = float(request.args.get("min_score") or 3.0)
+    except (TypeError, ValueError):
+        min_score = 3.0
+    ranked = rank_profit_pairs(include_live=True, min_score=min_score)
+    return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
 
 
 @app.route("/api/profit-monitor")
@@ -560,6 +573,16 @@ def api_controls_action():
         from backend.services.exchange_grid_bot_service import set_enabled
         store.record_alert("kill", "Kill switch: grid bot disabled", "warn")
         return jsonify(set_enabled(False))
+    if action == "grid_autoselect":
+        from backend.services.exchange_grid_bot_service import autoselect_profit_pairs
+        try:
+            min_score = float(data.get("min_score") or 3.0)
+        except (TypeError, ValueError):
+            min_score = 3.0
+        res = autoselect_profit_pairs(min_score=min_score, include_live=True, apply=True)
+        if res.get("applied"):
+            store.record_alert("grid", f"Added profit-ranked pairs ({res.get('targets_total')} targets)", "info")
+        return jsonify(res)
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),

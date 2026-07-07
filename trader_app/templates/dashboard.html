@@ -112,6 +112,13 @@
         <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin." style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;color:var(--txt);font-size:13px"><input id="cf_sellexist" type="checkbox" style="width:auto;flex:none"/> Sell existing coin — trade the base coin you already hold (e.g. DOGE)</label>
       </div>
       <button id="cf_save">Save config</button><span class="muted" id="cf_msg" style="margin-left:8px"></span></div>
+    <div class="card"><h2>Profit-ranked pairs</h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Ranks candidate pairs by measured edge (ledger history + live arb), net of fees. "Add profitable" writes the winners into the multi-venue grid config.</div>
+      <div class="row" style="margin-bottom:8px">
+        <button id="pr_scan" class="ghost">Scan &amp; rank</button>
+        <button id="pr_add">Add profitable pairs</button>
+        <span class="muted" id="pr_msg" style="margin-left:8px"></span></div>
+      <div id="pr_body" class="muted">Click "Scan &amp; rank" to find the pairs that actually make the difference.</div></div>
   </div>
 
   <div class="pane" id="p_monitor">
@@ -277,6 +284,12 @@ el('tr_tick').onclick=function(){busy(el('tr_tick'),true);el('tr_msg').textConte
 el('tr_kill').onclick=function(){if(!confirm('Kill switch: disable the grid bot?'))return;busy(el('tr_kill'),true);postJSON('/api/controls/action',{action:'grid_kill'}).then(function(){loaders.overview();busy(el('tr_kill'),false);});};
 el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,allow_sell_existing_inventory:el('cf_sellexist').checked,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
 window.preset=function(n){postJSON('/api/config/preset',{preset:n}).then(function(){loaders.trading();el('cf_msg').textContent='applied '+n;});};
+function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';
+  pairs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td class=r>'+r.edge_bps+'</td><td class=r>'+r.net_edge_bps+'</td><td class=r>'+r.hit_rate_pct+'</td><td class=r>'+r.fill_count+'</td><td class=r><b>'+r.score+'</b></td><td class=muted>'+(r.venues||[]).join(', ')+'</td><td class=muted>'+r.source+'</td></tr>';});
+  el('pr_body').innerHTML=h+'</tbody></table>';makeSortable(el('pr_body').querySelector('table'));}
+el('pr_scan').onclick=function(){busy(el('pr_scan'),true);el('pr_msg').textContent='scanning…';getJSON('/api/grid/rank').then(function(d){el('pr_msg').textContent=(d.count||0)+' profitable';renderRanked(d.pairs);busy(el('pr_scan'),false);});};
+el('pr_add').onclick=function(){if(!confirm('Add profit-ranked pairs to the multi-venue grid config?'))return;busy(el('pr_add'),true);postJSON('/api/controls/action',{action:'grid_autoselect'}).then(function(d){el('pr_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderRanked(d.selected);loaders.trading();busy(el('pr_add'),false);});};
 el('goal').onchange=loaders.overview;
 
 /* auto-refresh */

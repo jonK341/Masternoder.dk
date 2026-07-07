@@ -22,6 +22,8 @@ from backend.services import crypto_exchange_service as ex
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_grid_bot_config.json")
 _STATE_PATH = os.path.join(ex._DATA_DIR, "grid_bot_state.json")
 _LEDGER_PATH = os.path.join(ex._DATA_DIR, "grid_bot_ledger.jsonl")
+_PROFIT_INDEX_PATH = os.path.join(ex._DATA_DIR, "profit_pair_search_index.json")
+_PAIR_CATALOG_PATH = os.path.join(ex._DATA_DIR, "profit_pair_catalog_cache.json")
 
 
 def _iso() -> str:
@@ -532,6 +534,124 @@ def grid_profit() -> Dict[str, Any]:
     fills = sum(int(s.get("fills") or 0) for s in st.values())
     return {"success": True, "realized_pnl_usd": realized, "total_fills": fills,
             "assets": {k: round(float(s.get("realized_pnl_usd") or 0), 6) for k, s in st.items()}}
+
+
+# ----------------------------- profit-driven pair selection -----------------------------
+
+_GRID_VENUES = ("binance", "nonkyc", "xeggex")
+
+
+def _load_pair_catalog() -> Dict[str, set]:
+    """venue -> set of tradeable base symbols. XeggeX mirrors the NonKYC USDT list (same family)."""
+    cat = ex._read_json(_PAIR_CATALOG_PATH, {}) or {}
+    binance = {str(s).upper() for s in (cat.get("binance_usdc_bases") or [])}
+    nonkyc = {str(s).upper() for s in (cat.get("nonkyc_usdt_bases") or [])}
+    return {"binance": binance, "nonkyc": nonkyc, "xeggex": set(nonkyc)}
+
+
+def _load_profit_history() -> Dict[str, Dict[str, Any]]:
+    """symbol -> measured edge/hit-rate/fills from the ledger profit index."""
+    idx = ex._read_json(_PROFIT_INDEX_PATH, {}) or {}
+    hist: Dict[str, Dict[str, Any]] = {}
+    for h in (idx.get("hits") or []):
+        if not isinstance(h, dict):
+            continue
+        sym = str(h.get("symbol") or "").upper()
+        if not sym:
+            continue
+        cur = hist.setdefault(sym, {"avg_net_bps": 0.0, "hit_rate_pct": 0.0, "fill_count": 0, "venues": set()})
+        cur["avg_net_bps"] = max(cur["avg_net_bps"], float(h.get("avg_net_bps") or 0))
+        cur["hit_rate_pct"] = max(cur["hit_rate_pct"], float(h.get("hit_rate_pct") or 0))
+        cur["fill_count"] += int(h.get("fill_count") or 0)
+        for v in (h.get("buy_venue"), h.get("sell_venue")):
+            if v:
+                cur["venues"].add(str(v).lower())
+    return hist
+
+
+def _live_arb_edges() -> Dict[str, float]:
+    """symbol -> best current cross-venue net edge (bps). Empty if unreachable."""
+    edges: Dict[str, float] = {}
+    try:
+        from backend.services.exchange_arbitrage_service import scan_opportunities
+        for o in (scan_opportunities().get("opportunities") or []):
+            if not isinstance(o, dict):
+                continue
+            s = str(o.get("symbol") or "").upper()
+            if s:
+                edges[s] = max(edges.get(s, 0.0), float(o.get("net_bps") or 0))
+    except Exception:
+        pass
+    return edges
+
+
+def rank_profit_pairs(*, include_live: bool = True, min_score: float = 3.0,
+                      cfg: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Rank candidate pairs by *measured* profitability so we add the ones that actually make money.
+
+    Score blends the ledger's historical net edge (avg_net_bps) with the current live arb edge,
+    discounted by hit-rate and sample-size confidence, and keeps only symbols the venue catalog
+    lists. Deterministic and offline-safe (live edges are additive, not required).
+    """
+    cfg = cfg or load_config()
+    catalog = _load_pair_catalog()
+    hist = _load_profit_history()
+    live = _live_arb_edges() if include_live else {}
+    fee_bps = float(cfg.get("maker_fee_bps") or 10.0)
+
+    ranked: List[Dict[str, Any]] = []
+    for sym in (set(hist) | set(live)):
+        h = hist.get(sym, {})
+        hist_edge = float(h.get("avg_net_bps") or 0)
+        live_edge = float(live.get(sym, 0.0))
+        edge = max(hist_edge, live_edge)
+        # net of a round-trip of fees so the "profit difference" is honest
+        net_edge = edge - 2 * fee_bps
+        hit = float(h.get("hit_rate_pct") or (100.0 if sym in live else 0.0)) / 100.0
+        fills = int(h.get("fill_count") or 0)
+        conf = min(1.0, (fills + (5 if sym in live else 0)) / 10.0)
+        score = max(0.0, net_edge) * (0.5 + 0.5 * hit) * (0.3 + 0.7 * conf)
+        venues = [v for v in _GRID_VENUES if sym in catalog.get(v, set())]
+        if not venues or score < min_score:
+            continue
+        ranked.append({
+            "symbol": sym, "edge_bps": round(edge, 2), "net_edge_bps": round(net_edge, 2),
+            "hit_rate_pct": round(hit * 100, 1), "fill_count": fills,
+            "confidence": round(conf, 2), "score": round(score, 2),
+            "venues": venues, "source": "live+ledger" if (sym in live and sym in hist)
+                        else ("live" if sym in live else "ledger"),
+        })
+    ranked.sort(key=lambda r: r["score"], reverse=True)
+    return ranked
+
+
+def autoselect_profit_pairs(*, min_score: float = 3.0, top_n: Optional[int] = None,
+                            include_live: bool = True, apply: bool = False) -> Dict[str, Any]:
+    """Rank pairs by measured profit and (optionally) add them to the multi-venue config."""
+    cfg = load_config()
+    ranked = rank_profit_pairs(include_live=include_live, min_score=min_score, cfg=cfg)
+    if top_n:
+        ranked = ranked[: int(top_n)]
+    add: Dict[str, List[str]] = {}
+    for r in ranked:
+        for v in r["venues"]:
+            add.setdefault(v, []).append(r["symbol"])
+    result: Dict[str, Any] = {"success": True, "selected": ranked, "venues_add": add,
+                              "applied": False, "min_score": min_score}
+    if apply and add:
+        venues = {k: list(v) for k, v in (cfg.get("venues") or {}).items()}
+        legacy_assets = {str(a).upper() for a in (cfg.get("assets") or [])}
+        for v, syms in add.items():
+            existing = {str(x).upper() for x in (venues.get(v) or [])}
+            if v == "binance":
+                existing |= legacy_assets
+            venues[v] = sorted(existing | set(syms))
+        cfg["venues"] = venues
+        ex._write_json(_CFG_PATH, cfg)
+        result["applied"] = True
+        result["config_venues"] = venues
+        result["targets_total"] = len(grid_targets(cfg))
+    return result
 
 
 def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
