@@ -41,6 +41,11 @@ def _default_config() -> Dict[str, Any]:
         "min_spread_bps": 8.0,          # asset selection: min quoted spread
         "min_vol_pct": 0.5,             # asset selection: min recent volatility %
         "min_notional_usd": 5.0,        # skip orders below the venue minimum notional
+        # Sell-from-existing: when the bot has no accumulated inventory yet, seed SELL levels
+        # against the coin you already hold on the venue (e.g. DOGE). This lets the grid trade
+        # when you hold the base asset but little quote (USDC). Trigger/kill switch — set false
+        # to stop selling your existing coin.
+        "allow_sell_existing_inventory": True,
         "taker_fee_bps": 10.0,
         "maker_fee_bps": 10.0,
         "tick_cooldown_seconds": 20,
@@ -69,6 +74,7 @@ def load_config() -> Dict[str, Any]:
     base["hard_loss_cap_usd"] = _clampf(base.get("hard_loss_cap_usd"), 0.0, 1e9, 5.0)
     base["min_notional_usd"] = _clampf(base.get("min_notional_usd"), 0.0, 1e6, 5.0)
     base["maker_fee_bps"] = _clampf(base.get("maker_fee_bps"), 0.0, 100.0, 10.0)
+    base["allow_sell_existing_inventory"] = bool(base.get("allow_sell_existing_inventory"))
     return base
 
 
@@ -141,11 +147,20 @@ def apply_fill(state: Dict[str, Any], fill: Dict[str, Any], *, fee_bps: float = 
         state["avg_cost_usd"] = ((inv * avg) + (size * price) + fee) / new_inv if new_inv > 0 else 0.0
         state["inventory_base"] = round(new_inv, 12)
     elif side == "sell":
-        sell_size = min(size, inv)
-        realized_delta = sell_size * (price - avg) - fee
-        state["inventory_base"] = round(inv - sell_size, 12)
-        if state["inventory_base"] <= 1e-12:
-            state["avg_cost_usd"] = 0.0
+        if fill.get("is_existing_inv_sell"):
+            # Selling the user's PRE-EXISTING coin (not bot-accumulated inventory). Book only the
+            # grid edge relative to the reference mid when the order was posted — the coin's
+            # principal value is the user's capital, not bot profit. This sale does NOT draw down
+            # the avg-cost inventory book (that coin was never in it); the paired buy that follows
+            # rebuys the coin one step lower, closing the round.
+            ref = float(fill.get("existing_ref_px") or price)
+            realized_delta = size * (price - ref) - fee
+        else:
+            sell_size = min(size, inv)
+            realized_delta = sell_size * (price - avg) - fee
+            state["inventory_base"] = round(inv - sell_size, 12)
+            if state["inventory_base"] <= 1e-12:
+                state["avg_cost_usd"] = 0.0
     state["realized_pnl_usd"] = round(float(state.get("realized_pnl_usd") or 0) + realized_delta, 8)
     state["fills"] = int(state.get("fills") or 0) + 1
     return round(realized_delta, 8)
@@ -222,11 +237,14 @@ def grid_live_enabled() -> bool:
 
 def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
                   dry_run: Optional[bool] = None,
-                  simulate_fill_mid: Optional[float] = None) -> Dict[str, Any]:
+                  simulate_fill_mid: Optional[float] = None,
+                  spot_free_base: Optional[float] = None) -> Dict[str, Any]:
     """One grid tick: reconcile fills, enforce risk, refresh grid. Paper unless live gate on.
 
     ``mid`` overrides the market price (tests). ``simulate_fill_mid`` (paper) drives which open
-    orders fill this tick before the grid is refreshed.
+    orders fill this tick before the grid is refreshed. ``spot_free_base`` overrides the free
+    balance of ``asset`` on the venue (tests); when omitted and live, it's read from the venue —
+    used by sell-from-existing mode to seed sells against coin you already hold.
     """
     cfg = load_config()
     venue = str(venue or cfg.get("venue") or "binance").lower()
@@ -317,11 +335,25 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
     size_usd = float(cfg.get("order_size_usd") or 5.0)
     max_inv = float(cfg.get("max_inventory_usd") or 0)
     min_notional = float(cfg.get("min_notional_usd") or 0)
+    allow_sell_existing = bool(cfg.get("allow_sell_existing_inventory"))
+    # Free base-asset balance you already hold on the venue — seeds sells when the bot has no
+    # accumulated inventory yet ("sell-from-existing" mode). Live: read from the venue.
+    existing_free = 0.0
+    if allow_sell_existing:
+        if spot_free_base is not None:
+            existing_free = max(0.0, float(spot_free_base or 0))
+        elif live:
+            try:
+                from backend.services import exchange_venue_api_service as vapi
+                existing_free = max(0.0, float(vapi.parse_spot_balances(venue, dry_run=False).get(asset) or 0))
+            except Exception:
+                existing_free = 0.0
     st_open: List[Dict[str, Any]] = list(st.get("open_orders") or [])
     place_errors: List[Dict[str, Any]] = []
     _seq = [0]
 
-    def _place(side: str, price: float, size_base: float) -> None:
+    def _place(side: str, price: float, size_base: float, *,
+               from_existing: bool = False, ref_px: Optional[float] = None) -> None:
         price = round(float(price), 8)
         size_base = round(float(size_base), 8)
         if price <= 0 or size_base <= 0:
@@ -345,8 +377,13 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
         else:
             _seq[0] += 1
             oid = f"paper-{venue}-{asset}-{side}-{int(time.time()*1000)}-{_seq[0]}"
-        st_open.append({"order_id": oid, "side": side, "price": price,
-                        "size_base": size_base, "ts": _iso()})
+        order = {"order_id": oid, "side": side, "price": price,
+                 "size_base": size_base, "ts": _iso()}
+        if from_existing:
+            # Mark so apply_fill books only the grid edge vs the reference mid, not principal.
+            order["is_existing_inv_sell"] = True
+            order["existing_ref_px"] = round(float(ref_px if ref_px is not None else mid), 8)
+        st_open.append(order)
 
     # Paired replacement for orders that filled this tick.
     for f in fills_applied:
@@ -360,12 +397,23 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
             if bp > 0:
                 _place("buy", bp, size_usd / bp)
 
-    # Seed a fresh grid if we have no resting orders.
+    # Seed a fresh grid if we have no resting orders. Sells need something to sell: either
+    # bot-accumulated inventory, or (sell-from-existing) the coin you already hold on the venue.
     if not st_open:
+        inv_base = float(st.get("inventory_base") or 0)
+        remaining_existing = existing_free
         for od in compute_grid_orders(mid, cfg):
-            if od["side"] == "sell" and float(st.get("inventory_base") or 0) <= 0:
-                continue
-            _place(od["side"], od["price"], od["size_base"])
+            side = od["side"]
+            size_base = float(od.get("size_base") or 0)
+            if side == "sell":
+                if inv_base > 1e-12:
+                    _place("sell", od["price"], size_base)
+                elif allow_sell_existing and size_base > 0 and remaining_existing >= size_base:
+                    _place("sell", od["price"], size_base, from_existing=True, ref_px=mid)
+                    remaining_existing -= size_base
+                # else: no inventory and no existing coin to sell -> skip this sell level
+            else:
+                _place("buy", od["price"], size_base)
 
     new_open = st_open
     st["open_orders"] = new_open
@@ -441,7 +489,8 @@ def grid_status() -> Dict[str, Any]:
         "venue": cfg.get("venue"), "assets_configured": cfg.get("assets"),
         "config": {k: cfg.get(k) for k in ("grid_levels", "grid_step_pct", "order_size_usd",
                                            "max_inventory_usd", "hard_loss_cap_usd",
-                                           "min_spread_bps", "min_vol_pct")},
+                                           "min_spread_bps", "min_vol_pct",
+                                           "allow_sell_existing_inventory")},
         "state": assets,
     }
 

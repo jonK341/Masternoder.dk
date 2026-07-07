@@ -135,6 +135,108 @@ def test_run_grid_tick_paper_places_and_fills(grid):
     assert os.path.isfile(grid._LEDGER_PATH)
 
 
+def test_allow_sell_existing_default_true(grid, tmp_path, monkeypatch):
+    # A config that omits the flag should default it to True (opt-out switch).
+    import json
+    p = tmp_path / "noflag.json"
+    p.write_text(json.dumps({"enabled": True, "venue": "binance", "assets": ["DOGE"]}),
+                 encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    assert grid.load_config()["allow_sell_existing_inventory"] is True
+
+
+def test_sell_from_existing_seeds_sell_orders(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "sellexist.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "grid_levels": 2, "grid_step_pct": 0.01, "order_size_usd": 6.0,
+        "max_inventory_usd": 15.0, "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0,
+        "taker_fee_bps": 0.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": True,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+
+    # Bot has NO accumulated inventory but holds plenty of DOGE on the venue -> sells are seeded.
+    r = grid.run_grid_tick("binance", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0)
+    assert r["success"]
+    st = grid._read_state()[grid._key("binance", "DOGE")]
+    sells = [o for o in st["open_orders"] if o["side"] == "sell"]
+    assert len(sells) == 2  # both sell levels seeded from existing coin
+    assert all(o.get("is_existing_inv_sell") for o in sells)
+
+
+def test_sell_from_existing_disabled_skips_sells(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "nosell.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "grid_levels": 2, "grid_step_pct": 0.01, "order_size_usd": 6.0,
+        "max_inventory_usd": 15.0, "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0,
+        "taker_fee_bps": 0.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": False,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    r = grid.run_grid_tick("binance", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0)
+    st = grid._read_state()[grid._key("binance", "DOGE")]
+    sells = [o for o in st["open_orders"] if o["side"] == "sell"]
+    assert sells == []  # no bot inventory + flag off -> no sells
+
+
+def test_sell_from_existing_budget_limits_orders(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "budget.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "grid_levels": 3, "grid_step_pct": 0.01, "order_size_usd": 6.0,
+        "max_inventory_usd": 15.0, "hard_loss_cap_usd": 5.0, "min_notional_usd": 5.0,
+        "taker_fee_bps": 0.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": True,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # mid 0.10, order_size $6 -> 60 DOGE per sell. Only 90 DOGE free -> at most 1 full sell level.
+    r = grid.run_grid_tick("binance", "DOGE", mid=0.10, dry_run=True, spot_free_base=90.0)
+    st = grid._read_state()[grid._key("binance", "DOGE")]
+    sells = [o for o in st["open_orders"] if o["side"] == "sell"]
+    assert len(sells) == 1
+
+
+def test_existing_inv_sell_books_only_grid_edge(grid):
+    # Selling existing coin books only (fill - reference), not the coin's principal value.
+    st = grid._new_asset_state()
+    realized = grid.apply_fill(
+        st, {"side": "sell", "price": 0.11, "size_base": 100.0,
+             "is_existing_inv_sell": True, "existing_ref_px": 0.10},
+        fee_bps=0.0)
+    assert realized == pytest.approx(100.0 * (0.11 - 0.10))  # $1 edge, not $11 principal
+    assert st["inventory_base"] == pytest.approx(0.0)  # does not touch avg-cost book
+    assert st["realized_pnl_usd"] == pytest.approx(1.0)
+
+
+def test_sell_from_existing_full_cycle_profit(grid, tmp_path, monkeypatch):
+    import json
+    p = tmp_path / "cycle.json"
+    p.write_text(json.dumps({
+        "enabled": True, "venue": "binance", "assets": ["DOGE"],
+        "grid_levels": 1, "grid_step_pct": 0.02, "order_size_usd": 6.0,
+        "max_inventory_usd": 100.0, "hard_loss_cap_usd": 50.0, "min_notional_usd": 5.0,
+        "taker_fee_bps": 0.0, "maker_fee_bps": 0.0,
+        "allow_sell_existing_inventory": True,
+    }), encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    # Tick 1: seed sell against existing coin at mid 0.10 -> sell resting at 0.102
+    grid.run_grid_tick("binance", "DOGE", mid=0.10, dry_run=True, spot_free_base=1000.0)
+    # Tick 2: price rises to 0.103 -> existing sell fills, booking the 2% edge
+    r2 = grid.run_grid_tick("binance", "DOGE", mid=0.103, dry_run=True,
+                            simulate_fill_mid=0.103, spot_free_base=1000.0)
+    assert r2["fills_this_tick"] >= 1
+    assert r2["realized_pnl_usd"] > 0  # grid edge booked
+    key = grid._key("binance", "DOGE")
+    # A paired buy was placed one step below the sell fill.
+    buys = [o for o in grid._read_state()[key]["open_orders"] if o["side"] == "buy"]
+    assert len(buys) >= 1
+
+
 def test_run_grid_tick_halts_on_loss_cap(grid):
     # Seed inventory bought high, then price craters below the loss cap
     all_state = {}

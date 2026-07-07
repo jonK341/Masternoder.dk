@@ -10,6 +10,7 @@
   "min_spread_bps": 8.0,
   "min_vol_pct": 0.5,
   "min_notional_usd": 5.0,
+  "allow_sell_existing_inventory": true,
   "taker_fee_bps": 10.0,
   "maker_fee_bps": 10.0,
   "tick_cooldown_seconds": 20

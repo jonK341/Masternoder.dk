@@ -99,8 +99,18 @@ def _diagnose() -> None:
     except Exception as e:
         print("[diag] live_enabled error: " + repr(e))
     try:
-        from backend.services.exchange_grid_bot_service import grid_live_enabled
+        from backend.services.exchange_grid_bot_service import grid_live_enabled, load_config
         print("[diag] grid_live_enabled (paper if False): " + str(grid_live_enabled()))
+        cfg = load_config()
+        allow = bool(cfg.get("allow_sell_existing_inventory"))
+        print("[diag] allow_sell_existing_inventory: " + str(allow))
+        if allow and grid_live_enabled():
+            from backend.services import exchange_venue_api_service as vapi
+            venue = str(cfg.get("venue") or "binance").lower()
+            bals = vapi.parse_spot_balances(venue, dry_run=False)
+            for asset in (cfg.get("assets") or []):
+                free = float(bals.get(str(asset).upper()) or 0)
+                print(f"[diag] existing {asset} free on {venue}: {free}")
     except Exception as e:
         print("[diag] grid_live_enabled error: " + repr(e))
 

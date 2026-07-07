@@ -109,6 +109,7 @@
         <label>Max inventory $<input id="cf_maxinv" type="number"/></label>
         <label>Hard loss cap $<input id="cf_loss" type="number"/></label>
         <label>Assets (csv)<input id="cf_assets"/></label>
+        <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin.">Sell existing coin<input id="cf_sellexist" type="checkbox"/></label>
       </div>
       <button id="cf_save">Save config</button><span class="muted" id="cf_msg" style="margin-left:8px"></span></div>
   </div>
@@ -214,7 +215,7 @@ loaders.overview=function(){getJSON('/api/overview').then(function(d){
   refreshAlerts();
 };
 loaders.trading=function(){getJSON('/api/trading').then(function(d){window._recs=d.recommendations||[];renderRecs();
-  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');});};
+  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});};
 function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||'').toUpperCase();var mn=Number(el('tr_minbps').value||0);
   recs=recs.filter(function(r){return (!q||r.symbol.indexOf(q)>=0)&&r.edge_bps>=mn;});
   if(!recs.length){el('tr_recs').innerHTML='<span class="muted">No matching recommendations.</span>';return;}
@@ -274,7 +275,7 @@ function busy(btn,on){if(!btn)return;btn.disabled=on;btn.style.opacity=on?'0.6':
 el('tr_toggle').onclick=function(){busy(el('tr_toggle'),true);postJSON('/api/controls/action',{action:'grid_enable',enabled:!enabled}).then(function(){loaders.overview();busy(el('tr_toggle'),false);});};
 el('tr_tick').onclick=function(){busy(el('tr_tick'),true);el('tr_msg').textContent='running…';postJSON('/api/controls/action',{action:'grid_tick'}).then(function(x){el('tr_msg').textContent='tick: realized '+money((x||{}).realized_pnl_usd);loaders.overview();busy(el('tr_tick'),false);});};
 el('tr_kill').onclick=function(){if(!confirm('Kill switch: disable the grid bot?'))return;busy(el('tr_kill'),true);postJSON('/api/controls/action',{action:'grid_kill'}).then(function(){loaders.overview();busy(el('tr_kill'),false);});};
-el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
+el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,allow_sell_existing_inventory:el('cf_sellexist').checked,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
 window.preset=function(n){postJSON('/api/config/preset',{preset:n}).then(function(){loaders.trading();el('cf_msg').textContent='applied '+n;});};
 el('goal').onchange=loaders.overview;
 

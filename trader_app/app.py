@@ -499,7 +499,8 @@ def api_trading():
     recs = recommend(sig.get("signals") or [], order_size_usd=float(cfg.get("order_size_usd") or 10.0))
     return jsonify({"success": True, "signals": sig.get("signals") or [], "recommendations": recs,
                     "grid_config": {k: cfg.get(k) for k in ("venue", "assets", "grid_levels",
-                                    "grid_step_pct", "order_size_usd", "max_inventory_usd", "hard_loss_cap_usd")}})
+                                    "grid_step_pct", "order_size_usd", "max_inventory_usd",
+                                    "hard_loss_cap_usd", "allow_sell_existing_inventory")}})
 
 
 @app.route("/api/profit-monitor")
