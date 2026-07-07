@@ -127,6 +127,24 @@ def _diagnose() -> None:
         print("[diag] grid_live_enabled error: " + repr(e))
 
 
+def _digest_record(kind, message, level="info"):
+    """Record the daily digest to the app's alerts feed if available, else print it."""
+    try:
+        from trader_app import store
+        store.record_alert(kind, message, level)
+    except Exception:
+        pass
+    print(f"[grid-daemon] DAILY DIGEST: {message}")
+
+
+def _maybe_daily_digest():
+    try:
+        from backend.services.exchange_grid_bot_service import maybe_emit_daily_digest
+        maybe_emit_daily_digest(_digest_record)
+    except Exception as exc:
+        print(f"[grid-daemon] digest error: {exc}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Grid/market-maker bot daemon")
     parser.add_argument("--once", action="store_true", help="Run one tick cycle and exit")
@@ -234,6 +252,7 @@ def main() -> int:
                     print(f"[grid-daemon] CIRCUIT BREAKER: {cbev}")
                 if res.get("paused_venues"):
                     print(f"[grid-daemon] paused venues (skipped): {res.get('paused_venues')}")
+            _maybe_daily_digest()
             _cross_trade_pass()
         except Exception as exc:
             print(f"[grid-daemon] loop error: {exc}")

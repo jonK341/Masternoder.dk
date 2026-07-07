@@ -654,7 +654,7 @@ def grid_status() -> Dict[str, Any]:
     cfg = load_config()
     st = _read_state()
     assets = {}
-    for key, s in st.items():
+    for key, s in _asset_states(st).items():
         assets[key] = {
             "halted": s.get("halted"), "halt_reason": s.get("halt_reason"),
             "inventory_base": s.get("inventory_base"), "avg_cost_usd": s.get("avg_cost_usd"),
@@ -843,18 +843,84 @@ def check_circuit_breakers() -> Dict[str, Any]:
                          "realized_usd": round(realized, 6), "window_hours": window}
                 events.append({"venue": v, "action": "pause", "realized_usd": round(realized, 6)})
 
+    if events:
+        log = st.get("cb_event_log")
+        if not isinstance(log, list):
+            log = []
+        for e in events:
+            log.append({"ts": _iso(), **e})
+        st["cb_event_log"] = log[-200:]
     st["paused_venues"] = pv
     _write_state(st)
     return {"success": True, "enabled": True, "paused": pv, "events": events,
             "window_hours": window, "loss_threshold_usd": loss_thr, "cooldown_hours": cooldown}
 
 
-def grid_profit() -> Dict[str, Any]:
+def daily_digest(window_hours: float = 24.0) -> Dict[str, Any]:
+    """Passive summary of the trailing window: per-venue realized + fills, totals, currently
+    paused venues, and the day's circuit-breaker pause/resume counts."""
+    perf = venue_performance(window_hours=window_hours)
+    venues = perf.get("venues") or []
+    total_realized = round(sum(float(v.get("realized_usd") or 0) for v in venues), 6)
+    total_fills = sum(int(v.get("fills") or 0) for v in venues)
+    paused = paused_venues()
     st = _read_state()
-    realized = round(sum(float(s.get("realized_pnl_usd") or 0) for s in st.values()), 6)
-    fills = sum(int(s.get("fills") or 0) for s in st.values())
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ev_today = [e for e in (st.get("cb_event_log") or []) if str(e.get("ts", "")).startswith(today)]
+    pauses = [e for e in ev_today if e.get("action") == "pause"]
+    resumes = [e for e in ev_today if e.get("action") in ("auto_resume", "resume")]
+    parts = [f"{int(round(window_hours))}h: {total_fills} fills, realized ${total_realized:.2f} "
+             f"across {len(venues)} venue(s)"]
+    if venues:
+        parts.append("; ".join(f"{v['venue']} ${float(v.get('realized_usd') or 0):.2f}/"
+                               f"{int(v.get('fills') or 0)}f" for v in venues[:6]))
+    if paused:
+        parts.append("paused: " + ", ".join(sorted(paused.keys())))
+    if pauses or resumes:
+        parts.append(f"breaker {len(pauses)} pause / {len(resumes)} resume")
+    return {
+        "success": True, "date": today, "window_hours": window_hours,
+        "total_realized_usd": total_realized, "total_fills": total_fills,
+        "venues": venues, "paused": sorted(paused.keys()),
+        "pauses_today": len(pauses), "resumes_today": len(resumes),
+        "focus_suggestion": perf.get("focus_suggestion"),
+        "message": " | ".join(parts),
+    }
+
+
+def maybe_emit_daily_digest(record_fn=None, *, force: bool = False) -> Dict[str, Any]:
+    """Emit the digest at most once per UTC day. ``record_fn(kind, message, level)`` receives it
+    (e.g. the app's alerts feed). Idempotent via a date marker in state — safe to call every
+    daemon loop / UI refresh."""
+    st = _read_state()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if not force and st.get("last_digest_date") == today:
+        return {"success": True, "emitted": False, "reason": "already_emitted_today"}
+    dg = daily_digest()
+    if record_fn is not None:
+        try:
+            record_fn("digest", dg["message"], "info")
+        except Exception:
+            pass
+    st = _read_state()
+    st["last_digest_date"] = today
+    _write_state(st)
+    return {"success": True, "emitted": True, "digest": dg}
+
+
+def _asset_states(st: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Only the per-(venue:asset) grid states — filters out metadata keys like paused_venues,
+    cb_event_log, last_digest_date that also live in the state file."""
+    return {k: s for k, s in st.items()
+            if isinstance(s, dict) and ":" in str(k) and "inventory_base" in s}
+
+
+def grid_profit() -> Dict[str, Any]:
+    states = _asset_states(_read_state())
+    realized = round(sum(float(s.get("realized_pnl_usd") or 0) for s in states.values()), 6)
+    fills = sum(int(s.get("fills") or 0) for s in states.values())
     return {"success": True, "realized_pnl_usd": realized, "total_fills": fills,
-            "assets": {k: round(float(s.get("realized_pnl_usd") or 0), 6) for k, s in st.items()}}
+            "assets": {k: round(float(s.get("realized_pnl_usd") or 0), 6) for k, s in states.items()}}
 
 
 # ----------------------------- profit-driven pair selection -----------------------------

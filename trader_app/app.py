@@ -366,6 +366,12 @@ def _refresh_once() -> None:
             _cache_set("health", site_get("/api/exchange/health"))
     except Exception:
         pass
+    # Passive once-a-day digest into the alerts feed (idempotent via a date marker).
+    try:
+        from backend.services.exchange_grid_bot_service import maybe_emit_daily_digest
+        maybe_emit_daily_digest(store.record_alert)
+    except Exception:
+        pass
 
 
 def _refresher() -> None:
@@ -514,6 +520,14 @@ def api_grid_rank():
         min_score = 3.0
     ranked = rank_profit_pairs(include_live=True, min_score=min_score)
     return jsonify({"success": True, "min_score": min_score, "count": len(ranked), "pairs": ranked})
+
+
+@app.route("/api/digest")
+@login_required
+def api_digest():
+    """Daily digest summary (per-venue realized/fills, paused venues, breaker events)."""
+    from backend.services.exchange_grid_bot_service import daily_digest
+    return jsonify(daily_digest())
 
 
 @app.route("/api/grid/status")
@@ -672,6 +686,9 @@ def api_controls_action():
         v = str(data.get("venue") or "")
         store.record_alert("grid", f"Resumed venue {v}", "info")
         return jsonify(resume_venue(v))
+    if action == "emit_digest":
+        from backend.services.exchange_grid_bot_service import maybe_emit_daily_digest
+        return jsonify(maybe_emit_daily_digest(store.record_alert, force=True))
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),

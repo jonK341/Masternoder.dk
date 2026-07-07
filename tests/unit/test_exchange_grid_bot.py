@@ -617,6 +617,52 @@ def test_circuit_breaker_auto_resume_after_cooldown(grid, tmp_path, monkeypatch)
     assert any(e["action"] == "auto_resume" and e["venue"] == "nonkyc" for e in r["events"])
 
 
+def test_daily_digest_summarizes_window(grid):
+    import json as _json
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    with open(grid._LEDGER_PATH, "w", encoding="utf-8") as fh:
+        fh.write(_json.dumps({"ts": now, "venue": "nonkyc", "asset": "DOGE", "side": "sell",
+                              "realized_delta_usd": 0.40}) + "\n")
+        fh.write(_json.dumps({"ts": now, "venue": "binance", "asset": "DOGE", "side": "sell",
+                              "realized_delta_usd": 0.10}) + "\n")
+    dg = grid.daily_digest(window_hours=24.0)
+    assert dg["success"]
+    assert dg["total_fills"] == 2
+    assert dg["total_realized_usd"] == pytest.approx(0.50)
+    assert "realized $0.50" in dg["message"]
+
+
+def test_maybe_emit_daily_digest_once_per_day(grid):
+    recorded = []
+    r1 = grid.maybe_emit_daily_digest(lambda k, m, l: recorded.append((k, m, l)))
+    assert r1["emitted"] is True and len(recorded) == 1 and recorded[0][0] == "digest"
+    r2 = grid.maybe_emit_daily_digest(lambda k, m, l: recorded.append((k, m, l)))
+    assert r2["emitted"] is False and r2["reason"] == "already_emitted_today"
+    assert len(recorded) == 1  # not recorded twice
+    r3 = grid.maybe_emit_daily_digest(lambda k, m, l: recorded.append((k, m, l)), force=True)
+    assert r3["emitted"] is True and len(recorded) == 2  # force overrides the gate
+
+
+def test_digest_counts_breaker_events(grid, tmp_path, monkeypatch):
+    import json as _json
+    from datetime import datetime, timezone
+    p = tmp_path / "cbd.json"
+    p.write_text(_json.dumps({"enabled": True, "venue": "nonkyc", "assets": ["DOGE"],
+                              "circuit_breaker": {"enabled": True, "window_hours": 6.0,
+                                                  "loss_threshold_usd": 3.0, "cooldown_hours": 12.0}}),
+                 encoding="utf-8")
+    monkeypatch.setattr(grid, "_CFG_PATH", str(p))
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    with open(grid._LEDGER_PATH, "w", encoding="utf-8") as fh:
+        fh.write(_json.dumps({"ts": now, "venue": "nonkyc", "asset": "DOGE", "side": "sell",
+                              "realized_delta_usd": -5.0}) + "\n")
+    grid.check_circuit_breakers()  # logs a pause event
+    dg = grid.daily_digest()
+    assert dg["pauses_today"] >= 1
+    assert "breaker" in dg["message"]
+
+
 def test_manual_pause_persists_through_cooldown(grid, tmp_path, monkeypatch):
     import json as _json
     from datetime import datetime, timezone, timedelta
