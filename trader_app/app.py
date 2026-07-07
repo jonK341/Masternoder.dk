@@ -528,6 +528,14 @@ def api_grid_cross_diff():
     return jsonify(scan_cross_venue_differences(min_net_bps=min_bps))
 
 
+@app.route("/api/grid/cross-trade")
+@login_required
+def api_grid_cross_trade():
+    """Cross-venue auto-trader status + recent executions (audit trail)."""
+    from backend.services.exchange_cross_trade_service import status
+    return jsonify(status())
+
+
 @app.route("/api/profit-monitor")
 @login_required
 def api_profit_monitor():
@@ -605,6 +613,17 @@ def api_controls_action():
         if res.get("applied"):
             store.record_alert("grid", f"Added cross-venue pairs ({res.get('targets_total')} targets)", "info")
         return jsonify(res)
+    if action == "cross_trade_enable":
+        from backend.services.exchange_cross_trade_service import set_enabled, cross_trade_live_enabled
+        on = bool(data.get("enabled"))
+        r = set_enabled(on)
+        store.record_alert("cross_trade", f"Cross-venue auto-trader {'ENABLED' if on else 'disabled'} "
+                           f"(live={cross_trade_live_enabled()})", "warn" if on else "info")
+        return jsonify(r)
+    if action == "cross_trade_run":
+        from backend.services.exchange_cross_trade_service import run_once
+        # Manual one-shot search+execute. Paper unless both live gates are on.
+        return jsonify(run_once(force=True))
     # Site controls (proxied)
     routes = {
         "run_all_bots": ("/api/exchange/control-board/run", {}),

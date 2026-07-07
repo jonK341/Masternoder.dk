@@ -146,6 +146,10 @@ def main() -> int:
                              "add the profitable pairs to the config before running")
     parser.add_argument("--cross-min-bps", type=float, default=5.0,
                         help="Minimum net cross-venue difference (bps) to add a pair (default 5.0)")
+    parser.add_argument("--cross-trade", action="store_true",
+                        help="Auto-trader: each loop, SEARCH cross-venue differences and EXECUTE the "
+                             "spatial arb the instant one clears the threshold (paper unless "
+                             "EXCHANGE_ARBITRAGE_LIVE=1 + EXCHANGE_CROSS_TRADE_LIVE=1)")
     args = parser.parse_args()
 
     try:
@@ -184,8 +188,30 @@ def main() -> int:
     dry = True if args.paper else None
     mode = "paper" if (args.paper or not grid_live_enabled()) else "LIVE"
 
+    ct = None
+    if args.cross_trade:
+        from backend.services import exchange_cross_trade_service as ct
+        ct.set_enabled(True)
+        print(f"[grid-daemon] cross-trade auto-execute ON (live={ct.cross_trade_live_enabled()})")
+
+    def _cross_trade_pass():
+        if ct is None:
+            return
+        try:
+            r = ct.run_once(dry_run=dry)
+            fired = r.get("executed") or []
+            if fired:
+                for e in fired:
+                    print(f"[cross-trade] {e['mode'].upper()} {e['symbol']} {e['route']} "
+                          f"net={e['net_bps']}bps ok={e['success']} ~${e.get('est_profit_usd') or 0}")
+            elif r.get("halted"):
+                print(f"[cross-trade] HALTED: {r.get('reason')}")
+        except Exception as exc:
+            print(f"[cross-trade] error: {exc}")
+
     if args.once:
         print(run_all(dry_run=dry))
+        _cross_trade_pass()
         return 0
 
     print(f"[grid-daemon] mode={mode} interval={args.interval}s")
@@ -203,6 +229,7 @@ def main() -> int:
                     print(f"[grid-daemon] RECONCILE: {notes} (fills not inferred this tick)")
                 if errs:
                     print(f"[grid-daemon] ORDER PLACEMENT ISSUES: {errs[:4]}")
+            _cross_trade_pass()
         except Exception as exc:
             print(f"[grid-daemon] loop error: {exc}")
         time.sleep(max(10, args.interval))

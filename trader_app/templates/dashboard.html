@@ -126,7 +126,17 @@
         <button id="cx_scan" class="ghost">Search differences</button>
         <button id="cx_add">Add cross-venue pairs</button>
         <span class="muted" id="cx_msg" style="margin-left:8px"></span></div>
-      <div id="cx_body" class="muted">Click "Search differences" to find cross-exchange price gaps.</div></div>
+      <div id="cx_body" class="muted">Click "Search differences" to find cross-exchange price gaps.</div>
+      <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px">
+        <div class="row" style="align-items:center">
+          <b>Auto-trader</b>
+          <span class="pill" id="ct_state">off</span>
+          <span class="pill" id="ct_mode">paper</span>
+          <button id="ct_toggle" class="ghost">Enable auto-execute</button>
+          <button id="ct_run">Run now (paper)</button>
+          <span class="muted" id="ct_msg" style="margin-left:8px"></span></div>
+        <div class="muted" style="font-size:12px;margin:6px 0">Searches continuously and fires the cross-trade the instant an edge clears the threshold. Real orders need both live gates; every fire is written to the audit trail below.</div>
+        <div id="ct_body" class="muted">No cross-trade executions yet.</div></div></div>
   </div>
 
   <div class="pane" id="p_monitor">
@@ -230,7 +240,7 @@ loaders.overview=function(){getJSON('/api/overview').then(function(d){
   refreshAlerts();
 };
 loaders.trading=function(){getJSON('/api/trading').then(function(d){window._recs=d.recommendations||[];renderRecs();
-  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});};
+  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();};
 function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||'').toUpperCase();var mn=Number(el('tr_minbps').value||0);
   recs=recs.filter(function(r){return (!q||r.symbol.indexOf(q)>=0)&&r.edge_bps>=mn;});
   if(!recs.length){el('tr_recs').innerHTML='<span class="muted">No matching recommendations.</span>';return;}
@@ -304,6 +314,19 @@ function renderCross(diffs){if(!diffs||!diffs.length){el('cx_body').innerHTML='<
   el('cx_body').innerHTML=h+'</tbody></table>';makeSortable(el('cx_body').querySelector('table'));}
 el('cx_scan').onclick=function(){busy(el('cx_scan'),true);el('cx_msg').textContent='searching…';getJSON('/api/grid/cross-diff?min_bps='+(Number(el('cx_min').value)||0)).then(function(d){el('cx_msg').textContent=d.success?((d.count||0)+' differences'):('error: '+(d.error||''));renderCross(d.differences);busy(el('cx_scan'),false);});};
 el('cx_add').onclick=function(){if(!confirm('Add cross-venue difference pairs to the grid config?'))return;busy(el('cx_add'),true);postJSON('/api/controls/action',{action:'grid_add_cross',min_bps:(Number(el('cx_min').value)||5)}).then(function(d){el('cx_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderCross(d.differences);loaders.trading();busy(el('cx_add'),false);});};
+var ctEnabled=false;
+function renderCrossTrade(d){if(!d||!d.success)return;ctEnabled=!!d.enabled;
+  el('ct_state').textContent=d.enabled?'on':'off';el('ct_state').className='pill '+(d.enabled?'strong':'no');
+  el('ct_mode').textContent=d.live?'LIVE':'paper';el('ct_mode').className='pill '+(d.live?'neg':'');
+  el('ct_toggle').textContent=d.enabled?'Disable auto-execute':'Enable auto-execute';
+  var ev=(d.recent||[]).filter(function(e){return e.event==='execute';});
+  if(!ev.length){el('ct_body').innerHTML='<span class="muted">No cross-trade executions yet. Realized: '+money(d.realized_pnl_usd)+' over '+(d.executed_fills||0)+' fills.</span>';return;}
+  var h='<div class="muted" style="margin-bottom:4px">Realized <b class="'+cls(d.realized_pnl_usd)+'">'+money(d.realized_pnl_usd)+'</b> · '+(d.executed_fills||0)+' fills · audit trail:</div><table><thead><tr><th>Time</th><th>Symbol</th><th>Route</th><th class=r>Net bps</th><th>Mode</th><th class=r>~P&L</th><th>OK</th></tr></thead><tbody>';
+  ev.forEach(function(e){h+='<tr><td class=muted>'+(e.ts||'').slice(11,19)+'</td><td><b>'+e.symbol+'</b></td><td class=muted>'+(e.route||'')+'</td><td class=r>'+e.net_bps+'</td><td>'+(e.mode==='live'?'<span class="pill neg">live</span>':'<span class="pill">paper</span>')+'</td><td class=r>'+money(e.est_profit_usd)+'</td><td>'+(e.success?'✓':'✗')+'</td></tr>';});
+  el('ct_body').innerHTML=h+'</tbody></table>';}
+function loadCrossTrade(){getJSON('/api/grid/cross-trade').then(renderCrossTrade);}
+el('ct_toggle').onclick=function(){busy(el('ct_toggle'),true);postJSON('/api/controls/action',{action:'cross_trade_enable',enabled:!ctEnabled}).then(function(){loadCrossTrade();busy(el('ct_toggle'),false);});};
+el('ct_run').onclick=function(){busy(el('ct_run'),true);el('ct_msg').textContent='searching + executing…';postJSON('/api/controls/action',{action:'cross_trade_run'}).then(function(r){el('ct_msg').textContent=(r.executed&&r.executed.length)?(r.executed.length+' fired'):((r.candidates||0)+' candidates, none cleared '+ (r.min_net_bps||'')+'bps');loadCrossTrade();busy(el('ct_run'),false);});};
 el('goal').onchange=loaders.overview;
 
 /* auto-refresh */

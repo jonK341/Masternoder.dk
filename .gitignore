@@ -79,3 +79,5 @@ data/mn2_verified_users.json
 # grid bot runtime state
 data/crypto_exchange/grid_bot_state.json
 data/crypto_exchange/grid_bot_ledger.jsonl
+data/crypto_exchange/cross_trade_audit.jsonl
+data/crypto_exchange/cross_trade_state.json
