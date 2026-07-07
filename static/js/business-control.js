@@ -217,6 +217,106 @@
     });
   }
 
+  function loadFiat() {
+    api("/api/exchange/fiat/valuation").then(function (res) {
+      var el = $("fiatValuation");
+      if (!el) return;
+      var d = res && res.data;
+      if (!d || !d.success) { el.textContent = "Pool valuation unavailable."; return; }
+      var top = (d.assets || []).slice(0, 8).map(function (a) {
+        return a.symbol + " " + Number(a.amount).toFixed(4) + " (" + money(a.usd_value) + ")";
+      }).join(" · ");
+      el.innerHTML =
+        "<div class='big'>" + money(d.total_usd) + " <span class='muted'>pool value</span></div>" +
+        "<div class='muted'>Stable " + money(d.stable_usd) + " · Crypto " + money(d.crypto_usd) +
+        " · " + (d.asset_count || 0) + " assets</div>" +
+        "<div class='muted' style='margin-top:6px'>" + (top || "No pooled balances.") + "</div>";
+    });
+  }
+
+  function saveWithdrawTarget() {
+    var venue = ($("waVenue").value || "binance");
+    var coin = ($("waCoin").value || "").trim().toUpperCase();
+    var address = ($("waAddress").value || "").trim();
+    var net = ($("waNetwork").value || "").trim();
+    if (!coin || !address) { $("fiatResult").textContent = "Coin and address required."; return; }
+    var row = { address: address };
+    if (venue === "nonkyc") { if (net) row.ticker = net; } else if (net) { row.network = net; }
+    var targets = {}; targets[coin] = row;
+    api("/api/exchange/payout/configure-venue-withdraw", { method: "POST", body: { venue: venue, targets: targets } })
+      .then(function (r) {
+        var d = r && r.data;
+        $("fiatResult").textContent = (d && d.success)
+          ? ("Saved " + coin + " address for " + venue + ".") : ("Save failed: " + ((d && d.error) || "error"));
+      });
+  }
+
+  function preflightWithdraw() {
+    var venue = ($("waVenue").value || "binance");
+    var coin = ($("waCoin").value || "").trim().toUpperCase();
+    var amt = ($("waAmount").value || "").trim();
+    var qs = "?venue=" + encodeURIComponent(venue) + "&coin=" + encodeURIComponent(coin);
+    if (amt) qs += "&amount=" + encodeURIComponent(amt);
+    api("/api/exchange/payout/asset-preflight" + qs).then(function (r) {
+      var d = r && r.data;
+      if (!d || !d.success) { $("fiatResult").textContent = "Preflight failed: " + ((d && d.error) || "error"); return; }
+      var pf = d.preflight || {};
+      var blk = (pf.blockers || []).map(function (b) { return b.code; }).join(", ");
+      $("fiatResult").textContent = "Preflight " + coin + " on " + venue + ": " +
+        (pf.ready ? "READY" : ("blocked — " + (blk || "n/a"))) +
+        " · pool " + Number(d.sales_pool_balance || 0).toFixed(6) + " " + coin;
+    });
+  }
+
+  function withdrawAsset() {
+    var venue = ($("waVenue").value || "binance");
+    var coin = ($("waCoin").value || "").trim().toUpperCase();
+    var amt = ($("waAmount").value || "").trim();
+    var body = { venue: venue, coin: coin };
+    if (amt) body.amount = Number(amt);
+    api("/api/exchange/payout/withdraw-asset", { method: "POST", body: body }).then(function (r) {
+      var d = r && r.data;
+      if (d && d.success) {
+        var w = d.withdrawn || {};
+        $("fiatResult").textContent = "Withdrew " + Number(w.amount || 0) + " " + coin + " to " + venue +
+          " (" + w.mode + "). " + (d.note || "");
+        loadFiat();
+      } else {
+        $("fiatResult").textContent = "Withdraw failed: " + ((d && (d.error || (d.message))) || "error");
+      }
+    });
+  }
+
+  function planConvert() {
+    api("/api/exchange/fiat/plan", { method: "POST", body: {
+      venue: ($("fcVenue").value || "binance"), target: ($("fcTarget").value || "USD").trim().toUpperCase(),
+    } }).then(function (r) {
+      var d = r && r.data;
+      if (!d || !d.success) { $("fiatResult").textContent = "Plan failed."; return; }
+      var off = d.offramp ? (" · off-ramp " + money(d.offramp.amount_usd) + " via " + d.offramp.rail) : "";
+      $("fiatResult").textContent = "Plan (" + d.mode + "): " + d.sell_legs.length + " sell legs → " +
+        money(d.est_total_stable_usd) + " " + d.consolidation_stable + " (fees " + money(d.est_fees_usd) + ")" + off +
+        (d.actionable ? "" : " · not actionable");
+    });
+  }
+
+  function doConvert() {
+    if (!confirm("Convert pooled crypto to " + ($("fcTarget").value || "USD") + "? Paper unless live gates are on.")) return;
+    api("/api/exchange/fiat/convert", { method: "POST", body: {
+      venue: ($("fcVenue").value || "binance"), target: ($("fcTarget").value || "USD").trim().toUpperCase(),
+    } }).then(function (r) {
+      var d = r && r.data;
+      if (d && d.success) {
+        var off = d.offramp ? (" Off-ramp " + money(d.offramp.amount_usd) + " (" + d.offramp.mode + ").") : "";
+        $("fiatResult").textContent = "Converted " + d.sells.length + " assets → " + money(d.credited_stable_usd) +
+          " " + d.consolidation_stable + " (" + d.mode + ")." + off + " " + (d.note || "");
+        loadFiat();
+      } else {
+        $("fiatResult").textContent = "Convert failed: " + ((d && d.error) || "error");
+      }
+    });
+  }
+
   function loadOwnerWatch() {
     api("/api/exchange/live-watch/owner?limit=60").then(function (d) {
       var el = $("watchTotals");
@@ -246,7 +346,7 @@
       p.classList.toggle("active", p.id === "pane-" + name);
     });
     if (name === "predictions") loadPredictions();
-    if (name === "payout") loadPayout();
+    if (name === "payout") { loadPayout(); loadFiat(); }
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
   }
@@ -281,6 +381,11 @@
     var pp = $("ppPlan"); if (pp) pp.addEventListener("click", planSweep);
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
+    var wt = $("waSaveTarget"); if (wt) wt.addEventListener("click", saveWithdrawTarget);
+    var wp = $("waPreflight"); if (wp) wp.addEventListener("click", preflightWithdraw);
+    var ww = $("waWithdraw"); if (ww) ww.addEventListener("click", withdrawAsset);
+    var fp = $("fcPlan"); if (fp) fp.addEventListener("click", planConvert);
+    var fcv = $("fcConvert"); if (fcv) fcv.addEventListener("click", doConvert);
 
     if (getKey()) { showApp(); load(); } else { showGate(); }
   }

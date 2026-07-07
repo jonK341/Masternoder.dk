@@ -66,3 +66,18 @@ tools/mn2-daemon/
 # MN2 verified users list (Phase 10); maintain on server or via ops API
 data/mn2_verified_users.json
 
+
+# PyInstaller build output (trader_app)
+/build/
+/dist/
+/MN2PrivateControl.spec
+/data/crypto_exchange_PAPER/
+/.build-venv/
+/trader_app/.state/
+/trader_app/config.json
+
+# grid bot runtime state
+data/crypto_exchange/grid_bot_state.json
+data/crypto_exchange/grid_bot_ledger.jsonl
+data/crypto_exchange/cross_trade_audit.jsonl
+data/crypto_exchange/cross_trade_state.json

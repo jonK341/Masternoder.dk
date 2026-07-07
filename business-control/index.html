@@ -173,6 +173,47 @@
           </details>
           <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
         </div>
+
+        <div class="section" style="margin-top:16px">
+          <h2>Sales pool cash-out — multi-asset withdraw &amp; fiat converter</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">
+            Withdraw any pooled asset to Binance or NonKYC, or convert the whole pool to a
+            stablecoin / fiat. Paper by default — real transfers need the venue live gate
+            (<code>EXCHANGE_PAYOUT_BINANCE_LIVE</code> / <code>EXCHANGE_PAYOUT_NONKYC_LIVE</code> /
+            <code>EXCHANGE_FIAT_CONVERT_LIVE</code>) plus <code>EXCHANGE_ARBITRAGE_LIVE=1</code> and
+            real coins on the venue account.
+          </p>
+          <div id="fiatValuation" class="muted">Pool valuation loading…</div>
+
+          <h3 style="margin:16px 0 6px;font-size:14px">Withdraw a pooled asset</h3>
+          <div class="grid2">
+            <label class="field">Venue
+              <select id="waVenue"><option value="binance">Binance</option><option value="nonkyc">NonKYC</option></select>
+            </label>
+            <label class="field">Coin<input type="text" id="waCoin" placeholder="BTC / ETH / USDT…" /></label>
+            <label class="field">Withdraw address<input type="text" id="waAddress" placeholder="external address" /></label>
+            <label class="field">Network / ticker<input type="text" id="waNetwork" placeholder="e.g. BTC, TRC20 (Binance)" /></label>
+            <label class="field">Amount (blank = all)<input type="number" id="waAmount" placeholder="optional" /></label>
+          </div>
+          <div class="bar">
+            <button class="btn small" id="waSaveTarget">Save address</button>
+            <button class="btn small" id="waPreflight">Preflight</button>
+            <button class="btn small primary" id="waWithdraw">Withdraw asset</button>
+          </div>
+
+          <h3 style="margin:16px 0 6px;font-size:14px">Convert pool to stable / fiat</h3>
+          <div class="grid2">
+            <label class="field">Sell venue
+              <select id="fcVenue"><option value="binance">Binance</option><option value="nonkyc">NonKYC</option></select>
+            </label>
+            <label class="field">Target<input type="text" id="fcTarget" value="USD" placeholder="USD, EUR, USDC…" /></label>
+          </div>
+          <div class="bar">
+            <button class="btn small" id="fcPlan">Plan conversion</button>
+            <button class="btn small primary" id="fcConvert">Convert now</button>
+          </div>
+          <div id="fiatResult" class="muted" style="margin-top:10px"></div>
+        </div>
       </div>
 
       <div class="tabpane" id="pane-watch">
