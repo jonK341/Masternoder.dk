@@ -37,7 +37,8 @@
   "agent_trading": {
     "enabled": true,
     "daemon_interval_sec": 300,
-    "max_trade_mn2_per_tick": 2.5,
+    "max_trade_mn2_per_tick": 3.5,
+    "trades_per_tick": 3,
     "seed_mn2_per_agent": 25.0,
     "agents": [
       {"id": "exchange_agent_stable_router", "name": "Stable Router", "strategy": "stable_rebalance", "assets": ["USDC", "USDT"], "enabled": true},

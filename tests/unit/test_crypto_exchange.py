@@ -537,3 +537,28 @@ def test_agent_seed_repeats_each_tick(ex_env, points_db, monkeypatch):
     agents.tick(force=True)
     bal2 = ex_env._get_quote_balance("exchange_agent_test", "MN2")
     assert bal2 == pytest.approx(25.0)
+
+
+def test_agent_tick_supports_trades_per_tick(ex_env, points_db, tmp_path, monkeypatch):
+    from backend.services import crypto_exchange_agent_service as agents
+
+    monkeypatch.setattr(agents, "_STATE_PATH", str(tmp_path / "agent_state.json"))
+    calls = {"n": 0}
+
+    def fake_trade(agent, tick_count, max_trade_mn2):
+        calls["n"] += 1
+        return {"agent_id": agent.get("id"), "success": True, "trade": None}
+
+    monkeypatch.setattr(agents, "_trade_agent", fake_trade)
+    monkeypatch.setattr(agents, "_seed_agent_mn2", lambda *a, **k: None)
+
+    cfg = ex_env.load_config()
+    cfg.setdefault("agent_trading", {})["trades_per_tick"] = 3
+    with open(ex_env._CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f)
+
+    result = agents.tick(force=True)
+    assert result["success"] is True
+    assert result["trades_per_tick"] == 3
+    enabled_agents = [a for a in (cfg.get("agent_trading") or {}).get("agents") or [] if a.get("enabled", True)]
+    assert calls["n"] == len(enabled_agents) * 3

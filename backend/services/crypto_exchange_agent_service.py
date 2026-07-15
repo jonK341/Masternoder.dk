@@ -156,6 +156,7 @@ def tick(*, force: bool = False) -> Dict[str, Any]:
     tick_count = int(state.get("tick_count") or 0) + 1
     max_trade_mn2 = float(cfg.get("max_trade_mn2_per_tick") or 2.5)
     seed_mn2 = float(cfg.get("seed_mn2_per_agent") or 25.0)
+    trades_per_tick = max(1, int(cfg.get("trades_per_tick") or 1))
     actions: List[Dict[str, Any]] = []
 
     for agent in cfg.get("agents") or []:
@@ -164,26 +165,34 @@ def tick(*, force: bool = False) -> Dict[str, Any]:
         agent_id = str(agent.get("id") or "").strip()
         if not agent_id:
             continue
+        agent_actions: List[Dict[str, Any]] = []
         try:
             _seed_agent_mn2(agent_id, seed_mn2, tick_count=tick_count)
-            action = _trade_agent(agent, tick_count, max_trade_mn2)
+            for trade_idx in range(trades_per_tick):
+                agent_actions.append(_trade_agent(agent, tick_count + trade_idx, max_trade_mn2))
         except Exception as exc:
-            action = {
+            agent_actions.append({
                 "agent_id": agent_id,
                 "agent_name": agent.get("name") or agent_id,
                 "success": False,
                 "error": str(exc),
-            }
-        actions.append(action)
+            })
+        actions.extend(agent_actions)
         state.setdefault("agents", {})[agent_id] = {
-            "last_action": action,
+            "last_action": agent_actions[-1],
             "last_tick": _iso(),
         }
 
     state["tick_count"] = tick_count
     state["last_tick"] = _iso()
     _write_state(state)
-    return {"success": True, "tick_count": tick_count, "actions": actions, "state": state}
+    return {
+        "success": True,
+        "tick_count": tick_count,
+        "trades_per_tick": trades_per_tick,
+        "actions": actions,
+        "state": state,
+    }
 
 
 def run_daemon(interval_sec: int | None = None) -> None:

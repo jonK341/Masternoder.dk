@@ -38,8 +38,8 @@ def test_overview_aggregates_bot_profits(ctl_env):
     sup = next(s for s in ov["supervisors"] if s["id"] == "sup_arbitrage")
     assert sup["profit_usd"] >= 42.5
     assert "arb_agent_btc_eth" in sup["bot_ids"]
-    # Five supervisor agents control the business.
-    assert len(ov["supervisors"]) == 5
+    # Six supervisor agents control the business.
+    assert len(ov["supervisors"]) == 6
 
 
 def test_set_bot_enabled_override(ctl_env):

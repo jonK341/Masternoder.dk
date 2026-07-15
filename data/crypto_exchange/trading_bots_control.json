@@ -36,6 +36,13 @@
       "enabled": true
     },
     {
+      "id": "sup_extended",
+      "name": "Extended Profit Director",
+      "role": "Stablecoin peg, triangular loops, meme/defi/payments specialty farms.",
+      "controls_kind": "extended_profit",
+      "enabled": true
+    },
+    {
       "id": "sup_treasury",
       "name": "Treasury Manager",
       "role": "Tracks profit accounts, wallet registry, and sweeps.",

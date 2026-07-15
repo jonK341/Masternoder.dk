@@ -40,14 +40,14 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 90},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 120},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 60},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 60},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
-_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60}
+_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid": 45}
 
 
 def _resolve_intervals(profile: str, iv: dict) -> dict:
@@ -81,6 +81,12 @@ def _casino_dry_run(cli_dry_run: bool) -> bool:
     # Default: dry-run in paper mode, live bets when profit daemons are live
     from scripts.daemon_env import daemon_mode_label
     return daemon_mode_label() != "live"
+
+
+def _grid_once() -> Dict[str, Any]:
+    from backend.services.exchange_daemon_matcher_service import run_grid_tick
+
+    return run_grid_tick()
 
 
 def _casino_once(*, dry_run: bool) -> Dict[str, Any]:
@@ -359,6 +365,11 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
         f"ext_exec={ext.get('executed_count', '?')}",
         f"user_agents={res.get('user_agent_ticks', 0)}",
     ])
+    mesh = res.get("daemon_mesh") or {}
+    if mesh.get("match_count") is not None:
+        parts.append(f"grid_matches={mesh.get('match_count', 0)}")
+        if mesh.get("agents_involved"):
+            parts.append(f"grid_agents={mesh.get('agents_involved')}")
     sweep_res = res.get("sweep")
     if isinstance(sweep_res, dict) and sweep_res.get("success"):
         swept = sweep_res.get("swept") or {}
@@ -498,6 +509,35 @@ def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
         pass
 
 
+def _summarize_grid(res: Dict[str, Any]) -> str:
+    if res.get("skipped"):
+        return f"skipped={res.get('reason', '?')}"
+    parts = [
+        f"matches={res.get('match_count', 0)}",
+        f"intents={res.get('intent_count', 0)}",
+        f"agents={res.get('agents_involved', 0)}",
+        f"profit=${float(res.get('mesh_profit_usd') or 0):.4f}",
+    ]
+    by_kind = res.get("by_kind") or {}
+    if by_kind:
+        kind_bits = [f"{k}:{v}" for k, v in sorted(by_kind.items())[:4]]
+        parts.append(f"kinds={','.join(kind_bits)}")
+    return " ".join(parts)
+
+
+def _grid_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] grid loop interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            res = _grid_once()
+            summary = _summarize_grid(res)
+            print(f"[all-profit] grid {summary}", flush=True)
+            _write_heartbeat("grid", summary)
+        except Exception as exc:
+            print(f"[all-profit] grid error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
 def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threading.Event) -> None:
     print(f"[all-profit] exchange loop interval={interval}s profile={profile} mode={daemon_mode_label()}", flush=True)
     while not stop.is_set():
@@ -588,6 +628,7 @@ def main() -> int:
     ex_iv = args.exchange_interval or args.interval or iv["exchange"]
     cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
     fast_iv = iv.get("fast") or 0
+    grid_iv = int(os.environ.get("EXCHANGE_GRID_INTERVAL") or 0) or iv.get("grid") or 0
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -630,6 +671,8 @@ def main() -> int:
         print(f"    interval={ex_iv}s")
         if fast_iv:
             print(f"    fast rescan interval={fast_iv}s")
+        if grid_iv:
+            print(f"    agent grid interval={grid_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino: Nova/Luna/Sage/Ember/Iris ({cas_iv}s, {dr})")
@@ -642,6 +685,10 @@ def main() -> int:
         if fast_iv:
             threads.append(threading.Thread(
                 target=_fast_loop, args=(fast_iv, profile, stop), name="fast", daemon=True,
+            ))
+        if grid_iv:
+            threads.append(threading.Thread(
+                target=_grid_loop, args=(grid_iv, stop), name="grid", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

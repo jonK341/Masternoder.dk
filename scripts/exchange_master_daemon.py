@@ -80,8 +80,8 @@ def run_once(auto_sweep: bool = False) -> dict:
     out["user_agent_ticks"] = _tick_all_user_agents()
 
     try:
-        from backend.services.exchange_daemon_matcher_service import run_mesh_tick
-        out["daemon_mesh"] = run_mesh_tick()
+        from backend.services.exchange_daemon_matcher_service import run_grid_tick
+        out["daemon_mesh"] = run_grid_tick()
     except Exception as exc:
         out["daemon_mesh"] = {"success": False, "error": str(exc)}
 
