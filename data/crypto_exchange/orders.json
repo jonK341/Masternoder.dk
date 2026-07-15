@@ -8,9 +8,10 @@
     "remaining": 3056.65140983,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T22:40:41.280786Z",
-    "lock_ref": "ex-order:8a467e09d1df"
+    "lock_ref": "ex-order:8a467e09d1df",
+    "cancelled_at": "2026-07-15T01:59:54.307679Z"
   },
   {
     "order_id": "f9e87f69ee724134",
@@ -21,9 +22,10 @@
     "remaining": 2903.78105809,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T22:43:10.523208Z",
-    "lock_ref": "ex-order:1e2fd00fb65a"
+    "lock_ref": "ex-order:1e2fd00fb65a",
+    "cancelled_at": "2026-07-15T01:59:54.310080Z"
   },
   {
     "order_id": "6c0d4c212c814f5f",
@@ -34,9 +36,10 @@
     "remaining": 2758.51644269,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T22:44:26.816455Z",
-    "lock_ref": "ex-order:554b23af0677"
+    "lock_ref": "ex-order:554b23af0677",
+    "cancelled_at": "2026-07-15T01:59:54.312038Z"
   },
   {
     "order_id": "c1b0c297a413469d",
@@ -47,9 +50,10 @@
     "remaining": 2620.43949556,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T22:56:15.223411Z",
-    "lock_ref": "ex-order:202b96590e2e"
+    "lock_ref": "ex-order:202b96590e2e",
+    "cancelled_at": "2026-07-15T01:59:54.314462Z"
   },
   {
     "order_id": "1634c619fa2e458b",
@@ -60,9 +64,10 @@
     "remaining": 2489.41752077,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T22:56:43.792527Z",
-    "lock_ref": "ex-order:91cd7d3db09d"
+    "lock_ref": "ex-order:91cd7d3db09d",
+    "cancelled_at": "2026-07-15T01:59:54.316862Z"
   },
   {
     "order_id": "5c7a0bed858743a4",
@@ -73,9 +78,10 @@
     "remaining": 2364.83330098,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:05:09.577219Z",
-    "lock_ref": "ex-order:38a67dcf60ed"
+    "lock_ref": "ex-order:38a67dcf60ed",
+    "cancelled_at": "2026-07-15T01:59:54.318724Z"
   },
   {
     "order_id": "bfaf71449a684273",
@@ -86,9 +92,10 @@
     "remaining": 2246.59163593,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:06:53.368165Z",
-    "lock_ref": "ex-order:ce62cf298726"
+    "lock_ref": "ex-order:ce62cf298726",
+    "cancelled_at": "2026-07-15T01:59:54.320583Z"
   },
   {
     "order_id": "eb1a9c351722467a",
@@ -99,9 +106,10 @@
     "remaining": 2134.18649164,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:14:04.204658Z",
-    "lock_ref": "ex-order:33845ab6dc2f"
+    "lock_ref": "ex-order:33845ab6dc2f",
+    "cancelled_at": "2026-07-15T01:59:54.322709Z"
   },
   {
     "order_id": "80675b1a2a9a457a",
@@ -112,9 +120,10 @@
     "remaining": 2027.40160456,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:22:48.505863Z",
-    "lock_ref": "ex-order:559b1bd42151"
+    "lock_ref": "ex-order:559b1bd42151",
+    "cancelled_at": "2026-07-15T01:59:54.325048Z"
   },
   {
     "order_id": "957ca191897b4e5f",
@@ -125,9 +134,10 @@
     "remaining": 1925.95596183,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:32:35.791210Z",
-    "lock_ref": "ex-order:b02a8590ec67"
+    "lock_ref": "ex-order:b02a8590ec67",
+    "cancelled_at": "2026-07-15T01:59:54.326860Z"
   },
   {
     "order_id": "21dcc6a1cdf94957",
@@ -138,9 +148,10 @@
     "remaining": 1829.65816374,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:33:32.297941Z",
-    "lock_ref": "ex-order:d39c949df453"
+    "lock_ref": "ex-order:d39c949df453",
+    "cancelled_at": "2026-07-15T01:59:54.328674Z"
   },
   {
     "order_id": "64dc263d3bb74857",
@@ -151,9 +162,10 @@
     "remaining": 1738.1374743,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:34:06.471828Z",
-    "lock_ref": "ex-order:d5cce7bae153"
+    "lock_ref": "ex-order:d5cce7bae153",
+    "cancelled_at": "2026-07-15T01:59:54.331022Z"
   },
   {
     "order_id": "46646673608c4260",
@@ -164,9 +176,10 @@
     "remaining": 1651.15503808,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:34:46.192603Z",
-    "lock_ref": "ex-order:15e7349846af"
+    "lock_ref": "ex-order:15e7349846af",
+    "cancelled_at": "2026-07-15T01:59:54.333507Z"
   },
   {
     "order_id": "6ecb552841e542c5",
@@ -177,9 +190,10 @@
     "remaining": 1568.59728619,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:35:39.755999Z",
-    "lock_ref": "ex-order:93b05d54eee8"
+    "lock_ref": "ex-order:93b05d54eee8",
+    "cancelled_at": "2026-07-15T01:59:54.336026Z"
   },
   {
     "order_id": "babcf6c6c0c9483e",
@@ -190,9 +204,10 @@
     "remaining": 1490.09185938,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:38:58.242471Z",
-    "lock_ref": "ex-order:3d456f495d4f"
+    "lock_ref": "ex-order:3d456f495d4f",
+    "cancelled_at": "2026-07-15T01:59:54.337908Z"
   },
   {
     "order_id": "651685fcd18642a7",
@@ -203,9 +218,10 @@
     "remaining": 1415.54948515,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:40:28.721195Z",
-    "lock_ref": "ex-order:b816f5ad8b8f"
+    "lock_ref": "ex-order:b816f5ad8b8f",
+    "cancelled_at": "2026-07-15T01:59:54.339983Z"
   },
   {
     "order_id": "1f6c3bf2f8864715",
@@ -216,9 +232,10 @@
     "remaining": 1344.65866714,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:42:54.119303Z",
-    "lock_ref": "ex-order:b4e148018649"
+    "lock_ref": "ex-order:b4e148018649",
+    "cancelled_at": "2026-07-15T01:59:54.342058Z"
   },
   {
     "order_id": "ba1fa522db5e4d0b",
@@ -229,9 +246,10 @@
     "remaining": 1277.35017129,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:44:59.588436Z",
-    "lock_ref": "ex-order:d2b3a5a6ccd2"
+    "lock_ref": "ex-order:d2b3a5a6ccd2",
+    "cancelled_at": "2026-07-15T01:59:54.343816Z"
   },
   {
     "order_id": "ae350954377a46b9",
@@ -242,9 +260,10 @@
     "remaining": 1213.48266272,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:45:16.254794Z",
-    "lock_ref": "ex-order:c2d2d15704e8"
+    "lock_ref": "ex-order:c2d2d15704e8",
+    "cancelled_at": "2026-07-15T01:59:54.345616Z"
   },
   {
     "order_id": "5366d51c75aa4b34",
@@ -255,9 +274,10 @@
     "remaining": 1152.80852959,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:45:27.070118Z",
-    "lock_ref": "ex-order:f09d9ad07408"
+    "lock_ref": "ex-order:f09d9ad07408",
+    "cancelled_at": "2026-07-15T01:59:54.347922Z"
   },
   {
     "order_id": "ba1732328cbd440a",
@@ -268,9 +288,10 @@
     "remaining": 1095.13032186,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:46:18.606385Z",
-    "lock_ref": "ex-order:602ea21ee949"
+    "lock_ref": "ex-order:602ea21ee949",
+    "cancelled_at": "2026-07-15T01:59:54.350030Z"
   },
   {
     "order_id": "eacca116159f45b7",
@@ -281,9 +302,10 @@
     "remaining": 1040.26046202,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:49:45.879912Z",
-    "lock_ref": "ex-order:b0dae05175cb"
+    "lock_ref": "ex-order:b0dae05175cb",
+    "cancelled_at": "2026-07-15T01:59:54.351835Z"
   },
   {
     "order_id": "8f60a2c0cf404ba8",
@@ -294,9 +316,10 @@
     "remaining": 988.17187642,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:52:40.174834Z",
-    "lock_ref": "ex-order:566de16c38c4"
+    "lock_ref": "ex-order:566de16c38c4",
+    "cancelled_at": "2026-07-15T01:59:54.353643Z"
   },
   {
     "order_id": "f29dc4ceae8a4c5a",
@@ -307,9 +330,10 @@
     "remaining": 938.76328259,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:52:56.338470Z",
-    "lock_ref": "ex-order:14207d7e7c32"
+    "lock_ref": "ex-order:14207d7e7c32",
+    "cancelled_at": "2026-07-15T01:59:54.355973Z"
   },
   {
     "order_id": "b8b45440e38f4f2e",
@@ -320,9 +344,10 @@
     "remaining": 891.74955597,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:53:28.104625Z",
-    "lock_ref": "ex-order:e738b8bb1bdc"
+    "lock_ref": "ex-order:e738b8bb1bdc",
+    "cancelled_at": "2026-07-15T01:59:54.358222Z"
   },
   {
     "order_id": "fbd2884f9b6042d2",
@@ -333,9 +358,10 @@
     "remaining": 847.16207817,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:53:50.798722Z",
-    "lock_ref": "ex-order:62a8c5095f96"
+    "lock_ref": "ex-order:62a8c5095f96",
+    "cancelled_at": "2026-07-15T01:59:54.359980Z"
   },
   {
     "order_id": "8a023df3d1d84eed",
@@ -346,9 +372,10 @@
     "remaining": 804.72841176,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-06-30T23:57:21.449806Z",
-    "lock_ref": "ex-order:fd1f2aef55df"
+    "lock_ref": "ex-order:fd1f2aef55df",
+    "cancelled_at": "2026-07-15T01:59:54.361878Z"
   },
   {
     "order_id": "ce07cbba11c14151",
@@ -359,9 +386,10 @@
     "remaining": 764.34086617,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:01:46.765706Z",
-    "lock_ref": "ex-order:3731a2433aed"
+    "lock_ref": "ex-order:3731a2433aed",
+    "cancelled_at": "2026-07-15T01:59:54.364276Z"
   },
   {
     "order_id": "0365e72174bb47df",
@@ -372,9 +400,10 @@
     "remaining": 764.34086617,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:01:46.958870Z",
-    "lock_ref": "ex-order:e94786be9d50"
+    "lock_ref": "ex-order:e94786be9d50",
+    "cancelled_at": "2026-07-15T01:59:54.366517Z"
   },
   {
     "order_id": "16f9797d8f074e70",
@@ -385,9 +414,10 @@
     "remaining": 687.90677955,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:02:06.012150Z",
-    "lock_ref": "ex-order:08a7d6c36bab"
+    "lock_ref": "ex-order:08a7d6c36bab",
+    "cancelled_at": "2026-07-15T01:59:54.368268Z"
   },
   {
     "order_id": "3c44c3cd7608430d",
@@ -398,9 +428,10 @@
     "remaining": 653.47365932,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:05:15.875843Z",
-    "lock_ref": "ex-order:20bd33a308f8"
+    "lock_ref": "ex-order:20bd33a308f8",
+    "cancelled_at": "2026-07-15T01:59:54.370099Z"
   },
   {
     "order_id": "07c08c86f27d412a",
@@ -411,9 +442,10 @@
     "remaining": 620.68663261,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:08:11.879124Z",
-    "lock_ref": "ex-order:ea1b6a29acbe"
+    "lock_ref": "ex-order:ea1b6a29acbe",
+    "cancelled_at": "2026-07-15T01:59:54.372202Z"
   },
   {
     "order_id": "fdc518a1d68d4bd7",
@@ -424,9 +456,10 @@
     "remaining": 589.65230098,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:08:24.375007Z",
-    "lock_ref": "ex-order:6f28e0668528"
+    "lock_ref": "ex-order:6f28e0668528",
+    "cancelled_at": "2026-07-15T01:59:54.374448Z"
   },
   {
     "order_id": "1488a93e45664bb9",
@@ -437,9 +470,10 @@
     "remaining": 560.16968593,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:08:42.409977Z",
-    "lock_ref": "ex-order:d62b86cd2c16"
+    "lock_ref": "ex-order:d62b86cd2c16",
+    "cancelled_at": "2026-07-15T01:59:54.376200Z"
   },
   {
     "order_id": "cb71f93f4b9b4493",
@@ -450,9 +484,10 @@
     "remaining": 532.12342039,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:12:05.904623Z",
-    "lock_ref": "ex-order:4f19efbaa71a"
+    "lock_ref": "ex-order:4f19efbaa71a",
+    "cancelled_at": "2026-07-15T01:59:54.377993Z"
   },
   {
     "order_id": "88f9bda8c6e247bf",
@@ -463,9 +498,10 @@
     "remaining": 505.40390561,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:15:35.192651Z",
-    "lock_ref": "ex-order:b1da88ab49be"
+    "lock_ref": "ex-order:b1da88ab49be",
+    "cancelled_at": "2026-07-15T01:59:54.380230Z"
   },
   {
     "order_id": "a00d190c5fde4920",
@@ -476,9 +512,10 @@
     "remaining": 480.13371033,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:15:49.099651Z",
-    "lock_ref": "ex-order:dc0586b11396"
+    "lock_ref": "ex-order:dc0586b11396",
+    "cancelled_at": "2026-07-15T01:59:54.382257Z"
   },
   {
     "order_id": "8c902d35e7204d8b",
@@ -489,9 +526,10 @@
     "remaining": 456.12702482,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:15:56.344554Z",
-    "lock_ref": "ex-order:255231866dd8"
+    "lock_ref": "ex-order:255231866dd8",
+    "cancelled_at": "2026-07-15T01:59:54.384043Z"
   },
   {
     "order_id": "ab463e5770484cf8",
@@ -502,9 +540,10 @@
     "remaining": 433.24511108,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:19:27.790655Z",
-    "lock_ref": "ex-order:943f14539bb0"
+    "lock_ref": "ex-order:943f14539bb0",
+    "cancelled_at": "2026-07-15T01:59:54.385871Z"
   },
   {
     "order_id": "dcc02d3ff11d4738",
@@ -515,9 +554,10 @@
     "remaining": 411.50729303,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:22:00.114182Z",
-    "lock_ref": "ex-order:c7ce3ff1caf8"
+    "lock_ref": "ex-order:c7ce3ff1caf8",
+    "cancelled_at": "2026-07-15T01:59:54.388475Z"
   },
   {
     "order_id": "41818de020c047ca",
@@ -528,9 +568,10 @@
     "remaining": 411.50729303,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:22:00.343339Z",
-    "lock_ref": "ex-order:dca2766b4890"
+    "lock_ref": "ex-order:dca2766b4890",
+    "cancelled_at": "2026-07-15T01:59:54.390809Z"
   },
   {
     "order_id": "1be72de6d809421a",
@@ -541,9 +582,10 @@
     "remaining": 370.35656372,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:22:04.395641Z",
-    "lock_ref": "ex-order:9d0bcc534d69"
+    "lock_ref": "ex-order:9d0bcc534d69",
+    "cancelled_at": "2026-07-15T01:59:54.392607Z"
   },
   {
     "order_id": "303541c4e55e43e0",
@@ -554,9 +596,10 @@
     "remaining": 351.80095428,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:24:49.231992Z",
-    "lock_ref": "ex-order:e214bfe26da2"
+    "lock_ref": "ex-order:e214bfe26da2",
+    "cancelled_at": "2026-07-15T01:59:54.394398Z"
   },
   {
     "order_id": "4b86f22f535b46dd",
@@ -567,9 +610,10 @@
     "remaining": 334.13534407,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:27:36.510170Z",
-    "lock_ref": "ex-order:1e3d0c4885a5"
+    "lock_ref": "ex-order:1e3d0c4885a5",
+    "cancelled_at": "2026-07-15T01:59:54.396646Z"
   },
   {
     "order_id": "624241bf2bec468b",
@@ -580,9 +624,10 @@
     "remaining": 317.42857687,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:27:50.832736Z",
-    "lock_ref": "ex-order:4f2d48b5a70b"
+    "lock_ref": "ex-order:4f2d48b5a70b",
+    "cancelled_at": "2026-07-15T01:59:54.398886Z"
   },
   {
     "order_id": "de43364da9344967",
@@ -593,9 +638,10 @@
     "remaining": 301.55714803,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:27:51.165100Z",
-    "lock_ref": "ex-order:4a87d0f659ab"
+    "lock_ref": "ex-order:4a87d0f659ab",
+    "cancelled_at": "2026-07-15T01:59:54.400663Z"
   },
   {
     "order_id": "f1ea2889e3324db0",
@@ -606,9 +652,10 @@
     "remaining": 286.40372812,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:31:17.348823Z",
-    "lock_ref": "ex-order:9eb0ea371df7"
+    "lock_ref": "ex-order:9eb0ea371df7",
+    "cancelled_at": "2026-07-15T01:59:54.402518Z"
   },
   {
     "order_id": "f5d72eb39cf44f5d",
@@ -619,9 +666,10 @@
     "remaining": 272.00797921,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:34:03.331943Z",
-    "lock_ref": "ex-order:c6f30ee07ee4"
+    "lock_ref": "ex-order:c6f30ee07ee4",
+    "cancelled_at": "2026-07-15T01:59:54.404792Z"
   },
   {
     "order_id": "e69560a13f5a421d",
@@ -632,9 +680,10 @@
     "remaining": 258.40758026,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T00:34:04.813211Z",
-    "lock_ref": "ex-order:4b7c25ede291"
+    "lock_ref": "ex-order:4b7c25ede291",
+    "cancelled_at": "2026-07-15T01:59:54.407099Z"
   },
   {
     "order_id": "fa4be459a7704409",
@@ -645,9 +694,10 @@
     "remaining": 1458.07451028,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:21:13.425901Z",
-    "lock_ref": "ex-order:fc59386d4f19"
+    "lock_ref": "ex-order:fc59386d4f19",
+    "cancelled_at": "2026-07-15T01:59:54.408884Z"
   },
   {
     "order_id": "a039eeca65b04458",
@@ -658,9 +708,10 @@
     "remaining": 1385.13302226,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:21:30.444944Z",
-    "lock_ref": "ex-order:347e14568310"
+    "lock_ref": "ex-order:347e14568310",
+    "cancelled_at": "2026-07-15T01:59:54.410874Z"
   },
   {
     "order_id": "3b219085cb6a40d6",
@@ -671,9 +722,10 @@
     "remaining": 1315.80084616,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:24:17.482641Z",
-    "lock_ref": "ex-order:228b1a4fd942"
+    "lock_ref": "ex-order:228b1a4fd942",
+    "cancelled_at": "2026-07-15T01:59:54.413180Z"
   },
   {
     "order_id": "d5a681aa462a4c55",
@@ -684,9 +736,10 @@
     "remaining": 1249.97304134,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:24:27.025529Z",
-    "lock_ref": "ex-order:c0367681d313"
+    "lock_ref": "ex-order:c0367681d313",
+    "cancelled_at": "2026-07-15T01:59:54.415531Z"
   },
   {
     "order_id": "fda6127bfe4347f8",
@@ -697,9 +750,10 @@
     "remaining": 1187.39886428,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:27:30.213027Z",
-    "lock_ref": "ex-order:e21ac68ad4db"
+    "lock_ref": "ex-order:e21ac68ad4db",
+    "cancelled_at": "2026-07-15T01:59:54.417361Z"
   },
   {
     "order_id": "f168cf194b274fc7",
@@ -710,9 +764,10 @@
     "remaining": 1127.91563357,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:30:27.960020Z",
-    "lock_ref": "ex-order:c436855c27c9"
+    "lock_ref": "ex-order:c436855c27c9",
+    "cancelled_at": "2026-07-15T01:59:54.419276Z"
   },
   {
     "order_id": "d6f1af0d10084618",
@@ -723,9 +778,10 @@
     "remaining": 1071.51985188,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:31:06.949815Z",
-    "lock_ref": "ex-order:e4117ba5e22d"
+    "lock_ref": "ex-order:e4117ba5e22d",
+    "cancelled_at": "2026-07-15T01:59:54.421386Z"
   },
   {
     "order_id": "0b4c96af1d8845c0",
@@ -736,9 +792,10 @@
     "remaining": 1017.83057179,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:34:16.071382Z",
-    "lock_ref": "ex-order:68b3b41f7bb9"
+    "lock_ref": "ex-order:68b3b41f7bb9",
+    "cancelled_at": "2026-07-15T01:59:54.423482Z"
   },
   {
     "order_id": "a88c0f8f9b264a50",
@@ -749,9 +806,10 @@
     "remaining": 966.9012807,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:35:59.771818Z",
-    "lock_ref": "ex-order:d56fb603d68f"
+    "lock_ref": "ex-order:d56fb603d68f",
+    "cancelled_at": "2026-07-15T01:59:54.425373Z"
   },
   {
     "order_id": "5ccf201692fe4e7f",
@@ -762,9 +820,10 @@
     "remaining": 918.48069167,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:37:23.855102Z",
-    "lock_ref": "ex-order:19c955085469"
+    "lock_ref": "ex-order:19c955085469",
+    "cancelled_at": "2026-07-15T01:59:54.427212Z"
   },
   {
     "order_id": "02aaae434ca54f0f",
@@ -775,9 +834,10 @@
     "remaining": 872.44336959,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:40:35.626761Z",
-    "lock_ref": "ex-order:893b7112d59d"
+    "lock_ref": "ex-order:893b7112d59d",
+    "cancelled_at": "2026-07-15T01:59:54.429401Z"
   },
   {
     "order_id": "e69732da0c3146b5",
@@ -788,9 +848,10 @@
     "remaining": 828.78343861,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:41:40.239397Z",
-    "lock_ref": "ex-order:ebd141a6790b"
+    "lock_ref": "ex-order:ebd141a6790b",
+    "cancelled_at": "2026-07-15T01:59:54.431571Z"
   },
   {
     "order_id": "0bbced34816146d4",
@@ -801,9 +862,10 @@
     "remaining": 787.30650417,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:43:45.667473Z",
-    "lock_ref": "ex-order:065e8bc59ded"
+    "lock_ref": "ex-order:065e8bc59ded",
+    "cancelled_at": "2026-07-15T01:59:54.433441Z"
   },
   {
     "order_id": "83272d73f0cd42c8",
@@ -814,9 +876,10 @@
     "remaining": 747.86565396,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:46:08.330455Z",
-    "lock_ref": "ex-order:4541a54719cb"
+    "lock_ref": "ex-order:4541a54719cb",
+    "cancelled_at": "2026-07-15T01:59:54.435278Z"
   },
   {
     "order_id": "c26411a89369423d",
@@ -827,9 +890,10 @@
     "remaining": 710.39684627,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:46:48.276731Z",
-    "lock_ref": "ex-order:7ccfc2dd50f5"
+    "lock_ref": "ex-order:7ccfc2dd50f5",
+    "cancelled_at": "2026-07-15T01:59:54.437377Z"
   },
   {
     "order_id": "d60b07df286f482e",
@@ -840,9 +904,10 @@
     "remaining": 674.87700395,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:47:06.112707Z",
-    "lock_ref": "ex-order:89d8f3232266"
+    "lock_ref": "ex-order:89d8f3232266",
+    "cancelled_at": "2026-07-15T01:59:54.439539Z"
   },
   {
     "order_id": "fa4027a86d4b4e3e",
@@ -853,9 +918,10 @@
     "remaining": 674.87700395,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:47:28.686624Z",
-    "lock_ref": "ex-order:c260155ff064"
+    "lock_ref": "ex-order:c260155ff064",
+    "cancelled_at": "2026-07-15T01:59:54.441352Z"
   },
   {
     "order_id": "f01d591fd007423e",
@@ -866,9 +932,10 @@
     "remaining": 1829.0590683,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:51:10.896437Z",
-    "lock_ref": "ex-order:d2e6f876f0bf"
+    "lock_ref": "ex-order:d2e6f876f0bf",
+    "cancelled_at": "2026-07-15T01:59:54.443332Z"
   },
   {
     "order_id": "71cdb2fe94464e2a",
@@ -879,9 +946,10 @@
     "remaining": 2959.3385087,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:51:53.436179Z",
-    "lock_ref": "ex-order:e32473ea50d3"
+    "lock_ref": "ex-order:e32473ea50d3",
+    "cancelled_at": "2026-07-15T01:59:54.445461Z"
   },
   {
     "order_id": "4c64588bb43449e9",
@@ -892,9 +960,10 @@
     "remaining": 2811.25829576,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:54:29.379945Z",
-    "lock_ref": "ex-order:049aca61e2cc"
+    "lock_ref": "ex-order:049aca61e2cc",
+    "cancelled_at": "2026-07-15T01:59:54.447513Z"
   },
   {
     "order_id": "f65f27ae82b74cac",
@@ -905,9 +974,10 @@
     "remaining": 2670.61985597,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:57:01.332748Z",
-    "lock_ref": "ex-order:95ac8af32578"
+    "lock_ref": "ex-order:95ac8af32578",
+    "cancelled_at": "2026-07-15T01:59:54.449359Z"
   },
   {
     "order_id": "b488d4ae21e54beb",
@@ -918,9 +988,10 @@
     "remaining": 2537.08886317,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T05:57:38.614908Z",
-    "lock_ref": "ex-order:d06d3d9bdbc9"
+    "lock_ref": "ex-order:d06d3d9bdbc9",
+    "cancelled_at": "2026-07-15T01:59:54.451225Z"
   },
   {
     "order_id": "3e8af96eeac844c3",
@@ -931,9 +1002,10 @@
     "remaining": 2410.12113252,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:00:44.409234Z",
-    "lock_ref": "ex-order:dcd580fbad1c"
+    "lock_ref": "ex-order:dcd580fbad1c",
+    "cancelled_at": "2026-07-15T01:59:54.453264Z"
   },
   {
     "order_id": "94dc0178417d441a",
@@ -944,9 +1016,10 @@
     "remaining": 2289.53955089,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:02:33.651885Z",
-    "lock_ref": "ex-order:d7ccadf446d5"
+    "lock_ref": "ex-order:d7ccadf446d5",
+    "cancelled_at": "2026-07-15T01:59:54.455385Z"
   },
   {
     "order_id": "343c401b852e4300",
@@ -957,9 +1030,10 @@
     "remaining": 2175.02481085,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:03:54.923808Z",
-    "lock_ref": "ex-order:7a899fbb7001"
+    "lock_ref": "ex-order:7a899fbb7001",
+    "cancelled_at": "2026-07-15T01:59:54.457274Z"
   },
   {
     "order_id": "43540bf3892e48d2",
@@ -970,9 +1044,10 @@
     "remaining": 2066.1602828,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:07:03.366941Z",
-    "lock_ref": "ex-order:9908c1236f2b"
+    "lock_ref": "ex-order:9908c1236f2b",
+    "cancelled_at": "2026-07-15T01:59:54.459127Z"
   },
   {
     "order_id": "83e7291d5ebd4149",
@@ -983,9 +1058,10 @@
     "remaining": 1962.81450616,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:08:12.759278Z",
-    "lock_ref": "ex-order:7c51313119fc"
+    "lock_ref": "ex-order:7c51313119fc",
+    "cancelled_at": "2026-07-15T01:59:54.461215Z"
   },
   {
     "order_id": "23ed6f06c99c4d68",
@@ -996,9 +1072,10 @@
     "remaining": 1864.63601836,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:10:15.697767Z",
-    "lock_ref": "ex-order:d91b3abd4913"
+    "lock_ref": "ex-order:d91b3abd4913",
+    "cancelled_at": "2026-07-15T01:59:54.463404Z"
   },
   {
     "order_id": "4a1af76fe61c44f1",
@@ -1009,9 +1086,10 @@
     "remaining": 1771.29092993,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:13:20.661065Z",
-    "lock_ref": "ex-order:5ca95a750831"
+    "lock_ref": "ex-order:5ca95a750831",
+    "cancelled_at": "2026-07-15T01:59:54.465275Z"
   },
   {
     "order_id": "e9e8dfdc1c9f41bf",
@@ -1022,9 +1100,10 @@
     "remaining": 1682.68862094,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:13:28.496446Z",
-    "lock_ref": "ex-order:0e03b74ecec8"
+    "lock_ref": "ex-order:0e03b74ecec8",
+    "cancelled_at": "2026-07-15T01:59:54.467235Z"
   },
   {
     "order_id": "3aa9b40f95ec4572",
@@ -1035,9 +1114,10 @@
     "remaining": 1598.47866489,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:16:36.434736Z",
-    "lock_ref": "ex-order:880d1b46ae09"
+    "lock_ref": "ex-order:880d1b46ae09",
+    "cancelled_at": "2026-07-15T01:59:54.469308Z"
   },
   {
     "order_id": "b8600677953a473d",
@@ -1048,9 +1128,10 @@
     "remaining": 1518.47920664,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:18:24.268700Z",
-    "lock_ref": "ex-order:d11903dc2502"
+    "lock_ref": "ex-order:d11903dc2502",
+    "cancelled_at": "2026-07-15T01:59:54.471370Z"
   },
   {
     "order_id": "47229f9a7d914094",
@@ -1061,9 +1142,10 @@
     "remaining": 1442.51748382,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:19:47.403382Z",
-    "lock_ref": "ex-order:78ba60cdafc9"
+    "lock_ref": "ex-order:78ba60cdafc9",
+    "cancelled_at": "2026-07-15T01:59:54.473193Z"
   },
   {
     "order_id": "417b20efa8ed4cb5",
@@ -1074,9 +1156,10 @@
     "remaining": 1370.27835962,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:23:03.727110Z",
-    "lock_ref": "ex-order:2a17eb0e297e"
+    "lock_ref": "ex-order:2a17eb0e297e",
+    "cancelled_at": "2026-07-15T01:59:54.475013Z"
   },
   {
     "order_id": "fdb14dd828c64395",
@@ -1087,9 +1170,10 @@
     "remaining": 1301.72669789,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:23:40.549558Z",
-    "lock_ref": "ex-order:3a0e5420a0a1"
+    "lock_ref": "ex-order:3a0e5420a0a1",
+    "cancelled_at": "2026-07-15T01:59:54.477029Z"
   },
   {
     "order_id": "98603a161ebe423b",
@@ -1100,9 +1184,10 @@
     "remaining": 1236.5648755,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:26:55.434358Z",
-    "lock_ref": "ex-order:0b04f9259ba7"
+    "lock_ref": "ex-order:0b04f9259ba7",
+    "cancelled_at": "2026-07-15T01:59:54.479082Z"
   },
   {
     "order_id": "4401b055877644ee",
@@ -1113,9 +1198,10 @@
     "remaining": 1174.66114423,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:28:52.143547Z",
-    "lock_ref": "ex-order:592e02d3a871"
+    "lock_ref": "ex-order:592e02d3a871",
+    "cancelled_at": "2026-07-15T01:59:54.480867Z"
   },
   {
     "order_id": "218e61c44454490c",
@@ -1126,9 +1212,10 @@
     "remaining": 1115.89034326,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:30:25.197299Z",
-    "lock_ref": "ex-order:9f3b8f1f992f"
+    "lock_ref": "ex-order:9f3b8f1f992f",
+    "cancelled_at": "2026-07-15T01:59:54.482731Z"
   },
   {
     "order_id": "8840947fbca34560",
@@ -1139,9 +1226,10 @@
     "remaining": 1059.98259485,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:33:48.549086Z",
-    "lock_ref": "ex-order:b7fc5b0cb619"
+    "lock_ref": "ex-order:b7fc5b0cb619",
+    "cancelled_at": "2026-07-15T01:59:54.484720Z"
   },
   {
     "order_id": "4868cfa5141e49fe",
@@ -1152,9 +1240,10 @@
     "remaining": 1006.94572136,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:33:56.448882Z",
-    "lock_ref": "ex-order:8b95d870e672"
+    "lock_ref": "ex-order:8b95d870e672",
+    "cancelled_at": "2026-07-15T01:59:54.486735Z"
   },
   {
     "order_id": "3a9f36cbc31647f6",
@@ -1165,9 +1254,10 @@
     "remaining": 956.52294779,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:37:09.822531Z",
-    "lock_ref": "ex-order:471e2b747891"
+    "lock_ref": "ex-order:471e2b747891",
+    "cancelled_at": "2026-07-15T01:59:54.488519Z"
   },
   {
     "order_id": "cafdf5450b274137",
@@ -1178,9 +1268,10 @@
     "remaining": 908.6213129,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:39:42.753858Z",
-    "lock_ref": "ex-order:225ac00075f2"
+    "lock_ref": "ex-order:225ac00075f2",
+    "cancelled_at": "2026-07-15T01:59:54.490337Z"
   },
   {
     "order_id": "c2aff6a973634b06",
@@ -1191,9 +1282,10 @@
     "remaining": 863.15250351,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:40:43.243323Z",
-    "lock_ref": "ex-order:943c019493a7"
+    "lock_ref": "ex-order:943c019493a7",
+    "cancelled_at": "2026-07-15T01:59:54.492573Z"
   },
   {
     "order_id": "e61b1961c9a34639",
@@ -1204,9 +1296,10 @@
     "remaining": 819.88164708,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:44:07.646517Z",
-    "lock_ref": "ex-order:56e41341e876"
+    "lock_ref": "ex-order:56e41341e876",
+    "cancelled_at": "2026-07-15T01:59:54.494626Z"
   },
   {
     "order_id": "acc7c8d791964a68",
@@ -1217,9 +1310,10 @@
     "remaining": 778.84982097,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:44:48.738004Z",
-    "lock_ref": "ex-order:f1d839393d95"
+    "lock_ref": "ex-order:f1d839393d95",
+    "cancelled_at": "2026-07-15T01:59:54.496509Z"
   },
   {
     "order_id": "7c7ef855e4ed4c0a",
@@ -1230,9 +1324,10 @@
     "remaining": 739.79409867,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:47:34.207159Z",
-    "lock_ref": "ex-order:3b6ac47f98c8"
+    "lock_ref": "ex-order:3b6ac47f98c8",
+    "cancelled_at": "2026-07-15T01:59:54.498383Z"
   },
   {
     "order_id": "7234e00c61c14af7",
@@ -1243,9 +1338,10 @@
     "remaining": 702.76664999,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:49:56.806495Z",
-    "lock_ref": "ex-order:1a6e6f702f30"
+    "lock_ref": "ex-order:1a6e6f702f30",
+    "cancelled_at": "2026-07-15T01:59:54.500395Z"
   },
   {
     "order_id": "291afb991c9b4f3b",
@@ -1256,9 +1352,10 @@
     "remaining": 667.59057375,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:50:53.386266Z",
-    "lock_ref": "ex-order:d138dc3b0583"
+    "lock_ref": "ex-order:d138dc3b0583",
+    "cancelled_at": "2026-07-15T01:59:54.502510Z"
   },
   {
     "order_id": "7ebd07899f2041cf",
@@ -1269,9 +1366,10 @@
     "remaining": 634.0978138,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:54:10.942523Z",
-    "lock_ref": "ex-order:ef3ffa9548d7"
+    "lock_ref": "ex-order:ef3ffa9548d7",
+    "cancelled_at": "2026-07-15T01:59:54.504303Z"
   },
   {
     "order_id": "ce8cab8b48674153",
@@ -1282,9 +1380,10 @@
     "remaining": 602.35517937,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:55:00.469361Z",
-    "lock_ref": "ex-order:af079535a660"
+    "lock_ref": "ex-order:af079535a660",
+    "cancelled_at": "2026-07-15T01:59:54.506116Z"
   },
   {
     "order_id": "0b34c21ce84b42da",
@@ -1295,9 +1394,10 @@
     "remaining": 572.12418914,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T06:57:29.234948Z",
-    "lock_ref": "ex-order:6a250e3c4faf"
+    "lock_ref": "ex-order:6a250e3c4faf",
+    "cancelled_at": "2026-07-15T01:59:54.508097Z"
   },
   {
     "order_id": "7748a0b4c26d4507",
@@ -1308,9 +1408,10 @@
     "remaining": 543.44249219,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:00:37.903673Z",
-    "lock_ref": "ex-order:6a796fab1ba9"
+    "lock_ref": "ex-order:6a796fab1ba9",
+    "cancelled_at": "2026-07-15T01:59:54.510092Z"
   },
   {
     "order_id": "31909d4f5cf94d90",
@@ -1321,9 +1422,10 @@
     "remaining": 516.23262383,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:01:08.626545Z",
-    "lock_ref": "ex-order:b54de99cff43"
+    "lock_ref": "ex-order:b54de99cff43",
+    "cancelled_at": "2026-07-15T01:59:54.511922Z"
   },
   {
     "order_id": "2b7a3b1f229b4661",
@@ -1334,9 +1436,10 @@
     "remaining": 490.30776139,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:04:29.315239Z",
-    "lock_ref": "ex-order:9c638e6d705d"
+    "lock_ref": "ex-order:9c638e6d705d",
+    "cancelled_at": "2026-07-15T01:59:54.513765Z"
   },
   {
     "order_id": "5c535a4a445e496b",
@@ -1347,9 +1450,10 @@
     "remaining": 465.75462957,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:05:41.038996Z",
-    "lock_ref": "ex-order:305d3dc2f84e"
+    "lock_ref": "ex-order:305d3dc2f84e",
+    "cancelled_at": "2026-07-15T01:59:54.515768Z"
   },
   {
     "order_id": "b0775b3560dc459a",
@@ -1360,9 +1464,10 @@
     "remaining": 442.39141059,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:07:49.621840Z",
-    "lock_ref": "ex-order:f1503f1ebcfb"
+    "lock_ref": "ex-order:f1503f1ebcfb",
+    "cancelled_at": "2026-07-15T01:59:54.517831Z"
   },
   {
     "order_id": "66c77dff6b364cf7",
@@ -1373,9 +1478,10 @@
     "remaining": 420.19635256,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:10:44.477755Z",
-    "lock_ref": "ex-order:d21a942cf2ff"
+    "lock_ref": "ex-order:d21a942cf2ff",
+    "cancelled_at": "2026-07-15T01:59:54.519610Z"
   },
   {
     "order_id": "f8aa98db55b64d22",
@@ -1386,9 +1492,10 @@
     "remaining": 399.14879118,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:11:09.564818Z",
-    "lock_ref": "ex-order:a2fd55df5445"
+    "lock_ref": "ex-order:a2fd55df5445",
+    "cancelled_at": "2026-07-15T01:59:54.521403Z"
   },
   {
     "order_id": "ea322db6acdd4f3f",
@@ -1399,9 +1506,10 @@
     "remaining": 379.07812038,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:14:27.829732Z",
-    "lock_ref": "ex-order:e02ba4104759"
+    "lock_ref": "ex-order:e02ba4104759",
+    "cancelled_at": "2026-07-15T01:59:54.523292Z"
   },
   {
     "order_id": "2277fc656aa94440",
@@ -1412,9 +1520,10 @@
     "remaining": 360.0864706,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:15:47.619453Z",
-    "lock_ref": "ex-order:655a2f11fb6f"
+    "lock_ref": "ex-order:655a2f11fb6f",
+    "cancelled_at": "2026-07-15T01:59:54.525130Z"
   },
   {
     "order_id": "81af12736b584867",
@@ -1425,9 +1534,10 @@
     "remaining": 342.00665958,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:17:46.445625Z",
-    "lock_ref": "ex-order:709d24b6d7f4"
+    "lock_ref": "ex-order:709d24b6d7f4",
+    "cancelled_at": "2026-07-15T01:59:54.526961Z"
   },
   {
     "order_id": "61ee8631c7dc45fc",
@@ -1438,9 +1548,10 @@
     "remaining": 324.83083909,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:20:50.948907Z",
-    "lock_ref": "ex-order:458577868057"
+    "lock_ref": "ex-order:458577868057",
+    "cancelled_at": "2026-07-15T01:59:54.528749Z"
   },
   {
     "order_id": "2d395f4723e041cd",
@@ -1451,9 +1562,10 @@
     "remaining": 308.55155339,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:21:07.704463Z",
-    "lock_ref": "ex-order:7d79f5485318"
+    "lock_ref": "ex-order:7d79f5485318",
+    "cancelled_at": "2026-07-15T01:59:54.530634Z"
   },
   {
     "order_id": "1f7edd6d44874aea",
@@ -1464,9 +1576,10 @@
     "remaining": 293.01072131,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:24:27.753443Z",
-    "lock_ref": "ex-order:fb094981b432"
+    "lock_ref": "ex-order:fb094981b432",
+    "cancelled_at": "2026-07-15T01:59:54.532486Z"
   },
   {
     "order_id": "0accc81bc17e4f57",
@@ -1477,9 +1590,10 @@
     "remaining": 278.3224415,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:25:54.017397Z",
-    "lock_ref": "ex-order:aea4e300acc3"
+    "lock_ref": "ex-order:aea4e300acc3",
+    "cancelled_at": "2026-07-15T01:59:54.534321Z"
   },
   {
     "order_id": "de616610eec54343",
@@ -1490,9 +1604,10 @@
     "remaining": 264.33083192,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:27:45.996541Z",
-    "lock_ref": "ex-order:da30b700eb19"
+    "lock_ref": "ex-order:da30b700eb19",
+    "cancelled_at": "2026-07-15T01:59:54.536145Z"
   },
   {
     "order_id": "fbcc75adddc54ed1",
@@ -1503,9 +1618,10 @@
     "remaining": 251.03880283,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T07:30:59.153320Z",
-    "lock_ref": "ex-order:2a26f9abbc21"
+    "lock_ref": "ex-order:2a26f9abbc21",
+    "cancelled_at": "2026-07-15T01:59:54.537960Z"
   },
   {
     "order_id": "1b25f46ce7c845ad",
@@ -1516,9 +1632,10 @@
     "remaining": 1453.92826289,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:16:01.759975Z",
-    "lock_ref": "ex-order:1944ffb24c96"
+    "lock_ref": "ex-order:1944ffb24c96",
+    "cancelled_at": "2026-07-15T01:59:54.539770Z"
   },
   {
     "order_id": "eabbaa792d6946fc",
@@ -1529,9 +1646,10 @@
     "remaining": 1381.23184974,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:16:26.997864Z",
-    "lock_ref": "ex-order:83a7e9a2c2fe"
+    "lock_ref": "ex-order:83a7e9a2c2fe",
+    "cancelled_at": "2026-07-15T01:59:54.541581Z"
   },
   {
     "order_id": "095ecfaa58674668",
@@ -1542,9 +1660,10 @@
     "remaining": 1312.1325135,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:16:39.269021Z",
-    "lock_ref": "ex-order:17b1967cf585"
+    "lock_ref": "ex-order:17b1967cf585",
+    "cancelled_at": "2026-07-15T01:59:54.543395Z"
   },
   {
     "order_id": "dc1e6ad2b98547c4",
@@ -1555,9 +1674,10 @@
     "remaining": 1246.45040032,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:19:25.380208Z",
-    "lock_ref": "ex-order:25c784669fdf"
+    "lock_ref": "ex-order:25c784669fdf",
+    "cancelled_at": "2026-07-15T01:59:54.545216Z"
   },
   {
     "order_id": "d9fe427dda5c45a6",
@@ -1568,9 +1688,10 @@
     "remaining": 1184.09013656,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:21:16.777865Z",
-    "lock_ref": "ex-order:ebdeed7b417c"
+    "lock_ref": "ex-order:ebdeed7b417c",
+    "cancelled_at": "2026-07-15T01:59:54.547118Z"
   },
   {
     "order_id": "33c305e3fd4347c6",
@@ -1581,9 +1702,10 @@
     "remaining": 1124.84788598,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:21:53.199196Z",
-    "lock_ref": "ex-order:138793d558ae"
+    "lock_ref": "ex-order:138793d558ae",
+    "cancelled_at": "2026-07-15T01:59:54.548955Z"
   },
   {
     "order_id": "3c4e57e981214909",
@@ -1594,9 +1716,10 @@
     "remaining": 1068.56774793,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:23:26.421012Z",
-    "lock_ref": "ex-order:8080517e9581"
+    "lock_ref": "ex-order:8080517e9581",
+    "cancelled_at": "2026-07-15T01:59:54.550822Z"
   },
   {
     "order_id": "99523816a44f42f0",
@@ -1607,9 +1730,10 @@
     "remaining": 1015.06387304,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:23:51.042319Z",
-    "lock_ref": "ex-order:66107b42d020"
+    "lock_ref": "ex-order:66107b42d020",
+    "cancelled_at": "2026-07-15T01:59:54.552642Z"
   },
   {
     "order_id": "d3ab30f0587b46b5",
@@ -1620,9 +1744,10 @@
     "remaining": 2184.48134591,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:27:33.680328Z",
-    "lock_ref": "ex-order:64585e37b89c"
+    "lock_ref": "ex-order:64585e37b89c",
+    "cancelled_at": "2026-07-15T01:59:54.554488Z"
   },
   {
     "order_id": "2c756993689b4ba1",
@@ -1633,9 +1758,10 @@
     "remaining": 2075.25727861,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:27:36.180235Z",
-    "lock_ref": "ex-order:a55d2a67f78e"
+    "lock_ref": "ex-order:a55d2a67f78e",
+    "cancelled_at": "2026-07-15T01:59:54.556279Z"
   },
   {
     "order_id": "fc064d74a9df403e",
@@ -1646,9 +1772,10 @@
     "remaining": 1971.38118343,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:30:52.335340Z",
-    "lock_ref": "ex-order:21e726d942f4"
+    "lock_ref": "ex-order:21e726d942f4",
+    "cancelled_at": "2026-07-15T01:59:54.558129Z"
   },
   {
     "order_id": "9757e53f82544249",
@@ -1659,9 +1786,10 @@
     "remaining": 1872.77438051,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:31:18.651241Z",
-    "lock_ref": "ex-order:ef49f3b69139"
+    "lock_ref": "ex-order:ef49f3b69139",
+    "cancelled_at": "2026-07-15T01:59:54.559925Z"
   },
   {
     "order_id": "7755eb1731eb4441",
@@ -1672,9 +1800,10 @@
     "remaining": 1779.06017398,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:33:12.651082Z",
-    "lock_ref": "ex-order:8946124fcade"
+    "lock_ref": "ex-order:8946124fcade",
+    "cancelled_at": "2026-07-15T01:59:54.561894Z"
   },
   {
     "order_id": "8d4aec03357a4f1e",
@@ -1685,9 +1814,10 @@
     "remaining": 1690.06942153,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:34:48.784159Z",
-    "lock_ref": "ex-order:f821e2d70502"
+    "lock_ref": "ex-order:f821e2d70502",
+    "cancelled_at": "2026-07-15T01:59:54.563836Z"
   },
   {
     "order_id": "a3cdec5ee54e495e",
@@ -1698,9 +1828,10 @@
     "remaining": 1605.49046296,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:37:40.199218Z",
-    "lock_ref": "ex-order:e8b5ef6e2f77"
+    "lock_ref": "ex-order:e8b5ef6e2f77",
+    "cancelled_at": "2026-07-15T01:59:54.565697Z"
   },
   {
     "order_id": "15e2fb9ec6fb4770",
@@ -1711,9 +1842,10 @@
     "remaining": 1525.14045231,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:38:18.818944Z",
-    "lock_ref": "ex-order:3ff5d902d61c"
+    "lock_ref": "ex-order:3ff5d902d61c",
+    "cancelled_at": "2026-07-15T01:59:54.567509Z"
   },
   {
     "order_id": "8987ddae013345dd",
@@ -1724,9 +1856,10 @@
     "remaining": 1448.88342969,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:38:22.896713Z",
-    "lock_ref": "ex-order:4b8c889ec5a1"
+    "lock_ref": "ex-order:4b8c889ec5a1",
+    "cancelled_at": "2026-07-15T01:59:54.569340Z"
   },
   {
     "order_id": "dab1e065ca77468f",
@@ -1737,9 +1870,10 @@
     "remaining": 1376.32602696,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:41:43.452154Z",
-    "lock_ref": "ex-order:9b3a68c71236"
+    "lock_ref": "ex-order:9b3a68c71236",
+    "cancelled_at": "2026-07-15T01:59:54.571141Z"
   },
   {
     "order_id": "4356ddc8d0fd45a2",
@@ -1750,9 +1884,10 @@
     "remaining": 1307.47198187,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:43:22.463004Z",
-    "lock_ref": "ex-order:53f03cae7e12"
+    "lock_ref": "ex-order:53f03cae7e12",
+    "cancelled_at": "2026-07-15T01:59:54.572970Z"
   },
   {
     "order_id": "a850938d908a4846",
@@ -1763,9 +1898,10 @@
     "remaining": 1242.02289527,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:44:33.374189Z",
-    "lock_ref": "ex-order:47958a5aecb3"
+    "lock_ref": "ex-order:47958a5aecb3",
+    "cancelled_at": "2026-07-15T01:59:54.574849Z"
   },
   {
     "order_id": "cea04de8e1a74953",
@@ -1776,9 +1912,10 @@
     "remaining": 1179.92175051,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:45:16.623927Z",
-    "lock_ref": "ex-order:e749362e973e"
+    "lock_ref": "ex-order:e749362e973e",
+    "cancelled_at": "2026-07-15T01:59:54.576662Z"
   },
   {
     "order_id": "2105542dc37b4087",
@@ -1789,9 +1926,10 @@
     "remaining": 1120.81243173,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:48:50.509224Z",
-    "lock_ref": "ex-order:72f67ed620ae"
+    "lock_ref": "ex-order:72f67ed620ae",
+    "cancelled_at": "2026-07-15T01:59:54.578489Z"
   },
   {
     "order_id": "05aa8462e9574431",
@@ -1802,9 +1940,10 @@
     "remaining": 1064.73406639,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:49:00.343592Z",
-    "lock_ref": "ex-order:fd5c787907df"
+    "lock_ref": "ex-order:fd5c787907df",
+    "cancelled_at": "2026-07-15T01:59:54.580350Z"
   },
   {
     "order_id": "426cb94781a14cc7",
@@ -1815,9 +1954,10 @@
     "remaining": 1011.42187557,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:51:37.345131Z",
-    "lock_ref": "ex-order:00e33b4cd30c"
+    "lock_ref": "ex-order:00e33b4cd30c",
+    "cancelled_at": "2026-07-15T01:59:54.582248Z"
   },
   {
     "order_id": "bf92b2ac20df4717",
@@ -1828,9 +1968,10 @@
     "remaining": 960.81303804,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:52:26.047044Z",
-    "lock_ref": "ex-order:9d2d5ecc503f"
+    "lock_ref": "ex-order:9d2d5ecc503f",
+    "cancelled_at": "2026-07-15T01:59:54.584087Z"
   },
   {
     "order_id": "4e50d28b3f2b42ab",
@@ -1841,9 +1982,10 @@
     "remaining": 912.69689865,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:54:43.215577Z",
-    "lock_ref": "ex-order:0fa6369b57c7"
+    "lock_ref": "ex-order:0fa6369b57c7",
+    "cancelled_at": "2026-07-15T01:59:54.585903Z"
   },
   {
     "order_id": "b9f2d76f2d2942f9",
@@ -1854,9 +1996,10 @@
     "remaining": 867.02430996,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:55:53.574137Z",
-    "lock_ref": "ex-order:54a00b0c9b18"
+    "lock_ref": "ex-order:54a00b0c9b18",
+    "cancelled_at": "2026-07-15T01:59:54.587727Z"
   },
   {
     "order_id": "124b9bbc2df74651",
@@ -1867,9 +2010,10 @@
     "remaining": 823.59760696,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:58:42.211592Z",
-    "lock_ref": "ex-order:b16534229ac7"
+    "lock_ref": "ex-order:b16534229ac7",
+    "cancelled_at": "2026-07-15T01:59:54.589569Z"
   },
   {
     "order_id": "839a0dc7f7e54021",
@@ -1880,9 +2024,10 @@
     "remaining": 782.37998286,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T10:59:55.546139Z",
-    "lock_ref": "ex-order:f43b63d972db"
+    "lock_ref": "ex-order:f43b63d972db",
+    "cancelled_at": "2026-07-15T01:59:54.591387Z"
   },
   {
     "order_id": "0d4256f652d34573",
@@ -1893,9 +2038,10 @@
     "remaining": 743.18549622,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:00:03.517484Z",
-    "lock_ref": "ex-order:729af4cbc50a"
+    "lock_ref": "ex-order:729af4cbc50a",
+    "cancelled_at": "2026-07-15T01:59:54.593215Z"
   },
   {
     "order_id": "1ed43b01850b4d11",
@@ -1906,9 +2052,10 @@
     "remaining": 705.98847766,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:00:47.079827Z",
-    "lock_ref": "ex-order:8689e6fea4c0"
+    "lock_ref": "ex-order:8689e6fea4c0",
+    "cancelled_at": "2026-07-15T01:59:54.595064Z"
   },
   {
     "order_id": "31da7a729dfc47a8",
@@ -1919,9 +2066,10 @@
     "remaining": 670.57582253,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:04:31.885582Z",
-    "lock_ref": "ex-order:29c426293c1d"
+    "lock_ref": "ex-order:29c426293c1d",
+    "cancelled_at": "2026-07-15T01:59:54.596970Z"
   },
   {
     "order_id": "1fd908eced624d98",
@@ -1932,9 +2080,10 @@
     "remaining": 636.9715439,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:04:53.063754Z",
-    "lock_ref": "ex-order:7101400168bd"
+    "lock_ref": "ex-order:7101400168bd",
+    "cancelled_at": "2026-07-15T01:59:54.598860Z"
   },
   {
     "order_id": "aca89b1d034a473f",
@@ -1945,9 +2094,10 @@
     "remaining": 605.1229667,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:04:59.880207Z",
-    "lock_ref": "ex-order:4601aa2bd0c5"
+    "lock_ref": "ex-order:4601aa2bd0c5",
+    "cancelled_at": "2026-07-15T01:59:54.600669Z"
   },
   {
     "order_id": "40bacd16224f4866",
@@ -1958,9 +2108,10 @@
     "remaining": 574.82907462,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:05:26.924044Z",
-    "lock_ref": "ex-order:b3257ece97f8"
+    "lock_ref": "ex-order:b3257ece97f8",
+    "cancelled_at": "2026-07-15T01:59:54.602549Z"
   },
   {
     "order_id": "8bde72b979fd48ed",
@@ -1971,9 +2122,10 @@
     "remaining": 545.97438964,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:08:32.923298Z",
-    "lock_ref": "ex-order:5dfe73ab51cb"
+    "lock_ref": "ex-order:5dfe73ab51cb",
+    "cancelled_at": "2026-07-15T01:59:54.604395Z"
   },
   {
     "order_id": "80faee57765945ec",
@@ -1984,9 +2136,10 @@
     "remaining": 518.63792641,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:08:40.863988Z",
-    "lock_ref": "ex-order:7d15e24fa759"
+    "lock_ref": "ex-order:7d15e24fa759",
+    "cancelled_at": "2026-07-15T01:59:54.606284Z"
   },
   {
     "order_id": "461eb87f81684d2c",
@@ -1997,9 +2150,10 @@
     "remaining": 492.59279883,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:11:04.562548Z",
-    "lock_ref": "ex-order:ed6d007f1519"
+    "lock_ref": "ex-order:ed6d007f1519",
+    "cancelled_at": "2026-07-15T01:59:54.608073Z"
   },
   {
     "order_id": "993745f6b94048b7",
@@ -2010,9 +2164,10 @@
     "remaining": 467.88767139,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:13:31.856537Z",
-    "lock_ref": "ex-order:697af731d352"
+    "lock_ref": "ex-order:697af731d352",
+    "cancelled_at": "2026-07-15T01:59:54.609882Z"
   },
   {
     "order_id": "6b000d5de2f64286",
@@ -2023,9 +2178,10 @@
     "remaining": 444.49328782,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:13:32.115687Z",
-    "lock_ref": "ex-order:76e5c365dc9a"
+    "lock_ref": "ex-order:76e5c365dc9a",
+    "cancelled_at": "2026-07-15T01:59:54.611712Z"
   },
   {
     "order_id": "1c169326976b45b3",
@@ -2036,9 +2192,10 @@
     "remaining": 422.23087968,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:13:34.771793Z",
-    "lock_ref": "ex-order:bf3759e7e6ba"
+    "lock_ref": "ex-order:bf3759e7e6ba",
+    "cancelled_at": "2026-07-15T01:59:54.613655Z"
   },
   {
     "order_id": "6afcca54dcb246e9",
@@ -2049,9 +2206,10 @@
     "remaining": 400.9683607,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:17:15.092678Z",
-    "lock_ref": "ex-order:267d503141e7"
+    "lock_ref": "ex-order:267d503141e7",
+    "cancelled_at": "2026-07-15T01:59:54.615498Z"
   },
   {
     "order_id": "ef184ebbe1b947b6",
@@ -2062,9 +2220,10 @@
     "remaining": 380.88219892,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:18:04.011387Z",
-    "lock_ref": "ex-order:f7bf4a8f599e"
+    "lock_ref": "ex-order:f7bf4a8f599e",
+    "cancelled_at": "2026-07-15T01:59:54.617332Z"
   },
   {
     "order_id": "929788e3f6cf44d6",
@@ -2075,9 +2234,10 @@
     "remaining": 361.83808897,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:18:07.051725Z",
-    "lock_ref": "ex-order:dfaef6805abf"
+    "lock_ref": "ex-order:dfaef6805abf",
+    "cancelled_at": "2026-07-15T01:59:54.619171Z"
   },
   {
     "order_id": "7e09248d02da4aea",
@@ -2088,9 +2248,10 @@
     "remaining": 343.63295327,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:20:50.960358Z",
-    "lock_ref": "ex-order:3a151d615395"
+    "lock_ref": "ex-order:3a151d615395",
+    "cancelled_at": "2026-07-15T01:59:54.621002Z"
   },
   {
     "order_id": "384fe5c0b0554a0b",
@@ -2101,9 +2262,10 @@
     "remaining": 326.41356186,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:22:15.856628Z",
-    "lock_ref": "ex-order:c4a3df70cc8a"
+    "lock_ref": "ex-order:c4a3df70cc8a",
+    "cancelled_at": "2026-07-15T01:59:54.622885Z"
   },
   {
     "order_id": "eb6573fb70e24feb",
@@ -2114,9 +2276,10 @@
     "remaining": 310.05514002,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:22:19.176445Z",
-    "lock_ref": "ex-order:2e4080c3feb5"
+    "lock_ref": "ex-order:2e4080c3feb5",
+    "cancelled_at": "2026-07-15T01:59:54.624818Z"
   },
   {
     "order_id": "b17ddc0e3aa444a8",
@@ -2127,9 +2290,10 @@
     "remaining": 294.43915177,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:25:51.189618Z",
-    "lock_ref": "ex-order:4a8351bf578a"
+    "lock_ref": "ex-order:4a8351bf578a",
+    "cancelled_at": "2026-07-15T01:59:54.626689Z"
   },
   {
     "order_id": "e5c3c1512f034149",
@@ -2140,9 +2304,10 @@
     "remaining": 279.64170668,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:28:03.792659Z",
-    "lock_ref": "ex-order:9b9d883d1503"
+    "lock_ref": "ex-order:9b9d883d1503",
+    "cancelled_at": "2026-07-15T01:59:54.628552Z"
   },
   {
     "order_id": "3a27c87fa2c2455a",
@@ -2153,9 +2318,10 @@
     "remaining": 265.62187759,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:29:19.388110Z",
-    "lock_ref": "ex-order:83ffbb0f973e"
+    "lock_ref": "ex-order:83ffbb0f973e",
+    "cancelled_at": "2026-07-15T01:59:54.630490Z"
   },
   {
     "order_id": "d0d347ca5825453c",
@@ -2166,9 +2332,10 @@
     "remaining": 252.22755246,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-01T11:32:50.323758Z",
-    "lock_ref": "ex-order:14f6e3de91fa"
+    "lock_ref": "ex-order:14f6e3de91fa",
+    "cancelled_at": "2026-07-15T01:59:54.632340Z"
   },
   {
     "order_id": "49e9ccb722404350",
@@ -2179,9 +2346,10 @@
     "remaining": 1444.67012155,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:23:42.982614Z",
-    "lock_ref": "ex-order:256ab3e764c3"
+    "lock_ref": "ex-order:256ab3e764c3",
+    "cancelled_at": "2026-07-15T01:59:54.634195Z"
   },
   {
     "order_id": "0add27bf88b64ae7",
@@ -2192,9 +2360,10 @@
     "remaining": 1372.39887172,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:24:51.142084Z",
-    "lock_ref": "ex-order:059d547e2d01"
+    "lock_ref": "ex-order:059d547e2d01",
+    "cancelled_at": "2026-07-15T01:59:54.636018Z"
   },
   {
     "order_id": "fc5751752a1f4d81",
@@ -2205,9 +2374,10 @@
     "remaining": 1303.70344064,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:27:48.898586Z",
-    "lock_ref": "ex-order:6911f6d9866e"
+    "lock_ref": "ex-order:6911f6d9866e",
+    "cancelled_at": "2026-07-15T01:59:54.637872Z"
   },
   {
     "order_id": "18de241ac88d408e",
@@ -2218,9 +2388,10 @@
     "remaining": 2461.34021172,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:32:12.095146Z",
-    "lock_ref": "ex-order:cedc1c02afd6"
+    "lock_ref": "ex-order:cedc1c02afd6",
+    "cancelled_at": "2026-07-15T01:59:54.639698Z"
   },
   {
     "order_id": "e6ab7476f410438c",
@@ -2231,9 +2402,10 @@
     "remaining": 2338.19771364,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:35:53.054097Z",
-    "lock_ref": "ex-order:a35bf7074469"
+    "lock_ref": "ex-order:a35bf7074469",
+    "cancelled_at": "2026-07-15T01:59:54.641532Z"
   },
   {
     "order_id": "4cb6a99f4aa84e11",
@@ -2244,9 +2416,10 @@
     "remaining": 2221.21234045,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:39:34.735193Z",
-    "lock_ref": "ex-order:a10b49b1ed11"
+    "lock_ref": "ex-order:a10b49b1ed11",
+    "cancelled_at": "2026-07-15T01:59:54.643417Z"
   },
   {
     "order_id": "d7816559b0c44860",
@@ -2257,9 +2430,10 @@
     "remaining": 2110.07623593,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:43:10.538387Z",
-    "lock_ref": "ex-order:90a829c8ef01"
+    "lock_ref": "ex-order:90a829c8ef01",
+    "cancelled_at": "2026-07-15T01:59:54.645255Z"
   },
   {
     "order_id": "eabdcdb98ee24bfa",
@@ -2270,9 +2444,10 @@
     "remaining": 2004.49693664,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:46:58.213123Z",
-    "lock_ref": "ex-order:d937f57edab4"
+    "lock_ref": "ex-order:d937f57edab4",
+    "cancelled_at": "2026-07-15T01:59:54.647200Z"
   },
   {
     "order_id": "e4edb4ae8257484a",
@@ -2283,9 +2458,10 @@
     "remaining": 1904.1966023,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:50:37.773961Z",
-    "lock_ref": "ex-order:84fd885fd32e"
+    "lock_ref": "ex-order:84fd885fd32e",
+    "cancelled_at": "2026-07-15T01:59:54.649097Z"
   },
   {
     "order_id": "26e85d1f9a1141af",
@@ -2296,9 +2472,10 @@
     "remaining": 1808.91128469,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:54:15.304007Z",
-    "lock_ref": "ex-order:2fd83fd877a8"
+    "lock_ref": "ex-order:2fd83fd877a8",
+    "cancelled_at": "2026-07-15T01:59:54.651000Z"
   },
   {
     "order_id": "8d96a799d2ad4917",
@@ -2309,9 +2486,10 @@
     "remaining": 1718.39023295,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T15:57:52.070245Z",
-    "lock_ref": "ex-order:9e9864d24024"
+    "lock_ref": "ex-order:9e9864d24024",
+    "cancelled_at": "2026-07-15T01:59:54.652837Z"
   },
   {
     "order_id": "d4ce63e65f024ca8",
@@ -2322,9 +2500,10 @@
     "remaining": 1632.39523381,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:01:31.134962Z",
-    "lock_ref": "ex-order:f19172b0730a"
+    "lock_ref": "ex-order:f19172b0730a",
+    "cancelled_at": "2026-07-15T01:59:54.654741Z"
   },
   {
     "order_id": "baddf8ba155f4683",
@@ -2335,9 +2514,10 @@
     "remaining": 1550.69998461,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:04:45.249397Z",
-    "lock_ref": "ex-order:d3fdeb761485"
+    "lock_ref": "ex-order:d3fdeb761485",
+    "cancelled_at": "2026-07-15T01:59:54.656576Z"
   },
   {
     "order_id": "91b6d8de94114223",
@@ -2348,9 +2528,10 @@
     "remaining": 1473.12724164,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:05:38.074558Z",
-    "lock_ref": "ex-order:8970c2547859"
+    "lock_ref": "ex-order:8970c2547859",
+    "cancelled_at": "2026-07-15T01:59:54.658430Z"
   },
   {
     "order_id": "4532800f8ec44fbe",
@@ -2361,9 +2542,10 @@
     "remaining": 1399.3576483,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:09:38.687886Z",
-    "lock_ref": "ex-order:b0a9183a9aaf"
+    "lock_ref": "ex-order:b0a9183a9aaf",
+    "cancelled_at": "2026-07-15T01:59:54.660259Z"
   },
   {
     "order_id": "ff9a878dd3114c89",
@@ -2374,9 +2556,10 @@
     "remaining": 1329.35202213,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:09:50.538189Z",
-    "lock_ref": "ex-order:02de49963104"
+    "lock_ref": "ex-order:02de49963104",
+    "cancelled_at": "2026-07-15T01:59:54.662131Z"
   },
   {
     "order_id": "1286b9bbedb742b7",
@@ -2387,9 +2570,10 @@
     "remaining": 1262.77118978,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:14:56.659277Z",
-    "lock_ref": "ex-order:5836b53092c8"
+    "lock_ref": "ex-order:5836b53092c8",
+    "cancelled_at": "2026-07-15T01:59:54.664012Z"
   },
   {
     "order_id": "46d2301019f5415c",
@@ -2400,9 +2584,10 @@
     "remaining": 1199.59488654,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:14:58.138117Z",
-    "lock_ref": "ex-order:1cb493035676"
+    "lock_ref": "ex-order:1cb493035676",
+    "cancelled_at": "2026-07-15T01:59:54.665874Z"
   },
   {
     "order_id": "7dbf4341687e4d30",
@@ -2413,9 +2598,10 @@
     "remaining": 1139.50191096,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:20:31.575315Z",
-    "lock_ref": "ex-order:2a4473b4026d"
+    "lock_ref": "ex-order:2a4473b4026d",
+    "cancelled_at": "2026-07-15T01:59:54.667688Z"
   },
   {
     "order_id": "0eaaa1a9ec194827",
@@ -2426,9 +2612,10 @@
     "remaining": 1082.48907166,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:20:34.759653Z",
-    "lock_ref": "ex-order:6cac3980742b"
+    "lock_ref": "ex-order:6cac3980742b",
+    "cancelled_at": "2026-07-15T01:59:54.669505Z"
   },
   {
     "order_id": "e9248ab86d454ccd",
@@ -2439,9 +2626,10 @@
     "remaining": 1028.25134757,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:26:12.252882Z",
-    "lock_ref": "ex-order:666c4c426de5"
+    "lock_ref": "ex-order:666c4c426de5",
+    "cancelled_at": "2026-07-15T01:59:54.671360Z"
   },
   {
     "order_id": "fad2f4b23a0141d8",
@@ -2452,9 +2640,10 @@
     "remaining": 976.80103644,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:26:13.405781Z",
-    "lock_ref": "ex-order:576996793769"
+    "lock_ref": "ex-order:576996793769",
+    "cancelled_at": "2026-07-15T01:59:54.673211Z"
   },
   {
     "order_id": "b268cee453ae44a7",
@@ -2465,9 +2654,10 @@
     "remaining": 927.84775337,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:31:40.600865Z",
-    "lock_ref": "ex-order:49f00bf50e0a"
+    "lock_ref": "ex-order:49f00bf50e0a",
+    "cancelled_at": "2026-07-15T01:59:54.675048Z"
   },
   {
     "order_id": "1a4aa8158afe43a7",
@@ -2478,9 +2668,10 @@
     "remaining": 881.41762194,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:31:57.069758Z",
-    "lock_ref": "ex-order:fd65d8a819ed"
+    "lock_ref": "ex-order:fd65d8a819ed",
+    "cancelled_at": "2026-07-15T01:59:54.676873Z"
   },
   {
     "order_id": "5ff2ff8185c740ea",
@@ -2491,9 +2682,10 @@
     "remaining": 837.2335096,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:37:07.443206Z",
-    "lock_ref": "ex-order:57b685f6669c"
+    "lock_ref": "ex-order:57b685f6669c",
+    "cancelled_at": "2026-07-15T01:59:54.678824Z"
   },
   {
     "order_id": "15f4b6708a544e01",
@@ -2504,9 +2696,10 @@
     "remaining": 795.33409037,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:37:23.244505Z",
-    "lock_ref": "ex-order:55c32454b067"
+    "lock_ref": "ex-order:55c32454b067",
+    "cancelled_at": "2026-07-15T01:59:54.680743Z"
   },
   {
     "order_id": "13ecf07f016e4b8c",
@@ -2517,9 +2710,10 @@
     "remaining": 755.4541546,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:42:29.179474Z",
-    "lock_ref": "ex-order:a8390508c5a7"
+    "lock_ref": "ex-order:a8390508c5a7",
+    "cancelled_at": "2026-07-15T01:59:54.682660Z"
   },
   {
     "order_id": "6e8796a0f3614d25",
@@ -2530,9 +2724,10 @@
     "remaining": 717.60595937,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:46:39.159469Z",
-    "lock_ref": "ex-order:1cd5497f7718"
+    "lock_ref": "ex-order:1cd5497f7718",
+    "cancelled_at": "2026-07-15T01:59:54.684528Z"
   },
   {
     "order_id": "cfc9069bdc6e4eb1",
@@ -2543,9 +2738,10 @@
     "remaining": 681.6501739,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:50:25.972239Z",
-    "lock_ref": "ex-order:d5dff6972787"
+    "lock_ref": "ex-order:d5dff6972787",
+    "cancelled_at": "2026-07-15T01:59:54.686437Z"
   },
   {
     "order_id": "a152a4779ec141c5",
@@ -2556,9 +2752,10 @@
     "remaining": 647.49217771,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:54:01.057506Z",
-    "lock_ref": "ex-order:10081889e6c4"
+    "lock_ref": "ex-order:10081889e6c4",
+    "cancelled_at": "2026-07-15T01:59:54.688280Z"
   },
   {
     "order_id": "fb6420e7a9894605",
@@ -2569,9 +2766,10 @@
     "remaining": 615.04208132,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T16:57:28.066227Z",
-    "lock_ref": "ex-order:3808fb554a9c"
+    "lock_ref": "ex-order:3808fb554a9c",
+    "cancelled_at": "2026-07-15T01:59:54.690124Z"
   },
   {
     "order_id": "174bb4a2ca9541b3",
@@ -2582,9 +2780,10 @@
     "remaining": 584.21448976,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:00:54.845286Z",
-    "lock_ref": "ex-order:4ff23f44ee53"
+    "lock_ref": "ex-order:4ff23f44ee53",
+    "cancelled_at": "2026-07-15T01:59:54.691957Z"
   },
   {
     "order_id": "9f247dcaedcb4aac",
@@ -2595,9 +2794,10 @@
     "remaining": 554.92827777,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:04:24.039694Z",
-    "lock_ref": "ex-order:fce25b30760f"
+    "lock_ref": "ex-order:fce25b30760f",
+    "cancelled_at": "2026-07-15T01:59:54.693833Z"
   },
   {
     "order_id": "4b72794ad5174e70",
@@ -2608,9 +2808,10 @@
     "remaining": 527.10637638,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:07:52.304753Z",
-    "lock_ref": "ex-order:805b9010f2e4"
+    "lock_ref": "ex-order:805b9010f2e4",
+    "cancelled_at": "2026-07-15T01:59:54.695671Z"
   },
   {
     "order_id": "323f6ec058a8442c",
@@ -2621,9 +2822,10 @@
     "remaining": 500.67557006,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:11:19.401753Z",
-    "lock_ref": "ex-order:79a5ab4d8023"
+    "lock_ref": "ex-order:79a5ab4d8023",
+    "cancelled_at": "2026-07-15T01:59:54.697575Z"
   },
   {
     "order_id": "d66ec1781aa44026",
@@ -2634,9 +2836,10 @@
     "remaining": 475.56630406,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:14:48.932578Z",
-    "lock_ref": "ex-order:9c8918afd32a"
+    "lock_ref": "ex-order:9c8918afd32a",
+    "cancelled_at": "2026-07-15T01:59:54.699424Z"
   },
   {
     "order_id": "27c5a779b8a34fcb",
@@ -2647,9 +2850,10 @@
     "remaining": 451.7502451,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:18:32.602240Z",
-    "lock_ref": "ex-order:75ebb9b89a13"
+    "lock_ref": "ex-order:75ebb9b89a13",
+    "cancelled_at": "2026-07-15T01:59:54.701241Z"
   },
   {
     "order_id": "105b4d6f52ac42de",
@@ -2660,9 +2864,10 @@
     "remaining": 429.08724535,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:22:07.959348Z",
-    "lock_ref": "ex-order:0ee2a7ecb0b3"
+    "lock_ref": "ex-order:0ee2a7ecb0b3",
+    "cancelled_at": "2026-07-15T01:59:54.703184Z"
   },
   {
     "order_id": "9a0272b41203445b",
@@ -2673,9 +2878,10 @@
     "remaining": 407.55739558,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:25:34.036910Z",
-    "lock_ref": "ex-order:202d5ae1f9d9"
+    "lock_ref": "ex-order:202d5ae1f9d9",
+    "cancelled_at": "2026-07-15T01:59:54.705031Z"
   },
   {
     "order_id": "7809a44a790347be",
@@ -2686,9 +2892,10 @@
     "remaining": 387.10403831,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:29:01.336239Z",
-    "lock_ref": "ex-order:2a526357d4be"
+    "lock_ref": "ex-order:2a526357d4be",
+    "cancelled_at": "2026-07-15T01:59:54.706912Z"
   },
   {
     "order_id": "4c3e1cb979ee421a",
@@ -2699,9 +2906,10 @@
     "remaining": 367.67334889,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:32:28.517619Z",
-    "lock_ref": "ex-order:4c62b0489fcf"
+    "lock_ref": "ex-order:4c62b0489fcf",
+    "cancelled_at": "2026-07-15T01:59:54.708793Z"
   },
   {
     "order_id": "0ca421709d124c02",
@@ -2712,9 +2920,10 @@
     "remaining": 349.21419394,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:35:57.592195Z",
-    "lock_ref": "ex-order:7e9ed116ea0f"
+    "lock_ref": "ex-order:7e9ed116ea0f",
+    "cancelled_at": "2026-07-15T01:59:54.710673Z"
   },
   {
     "order_id": "3165993f1f4d424b",
@@ -2725,9 +2934,10 @@
     "remaining": 331.67799674,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:39:23.995528Z",
-    "lock_ref": "ex-order:27eb8d53a518"
+    "lock_ref": "ex-order:27eb8d53a518",
+    "cancelled_at": "2026-07-15T01:59:54.712563Z"
   },
   {
     "order_id": "7519d85603db4dc1",
@@ -2738,9 +2948,10 @@
     "remaining": 315.01860941,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:42:51.007379Z",
-    "lock_ref": "ex-order:45c60d3c87d3"
+    "lock_ref": "ex-order:45c60d3c87d3",
+    "cancelled_at": "2026-07-15T01:59:54.714520Z"
   },
   {
     "order_id": "4d099e217c804de7",
@@ -2751,9 +2962,10 @@
     "remaining": 299.19219144,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:46:20.332230Z",
-    "lock_ref": "ex-order:133ca8461786"
+    "lock_ref": "ex-order:133ca8461786",
+    "cancelled_at": "2026-07-15T01:59:54.716406Z"
   },
   {
     "order_id": "16056890c4104d33",
@@ -2764,9 +2976,10 @@
     "remaining": 284.19483811,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:49:51.381922Z",
-    "lock_ref": "ex-order:7b1179ce5aa8"
+    "lock_ref": "ex-order:7b1179ce5aa8",
+    "cancelled_at": "2026-07-15T01:59:54.718272Z"
   },
   {
     "order_id": "d4680574b0284802",
@@ -2777,9 +2990,10 @@
     "remaining": 269.90960871,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:53:21.062831Z",
-    "lock_ref": "ex-order:f329d71a8e47"
+    "lock_ref": "ex-order:f329d71a8e47",
+    "cancelled_at": "2026-07-15T01:59:54.720110Z"
   },
   {
     "order_id": "ec116c5c99144b64",
@@ -2790,9 +3004,10 @@
     "remaining": 256.33864077,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-02T17:56:48.426204Z",
-    "lock_ref": "ex-order:91613da53d79"
+    "lock_ref": "ex-order:91613da53d79",
+    "cancelled_at": "2026-07-15T01:59:54.722013Z"
   },
   {
     "order_id": "88e2b666e6684465",
@@ -2803,9 +3018,10 @@
     "remaining": 469.46463036,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T12:45:31.421055Z",
-    "lock_ref": "ex-order:7545da76531c"
+    "lock_ref": "ex-order:7545da76531c",
+    "cancelled_at": "2026-07-15T01:59:54.723870Z"
   },
   {
     "order_id": "894513ddf9bc46a1",
@@ -2816,9 +3032,10 @@
     "remaining": 445.91598634,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T12:50:05.043495Z",
-    "lock_ref": "ex-order:295aec293b0c"
+    "lock_ref": "ex-order:295aec293b0c",
+    "cancelled_at": "2026-07-15T01:59:54.725740Z"
   },
   {
     "order_id": "b68784d7a8e44659",
@@ -2829,9 +3046,10 @@
     "remaining": 423.50706827,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T12:54:43.153769Z",
-    "lock_ref": "ex-order:c94471a61dbe"
+    "lock_ref": "ex-order:c94471a61dbe",
+    "cancelled_at": "2026-07-15T01:59:54.727563Z"
   },
   {
     "order_id": "2eea72a9391c42f2",
@@ -2842,9 +3060,10 @@
     "remaining": 402.25630236,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T12:58:58.860307Z",
-    "lock_ref": "ex-order:fa09b41e9f7e"
+    "lock_ref": "ex-order:fa09b41e9f7e",
+    "cancelled_at": "2026-07-15T01:59:54.729404Z"
   },
   {
     "order_id": "754d485347f34c75",
@@ -2855,9 +3074,10 @@
     "remaining": 382.06807474,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:03:04.016961Z",
-    "lock_ref": "ex-order:95db4b7b57cb"
+    "lock_ref": "ex-order:95db4b7b57cb",
+    "cancelled_at": "2026-07-15T01:59:54.731339Z"
   },
   {
     "order_id": "67e9e0b1d4754324",
@@ -2868,9 +3088,10 @@
     "remaining": 362.8892585,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:07:15.090508Z",
-    "lock_ref": "ex-order:ef296bc1b674"
+    "lock_ref": "ex-order:ef296bc1b674",
+    "cancelled_at": "2026-07-15T01:59:54.733233Z"
   },
   {
     "order_id": "198af9409b544cb6",
@@ -2881,9 +3102,10 @@
     "remaining": 344.63167683,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:11:18.132950Z",
-    "lock_ref": "ex-order:95f7f7c7eb82"
+    "lock_ref": "ex-order:95f7f7c7eb82",
+    "cancelled_at": "2026-07-15T01:59:54.735109Z"
   },
   {
     "order_id": "2db83e003e354b8e",
@@ -2894,9 +3116,10 @@
     "remaining": 327.32468049,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:15:23.878244Z",
-    "lock_ref": "ex-order:a6729497b85c"
+    "lock_ref": "ex-order:a6729497b85c",
+    "cancelled_at": "2026-07-15T01:59:54.736934Z"
   },
   {
     "order_id": "d879e06edd2a4b80",
@@ -2907,9 +3130,10 @@
     "remaining": 310.88303396,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:19:40.707026Z",
-    "lock_ref": "ex-order:277d13e2f6c5"
+    "lock_ref": "ex-order:277d13e2f6c5",
+    "cancelled_at": "2026-07-15T01:59:54.738844Z"
   },
   {
     "order_id": "c171303c17ca4c65",
@@ -2920,9 +3144,10 @@
     "remaining": 295.26346977,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:23:51.342424Z",
-    "lock_ref": "ex-order:ac8874229824"
+    "lock_ref": "ex-order:ac8874229824",
+    "cancelled_at": "2026-07-15T01:59:54.740701Z"
   },
   {
     "order_id": "f1cbba959bc444b2",
@@ -2933,9 +3158,10 @@
     "remaining": 280.42498095,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:28:13.897341Z",
-    "lock_ref": "ex-order:ce41d64bcdc0"
+    "lock_ref": "ex-order:ce41d64bcdc0",
+    "cancelled_at": "2026-07-15T01:59:54.742582Z"
   },
   {
     "order_id": "beeebe29e77a4143",
@@ -2946,9 +3172,10 @@
     "remaining": 266.29061315,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:32:21.739743Z",
-    "lock_ref": "ex-order:49576a77dbcd"
+    "lock_ref": "ex-order:49576a77dbcd",
+    "cancelled_at": "2026-07-15T01:59:54.744427Z"
   },
   {
     "order_id": "49a2e963b2984df2",
@@ -2959,9 +3186,10 @@
     "remaining": 252.90066999,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T13:36:31.932470Z",
-    "lock_ref": "ex-order:ac3fc04786ef"
+    "lock_ref": "ex-order:ac3fc04786ef",
+    "cancelled_at": "2026-07-15T01:59:54.746354Z"
   },
   {
     "order_id": "226087da9cdd4101",
@@ -2972,9 +3200,10 @@
     "remaining": 483.97247564,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T20:53:26.832192Z",
-    "lock_ref": "ex-order:fa5729bb2e36"
+    "lock_ref": "ex-order:fa5729bb2e36",
+    "cancelled_at": "2026-07-15T01:59:54.748278Z"
   },
   {
     "order_id": "6e5b98130d9d44c6",
@@ -2985,9 +3214,10 @@
     "remaining": 459.69843936,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T20:58:25.963683Z",
-    "lock_ref": "ex-order:096687acd60d"
+    "lock_ref": "ex-order:096687acd60d",
+    "cancelled_at": "2026-07-15T01:59:54.750187Z"
   },
   {
     "order_id": "d23c65b4b8164685",
@@ -2998,9 +3228,10 @@
     "remaining": 436.60283535,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:06:36.234670Z",
-    "lock_ref": "ex-order:6ec905f707fd"
+    "lock_ref": "ex-order:6ec905f707fd",
+    "cancelled_at": "2026-07-15T01:59:54.752046Z"
   },
   {
     "order_id": "a2efcb4531604671",
@@ -3011,9 +3242,10 @@
     "remaining": 414.65957483,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:11:27.963107Z",
-    "lock_ref": "ex-order:5cbbe2fad53e"
+    "lock_ref": "ex-order:5cbbe2fad53e",
+    "cancelled_at": "2026-07-15T01:59:54.753937Z"
   },
   {
     "order_id": "2b37483331ae4b66",
@@ -3024,9 +3256,10 @@
     "remaining": 393.85118359,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:16:16.194429Z",
-    "lock_ref": "ex-order:c9b3bdad3f2a"
+    "lock_ref": "ex-order:c9b3bdad3f2a",
+    "cancelled_at": "2026-07-15T01:59:54.755804Z"
   },
   {
     "order_id": "6fffb12c99d540c7",
@@ -3037,9 +3270,10 @@
     "remaining": 374.04550566,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:21:01.133615Z",
-    "lock_ref": "ex-order:f28443033e32"
+    "lock_ref": "ex-order:f28443033e32",
+    "cancelled_at": "2026-07-15T01:59:54.757677Z"
   },
   {
     "order_id": "1cc68a4e4c0f4b15",
@@ -3050,9 +3284,10 @@
     "remaining": 355.26781787,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:25:38.032263Z",
-    "lock_ref": "ex-order:9b72c6fa5c0b"
+    "lock_ref": "ex-order:9b72c6fa5c0b",
+    "cancelled_at": "2026-07-15T01:59:54.759525Z"
   },
   {
     "order_id": "071678814e7d45bb",
@@ -3063,9 +3298,10 @@
     "remaining": 337.42901448,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:30:13.064987Z",
-    "lock_ref": "ex-order:6874f53b1a7b"
+    "lock_ref": "ex-order:6874f53b1a7b",
+    "cancelled_at": "2026-07-15T01:59:54.761384Z"
   },
   {
     "order_id": "616f968327944723",
@@ -3076,9 +3312,10 @@
     "remaining": 320.44444501,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:34:42.167244Z",
-    "lock_ref": "ex-order:09259dd429e8"
+    "lock_ref": "ex-order:09259dd429e8",
+    "cancelled_at": "2026-07-15T01:59:54.763306Z"
   },
   {
     "order_id": "7b54f121a5fb4811",
@@ -3089,9 +3326,10 @@
     "remaining": 304.34681026,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:39:01.185384Z",
-    "lock_ref": "ex-order:b2a180db8876"
+    "lock_ref": "ex-order:b2a180db8876",
+    "cancelled_at": "2026-07-15T01:59:54.765197Z"
   },
   {
     "order_id": "beacef6bf898401a",
@@ -3102,9 +3340,10 @@
     "remaining": 289.05405725,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:43:16.950267Z",
-    "lock_ref": "ex-order:664d5b550608"
+    "lock_ref": "ex-order:664d5b550608",
+    "cancelled_at": "2026-07-15T01:59:54.767079Z"
   },
   {
     "order_id": "0bc236d57e5a4c64",
@@ -3115,9 +3354,10 @@
     "remaining": 274.52594189,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:47:31.122308Z",
-    "lock_ref": "ex-order:c75b9675c89f"
+    "lock_ref": "ex-order:c75b9675c89f",
+    "cancelled_at": "2026-07-15T01:59:54.768961Z"
   },
   {
     "order_id": "7e915104402a4464",
@@ -3128,9 +3368,10 @@
     "remaining": 260.68652604,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-03T21:51:52.647821Z",
-    "lock_ref": "ex-order:6a54588a7030"
+    "lock_ref": "ex-order:6a54588a7030",
+    "cancelled_at": "2026-07-15T01:59:54.770887Z"
   },
   {
     "order_id": "885ab7905b9c4341",
@@ -3141,9 +3382,10 @@
     "remaining": 261.16462596,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T15:32:57.999385Z",
-    "lock_ref": "ex-order:98c31ea73070"
+    "lock_ref": "ex-order:98c31ea73070",
+    "cancelled_at": "2026-07-15T01:59:54.772725Z"
   },
   {
     "order_id": "7f84c2dc409d402f",
@@ -3154,9 +3396,10 @@
     "remaining": 278.04580685,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:14:37.572165Z",
-    "lock_ref": "ex-order:f8b198b2f070"
+    "lock_ref": "ex-order:f8b198b2f070",
+    "cancelled_at": "2026-07-15T01:59:54.774599Z"
   },
   {
     "order_id": "2bda2403e26b461d",
@@ -3167,9 +3410,10 @@
     "remaining": 264.07053497,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:19:28.364294Z",
-    "lock_ref": "ex-order:2efbb899a241"
+    "lock_ref": "ex-order:2efbb899a241",
+    "cancelled_at": "2026-07-15T01:59:54.776456Z"
   },
   {
     "order_id": "792833289b8b4763",
@@ -3180,9 +3424,10 @@
     "remaining": 250.79159573,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:23:41.216710Z",
-    "lock_ref": "ex-order:33d78f5480d3"
+    "lock_ref": "ex-order:33d78f5480d3",
+    "cancelled_at": "2026-07-15T01:59:54.778360Z"
   },
   {
     "order_id": "9dac19b0d92149e9",
@@ -3193,9 +3438,10 @@
     "remaining": 268.59145124,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:34:18.821015Z",
-    "lock_ref": "ex-order:366603751735"
+    "lock_ref": "ex-order:366603751735",
+    "cancelled_at": "2026-07-15T01:59:54.780214Z"
   },
   {
     "order_id": "63d19a02ab194c25",
@@ -3206,9 +3452,10 @@
     "remaining": 377.1337868,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:47:25.933734Z",
-    "lock_ref": "ex-order:5f0995b657af"
+    "lock_ref": "ex-order:5f0995b657af",
+    "cancelled_at": "2026-07-15T01:59:54.782160Z"
   },
   {
     "order_id": "d6eb49e50e1f445f",
@@ -3219,9 +3466,10 @@
     "remaining": 434.57441224,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T16:54:27.681790Z",
-    "lock_ref": "ex-order:d998f9ecb85d"
+    "lock_ref": "ex-order:d998f9ecb85d",
+    "cancelled_at": "2026-07-15T01:59:54.784012Z"
   },
   {
     "order_id": "885c579dcb8b40a5",
@@ -3232,9 +3480,10 @@
     "remaining": 489.01960846,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:01:40.277825Z",
-    "lock_ref": "ex-order:7a28ebc6a82b"
+    "lock_ref": "ex-order:7a28ebc6a82b",
+    "cancelled_at": "2026-07-15T01:59:54.785923Z"
   },
   {
     "order_id": "39cb13cd7452460b",
@@ -3245,9 +3494,10 @@
     "remaining": 540.82328333,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:07:14.698547Z",
-    "lock_ref": "ex-order:7a021847a490"
+    "lock_ref": "ex-order:7a021847a490",
+    "cancelled_at": "2026-07-15T01:59:54.787803Z"
   },
   {
     "order_id": "b4396aedc3cd47d7",
@@ -3258,9 +3508,10 @@
     "remaining": 513.70913834,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:11:55.751570Z",
-    "lock_ref": "ex-order:ac796230c7a8"
+    "lock_ref": "ex-order:ac796230c7a8",
+    "cancelled_at": "2026-07-15T01:59:54.789697Z"
   },
   {
     "order_id": "1c85fc2dd8d0450e",
@@ -3271,9 +3522,10 @@
     "remaining": 564.30589516,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:16:55.844546Z",
-    "lock_ref": "ex-order:20540073b5b3"
+    "lock_ref": "ex-order:20540073b5b3",
+    "cancelled_at": "2026-07-15T01:59:54.791557Z"
   },
   {
     "order_id": "64f72b66f0654a5f",
@@ -3284,9 +3536,10 @@
     "remaining": 536.0151879,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:22:03.015030Z",
-    "lock_ref": "ex-order:11f060ebdca5"
+    "lock_ref": "ex-order:11f060ebdca5",
+    "cancelled_at": "2026-07-15T01:59:54.793498Z"
   },
   {
     "order_id": "b862cb41d0ee40e0",
@@ -3297,9 +3550,10 @@
     "remaining": 585.50180102,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:23:42.950861Z",
-    "lock_ref": "ex-order:f67bdbd2dba9"
+    "lock_ref": "ex-order:f67bdbd2dba9",
+    "cancelled_at": "2026-07-15T01:59:54.795377Z"
   },
   {
     "order_id": "3d226af4d17a4e18",
@@ -3310,9 +3564,10 @@
     "remaining": 632.46670125,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:30:33.677263Z",
-    "lock_ref": "ex-order:1bb547a7254d"
+    "lock_ref": "ex-order:1bb547a7254d",
+    "cancelled_at": "2026-07-15T01:59:54.797247Z"
   },
   {
     "order_id": "f1eacc352515444a",
@@ -3323,9 +3578,10 @@
     "remaining": 600.73267695,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:36:48.805876Z",
-    "lock_ref": "ex-order:d833b66b3588"
+    "lock_ref": "ex-order:d833b66b3588",
+    "cancelled_at": "2026-07-15T01:59:54.799251Z"
   },
   {
     "order_id": "394ae49fbd46439e",
@@ -3336,9 +3592,10 @@
     "remaining": 570.62595634,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:42:22.863679Z",
-    "lock_ref": "ex-order:6f41368fd7f1"
+    "lock_ref": "ex-order:6f41368fd7f1",
+    "cancelled_at": "2026-07-15T01:59:54.801144Z"
   },
   {
     "order_id": "130859d682324d0d",
@@ -3349,9 +3606,10 @@
     "remaining": 541.98153978,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:47:30.813982Z",
-    "lock_ref": "ex-order:052fd14ff3ee"
+    "lock_ref": "ex-order:052fd14ff3ee",
+    "cancelled_at": "2026-07-15T01:59:54.803072Z"
   },
   {
     "order_id": "286f93e06eac42f2",
@@ -3362,9 +3620,10 @@
     "remaining": 514.80705029,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T17:52:37.062021Z",
-    "lock_ref": "ex-order:b2fb0168fbf8"
+    "lock_ref": "ex-order:b2fb0168fbf8",
+    "cancelled_at": "2026-07-15T01:59:54.804941Z"
   },
   {
     "order_id": "f7364cd787c54caa",
@@ -3375,9 +3634,10 @@
     "remaining": 488.99732041,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:00:37.511471Z",
-    "lock_ref": "ex-order:9160fd95f612"
+    "lock_ref": "ex-order:9160fd95f612",
+    "cancelled_at": "2026-07-15T01:59:54.806978Z"
   },
   {
     "order_id": "537e9da0e1d04422",
@@ -3388,9 +3648,10 @@
     "remaining": 464.47217225,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:14:00.779062Z",
-    "lock_ref": "ex-order:6fd6bb78f8ee"
+    "lock_ref": "ex-order:6fd6bb78f8ee",
+    "cancelled_at": "2026-07-15T01:59:54.808882Z"
   },
   {
     "order_id": "edbd633937c24960",
@@ -3401,9 +3662,10 @@
     "remaining": 441.17315114,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:17:19.980844Z",
-    "lock_ref": "ex-order:893c13491182"
+    "lock_ref": "ex-order:893c13491182",
+    "cancelled_at": "2026-07-15T01:59:54.810802Z"
   },
   {
     "order_id": "4e72ab8018b54b1f",
@@ -3414,9 +3676,10 @@
     "remaining": 419.03908109,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:20:57.668210Z",
-    "lock_ref": "ex-order:8707c6722645"
+    "lock_ref": "ex-order:8707c6722645",
+    "cancelled_at": "2026-07-15T01:59:54.812724Z"
   },
   {
     "order_id": "a8114b4d88c64bfe",
@@ -3427,9 +3690,10 @@
     "remaining": 398.01171453,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:24:33.444754Z",
-    "lock_ref": "ex-order:361141ad10eb"
+    "lock_ref": "ex-order:361141ad10eb",
+    "cancelled_at": "2026-07-15T01:59:54.814639Z"
   },
   {
     "order_id": "3047164d0ce1469a",
@@ -3440,9 +3704,10 @@
     "remaining": 378.0357163,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:28:20.020742Z",
-    "lock_ref": "ex-order:4aa324727cfb"
+    "lock_ref": "ex-order:4aa324727cfb",
+    "cancelled_at": "2026-07-15T01:59:54.816577Z"
   },
   {
     "order_id": "a65757aaf63a441a",
@@ -3453,9 +3718,10 @@
     "remaining": 359.05851798,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:31:56.285895Z",
-    "lock_ref": "ex-order:7786fc78aa05"
+    "lock_ref": "ex-order:7786fc78aa05",
+    "cancelled_at": "2026-07-15T01:59:54.818463Z"
   },
   {
     "order_id": "7efd590d644f4bd3",
@@ -3466,8 +3732,9 @@
     "remaining": 341.03017959,
     "limit_price": 101.0,
     "quote": "COINS",
-    "status": "open",
+    "status": "cancelled",
     "created_at": "2026-07-04T18:35:34.782799Z",
-    "lock_ref": "ex-order:0644d5154f69"
+    "lock_ref": "ex-order:0644d5154f69",
+    "cancelled_at": "2026-07-15T01:59:54.820312Z"
   }
 ]
