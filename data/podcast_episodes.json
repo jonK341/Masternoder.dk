@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2026-06-22",
+  "version": "1.1.0",
+  "updated_at": "2026-07-15",
   "episodes": [
     {
       "id": "ep-001-welcome",
@@ -96,8 +96,8 @@
       "duration_sec": 840,
       "audio_url": "/static/audio/podcast/ep-004-view-rewards.mp3",
       "published_at": "2026-06-15T16:00:00Z",
-      "view_count": 5432,
-      "play_count": 3892,
+      "view_count": 5434,
+      "play_count": 3894,
       "share_count": 275,
       "premium": false,
       "shop_item_id": null,
@@ -125,7 +125,7 @@
       "duration_sec": 1200,
       "audio_url": "/static/audio/podcast/ep-005-agents-encoder.mp3",
       "published_at": "2026-06-18T11:00:00Z",
-      "view_count": 4219,
+      "view_count": 4221,
       "play_count": 2980,
       "share_count": 198,
       "premium": true,
@@ -143,6 +143,111 @@
         "facebook": "https://facebook.com/MasterNoderAI/posts/agents",
         "discord": "https://discord.gg/masternoder",
         "github": "https://github.com/MasterNoder/generator-intelligence/releases"
+      }
+    },
+    {
+      "id": "ep-006-bbcg-hub-v2",
+      "channel_id": "masternoder-main",
+      "title": "BBCG Podcast Hub v2 \u2014 Sound Lab & Portal Max",
+      "description": "Reviving the MasterNoder podcast hub: verified sound pipeline, Sound Lab diagnostics, RSS syndication, chapter markers, bubble visualizer, and portal strips on 20+ pages.",
+      "duration_sec": 960,
+      "audio_url": "/static/audio/podcast/ep-006-bbcg-hub-v2.mp3",
+      "published_at": "2026-07-12T10:00:00Z",
+      "view_count": 2100,
+      "play_count": 890,
+      "share_count": 112,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "studio",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "bbcg",
+        "sound-lab",
+        "portal",
+        "rss"
+      ],
+      "chapters": [
+        {
+          "title": "BBCG Intro",
+          "start_sec": 0
+        },
+        {
+          "title": "Sound Lab walkthrough",
+          "start_sec": 45
+        },
+        {
+          "title": "Portal integration",
+          "start_sec": 420
+        },
+        {
+          "title": "Outro \u2014 comment on news",
+          "start_sec": 900
+        }
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=bbcg-hub-v2",
+        "facebook": "https://facebook.com/MasterNoder/posts/bbcg-v2",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/Masternoder.dk/blob/main/docs/PODCAST.md"
+      }
+    },
+    {
+      "id": "ep-007-exchange-profit",
+      "channel_id": "crypto-hunters",
+      "title": "Exchange Profit Daemon & Cross-Trade Intel",
+      "description": "How the crypto exchange hub, profit daemon, grid bots, and cross-trade engine feed podcast news \u2014 listen, comment, earn MN2 on platform changes.",
+      "duration_sec": 1140,
+      "audio_url": "/static/audio/podcast/ep-007-exchange-profit.mp3",
+      "published_at": "2026-07-13T14:30:00Z",
+      "view_count": 1580,
+      "play_count": 620,
+      "share_count": 88,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "analytics_agent",
+      "tags": [
+        "exchange",
+        "profit",
+        "mn2",
+        "daemon"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=exchange-profit-007",
+        "facebook": "https://facebook.com/CryptoHuntersMN2/posts/exchange",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/Masternoder.dk/tree/main/exchange"
+      }
+    },
+    {
+      "id": "ep-008-hosting-masternodes",
+      "channel_id": "masternoder-main",
+      "title": "MN2 Masternode Hosting \u2014 Ops & Rewards",
+      "description": "Hosted masternode slots from $4.99, 5,000 MN2 collateral, 50% block-reward tier, and how hosting ops appear in podcast news for enterprise listeners.",
+      "duration_sec": 780,
+      "audio_url": "/static/audio/podcast/ep-008-hosting-masternodes.mp3",
+      "published_at": "2026-07-14T09:00:00Z",
+      "view_count": 942,
+      "play_count": 411,
+      "share_count": 54,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": false,
+      "encode_profile": "broadcast",
+      "assigned_agent": "reporter_agent",
+      "tags": [
+        "hosting",
+        "masternode",
+        "mn2",
+        "ops"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=hosting-mn2-008",
+        "facebook": "https://facebook.com/MasterNoder/posts/hosting",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://masternoder.dk/hosting/"
       }
     }
   ]

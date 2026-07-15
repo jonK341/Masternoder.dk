@@ -10,7 +10,7 @@
             '/command-center': 'command-center', '/social': 'social', '/news': 'news', '/lab': 'lab',
             '/explorer': 'explorer', '/shop': 'shop', '/compendium': 'compendium', '/rights-law': 'rights-law',
             '/camgirls': 'camgirls', '/battle': 'battle', '/game': 'game', '/casino': 'casino',
-            '/quests': 'quests', '/market': 'market', '/starmap25': 'starmap25', '/profile': 'profile',
+            '/quests': 'quests', '/market': 'market', '/exchange': 'exchange', '/starmap25': 'starmap25', '/profile': 'profile',
             '/debugger': 'debugger', '/agent_support': 'agent_support', '/hosting': 'hosting', '/podcast': 'podcast'
         };
         siteId = map[path] || '';

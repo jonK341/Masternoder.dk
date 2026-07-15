@@ -14,6 +14,9 @@
     let vizMode = 'bars';
     let audioSourceNode = null;
     let episodeQueue = JSON.parse(localStorage.getItem('podcast_queue') || '[]');
+    episodeQueue = episodeQueue.map(item =>
+        typeof item === 'string' ? { id: item, title: item } : (item && item.id ? item : { id: String(item), title: String(item) })
+    );
 
     qsa('.podcast-tab').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -124,8 +127,8 @@
         if (!el) return;
         if (!episodeQueue.length) { el.hidden = true; return; }
         el.hidden = false;
-        el.innerHTML = episodeQueue.map((id, i) =>
-            `<li data-idx="${i}">${id} <button type="button" class="podcast-btn queue-remove" data-idx="${i}">×</button></li>`
+        el.innerHTML = episodeQueue.map((item, i) =>
+            `<li data-idx="${i}">${item.title || item.id} <button type="button" class="podcast-btn queue-remove" data-idx="${i}">×</button></li>`
         ).join('');
         el.querySelectorAll('.queue-remove').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -192,7 +195,7 @@
         if (!episodeQueue.length) return;
         const next = episodeQueue.shift();
         saveQueue();
-        playEpisode(next, false, null);
+        playEpisode(next.id || next, false, null);
     }
 
     async function loadStats() {
@@ -527,8 +530,8 @@
     });
 
     qs('#queue-add-btn') && qs('#queue-add-btn').addEventListener('click', () => {
-        if (!currentEpisode || episodeQueue.includes(currentEpisode.id)) return;
-        episodeQueue.push(currentEpisode.id);
+        if (!currentEpisode || episodeQueue.some(q => (q.id || q) === currentEpisode.id)) return;
+        episodeQueue.push({ id: currentEpisode.id, title: currentEpisode.title || currentEpisode.id });
         saveQueue();
     });
 

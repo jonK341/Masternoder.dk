@@ -2,6 +2,36 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "news-podcast-hub-revival-20260715",
+      "title": "Podcast hub revived — BBCG Sound Lab & portal max",
+      "summary": "MasterNoder Podcast is back at /podcast with verified sound, Sound Lab diagnostics, RSS feed, chapter markers, bubble visualizer, and portal strips across 20+ surfaces. Comment on this change in Podcast News — earn MN2.",
+      "date": "2026-07-15",
+      "category": "podcast",
+      "channel": "masternoder-main",
+      "href": "/podcast",
+      "featured": true
+    },
+    {
+      "id": "news-podcast-exchange-20260714",
+      "title": "Exchange ↔ Podcast — profit daemon news drops",
+      "summary": "Crypto exchange updates now syndicate to the podcast news feed. New episode ep-007 covers profit daemon, grid bots, and cross-trade intel. Discuss on /podcast#news.",
+      "date": "2026-07-14",
+      "category": "podcast",
+      "channel": "crypto-hunters",
+      "href": "/podcast#news",
+      "featured": false
+    },
+    {
+      "id": "news-podcast-hosting-20260713",
+      "title": "Hosting ops → Podcast news channel",
+      "summary": "MN2 masternode hosting launches podcast portal integration. Episode ep-008 covers $4.99 slots, collateral, and block-reward tiers — komment on hosting changes.",
+      "date": "2026-07-13",
+      "category": "podcast",
+      "channel": "hosting",
+      "href": "/hosting/",
+      "featured": false
+    },
+    {
       "id": "profit_bf62c4dbfdad",
       "title": "Cross-trade engine: 7 swaps",
       "summary": "7-bot cross-trade active \u00b7 arb ?/? \u00b7 best ? bps",

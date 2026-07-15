@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "updated_at": "2026-06-22",
+  "version": "2.1.0",
+  "updated_at": "2026-07-15",
   "flavor": "blue_bubble_cheese_gum",
   "flavor_tagline": "🫧 Extended visuals that taste like blue bubble cheese gum — verified sound, news comments, MN2.",
   "description": "Maximum podcast portal — cross-site lines, news hooks, comment CTAs on every major surface.",
@@ -23,6 +23,7 @@
     {"id": "casino", "path": "/casino", "line": "🎰 Casino events → Podcast news drops with MN2 comment rewards.", "comment_hint": "Discuss casino updates on Podcast News tab."},
     {"id": "quests", "path": "/quests", "line": "📜 Quest changes announced on Podcast news feed.", "comment_hint": "Komment quest patches — attract crew discussion."},
     {"id": "market", "path": "/market", "line": "📈 P2P MN2 market news → Podcast crypto channel comments.", "comment_hint": "Market moves discussed in Podcast Social feed."},
+    {"id": "exchange", "path": "/exchange", "line": "📊 Exchange hub ↔ Podcast — profit daemon, grid bots, cross-trade news.", "comment_hint": "Discuss exchange updates on Podcast News — earn MN2."},
     {"id": "starmap25", "path": "/starmap25", "line": "🗺️ Star Map lore → Podcast episodes + news comment threads.", "comment_hint": "Investigation updates commentable on Podcast."},
     {"id": "profile", "path": "/profile", "line": "👤 Your MN2 + podcast listen history — portal links here.", "comment_hint": "Profile wallet powers podcast shop unlocks."},
     {"id": "debugger", "path": "/debugger", "line": "🔧 Debugger Q&A → Podcast AI-generated explainers.", "comment_hint": "Comment on debugger releases in Podcast news."},

@@ -32,18 +32,18 @@ Deep diagnostics: `GET /api/podcast/sound-lab`
 
 ## 10 podcast expansions (v2)
 
-| # | Expansion | API / UI |
-|---|-----------|----------|
-| 1 | **Sound Lab** | `GET /api/podcast/sound-lab` — per-episode format, bytes, status |
-| 2 | **BBCG flavor synth** | Multi-tone repair audio in `podcast_audio_service` |
-| 3 | **Playback speed** | 0.75×–2× on player |
-| 4 | **Episode queue** | Local queue + auto-play next |
-| 5 | **RSS syndication** | `GET /api/podcast/rss.xml` |
-| 6 | **Transcripts** | `GET /api/podcast/episodes/<id>/transcript` |
-| 7 | **Chapter markers** | `GET /api/podcast/episodes/<id>/chapters` — skip navigation |
-| 8 | **Leaderboard** | `GET /api/podcast/leaderboard` — comments, news, likes |
-| 9 | **Bubble visualizer** | Toggle bar vs bubble BBCG canvas mode |
-| 10 | **Visualizer fix** | Single MediaElementSource — no reconnect crash |
+| # | Expansion | API / UI | Status |
+|---|-----------|----------|--------|
+| 1 | **Sound Lab** | `GET /api/podcast/sound-lab` — per-episode format, bytes, status | ✅ Hub tab + API |
+| 2 | **BBCG flavor synth** | Multi-tone repair audio in `podcast_audio_service` | ✅ `_write_bbcg_flavor_tone` |
+| 3 | **Playback speed** | 0.75×–2× on player | ✅ `#playback-speed` selector |
+| 4 | **Episode queue** | Local queue + auto-play next | ✅ localStorage queue + titles |
+| 5 | **RSS syndication** | `GET /api/podcast/rss.xml` | ✅ Feed + hub link |
+| 6 | **Transcripts** | `GET /api/podcast/episodes/<id>/transcript` | ✅ Auto-generated fallback |
+| 7 | **Chapter markers** | `GET /api/podcast/episodes/<id>/chapters` — skip navigation | ✅ Skip buttons in player |
+| 8 | **Leaderboard** | `GET /api/podcast/leaderboard` — comments, news, likes | ✅ Hub tab |
+| 9 | **Bubble visualizer** | Toggle bar vs bubble BBCG canvas mode | ✅ `#viz-mode-btn` |
+| 10 | **Visualizer fix** | Single MediaElementSource — no reconnect crash | ✅ `audioSourceNode` guard |
 
 ## Portal integration
 
@@ -54,7 +54,9 @@ Add to any page:
 <script src="/static/js/podcast-portal-lines.js" data-site="generator"></script>
 ```
 
-Site lines: `data/podcast_portal_lines.json` (20+ surfaces).
+Site lines: `data/podcast_portal_lines.json` (**25 surfaces** including exchange, market, hosting).
+
+**Wired pages (2026-07-15):** home, generator, gallery, aggregator, command-center, social, news, lab, explorer, shop, compendium, rights-law, camgirls, battle, game, casino, quests, starmap25, profile, debugger, agent_support, hosting, **exchange**, **market**, podcast hub.
 
 ## Google Play Store app — **saved for later**
 
