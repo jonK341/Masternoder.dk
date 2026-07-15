@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>MN2 Crypto Hub — MasterNoder</title>
+    <title>MN2 Network Explorer — MasterNoder</title>
 
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
 
@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 
-    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260715">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
 
@@ -29,65 +29,69 @@
 
     <div class="mn2-hub-wrap explorer-page">
 
-        <div class="mn2-hub-header">
+        <header class="mn2-hub-header">
+            <div class="mn2-hub-kicker">MN2 network intelligence</div>
+            <div class="mn2-hub-header-row">
+                <div>
+                    <h1>MN2 Network Explorer</h1>
+                    <p>Live chain health, staking, reserves, masternodes, and markets in one focused workspace.</p>
+                </div>
+                <div class="mn2-live-status is-connecting" id="mn2-live-status" role="status" aria-live="polite">
+                    <span class="mn2-live-dot" aria-hidden="true"></span>
+                    <span id="mn2-live-label">Connecting to network…</span>
+                </div>
+            </div>
+        </header>
 
-            <h1>🪙 MN2 Crypto Hub</h1>
-
-            <p>Explorer, staking, masternode hosting, reserves, and P2P market — one place for MasterNoder2 network transparency.</p>
-
+        <div class="mn2-hub-nav-shell">
+            <div class="mn2-hub-nav-heading">
+                <span>Explore MN2</span>
+                <span class="mn2-hub-nav-hint">Use ← → keys to move between tabs</span>
+            </div>
+            <nav class="mn2-hub-nav" id="mn2-hub-nav" aria-label="MN2 crypto sections" aria-orientation="horizontal" role="tablist">
+                <button type="button" id="mn2-tab-explorer" class="mn2-hub-tab active" data-mn2-tab="explorer" role="tab" aria-controls="mn2-panel-explorer" aria-selected="true" tabindex="0"><span aria-hidden="true">🔎</span> Explorer</button>
+                <button type="button" id="mn2-tab-staking" class="mn2-hub-tab" data-mn2-tab="staking" role="tab" aria-controls="mn2-panel-staking" aria-selected="false" tabindex="-1"><span aria-hidden="true">⚡</span> Staking</button>
+                <button type="button" id="mn2-tab-leaderboard" class="mn2-hub-tab" data-mn2-tab="leaderboard" role="tab" aria-controls="mn2-panel-leaderboard" aria-selected="false" tabindex="-1"><span aria-hidden="true">🏆</span> Leaderboard</button>
+                <button type="button" id="mn2-tab-teams" class="mn2-hub-tab" data-mn2-tab="teams" role="tab" aria-controls="mn2-panel-teams" aria-selected="false" tabindex="-1"><span aria-hidden="true">👥</span> Teams</button>
+                <button type="button" id="mn2-tab-reserves" class="mn2-hub-tab" data-mn2-tab="reserves" role="tab" aria-controls="mn2-panel-reserves" aria-selected="false" tabindex="-1"><span aria-hidden="true">🛡️</span> Reserves</button>
+                <button type="button" id="mn2-tab-masternodes" class="mn2-hub-tab" data-mn2-tab="masternodes" role="tab" aria-controls="mn2-panel-masternodes" aria-selected="false" tabindex="-1"><span aria-hidden="true">🏛️</span> Masternodes</button>
+                <button type="button" id="mn2-tab-market" class="mn2-hub-tab" data-mn2-tab="market" role="tab" aria-controls="mn2-panel-market" aria-selected="false" tabindex="-1"><span aria-hidden="true">📈</span> Market</button>
+            </nav>
         </div>
 
-
-
-        <nav class="mn2-hub-nav" id="mn2-hub-nav" aria-label="MN2 crypto sections" role="tablist">
-
-            <button type="button" class="mn2-hub-tab active" data-mn2-tab="explorer" role="tab" aria-selected="true">🔎 Explorer</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="staking" role="tab" aria-selected="false">⚡ Staking</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="leaderboard" role="tab" aria-selected="false">🏆 Leaderboard</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="teams" role="tab" aria-selected="false">👥 Teams</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="reserves" role="tab" aria-selected="false">🛡️ Reserves</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="masternodes" role="tab" aria-selected="false">🏛️ Masternodes</button>
-
-            <button type="button" class="mn2-hub-tab" data-mn2-tab="market" role="tab" aria-selected="false">📈 Market</button>
-
-        </nav>
-
-        <div id="mn2-route-note" class="mn2-route-note">Viewing: Explorer overview. Switch tabs above to browse the MN2 crypto hub.</div>
+        <div id="mn2-route-note" class="mn2-route-note" aria-live="polite" aria-atomic="true">Viewing Explorer overview. Live data refreshes while this tab is open.</div>
 
 
 
         <!-- Explorer -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="explorer" aria-label="Explorer overview">
+        <section class="mn2-tab-panel" id="mn2-panel-explorer" data-mn2-tab="explorer" role="tabpanel" aria-labelledby="mn2-tab-explorer">
 
             <div class="ex-header">
-
-                <div>
-
-                    <p style="margin:0 0 12px;opacity:0.85;">Live MasterNoder2 network stats. On-site links use <a class="ex-open" href="https://chainz.cryptoid.info/mn2/" target="_blank" rel="noopener">Chainz</a>; stats: daemon RPC → Chainz fallback.</p>
-
+                <div class="ex-header-copy">
+                    <span class="ex-eyebrow">Live network overview</span>
+                    <h2>Follow the chain at a glance</h2>
+                    <p>Fresh stats come from the MN2 daemon with a Chainz fallback when the node is unavailable.</p>
                 </div>
-
-                <a class="ex-open" id="ex-open" href="https://chainz.cryptoid.info/mn2/" target="_blank" rel="noopener">Open Chainz explorer ↗</a>
-
+                <a class="ex-open ex-open-primary" id="ex-open" href="https://chainz.cryptoid.info/mn2/" target="_blank" rel="noopener">Open full explorer <span aria-hidden="true">↗</span></a>
             </div>
 
             <div class="ex-health" id="ex-health"></div>
 
-            <form class="ex-search" id="ex-search" autocomplete="off">
+            <div class="ex-search-card">
+                <label for="ex-q">Find an address or transaction</label>
+                <p id="ex-search-help">Paste an MN2 address or a 64-character transaction ID. Results open in the full explorer.</p>
+                <form class="ex-search" id="ex-search" autocomplete="off">
+                    <input type="text" id="ex-q" placeholder="MN2 address or transaction ID" aria-describedby="ex-search-help ex-search-status" spellcheck="false">
+                    <button type="submit">Search <span aria-hidden="true">↗</span></button>
+                </form>
+                <p class="ex-search-status" id="ex-search-status" aria-live="polite"></p>
+            </div>
 
-                <input type="text" id="ex-q" placeholder="Search MN2 address or transaction id…" aria-label="Search address or transaction">
-
-                <button type="submit">Search ↗</button>
-
-            </form>
-
-            <div class="ex-updated" id="ex-updated">Loading…</div>
+            <div class="ex-meta-row">
+                <div class="ex-updated" id="ex-updated" role="status">Connecting to MN2…</div>
+                <button type="button" class="ex-refresh" id="ex-refresh">Refresh data</button>
+            </div>
 
             <div class="ex-section-title">Network</div>
 
@@ -189,7 +193,7 @@
 
         <!-- Staking monitor -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="staking" hidden aria-label="Staking monitor">
+        <section class="mn2-tab-panel" id="mn2-panel-staking" data-mn2-tab="staking" role="tabpanel" aria-labelledby="mn2-tab-staking" hidden>
 
             <p class="sub-note">Live view of all staking processes across users. Identifiers are anonymized.</p>
 
@@ -253,7 +257,7 @@
 
         <!-- Leaderboard -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="leaderboard" hidden aria-label="Staking leaderboard">
+        <section class="mn2-tab-panel" id="mn2-panel-leaderboard" data-mn2-tab="leaderboard" role="tabpanel" aria-labelledby="mn2-tab-leaderboard" hidden>
 
             <p class="sub-note">Opt-in stakers only. Amounts hidden unless a user chooses to show them. <a href="/profile#mn2-wallet">Opt in on your profile →</a></p>
 
@@ -273,7 +277,7 @@
 
         <!-- Teams -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="teams" hidden aria-label="Staking teams">
+        <section class="mn2-tab-panel" id="mn2-panel-teams" data-mn2-tab="teams" role="tabpanel" aria-labelledby="mn2-tab-teams" hidden>
 
             <p class="sub-note">Teams with ≥2 active stakers share pooled longevity for a capped reward multiplier. <a href="/profile#mn2-wallet">Create or join on your profile →</a></p>
 
@@ -293,7 +297,7 @@
 
         <!-- Proof of reserves -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="reserves" id="mn2-tab-reserves" hidden aria-label="Proof of reserves">
+        <section class="mn2-tab-panel" id="mn2-panel-reserves" data-mn2-tab="reserves" role="tabpanel" aria-labelledby="mn2-tab-reserves" hidden>
 
             <p class="sub-note">Independent, on-demand check that every user's in-app MN2 is backed by custodial coins the daemon controls.</p>
 
@@ -349,7 +353,7 @@
 
         <!-- Masternode hosting + services -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="masternodes" hidden aria-label="Masternode hosting">
+        <section class="mn2-tab-panel" id="mn2-panel-masternodes" data-mn2-tab="masternodes" role="tabpanel" aria-labelledby="mn2-tab-masternodes" hidden>
 
             <div class="mn-hero">
                 <div class="mn-hero-copy">
@@ -424,7 +428,7 @@
 
         <!-- Market -->
 
-        <section class="mn2-tab-panel" data-mn2-tab="market" hidden aria-label="P2P market">
+        <section class="mn2-tab-panel" id="mn2-panel-market" data-mn2-tab="market" role="tabpanel" aria-labelledby="mn2-tab-market" hidden>
 
             <p class="sub-note">Trade MN2 on the internal coins order book (trader agent liquidity) or via PayPal listings when Model B is enabled.</p>
 
@@ -540,11 +544,11 @@
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="explorer" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20260715" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260715" defer></script>
 
-    <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
+    <script src="/static/js/mn2-staking-monitor.js?v=20260715" defer></script>
 
     <script src="/static/js/mn2-site-bridge.js?v=20260614d" defer></script>
 

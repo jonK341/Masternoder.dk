@@ -29,6 +29,30 @@
   }
 
   var explorerBase = 'https://chainz.cryptoid.info/mn2/';
+  var explorerRunning = false;
+  var explorerStream = null;
+  var explorerTimers = {};
+
+  function setLiveStatus(state, label) {
+    var status = q('mn2-live-status');
+    var text = q('mn2-live-label');
+    if (!status || !text) return;
+    status.classList.remove('is-connecting', 'is-live', 'is-paused', 'is-error');
+    status.classList.add('is-' + state);
+    text.textContent = label;
+  }
+
+  function setTimer(name, fn, delay) {
+    if (explorerTimers[name]) clearInterval(explorerTimers[name]);
+    explorerTimers[name] = setInterval(fn, delay);
+  }
+
+  function clearExplorerTimers() {
+    Object.keys(explorerTimers).forEach(function (name) {
+      clearInterval(explorerTimers[name]);
+      delete explorerTimers[name];
+    });
+  }
 
   function renderHealth(sh) {
     var el = q('ex-health');
@@ -140,6 +164,7 @@
     renderDaemon(d.daemon);
 
     q('ex-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    setLiveStatus('live', 'Live network data');
   }
 
   function fmtBytes(n) {
@@ -170,25 +195,53 @@
   function refresh() {
     var upd = q('ex-updated');
     if (upd) upd.textContent = 'Loading network stats…';
-    fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
-      .then(function (r) { return r.json(); })
-      .then(render)
-      .catch(function () { q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
+    setLiveStatus('connecting', 'Refreshing network data…');
+    return fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        render(data);
+        return data;
+      })
+      .catch(function () {
+        if (upd) upd.textContent = 'Stats temporarily unavailable. Try refreshing.';
+        setLiveStatus('error', 'Network data unavailable');
+        return null;
+      });
+  }
+
+  function startOverviewPolling() {
+    if (!explorerRunning) return;
+    setTimer('overview', refresh, 30000);
   }
 
   function startExplorerStream() {
     if (typeof EventSource === 'undefined') return false;
     try {
       var es = new EventSource('/api/mn2/explorer/stream?interval=30');
+      explorerStream = es;
+      es.onopen = function () {
+        setLiveStatus('live', 'Live stream connected');
+      };
       es.onmessage = function (ev) {
         try {
           var msg = JSON.parse(ev.data || '{}');
           if (msg.type === 'overview' && msg.data) render(msg.data);
         } catch (e) { /* ignore */ }
       };
-      es.onerror = function () { es.close(); };
+      es.onerror = function () {
+        es.close();
+        if (explorerStream === es) explorerStream = null;
+        if (explorerRunning) {
+          setLiveStatus('paused', 'Live stream paused · polling');
+          startOverviewPolling();
+        }
+      };
       return true;
     } catch (e) {
+      explorerStream = null;
       return false;
     }
   }
@@ -406,26 +459,107 @@
 
   function initSearch() {
     var form = q('ex-search');
-    if (!form) return;
+    var input = q('ex-q');
+    var status = q('ex-search-status');
+    if (!form || !input) return;
+    input.addEventListener('input', function () {
+      input.removeAttribute('aria-invalid');
+      if (status) {
+        status.textContent = '';
+        status.classList.remove('is-ok');
+      }
+    });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var v = (q('ex-q').value || '').trim();
-      if (!v) return;
+      var v = (input.value || '').trim();
+      var isTx = /^[0-9a-fA-F]{64}$/.test(v);
+      var isAddress = /^[A-Za-z0-9]{20,80}$/.test(v);
+      if (!isTx && !isAddress) {
+        input.setAttribute('aria-invalid', 'true');
+        if (status) {
+          status.classList.remove('is-ok');
+          status.textContent = 'Enter a valid MN2 address or 64-character transaction ID.';
+        }
+        input.focus();
+        return;
+      }
+      if (status) {
+        status.classList.add('is-ok');
+        status.textContent = 'Opening ' + (isTx ? 'transaction' : 'address') + ' in the full explorer…';
+      }
       window.open(explorerLink(v), '_blank', 'noopener');
     });
   }
 
-  initSearch();
-  refresh();
-  loadSparklines();
-  loadBlocks();
-  loadMasternodes();
-  loadMonitor();
-  if (!startExplorerStream()) {
-    setInterval(refresh, 30000);
+  function refreshExplorer() {
+    loadSparklines();
+    loadBlocks();
+    loadMasternodes();
+    loadMonitor();
+    return refresh();
   }
-  setInterval(loadSparklines, 300000);
-  setInterval(loadBlocks, 30000);
-  setInterval(loadMasternodes, 60000);
-  setInterval(loadMonitor, 120000);
+
+  function initRefreshButton() {
+    var button = q('ex-refresh');
+    if (!button) return;
+    button.addEventListener('click', function () {
+      button.disabled = true;
+      button.textContent = 'Refreshing…';
+      refreshExplorer().then(function () {
+        button.disabled = false;
+        button.textContent = 'Refresh data';
+      });
+    });
+  }
+
+  function explorerIsSelected() {
+    var panel = q('mn2-panel-explorer');
+    return !!panel && !panel.hidden;
+  }
+
+  function startExplorer() {
+    if (explorerRunning || !explorerIsSelected() || document.hidden) return;
+    explorerRunning = true;
+    setLiveStatus('connecting', 'Connecting to network…');
+    refreshExplorer();
+    if (!startExplorerStream()) startOverviewPolling();
+    setTimer('sparklines', loadSparklines, 300000);
+    setTimer('blocks', loadBlocks, 30000);
+    setTimer('masternodes', loadMasternodes, 60000);
+    setTimer('monitor', loadMonitor, 120000);
+  }
+
+  function stopExplorer() {
+    explorerRunning = false;
+    clearExplorerTimers();
+    if (explorerStream) {
+      explorerStream.close();
+      explorerStream = null;
+    }
+    if (!explorerIsSelected()) {
+      setLiveStatus('paused', 'Explorer updates paused off-tab');
+    } else if (document.hidden) {
+      setLiveStatus('paused', 'Updates paused while page is hidden');
+    }
+  }
+
+  function syncExplorerLifecycle() {
+    if (explorerIsSelected() && !document.hidden) startExplorer();
+    else stopExplorer();
+  }
+
+  initSearch();
+  initRefreshButton();
+  document.addEventListener('mn2:tabchange', syncExplorerLifecycle);
+  document.addEventListener('visibilitychange', syncExplorerLifecycle);
+
+  window.Mn2ExplorerOverview = {
+    start: startExplorer,
+    stop: stopExplorer,
+    refresh: refreshExplorer,
+    isRunning: function () { return explorerRunning; },
+    explorerLink: explorerLink
+  };
+
+  syncExplorerLifecycle();
 })();

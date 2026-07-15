@@ -11,6 +11,16 @@
     masternodes: 'Masternode hosting',
     market: 'P2P market'
   };
+  var TAB_DESCRIPTIONS = {
+    explorer: 'Live data refreshes while this tab is open.',
+    staking: 'Staking and health data refresh while this tab is open.',
+    leaderboard: 'Privacy-aware rankings load when you open this tab.',
+    teams: 'Team staking performance loads when you open this tab.',
+    reserves: 'Reserve coverage refreshes while this tab is open.',
+    masternodes: 'Hosting capacity and network nodes load on demand.',
+    market: 'Order books and enabled payment rails load on demand.'
+  };
+  var TAB_ORDER = ['explorer', 'staking', 'leaderboard', 'teams', 'reserves', 'masternodes', 'market'];
 
   var porLoaded = false;
   var marketChecked = false;
@@ -18,6 +28,7 @@
   var mnPayPalReturnDone = false;
   var mnCheckoutConfig = null;
   var mnOnChainPollTimer = null;
+  var activeTab = null;
 
   function uid() {
     if (window.Mn2SiteBridge && window.Mn2SiteBridge.uid) return window.Mn2SiteBridge.uid();
@@ -41,35 +52,92 @@
 
   function mn2(v) { return v === null || v === undefined ? '--' : fmtNum(v, 4) + ' MN2'; }
 
-  function applyMn2Tab(tabId) {
+  function validTab(tabId) {
+    return Object.prototype.hasOwnProperty.call(TAB_LABELS, tabId);
+  }
+
+  function requestedTab() {
+    var requested = new URLSearchParams(window.location.search).get('tab');
+    return validTab(requested) ? requested : 'explorer';
+  }
+
+  function updateTabHistory(tabId, mode) {
+    if (mode !== 'push' && mode !== 'replace') return;
+    try {
+      var url = new URL(window.location.href);
+      if (tabId === 'explorer') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', tabId);
+      var nextUrl = url.pathname + url.search + url.hash;
+      if (mode === 'push') window.history.pushState({ mn2Tab: tabId }, document.title, nextUrl);
+      else window.history.replaceState({ mn2Tab: tabId }, document.title, nextUrl);
+    } catch (e) { /* ignore */ }
+  }
+
+  function emitTabChange(tabId, previousTab) {
+    var detail = {
+      tabId: tabId,
+      previousTab: previousTab,
+      label: TAB_LABELS[tabId]
+    };
+    try {
+      document.dispatchEvent(new CustomEvent('mn2:tabchange', { detail: detail }));
+    } catch (e) {
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('mn2:tabchange', false, false, detail);
+      document.dispatchEvent(event);
+    }
+  }
+
+  function applyMn2Tab(tabId, options) {
+    options = options || {};
+    if (!validTab(tabId)) tabId = 'explorer';
+    var previousTab = activeTab;
+    var changed = previousTab !== tabId;
     var nav = q('mn2-hub-nav');
     var panels = document.querySelectorAll('.mn2-tab-panel[data-mn2-tab]');
     panels.forEach(function (el) {
-      el.hidden = el.getAttribute('data-mn2-tab') !== tabId;
+      var on = el.getAttribute('data-mn2-tab') === tabId;
+      el.hidden = !on;
+      el.classList.toggle('active', on);
     });
+    var selectedButton = null;
     if (nav) {
       nav.querySelectorAll('.mn2-hub-tab').forEach(function (btn) {
         var on = btn.getAttribute('data-mn2-tab') === tabId;
         btn.classList.toggle('active', on);
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.setAttribute('tabindex', on ? '0' : '-1');
+        if (on) selectedButton = btn;
       });
     }
     var note = q('mn2-route-note');
     if (note) {
-      note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse the MN2 crypto hub.';
+      note.textContent = 'Viewing ' + TAB_LABELS[tabId] + '. ' + TAB_DESCRIPTIONS[tabId];
     }
-    try {
-      var url = new URL(window.location.href);
-      if (tabId === 'explorer') url.searchParams.delete('tab');
-      else url.searchParams.set('tab', tabId);
-      window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) { /* ignore */ }
+    activeTab = tabId;
+    if (changed) updateTabHistory(tabId, options.history || 'none');
+    if (selectedButton && options.focus) selectedButton.focus();
+    if (selectedButton && options.scroll !== false && selectedButton.scrollIntoView) {
+      selectedButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
 
     if (tabId === 'leaderboard') loadLeaderboard();
     if (tabId === 'teams') loadTeams();
     if (tabId === 'reserves' && !porLoaded) { porLoaded = true; loadProofOfReserves(); }
     if (tabId === 'masternodes' && !mnLoaded) { mnLoaded = true; loadMasternodeHosting(); }
     if (tabId === 'market' && !marketChecked) { marketChecked = true; checkMarketEnabled(); }
+    if (changed) emitTabChange(tabId, previousTab);
+    return tabId;
+  }
+
+  function activateRelativeTab(currentButton, direction) {
+    var currentId = currentButton && currentButton.getAttribute('data-mn2-tab');
+    var currentIndex = TAB_ORDER.indexOf(currentId);
+    if (currentIndex < 0) currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (direction === 'first') currentIndex = 0;
+    else if (direction === 'last') currentIndex = TAB_ORDER.length - 1;
+    else currentIndex = (currentIndex + direction + TAB_ORDER.length) % TAB_ORDER.length;
+    applyMn2Tab(TAB_ORDER[currentIndex], { history: 'push', focus: true });
   }
 
   function initTabs() {
@@ -78,11 +146,24 @@
     nav.addEventListener('click', function (ev) {
       var btn = ev.target.closest('[data-mn2-tab]');
       if (!btn || !nav.contains(btn)) return;
-      applyMn2Tab(btn.getAttribute('data-mn2-tab'));
+      applyMn2Tab(btn.getAttribute('data-mn2-tab'), { history: 'push' });
     });
-    var requested = new URLSearchParams(window.location.search).get('tab');
-    var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, requested);
-    applyMn2Tab(valid ? requested : 'explorer');
+    nav.addEventListener('keydown', function (ev) {
+      var btn = ev.target.closest('[role="tab"]');
+      if (!btn || !nav.contains(btn)) return;
+      var direction = null;
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') direction = 1;
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp') direction = -1;
+      if (ev.key === 'Home') direction = 'first';
+      if (ev.key === 'End') direction = 'last';
+      if (direction === null) return;
+      ev.preventDefault();
+      activateRelativeTab(btn, direction);
+    });
+    applyMn2Tab(requestedTab(), { history: 'replace', scroll: false });
+    window.addEventListener('popstate', function () {
+      applyMn2Tab(requestedTab(), { history: 'none', scroll: false });
+    });
     handleMasternodePayPalReturn();
   }
 
@@ -233,7 +314,7 @@
         if (text) text.textContent = 'Could not load reserve data. Please retry shortly.';
       });
     setInterval(function () {
-      if (q('mn2-tab-reserves') && !q('mn2-tab-reserves').hidden) {
+      if (q('mn2-panel-reserves') && !q('mn2-panel-reserves').hidden) {
         fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
           .then(function (d) { renderPoR(d); renderTreasuryOverview(d); }).catch(function () {});
       }
@@ -763,5 +844,60 @@
     }
   }
 
-  initTabs();
+  function runDiagnostics() {
+    var checks = [];
+    function check(name, passed, detail) {
+      checks.push({ name: name, passed: !!passed, detail: detail || '' });
+    }
+
+    var nav = q('mn2-hub-nav');
+    var buttons = nav ? Array.prototype.slice.call(nav.querySelectorAll('[role="tab"]')) : [];
+    var visiblePanels = Array.prototype.slice.call(
+      document.querySelectorAll('.mn2-tab-panel[data-mn2-tab]')
+    ).filter(function (panel) { return !panel.hidden; });
+
+    check('tablist exists', !!nav);
+    check('all seven tabs render', buttons.length === TAB_ORDER.length, buttons.length + ' found');
+    check('one panel is visible', visiblePanels.length === 1, visiblePanels.length + ' visible');
+
+    TAB_ORDER.forEach(function (tabId) {
+      var button = q('mn2-tab-' + tabId);
+      var panel = q('mn2-panel-' + tabId);
+      check(tabId + ' button exists', !!button);
+      check(tabId + ' panel exists', !!panel);
+      check(
+        tabId + ' aria relationship',
+        !!button && !!panel &&
+          button.getAttribute('aria-controls') === panel.id &&
+          panel.getAttribute('aria-labelledby') === button.id
+      );
+    });
+
+    var selected = nav ? nav.querySelector('[aria-selected="true"]') : null;
+    check(
+      'selected tab matches active state',
+      !!selected && selected.getAttribute('data-mn2-tab') === activeTab,
+      activeTab || 'none'
+    );
+
+    return {
+      ok: checks.every(function (item) { return item.passed; }),
+      activeTab: activeTab,
+      checks: checks
+    };
+  }
+
+  window.Mn2CryptoHub = {
+    TAB_LABELS: TAB_LABELS,
+    TAB_ORDER: TAB_ORDER.slice(),
+    applyTab: applyMn2Tab,
+    getActiveTab: function () { return activeTab; },
+    runDiagnostics: runDiagnostics
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTabs);
+  } else {
+    initTabs();
+  }
 })();

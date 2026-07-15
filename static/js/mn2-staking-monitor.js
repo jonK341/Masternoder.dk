@@ -4,6 +4,8 @@
 
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
   function q(id) { return document.getElementById(id); }
+  var stakingRunning = false;
+  var stakingTimer = null;
 
   function render(data) {
     if (!data || !data.success) return;
@@ -38,11 +40,11 @@
   }
 
   function refresh() {
-    fetch('/api/mn2/staking/monitor?limit=100', { credentials: 'same-origin' })
+    var monitorRequest = fetch('/api/mn2/staking/monitor?limit=100', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(render)
       .catch(function () {});
-    fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
+    var overviewRequest = fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (o) {
         var b = q('sm-failover-banner');
@@ -55,7 +57,7 @@
           b.style.display = 'none';
         }
       }).catch(function () {});
-    loadHealthHub();
+    return Promise.all([monitorRequest, overviewRequest, loadHealthHub()]);
   }
 
   function hubClass(status) {
@@ -90,7 +92,7 @@
   }
 
   function loadHealthHub() {
-    fetch('/api/mn2/health', { credentials: 'same-origin' })
+    return fetch('/api/mn2/health', { credentials: 'same-origin' })
       .then(function (r) {
         return r.json().then(function (d) { return { http: r.status, data: d }; });
       })
@@ -118,7 +120,7 @@
         grid.innerHTML = cards.join('');
         var up = q('hub-updated');
         if (up) up.textContent = 'Health updated ' + new Date().toLocaleTimeString() + ' · overall ' + (d.status || '—') + (res.http >= 400 ? ' (HTTP ' + res.http + ')' : '');
-        loadServicesGrid();
+        return loadServicesGrid();
       })
       .catch(function () {
         var grid = q('hub-grid');
@@ -127,7 +129,7 @@
   }
 
   function loadServicesGrid() {
-    fetch('/api/mn2/services', { credentials: 'same-origin' })
+    return fetch('/api/mn2/services', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var grid = q('services-grid');
@@ -147,6 +149,40 @@
       });
   }
 
-  refresh();
-  setInterval(refresh, 15000);
+  function stakingIsSelected() {
+    var panel = q('mn2-panel-staking');
+    return !!panel && !panel.hidden;
+  }
+
+  function start() {
+    if (stakingRunning || !stakingIsSelected() || document.hidden) return;
+    stakingRunning = true;
+    refresh();
+    stakingTimer = setInterval(refresh, 15000);
+  }
+
+  function stop() {
+    stakingRunning = false;
+    if (stakingTimer) {
+      clearInterval(stakingTimer);
+      stakingTimer = null;
+    }
+  }
+
+  function syncLifecycle() {
+    if (stakingIsSelected() && !document.hidden) start();
+    else stop();
+  }
+
+  document.addEventListener('mn2:tabchange', syncLifecycle);
+  document.addEventListener('visibilitychange', syncLifecycle);
+
+  window.Mn2StakingMonitor = {
+    start: start,
+    stop: stop,
+    refresh: refresh,
+    isRunning: function () { return stakingRunning; }
+  };
+
+  syncLifecycle();
 })();
