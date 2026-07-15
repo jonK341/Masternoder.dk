@@ -1,6 +1,6 @@
 # Profit Daemon — Activity & Upgrade Checklist
 
-_Last updated: 2026-07-04_
+_Last updated: 2026-07-15_
 
 Canonical ops checklist for Masternoder.dk profit engines. For the **110-upgrade roadmap** (22 done / 88 planned), see [PROFIT_DAEMON_110_UPGRADES.md](./PROFIT_DAEMON_110_UPGRADES.md). For the full 25-item audit (auto-synced from PPP ledger), see [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md). For PPP schema and research workflow, see [PROFIT_PATH_PROTOCOL.md](./PROFIT_PATH_PROTOCOL.md). For 24/7 server systemd plan, see [PROFIT_DAEMON_SERVER.md](./PROFIT_DAEMON_SERVER.md).
 
@@ -28,13 +28,15 @@ Full checklist: [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) (21/25 do
 
 | # | Item | Status | Next action |
 |---|------|--------|-------------|
-| **#2** | XeggeX API 401 — keys or IP whitelist | Open | `python scripts/refresh_xeggex_server.py --probe-only` → fix `.env` keys + dashboard IP whitelist → `python scripts/remote_vault_import.py` |
-| **#3** | Arb spreads mostly below 18 bps min_margin | Open (market) | Wait for volatility; optional `EXCHANGE_FAST_MIN_BPS=10` before restart when `near_threshold=yes`; watch `arb_skip=below_threshold` |
+| **#2** | XeggeX API 401 — keys or IP whitelist | Open | `python scripts/refresh_xeggex_server.py --probe-only` → fix `.env` keys + dashboard IP whitelist → `python scripts/remote_vault_import.py`. Blocks grid bot live on xeggex and `arb_live_dual_farm` (#20). |
+| **#3** | Arb spreads mostly below 18 bps min_margin | Open (market) | Wait for volatility; optional `EXCHANGE_FAST_MIN_BPS=10` before restart when `near_threshold=yes`; watch `arb_skip=below_threshold`. Grid bot paper ticks still run; live grid needs funded quote or held coin per venue. |
 | **#10** | PayPal sweep still paper — unswept ledger | Open | Preflight PayPal **or** use **Binance bank wire** when PayPal blocked: register bank on Binance app → `POST /api/exchange/payout/binance/configure-bank` → `EXCHANGE_PAYOUT_BINANCE_LIVE=1` + SPORK; optional `EXCHANGE_AUTO_BINANCE_BANK_SWEEP=1` |
-| **#20** | `arb_live_dual_farm` limited to binance+nonkyc | Blocked by #2 | After XeggeX probe OK: `python scripts/configure_live_profit_max.py` (enables xeggex in dual-farm) |
+| **#20** | `arb_live_dual_farm` limited to binance+nonkyc | Blocked by #2 | After XeggeX probe OK: `python scripts/configure_live_profit_max.py` (enables xeggex in dual-farm). Same XeggeX fix unblocks xeggex grid targets. |
 
 ### Server deploy (from PROFIT_DAEMON_SERVER.md)
 
+- [x] Cinematic monitor UI shipped (`6def32c`) — `/profit/` uses `profit-monitor-cinematic.css`
+- [x] Deploy manifest UPLOAD list fixed — uploads `static/css/profit-monitor-cinematic.css` (not legacy `profit-daemon-monitor.css`)
 - [ ] Run deploy: `python scripts/deploy_profit_daemon_server.py`
 - [ ] Windows: deploy script forces UTF-8 stdout so systemd status bullets do not crash on cp1252.
 - [ ] Fix `.env` line 19 separator (`command not found` when sourcing on server)
@@ -62,6 +64,32 @@ scripts\run_all_profit_daemons.cmd --auto-sweep
 ```
 
 One-shot smoke test: `python scripts/all_profit_daemons.py --once`
+
+### Grid / market-maker bot (standalone)
+
+Separate from the main profit daemon loop — posts maker limit orders around mid on Binance / NonKYC / XeggeX.
+
+```cmd
+.venv\Scripts\python scripts\grid_bot_daemon.py --enable --interval 30
+```
+
+Paper smoke (one tick, no real orders):
+
+```cmd
+.venv\Scripts\python scripts\grid_bot_daemon.py --once --paper --enable
+```
+
+Optional: `--autoselect` (profit-ranked pairs), `--cross-scan` (cross-venue diffs), `--cross-trade` (auto spatial arb; needs `EXCHANGE_CROSS_TRADE_LIVE=1` for live).
+
+| Gate | Purpose |
+|------|---------|
+| `EXCHANGE_GRID_LIVE=1` + `EXCHANGE_ARBITRAGE_LIVE=1` | Live grid limit orders |
+| `EXCHANGE_CROSS_TRADE_LIVE=1` | Live cross-venue auto-trader (`--cross-trade`) |
+| `MN2_SPORK_GATES` / site spork | Diagnostic only in grid daemon; grid live does **not** require spork (standalone laptop bot) |
+
+Config: `data/exchange_grid_bot_config.json` (default `enabled: false` — use `--enable` or edit). State/ledger: `data/crypto_exchange/grid_bot_state.json`, `grid_bot_ledger.jsonl`.
+
+**Blockers:** XeggeX 401 (#2) blocks live on xeggex; `exchange_live_spork_ok: spork_exchange_live_off` is expected off-server and does not block paper mode. Fund quote (USDC/USDT) for buys or hold coin for sell-from-existing on each venue before live.
 
 ### 3. Server deploy (production)
 
@@ -213,6 +241,17 @@ Register bank on Binance app first (Wallet → Withdraw Fiat → SEPA). Fee ~2 E
 ---
 
 ## Session notes / recent wins
+
+### 2026-07-15 — Grid bot port + deploy manifest fix
+
+- Ported `scripts/grid_bot_daemon.py`, `exchange_grid_bot_service.py`, `exchange_cross_trade_service.py` from sibling repo
+- Added starter configs: `data/exchange_grid_bot_config.json`, `data/exchange_cross_trade_config.json`
+- Deploy script UPLOAD: `profit-monitor-cinematic.css` replaces legacy monitor CSS
+
+### 6def32c — Cinematic profit monitor UI
+
+- Redesigned `/profit/` monitor with cinematic streaming UI + earn guide
+- CSS: `static/css/profit-monitor-cinematic.css` (deploy manifest updated)
 
 ### ec2743b — Profit daemon monitor, hot-pair prefunding, live runtime
 

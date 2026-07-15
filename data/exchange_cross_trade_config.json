@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "venues": ["binance", "nonkyc", "xeggex"],
+  "min_net_bps": 8.0,
+  "notional_usd": 25.0,
+  "cooldown_seconds": 3.0,
+  "max_trades_per_run": 3,
+  "daily_loss_cap_usd": 10.0
+}

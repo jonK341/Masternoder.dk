@@ -28,7 +28,7 @@ UPLOAD = [
     "backend/routes/all_page_routes.py",
     "profit/index.html",
     "static/js/profit-daemon-monitor.js",
-    "static/css/profit-daemon-monitor.css",
+    "static/css/profit-monitor-cinematic.css",
     "static/js/frontpage-home.js",
     "static/js/navigation-toolbar.js",
     "data/exchange_shop_catalog.json",
