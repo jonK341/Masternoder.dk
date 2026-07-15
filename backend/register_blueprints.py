@@ -306,6 +306,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP platform_news: {e}")
     try:
+        from backend.routes.podcast_routes import podcast_bp
+        if "podcast" not in app.blueprints:
+            app.register_blueprint(podcast_bp)
+            n += 1
+            print("  [OK] Registered podcast blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP podcast: {e}")
+    try:
         from backend.routes.platform_upgrades_routes import platform_upgrades_bp
         app.register_blueprint(platform_upgrades_bp)
         n += 1
@@ -2246,6 +2254,19 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import leaderboard: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering leaderboard: {e}")
+
+
+    # Podcast Routes (channels, episodes, sound lab, RSS)
+    try:
+        from backend.routes.podcast_routes import podcast_bp
+        if "podcast" not in app.blueprints:
+            app.register_blueprint(podcast_bp)
+            registered_count += 1
+            print("  [OK] Registered podcast blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import podcast: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering podcast: {e}")
 
     print("  [OK 4/4] Agent technologies, chat, quest, leaderboard")
 
