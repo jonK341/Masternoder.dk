@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260705">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -1523,7 +1523,22 @@
 
                     <!-- Password protection (reward for completing / earning points) -->
                     <!-- Layered security overview + account protections -->
-                    <div class="section-card" id="profile-section-security-layer" data-profile-route="security">
+                    <div class="profile-security-frame" id="profile-security-frame" data-profile-route="security">
+                        <header class="profile-security-header">
+                            <div>
+                                <h2>Account security center</h2>
+                                <p>Password, verified email, recovery options, session binding, and real-money protections — all in one place.</p>
+                            </div>
+                        </header>
+                        <div id="profile-security-status-panel" class="profile-security-status-panel" aria-live="polite">Loading security status…</div>
+                        <nav class="profile-security-subnav page-tabs" aria-label="Security sections">
+                            <button type="button" class="tab-btn active" data-security-scroll="layers">Layers</button>
+                            <button type="button" class="tab-btn" data-security-scroll="password">Password</button>
+                            <button type="button" class="tab-btn" data-security-scroll="email">Email recovery</button>
+                            <button type="button" class="tab-btn" data-security-scroll="account">Real-money</button>
+                        </nav>
+
+                    <div class="section-card" id="profile-section-security-layer" data-security-panel="layers">
                         <h2 class="section-title">🛡️ Layered security</h2>
                         <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Three layers protect your account and MN2: profile password, real-money account rules, and withdrawal 2FA / whitelist (Wallet tab → Withdraw 2FA).</p>
                         <div class="profile-layer-security-grid">
@@ -1542,7 +1557,7 @@
                         </div>
                     </div>
 
-                    <div class="section-card" id="password-protection-card" data-profile-route="security account">
+                    <div class="section-card" id="password-protection-card" data-profile-route="security account" data-security-panel="password">
                         <h2 class="section-title">🔐 Password protection</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Unlock by earning points or completing Star Map investigations; set a password and get a small reward.</p>
                         <div id="password-protection-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
@@ -1556,9 +1571,42 @@
                             <button type="button" id="password-recovery-reset-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24;cursor:pointer;">Reset with token</button>
                         </div>
                         <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
+                        <details style="margin-top:12px;">
+                            <summary style="cursor:pointer;color:#fbbf24;">Forgot password? Reset by email</summary>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                                <input type="email" id="profile-forgot-password-email" placeholder="Account email" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;min-width:220px;">
+                                <button type="button" id="profile-forgot-password-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #fbbf24;background:rgba(251,191,36,0.12);color:#fbbf24;cursor:pointer;">Send recovery</button>
+                            </div>
+                        </details>
                     </div>
 
-                    <div class="section-card" id="account-security-card" data-profile-route="security account">
+                    <div class="section-card profile-email-recovery-card" id="profile-email-recovery-card" data-profile-route="security account" data-security-panel="email">
+                        <h2 class="section-title">📧 Email verification &amp; recovery</h2>
+                        <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Verify your primary email, set a backup recovery address, or change email with confirmation.</p>
+                        <p id="profile-email-recovery-status" class="profile-email-recovery-status" style="font-size:0.88rem;margin-bottom:12px;">Loading…</p>
+                        <div class="recovery-actions">
+                            <strong style="color:#00d4ff;font-size:0.9rem;">Verify primary email</strong>
+                            <input type="email" id="profile-email-verify-input" placeholder="you@example.com">
+                            <button type="button" id="profile-email-verify-btn">Send verification</button>
+                            <input type="text" id="profile-email-verify-token" placeholder="Verification token">
+                            <button type="button" id="profile-email-verify-confirm-btn">Confirm email</button>
+
+                            <strong style="color:#00d4ff;font-size:0.9rem;margin-top:8px;">Change email</strong>
+                            <input type="email" id="profile-email-change-input" placeholder="New email">
+                            <input type="password" id="profile-email-change-password" placeholder="Current password (if set)">
+                            <button type="button" id="profile-email-change-btn">Request change</button>
+                            <input type="text" id="profile-email-change-token" placeholder="Change token">
+                            <button type="button" id="profile-email-change-confirm-btn">Confirm change</button>
+
+                            <strong style="color:#00d4ff;font-size:0.9rem;margin-top:8px;">Backup recovery email</strong>
+                            <input type="email" id="profile-recovery-email-input" placeholder="backup@example.com">
+                            <button type="button" id="profile-recovery-email-btn">Send recovery confirmation</button>
+                            <input type="text" id="profile-recovery-email-token" placeholder="Recovery token">
+                            <button type="button" id="profile-recovery-email-confirm-btn">Confirm recovery email</button>
+                        </div>
+                    </div>
+
+                    <div class="section-card" id="account-security-card" data-profile-route="security account" data-security-panel="account">
                         <h2 class="section-title">🛡️ Real-money security</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Protect accounts with MN2 or casino USD balance. Enable password-on-login and require verification before real-money casino bets.</p>
                         <div id="account-security-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
@@ -1586,6 +1634,7 @@
                             <button type="button" id="account-security-save-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;max-width:220px;">Save security settings</button>
                         </div>
                     </div>
+                    </div><!-- /.profile-security-frame -->
 
                     <!-- Achievements Section -->
                     <div class="section-card" id="profile-section-achievements" data-profile-route="progress">
@@ -1668,6 +1717,7 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/profile-security.js?v=20260705"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -1759,6 +1809,9 @@
                         this.loadRecentClipDownload();
                         this.loadPasswordProtection();
                         this.loadAccountSecurity();
+                        if (window.ProfileSecurity && typeof window.ProfileSecurity.init === 'function') {
+                            window.ProfileSecurity.init(this.userId);
+                        }
                         this.loadQuickBattleAndLeaderboard();
                         this.loadAgentControl();
                         this.loadMonetization25();
@@ -2295,6 +2348,7 @@
                             if (res.success) {
                                 statusEl.textContent = 'Password saved.' + (res.points_awarded ? ' +' + res.points_awarded + ' game_points reward.' : '');
                                 window.profileManager.loadPasswordProtection();
+                                if (window.ProfileSecurity) window.ProfileSecurity.loadSecurityPanel(uid);
                                 if (window.profileManager.refreshProfilePoints) window.profileManager.refreshProfilePoints();
                             } else statusEl.textContent = res.error || 'Failed to set password.';
                         }).catch(function() { setBtn.disabled = false; statusEl.textContent = 'Request failed.'; });
@@ -2350,6 +2404,7 @@
                             if (res.success) {
                                 statusEl.textContent = 'Password reset.';
                                 window.profileManager.loadPasswordProtection();
+                                if (window.ProfileSecurity) window.ProfileSecurity.loadSecurityPanel(uid);
                             } else statusEl.textContent = res.error || 'Password reset failed.';
                         }).catch(function() { recoveryResetBtn.disabled = false; statusEl.textContent = 'Password reset failed.'; });
                     });
@@ -3959,7 +4014,21 @@
                 if (window.profileManager) {
                     if (typeof window.profileManager.loadPasswordProtection === 'function') window.profileManager.loadPasswordProtection();
                     if (typeof window.profileManager.loadAccountSecurity === 'function') window.profileManager.loadAccountSecurity();
+                    if (window.ProfileSecurity && typeof window.ProfileSecurity.init === 'function') {
+                        window.ProfileSecurity.init(window.profileManager.userId);
+                    }
                 }
+                document.querySelectorAll('.profile-security-subnav [data-security-scroll]').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var key = btn.getAttribute('data-security-scroll');
+                        document.querySelectorAll('.profile-security-subnav .tab-btn').forEach(function(b) {
+                            b.classList.toggle('active', b === btn);
+                        });
+                        document.querySelectorAll('[data-security-panel]').forEach(function(panel) {
+                            panel.style.display = panel.getAttribute('data-security-panel') === key ? '' : 'none';
+                        });
+                    });
+                });
                 if (window.Mn2WithdrawalSecurity && typeof window.Mn2WithdrawalSecurity.refresh === 'function') {
                     window.Mn2WithdrawalSecurity.refresh();
                 }

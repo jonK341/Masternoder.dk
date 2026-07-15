@@ -537,3 +537,70 @@ def test_agent_seed_repeats_each_tick(ex_env, points_db, monkeypatch):
     agents.tick(force=True)
     bal2 = ex_env._get_quote_balance("exchange_agent_test", "MN2")
     assert bal2 == pytest.approx(25.0)
+
+
+def test_quote_quick_swap_two_leg(ex_env, points_db):
+    points_db.add_points("qs_user", "mn2_balance", 5000.0, source="seed", metadata={"reference": "seed"})
+    ex_env._adjust_balance("qs_user", "BTC", 0.01)
+    q = ex_env.quote_quick_swap("qs_user", "BTC", "ETH", 0.005)
+    assert q["success"] is True, q.get("error")
+    assert q["leg_count"] == 2
+    assert len(q["legs"]) == 2
+    assert q["estimated_output"] > 0
+
+
+def test_execute_quick_swap_single_leg(ex_env, points_db):
+    points_db.add_points("qs_user2", "mn2_balance", 5000.0, source="seed", metadata={"reference": "seed"})
+    ex_env._adjust_balance("qs_user2", "ETH", 1.0)
+    preview = ex_env.quote_quick_swap("qs_user2", "ETH", "MN2", 0.5)
+    assert preview["success"] is True
+    assert preview["leg_count"] == 1
+    res = ex_env.execute_quick_swap(
+        "qs_user2", preview["quote_id"], "ETH", "MN2", 0.5,
+    )
+    assert res["success"] is True, res.get("error")
+    w = ex_env.get_wallet("qs_user2")
+    assert float(w["assets"].get("ETH") or 0) < 1.0
+
+
+def test_venue_swap_paper_mode(ex_env, monkeypatch):
+    from backend.services import exchange_user_venue_execution_service as vexec
+
+    monkeypatch.setattr(
+        "backend.services.mn2_earn_auth.require_earn_user",
+        lambda uid: (True, uid),
+    )
+    monkeypatch.setattr(
+        vexec, "venue_ready",
+        lambda vid: {"ok": True, "venue_id": vid, "live_ready": False, "mode": "paper", "quote_currency": "USDC"},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.place_market_order",
+        lambda *a, **k: {"success": True, "simulated": True, "mode": "paper", "order_id": "paper-1"},
+    )
+    monkeypatch.setattr(
+        vexec, "_external_price",
+        lambda vid, sym, side: 50000.0 if sym == "BTC" else 1.0,
+    )
+    points_db_fixture = None
+    from backend.services import unified_points_database as upd
+    ex_env._adjust_balance("venue_user", "USDC", 500.0)
+    q = vexec.quote_venue_swap("venue_user", "binance", "BTC", "buy", 0.001, "USDC")
+    assert q["success"] is True, q.get("error")
+    assert q["mode"] == "paper"
+    res = vexec.execute_venue_swap("venue_user", "binance", q["quote_id"], "BTC", "buy", 0.001, "USDC")
+    assert res["success"] is True, res.get("error")
+    assert res["trade"]["venue_id"] == "binance"
+
+
+def test_broadcast_snapshot_shape(ex_env):
+    from backend.services.exchange_broadcast_service import broadcast_snapshot, snapshot_signature
+
+    snap = broadcast_snapshot("test_user", feed_limit=5, include_metrics=False)
+    assert snap["success"] is True
+    assert snap["type"] == "exchange_broadcast"
+    assert "monitor" in snap
+    assert "prices" in snap
+    sig1 = snapshot_signature(snap)
+    sig2 = snapshot_signature(snap)
+    assert sig1 == sig2

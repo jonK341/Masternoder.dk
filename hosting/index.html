@@ -4,138 +4,226 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MN2 Masternode Hosting — $4.99/slot | MasterNoder</title>
-    <meta name="description" content="Host a MasterNoder2 masternode from $4.99 per slot. PayPal, coins, MN2 wallet, or on-chain. Automatic provisioning, 10,000 MN2 collateral, 50% block-reward tier.">
-    <meta name="keywords" content="MN2 masternode hosting, MasterNoder2, crypto masternode, PayPal hosting, staking rewards">
+    <meta name="description" content="Host a MasterNoder2 masternode from $4.99 per slot. PayPal, coins, MN2 wallet, or on-chain. Automatic provisioning, 5,000 MN2 collateral, 50% block-reward tier.">
     <link rel="canonical" href="https://masternoder.dk/hosting/">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://masternoder.dk/hosting/">
     <meta property="og:title" content="MN2 Masternode Hosting — MasterNoder">
     <meta property="og:description" content="Reserve a hosted masternode slot from $4.99. Multi-rail checkout: PayPal, coins, MN2 balance, or on-chain.">
-    <meta property="og:site_name" content="MasterNoder">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="MN2 Masternode Hosting">
-    <meta name="twitter:description" content="Hosted MN2 masternodes from $4.99/slot — automatic fleet provisioning on MasterNoder.dk.">
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": "MN2 Masternode Hosting Slot",
-        "description": "Hosted MasterNoder2 masternode slot with automatic provisioning",
-        "brand": { "@type": "Brand", "name": "MasterNoder" },
-        "offers": {
-            "@type": "Offer",
-            "priceCurrency": "USD",
-            "price": "4.99",
-            "availability": "https://schema.org/InStock",
-            "url": "https://masternoder.dk/shop?tab=mn2"
-        }
-    }
-    </script>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <style>
-        .host-page { max-width: 920px; margin: 0 auto; padding: 28px 16px 72px; }
-        .host-hero { text-align: center; margin-bottom: 36px; }
-        .host-hero h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0 0 10px; background: linear-gradient(135deg, #ffc439, #00ff88); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .host-hero p.lead { color: var(--text-secondary); line-height: 1.6; max-width: 42rem; margin: 0 auto 20px; font-size: 1.02rem; }
-        .host-status { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 28px; }
-        .host-stat { min-width: 140px; padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); text-align: center; }
-        .host-stat strong { display: block; font-size: 1.4rem; color: var(--primary); }
-        .host-stat span { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-        .host-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 24px 0 40px; }
-        .host-cta a { padding: 12px 22px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 0.95rem; }
-        .host-cta .primary { background: linear-gradient(135deg, #ffc439, #ffaa00); color: #111; }
-        .host-cta .secondary { background: rgba(0,255,136,0.12); color: var(--primary); border: 1px solid rgba(0,255,136,0.35); }
-        .host-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
-        .host-card { padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); }
-        .host-card h2 { margin: 0 0 8px; font-size: 1rem; color: var(--secondary); }
-        .host-card p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; }
-        .host-rails { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
-        .host-rails li { font-size: 0.82rem; padding: 6px 12px; border-radius: 999px; background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid rgba(0,212,255,0.25); }
-        .host-faq { margin-top: 32px; }
-        .host-faq h2 { font-size: 1.15rem; margin-bottom: 14px; }
-        .host-faq details { margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; background: rgba(0,0,0,0.2); }
-        .host-faq summary { cursor: pointer; font-weight: 600; }
-        .host-faq p { margin: 10px 0 0; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
-    </style>
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
+    <link rel="stylesheet" href="/static/css/loading-states.css">
+    <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260705">
+    <link rel="stylesheet" href="/hosting/hosting-ui.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260715">
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Product","name":"MN2 Masternode Hosting Slot","offers":{"@type":"Offer","priceCurrency":"USD","price":"4.99","url":"https://masternoder.dk/hosting/"}}
+    </script>
 </head>
-<body class="layout-standard">
+<body class="layout-standard hosting-page">
     <div class="host-page">
-        <header class="host-hero">
-            <h1>MN2 Masternode Hosting</h1>
-            <p class="lead">Run a MasterNoder2 masternode without managing your own server. We provision your slot on shared infrastructure — <strong>10,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
-            <div class="host-status" id="host-status" aria-live="polite">
-                <div class="host-stat"><strong id="host-slots">—</strong><span>Slots available</span></div>
-                <div class="host-stat"><strong id="host-price">$4.99</strong><span>Per slot (USD)</span></div>
-                <div class="host-stat"><strong id="host-live">—</strong><span>Live on network</span></div>
-            </div>
-            <div class="host-cta">
-                <a class="primary" href="/shop?tab=mn2">Reserve a slot in Shop</a>
-                <a class="secondary" href="/explorer?tab=masternodes">Explorer fleet →</a>
-            </div>
+        <header class="host-header">
+            <h1>🏛️ MN2 Masternode Hosting</h1>
+            <p class="host-sub">Platform-hosted MasterNoder2 masternodes on shared infrastructure — <strong>5,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier. Fully automated provisioning after payment.</p>
+            <nav class="host-shortcuts" aria-label="Hosting shortcuts" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                <a href="/explorer?tab=masternodes" style="font-size:0.82rem;color:#00d4ff;">Explorer fleet →</a>
+                <a href="/shop?tab=mn2" style="font-size:0.82rem;color:#00d4ff;">Shop MN2 tab →</a>
+                <a href="/profile#mn2-wallet" style="font-size:0.82rem;color:#00d4ff;">MN2 wallet →</a>
+            </nav>
         </header>
 
-        <section class="host-grid" aria-label="Hosting features">
-            <article class="host-card">
-                <h2>Automatic provisioning</h2>
-                <p>After payment, your node registers on the fleet list and provisioning runs automatically — no manual SSH setup.</p>
-            </article>
-            <article class="host-card">
-                <h2>Multi-rail checkout</h2>
-                <p>Pay the way that fits you:</p>
-                <ul class="host-rails">
-                    <li>PayPal</li>
-                    <li>Shop coins</li>
-                    <li>MN2 wallet</li>
-                    <li>On-chain MN2</li>
-                </ul>
-            </article>
-            <article class="host-card">
-                <h2>Transparent network</h2>
-                <p>Track slots, reserves, and network stats in the Explorer. Proof-of-Stake with a documented 50/50 masternode vs staking split.</p>
-            </article>
-            <article class="host-card">
-                <h2>Earn while you play</h2>
-                <p>Stack hosting with shop boosters, staking pool rewards, and Game Hub progression — one MN2 ecosystem.</p>
-            </article>
-        </section>
+        <nav class="host-hub-nav" id="host-hub-nav" role="tablist" aria-label="Hosting sections">
+            <button type="button" class="host-hub-tab active" data-host-tab="overview" role="tab" aria-selected="true"><span class="host-tab-emoji">📊</span> Overview</button>
+            <button type="button" class="host-hub-tab" data-host-tab="rent" role="tab" aria-selected="false"><span class="host-tab-emoji">🛒</span> Rent</button>
+            <button type="button" class="host-hub-tab" data-host-tab="fleet" role="tab" aria-selected="false"><span class="host-tab-emoji">🏛️</span> Fleet</button>
+            <button type="button" class="host-hub-tab" data-host-tab="network" role="tab" aria-selected="false"><span class="host-tab-emoji">🌐</span> Network</button>
+            <button type="button" class="host-hub-tab" data-host-tab="orders" role="tab" aria-selected="false"><span class="host-tab-emoji">📋</span> My orders</button>
+            <button type="button" class="host-hub-tab" data-host-tab="faq" role="tab" aria-selected="false"><span class="host-tab-emoji">❓</span> FAQ</button>
+        </nav>
+        <p class="host-route-note" id="host-route-note">Viewing: 📊 Overview</p>
 
-        <section class="host-faq" aria-label="FAQ">
-            <h2>Frequently asked</h2>
-            <details>
-                <summary>How much does a slot cost?</summary>
-                <p>Hosting starts at <strong>$4.99 USD per slot</strong> via PayPal. Coin and MN2 pricing is shown at checkout in the Shop MN2 tab.</p>
-            </details>
-            <details>
-                <summary>What happens after I pay?</summary>
-                <p>Your order moves to <em>paid</em> status and slot provisioning starts automatically. Host IDs appear in your purchase history and on the Explorer masternode tab.</p>
-            </details>
-            <details>
-                <summary>Can I pay with MN2 instead of PayPal?</summary>
-                <p>Yes — use in-wallet MN2 balance or generate a one-time on-chain payment address with the exact amount from the Shop checkout flow.</p>
-            </details>
-        </section>
+        <div class="host-onboard" id="host-onboard" role="status">
+            <span>👋 Pick slots, choose a payment rail, confirm checkout. <kbd>/</kbd> search fleet · <kbd>R</kbd> refresh · <kbd>1</kbd>–<kbd>5</kbd> quick slots.</span>
+            <button type="button" class="host-btn host-btn--ghost" id="host-onboard-dismiss" aria-label="Dismiss hint">Got it</button>
+        </div>
+
+        <div id="host-toast-host" class="host-toast-host" aria-live="polite" aria-atomic="true"></div>
+
+        <div class="host-status-bar" id="host-security-bar" aria-live="polite">Checking account…</div>
+
+        <!-- Overview -->
+        <div class="host-tab-shell active" data-host-tab="overview" id="host-shell-overview">
+            <section class="host-panel host-panel--accent host-collapsible" aria-label="Live rental monitor">
+                <div class="host-collapsible-head">
+                    <h2><span class="host-live-pulse" id="host-live-dot" aria-hidden="true"></span> Live rental monitor</h2>
+                    <div>
+                        <span class="host-status-pill" id="host-health-pill">Health: …</span>
+                        <button type="button" class="host-collapse-btn" data-collapse="host-monitor-body" aria-expanded="true" aria-controls="host-monitor-body">▼</button>
+                    </div>
+                </div>
+                <div class="host-collapsible-body" id="host-monitor-body">
+                    <div class="host-kpi-grid">
+                        <div class="host-kpi"><strong id="host-slots-open">—</strong><span>Slots open</span></div>
+                        <div class="host-kpi"><strong id="host-slots-used">—</strong><span>Fleet used</span></div>
+                        <div class="host-kpi"><strong id="host-net-enabled">—</strong><span>Network enabled</span></div>
+                        <div class="host-kpi"><strong id="host-platform-live">—</strong><span>Platform live</span></div>
+                        <div class="host-kpi"><strong id="host-daemon-status">—</strong><span>Daemon</span></div>
+                        <div class="host-kpi"><strong id="host-stale-count">—</strong><span>Stale provision</span></div>
+                    </div>
+                    <p style="margin:0 0 8px;font-size:0.82rem;color:#9ec5ff;">Capacity</p>
+                    <div class="host-slot-meter-bar"><div class="host-slot-meter-fill" id="host-meter-fill" style="width:0"></div></div>
+                    <p id="host-stale-warning" class="host-sold-out" hidden aria-live="polite"></p>
+                    <p style="margin:8px 0 4px;font-size:0.78rem;color:#9ec5ff;">Daemon: <span id="host-daemon-sync">—</span> · v<span id="host-daemon-version">—</span></p>
+                    <div class="host-activity-feed" id="host-activity-feed" role="log" aria-label="Hosting activity"><span class="host-skeleton host-skeleton--inline"></span></div>
+                </div>
+            </section>
+
+            <section class="host-panel" aria-label="Tier comparison">
+                <h2 style="margin:0 0 10px;font-size:0.95rem;color:#00ff88;">Rental tiers</h2>
+                <div class="host-tier-grid">
+                    <article class="host-tier-card">
+                        <h3>Starter · 1 slot</h3>
+                        <p style="margin:0;font-size:0.85rem;color:#dce6ff;">$4.99 / 30 days · ideal to try hosting.</p>
+                        <ul><li>Auto-provision</li><li>PayPal or MN2</li><li>Explorer visibility</li></ul>
+                    </article>
+                    <article class="host-tier-card featured">
+                        <h3>Standard · 2–3 slots</h3>
+                        <p style="margin:0;font-size:0.85rem;color:#dce6ff;">Bundle checkout in one quote.</p>
+                        <ul><li>Multi-slot discount path</li><li>Coins + on-chain rails</li><li>Fleet dashboard</li></ul>
+                    </article>
+                    <article class="host-tier-card">
+                        <h3>Fleet · up to 5</h3>
+                        <p style="margin:0;font-size:0.85rem;color:#dce6ff;">Max per order from config.</p>
+                        <ul><li>Priority provisioning queue</li><li>Order history export</li><li>VIP Discord retention</li></ul>
+                    </article>
+                </div>
+            </section>
+
+            <section class="mn2-page-strip" data-mn2-auto data-balance-id="host-mn2-balance" data-rate-id="host-mn2-rate">
+                <h2>Your MN2 wallet</h2>
+                <div class="mn2-page-metrics">
+                    <div class="mn2-page-metric"><span>Balance</span><strong id="host-mn2-balance">—</strong></div>
+                    <div class="mn2-page-metric"><span>USD / MN2</span><strong id="host-mn2-rate">—</strong></div>
+                    <div class="mn2-page-metric"><span>Open slots</span><strong id="host-slots-open-strip">—</strong></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Rent -->
+        <div class="host-tab-shell" data-host-tab="rent" id="host-shell-rent" hidden>
+            <div class="host-checkout-card" id="host-checkout-card">
+                <h3>Reserve a slot</h3>
+                <p style="margin:0 0 12px;color:#dce6ff;font-size:0.9rem;line-height:1.5;">Pay with PayPal, shop coins, in-wallet MN2, or on-chain MN2. Collateral lock and fleet registration run automatically.</p>
+                <div class="host-checkout-row">
+                    <label class="host-tooltip-label" title="Number of hosting slots (max per order from config)">Slots
+                        <input type="number" id="host-checkout-slots" class="host-input" min="1" max="5" value="1" aria-label="Number of slots">
+                    </label>
+                    <div>
+                        <div style="font-size:1.35rem;font-weight:800;color:#fff;" id="host-price-usd">$4.99</div>
+                        <div style="font-size:0.78rem;color:#9ec5ff;" id="host-price-alt">— coins · — MN2</div>
+                        <div id="host-quote-ttl" style="font-size:0.72rem;color:#9ec5ff;margin-top:4px;" aria-live="polite"></div>
+                    </div>
+                </div>
+                <div class="host-quick-slots" role="group" aria-label="Quick slot amounts">
+                    <button type="button" data-slots="1" class="active">1</button>
+                    <button type="button" data-slots="2">2</button>
+                    <button type="button" data-slots="3">3</button>
+                    <button type="button" data-slots="5">5</button>
+                </div>
+                <div class="host-fee-breakdown" id="host-fee-breakdown" title="Per-slot and total fees">Loading fee breakdown…</div>
+                <p class="host-sold-out" id="host-sold-out" hidden>Sold out — all slots reserved. Check back soon.</p>
+                <div class="host-checkout-actions" id="host-checkout-actions">
+                    <button type="button" class="host-btn host-btn--paypal" data-host-pay="paypal">PayPal</button>
+                    <button type="button" class="host-btn host-btn--coins" data-host-pay="coins">Coins</button>
+                    <button type="button" class="host-btn host-btn--mn2" data-host-pay="mn2">MN2 wallet</button>
+                    <button type="button" class="host-btn host-btn--onchain" data-host-pay="onchain">On-chain MN2</button>
+                </div>
+                <p id="host-checkout-msg" style="min-height:1.2em;margin:10px 0 0;font-size:0.88rem;color:#5dffb0;" aria-live="polite"></p>
+                <p style="margin:12px 0 4px;font-size:0.78rem;color:#9ec5ff;">Recent attempts</p>
+                <div class="host-recent-row" id="host-recent-rentals"></div>
+            </div>
+        </div>
+
+        <!-- Fleet -->
+        <div class="host-tab-shell" data-host-tab="fleet" id="host-shell-fleet" hidden>
+            <section class="host-panel" aria-label="Platform fleet">
+                <div class="host-toolbar">
+                    <input type="search" id="host-fleet-search" class="host-input" placeholder="Search label, ID, address… (/)" aria-label="Search fleet">
+                    <select id="host-fleet-filter" class="host-input" aria-label="Filter by status">
+                        <option value="all">All statuses</option>
+                        <option value="enabled">Enabled only</option>
+                        <option value="queued">Queued / provisioning</option>
+                    </select>
+                    <button type="button" class="host-btn host-btn--ghost" onclick="HostingHub.loadService(true);HostingHub.toast('Fleet refreshed','ok')">↻ Refresh</button>
+                </div>
+                <div class="host-node-grid" id="host-fleet-grid">
+                    <span class="host-skeleton host-skeleton--row"></span>
+                    <span class="host-skeleton host-skeleton--row"></span>
+                </div>
+            </section>
+        </div>
+
+        <!-- Network -->
+        <div class="host-tab-shell" data-host-tab="network" id="host-shell-network" hidden>
+            <section class="host-panel" aria-label="Network masternodes">
+                <div class="host-toolbar">
+                    <label>Sort
+                        <select id="host-net-sort" class="host-input" aria-label="Sort network list">
+                            <option value="rank">Rank</option>
+                            <option value="activetime">Active time</option>
+                        </select>
+                    </label>
+                </div>
+                <table class="host-net-table">
+                    <thead><tr><th>Rank</th><th>Address</th><th>Status</th><th>Active time</th></tr></thead>
+                    <tbody id="host-net-table-body"><tr><td colspan="4"><span class="host-skeleton host-skeleton--row"></span></td></tr></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Orders -->
+        <div class="host-tab-shell" data-host-tab="orders" id="host-shell-orders" hidden>
+            <section class="host-panel" aria-label="My hosting orders">
+                <table class="host-net-table">
+                    <thead><tr><th>Order</th><th>Status</th><th>Slots</th><th>Total</th><th>Date</th></tr></thead>
+                    <tbody id="host-orders-body"><tr><td colspan="5"><span class="host-skeleton host-skeleton--row"></span></td></tr></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- FAQ -->
+        <div class="host-tab-shell" data-host-tab="faq" id="host-shell-faq" hidden>
+            <section class="host-panel" aria-label="FAQ">
+                <details open><summary>How much does a slot cost?</summary><p style="color:#dce6ff;margin:10px 0 0;">From <strong>$4.99 USD</strong> per slot / 30 days. Coin and MN2 pricing shown at checkout.</p></details>
+                <details><summary>What happens after I pay?</summary><p style="color:#dce6ff;margin:10px 0 0;">Order → paid → auto-provision → host appears in fleet with on-chain status.</p></details>
+                <details><summary>Can I pay with MN2?</summary><p style="color:#dce6ff;margin:10px 0 0;">Yes — in-wallet MN2 or one-time on-chain address with exact amount.</p></details>
+                <details><summary>Is auth required?</summary><p style="color:#dce6ff;margin:10px 0 0;">Yes — sign in at Profile so quotes and orders bind to your account (IDOR-safe).</p></details>
+            </section>
+        </div>
     </div>
-    <script>
-    (function () {
-        fetch('/api/mn2/masternode/service', { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (!d || !d.success) return;
-                var avail = d.slots_available != null ? d.slots_available : (d.hosting && d.hosting.slots_available);
-                var live = d.enabled_count != null ? d.enabled_count : (d.network && d.network.enabled_masternodes);
-                var pp = d.paypal || {};
-                var price = pp.price_usd_per_slot;
-                if (avail != null) document.getElementById('host-slots').textContent = String(avail);
-                if (live != null) document.getElementById('host-live').textContent = String(live);
-                if (price != null) document.getElementById('host-price').textContent = '$' + Number(price).toFixed(2);
-            })
-            .catch(function () {});
-    })();
-    </script>
+
+    <footer class="host-footer-bar" id="host-footer-bar" aria-live="polite">Connecting…</footer>
+
+    <div id="host-onchain-modal" class="host-onchain-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="host-onchain-title">
+        <div class="host-onchain-dialog">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <strong id="host-onchain-title">Pay with MN2 (on-chain)</strong>
+                <button type="button" id="host-onchain-close" aria-label="Close" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;">×</button>
+            </div>
+            <p style="font-size:0.88rem;color:#dce6ff;">Send the <strong>exact</strong> amount below. Provisioning starts after confirmations.</p>
+            <div id="host-onchain-qr"></div>
+            <div id="host-onchain-address" class="host-node-addr"></div>
+            <button type="button" class="host-btn host-btn--ghost" id="host-onchain-copy">Copy address</button>
+            <p id="host-onchain-amount"></p>
+            <p id="host-onchain-status" aria-live="polite"></p>
+        </div>
+    </div>
+
+    <script src="/static/js/mn2-page-strip.js" defer></script>
+    <script src="/static/js/hosting-hub.js?v=20260705" defer></script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
-    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="hosting" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260715" data-site="hosting" defer></script>
 </body>
 </html>

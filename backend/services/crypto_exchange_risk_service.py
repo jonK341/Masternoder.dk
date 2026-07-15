@@ -115,16 +115,76 @@ def check_fiat_buy(user_id: str, usd_amount: float, *, country: Optional[str] = 
     }
 
 
+def _captured_sell_rows() -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    path = getattr(ex, "_PAYPAL_CRYPTO_SELL_ORDERS_PATH", None)
+    if not path:
+        return rows
+    data = ex._read_json(path, {})
+    for bucket in ("pending", "completed"):
+        for row in (data.get(bucket) or {}).values():
+            if not isinstance(row, dict):
+                continue
+            rows.append({
+                "user_id": str(row.get("user_id") or ""),
+                "ts": row.get("created_at") or row.get("completed_at"),
+                "usd": float(row.get("usd_amount") or 0),
+            })
+    return rows
+
+
+def _sum_sell_usd_since(user_id: str, since: datetime) -> float:
+    total = 0.0
+    for row in _captured_sell_rows():
+        if row["user_id"] != user_id:
+            continue
+        ts = ex._parse_iso(row.get("ts"))
+        if ts and ts >= since:
+            total += float(row.get("usd") or 0)
+    return round(total, 2)
+
+
+def check_fiat_sell(user_id: str, usd_amount: float) -> Dict[str, Any]:
+    """Enforce PayPal crypto sell caps (daily USD off-ramp)."""
+    cfg = ex.load_config()
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    uid = str(user_id or "").strip()
+    usd = float(usd_amount or 0)
+    if not sell_cfg.get("enabled", True):
+        return {"ok": False, "error": "paypal_crypto_sell_disabled"}
+    if not uid or uid.lower() == "default_user":
+        return {"ok": False, "error": "account_required"}
+    now = datetime.now(timezone.utc)
+    day_cap = float(sell_cfg.get("max_usd_daily") or 0)
+    spent_day = _sum_sell_usd_since(uid, now - timedelta(days=1))
+    if day_cap > 0 and (spent_day + usd) > day_cap:
+        return {
+            "ok": False,
+            "error": "daily_sell_cap_exceeded",
+            "cap_usd": day_cap,
+            "spent_usd": spent_day,
+            "remaining_usd": round(max(0.0, day_cap - spent_day), 2),
+        }
+    return {"ok": True, "spent_day_usd": spent_day, "daily_remaining_usd": round(max(0.0, day_cap - spent_day - usd), 2) if day_cap > 0 else None}
+
+
 def user_risk_snapshot(user_id: str) -> Dict[str, Any]:
     limits = _limits()
     uid = str(user_id or "").strip()
     now = datetime.now(timezone.utc)
+    cfg = ex.load_config()
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    sell_day_cap = float(sell_cfg.get("max_usd_daily") or 0)
+    spent_sell_day = _sum_sell_usd_since(uid, now - timedelta(days=1))
     return {
         "success": True,
         "user_id": uid,
         "spent_day_usd": _sum_usd_since(uid, now - timedelta(days=1)),
         "spent_month_usd": _sum_usd_since(uid, now - timedelta(days=30)),
+        "spent_sell_day_usd": spent_sell_day,
+        "sell_daily_remaining_usd": round(max(0.0, sell_day_cap - spent_sell_day), 2) if sell_day_cap > 0 else None,
         "buys_last_hour": _count_buys_since(uid, now - timedelta(hours=1)),
         "open_orders": _open_order_count(uid),
         "limits": limits,
+        "sell_limits": sell_cfg,
     }

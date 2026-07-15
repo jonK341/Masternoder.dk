@@ -237,6 +237,23 @@ def casino_page():
     return 'Casino page not found', 404
 
 
+@all_page_bp.route('/exchange/exchange-ui.css', methods=['GET'])
+def exchange_ui_css():
+    """Stylesheet co-located with exchange/index.html."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'exchange')
+        if os.path.isfile(os.path.join(page_dir, 'exchange-ui.css')):
+            resp = send_from_directory(page_dir, 'exchange-ui.css', mimetype='text/css; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            resp.headers['ETag'] = CONTENT_VERSION
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
+
 @all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
 def casino_manifest():
     """PWA manifest for casino (Play TWA + installable web app)."""

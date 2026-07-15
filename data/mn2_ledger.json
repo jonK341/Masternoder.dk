@@ -760,6 +760,355 @@
         "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
         "source": "exchange_paypal_mn2"
       }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T17:28:17.924479Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T17:29:09.099128Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:01:40.266104Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:02:00.263463Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:02:46.845150Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:07:40.092222Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:13:02.806037Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "buyer_paypal",
+      "type": "exchange_paypal_mn2",
+      "amount": 10.0,
+      "txid": "exchange_paypal_mn2:CAP-1:mn2-starter",
+      "address": null,
+      "created_at": "2026-07-05T18:22:39.778642Z",
+      "metadata": {
+        "order_id": "PAY-1",
+        "capture_id": "CAP-1",
+        "amount_usd": "4.99",
+        "currency": "USD",
+        "destination": "exchange_wallet",
+        "item_id": "mn2-starter",
+        "quantity": 1,
+        "purchase_source": "exchange_paypal_mn2",
+        "reference": "exchange_paypal_mn2:CAP-1:mn2-starter",
+        "source": "exchange_paypal_mn2"
+      }
+    },
+    {
+      "user_id": "test_comment_user",
+      "type": "podcast_comment",
+      "amount": 0.0015,
+      "txid": "podcast-comment:test_comment_user:pcc-e4634f3e9f",
+      "address": null,
+      "created_at": "2026-07-09T04:21:07.305914Z",
+      "metadata": {
+        "episode_id": "ep-005-agents-encoder",
+        "comment_id": "pcc-e4634f3e9f",
+        "action": "comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-comment:test_comment_user:pcc-e4634f3e9f",
+        "source": "podcast_comment"
+      }
+    },
+    {
+      "user_id": "test_news_comment_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:test_news_comment_user:pnc-e1301c2e76",
+      "address": null,
+      "created_at": "2026-07-09T04:21:07.426637Z",
+      "metadata": {
+        "news_id": "profit_bf62c4dbfdad",
+        "comment_id": "pnc-e1301c2e76",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:test_news_comment_user:pnc-e1301c2e76",
+        "source": "podcast_news_comment"
+      }
+    },
+    {
+      "user_id": "route_play_user",
+      "type": "podcast_play",
+      "amount": 0.001,
+      "txid": "podcast-play:route_play_user:ep-004-view-rewards:2026-07-09",
+      "address": null,
+      "created_at": "2026-07-09T04:21:08.884609Z",
+      "metadata": {
+        "episode_id": "ep-004-view-rewards",
+        "action": "play",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-play:route_play_user:ep-004-view-rewards:2026-07-09",
+        "source": "podcast_play"
+      }
+    },
+    {
+      "user_id": "route_news_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:route_news_user:pnc-ade1d4f156",
+      "address": null,
+      "created_at": "2026-07-09T04:21:09.236378Z",
+      "metadata": {
+        "news_id": "profit_bf62c4dbfdad",
+        "comment_id": "pnc-ade1d4f156",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:route_news_user:pnc-ade1d4f156",
+        "source": "podcast_news_comment"
+      }
+    },
+    {
+      "user_id": "test_comment_user",
+      "type": "podcast_comment",
+      "amount": 0.0015,
+      "txid": "podcast-comment:test_comment_user:pcc-4de8167ad9",
+      "address": null,
+      "created_at": "2026-07-15T03:52:26.468845Z",
+      "metadata": {
+        "episode_id": "ep-005-agents-encoder",
+        "comment_id": "pcc-4de8167ad9",
+        "action": "comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-comment:test_comment_user:pcc-4de8167ad9",
+        "source": "podcast_comment"
+      }
+    },
+    {
+      "user_id": "test_news_comment_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:test_news_comment_user:pnc-898798f3f8",
+      "address": null,
+      "created_at": "2026-07-15T03:52:26.580336Z",
+      "metadata": {
+        "news_id": "profit_bf62c4dbfdad",
+        "comment_id": "pnc-898798f3f8",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:test_news_comment_user:pnc-898798f3f8",
+        "source": "podcast_news_comment"
+      }
+    },
+    {
+      "user_id": "route_play_user",
+      "type": "podcast_play",
+      "amount": 0.001,
+      "txid": "podcast-play:route_play_user:ep-004-view-rewards:2026-07-15",
+      "address": null,
+      "created_at": "2026-07-15T03:52:28.531257Z",
+      "metadata": {
+        "episode_id": "ep-004-view-rewards",
+        "action": "play",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-play:route_play_user:ep-004-view-rewards:2026-07-15",
+        "source": "podcast_play"
+      }
+    },
+    {
+      "user_id": "route_news_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:route_news_user:pnc-b49583afcc",
+      "address": null,
+      "created_at": "2026-07-15T03:52:29.385214Z",
+      "metadata": {
+        "news_id": "profit_bf62c4dbfdad",
+        "comment_id": "pnc-b49583afcc",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:route_news_user:pnc-b49583afcc",
+        "source": "podcast_news_comment"
+      }
+    },
+    {
+      "user_id": "test_comment_user",
+      "type": "podcast_comment",
+      "amount": 0.0015,
+      "txid": "podcast-comment:test_comment_user:pcc-e1bcb6679c",
+      "address": null,
+      "created_at": "2026-07-15T03:53:11.120388Z",
+      "metadata": {
+        "episode_id": "ep-008-hosting-masternodes",
+        "comment_id": "pcc-e1bcb6679c",
+        "action": "comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-comment:test_comment_user:pcc-e1bcb6679c",
+        "source": "podcast_comment"
+      }
+    },
+    {
+      "user_id": "test_news_comment_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:test_news_comment_user:pnc-7c70b2a2ba",
+      "address": null,
+      "created_at": "2026-07-15T03:53:32.262419Z",
+      "metadata": {
+        "news_id": "news-podcast-hub-revival-20260715",
+        "comment_id": "pnc-7c70b2a2ba",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:test_news_comment_user:pnc-7c70b2a2ba",
+        "source": "podcast_news_comment"
+      }
+    },
+    {
+      "user_id": "route_play_user",
+      "type": "podcast_play",
+      "amount": 0.001,
+      "txid": "podcast-play:route_play_user:ep-008-hosting-masternodes:2026-07-15",
+      "address": null,
+      "created_at": "2026-07-15T03:53:32.609732Z",
+      "metadata": {
+        "episode_id": "ep-008-hosting-masternodes",
+        "action": "play",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-play:route_play_user:ep-008-hosting-masternodes:2026-07-15",
+        "source": "podcast_play"
+      }
+    },
+    {
+      "user_id": "route_news_user",
+      "type": "podcast_news_comment",
+      "amount": 0.002,
+      "txid": "podcast-news-comment:route_news_user:pnc-051a9a59f6",
+      "address": null,
+      "created_at": "2026-07-15T03:53:50.743420Z",
+      "metadata": {
+        "news_id": "news-podcast-hub-revival-20260715",
+        "comment_id": "pnc-051a9a59f6",
+        "action": "news_comment",
+        "staking_bonus_percent": 0.0,
+        "reference": "podcast-news-comment:route_news_user:pnc-051a9a59f6",
+        "source": "podcast_news_comment"
+      }
     }
   ]
 }

@@ -31,6 +31,10 @@ def pwd_env(monkeypatch):
         monkeypatch.setattr(pwd, "_profile_email", lambda uid: None)
         monkeypatch.setattr(pwd, "_linked_provider", lambda uid: None)
         monkeypatch.setattr(pwd, "_real_money_account", lambda uid: False)
+        monkeypatch.setattr(
+            "backend.services.email_recovery_service.get_email_status",
+            lambda uid: {"email_verified": False, "recovery_email_verified": False},
+        )
         yield pwd
 
 

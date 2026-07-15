@@ -40,6 +40,18 @@ def _body() -> dict:
     return request.get_json(silent=True) or {}
 
 
+def _guest_user(user_id: str) -> bool:
+    uid = str(user_id or "").strip()
+    return not uid or uid == "default_user" or uid.startswith("anon_")
+
+
+def _require_auth_user(user_id: str):
+    """Reject anonymous checkout / order access (IDOR-safe binding)."""
+    if _guest_user(user_id):
+        return jsonify({"success": False, "error": "auth_required", "code": "auth_required"}), 401
+    return None
+
+
 @mn2_masternode_bp.route("/api/mn2/services", methods=["GET"])
 def mn2_services_catalog():
     """Unified MN2 services registry with live status probes."""
@@ -69,6 +81,32 @@ def masternode_service_public():
         return jsonify(mn_service.get_service_status(fresh=fresh)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/health", methods=["GET"])
+def masternode_health():
+    """Readiness probe for hosting UI and ops monitors."""
+    try:
+        probe = mn_service.probe_health()
+        stats = {}
+        try:
+            stats = mn_hosting.hosting_stats()
+        except Exception:
+            pass
+        code = 200
+        status = (probe or {}).get("status") or "unknown"
+        if status in ("degraded", "disabled"):
+            code = 503
+        return jsonify({
+            "success": True,
+            "service": "mn2_masternode_hosting",
+            "status": status,
+            "probe": probe,
+            "hosting_stats": stats,
+            "checked_at": mn_service._iso() if hasattr(mn_service, "_iso") else None,
+        }), code
+    except Exception as exc:
+        return jsonify({"success": False, "status": "degraded", "error": str(exc)}), 503
 
 
 @mn2_masternode_bp.route("/api/mn2/masternode/hosts", methods=["GET"])
@@ -142,6 +180,9 @@ def masternode_checkout_config():
 def masternode_checkout_quote():
     try:
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         slots = _body().get("slots") if request.method == "POST" else request.args.get("slots", 1)
         if slots is None:
             slots = request.args.get("slots", 1)
@@ -156,6 +197,9 @@ def masternode_checkout_order():
     try:
         data = _body()
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         result = mn_hosting.create_order(
             quote_id=(data.get("quote_id") or "").strip(),
             user_id=user_id,
@@ -173,6 +217,9 @@ def masternode_checkout_capture():
     try:
         data = _body()
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         result = mn_hosting.capture(
             order_id=(data.get("order_id") or data.get("quote_id") or "").strip(),
             user_id=user_id,
@@ -186,6 +233,9 @@ def masternode_checkout_capture():
 def masternode_checkout_status():
     try:
         user_id = resolve_user_id(from_body=False, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         order_id = (request.args.get("order_id") or request.args.get("quote_id") or "").strip()
         if not order_id:
             return jsonify({"success": False, "error": "order_id required"}), 400
@@ -199,6 +249,9 @@ def masternode_checkout_pay_coins():
     try:
         data = _body()
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         quote_id = (data.get("quote_id") or data.get("order_id") or "").strip()
         if not quote_id:
             return jsonify({"success": False, "error": "quote_id required"}), 400
@@ -213,6 +266,9 @@ def masternode_checkout_pay_mn2():
     try:
         data = _body()
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         quote_id = (data.get("quote_id") or data.get("order_id") or "").strip()
         if not quote_id:
             return jsonify({"success": False, "error": "quote_id required"}), 400
@@ -227,6 +283,9 @@ def masternode_checkout_pay_onchain():
     try:
         data = _body()
         user_id = resolve_user_id(from_body=True, from_query=True)
+        denied = _require_auth_user(user_id)
+        if denied:
+            return denied
         quote_id = (data.get("quote_id") or data.get("order_id") or "").strip()
         if not quote_id:
             return jsonify({"success": False, "error": "quote_id required"}), 400

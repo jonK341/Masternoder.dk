@@ -6,6 +6,7 @@ import os
 import json
 import hashlib
 import secrets
+import threading
 from datetime import datetime
 from datetime import timedelta
 from typing import Dict, Any, Optional
@@ -13,6 +14,9 @@ from typing import Dict, Any, Optional
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PROTECTION_PATH = os.path.join(BASE_DIR, "data", "user_password_protection.json")
 INVESTIGATIONS_PATH = os.path.join(BASE_DIR, "data", "star_map_25_investigations.json")
+_RECOVERY_RATE_PATH = os.path.join(BASE_DIR, "data", "password_recovery_rate_limit.json")
+_RECOVERY_MAX_PER_HOUR = 5
+_recovery_lock = threading.Lock()
 
 
 def _load_protection() -> Dict[str, Any]:
@@ -181,14 +185,90 @@ def _linked_provider(user_id: str) -> Optional[str]:
 def get_recovery_status(user_id: str) -> Dict[str, Any]:
     email = _profile_email(user_id)
     provider = _linked_provider(user_id)
+    email_verified = False
+    recovery_email_set = False
+    try:
+        from backend.services.email_recovery_service import get_email_status
+        email_meta = get_email_status(user_id)
+        email_verified = bool(email_meta.get("email_verified"))
+        recovery_email_set = bool(email_meta.get("recovery_email_verified"))
+    except Exception:
+        pass
     return {
         "has_email": bool(email),
         "email_masked": _mask_email(email) if email else None,
+        "email_verified": email_verified,
+        "recovery_email_set": recovery_email_set,
         "email_delivery_configured": _email_delivery_configured(),
         "provider": provider,
         "provider_recovery_supported": bool(provider),
         "token_reset_supported": True,
     }
+
+
+def _email_delivery_configured() -> bool:
+    try:
+        from backend.services.purchase_notification_service import SMTP_HOST, SMTP_USER, SMTP_PASSWORD
+        if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
+            return True
+    except Exception:
+        pass
+    return (os.getenv("PASSWORD_RECOVERY_EMAIL_ENABLED") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _load_recovery_rate() -> Dict[str, Any]:
+    if not os.path.exists(_RECOVERY_RATE_PATH):
+        return {"keys": {}}
+    try:
+        with open(_RECOVERY_RATE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"keys": {}}
+
+
+def _save_recovery_rate(data: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_RECOVERY_RATE_PATH), exist_ok=True)
+    with open(_RECOVERY_RATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def _recovery_rate_allowed(key: str) -> bool:
+    cutoff = datetime.utcnow() - timedelta(hours=1)
+    with _recovery_lock:
+        data = _load_recovery_rate()
+        keys = data.setdefault("keys", {})
+        attempts = []
+        for ts in keys.get(key, []):
+            try:
+                if datetime.fromisoformat(str(ts).replace("Z", "")) > cutoff:
+                    attempts.append(ts)
+            except Exception:
+                pass
+        if len(attempts) >= _RECOVERY_MAX_PER_HOUR:
+            return False
+        attempts.append(datetime.utcnow().isoformat() + "Z")
+        keys[key] = attempts
+        _save_recovery_rate(data)
+        return True
+
+
+def _send_recovery_email(to_email: str, user_id: str, token: str, expires_at: str) -> bool:
+    try:
+        from backend.services.purchase_notification_service import _send_email
+        subject = "MasterNoder password recovery"
+        body = (
+            f"Password recovery was requested for account {user_id}.\n\n"
+            f"Reset token: {token}\n"
+            f"Expires: {expires_at}\n\n"
+            "If you did not request this, ignore this email."
+        )
+        return _send_email(subject, body, to_email)
+    except Exception:
+        return False
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def _mask_email(email: str) -> str:
@@ -198,16 +278,12 @@ def _mask_email(email: str) -> str:
     return f"{name[:2]}***@{domain}"
 
 
-def _email_delivery_configured() -> bool:
-    return (os.getenv("PASSWORD_RECOVERY_EMAIL_ENABLED") or os.getenv("SMTP_HOST") or "").strip().lower() in {"1", "true", "yes", "on"} or bool(os.getenv("SMTP_HOST"))
-
-
-def _hash_token(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
-
-def request_password_recovery(user_id: str, email: Optional[str] = None) -> Dict[str, Any]:
+def request_password_recovery(user_id: str, email: Optional[str] = None, *, _skip_rate: bool = False) -> Dict[str, Any]:
     """Create a short-lived reset token when the account has a matching email or linked provider."""
+    if not _skip_rate:
+        rate_key = f"user:{user_id}"
+        if not _recovery_rate_allowed(rate_key):
+            return {"success": False, "error": "Too many recovery requests. Try again later."}
     recovery = get_recovery_status(user_id)
     account_email = _profile_email(user_id)
     if email and account_email and email.strip().lower() != account_email:
@@ -229,18 +305,48 @@ def request_password_recovery(user_id: str, email: Optional[str] = None) -> Dict
         "used_at": None,
     }
     _save_protection(data)
+    delivery_configured = recovery.get("email_delivery_configured")
+    sent = False
+    if delivery_configured and account_email:
+        sent = _send_recovery_email(account_email, user_id, token, expires_at)
     result = {
         "success": True,
         "user_id": user_id,
         "expires_at": expires_at,
         "email_masked": recovery.get("email_masked"),
-        "email_delivery_configured": recovery.get("email_delivery_configured"),
+        "email_delivery_configured": delivery_configured,
+        "email_sent": sent,
         "provider": recovery.get("provider"),
-        "message": "Recovery token created. Email delivery is configured." if recovery.get("email_delivery_configured") else "Recovery token created. Configure email delivery to send reset links automatically.",
+        "message": "Recovery email sent." if sent else "Recovery token created. Configure NOTIFY_SMTP_* to send reset links automatically.",
     }
-    if not recovery.get("email_delivery_configured") or (os.getenv("PASSWORD_RECOVERY_RETURN_TOKEN") or "").strip().lower() in {"1", "true", "yes", "on"}:
+    if not sent or (os.getenv("PASSWORD_RECOVERY_RETURN_TOKEN") or "").strip().lower() in {"1", "true", "yes", "on"}:
         result["reset_token"] = token
     return result
+
+
+def request_password_recovery_by_email(email: str) -> Dict[str, Any]:
+    """Public forgot-password entry point — always returns a generic success message."""
+    normalized = (email or "").strip().lower()
+    generic = {
+        "success": True,
+        "message": "If an account exists for that email, recovery instructions were sent.",
+    }
+    if not normalized or "@" not in normalized:
+        return generic
+    rate_key = f"email:{normalized}"
+    if not _recovery_rate_allowed(rate_key):
+        return generic
+    try:
+        from backend.services.email_recovery_service import lookup_user_id_by_email
+        user_id = lookup_user_id_by_email(normalized)
+    except Exception:
+        user_id = None
+    if not user_id:
+        return generic
+    inner = request_password_recovery(user_id, normalized, _skip_rate=True)
+    if inner.get("success"):
+        return generic
+    return generic
 
 
 def reset_password_with_recovery(user_id: str, token: str, new_password: str) -> Dict[str, Any]:

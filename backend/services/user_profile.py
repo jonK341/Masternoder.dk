@@ -144,7 +144,6 @@ class UserProfile:
                     'skill_path': profile.get('agent_skillset_id', 'balanced'),
                     'assigned_agents': assigned_agents,
                     'preferences': preferences,
-                    'scraped_info': scraped_info
                 },
                 'skills': skills_data,
                 'stats': stats,

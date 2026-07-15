@@ -18,7 +18,7 @@ def _utcnow() -> datetime:
 
 def _load_settings() -> Dict[str, Any]:
     if not os.path.exists(_SETTINGS_PATH):
-        return {"users": {}, "defaults": {"require_password_login": True, "require_password_real_money": True, "require_password_purchases": False}}
+        return {"users": {}, "defaults": {"require_password_login": True, "require_password_real_money": True, "require_password_purchases": False, "require_password_bind_session": False}}
     try:
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -53,14 +53,31 @@ def get_security_settings(user_id: str) -> Dict[str, Any]:
         "require_password_login": defaults.get("require_password_login", True),
         "require_password_real_money": defaults.get("require_password_real_money", True),
         "require_password_purchases": defaults.get("require_password_purchases", False),
+        "require_password_bind_session": defaults.get("require_password_bind_session", False),
+        "security_preset": defaults.get("security_preset", "balanced"),
     }
-    merged.update({k: v for k, v in user.items() if k.startswith("require_")})
+    merged.update({k: v for k, v in user.items() if k.startswith("require_") or k == "security_preset"})
     return merged
 
 
 def update_security_settings(user_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
-    allowed = {"require_password_login", "require_password_real_money", "require_password_purchases"}
-    clean = {k: bool(v) for k, v in updates.items() if k in allowed}
+    allowed = {
+        "require_password_login",
+        "require_password_real_money",
+        "require_password_purchases",
+        "require_password_bind_session",
+        "security_preset",
+    }
+    clean = {}
+    for key, value in updates.items():
+        if key not in allowed:
+            continue
+        if key == "security_preset":
+            preset = str(value or "balanced").strip().lower()
+            if preset in {"balanced", "secure", "maximum"}:
+                clean[key] = preset
+            continue
+        clean[key] = bool(value)
     data = _load_settings()
     users = data.setdefault("users", {})
     row = dict(users.get(user_id) or {})
@@ -73,27 +90,45 @@ def update_security_settings(user_id: str, updates: Dict[str, Any]) -> Dict[str,
 
 def get_security_status(user_id: str) -> Dict[str, Any]:
     from backend.services.password_protection_service import get_password_status
+    from backend.services.profile_auth_service import is_session_bound
 
     pwd = get_password_status(user_id)
     balances = _real_money_balances(user_id)
     settings = get_security_settings(user_id)
+    email_status = {}
+    try:
+        from backend.services.email_recovery_service import get_email_status
+        email_status = get_email_status(user_id)
+    except Exception:
+        pass
     return {
         "success": True,
         "user_id": user_id,
         "has_password": bool(pwd.get("has_password")),
+        "password_set_at": pwd.get("set_at"),
         "can_unlock_password": bool(pwd.get("can_unlock")),
         "has_real_money": balances["has_real_money"],
         "mn2_balance": balances["mn2_balance"],
         "casino_fiat_balance": balances["casino_fiat_balance"],
+        "session_bound": is_session_bound(user_id),
+        "email_verified": bool(email_status.get("email_verified")),
+        "recovery_email_set": bool(email_status.get("recovery_email_verified")),
+        "email_masked": email_status.get("email_masked"),
         "settings": settings,
-        "recommendations": _recommendations(pwd, balances, settings),
+        "recovery": pwd.get("recovery") or {},
+        "recommendations": _recommendations(pwd, balances, settings, email_status),
     }
 
 
-def _recommendations(pwd: dict, balances: dict, settings: dict) -> list:
+def _recommendations(pwd: dict, balances: dict, settings: dict, email_status: dict | None = None) -> list:
     recs = []
+    email_status = email_status or {}
     if balances.get("has_real_money") and not pwd.get("has_password"):
         recs.append("Set a password — you hold real-money balance (MN2 or casino USD).")
+    if not email_status.get("email_verified") and not pwd.get("recovery", {}).get("has_email"):
+        recs.append("Add and verify an email for account recovery.")
+    if email_status.get("has_email") and not email_status.get("recovery_email_verified"):
+        recs.append("Set a recovery email as a backup recovery method.")
     if balances.get("has_real_money") and pwd.get("has_password") and not settings.get("require_password_real_money"):
         recs.append("Enable real-money protection to require password before MN2/USD casino bets.")
     if pwd.get("has_password") and not settings.get("require_password_login"):

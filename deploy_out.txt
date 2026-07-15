@@ -1,0 +1,119 @@
+﻿Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+  uploaded scripts/all_profit_daemons.py
+  uploaded scripts/run_profit_daemon_server.sh
+  uploaded scripts/install_profit_daemon_server.sh
+  uploaded scripts/exchange_master_daemon.py
+  uploaded scripts/daemon_env.py
+  uploaded scripts/_daemon_env.cmd
+  uploaded systemd/masternoder-profit-daemon.service
+  uploaded backend/services/profit_daemon_monitor_service.py
+  uploaded backend/services/profit_daemon_news_service.py
+  uploaded backend/routes/profit_daemon_routes.py
+  uploaded backend/register_blueprints.py
+  uploaded backend/routes/all_page_routes.py
+  uploaded profit/index.html
+  uploaded static/js/profit-daemon-monitor.js
+  uploaded static/css/profit-daemon-monitor.css
+  uploaded static/js/frontpage-home.js
+  uploaded static/js/navigation-toolbar.js
+  uploaded data/exchange_shop_catalog.json
+  uploaded data/crypto_exchange/payout_config.json
+  uploaded cron/exchange_master_tick.sh
+● masternoder-profit-daemon.service - MasterNoder profit daemons (exchange + casino + extended)
+     Loaded: loaded (/etc/systemd/system/masternoder-profit-daemon.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-07-04 21:18:29 UTC; 3s ago
+ Invocation: a444e57225e1487fbeb2c7ca665262f0
+   Main PID: 483637 (python3)
+      Tasks: 1 (limit: 1795)
+     Memory: 92.5M (peak: 98.9M)
+        CPU: 2.622s
+     CGroup: /system.slice/masternoder-profit-daemon.service
+             └─483637 python3 /var/www/html/scripts/all_profit_daemons.py --profile max --auto-sweep
+
+Jul 04 21:18:29 Masternoder-Website systemd[1]: Started masternoder-profit-daemon.service - MasterNoder profit daemons (exchange + casino + extended).
+Profit daemon installed. Logs: /var/www/html/logs/profit_daemon_stdout.log
+EXCHANGE_PAYOUT_PAYPAL_LIVE=1
+active
+--- monitor ---
+{
+  "success": true,
+  "host": "masternoder.dk",
+  "running": true,
+  "stale_threshold_sec": 300.0,
+  "mode": "live",
+  "profile": "max",
+  "heartbeat_updated_at": "2026-07-04T21:17:53.681914Z",
+  "loops": [
+    {
+      "loop": "exchange",
+      "updated_at": "2026-07-04T21:17:53.681904Z",
+      "age_sec": 39.9,
+      "stale": false,
+      "summary": "platform_ok=True arb_exec=0/11 best_bps=-18.3 arb_block=threshold arb_skip=below_thresholdx9 ai_exec=False ai_skip=no_signal cross_actions=3 ext_exec=? user_agents=0 sweep=no",
+      "metrics": {
+        "platform_ok": "True",
+        "arb_exec": "0/11",
+        "best_bps": "-18.3",
+        "arb_block": "threshold",
+        "arb_skip": "below_thresholdx9",
+        "ai_exec": "False",
+        "ai_skip": "no_signal",
+        "cross_actions": "3",
+        "ext_exec": "?",
+        "user_agents": "0",
+        "sweep": "no"
+      }
+    },
+    {
+      "loop": "fast",
+      "updated_at": "2026-07-04T21:17:00.251142Z",
+      "age_sec": 93.3,
+      "stale": false,
+      "summary": "ext_exec=0 strategies=7",
+      "metrics": {
+        "ext_exec": "0",
+        "strategies": "7"
+      }
+    },
+    {
+      "loop": "casino",
+      "updated_at": "2026-07-04T21:15:24.600045Z",
+      "age_sec": 188.9,
+      "stale": false,
+      "summary": "success=True ran=3/3",
+      "metrics": {
+        "success": "True",
+        "ran": "3/3"
+      }
+    }
+  ],
+  "stats": [
+    {
+      "id": "daemon_online",
+      "label": "Daemon online",
+      "value": "yes",
+      "unit": "",
+      "category": "daemon",
+      "status": "good",
+      "hint": "Server systemd heartbeat"
+    },
+    {
+      "id": "mode",
+      "label": "Trading mode",
+      "value": "live",
+      "unit": "",
+      "category": "daemon",
+      "status": "good",
+      "hint": ""
+    },
+    {
+      "id": "profile",
+      "label": "Profit profile",
+      "value": "max",
+      "unit": "",
+      "category": "daemon",
+      "status": "neutral",
+      "hint": ""
+    },
+    {
+      "id": "exchan

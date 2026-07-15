@@ -26,6 +26,8 @@ _BONUS_PATH = os.path.join(_DATA_DIR, "bonus_claims.json")
 _TREASURY_PATH = os.path.join(_DATA_DIR, "fee_treasury.json")
 _PRICE_CACHE_PATH = os.path.join(_DATA_DIR, "price_cache.json")
 _PAYPAL_CRYPTO_ORDERS_PATH = os.path.join(_DATA_DIR, "paypal_crypto_orders.json")
+_PAYPAL_CRYPTO_SELL_ORDERS_PATH = os.path.join(_DATA_DIR, "paypal_crypto_sell_orders.json")
+_PAYPAL_SELL_CAP_PATH = os.path.join(_DATA_DIR, "paypal_sell_price_caps.json")
 _PAYPAL_MN2_ORDERS_PATH = os.path.join(_DATA_DIR, "paypal_mn2_orders.json")
 _AUDIT_PATH = os.path.join(_DATA_DIR, "audit_log.jsonl")
 _STABLE_QUOTES = frozenset({"USDC", "USDT"})
@@ -632,6 +634,263 @@ def fulfill_paypal_crypto_order(user_id: str, order_id: str, capture: Dict[str, 
     return {"success": True, "trade": trade, "wallet": get_wallet(uid), **captured}
 
 
+def _median(values: List[float]) -> float:
+    nums = sorted(v for v in values if v > 0)
+    if not nums:
+        return 0.0
+    mid = len(nums) // 2
+    if len(nums) % 2:
+        return nums[mid]
+    return (nums[mid - 1] + nums[mid]) / 2.0
+
+
+def refresh_paypal_sell_price_caps(*, force: bool = False) -> Dict[str, Any]:
+    """Daemon tick: cache external reference USD prices for PayPal sell cap enforcement."""
+    cfg = load_config()
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    if not sell_cfg.get("enabled", True):
+        return {"success": False, "error": "paypal_crypto_sell_disabled"}
+    interval = int(sell_cfg.get("refresh_interval_sec") or 300)
+    prior = _read_json(_PAYPAL_SELL_CAP_PATH, {})
+    last = prior.get("updated_at")
+    if not force and last:
+        ts = _parse_iso(last)
+        if ts and (datetime.now(timezone.utc) - ts).total_seconds() < interval:
+            return {"success": True, "cached": True, **prior}
+    venues = list(sell_cfg.get("reference_venues") or ["binance", "nonkyc"])
+    symbols = [str(a.get("symbol") or "").upper() for a in (cfg.get("assets") or []) if a.get("symbol")]
+    try:
+        from backend.services.external_exchange_connector_service import fetch_prices
+        batch = fetch_prices(symbols, venues=venues, use_cache=False)
+    except Exception as exc:
+        return {"success": False, "error": str(exc)[:200]}
+    prices = batch.get("prices") or {}
+    out_symbols: Dict[str, Any] = {}
+    for sym in symbols:
+        venue_rows = prices.get(sym) or {}
+        mids = []
+        for vid in venues:
+            row = venue_rows.get(vid) or {}
+            bid = float(row.get("bid") or 0)
+            ask = float(row.get("ask") or 0)
+            if bid > 0 and ask > 0:
+                mids.append((bid + ask) / 2.0)
+            elif bid > 0:
+                mids.append(bid)
+            elif ask > 0:
+                mids.append(ask)
+        ref = round(_median(mids), 8) if mids else 0.0
+        internal = _price_usd(sym, cfg)
+        capped = min(internal, ref) if ref > 0 else internal
+        out_symbols[sym] = {
+            "reference_usd": ref,
+            "internal_usd": round(internal, 8),
+            "capped_usd": round(capped, 8),
+            "venues": {v: venue_rows.get(v) for v in venues if venue_rows.get(v)},
+        }
+    payload = {
+        "success": True,
+        "updated_at": _iso(),
+        "reference_venues": venues,
+        "symbols": out_symbols,
+    }
+    _write_json(_PAYPAL_SELL_CAP_PATH, payload)
+    _audit("paypal_sell_cap_refresh", symbol_count=len(out_symbols), venues=",".join(venues))
+    return payload
+
+
+def paypal_sell_cap_status() -> Dict[str, Any]:
+    cfg = load_config()
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    caps = _read_json(_PAYPAL_SELL_CAP_PATH, {})
+    return {
+        "success": True,
+        "enabled": bool(sell_cfg.get("enabled", True)),
+        "limits": {
+            "min_usd": float(sell_cfg.get("min_usd") or 5),
+            "max_usd": float(sell_cfg.get("max_usd") or 500),
+            "max_usd_daily": float(sell_cfg.get("max_usd_daily") or 2000),
+            "fee_bps": int(sell_cfg.get("fee_bps") or 100),
+            "price_cap_bps": int(sell_cfg.get("price_cap_bps") or 0),
+        },
+        "reference_venues": list(sell_cfg.get("reference_venues") or ["binance", "nonkyc"]),
+        "updated_at": caps.get("updated_at"),
+        "symbol_count": len((caps.get("symbols") or {})),
+        "symbols": caps.get("symbols") or {},
+    }
+
+
+def _external_sell_reference_usd(symbol: str, cfg: Optional[Dict] = None) -> Tuple[float, float, float]:
+    """Return (reference_usd, internal_usd, capped_usd) for PayPal sell quotes."""
+    cfg = cfg or load_config()
+    sym = (symbol or "").strip().upper()
+    internal = _price_usd(sym, cfg)
+    caps = _read_json(_PAYPAL_SELL_CAP_PATH, {})
+    row = (caps.get("symbols") or {}).get(sym) or {}
+    ref = float(row.get("reference_usd") or 0)
+    if ref <= 0:
+        refresh_paypal_sell_price_caps(force=True)
+        row = (_read_json(_PAYPAL_SELL_CAP_PATH, {}).get("symbols") or {}).get(sym) or {}
+        ref = float(row.get("reference_usd") or 0)
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    cap_bps = int(sell_cfg.get("price_cap_bps") or 0)
+    base = min(internal, ref) if ref > 0 else internal
+    if base <= 0:
+        return ref, internal, 0.0
+    capped = base * (1 - cap_bps / 10000.0)
+    return ref, internal, round(capped, 12)
+
+
+def quote_paypal_crypto_sell(user_id: str, symbol: str, amount: float) -> Dict[str, Any]:
+    """Quote selling exchange crypto for PayPal USD payout (price-capped vs external venues)."""
+    from backend.services.mn2_earn_auth import require_earn_user
+    ok, uid = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid, "code": "ACCOUNT_REQUIRED"}
+    cfg = load_config()
+    sell_cfg = cfg.get("paypal_crypto_sell") or {}
+    if not sell_cfg.get("enabled", True):
+        return {"success": False, "error": "paypal_crypto_sell_disabled"}
+    sym = (symbol or "").strip().upper()
+    if sym not in _asset_map(cfg):
+        return {"success": False, "error": "unknown_asset"}
+    amt = float(amount or 0)
+    asset = _asset_map(cfg)[sym]
+    if amt < float(asset.get("min_trade") or 0):
+        return {"success": False, "error": "below_min_trade", "min_trade": asset.get("min_trade")}
+    if _get_balance(uid, sym) < amt:
+        return {"success": False, "error": f"insufficient_{sym.lower()}"}
+    ref_usd, internal_usd, capped_usd = _external_sell_reference_usd(sym, cfg)
+    if capped_usd <= 0:
+        return {"success": False, "error": "no_price"}
+    usd_gross = round(amt * capped_usd, 4)
+    min_usd = float(sell_cfg.get("min_usd") or 5.0)
+    max_usd = float(sell_cfg.get("max_usd") or 500.0)
+    if usd_gross < min_usd:
+        return {"success": False, "error": "below_min_usd", "min_usd": min_usd}
+    if usd_gross > max_usd:
+        return {"success": False, "error": "above_max_usd", "max_usd": max_usd}
+    try:
+        from backend.services.crypto_exchange_risk_service import check_fiat_sell
+        risk = check_fiat_sell(uid, usd_gross)
+        if not risk.get("ok"):
+            _audit("risk_denied", user_id=uid, amount_usd=usd_gross, kind="crypto_sell", reason=risk.get("error"))
+            return {"success": False, "error": risk.get("error", "risk_blocked"), "risk": risk}
+    except Exception:
+        pass
+    fee_bps = int(sell_cfg.get("fee_bps") or 100)
+    fee_usd = round(usd_gross * fee_bps / 10000, 4)
+    usd_net = round(max(0.0, usd_gross - fee_usd), 4)
+    return {
+        "success": True,
+        "quote_id": uuid.uuid4().hex[:16],
+        "user_id": uid,
+        "symbol": sym,
+        "asset_amount": amt,
+        "usd_gross": usd_gross,
+        "usd_amount": usd_net,
+        "fee_usd": fee_usd,
+        "fee_bps": fee_bps,
+        "price_usd": round(capped_usd, 8),
+        "reference_usd": round(ref_usd, 8),
+        "internal_usd": round(internal_usd, 8),
+        "price_capped": ref_usd > 0 and capped_usd < internal_usd,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat().replace("+00:00", "Z"),
+    }
+
+
+def execute_paypal_crypto_sell(user_id: str, quote_id: str, symbol: str, amount: float) -> Dict[str, Any]:
+    """Debit crypto and queue PayPal USD payout at daemon-enforced cap price."""
+    q = quote_paypal_crypto_sell(user_id, symbol, amount)
+    if not q.get("success"):
+        return q
+    if (q.get("quote_id") or "") != (quote_id or "").strip():
+        return {"success": False, "error": "quote_id_mismatch"}
+    uid = q["user_id"]
+    sym = q["symbol"]
+    amt = float(q["asset_amount"])
+    usd_net = float(q["usd_amount"])
+    with _LOCK:
+        rows = _read_json(_PAYPAL_CRYPTO_SELL_ORDERS_PATH, {"pending": {}, "completed": {}})
+        ref = f"paypal-crypto-sell:{quote_id}:{sym}"
+        if ref in (rows.get("completed") or {}):
+            return {"success": True, "duplicate": True, **rows["completed"][ref]}
+        _adjust_balance(uid, sym, -amt)
+        payout = {
+            "sell_id": ref,
+            "quote_id": quote_id,
+            "user_id": uid,
+            "symbol": sym,
+            "asset_amount": amt,
+            "usd_amount": usd_net,
+            "fee_usd": float(q.get("fee_usd") or 0),
+            "price_usd": float(q.get("price_usd") or 0),
+            "reference_usd": float(q.get("reference_usd") or 0),
+            "status": "queued_paypal",
+            "created_at": _iso(),
+        }
+        rows.setdefault("pending", {})[ref] = payout
+        _write_json(_PAYPAL_CRYPTO_SELL_ORDERS_PATH, rows)
+    trade = {
+        "ts": _iso(), "trade_id": ref, "user_id": uid, "type": "paypal_sell",
+        "symbol": sym, "side": "sell", "amount": amt, "usd_value": usd_net,
+    }
+    _append_jsonl(_TRADES_PATH, trade)
+    _record_tax(uid, sym, "sell", amt, usd_net, float(q.get("fee_usd") or 0))
+    _audit("paypal_crypto_sell", user_id=uid, amount_usd=usd_net, symbol=sym, asset_amount=amt, sell_id=ref)
+    return {"success": True, "payout": payout, "wallet": get_wallet(uid), "trade": trade}
+
+
+def external_prices_payload(
+    *,
+    venues: Optional[List[str]] = None,
+    symbols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """UI payload: internal catalog prices plus Binance/NonKYC (or configured) tickers."""
+    cfg = load_config()
+    venue_ids = venues or ["binance", "nonkyc"]
+    syms = symbols or [a["symbol"] for a in (cfg.get("assets") or []) if a.get("symbol")]
+    internal = []
+    for sym in syms:
+        internal.append({
+            "symbol": sym,
+            "price_usd": _price_usd(sym, cfg),
+            "source": "internal",
+        })
+    try:
+        from backend.services.external_exchange_connector_service import fetch_prices, list_venues
+        batch = fetch_prices(syms, venues=venue_ids)
+        venue_meta = {v["id"]: v for v in (list_venues().get("venues") or []) if v.get("id")}
+    except Exception as exc:
+        return {"success": False, "error": str(exc)[:200], "internal": internal}
+    prices = batch.get("prices") or {}
+    pairs = []
+    for sym in syms:
+        row = {"symbol": sym, "internal_usd": _price_usd(sym, cfg), "venues": {}}
+        for vid in venue_ids:
+            tick = (prices.get(sym) or {}).get(vid) or {}
+            if not tick:
+                continue
+            bid = float(tick.get("bid") or 0)
+            ask = float(tick.get("ask") or 0)
+            mid = (bid + ask) / 2.0 if bid > 0 and ask > 0 else (bid or ask)
+            row["venues"][vid] = {
+                "bid": bid,
+                "ask": ask,
+                "mid": round(mid, 8),
+                "name": (venue_meta.get(vid) or {}).get("name") or vid,
+                "quote": (venue_meta.get(vid) or {}).get("quote") or "",
+            }
+        pairs.append(row)
+    return {
+        "success": True,
+        "scanned_at": batch.get("scanned_at"),
+        "venues": venue_ids,
+        "pairs": pairs,
+        "internal": internal,
+    }
+
+
 def record_paypal_mn2_order(order_id: str, user_id: str, pack: Dict[str, Any], *, approve_url: str = "") -> Dict[str, Any]:
     order_id = (order_id or "").strip()
     uid = (user_id or "").strip()
@@ -739,8 +998,20 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
     return {"success": True, "order_id": order_id, **captured}
 
 
-def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str = "MN2") -> Dict[str, Any]:
+def quote_swap(
+    user_id: str,
+    symbol: str,
+    side: str,
+    amount: float,
+    quote: str = "MN2",
+    *,
+    venue: str = "internal",
+) -> Dict[str, Any]:
     """side=buy: spend quote to receive symbol. side=sell: spend symbol to receive quote."""
+    vid = str(venue or "internal").lower()
+    if vid not in ("", "internal"):
+        from backend.services.exchange_user_venue_execution_service import quote_venue_swap
+        return quote_venue_swap(user_id, vid, symbol, side, amount, quote)
     cfg = load_config()
     if not cfg.get("enabled", True):
         return {"success": False, "error": "exchange_disabled"}
@@ -795,11 +1066,25 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
     return payload
 
 
-def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: float, quote: str = "MN2") -> Dict[str, Any]:
+def execute_swap(
+    user_id: str,
+    quote_id: str,
+    symbol: str,
+    side: str,
+    amount: float,
+    quote: str = "MN2",
+    *,
+    venue: str = "internal",
+) -> Dict[str, Any]:
     from backend.services.mn2_earn_auth import require_earn_user
     ok, uid = require_earn_user(user_id)
     if not ok:
         return {"success": False, "error": uid}
+
+    vid = str(venue or "internal").lower()
+    if vid not in ("", "internal"):
+        from backend.services.exchange_user_venue_execution_service import execute_venue_swap
+        return execute_venue_swap(uid, vid, quote_id, symbol, side, amount, quote)
 
     q = quote_swap(uid, symbol, side, amount, quote)
     if not q.get("success"):
@@ -1299,6 +1584,171 @@ def deposit_from_mn2(user_id: str, symbol: str, mn2_amount: float) -> Dict[str, 
     price = max(_price_in_quote(symbol, "MN2"), 1e-12)
     asset_amt = float(mn2_amount) / price
     return execute_swap(user_id, uuid.uuid4().hex[:16], symbol, "buy", asset_amt, "MN2")
+
+
+_QUOTE_CURRENCIES = frozenset({"MN2", "COINS", "USDC", "USDT"})
+
+
+def _quick_bridge(from_asset: str, to_asset: str, venue: str = "internal") -> str:
+    if from_asset in _STABLE_QUOTES:
+        return from_asset
+    if to_asset in _STABLE_QUOTES:
+        return to_asset
+    vid = str(venue or "internal").lower()
+    if vid == "nonkyc":
+        return "USDT"
+    if vid == "binance":
+        return "USDC"
+    return "USDC"
+
+
+def quote_quick_swap(
+    user_id: str,
+    from_asset: str,
+    to_asset: str,
+    amount: float,
+    *,
+    venue: str = "internal",
+) -> Dict[str, Any]:
+    """Preview A→B route (one or two legs via bridge quote)."""
+    from_a = (from_asset or "").strip().upper()
+    to_a = (to_asset or "").strip().upper()
+    amt = float(amount or 0)
+    vid = str(venue or "internal").lower()
+    cfg = load_config()
+    assets = _asset_map(cfg)
+    if from_a not in assets or to_a not in assets:
+        return {"success": False, "error": "unknown_asset"}
+    if from_a == to_a:
+        return {"success": False, "error": "same_asset"}
+    if amt <= 0:
+        return {"success": False, "error": "invalid_amount"}
+
+    legs: List[Dict[str, Any]] = []
+    if from_a in _QUOTE_CURRENCIES and to_a not in _QUOTE_CURRENCIES:
+        leg = quote_swap(user_id, to_a, "buy", amt, from_a, venue=vid)
+        if not leg.get("success"):
+            return leg
+        legs.append({**leg, "leg": 1, "action": f"buy {to_a} with {from_a}"})
+    elif to_a in _QUOTE_CURRENCIES and from_a not in _QUOTE_CURRENCIES:
+        leg = quote_swap(user_id, from_a, "sell", amt, to_a, venue=vid)
+        if not leg.get("success"):
+            return leg
+        legs.append({**leg, "leg": 1, "action": f"sell {from_a} for {to_a}"})
+    else:
+        bridge = _quick_bridge(from_a, to_a, vid)
+        leg1 = quote_swap(user_id, from_a, "sell", amt, bridge, venue=vid)
+        if not leg1.get("success"):
+            return leg1
+        legs.append({**leg1, "leg": 1, "action": f"sell {from_a} for {bridge}"})
+        bridge_out = float(leg1.get("quote_received") or 0)
+        if bridge_out <= 0:
+            return {"success": False, "error": "insufficient_bridge_output"}
+        price_to = _price_in_quote(to_a, bridge, cfg)
+        if price_to <= 0:
+            return {"success": False, "error": "no_price"}
+        spread_bps = int((cfg.get("platform_fees") or {}).get("swap_spread_bps") or 50)
+        fee_bps = _fee_bps("buy", False, cfg, user_id or "anon")
+        total_bps = spread_bps + fee_bps
+        to_amt = bridge_out / (price_to * (1 + total_bps / 10000))
+        asset = assets.get(to_a) or {}
+        min_trade = float(asset.get("min_trade") or 0)
+        if to_amt < min_trade:
+            return {"success": False, "error": "below_min_trade", "min_trade": min_trade, "bridge": bridge}
+        leg2 = quote_swap(user_id, to_a, "buy", to_amt, bridge, venue=vid)
+        if not leg2.get("success"):
+            return leg2
+        legs.append({**leg2, "leg": 2, "action": f"buy {to_a} with {bridge}"})
+
+    qid = uuid.uuid4().hex[:16]
+    est_out = float(legs[-1].get("amount") if legs[-1].get("side") == "buy" else legs[-1].get("quote_received") or 0)
+    total_usd = sum(float(l.get("usd_value") or 0) for l in legs)
+    return {
+        "success": True,
+        "quote_id": qid,
+        "from_asset": from_a,
+        "to_asset": to_a,
+        "input_amount": amt,
+        "estimated_output": round(est_out, 8),
+        "legs": legs,
+        "leg_count": len(legs),
+        "venue": vid,
+        "usd_value": round(total_usd, 4),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat().replace("+00:00", "Z"),
+    }
+
+
+def execute_quick_swap(
+    user_id: str,
+    quote_id: str,
+    from_asset: str,
+    to_asset: str,
+    amount: float,
+    *,
+    venue: str = "internal",
+) -> Dict[str, Any]:
+    """Execute A→B quick swap; compensates leg1 if leg2 fails on two-leg routes."""
+    from backend.services.mn2_earn_auth import require_earn_user
+    ok, uid = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid}
+
+    preview = quote_quick_swap(uid, from_asset, to_asset, amount, venue=venue)
+    if not preview.get("success"):
+        return preview
+
+    executed: List[Dict[str, Any]] = []
+    legs = preview.get("legs") or []
+    for i, leg in enumerate(legs):
+        res = execute_swap(
+            uid,
+            leg.get("quote_id") or quote_id,
+            leg["symbol"],
+            leg["side"],
+            float(leg["amount"]),
+            leg.get("quote_currency") or "MN2",
+            venue=venue,
+        )
+        if not res.get("success"):
+            compensation = None
+            if i == 1 and len(legs) >= 2:
+                leg1 = legs[0]
+                bridge = leg1.get("quote_currency") or _quick_bridge(
+                    preview["from_asset"], preview["to_asset"], venue
+                )
+                bridge_bal = _get_quote_balance(uid, bridge)
+                if bridge_bal > 0 and leg1.get("symbol"):
+                    buy_back_amt = float(leg1.get("amount") or 0) * 0.98
+                    if buy_back_amt > 0:
+                        compensation = execute_swap(
+                            uid, uuid.uuid4().hex[:16], leg1["symbol"], "buy",
+                            buy_back_amt, bridge, venue=venue,
+                        )
+            return {
+                "success": False,
+                "error": res.get("error") or "leg_failed",
+                "failed_leg": i + 1,
+                "executed_legs": executed,
+                "compensation": compensation,
+            }
+        executed.append({"leg": i + 1, "result": res})
+
+    _audit(
+        "quick_swap", user_id=uid,
+        amount_usd=float(preview.get("usd_value") or 0),
+        from_asset=preview.get("from_asset"), to_asset=preview.get("to_asset"),
+        leg_count=len(executed), quote_id=quote_id, venue=venue,
+    )
+    return {
+        "success": True,
+        "quote_id": quote_id,
+        "from_asset": preview.get("from_asset"),
+        "to_asset": preview.get("to_asset"),
+        "estimated_output": preview.get("estimated_output"),
+        "executed_legs": executed,
+        "wallet": get_wallet(uid),
+        "venue": venue,
+    }
 
 
 def health() -> Dict[str, Any]:

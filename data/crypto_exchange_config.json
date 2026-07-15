@@ -19,6 +19,17 @@
     "fee_bps": 75,
     "settlement_note": "PayPal checkout settles to the configured PayPal business account; the selected asset is credited to the custodial exchange wallet after capture."
   },
+  "paypal_crypto_sell": {
+    "enabled": true,
+    "min_usd": 5.0,
+    "max_usd": 500.0,
+    "max_usd_daily": 2000.0,
+    "fee_bps": 100,
+    "price_cap_bps": 0,
+    "reference_venues": ["binance", "nonkyc"],
+    "refresh_interval_sec": 300,
+    "settlement_note": "Sell quotes use the lower of internal and external (Binance/NonKYC) reference prices. PayPal USD payout is queued after crypto debit; caps refresh on daemon ticks."
+  },
   "risk_limits": {
     "enabled": true,
     "daily_fiat_buy_usd_cap": 2000.0,

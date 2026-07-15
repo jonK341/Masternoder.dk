@@ -19,6 +19,14 @@
   var mnCheckoutConfig = null;
   var mnOnChainPollTimer = null;
 
+  function hostToast(text, type) {
+    if (window.HostingHub && window.HostingHub.toast) window.HostingHub.toast(text, type);
+  }
+
+  function hostCopy(text) {
+    if (window.HostingHub && window.HostingHub.copyText) window.HostingHub.copyText(text);
+  }
+
   function uid() {
     if (window.Mn2SiteBridge && window.Mn2SiteBridge.uid) return window.Mn2SiteBridge.uid();
     try {
@@ -28,6 +36,11 @@
     } catch (e) {
       return 'default_user';
     }
+  }
+
+  function isAuthed() {
+    var u = uid();
+    return u && u !== 'default_user' && !String(u).startsWith('anon_');
   }
 
   function q(id) { return document.getElementById(id); }
@@ -309,9 +322,12 @@
   }
 
   function renderNodeCard(title, addr, badges, extraClass) {
+    var copyBtn = addr && addr !== '—'
+      ? ' <button type="button" class="host-copy-btn" data-mn-copy="' + addr + '" aria-label="Copy address">📋</button>'
+      : '';
     return '<div class="mn-node-card ' + (extraClass || '') + '">' +
       '<div class="mn-node-title">' + title + '</div>' +
-      (addr ? '<div class="mn-node-addr">' + addr + '</div>' : '') +
+      (addr ? '<div class="mn-node-addr">' + addr + copyBtn + '</div>' : '') +
       '<div class="mn-node-badges">' + badges + '</div></div>';
   }
 
@@ -374,6 +390,9 @@
                 cls
               );
             }).join('');
+            grid.querySelectorAll('[data-mn-copy]').forEach(function (btn) {
+              btn.addEventListener('click', function () { hostCopy(btn.getAttribute('data-mn-copy')); });
+            });
           }
         }
       }).catch(function () {});
@@ -572,6 +591,7 @@
         return;
       }
       if (msg) msg.textContent = pay.message || okFallback;
+      hostToast(pay.message || okFallback, 'ok');
       loadMasternodeHosting();
     }).catch(function () {
       setCheckoutBusy(false);
@@ -649,19 +669,29 @@
 
   function runMasternodeHostingCheckout(method) {
     var msg = q('mn-checkout-msg');
+    if (!isAuthed()) {
+      if (msg) msg.textContent = 'Sign in at Profile to rent a slot.';
+      hostToast('Sign in at Profile to rent', 'warn');
+      return;
+    }
     var openEl = q('mn-open-slots');
     var open = openEl ? Number(openEl.textContent) : null;
     if (open != null && !isNaN(open) && open <= 0) {
       if (msg) msg.textContent = 'Sold out — no hosting slots available right now.';
+      hostToast('Sold out', 'warn');
       return;
     }
     var slots = parseInt((q('mn-checkout-slots') || {}).value, 10) || 1;
+    var labels = { paypal: 'PayPal', coins: 'coins', mn2: 'MN2 wallet', onchain: 'on-chain MN2' };
+    if (!window.confirm('Confirm ' + slots + ' slot(s) via ' + (labels[method] || method) + '?')) return;
     setCheckoutBusy(true);
     if (msg) msg.textContent = 'Creating quote…';
     fetchHostingQuote(slots).then(function (quote) {
       if (!quote || !quote.success) {
         setCheckoutBusy(false);
         if (msg) msg.textContent = (quote && quote.error) || 'Quote failed';
+        if (quote && quote.code === 'auth_required') hostToast('Sign in required', 'warn');
+        else hostToast((quote && quote.error) || 'Quote failed', 'err');
         return null;
       }
       if (method === 'coins') {

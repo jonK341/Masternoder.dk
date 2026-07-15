@@ -1,0 +1,742 @@
+/**
+ * Exchange UI — profit-daemon aligned styling (local to /exchange/)
+ * Complements /static/css/crypto-exchange.css
+ */
+:root {
+  --cex-accent: #00ff88;
+  --cex-accent-dim: rgba(0, 255, 136, 0.15);
+  --cex-accent-border: rgba(0, 255, 136, 0.35);
+  --cex-cyan: #00d4ff;
+  --cex-panel-bg: rgba(10, 14, 28, 0.88);
+  --cex-warn: #ffd080;
+}
+
+.cex-page {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.cex-header h1 {
+  color: var(--cex-accent);
+}
+
+.cex-hub-tab {
+  border-color: var(--cex-accent-border);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.cex-hub-tab.active {
+  border-color: var(--cex-accent);
+  color: var(--cex-accent);
+  background: var(--cex-accent-dim);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.12);
+}
+
+.cex-hub-tab .cex-tab-emoji {
+  margin-right: 4px;
+}
+
+/* Avoid wrong-tab flash before hub JS resolves ?hub= / hash route */
+.cex-page:not(.cex-hub-ready) .cex-tab-shell:not(.active) {
+  display: none !important;
+}
+
+.cex-tab-shell--loading .cex-tab-load-slot:not([hidden]) {
+  margin-bottom: 12px;
+}
+
+.cex-tab-shell--loading > :not(.cex-tab-load-slot) {
+  opacity: 0.92;
+}
+
+.cex-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  border-radius: 12px;
+  background: var(--cex-panel-bg);
+  border: 1px solid var(--cex-accent-border);
+  font-size: 0.8rem;
+}
+
+.cex-status-bar .cex-status-pill-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.cex-status-bar .cex-status-pill-inline.ok {
+  border-color: var(--cex-accent-border);
+  color: var(--cex-accent);
+}
+
+.cex-status-bar .cex-status-pill-inline.warn {
+  border-color: rgba(255, 200, 80, 0.45);
+  color: var(--cex-warn);
+}
+
+.cex-broadcast-board {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.06), rgba(0, 212, 255, 0.04));
+  border: 1px solid var(--cex-accent-border);
+}
+
+.cex-broadcast-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cex-broadcast-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--cex-accent);
+}
+
+.cex-live-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cex-accent);
+  margin-right: 6px;
+  animation: cex-pulse 1.4s ease-in-out infinite;
+}
+
+.cex-live-pulse.off {
+  background: #888;
+  animation: none;
+}
+
+@keyframes cex-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+}
+
+.cex-broadcast-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cex-broadcast-kpi {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cex-broadcast-kpi b {
+  color: var(--cex-accent);
+}
+
+.cex-broadcast-feed {
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.76rem;
+}
+
+.cex-broadcast-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cex-broadcast-row.you {
+  background: rgba(0, 255, 136, 0.04);
+}
+
+.cex-market-flow {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--cex-panel-bg);
+  border: 1px solid rgba(0, 212, 255, 0.22);
+}
+
+.cex-market-flow-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cex-market-flow-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #a8d4ff;
+}
+
+.cex-flow-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cex-flow-controls button {
+  font-size: 0.72rem;
+  padding: 5px 10px;
+}
+
+.cex-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.cex-flow-card {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.74rem;
+}
+
+.cex-flow-card .sym {
+  font-weight: 700;
+  color: var(--cex-cyan);
+}
+
+.cex-flow-card .venue-tag {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.cex-flow-card .spread-up {
+  color: var(--cex-accent);
+}
+
+.cex-flow-card .spread-down {
+  color: #ff9090;
+}
+
+.cex-venue-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cex-venue-chip--trade {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.cex-venue-chip--trade.active {
+  border-color: var(--cex-accent);
+  background: var(--cex-accent-dim);
+  color: var(--cex-accent);
+}
+
+.cex-pair-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.cex-pair-badge--internal {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--cex-cyan);
+}
+
+.cex-pair-badge--external {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--cex-accent);
+}
+
+.cex-quick-swap {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(0, 255, 136, 0.25);
+  background: rgba(0, 255, 136, 0.04);
+}
+
+.cex-quick-swap h3 {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  color: var(--cex-accent);
+}
+
+.cex-swap-arrow {
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.6;
+  padding: 4px 0;
+}
+
+.cex-paypal-sell-box {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 120, 120, 0.25);
+  background: rgba(255, 80, 80, 0.06);
+}
+
+.cex-paypal-sell-box h3 {
+  margin: 0 0 8px;
+  color: #ffb0b0;
+  font-size: 0.9rem;
+}
+
+.cex-cap-note {
+  font-size: 0.72rem;
+  color: var(--cex-warn);
+  margin: 6px 0;
+}
+
+.cex-tooltip-label {
+  cursor: help;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.35);
+}
+
+.cex-asset-row .ext-prices {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
+.cex-section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  margin: 0 0 6px;
+  color: #9ec4ff;
+}
+
+.cex-empty-hint {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.65;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.cex-trade-tabs .cex-tab .tab-emoji {
+  margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  .cex-flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cex-broadcast-feed {
+    max-height: 100px;
+  }
+  .cex-grid {
+    grid-template-columns: 1fr;
+  }
+  .cex-form-row {
+    flex-direction: column;
+  }
+  .cex-flow-controls {
+    width: 100%;
+  }
+  .cex-footer-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* ——— 25 upgrades: toasts, skeletons, a11y, collapsible, etc. ——— */
+
+.cex-toast-host {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  pointer-events: none;
+}
+
+.cex-toast {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 14, 28, 0.95);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  animation: cex-toast-in 0.25s ease;
+}
+
+.cex-toast.ok { border-color: var(--cex-accent-border); color: var(--cex-accent); }
+.cex-toast.err { border-color: rgba(255, 100, 100, 0.45); color: #ffb0b0; }
+.cex-toast.warn { border-color: rgba(255, 200, 80, 0.45); color: var(--cex-warn); }
+
+@keyframes cex-toast-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.cex-skeleton {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+  animation: cex-shimmer 1.2s infinite;
+}
+
+.cex-skeleton--row { height: 32px; margin-bottom: 6px; }
+.cex-skeleton--block { height: 72px; }
+.cex-skeleton--inline { display: inline-block; width: 120px; height: 20px; }
+
+@keyframes cex-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.cex-empty-hint--icon::before {
+  content: '';
+  display: block;
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+
+.cex-onboard-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--cex-accent-border);
+  background: var(--cex-accent-dim);
+  font-size: 0.82rem;
+}
+
+.cex-onboard-banner kbd {
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.3);
+  font-size: 0.75rem;
+}
+
+.cex-sse-status {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.cex-sse-status.connected { color: var(--cex-accent); border-color: var(--cex-accent-border); }
+.cex-sse-status.reconnecting { color: var(--cex-warn); }
+.cex-sse-status.polling { color: #a8d4ff; }
+
+.cex-broadcast-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cex-collapse-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #ccc;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.cex-collapsible.collapsed .cex-collapsible-body { display: none; }
+.cex-collapsible.collapsed .cex-collapse-btn { transform: rotate(-90deg); }
+
+.cex-venue-badge {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.cex-venue-badge--live { background: rgba(0,255,136,0.2); color: var(--cex-accent); }
+.cex-venue-badge--paper { background: rgba(255,200,80,0.15); color: var(--cex-warn); }
+.cex-venue-badge--offline { background: rgba(255,80,80,0.15); color: #ffb0b0; }
+
+.cex-spread-placeholder {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 48px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(0,212,255,0.2);
+  background: rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.cex-spread-bar {
+  flex: 1;
+  height: var(--h, 50%);
+  min-height: 8px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, var(--cex-cyan), rgba(0,212,255,0.2));
+  opacity: 0.7;
+}
+
+.cex-spread-label {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 0.62rem;
+  opacity: 0.5;
+}
+
+.cex-asset-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cex-asset-toolbar .cex-input { flex: 1; }
+
+.cex-fav-filter[aria-pressed="true"] {
+  color: #ffd080;
+  border-color: rgba(255, 208, 128, 0.5);
+}
+
+.cex-recent-pairs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cex-recent-chip {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  cursor: pointer;
+  color: var(--cex-cyan);
+}
+
+.cex-recent-chip:hover { border-color: var(--cex-accent-border); }
+
+.cex-asset-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 700;
+  margin-right: 6px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.cex-asset-fav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.35;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.cex-asset-fav.on { opacity: 1; color: #ffd080; }
+
+.cex-quick-pct {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.cex-pct-btn { font-size: 0.72rem; padding: 4px 10px; }
+
+.cex-input--compact {
+  font-size: 0.72rem;
+  padding: 4px 6px;
+  min-width: 72px;
+}
+
+.cex-flow-filter-label {
+  font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cex-wallet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cex-wallet-head h2 { margin: 0; }
+
+.cex-wallet-refresh { padding: 4px 10px; font-size: 0.85rem; }
+
+.cex-wallet-updated {
+  font-size: 0.68rem;
+  opacity: 0.55;
+  margin: 0 0 8px;
+}
+
+.cex-trades-panel {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.74rem;
+}
+
+.cex-trade-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.cex-trade-row.buy .cex-trade-side { color: var(--cex-accent); }
+.cex-trade-row.sell .cex-trade-side { color: #ff9090; }
+
+.cex-copy-btn {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.cex-copy-btn:hover { color: var(--cex-cyan); }
+
+.cex-sell-steps {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+}
+
+.cex-sell-steps li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  opacity: 0.5;
+}
+
+.cex-sell-steps li.active {
+  opacity: 1;
+  border-color: rgba(255, 120, 120, 0.4);
+  color: #ffb0b0;
+}
+
+.cex-sell-steps li.done {
+  opacity: 0.85;
+  border-color: var(--cex-accent-border);
+  color: var(--cex-accent);
+}
+
+.cex-quick-swap-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cex-quick-swap-head h3 { margin: 0; }
+
+.cex-alert-stub {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 8px;
+  vertical-align: middle;
+  position: relative;
+}
+
+.cex-alert-badge {
+  font-size: 0.6rem;
+  background: rgba(255,80,80,0.3);
+  padding: 1px 5px;
+  border-radius: 999px;
+}
+
+.cex-footer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-top: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.25);
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.cex-kbd-hint { opacity: 0.55; }
+
+.cex-broadcast-row .cex-event-type {
+  font-size: 0.62rem;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.cex-btn:focus-visible,
+.cex-hub-tab:focus-visible,
+.cex-venue-chip--trade:focus-visible,
+.cex-input:focus-visible,
+.cex-collapse-btn:focus-visible {
+  outline: 2px solid var(--cex-accent);
+  outline-offset: 2px;
+}
+
+.cex-cooldown-pill {
+  animation: cex-pulse 1.4s ease-in-out infinite;
+}
+
+.cex-quote-preview[data-fee-tip] {
+  cursor: help;
+  border-bottom: 1px dotted rgba(0,255,136,0.35);
+}

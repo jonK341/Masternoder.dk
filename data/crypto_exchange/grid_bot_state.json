@@ -1,0 +1,411 @@
+{
+  "paused_venues": {},
+  "BINANCE:DOGE": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-1",
+        "side": "buy",
+        "price": 0.07373313,
+        "size_base": 81.37454629,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      },
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-2",
+        "side": "buy",
+        "price": 0.07351127,
+        "size_base": 81.62013797,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      },
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-3",
+        "side": "buy",
+        "price": 0.0732894,
+        "size_base": 81.86722773,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      },
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-4",
+        "side": "buy",
+        "price": 0.07306754,
+        "size_base": 82.11580683,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      },
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-5",
+        "side": "buy",
+        "price": 0.07284567,
+        "size_base": 82.36591138,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      },
+      {
+        "order_id": "paper-binance-DOGE-buy-1784087020778-6",
+        "side": "buy",
+        "price": 0.07262381,
+        "size_base": 82.61753273,
+        "ts": "2026-07-15T03:43:40.778758Z"
+      }
+    ],
+    "last_mid": 0.07395499999999999,
+    "updated_at": "2026-07-15T03:43:40.778758Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "BINANCE:BTC": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-1",
+        "side": "buy",
+        "price": 64480.441605,
+        "size_base": 9.305e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      },
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-2",
+        "side": "buy",
+        "price": 64286.41821,
+        "size_base": 9.333e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      },
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-3",
+        "side": "buy",
+        "price": 64092.394815,
+        "size_base": 9.361e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      },
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-4",
+        "side": "buy",
+        "price": 63898.37142,
+        "size_base": 9.39e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      },
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-5",
+        "side": "buy",
+        "price": 63704.348025,
+        "size_base": 9.419e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      },
+      {
+        "order_id": "paper-binance-BTC-buy-1784087021320-6",
+        "side": "buy",
+        "price": 63510.32463,
+        "size_base": 9.447e-05,
+        "ts": "2026-07-15T03:43:41.320865Z"
+      }
+    ],
+    "last_mid": 64674.465,
+    "updated_at": "2026-07-15T03:43:41.320865Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "BINANCE:ETH": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-1",
+        "side": "buy",
+        "price": 1867.395955,
+        "size_base": 0.00321303,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      },
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-2",
+        "side": "buy",
+        "price": 1861.77691,
+        "size_base": 0.00322273,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      },
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-3",
+        "side": "buy",
+        "price": 1856.157865,
+        "size_base": 0.00323248,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      },
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-4",
+        "side": "buy",
+        "price": 1850.53882,
+        "size_base": 0.0032423,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      },
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-5",
+        "side": "buy",
+        "price": 1844.919775,
+        "size_base": 0.00325217,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      },
+      {
+        "order_id": "paper-binance-ETH-buy-1784087021862-6",
+        "side": "buy",
+        "price": 1839.30073,
+        "size_base": 0.00326211,
+        "ts": "2026-07-15T03:43:41.862928Z"
+      }
+    ],
+    "last_mid": 1873.0149999999999,
+    "updated_at": "2026-07-15T03:43:41.862928Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "NONKYC:DOGE": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-nonkyc-DOGE-buy-1784087022234-1",
+        "side": "buy",
+        "price": 0.07321545,
+        "size_base": 81.94991631,
+        "ts": "2026-07-15T03:43:42.234993Z"
+      },
+      {
+        "order_id": "paper-nonkyc-DOGE-buy-1784087022234-2",
+        "side": "buy",
+        "price": 0.0724759,
+        "size_base": 82.78613994,
+        "ts": "2026-07-15T03:43:42.234993Z"
+      },
+      {
+        "order_id": "paper-nonkyc-DOGE-buy-1784087022234-3",
+        "side": "buy",
+        "price": 0.07173635,
+        "size_base": 83.6396053,
+        "ts": "2026-07-15T03:43:42.234993Z"
+      }
+    ],
+    "last_mid": 0.07395499999999999,
+    "updated_at": "2026-07-15T03:43:42.234993Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "NONKYC:BTC": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-nonkyc-BTC-buy-1784087022556-1",
+        "side": "buy",
+        "price": 63903.4506,
+        "size_base": 9.389e-05,
+        "ts": "2026-07-15T03:43:42.556421Z"
+      },
+      {
+        "order_id": "paper-nonkyc-BTC-buy-1784087022556-2",
+        "side": "buy",
+        "price": 63257.9612,
+        "size_base": 9.485e-05,
+        "ts": "2026-07-15T03:43:42.556421Z"
+      },
+      {
+        "order_id": "paper-nonkyc-BTC-buy-1784087022556-3",
+        "side": "buy",
+        "price": 62612.4718,
+        "size_base": 9.583e-05,
+        "ts": "2026-07-15T03:43:42.556421Z"
+      }
+    ],
+    "last_mid": 64548.94,
+    "updated_at": "2026-07-15T03:43:42.556421Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "NONKYC:ETH": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-nonkyc-ETH-buy-1784087022882-1",
+        "side": "buy",
+        "price": 1854.9927,
+        "size_base": 0.00323451,
+        "ts": "2026-07-15T03:43:42.882042Z"
+      },
+      {
+        "order_id": "paper-nonkyc-ETH-buy-1784087022882-2",
+        "side": "buy",
+        "price": 1836.2554,
+        "size_base": 0.00326752,
+        "ts": "2026-07-15T03:43:42.882042Z"
+      },
+      {
+        "order_id": "paper-nonkyc-ETH-buy-1784087022882-3",
+        "side": "buy",
+        "price": 1817.5181,
+        "size_base": 0.00330121,
+        "ts": "2026-07-15T03:43:42.882042Z"
+      }
+    ],
+    "last_mid": 1873.73,
+    "updated_at": "2026-07-15T03:43:42.882042Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "NONKYC:XRP": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-nonkyc-XRP-buy-1784087023240-1",
+        "side": "buy",
+        "price": 1.0929105,
+        "size_base": 5.48992804,
+        "ts": "2026-07-15T03:43:43.240993Z"
+      },
+      {
+        "order_id": "paper-nonkyc-XRP-buy-1784087023240-2",
+        "side": "buy",
+        "price": 1.081871,
+        "size_base": 5.54594771,
+        "ts": "2026-07-15T03:43:43.240993Z"
+      },
+      {
+        "order_id": "paper-nonkyc-XRP-buy-1784087023240-3",
+        "side": "buy",
+        "price": 1.0708315,
+        "size_base": 5.60312243,
+        "ts": "2026-07-15T03:43:43.240993Z"
+      }
+    ],
+    "last_mid": 1.10395,
+    "updated_at": "2026-07-15T03:43:43.240993Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "NONKYC:SOL": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [
+      {
+        "order_id": "paper-nonkyc-SOL-buy-1784087023578-1",
+        "side": "buy",
+        "price": 76.93785,
+        "size_base": 0.07798502,
+        "ts": "2026-07-15T03:43:43.578804Z"
+      },
+      {
+        "order_id": "paper-nonkyc-SOL-buy-1784087023578-2",
+        "side": "buy",
+        "price": 76.1607,
+        "size_base": 0.07878079,
+        "ts": "2026-07-15T03:43:43.578804Z"
+      },
+      {
+        "order_id": "paper-nonkyc-SOL-buy-1784087023578-3",
+        "side": "buy",
+        "price": 75.38355,
+        "size_base": 0.07959296,
+        "ts": "2026-07-15T03:43:43.578804Z"
+      }
+    ],
+    "last_mid": 77.715,
+    "updated_at": "2026-07-15T03:43:43.578804Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "XEGGEX:DOGE": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [],
+    "last_mid": 0.07399,
+    "updated_at": "2026-07-15T03:43:44.115759Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "XEGGEX:BTC": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [],
+    "last_mid": 64707.72,
+    "updated_at": "2026-07-15T03:43:44.698677Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "XEGGEX:ETH": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [],
+    "last_mid": 1873.75,
+    "updated_at": "2026-07-15T03:43:45.204314Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "XEGGEX:XRP": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [],
+    "last_mid": 1.1022,
+    "updated_at": "2026-07-15T03:43:45.745867Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  },
+  "XEGGEX:SOL": {
+    "halted": false,
+    "halt_reason": null,
+    "inventory_base": 0.0,
+    "avg_cost_usd": 0.0,
+    "realized_pnl_usd": 0.0,
+    "fills": 0,
+    "open_orders": [],
+    "last_mid": 77.7,
+    "updated_at": "2026-07-15T03:43:46.257743Z",
+    "peak_realized_usd": 0.0,
+    "max_drawdown_usd": 0.0
+  }
+}

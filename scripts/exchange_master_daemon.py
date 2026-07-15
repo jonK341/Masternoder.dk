@@ -111,6 +111,12 @@ def run_once(auto_sweep: bool = False) -> dict:
     except Exception as exc:
         out["arb_rebalance"] = {"success": False, "error": str(exc)}
 
+    try:
+        from backend.services import crypto_exchange_service as ex
+        out["paypal_sell_caps"] = ex.refresh_paypal_sell_price_caps()
+    except Exception as exc:
+        out["paypal_sell_caps"] = {"success": False, "error": str(exc)}
+
     return out
 
 

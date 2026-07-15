@@ -3,18 +3,43 @@
   'use strict';
 
   var TAB_LABELS = {
-    trade: 'Trade',
-    overview: 'Overview',
-    bots: 'Bots & daemons',
-    liquidity: 'Sales pool',
-    treasury: 'Treasury',
-    marketplace: 'Marketplace',
-    venues: 'Venues',
+    trade: '💱 Trade',
+    overview: '📊 Overview',
+    bots: '🤖 Bots & daemons',
+    liquidity: '💧 Sales pool',
+    treasury: '🏦 Treasury',
+    marketplace: '🛒 Marketplace',
+    venues: '🔗 Venues',
   };
 
   var loaded = {};
   var handlers = {};
   var pollTimers = {};
+  var currentTab = null;
+  var navBound = false;
+  var syncingHash = false;
+
+  var TRADE_SUB_TABS = ['swap', 'onramp', 'limit', 'staking', 'tax'];
+
+  var HASH_TO_TAB = {
+    'cex-profit-oracle': 'overview',
+    'cex-gateway-layer': 'overview',
+    'cex-profit-blockers-overview': 'overview',
+    'cex-progress-monitor': 'overview',
+    'cex-social-links': 'overview',
+    'cex-daemon-control': 'bots',
+    'cex-agent-cross-trading': 'bots',
+    'cex-profit-path-research': 'bots',
+    'cex-live-monitor': 'bots',
+    'cex-live-watch': 'bots',
+    'cex-ai-trading': 'bots',
+    'cex-profit-blockers-bots': 'bots',
+    'cex-agent-marketplace': 'marketplace',
+    'cex-control-center': 'marketplace',
+    'cex-rental-hub': 'marketplace',
+    'cex-exchange-shop': 'marketplace',
+    'cex-trading-desk': 'trade',
+  };
 
   function q(id) { return document.getElementById(id); }
 
@@ -102,15 +127,17 @@
       try { return Promise.resolve(fn()); }
       catch (e) { return Promise.reject(e); }
     })).then(function () {
+      loaded[tabId] = true;
       clearSlot(tabId);
     }).catch(function () {
+      loaded[tabId] = false;
       setError(tabId, 'Request timed out or failed.', function () { loadTab(tabId, true); });
     });
   }
 
   function loadTab(tabId, force) {
     if (!force && loaded[tabId]) return;
-    loaded[tabId] = true;
+    if (force) loaded[tabId] = false;
     return runHandlers(tabId);
   }
 
@@ -126,8 +153,51 @@
     pollTimers[tabId] = setInterval(fn, ms || 15000);
   }
 
-  function applyTab(tabId) {
+  function tabFromHash() {
+    var id = (window.location.hash || '').replace(/^#/, '');
+    return id && HASH_TO_TAB[id] ? HASH_TO_TAB[id] : null;
+  }
+
+  function resolveInitialTab() {
+    var params = new URLSearchParams(window.location.search);
+    var hub = params.get('hub');
+    if (hub && Object.prototype.hasOwnProperty.call(TAB_LABELS, hub)) return hub;
+    var tabParam = params.get('tab');
+    if (tabParam && Object.prototype.hasOwnProperty.call(TAB_LABELS, tabParam)) return tabParam;
+    if (tabParam && TRADE_SUB_TABS.indexOf(tabParam) >= 0) return 'trade';
+    return tabFromHash() || 'trade';
+  }
+
+  function scrollToHash(delay) {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var target = document.querySelector(hash);
+    if (!target) return;
+    setTimeout(function () {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, delay == null ? 120 : delay);
+  }
+
+  function syncHubUrl(tabId) {
+    try {
+      var url = new URL(window.location.href);
+      if (tabId === 'trade') url.searchParams.delete('hub');
+      else url.searchParams.set('hub', tabId);
+      var hash = window.location.hash || '';
+      syncingHash = true;
+      window.history.replaceState({}, document.title, url.pathname + url.search + hash);
+      syncingHash = false;
+    } catch (e) { syncingHash = false; }
+  }
+
+  function applyTab(tabId, opts) {
+    opts = opts || {};
     if (!TAB_LABELS[tabId]) tabId = 'trade';
+    if (tabId === currentTab && loaded[tabId] && !opts.force) {
+      scrollToHash(opts.scrollDelay);
+      return;
+    }
+    currentTab = tabId;
     document.querySelectorAll('.cex-tab-shell[data-cex-tab]').forEach(function (el) {
       var on = el.getAttribute('data-cex-tab') === tabId;
       el.hidden = !on;
@@ -143,15 +213,10 @@
     }
     var note = q('cex-route-note');
     if (note) note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Data loads when you open each tab.';
-    try {
-      var url = new URL(window.location.href);
-      if (tabId === 'trade') url.searchParams.delete('hub');
-      else url.searchParams.set('hub', tabId);
-      var swapTab = url.searchParams.get('tab');
-      var hash = window.location.hash || '';
-      window.history.replaceState({}, document.title, url.pathname + url.search + hash);
-    } catch (e) { /* ignore */ }
-    loadTab(tabId);
+    if (!opts.skipUrl) syncHubUrl(tabId);
+    var page = document.querySelector('.cex-page');
+    if (page) page.classList.add('cex-hub-ready');
+    loadTab(tabId, !!opts.force);
     Object.keys(pollTimers).forEach(function (k) {
       if (k !== tabId) stopPoll(k);
     });
@@ -160,6 +225,7 @@
         if (window.CexMarketplace && window.CexMarketplace.pollBots) window.CexMarketplace.pollBots();
       }, 15000);
     }
+    scrollToHash(opts.scrollDelay);
   }
 
   function onTab(tabId, fn) {
@@ -167,12 +233,15 @@
     handlers[tabId].push(fn);
   }
 
-  function initNav() {
+  function bindNav() {
+    if (navBound) return;
     var nav = q('cex-hub-nav');
     if (!nav) return;
+    navBound = true;
     nav.addEventListener('click', function (ev) {
       var btn = ev.target.closest('[data-cex-tab]');
       if (!btn || !nav.contains(btn)) return;
+      ev.preventDefault();
       applyTab(btn.getAttribute('data-cex-tab'));
     });
     document.querySelectorAll('[data-cex-goto]').forEach(function (a) {
@@ -180,17 +249,32 @@
         var tab = a.getAttribute('data-cex-goto');
         if (!tab) return;
         ev.preventDefault();
-        applyTab(tab);
         var hash = a.getAttribute('href');
         if (hash && hash.charAt(0) === '#') {
-          var target = document.querySelector(hash);
-          if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+          try {
+            syncingHash = true;
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search + hash);
+            syncingHash = false;
+          } catch (e) { syncingHash = false; }
         }
+        applyTab(tab, { skipUrl: true, scrollDelay: 160 });
       });
     });
-    var hub = new URLSearchParams(window.location.search).get('hub');
-    var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, hub);
-    applyTab(valid ? hub : 'trade');
+    window.addEventListener('hashchange', function () {
+      if (syncingHash) return;
+      var tab = tabFromHash();
+      if (tab && tab !== currentTab) applyTab(tab, { skipUrl: true, scrollDelay: 80 });
+      else scrollToHash(80);
+    });
+  }
+
+  function bootHub() {
+    bindNav();
+    applyTab(resolveInitialTab());
+  }
+
+  function scheduleBoot() {
+    setTimeout(bootHub, 0);
   }
 
   function renderProfitBlockers(data, listId, countId) {
@@ -485,8 +569,8 @@
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initNav);
+    document.addEventListener('DOMContentLoaded', scheduleBoot);
   } else {
-    initNav();
+    scheduleBoot();
   }
 })();

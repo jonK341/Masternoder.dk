@@ -2,15 +2,6 @@
   "recent": [
     {
       "hash": "a12ac1ef0d7abcc8",
-      "ts": "2026-07-04T05:43:57.184110Z",
-      "asset_key": "binance||reduce_notional|",
-      "amount_usd": 10.0,
-      "type": "reduce_notional",
-      "success": true,
-      "skip_reason": ""
-    },
-    {
-      "hash": "a12ac1ef0d7abcc8",
       "ts": "2026-07-04T06:16:23.809304Z",
       "asset_key": "binance||reduce_notional|",
       "amount_usd": 10.0,
@@ -368,9 +359,18 @@
       "type": "reduce_notional",
       "success": true,
       "skip_reason": ""
+    },
+    {
+      "hash": "877102cb8e450d75",
+      "ts": "2026-07-05T17:19:05.912906Z",
+      "asset_key": "binance|DOGE|sell|DOGEUSDC",
+      "amount_usd": 7.61,
+      "type": "external_market_sell",
+      "success": true,
+      "skip_reason": ""
     }
   ],
-  "updated_at": "2026-07-04T20:16:05.971956Z",
-  "last_executed_hash": "cbc9beffe1e8fcd9",
-  "last_executed_at": "2026-07-04T20:16:05.971956Z"
+  "updated_at": "2026-07-05T17:19:05.912906Z",
+  "last_executed_hash": "877102cb8e450d75",
+  "last_executed_at": "2026-07-05T17:19:05.912906Z"
 }

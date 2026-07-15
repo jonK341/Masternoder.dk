@@ -161,6 +161,10 @@ def _select_agents(user_id: str, cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
 def run_user_daemon(user_id: str, *, volatility: Optional[float] = None) -> Dict[str, Any]:
     """Run one daemon cycle for the user's configured bots using live venue scans."""
     user_id = (user_id or "").strip() or "default_user"
+    try:
+        ex.refresh_paypal_sell_price_caps()
+    except Exception:
+        pass
     if not get_config(user_id)["config"].get("enabled", True):
         return {"success": False, "error": "daemon_disabled"}
 

@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260704">
+    <link rel="stylesheet" href="/hosting/hosting-ui.css?v=20260705">
 
 </head>
 
@@ -410,6 +411,13 @@
 
             <p class="sub-note" id="mn-public-notes"></p>
 
+            <div class="ex-section-title">My hosting orders</div>
+            <table class="mn-net-table" aria-label="My hosting orders">
+                <thead><tr><th>Order</th><th>Status</th><th>Slots</th><th>Total</th><th>Date</th></tr></thead>
+                <tbody id="mn-my-orders"><tr><td colspan="5">Loading orders…</td></tr></tbody>
+            </table>
+            <p style="margin:8px 0;font-size:0.82rem;"><a href="/hosting/?host_tab=orders" style="color:#00d4ff;">Full hosting hub →</a></p>
+
             <div id="mn2-onchain-modal" class="mn-onchain-modal" hidden aria-hidden="true">
                 <div class="mn-onchain-dialog">
                     <div class="mn-onchain-head">
@@ -547,7 +555,8 @@
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="explorer" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20260705" defer></script>
+    <script src="/static/js/hosting-hub.js?v=20260705" defer></script>
 
     <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
 

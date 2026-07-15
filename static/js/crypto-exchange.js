@@ -8,15 +8,111 @@
   var catalog = null;
   var lastQuote = null;
   var termsVersion = '2026-06-v1';
+  var walletCache = null;
+  var favOnly = false;
+  var searchDebounce = null;
+  var LARGE_TRADE_USD = 500;
+
+  var ASSET_COLORS = {
+    BTC: '#f7931a', ETH: '#627eea', SOL: '#9945ff', USDC: '#2775ca', USDT: '#26a17b',
+    BNB: '#f3ba2f', XRP: '#23292f', ADA: '#0033ad', DOGE: '#c2a633', DOT: '#e6007a',
+    AVAX: '#e84142', MATIC: '#8247e5', LINK: '#2a5ada', MN2: '#00ff88',
+  };
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
     catch (e) { return 'default_user'; }
   }
 
+  function isAuthed() {
+    var u = uid();
+    return u && u !== 'default_user' && !u.startsWith('anon_');
+  }
+
   function q(id) { return document.getElementById(id); }
 
   function msg(t) { var el = q('cex-msg'); if (el) el.textContent = t || ''; }
+
+  function toast(t, type) {
+    if (window.cexToast) window.cexToast(t, type);
+  }
+
+  function debounce(fn, ms) {
+    return function () {
+      var args = arguments;
+      var self = this;
+      if (searchDebounce) clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(function () { fn.apply(self, args); }, ms);
+    };
+  }
+
+  function getFavorites() {
+    try { return JSON.parse(localStorage.getItem('cex_favorites') || '[]'); }
+    catch (e) { return []; }
+  }
+
+  function toggleFavorite(sym) {
+    var favs = getFavorites();
+    var i = favs.indexOf(sym);
+    if (i >= 0) favs.splice(i, 1);
+    else favs.push(sym);
+    try { localStorage.setItem('cex_favorites', JSON.stringify(favs)); } catch (e) {}
+    if (catalog && catalog.assets) renderAssets(catalog.assets);
+  }
+
+  function pushRecent(sym) {
+    try {
+      var rec = JSON.parse(localStorage.getItem('cex_recent_pairs') || '[]');
+      rec = rec.filter(function (s) { return s !== sym; });
+      rec.unshift(sym);
+      localStorage.setItem('cex_recent_pairs', JSON.stringify(rec.slice(0, 6)));
+    } catch (e) {}
+    renderRecentPairs();
+  }
+
+  function renderRecentPairs() {
+    var el = q('cex-recent-pairs');
+    if (!el) return;
+    var rec = [];
+    try { rec = JSON.parse(localStorage.getItem('cex_recent_pairs') || '[]'); } catch (e) {}
+    if (!rec.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = rec.map(function (sym) {
+      return '<button type="button" class="cex-recent-chip" data-recent="' + sym + '">' + sym + '</button>';
+    }).join('');
+    el.querySelectorAll('[data-recent]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        selected = btn.getAttribute('data-recent');
+        if (window.CexTradeDesk) window.CexTradeDesk.setSelected(selected);
+        if (catalog && catalog.assets) renderAssets(catalog.assets);
+        updateSelected();
+        renderStaking(catalog.assets);
+      });
+    });
+  }
+
+  function assetColor(sym) {
+    return ASSET_COLORS[sym] || '#5a6a8a';
+  }
+
+  function copyText(text) {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('Copied to clipboard', 'ok'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('Copied', 'ok'); } catch (e) { toast('Copy failed', 'err'); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function setWalletUpdated() {
+    var el = q('cex-wallet-updated');
+    if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
 
   function fmt(n, d) {
     var x = Number(n || 0);
@@ -47,25 +143,51 @@
     var list = q('cex-asset-list');
     var search = (q('cex-asset-search') || {}).value || '';
     search = search.toLowerCase();
+    var favs = getFavorites();
     if (!list) return;
     var rows = (assets || []).filter(function (a) {
+      if (favOnly && favs.indexOf(a.symbol) < 0) return false;
       if (!search) return true;
       return (a.symbol + ' ' + a.name).toLowerCase().indexOf(search) >= 0;
     });
+    if (!rows.length) {
+      list.innerHTML = '<p class="cex-empty-hint cex-empty-hint--icon">🔍 No markets match — clear search or favorites filter.</p>';
+      list.setAttribute('aria-busy', 'false');
+      return;
+    }
+    list.setAttribute('aria-busy', 'false');
     list.innerHTML = rows.map(function (a) {
       var cls = a.symbol === selected ? 'cex-asset-row active' : 'cex-asset-row';
+      var favCls = favs.indexOf(a.symbol) >= 0 ? ' on' : '';
+      var col = assetColor(a.symbol);
       return '<div class="' + cls + '" data-sym="' + a.symbol + '">' +
-        '<span><span class="sym">' + a.symbol + '</span> ' + a.name + '</span>' +
+        '<span><span class="cex-asset-icon" style="background:' + col + '">' + a.symbol.slice(0, 2) + '</span>' +
+        '<button type="button" class="cex-asset-fav' + favCls + '" data-fav="' + a.symbol + '" aria-label="Toggle favorite ' + a.symbol + '">★</button>' +
+        '<span class="sym">' + a.symbol + '</span> ' + a.name + '</span>' +
         '<span class="price">$' + fmt(a.price_usd, a.price_usd < 1 ? 6 : 2) + '</span></div>';
     }).join('');
     list.querySelectorAll('[data-sym]').forEach(function (row) {
-      row.addEventListener('click', function () {
+      row.addEventListener('click', function (ev) {
+        if (ev.target && ev.target.getAttribute('data-fav')) return;
         selected = row.getAttribute('data-sym');
+        pushRecent(selected);
+        if (window.CexTradeDesk) {
+          window.CexTradeDesk.setSelected(selected);
+        }
         renderAssets(assets);
         updateSelected();
         renderStaking(assets);
       });
     });
+    list.querySelectorAll('[data-fav]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        toggleFavorite(btn.getAttribute('data-fav'));
+      });
+    });
+    if (window.CexTradeDesk && window.CexTradeDesk.decorateAssetRows) {
+      assets.forEach(function (a) { window.CexTradeDesk.decorateAssetRows(a.symbol); });
+    }
   }
 
   function updateSelected() {
@@ -76,20 +198,28 @@
     if (el) el.textContent = label;
     if (lim) lim.value = selected;
     if (q('cex-paypal-symbol')) q('cex-paypal-symbol').value = selected;
+    if (q('cex-paypal-sell-symbol')) q('cex-paypal-sell-symbol').value = selected;
+    if (window.CexTradeDesk) window.CexTradeDesk.setSelected(selected);
   }
 
   function renderWallet(w) {
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
+    walletCache = w;
+    el.setAttribute('aria-busy', 'false');
     var assets = w.assets || {};
     var keys = Object.keys(assets).filter(function (k) { return Number(assets[k]) > 0; });
     if (!keys.length) {
-      el.innerHTML = '<p class="cex-muted">No exchange balances yet. Buy assets via swap.</p>';
+      el.innerHTML = '<p class="cex-empty-hint cex-empty-hint--icon">💼 No balances yet — swap or buy via PayPal to fund your wallet.</p>';
+      setWalletUpdated();
       return;
     }
     el.innerHTML = keys.map(function (k) {
-      return '<div class="cex-wallet-row"><span>' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>';
+      var col = assetColor(k);
+      return '<div class="cex-wallet-row"><span><span class="cex-asset-icon" style="background:' + col + ';width:18px;height:18px;font-size:0.55rem">' +
+        k.slice(0, 2) + '</span> ' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>';
     }).join('');
+    setWalletUpdated();
   }
 
   function renderRewards(r) {
@@ -107,11 +237,26 @@
     var el = q('cex-recent-trades');
     if (!el) return;
     var rows = (trades && trades.trades) || [];
-    if (!rows.length) { el.textContent = 'No trades yet.'; return; }
+    if (!rows.length) {
+      el.innerHTML = '<p class="cex-empty-hint cex-empty-hint--icon">📋 No trades yet — your history appears here after swaps.</p>';
+      return;
+    }
     el.innerHTML = rows.slice(0, 8).map(function (t) {
       var ts = (t.ts || '').slice(0, 19).replace('T', ' ');
-      return '<div>' + ts + ' · ' + (t.symbol || '?') + ' ' + (t.side || t.type || '') + ' ' + fmt(t.amount, 6) + '</div>';
+      var side = (t.side || t.type || '').toLowerCase();
+      var sideCls = side.indexOf('buy') >= 0 ? 'buy' : (side.indexOf('sell') >= 0 ? 'sell' : '');
+      var usd = t.amount_usd != null ? t.amount_usd : (t.usd_value != null ? t.usd_value : null);
+      var pnlHint = usd != null ? ' ~$' + fmt(usd, 2) : '';
+      var tid = t.trade_id || '';
+      return '<div class="cex-trade-row ' + sideCls + '">' +
+        '<span class="cex-muted">' + ts + '</span>' +
+        '<span class="cex-trade-side">' + (t.symbol || '?') + ' ' + (t.side || t.type || '') + ' ' + fmt(t.amount, 6) + pnlHint + '</span>' +
+        (tid ? '<button type="button" class="cex-copy-btn" data-copy="' + tid + '" title="Copy trade ID">⎘ ' + tid.slice(0, 8) + '</button>' : '') +
+        '</div>';
     }).join('');
+    el.querySelectorAll('[data-copy]').forEach(function (btn) {
+      btn.addEventListener('click', function () { copyText(btn.getAttribute('data-copy')); });
+    });
   }
 
   function renderOrders(orders) {
@@ -295,7 +440,10 @@
       renderWallet(res[1]);
       renderRewards(res[2]);
       renderTrades(res[3]);
-    }).catch(function () { msg('Could not load exchange data.'); });
+    }).catch(function () {
+      msg('Could not load exchange data.');
+      toast('Exchange data load failed', 'err');
+    });
   }
 
   function refreshTradeExtras() {
@@ -332,42 +480,84 @@
     });
   }
 
+  function applyFeeTooltip(res, prev) {
+    if (!prev || !res) return;
+    var tip = 'Fee breakdown: ' + (res.fee_bps || 0) + ' bps total · fee ' +
+      fmt(res.fee_quote, 6) + ' ' + (res.quote_currency || '') +
+      ' · USD ~$' + fmt(res.usd_value, 2);
+    prev.setAttribute('data-fee-tip', tip);
+    prev.title = tip;
+  }
+
+  function getSlippagePct() {
+    var el = q('cex-slippage');
+    return el ? parseFloat(el.value || '1') : 1;
+  }
+
   function doQuote() {
     var amount = parseFloat((q('cex-swap-amount') || {}).value || '0');
     if (!amount) { msg('Enter amount'); return; }
+    var venue = (window.CexTradeDesk && window.CexTradeDesk.getVenue) ? window.CexTradeDesk.getVenue() : 'internal';
+    var quoteCur = (q('cex-swap-quote') || {}).value || 'MN2';
+    if (venue === 'binance') quoteCur = 'USDC';
+    else if (venue === 'nonkyc') quoteCur = 'USDT';
     postJson('/api/exchange/quote', {
       symbol: selected,
       side: (q('cex-swap-side') || {}).value || 'buy',
       amount: amount,
-      quote: (q('cex-swap-quote') || {}).value || 'MN2',
+      quote: quoteCur,
+      venue: venue,
     }).then(function (res) {
-      if (!res.success) { msg(res.error || 'Quote failed'); return; }
+      if (!res.success) {
+        msg(res.error || 'Quote failed');
+        toast(res.error || 'Quote failed', 'err');
+        return;
+      }
       lastQuote = res;
       var prev = q('cex-quote-preview');
+      var venueTag = venue !== 'internal' ? ' [' + venue + ' ' + (res.mode || 'paper') + ']' : '';
+      var slip = getSlippagePct();
       var line = res.side === 'buy'
         ? 'Cost: ' + fmt(res.quote_cost, 6) + ' ' + res.quote_currency + ' · Fee: ' + fmt(res.fee_quote, 6)
         : 'Receive: ' + fmt(res.quote_received, 6) + ' ' + res.quote_currency + ' · Fee: ' + fmt(res.fee_quote, 6);
-      if (prev) prev.textContent = line + ' · ' + res.fee_bps + ' bps · ~$' + fmt(res.usd_value, 2);
+      if (prev) {
+        prev.textContent = line + ' · ' + res.fee_bps + ' bps · ~$' + fmt(res.usd_value, 2) +
+          venueTag + ' · slippage tol ' + slip + '%';
+        applyFeeTooltip(res, prev);
+      }
       msg('Quote ready — confirm swap');
+      toast('Quote ready', 'ok');
     });
   }
 
   function doSwap() {
+    if (!isAuthed()) { msg('Sign in to swap — guest mode is view-only.'); return; }
     if (!lastQuote) { doQuote(); return; }
+    var usdVal = Number(lastQuote.usd_value || 0);
+    if (usdVal >= LARGE_TRADE_USD) {
+      if (!window.confirm('Large trade ~$' + fmt(usdVal, 2) + '. Confirm swap of ' +
+        lastQuote.amount + ' ' + lastQuote.symbol + '?')) {
+        return;
+      }
+    }
+    var venue = (window.CexTradeDesk && window.CexTradeDesk.getVenue) ? window.CexTradeDesk.getVenue() : 'internal';
     postJson('/api/exchange/swap', {
       quote_id: lastQuote.quote_id,
       symbol: lastQuote.symbol,
       side: lastQuote.side,
       amount: lastQuote.amount,
       quote: lastQuote.quote_currency,
+      venue: venue,
     }).then(function (res) {
       if (res.success) {
         msg('Swap complete');
+        toast('Swap complete', 'ok');
         lastQuote = null;
         q('cex-quote-preview').textContent = '';
         refresh();
       } else {
         msg(res.error || 'Swap failed');
+        toast(res.error || 'Swap failed', 'err');
       }
     });
   }
@@ -421,6 +611,7 @@
   }
 
   function doPayPalCrypto() {
+    if (!isAuthed()) { msg('Sign in to buy crypto with PayPal.'); return; }
     var usd = parseFloat((q('cex-paypal-usd') || {}).value || '0');
     if (!usd) { msg('Enter USD amount'); return; }
     msg('Preparing PayPal crypto checkout…');
@@ -541,16 +732,98 @@
       });
     });
     var initial = new URLSearchParams(window.location.search).get('tab');
-    if (initial) {
+    var tradeSubTabs = ['swap', 'onramp', 'limit', 'staking', 'tax'];
+    if (initial && tradeSubTabs.indexOf(initial) >= 0) {
       var btn = document.querySelector('.cex-tab[data-tab="' + initial + '"]');
       if (btn) btn.click();
     }
   }
 
+  function applyQuickPct(pct) {
+    if (!walletCache || !walletCache.assets) {
+      toast('Load wallet first', 'warn');
+      return;
+    }
+    var side = (q('cex-swap-side') || {}).value || 'buy';
+    var quote = (q('cex-swap-quote') || {}).value || 'MN2';
+    var bal = 0;
+    if (side === 'sell') {
+      bal = Number(walletCache.assets[selected] || 0);
+    } else {
+      bal = Number(walletCache.assets[quote] || 0);
+      var asset = (catalog && catalog.assets || []).find(function (a) { return a.symbol === selected; });
+      if (asset && asset.price_usd > 0 && bal > 0) {
+        var priceQ = asset.price_usd;
+        bal = bal / priceQ;
+      }
+    }
+    if (!bal) { toast('No balance for ' + (side === 'sell' ? selected : quote), 'warn'); return; }
+    var amt = bal * pct;
+    var inp = q('cex-swap-amount');
+    if (inp) inp.value = amt > 0 ? String(amt.toPrecision(8)) : '0';
+    lastQuote = null;
+    if (q('cex-quote-preview')) q('cex-quote-preview').textContent = '';
+  }
+
+  function initKeyboardShortcuts() {
+    document.addEventListener('keydown', function (ev) {
+      var tag = (ev.target && ev.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        if (ev.key !== 'Escape') return;
+      }
+      var tradeShell = document.querySelector('.cex-tab-shell[data-cex-tab="trade"]');
+      if (!tradeShell || tradeShell.hidden) return;
+      if (ev.key === '/' && !ev.ctrlKey && !ev.metaKey) {
+        ev.preventDefault();
+        var search = q('cex-asset-search');
+        if (search) search.focus();
+      } else if (ev.key === 'b' || ev.key === 'B') {
+        var side = q('cex-swap-side');
+        if (side) { side.value = 'buy'; lastQuote = null; }
+      } else if (ev.key === 's' || ev.key === 'S') {
+        var sideSell = q('cex-swap-side');
+        if (sideSell) { sideSell.value = 'sell'; lastQuote = null; }
+      } else if (ev.key === 'q' || ev.key === 'Q') {
+        ev.preventDefault();
+        doQuote();
+      }
+    });
+  }
+
   function init() {
+    if (window.CexTradeDesk) {
+      window.CexTradeDesk.refreshWallet = refresh;
+      window.CexTradeDesk._selected = selected;
+    }
     initTabs();
+    renderRecentPairs();
+    initKeyboardShortcuts();
     q('cex-swap-btn').addEventListener('click', doSwap);
     q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });
+    document.addEventListener('cex-venue-change', function () { lastQuote = null; });
+    document.querySelectorAll('.cex-pct-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyQuickPct(parseFloat(btn.getAttribute('data-pct') || '0'));
+      });
+    });
+    var favFilter = q('cex-fav-filter');
+    if (favFilter) {
+      favFilter.addEventListener('click', function () {
+        favOnly = !favOnly;
+        favFilter.setAttribute('aria-pressed', favOnly ? 'true' : 'false');
+        if (catalog && catalog.assets) renderAssets(catalog.assets);
+      });
+    }
+    var walletRefresh = q('cex-wallet-refresh');
+    if (walletRefresh) {
+      walletRefresh.addEventListener('click', function () {
+        walletRefresh.disabled = true;
+        refreshCore().then(function () {
+          walletRefresh.disabled = false;
+          toast('Wallet refreshed', 'ok');
+        });
+      });
+    }
     q('cex-limit-btn').addEventListener('click', doLimit);
     q('cex-bonus-btn').addEventListener('click', doBonus);
     q('cex-tax-btn').addEventListener('click', doTax);
@@ -558,9 +831,9 @@
     if (q('cex-agent-tick-btn') && !q('cex-agent-tick-btn').disabled) {
       q('cex-agent-tick-btn').addEventListener('click', runAgentTick);
     }
-    q('cex-asset-search').addEventListener('input', function () {
+    q('cex-asset-search').addEventListener('input', debounce(function () {
       if (catalog && catalog.assets) renderAssets(catalog.assets);
-    });
+    }, 300));
     if (window.ExchangeHub) {
       window.ExchangeHub.onTab('trade', function () {
         return refreshCore().then(refreshTradeExtras);

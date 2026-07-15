@@ -1,0 +1,9 @@
+{
+  "agents": {
+    "test_agent": {
+      "loss_streak": 0,
+      "cooled_skills": []
+    }
+  },
+  "updated_at": "2026-07-05T17:17:41.667782Z"
+}

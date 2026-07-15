@@ -57,6 +57,115 @@
     opacity: 0.85;
 }
 
+.profile-security-frame {
+    margin: 0 0 24px;
+    padding: 22px;
+    border-radius: 18px;
+    border: 2px solid rgba(0, 255, 136, 0.32);
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.07), rgba(0, 212, 255, 0.05));
+}
+
+.profile-security-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.profile-security-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #00ff88;
+}
+
+.profile-security-header p {
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+    opacity: 0.82;
+    max-width: 640px;
+}
+
+.profile-security-status-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.profile-security-indicator {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.profile-security-indicator .label {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.72;
+}
+
+.profile-security-indicator .value {
+    margin-top: 4px;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.profile-security-indicator.ok .value { color: #00ff88; }
+.profile-security-indicator.warn .value { color: #fbbf24; }
+.profile-security-indicator.bad .value { color: #ff8888; }
+
+.profile-security-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.profile-security-subnav .tab-btn {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.profile-security-subnav .tab-btn.active {
+    border-color: rgba(0, 255, 136, 0.45);
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.12);
+}
+
+.profile-email-recovery-card .recovery-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 420px;
+}
+
+.profile-email-recovery-card input {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #161b22;
+    color: #fff;
+}
+
+.profile-email-recovery-card button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 212, 255, 0.45);
+    background: rgba(0, 212, 255, 0.12);
+    color: #00d4ff;
+    cursor: pointer;
+    max-width: 220px;
+}
+
 .profile-avatar-panel {
     display: flex;
     flex-wrap: wrap;

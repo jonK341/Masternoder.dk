@@ -75,6 +75,7 @@ def exchange_quote():
         data.get("side"),
         float(data.get("amount") or 0),
         data.get("quote") or "MN2",
+        venue=(data.get("venue") or "internal"),
     ))
 
 
@@ -88,7 +89,64 @@ def exchange_swap():
         data.get("side"),
         float(data.get("amount") or 0),
         data.get("quote") or "MN2",
+        venue=(data.get("venue") or "internal"),
     ))
+
+
+@crypto_exchange_bp.route("/api/exchange/quick-swap/quote", methods=["POST"])
+def exchange_quick_swap_quote():
+    data = request.get_json(silent=True) or {}
+    return jsonify(ex.quote_quick_swap(
+        _uid(from_body=True),
+        data.get("from_asset") or data.get("from"),
+        data.get("to_asset") or data.get("to"),
+        float(data.get("amount") or 0),
+        venue=(data.get("venue") or "internal"),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/quick-swap/execute", methods=["POST"])
+def exchange_quick_swap_execute():
+    data = request.get_json(silent=True) or {}
+    user_id = _uid(from_body=True)
+    if not user_id or str(user_id).strip().lower() == "default_user":
+        return jsonify({"success": False, "error": "Create an account first", "code": "ACCOUNT_REQUIRED"}), 400
+    return jsonify(ex.execute_quick_swap(
+        user_id,
+        data.get("quote_id") or "",
+        data.get("from_asset") or data.get("from"),
+        data.get("to_asset") or data.get("to"),
+        float(data.get("amount") or 0),
+        venue=(data.get("venue") or "internal"),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/venue/execute", methods=["POST"])
+def exchange_venue_execute():
+    """Direct external venue market order (Binance / NonKYC)."""
+    from backend.services.exchange_user_venue_execution_service import execute_venue_swap
+
+    data = request.get_json(silent=True) or {}
+    user_id = _uid(from_body=True)
+    if not user_id or str(user_id).strip().lower() == "default_user":
+        return jsonify({"success": False, "error": "Create an account first", "code": "ACCOUNT_REQUIRED"}), 400
+    return jsonify(execute_venue_swap(
+        user_id,
+        (data.get("venue") or "").strip().lower(),
+        data.get("quote_id") or "",
+        data.get("symbol"),
+        data.get("side"),
+        float(data.get("amount") or 0),
+        data.get("quote"),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/venue/readiness", methods=["GET"])
+def exchange_venue_readiness():
+    from backend.services.exchange_user_venue_execution_service import venue_ready
+
+    venue = (request.args.get("venue") or "binance").strip().lower()
+    return jsonify(venue_ready(venue))
 
 
 @crypto_exchange_bp.route("/api/exchange/orders", methods=["GET"])
@@ -885,6 +943,55 @@ def exchange_monitor_live():
         return jsonify({"success": False, "error": "monitor_unavailable", "message": str(exc)[:200]}), 500
 
 
+@crypto_exchange_bp.route("/api/exchange/stream", methods=["GET"])
+def exchange_stream():
+    """SSE live broadcast — daemon feed, external prices, metrics (poll fallback in JS)."""
+    import json
+    import time
+    from flask import Response, stream_with_context
+
+    from backend.services.exchange_broadcast_service import broadcast_snapshot, snapshot_signature
+
+    interval = max(5, min(int(request.args.get("interval", 10)), 60))
+    feed_limit = max(5, min(int(request.args.get("limit", 20)), 80))
+    user_id = _uid()
+
+    def generate():
+        yield "data: " + json.dumps({
+            "type": "connected",
+            "channel": "exchange_broadcast",
+            "interval_sec": interval,
+        }) + "\n\n"
+        last_sig = None
+        while True:
+            try:
+                snap = broadcast_snapshot(user_id, feed_limit=feed_limit)
+                sig = snapshot_signature(snap)
+                if sig != last_sig:
+                    last_sig = sig
+                    yield "data: " + json.dumps({"type": "broadcast", **snap}, default=str) + "\n\n"
+                else:
+                    yield "data: " + json.dumps({"type": "heartbeat", "ts": time.time()}) + "\n\n"
+            except Exception as exc:
+                yield "data: " + json.dumps({"type": "error", "error": str(exc)[:200]}) + "\n\n"
+            time.sleep(interval)
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/broadcast/snapshot", methods=["GET"])
+def exchange_broadcast_snapshot_route():
+    """Poll fallback for exchange SSE stream."""
+    from backend.services.exchange_broadcast_service import broadcast_snapshot
+
+    feed_limit = int(request.args.get("limit") or 20)
+    return jsonify(broadcast_snapshot(_uid(), feed_limit=feed_limit))
+
+
 @crypto_exchange_bp.route("/api/exchange/monitor/metrics", methods=["GET"])
 def exchange_monitor_metrics():
     """Passthrough profit-daemon metrics for exchange hub dashboards."""
@@ -1399,6 +1506,62 @@ def exchange_payout_binance_configure_bank():
         account_type=(data.get("account_type") or "current").strip(),
         region=(data.get("region") or "").strip() or None,
     ))
+
+
+@crypto_exchange_bp.route("/api/exchange/external/prices", methods=["GET"])
+def exchange_external_prices():
+    syms = request.args.get("symbols")
+    venues = request.args.get("venues")
+    symbols = [s.strip().upper() for s in syms.split(",")] if syms else None
+    venue_list = [v.strip().lower() for v in venues.split(",")] if venues else None
+    return jsonify(ex.external_prices_payload(venues=venue_list, symbols=symbols))
+
+
+@crypto_exchange_bp.route("/api/exchange/paypal/sell-price-cap/status", methods=["GET"])
+def exchange_paypal_sell_cap_status():
+    return jsonify(ex.paypal_sell_cap_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/paypal/sell-price-cap/refresh", methods=["POST"])
+def exchange_paypal_sell_cap_refresh():
+    return jsonify(ex.refresh_paypal_sell_price_caps(force=True))
+
+
+@crypto_exchange_bp.route("/api/exchange/paypal/crypto-sell-quote", methods=["POST"])
+def exchange_paypal_crypto_sell_quote():
+    data = request.get_json(silent=True) or {}
+    return jsonify(ex.quote_paypal_crypto_sell(
+        _uid(from_body=True),
+        data.get("symbol"),
+        float(data.get("amount") or 0),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/paypal/crypto-sell", methods=["POST"])
+def exchange_paypal_crypto_sell():
+    data = request.get_json(silent=True) or {}
+    user_id = _uid(from_body=True)
+    if not user_id or str(user_id).strip().lower() == "default_user":
+        return jsonify({"success": False, "error": "Create an account first", "code": "ACCOUNT_REQUIRED"}), 400
+    quote = ex.quote_paypal_crypto_sell(
+        user_id,
+        data.get("symbol"),
+        float(data.get("amount") or 0),
+    )
+    if not quote.get("success"):
+        return jsonify(quote), 400
+    return jsonify(ex.execute_paypal_crypto_sell(
+        user_id,
+        data.get("quote_id") or quote.get("quote_id"),
+        data.get("symbol"),
+        float(data.get("amount") or 0),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/risk/me", methods=["GET"])
+def exchange_risk_me():
+    from backend.services.crypto_exchange_risk_service import user_risk_snapshot
+    return jsonify(user_risk_snapshot(_uid()))
 
 
 @crypto_exchange_bp.route("/api/exchange/paypal/crypto-quote", methods=["POST"])

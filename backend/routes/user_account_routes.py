@@ -11,8 +11,19 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from backend.services.account_resolution_service import resolve_user_id, resolve_user_id_with_source
 from backend.services import ai_user_controller
+from backend.services.profile_access_service import require_profile_owner
 
 user_account_bp = Blueprint("user_account", __name__)
+
+
+def _access_denied(err):
+    if err:
+        return jsonify(err[0]), err[1]
+    return None
+
+
+def _require_owned(user_id: str, *, allow_default_guest: bool = False):
+    return _access_denied(require_profile_owner(user_id, allow_default_guest=allow_default_guest))
 
 
 def _resolve(allow_default: bool = True) -> str:
@@ -306,6 +317,9 @@ def user_identity_full():
 def user_account_privacy():
     """Get or update profile privacy, notification, language, and feature preferences."""
     user_id = _resolve()
+    denied = _require_owned(user_id, allow_default_guest=True)
+    if denied:
+        return denied
     from backend.services.user_engagement import get_settings, update_settings
 
     if request.method == "GET":
@@ -380,6 +394,9 @@ def user_account_privacy():
 def user_account_export():
     """Export the user's account/profile state as JSON."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     export = {"success": True, "user_id": user_id, "exported_at": datetime.now(timezone.utc).isoformat()}
     try:
         from backend.services.user_onboarding import user_onboarding
@@ -403,6 +420,9 @@ def user_account_export():
 def user_account_delete():
     """Soft-delete an account by hiding profile data and disabling outward-facing preferences."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     data = request.get_json() or {}
     if data.get("confirm") != "DELETE":
         return jsonify({"success": False, "error": "confirm must equal DELETE"}), 400
@@ -426,6 +446,9 @@ def user_account_delete():
 def user_linked_providers():
     """List configured social providers and manage profile-linked provider labels."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.social_auth_service import list_providers
         configured = list_providers().get("providers", [])
@@ -512,6 +535,9 @@ def user_linked_providers():
 def user_sessions():
     """Return persistent session/device identity details for account UI."""
     user_id, resolution_source = resolve_user_id_with_source(from_body=True, from_query=True)
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     sessions = _record_current_session(user_id, resolution_source)
     return jsonify({
         "success": True,
@@ -525,6 +551,9 @@ def user_sessions():
 def user_session_revoke():
     """Mark a persisted non-current session/device as revoked."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     data = request.get_json() or {}
     session_id = str(data.get("session_id") or "").strip()
     if not session_id:
@@ -548,6 +577,9 @@ def account_summary():
     Single comprehensive payload that ties everything to the user account.
     """
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_full_account_summary
         return jsonify(get_full_account_summary(user_id)), 200
@@ -566,6 +598,9 @@ def account_summary():
 def account_summary_points():
     """Return only the points section of the account summary."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_points
         return jsonify({"success": True, "user_id": user_id, "points": get_points(user_id)}), 200
@@ -577,6 +612,9 @@ def account_summary_points():
 def account_summary_progress():
     """Return game progress + communication psychology for a user."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_game_progress, get_communication_psychology
         return jsonify({

@@ -2,6 +2,24 @@
   "comments": {
     "ep-005-agents-encoder": [
       {
+        "id": "pcc-4de8167ad9",
+        "episode_id": "ep-005-agents-encoder",
+        "user_id": "test_comment_user",
+        "content": "Great episode \u2014 MN2 rewards rock!",
+        "platform": "podcast",
+        "created_at": "2026-07-15T03:52:26.436309Z",
+        "likes": []
+      },
+      {
+        "id": "pcc-e4634f3e9f",
+        "episode_id": "ep-005-agents-encoder",
+        "user_id": "test_comment_user",
+        "content": "Great episode \u2014 MN2 rewards rock!",
+        "platform": "podcast",
+        "created_at": "2026-07-09T04:21:07.266784Z",
+        "likes": []
+      },
+      {
         "id": "pcc-57e52cd2d7",
         "episode_id": "ep-005-agents-encoder",
         "user_id": "test_comment_user",
@@ -55,11 +73,88 @@
         "created_at": "2026-06-22T01:14:27.932282Z",
         "likes": []
       }
+    ],
+    "ep-008-hosting-masternodes": [
+      {
+        "id": "pcc-e1bcb6679c",
+        "episode_id": "ep-008-hosting-masternodes",
+        "user_id": "test_comment_user",
+        "content": "Great episode \u2014 MN2 rewards rock!",
+        "platform": "podcast",
+        "created_at": "2026-07-15T03:53:11.107237Z",
+        "likes": []
+      }
     ]
   },
   "likes": {},
   "follows": {},
   "activity": [
+    {
+      "type": "news_comment",
+      "news_id": "news-podcast-hub-revival-20260715",
+      "user_id": "route_news_user",
+      "preview": "Route test komment on news",
+      "at": "2026-07-15T03:53:50.700656Z"
+    },
+    {
+      "type": "news_comment",
+      "news_id": "news-podcast-hub-revival-20260715",
+      "user_id": "test_news_comment_user",
+      "preview": "Podcast news komment \u2014 platform change looks great!",
+      "at": "2026-07-15T03:53:32.235873Z"
+    },
+    {
+      "type": "comment",
+      "episode_id": "ep-008-hosting-masternodes",
+      "user_id": "test_comment_user",
+      "comment_id": "pcc-e1bcb6679c",
+      "preview": "Great episode \u2014 MN2 rewards rock!",
+      "at": "2026-07-15T03:53:11.107237Z"
+    },
+    {
+      "type": "news_comment",
+      "news_id": "profit_bf62c4dbfdad",
+      "user_id": "route_news_user",
+      "preview": "Route test komment on news",
+      "at": "2026-07-15T03:52:29.326036Z"
+    },
+    {
+      "type": "news_comment",
+      "news_id": "profit_bf62c4dbfdad",
+      "user_id": "test_news_comment_user",
+      "preview": "Podcast news komment \u2014 platform change looks great!",
+      "at": "2026-07-15T03:52:26.548619Z"
+    },
+    {
+      "type": "comment",
+      "episode_id": "ep-005-agents-encoder",
+      "user_id": "test_comment_user",
+      "comment_id": "pcc-4de8167ad9",
+      "preview": "Great episode \u2014 MN2 rewards rock!",
+      "at": "2026-07-15T03:52:26.436309Z"
+    },
+    {
+      "type": "news_comment",
+      "news_id": "profit_bf62c4dbfdad",
+      "user_id": "route_news_user",
+      "preview": "Route test komment on news",
+      "at": "2026-07-09T04:21:09.200662Z"
+    },
+    {
+      "type": "news_comment",
+      "news_id": "profit_bf62c4dbfdad",
+      "user_id": "test_news_comment_user",
+      "preview": "Podcast news komment \u2014 platform change looks great!",
+      "at": "2026-07-09T04:21:07.397858Z"
+    },
+    {
+      "type": "comment",
+      "episode_id": "ep-005-agents-encoder",
+      "user_id": "test_comment_user",
+      "comment_id": "pcc-e4634f3e9f",
+      "preview": "Great episode \u2014 MN2 rewards rock!",
+      "at": "2026-07-09T04:21:07.266784Z"
+    },
     {
       "type": "news_comment",
       "news_id": "game-battle_win-b1d15310",
@@ -222,6 +317,52 @@
         "user_id": "test_news_comment_user",
         "content": "Podcast news komment \u2014 platform change looks great!",
         "created_at": "2026-06-22T01:22:30.026598Z"
+      }
+    ],
+    "profit_bf62c4dbfdad": [
+      {
+        "id": "pnc-b49583afcc",
+        "news_id": "profit_bf62c4dbfdad",
+        "user_id": "route_news_user",
+        "content": "Route test komment on news",
+        "created_at": "2026-07-15T03:52:29.326036Z"
+      },
+      {
+        "id": "pnc-898798f3f8",
+        "news_id": "profit_bf62c4dbfdad",
+        "user_id": "test_news_comment_user",
+        "content": "Podcast news komment \u2014 platform change looks great!",
+        "created_at": "2026-07-15T03:52:26.548619Z"
+      },
+      {
+        "id": "pnc-ade1d4f156",
+        "news_id": "profit_bf62c4dbfdad",
+        "user_id": "route_news_user",
+        "content": "Route test komment on news",
+        "created_at": "2026-07-09T04:21:09.200662Z"
+      },
+      {
+        "id": "pnc-e1301c2e76",
+        "news_id": "profit_bf62c4dbfdad",
+        "user_id": "test_news_comment_user",
+        "content": "Podcast news komment \u2014 platform change looks great!",
+        "created_at": "2026-07-09T04:21:07.397858Z"
+      }
+    ],
+    "news-podcast-hub-revival-20260715": [
+      {
+        "id": "pnc-051a9a59f6",
+        "news_id": "news-podcast-hub-revival-20260715",
+        "user_id": "route_news_user",
+        "content": "Route test komment on news",
+        "created_at": "2026-07-15T03:53:50.700656Z"
+      },
+      {
+        "id": "pnc-7c70b2a2ba",
+        "news_id": "news-podcast-hub-revival-20260715",
+        "user_id": "test_news_comment_user",
+        "content": "Podcast news komment \u2014 platform change looks great!",
+        "created_at": "2026-07-15T03:53:32.235873Z"
       }
     ]
   }

@@ -8,8 +8,10 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
     <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
+    <link rel="stylesheet" href="/exchange/exchange-ui.css?v=20260705c">
     <link rel="stylesheet" href="/static/css/platform-upgrades.css?v=20260705">
     <link rel="stylesheet" href="/static/css/hub-pages-ux.css?v=20260705">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260715">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -44,21 +46,75 @@
         </header>
 
         <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
-            <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
+            <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true"><span class="cex-tab-emoji">💱</span> Trade</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false"><span class="cex-tab-emoji">📊</span> Overview</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false"><span class="cex-tab-emoji">🤖</span> Bots</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false"><span class="cex-tab-emoji">💧</span> Sales pool</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false"><span class="cex-tab-emoji">🏦</span> Treasury</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false"><span class="cex-tab-emoji">🛒</span> Marketplace</button>
+            <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false"><span class="cex-tab-emoji">🔗</span> Venues</button>
         </nav>
         <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+
+        <div class="cex-onboard-banner" id="cex-onboard-banner" role="status" hidden>
+            <span>👋 First time? Pick an asset, get a quote, then swap. Use <kbd>/</kbd> to search, <kbd>B</kbd>/<kbd>S</kbd> for buy/sell.</span>
+            <button type="button" class="cex-btn cex-btn--ghost cex-onboard-dismiss" id="cex-onboard-dismiss" aria-label="Dismiss onboarding hint">Got it</button>
+        </div>
+
+        <div id="cex-toast-host" class="cex-toast-host" aria-live="polite" aria-atomic="true"></div>
 
         <div data-platform-area="exchange" id="platform-upgrade-mount"></div>
         <div id="platform-area-widget"></div>
 
         <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
         <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
+
+        <div class="cex-status-bar" id="cex-security-bar" aria-live="polite">Checking account security…</div>
+
+        <section class="cex-broadcast-board cex-collapsible" id="cex-broadcast-board" aria-label="Live daemon broadcast">
+            <div class="cex-broadcast-head">
+                <h2><span class="cex-live-pulse" id="cex-broadcast-dot" aria-hidden="true"></span> Live broadcast</h2>
+                <div class="cex-broadcast-meta">
+                    <span class="cex-sse-status" id="cex-sse-status" title="Live stream connection">● connecting</span>
+                    <span class="cex-muted">Daemon activity</span>
+                    <button type="button" class="cex-collapse-btn" data-collapse="cex-broadcast-body" aria-expanded="true" aria-controls="cex-broadcast-body">▼</button>
+                </div>
+            </div>
+            <div class="cex-collapsible-body" id="cex-broadcast-body">
+                <div class="cex-broadcast-kpis" id="cex-broadcast-kpis"><span class="cex-skeleton cex-skeleton--inline"></span></div>
+                <div class="cex-broadcast-feed" id="cex-broadcast-feed" role="log" aria-label="Daemon activity timeline"><span class="cex-skeleton cex-skeleton--block"></span></div>
+            </div>
+        </section>
+
+        <section class="cex-market-flow cex-collapsible" id="cex-market-flow" aria-label="Market flow monitor">
+            <div class="cex-market-flow-head">
+                <div>
+                    <p class="cex-section-label">External venues</p>
+                    <h2>📡 Market flow · Binance &amp; NonKYC</h2>
+                </div>
+                <div class="cex-flow-controls">
+                    <label class="cex-flow-filter-label">Sort
+                        <select id="cex-flow-sort" class="cex-input cex-input--compact" aria-label="Sort market flow">
+                            <option value="spread">Spread Δ</option>
+                            <option value="symbol">Symbol A–Z</option>
+                        </select>
+                    </label>
+                    <label class="cex-flow-filter-label">Min bps
+                        <input type="number" id="cex-flow-min-bps" class="cex-input cex-input--compact" min="0" step="1" value="0" aria-label="Minimum spread filter bps">
+                    </label>
+                    <button type="button" class="cex-btn cex-btn--ghost" id="cex-flow-refresh" title="Refresh external prices" aria-label="Refresh external prices">↻ Refresh</button>
+                    <button type="button" class="cex-btn cex-btn--ghost" id="cex-flow-pause" title="Pause live polling" aria-label="Pause market flow polling">⏸ Pause</button>
+                    <button type="button" class="cex-collapse-btn" data-collapse="cex-flow-body" aria-expanded="true" aria-controls="cex-flow-body">▼</button>
+                </div>
+            </div>
+            <div class="cex-collapsible-body" id="cex-flow-body">
+                <p class="cex-muted" id="cex-flow-stale" style="margin:0 0 8px;font-size:0.72rem">Loading…</p>
+                <div class="cex-flow-grid" id="cex-flow-grid">
+                    <div class="cex-empty-hint cex-empty-hint--icon">📡 Fetching Binance &amp; NonKYC tickers…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
             <h2>Platform wallet (MN2)</h2>
             <div class="mn2-page-metrics">
@@ -70,41 +126,97 @@
 
         <div class="cex-grid">
             <aside class="cex-panel cex-assets">
-                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span></h2>
-                <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
-                <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
+                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span>
+                    <button type="button" class="cex-alert-stub" id="cex-price-alert-btn" title="Price alerts (coming soon)" aria-label="Price alerts, 0 active">
+                        🔔 <span class="cex-alert-badge" id="cex-alert-badge">0</span>
+                    </button>
+                </h2>
+                <p class="cex-muted" style="margin:0 0 8px;font-size:0.72rem">Internal + live Binance/NonKYC refs shown per row.</p>
+                <div class="cex-asset-toolbar">
+                    <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH… (/)" class="cex-input" aria-label="Search assets">
+                    <button type="button" class="cex-btn cex-btn--ghost cex-fav-filter" id="cex-fav-filter" aria-pressed="false" title="Show favorites only">★</button>
+                </div>
+                <div class="cex-recent-pairs" id="cex-recent-pairs" aria-label="Recent pairs" hidden></div>
+                <div id="cex-asset-list" class="cex-asset-list" aria-busy="true"><span class="cex-skeleton cex-skeleton--row"></span><span class="cex-skeleton cex-skeleton--row"></span><span class="cex-skeleton cex-skeleton--row"></span></div>
             </aside>
 
             <main class="cex-panel cex-trade" id="cex-trading-desk">
-                <div class="cex-tabs">
-                    <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
-                    <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
-                    <button type="button" class="cex-tab" data-tab="limit">Limit order</button>
-                    <button type="button" class="cex-tab" data-tab="staking">Staking</button>
-                    <button type="button" class="cex-tab" data-tab="tax">Tax report</button>
+                <p class="cex-section-label">Trading venue</p>
+                <div class="cex-venue-source" role="group" aria-label="Price source">
+                    <button type="button" class="cex-venue-chip--trade active" data-venue="internal" title="MasterNoder custodial prices" aria-pressed="true">🏠 Internal <span class="cex-venue-badge cex-venue-badge--live">live</span></button>
+                    <button type="button" class="cex-venue-chip--trade" data-venue="binance" title="Binance public book ticker" aria-pressed="false">🟡 Binance <span class="cex-venue-badge cex-venue-badge--paper">paper</span></button>
+                    <button type="button" class="cex-venue-chip--trade" data-venue="nonkyc" title="NonKYC.io USDT pairs" aria-pressed="false">🔒 NonKYC <span class="cex-venue-badge cex-venue-badge--paper">paper</span></button>
+                </div>
+                <div class="cex-spread-placeholder" id="cex-spread-chart" aria-label="Spread depth placeholder" title="Depth chart coming soon">
+                    <span class="cex-spread-bar" style="--h:42%"></span>
+                    <span class="cex-spread-bar" style="--h:68%"></span>
+                    <span class="cex-spread-bar" style="--h:55%"></span>
+                    <span class="cex-spread-bar" style="--h:80%"></span>
+                    <span class="cex-spread-bar" style="--h:35%"></span>
+                    <span class="cex-spread-label">Spread depth · placeholder</span>
+                </div>
+                <div class="cex-tabs cex-trade-tabs">
+                    <button type="button" class="cex-tab active" data-tab="swap"><span class="tab-emoji">⚡</span> Instant swap</button>
+                    <button type="button" class="cex-tab" data-tab="onramp"><span class="tab-emoji">💳</span> PayPal buy/sell</button>
+                    <button type="button" class="cex-tab" data-tab="limit"><span class="tab-emoji">📋</span> Limit order</button>
+                    <button type="button" class="cex-tab" data-tab="staking"><span class="tab-emoji">🌱</span> Staking</button>
+                    <button type="button" class="cex-tab" data-tab="tax"><span class="tab-emoji">📑</span> Tax report</button>
                 </div>
 
                 <div id="cex-tab-swap" class="cex-tab-panel active">
-                    <div class="cex-selected" id="cex-selected-asset">Select an asset</div>
+                    <div class="cex-selected" id="cex-selected-asset">Select an asset <span class="cex-pair-badge cex-pair-badge--internal" id="cex-pair-source-badge">internal</span></div>
                     <div class="cex-form-row">
-                        <label>Side
-                            <select id="cex-swap-side" class="cex-input">
+                        <label class="cex-tooltip-label" title="Buy = spend quote currency. Sell = receive quote currency.">Side
+                            <select id="cex-swap-side" class="cex-input" aria-label="Swap side buy or sell">
                                 <option value="buy">Buy</option>
                                 <option value="sell">Sell</option>
                             </select>
                         </label>
-                        <label>Amount
-                            <input type="number" id="cex-swap-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                        <label class="cex-tooltip-label" title="Amount of the selected crypto asset.">Amount
+                            <input type="number" id="cex-swap-amount" class="cex-input" min="0" step="any" placeholder="0.0" aria-label="Swap amount">
                         </label>
-                        <label>Quote
-                            <select id="cex-swap-quote" class="cex-input">
+                        <label class="cex-tooltip-label" title="MN2 or Coins quote currency for internal swap.">Quote
+                            <select id="cex-swap-quote" class="cex-input" aria-label="Quote currency">
                                 <option value="MN2">MN2</option>
                                 <option value="COINS">Coins</option>
                             </select>
                         </label>
+                        <label class="cex-tooltip-label" title="Max price movement tolerated before execution warning.">Slippage
+                            <select id="cex-slippage" class="cex-input" aria-label="Slippage tolerance">
+                                <option value="0.5">0.5%</option>
+                                <option value="1" selected>1%</option>
+                                <option value="2">2%</option>
+                                <option value="5">5%</option>
+                            </select>
+                        </label>
                     </div>
-                    <div id="cex-quote-preview" class="cex-quote-preview"></div>
+                    <div class="cex-quick-pct" role="group" aria-label="Quick amount percentages">
+                        <button type="button" class="cex-btn cex-btn--ghost cex-pct-btn" data-pct="0.25">25%</button>
+                        <button type="button" class="cex-btn cex-btn--ghost cex-pct-btn" data-pct="0.5">50%</button>
+                        <button type="button" class="cex-btn cex-btn--ghost cex-pct-btn" data-pct="0.75">75%</button>
+                        <button type="button" class="cex-btn cex-btn--ghost cex-pct-btn" data-pct="1">Max</button>
+                    </div>
+                    <div id="cex-quote-preview" class="cex-quote-preview" aria-live="polite" title="Hover for fee breakdown"></div>
                     <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--primary">Get quote &amp; swap</button>
+
+                    <div class="cex-quick-swap cex-collapsible" id="cex-quick-swap">
+                        <div class="cex-quick-swap-head">
+                            <h3>🔄 Quick switch (A → B)</h3>
+                            <button type="button" class="cex-collapse-btn" data-collapse="cex-quick-swap-body" aria-expanded="true" aria-controls="cex-quick-swap-body">▼</button>
+                        </div>
+                        <div class="cex-collapsible-body" id="cex-quick-swap-body">
+                        <p class="cex-muted" style="margin:0 0 8px;font-size:0.75rem">Cross-asset route via internal and/or external venues (Binance/NonKYC).</p>
+                        <div class="cex-form-row">
+                            <label>From<select id="cex-quick-from" class="cex-input"><option value="MN2">MN2</option><option value="BTC">BTC</option><option value="ETH">ETH</option><option value="USDC">USDC</option></select></label>
+                            <label>To<select id="cex-quick-to" class="cex-input"><option value="ETH">ETH</option><option value="BTC">BTC</option><option value="MN2">MN2</option><option value="SOL">SOL</option></select></label>
+                            <label>Amount<input type="number" id="cex-quick-amount" class="cex-input" min="0" step="any" placeholder="0.0"></label>
+                        </div>
+                        <div class="cex-swap-arrow">↓</div>
+                        <div id="cex-quick-preview" class="cex-quote-preview"></div>
+                        <button type="button" id="cex-quick-quote-btn" class="cex-btn cex-btn--ghost">Preview route</button>
+                        <button type="button" id="cex-quick-execute-btn" class="cex-btn cex-btn--primary">Execute swap</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="cex-tab-onramp" class="cex-tab-panel">
@@ -129,7 +241,26 @@
                     <h3>MN2 PayPal packs</h3>
                     <div id="cex-paypal-mn2-packs" class="cex-pack-grid">Loading PayPal MN2 packs…</div>
                     <div class="cex-flow-note">
-                        <strong>Flow:</strong> PayPal checkout -> business PayPal account -> custodial exchange wallet credit -> exchange/casino/camgirls spend.
+                        <strong>Flow:</strong> PayPal checkout → business PayPal account → custodial exchange wallet credit → exchange/casino/camgirls spend.
+                    </div>
+                    <div class="cex-paypal-sell-box" id="cex-paypal-sell">
+                        <h3>Sell crypto → PayPal USD</h3>
+                        <ol class="cex-sell-steps" id="cex-sell-steps" aria-label="PayPal sell steps">
+                            <li class="active" data-step="1">1 · Amount</li>
+                            <li data-step="2">2 · Quote</li>
+                            <li data-step="3">3 · Confirm</li>
+                        </ol>
+                        <p class="cex-muted" style="margin:0 0 8px">Off-ramp at daemon-enforced price cap (min of internal &amp; Binance/NonKYC reference).</p>
+                        <p class="cex-cap-note" id="cex-sell-cap-note">Loading price cap policy…</p>
+                        <div class="cex-form-row">
+                            <label>Asset<input id="cex-paypal-sell-symbol" class="cex-input" readonly value="BTC" title="Uses selected market asset"></label>
+                            <label class="cex-tooltip-label" title="Crypto amount debited from your exchange wallet">Amount
+                                <input type="number" id="cex-paypal-sell-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                            </label>
+                        </div>
+                        <div id="cex-paypal-sell-preview" class="cex-quote-preview" aria-live="polite"></div>
+                        <button type="button" id="cex-paypal-sell-quote-btn" class="cex-btn cex-btn--ghost">Get sell quote</button>
+                        <button type="button" id="cex-paypal-sell-btn" class="cex-btn">Confirm sell &amp; queue PayPal</button>
                     </div>
                 </div>
 
@@ -159,8 +290,12 @@
             </main>
 
             <aside class="cex-panel cex-wallet">
-                <h2>Exchange wallet</h2>
-                <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
+                <div class="cex-wallet-head">
+                    <h2>Exchange wallet</h2>
+                    <button type="button" class="cex-btn cex-btn--ghost cex-wallet-refresh" id="cex-wallet-refresh" aria-label="Refresh wallet balances" title="Refresh balances">↻</button>
+                </div>
+                <p class="cex-wallet-updated" id="cex-wallet-updated" aria-live="polite">—</p>
+                <div id="cex-wallet-balances" class="cex-wallet-list" aria-busy="true"><span class="cex-skeleton cex-skeleton--row"></span></div>
 
                 <div class="cex-bonus-card" id="cex-bonus-card">
                     <h3>Welcome bonus</h3>
@@ -169,8 +304,8 @@
                     <button type="button" id="cex-bonus-btn" class="cex-btn cex-btn--accent">Claim bonus</button>
                 </div>
 
-                <h3>Recent trades</h3>
-                <div id="cex-recent-trades" class="cex-trades">—</div>
+                <h3>Recent trades <span class="cex-muted cex-trades-hint" title="Green = buy, red = sell">PnL lane</span></h3>
+                <div id="cex-recent-trades" class="cex-trades cex-trades-panel" role="region" aria-label="Recent trade history">—</div>
             </aside>
         </div>
         </div>
@@ -520,17 +655,26 @@
             </section>
         </section>
         </div>
+
+        <footer class="cex-footer-bar" id="cex-footer-bar" aria-label="Exchange status">
+            <span>MasterNoder Exchange</span>
+            <span id="cex-footer-build">build 20260705</span>
+            <span id="cex-footer-sse" class="cex-muted">stream —</span>
+            <span class="cex-kbd-hint" title="Keyboard shortcuts">/ search · B buy · S sell · Q quote</span>
+        </footer>
     </div>
 
     <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20260704a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
+    <script src="/static/js/exchange-hub.js?v=20260705c"></script>
+    <script src="/static/js/exchange-trade-desk.js?v=20260705c"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260705c"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
     <script src="/static/js/platform-upgrades.js?v=20260705" defer></script>
     <script src="/static/js/platform-upgrades-batch2.js?v=20260705" defer></script>
     <script src="/static/js/hub-pages-ux.js?v=20260705" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260715" data-site="exchange" defer></script>
 </body>
 </html>

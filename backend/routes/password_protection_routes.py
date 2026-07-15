@@ -4,22 +4,25 @@ Unlock by reaching min game_points or Star Map investigations; set password and 
 """
 from flask import Blueprint, jsonify, request
 
+from backend.services.account_resolution_service import resolve_user_id
 from backend.services.password_protection_service import (
     get_password_status,
     get_recovery_status,
     request_password_recovery,
+    request_password_recovery_by_email,
     reset_password_with_recovery,
     unlock_password_protection,
     set_password,
     verify_password,
 )
+from backend.services.profile_auth_service import check_profile_write_access
 
 password_protection_bp = Blueprint("password_protection", __name__)
 
 
 def _user_id() -> str:
     data = request.get_json(silent=True) or {}
-    return (data.get("user_id") or request.args.get("user_id") or "default_user").strip()
+    return (data.get("user_id") or request.args.get("user_id") or resolve_user_id()).strip()
 
 
 @password_protection_bp.route("/api/auth/password/status", methods=["GET"])
@@ -38,6 +41,9 @@ def password_unlock():
     """POST { user_id } — Mark password protection as unlocked if user meets rule (earn points / investigations)."""
     try:
         user_id = _user_id()
+        denied = check_profile_write_access(user_id)
+        if denied:
+            return jsonify({"success": False, "error": denied}), 403
         result = unlock_password_protection(user_id)
         status = 200 if result.get("success") else 400
         return jsonify(result), status
@@ -50,7 +56,10 @@ def password_set():
     """POST { user_id, password, current_password? } — Set or change password. Unlocks automatically if eligible. Awards game_points reward on first set."""
     try:
         data = request.get_json(silent=True) or {}
-        user_id = (data.get("user_id") or "default_user").strip()
+        user_id = (data.get("user_id") or resolve_user_id()).strip()
+        denied = check_profile_write_access(user_id)
+        if denied:
+            return jsonify({"success": False, "error": denied}), 403
         password = data.get("password") or data.get("new_password") or ""
         current_password = data.get("current_password")
         result = set_password(user_id, password, current_password=current_password)
@@ -65,8 +74,11 @@ def password_verify():
     """POST { user_id, password } — Verify password for sensitive actions."""
     try:
         data = request.get_json(silent=True) or {}
-        user_id = (data.get("user_id") or "default_user").strip()
+        user_id = (data.get("user_id") or resolve_user_id()).strip()
         password = data.get("password") or ""
+        denied = check_profile_write_access(user_id)
+        if denied:
+            return jsonify({"success": False, "error": denied}), 403
         result = verify_password(user_id, password)
         return jsonify(result), 200
     except Exception as e:
@@ -88,9 +100,23 @@ def password_recovery_request():
     """POST { user_id, email? } — create a short-lived reset request."""
     try:
         data = request.get_json(silent=True) or {}
-        user_id = (data.get("user_id") or "default_user").strip()
+        user_id = (data.get("user_id") or resolve_user_id()).strip()
+        denied = check_profile_write_access(user_id)
+        if denied:
+            return jsonify({"success": False, "error": denied}), 403
         result = request_password_recovery(user_id, data.get("email"))
         return jsonify(result), 200 if result.get("success") else 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@password_protection_bp.route("/api/auth/password/recovery/request-by-email", methods=["POST"])
+def password_recovery_request_by_email():
+    """POST { email } — forgot-password entry point without user enumeration."""
+    try:
+        data = request.get_json(silent=True) or {}
+        result = request_password_recovery_by_email(data.get("email") or "")
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -100,7 +126,10 @@ def password_recovery_reset():
     """POST { user_id, token, password } — reset password with a valid recovery token."""
     try:
         data = request.get_json(silent=True) or {}
-        user_id = (data.get("user_id") or "default_user").strip()
+        user_id = (data.get("user_id") or resolve_user_id()).strip()
+        denied = check_profile_write_access(user_id)
+        if denied:
+            return jsonify({"success": False, "error": denied}), 403
         result = reset_password_with_recovery(user_id, data.get("token") or "", data.get("password") or "")
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as e:
