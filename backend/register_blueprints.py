@@ -1618,6 +1618,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [ERROR] Error registering customer_aggregator: {e}")
 
     try:
+        from backend.routes.activity_stream_routes import activity_stream_bp
+        if "activity_stream" not in app.blueprints:
+            app.register_blueprint(activity_stream_bp)
+            registered_count += 1
+            print("  [OK] Registered activity_stream blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import activity_stream: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering activity_stream: {e}")
+
+    try:
         from backend.routes.agent_treasury_routes import agent_treasury_bp
         if "agent_treasury" not in app.blueprints:
             app.register_blueprint(agent_treasury_bp)

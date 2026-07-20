@@ -1,4 +1,6 @@
 """Customer aggregator tests."""
+import os
+
 import pytest
 from flask import Flask
 
@@ -40,3 +42,24 @@ def test_customers_list_localhost(tmp_path, monkeypatch):
     data = r.get_json()
     assert data.get("success") is True
     assert data.get("total", 0) >= 0
+
+
+def test_customer_event_emits(tmp_path, monkeypatch):
+    import backend.services.customer_aggregator_service as cas
+    import backend.services.activity_events_service as aes
+
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    monkeypatch.setattr(aes, "_LOG_PATH", str(log_dir / "activity_events.jsonl"))
+    monkeypatch.setattr(cas, "_ACTIVE_DEBOUNCE_PATH", str(log_dir / "customer_active_emit.json"))
+    monkeypatch.setattr(cas, "_POINTS_DIR", str(tmp_path / "points"))
+    os.makedirs(cas._POINTS_DIR, exist_ok=True)
+
+    cas.emit_customer_new("user_alpha")
+    cas.emit_customer_active("user_alpha", source="test")
+    cas.emit_customer_active("user_alpha", source="test")
+
+    rows = aes.recent(limit=10)
+    types = [r.get("type") for r in rows]
+    assert "customer_new" in types
+    assert types.count("customer_active") == 1
