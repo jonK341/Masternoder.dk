@@ -391,9 +391,8 @@ def network_overview():
         overview["pool_total_staked"] = staking.total_staked()
         overview["pool_apr_percent"] = staking.dynamic_apr()
         try:
-            from backend.routes.mn2_routes import _explorer_base_url
-            from backend.services.mn2_explorer_urls import explorer_kind
-            overview["explorer_base_url"] = _explorer_base_url()
+            from backend.services.mn2_explorer_urls import explorer_base_url, explorer_kind
+            overview["explorer_base_url"] = explorer_base_url()
             overview["explorer_kind"] = explorer_kind()
         except Exception:
             overview["explorer_base_url"] = None
@@ -529,6 +528,63 @@ def masternodes():
         data = mn2_explorer_data.masternodes(limit=limit, fresh=fresh)
         resp = jsonify({"success": True, **data})
         resp.headers["Cache-Control"] = "public, max-age=60"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/tx/<txid>", methods=["GET"])
+def explorer_tx_detail(txid):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_tx_url
+        detail = mn2_explorer_data.tx_detail(txid)
+        if not detail:
+            return jsonify({"success": False, "error": "Transaction not found"}), 404
+        detail["explorer_tx_url"] = explorer_tx_url(txid)
+        resp = jsonify({"success": True, "transaction": detail})
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/address/<address>", methods=["GET"])
+def explorer_address_detail(address):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_address_url
+        detail = mn2_explorer_data.address_detail(address)
+        if not detail:
+            return jsonify({"success": False, "error": "Invalid address"}), 404
+        detail["explorer_address_url"] = explorer_address_url(address)
+        resp = jsonify({"success": True, "address": detail})
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/rich-list", methods=["GET"])
+def explorer_rich_list():
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 100) or 100)
+        rows = mn2_explorer_data.rich_list(limit=limit)
+        resp = jsonify({"success": True, "rich_list": rows, "count": len(rows)})
+        resp.headers["Cache-Control"] = "public, max-age=90"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/supply-stats", methods=["GET"])
+def explorer_supply_stats():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.supply_stats()
+        resp = jsonify({"success": True, **stats})
+        resp.headers["Cache-Control"] = "public, max-age=90"
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

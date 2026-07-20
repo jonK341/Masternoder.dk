@@ -113,15 +113,15 @@ One host now runs **masternoder2d + MongoDB + Node/iquidus + Flask**. Watch:
 **Phase E1 — Server explorer (from source)** — **built 2026-06-04** (see §E1 below)
 - [x] Daemon: `txindex=1` + one-time `-reindex` (daemon only supports `-txindex`; **no** `addressindex`/`spentindex` — not needed, eiquidus self-indexes addresses into Mongo).
 - [x] Explorer install + `settings.json` + Mongo + PM2 + nginx/TLS. Initial full sync running.
-- [ ] Verify `/address/<addr>`, `/tx/<txid>`, rich list once the initial index finishes (`/ext/getmoneysupply` already live).
+- [ ] Verify `/address/<addr>`, `/tx/<txid>`, rich list once the initial index finishes (`/ext/getmoneysupply` already live). *(2026-07: `/ext/getmoneysupply` returns live supply; rich-list ext endpoints still syncing — Flask falls back to RPC/Chainz.)*
 
 **Phase E2 — Flask cutover (links)**
-- [ ] Add `explorer_kind` / local/fallback URLs to `mn2_config.json`.
-- [ ] Branch URL builders in `mn2_routes.py`; centralize into one helper. Tests for both shapes.
-- [ ] Flip `explorer_base_url` → self-hosted; Chainz becomes fallback.
+- [x] Add `explorer_kind` / local/fallback URLs to `mn2_config.json`.
+- [x] Branch URL builders in `mn2_routes.py`; centralize into one helper. Tests for both shapes.
+- [x] Flip `explorer_base_url` → self-hosted; Chainz becomes fallback.
 
 **Phase E3 — Local-first stats + overview page**
-- [ ] iquidus tier in `network_overview()` (cached, `source`-tagged, RPC/Chainz fallback). *(added once iquidus is live; RPC→Chainz tiers exist today)*
+- [x] iquidus tier in `network_overview()` (cached, `source`-tagged, RPC/Chainz fallback).
 - [x] `explorer/index.html` + `mn2-explorer-overview.js` tiles consuming `/api/mn2/network-overview` — **built & live** (routed via `PAGES` in `all_page_routes.py`; `/api/mn2/network-overview` also returns `explorer_base_url` for the "Open full explorer" link, and is linked in the nav toolbar). Live tiles: price (Chainz); height/difficulty/masternodes/**network weight** (RPC); pool staked/APR/USD value; on-ramp & P2P 24h.
 - [x] Parity note in `AGENTS_MN2.md` §12 (public read endpoint, full response shape documented).
 

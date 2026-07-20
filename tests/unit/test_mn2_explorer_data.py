@@ -84,3 +84,39 @@ def test_network_masternodes_passes_fresh(monkeypatch):
     out = mn.network_masternodes(limit=25, fresh=True)
     assert out.get("success") is True
     assert seen == {"fresh": True, "limit": 25}
+
+
+def test_tx_detail_invalid_txid():
+    from backend.services import mn2_explorer_data as ex
+    assert ex.tx_detail("not-a-txid") is None
+
+
+def test_tx_detail_rpc_fallback(monkeypatch):
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    monkeypatch.setattr(ex, "_explorer_http_get", lambda path, ttl=45: None)
+    monkeypatch.setattr(
+        ex,
+        "_rpc_tx_detail",
+        lambda txid: {"txid": txid, "confirmations": 10, "source": "rpc"},
+    )
+    txid = "b" * 64
+    out = ex.tx_detail(txid)
+    assert out is not None
+    assert out["source"] == "rpc"
+
+
+def test_address_detail_valid_minimal():
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    addr = "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX"
+    out = ex.address_detail(addr)
+    assert out is not None
+    assert out["address"] == addr
+
+
+def test_rich_list_empty_on_failure(monkeypatch):
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    monkeypatch.setattr(ex, "_explorer_http_get", lambda path, ttl=90: None)
+    assert ex.rich_list(limit=5) == []

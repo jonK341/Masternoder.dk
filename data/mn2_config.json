@@ -25,6 +25,10 @@
     "large_withdrawal_mn2": 50000
   },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
+  "explorer_kind": "iquidus",
+  "explorer_local_api_url": "http://127.0.0.1:3000",
+  "explorer_fallback_base_url": "https://chainz.cryptoid.info/mn2/",
+  "explorer_use_local_stats": true,
   "coins_per_mn2": 100,
   "generator": {
     "enabled": true,
@@ -38,9 +42,9 @@
   "aggregator": {
     "enabled": true,
     "daily_cap_mn2": 0.25,
-    "default_reward_mn2": 0.00005,
+    "default_reward_mn2": 5e-05,
     "action_rewards_mn2": {
-      "monitor_move": 0.00005,
+      "monitor_move": 5e-05,
       "monitor_battle_complete": 0.002,
       "battle_overlay_enter": 0.0003,
       "link_encode": 0.0005,
@@ -48,7 +52,7 @@
       "intel_loaded": 0.0002,
       "progress_refresh": 0.0001,
       "explorer_chat": 0.0004,
-      "interaction": 0.00005
+      "interaction": 5e-05
     }
   },
   "callbacks": {
@@ -57,7 +61,7 @@
   },
   "order_payment_expiry_hours": 1,
   "order_payment_grace_hours": 24,
-  "order_payment_match_tolerance": 0.00000001,
+  "order_payment_match_tolerance": 1e-08,
   "order_payment_overpay_credit": true,
   "order_payment_underpay_credit": true,
   "order_payment_combined_fulfill": true,

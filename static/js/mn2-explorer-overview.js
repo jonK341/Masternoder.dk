@@ -411,14 +411,43 @@
       e.preventDefault();
       var v = (q('ex-q').value || '').trim();
       if (!v) return;
-      window.open(explorerLink(v), '_blank', 'noopener');
+      if (/^[0-9a-fA-F]{64}$/.test(v)) {
+        window.location.href = '/explorer/tx/' + encodeURIComponent(v);
+        return;
+      }
+      window.location.href = '/explorer/address/' + encodeURIComponent(v);
     });
+  }
+
+  function loadRichList() {
+    fetch('/api/mn2/rich-list?limit=25', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var body = q('ex-rich');
+        if (!body) return;
+        var rows = (d && d.success && d.rich_list) ? d.rich_list : [];
+        var sum = q('rich-summary');
+        if (sum) sum.textContent = rows.length ? ('— top ' + rows.length) : '';
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="3">Rich list unavailable (eiquidus index syncing).</td></tr>';
+          return;
+        }
+        body.innerHTML = rows.map(function (row) {
+          var addr = row.address || '—';
+          var link = addr !== '—'
+            ? '<a href="/explorer/address/' + encodeURIComponent(addr) + '">' + addr + '</a>'
+            : '—';
+          return '<tr><td>' + (row.rank != null ? row.rank : '—') + '</td><td>' + link + '</td><td>' + fmtNum(row.balance, 4) + '</td></tr>';
+        }).join('');
+      })
+      .catch(function () {});
   }
 
   initSearch();
   refresh();
   loadSparklines();
   loadBlocks();
+  loadRichList();
   loadMasternodes();
   loadMonitor();
   if (!startExplorerStream()) {
@@ -426,6 +455,7 @@
   }
   setInterval(loadSparklines, 300000);
   setInterval(loadBlocks, 30000);
+  setInterval(loadRichList, 120000);
   setInterval(loadMasternodes, 60000);
   setInterval(loadMonitor, 120000);
 })();
