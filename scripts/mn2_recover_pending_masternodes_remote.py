@@ -38,9 +38,12 @@ def main() -> int:
         require_deploy_pass(force_prompt=True)
 
     restart = "0" if args.no_restart else "1"
-    remote = rf'''bash -s <<'ENDSCRIPT'
+    limit = str(args.limit)
+    remote = '''bash -s <<'ENDSCRIPT'
 set -euo pipefail
-WEB="{WEB}"
+WEB="__WEB__"
+RESTART="__RESTART__"
+LIMIT="__LIMIT__"
 cd "$WEB"
 chmod +x cron/mn2_masternode_daemon_recover.sh cron/mn2_masternode_provision.sh 2>/dev/null || true
 if [ -f cron/masternoder-mn2-masternode-provision.cron.d ]; then
@@ -50,7 +53,7 @@ fi
 if [ -f scripts/mn2_fix_config_permissions.sh ]; then
   bash scripts/mn2_fix_config_permissions.sh 2>/dev/null || true
 fi
-if [ "{restart}" = "1" ]; then
+if [ "$RESTART" = "1" ]; then
   echo "== restart masternoder2d =="
   systemctl restart masternoder2d
   sleep 25
@@ -64,8 +67,8 @@ echo ""
 echo "== provision recover API =="
 # shellcheck source=/dev/null
 source cron/mn2_read_ops_secret.sh
-curl -s -X POST -H "X-Ops-Secret: ${{MN2_OPS_SECRET}}" \
-  "http://127.0.0.1:5000/api/mn2/masternode/recover?limit={args.limit}&restart_daemon=0" | python3 -m json.tool
+curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
+  "http://127.0.0.1:5000/api/mn2/masternode/recover?limit=${LIMIT}&restart_daemon=0" | python3 -m json.tool
 echo ""
 echo "== service status =="
 curl -s "http://127.0.0.1:5000/api/mn2/masternode/service?fresh=1" | python3 -c "
@@ -75,10 +78,11 @@ d=json.load(sys.stdin)
 hosts=d.get('hosts',[])
 c=Counter((h.get('status') or '?').lower() for h in hosts)
 print('status', dict(c))
-print('rpc', (d.get('network') or {{}}).get('rpc_error'))
+print('rpc', (d.get('network') or {}).get('rpc_error'))
 print('collateral_outputs', d.get('collateral_outputs_available'))
 "
 ENDSCRIPT'''
+    remote = remote.replace("__WEB__", WEB).replace("__RESTART__", restart).replace("__LIMIT__", limit)
 
     host = deploy_host()
     user = deploy_user()
@@ -86,7 +90,7 @@ ENDSCRIPT'''
     ssh, auth, _ = connect_deploy_ssh()
     print(f"Connected via {auth}", flush=True)
     try:
-        print(sh(ssh, remote.format(WEB=WEB, restart=restart, args=args), timeout=1200))
+        print(sh(ssh, remote, timeout=1200))
     finally:
         ssh.close()
     return 0
