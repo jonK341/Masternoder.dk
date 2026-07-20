@@ -4,10 +4,10 @@ overview: "Get prod server database health to 200/green, then run and verify syn
 todos:
   - id: baseline-diagnose
     content: "Phase 0: SSH baseline — verify_server_env_db.sh, capture 503 root cause (DATABASE_URL, permissions, missing tables, uwsgi)"
-    status: pending
+    status: completed
   - id: db-health-fix
     content: "Phase 1: Fix /api/health/database → 200 (deploy health_routes.py if needed, fix .env/permissions, restart uwsgi)"
-    status: pending
+    status: completed
   - id: db-health-smoke
     content: "Phase 1b: Run smoke_db_health_flows.sh — health before/after user create still 200, missing_tables empty"
     status: pending
@@ -16,16 +16,16 @@ todos:
     status: pending
   - id: sync-verify-api
     content: "Phase 2b: Verify GET /api/sync/status + POST /api/sync/now succeed; confirm DB rows update (not JSON-only fallback)"
-    status: pending
+    status: completed
   - id: sync-deploy
     content: "Phase 2c: Deploy sync stack via deploy_sync_changes.py (or deploy.py subset) if server code is stale"
     status: pending
   - id: registry-doc
     content: "Phase 3 (repo): Add sync_database_migration.py to docs/db/migration_registry.md as ops_script/active"
-    status: pending
+    status: completed
   - id: session-report
     content: "Close-out: Update MASTERNODES_UDREDNING_SESSION_REPORT.md with date + curl results"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -51,7 +51,7 @@ isProject: false
 | Check | Status | Notes |
 |-------|--------|-------|
 | `GET /api/health` | **200** on prod | Basic liveness OK |
-| `GET /api/health/database` | **503** | Blocker — connection, permissions, or handler exception |
+| `GET /api/health/database` | **200** (2026-07-20 probe) | `missing_tables: []`, 11 tables |
 | `GET /api/health/system` | **Timeout** | Out of scope for today's done-state |
 | Sync tables on prod | **Unknown** | Not in `tables_to_check`; may be missing while DB health “core” tables pass |
 | Sync migration in registry | **Missing** | `sync_database_migration.py` not listed in `docs/db/migration_registry.md` |

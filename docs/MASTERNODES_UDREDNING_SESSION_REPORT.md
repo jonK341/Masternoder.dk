@@ -1,26 +1,26 @@
 # Masternodes udredning, session-rapport og prioriteringer
 
 **Genereret:** 2026-04-19  
-**Senest opdateret:** 2026-04-20 — `database_health` bruger nu kun tabeller fra `src/db/models.py`; deploy `health_routes.py` + kør `scripts/smoke_db_health_flows.sh` på serveren.  
-**Planreference:** session history / udredning (planfil ikke ændret).  
-**Primær prod-URL i repo:** `https://masternoder.dk` — afstem **masternodes.dk** vs **masternoder.dk** i DNS/panel hvis begge nævnes.
+**Senest opdateret:** 2026-07-20 — Gate A prod probe: database health **200**, sync APIs live; MN2 RPC work-queue degraded.
+**Planreference:** `docs/plans/gate_a_execution_today.plan.md`, `docs/plans/sync_migration_database_health_today.plan.md`
+**Primær prod-URL:** `PROD_BASE_URL`
 
 ---
 
-## 0. Seneste check (genprobe)
+## 0. Seneste check (genprobe 2026-07-20)
 
 | Check | Resultat | Noter |
 |------|----------|--------|
-| **DNS `masternoder.dk`** | **OK** | `A` → `140.82.39.124` (PowerShell `Resolve-DnsName`) |
-| **DNS `masternodes.dk`** | **Fejl** | *Navnet på fjernenheden kunne ikke fortolkes* — intet A/AAAA fra denne maskine |
-| **`GET https://masternoder.dk/api/health`** | **200** | Svar ~77 bytes |
-| **`GET https://masternoder.dk/api/health/system`** | **Timeout** | 25s — ingen respons i tid |
-| **`GET https://masternoder.dk/api/health/database`** | **503** | HTTP 503 |
-| **`https://masternodes.dk/`** | **DNS-fejl** | Samme som DNS-check |
-| **Surface C:** | **~194,8 GB fri** / ~475,7 GB total | `Win32_LogicalDisk` |
+| **`GET PROD_BASE_URL/api/health`** | **200** | `success: true`, `status: healthy` |
+| **`GET PROD_BASE_URL/api/health/database`** | **200** | `connected: true`, `missing_tables: []`, 11 tables checked |
+| **`GET PROD_BASE_URL/api/mn2/health`** | **503** (degraded) | Daemon running (block ~950915); `mn2_rpc` error: *Work queue depth exceeded* |
+| **`GET PROD_BASE_URL/api/themes/user`** | **200** | Gate A generator check |
+| **`GET PROD_BASE_URL/api/sync/status`** | **200** | `sync_count: 63634`, domains active |
+| **`POST PROD_BASE_URL/api/sync/now`** | **200** | Sync device responding |
+| **`GET /api/health/system`** | **Deferred** | Out of scope for Gate A today |
+| **Local Gate A tests** | **25/25 pass** | `test_gate_a_orchestrator.py` + `test_02_battle.py` |
 
-**Konklusion:** Basis-health er **grøn**; **`/api/health/system`** kan stadig timeout (MN2 m.m.). **`/api/health/database` 503:** deploy nyeste `backend/routes/health_routes.py` (tabeller matcher nu `models.py`) og genstart uwsgi; derefter `curl` igen eller `bash scripts/smoke_db_health_flows.sh` på serveren.
-
+**Konklusion:** Database health og sync APIs er **grønne** på prod. **Gate A blocker:** MN2 RPC work-queue saturation — kræver SSH til daemon restart/diagnose. SSH verify: sync tables + `smoke_db_health_flows.sh`.
 ---
 
 ## 1. Aim (north star)
@@ -43,7 +43,7 @@
 | **C** | 2 CPU synlige | `nproc` / `lscpu` | Ikke målt | SSH. |
 | **C** | Load | Ikke konstant 100% | Ikke målt | `uptime` / `top`. |
 | **D** | DNS `masternodes.dk` | Resolverer | **Afvigelse** | Probe: **ingen DNS** (host ukendt). Tjek om domænet findes eller er stavefejl. |
-| **D** | DNS `masternoder.dk` | Resolverer | **OK** | `A` → `140.82.39.124`. |
+| **D** | DNS `PROD_HOST` | Resolverer | **OK** | `A` → `140.82.39.124`. |
 | **D** | HTTPS | Gyldigt cert | **OK** | `GET /api/health` over HTTPS returnerer 200. |
 | **E** | App sund | `GET /api/health` 200 | **OK** | **200** (genprobe). |
 | **E** | App “system” health | `GET /api/health/system` 200 | **Afvigelse** | **Timeout** (25s) — endpoint tungt eller hænger. |
@@ -104,7 +104,7 @@ Seneste måling (genprobe): **C:** ca. **194,8 GB fri** af ~**475,7 GB** total. 
 
 | Prioritet | Item |
 |-----------|------|
-| **P0** | Afklar **masternodes.dk** vs **masternoder.dk** (DNS/panel). |
+| **P0** | Afklar **masternodes.dk** vs **PROD_HOST** (DNS/panel). |
 | **P0** | **SSH:** `systemctl status`, `df -h`, `curl localhost:5000/api/health` — luk A–E med evidens. |
 | **P0** | **Health:** `/api/health` er OK; ret **`/api/health/system` (timeout)** og **`/api/health/database` (503)** — DB, rettigheder, MN2, worker/harakiri, nginx timeout. |
 | **P0** | **Direkte sti** UI→API→DB→UI når health er OK. |
@@ -157,7 +157,7 @@ Korte temaer fra Cursor agent-historik (ingen rå hemmeligheder):
 | Emne | Værdi |
 |------|--------|
 | Tidsvindue historik | ~30 dages signal (mtime på transcripts; præcis dato ikke i JSONL-linjer). |
-| URL | Primært `https://masternoder.dk`; bekræft **masternodes.dk** separat. |
+| URL | Primært `PROD_BASE_URL`; bekræft **masternodes.dk** separat. |
 | Repo | `Masternoder.dk` |
 
 ---

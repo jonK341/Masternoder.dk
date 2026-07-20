@@ -11,6 +11,8 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 | Generator Roadmap | `docs/plans/generator_page_roadmap.plan.md` | Generator criticals + MN2 pay/earn foundation |
 | Game & Battle | `docs/plans/game_and_battle_review.plan.md` | Battle correctness + game crypto foundation |
 | Orchestrator | `docs/plans/master_build_orchestrator.plan.md` | Stage sequencing + gates |
+| Sync + DB health (today) | `docs/plans/sync_migration_database_health_today.plan.md` | DB health 200 → sync migration |
+| Gate A execution (today) | `docs/plans/gate_a_execution_today.plan.md` | Prod Gate A close: MN2 daemon + SSH verify |
 
 ## Build stages
 
