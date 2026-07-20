@@ -142,6 +142,23 @@
 
   function renderBlock(ref, data) {
     var blk = (data && data.block) || {};
+    var txids = blk.txids || [];
+    var txHtml = '';
+    if (txids.length) {
+      txHtml = '<h2 class="ex-detail-subhead">Transactions</h2><ul class="ex-detail-txlist">' +
+        txids.map(function (id) {
+          return '<li><a href="/explorer/tx/' + encodeURIComponent(id) + '">' + shortHash(id) + '</a></li>';
+        }).join('') + '</ul>';
+    }
+    var prev = blk.previousblockhash;
+    var prevHtml = '—';
+    if (prev) {
+      prevHtml = '<a href="' + (blk.previous_block_path || ('/explorer/block/' + encodeURIComponent(prev))) + '">' +
+        shortHash(prev) + '</a>';
+      if (blk.explorer_previous_block_url) {
+        prevHtml += ' <a href="' + blk.explorer_previous_block_url + '" target="_blank" rel="noopener" style="margin-left:8px;font-size:0.82rem">ext ↗</a>';
+      }
+    }
     var html = '<dl class="ex-detail-dl">' +
       row('Height', blk.height != null ? '<a href="/explorer/block/' + blk.height + '">' + fmtNum(blk.height, 0) + '</a>' : '—') +
       row('Hash', '<span class="ex-mono">' + (blk.hash || ref) + '</span> ' + copyBtn(blk.hash || ref, 'hash')) +
@@ -150,9 +167,9 @@
       row('Transactions', blk.tx_count != null ? fmtNum(blk.tx_count, 0) : '—') +
       row('Size', blk.size != null ? fmtNum(blk.size, 0) + ' B' : '—') +
       row('Difficulty', blk.difficulty != null ? fmtNum(blk.difficulty, 4) : '—') +
-      row('Previous', blk.previousblockhash ? '<a href="/explorer/block/' + encodeURIComponent(blk.previousblockhash) + '">' + shortHash(blk.previousblockhash) + '</a>' : '—') +
+      row('Previous', prevHtml) +
       row('Source', blk.source || '—') +
-      '</dl>';
+      '</dl>' + txHtml;
     var ext = blk.explorer_block_url
       ? '<a href="' + blk.explorer_block_url + '" target="_blank" rel="noopener">View on full block explorer ↗</a>'
       : '';
@@ -185,7 +202,22 @@
           showError('Address not found or invalid.');
           return;
         }
-        renderAddress(address, res.d);
+        var addr = (res.d && res.d.address) || {};
+        var txs = addr.transactions;
+        if (Array.isArray(txs) && txs.length) {
+          renderAddress(address, res.d);
+          return;
+        }
+        fetch('/api/mn2/explorer/address/' + encodeURIComponent(address) + '/txs?limit=25', { credentials: 'same-origin' })
+          .then(function (r2) { return r2.json(); })
+          .then(function (txRes) {
+            if (txRes && txRes.success && txRes.transactions) {
+              addr.transactions = txRes.transactions.map(function (t) { return t.txid || t; });
+              res.d.address = addr;
+            }
+            renderAddress(address, res.d);
+          })
+          .catch(function () { renderAddress(address, res.d); });
       })
       .catch(function () { showError('Failed to load address.'); });
   } else if (blockMatch) {

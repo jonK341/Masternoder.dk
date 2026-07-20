@@ -7,12 +7,60 @@ plus ops accrual. See docs/MN2_STAKING_PLAN.md and docs/AGENTS_MN2.md.
 import os
 import json
 import time
+import gzip
+from typing import Dict, List
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 
 from backend.services.account_resolution_service import resolve_user_id
 import backend.services.mn2_staking_service as staking
 
 mn2_staking_bp = Blueprint("mn2_staking", __name__)
+_SEARCH_RATE: Dict[str, List[int]] = {}
+
+
+def _client_ip() -> str:
+    fwd = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return fwd or request.remote_addr or "unknown"
+
+
+def _search_rate_ok() -> bool:
+    limit = max(5, int(os.environ.get("MN2_EXPLORER_SEARCH_RATE", "40") or 40))
+    window = 60
+    key = _client_ip()
+    now = int(time.time())
+    bucket = [t for t in _SEARCH_RATE.get(key, []) if t > now - window]
+    if len(bucket) >= limit:
+        _SEARCH_RATE[key] = bucket
+        return False
+    bucket.append(now)
+    _SEARCH_RATE[key] = bucket
+    return True
+
+
+def _cache_public(resp, max_age: int, swr: int = 0):
+    cc = f"public, max-age={max_age}"
+    if swr > 0:
+        cc += f", stale-while-revalidate={swr}"
+    resp.headers["Cache-Control"] = cc
+    return resp
+
+
+def _json_response(payload: dict, *, status: int = 200, max_age: int = 0, swr: int = 0, gzip_min: int = 0):
+    body = json.dumps(payload)
+    accept = (request.headers.get("Accept-Encoding") or "").lower()
+    if gzip_min and "gzip" in accept and len(body) >= gzip_min:
+        compressed = gzip.compress(body.encode("utf-8"))
+        resp = Response(compressed, status=status, mimetype="application/json")
+        resp.headers["Content-Encoding"] = "gzip"
+        resp.headers["Vary"] = "Accept-Encoding"
+        if max_age:
+            _cache_public(resp, max_age, swr)
+        return resp
+    resp = jsonify(payload)
+    resp.status_code = status
+    if max_age:
+        _cache_public(resp, max_age, swr)
+    return resp
 
 
 def _ops_authorized() -> bool:
@@ -450,7 +498,7 @@ def network_overview():
                 return ("", 304, {"ETag": etag, "Cache-Control": "public, max-age=30"})
         except Exception:
             pass
-        resp.headers["Cache-Control"] = "public, max-age=30"
+        _cache_public(resp, 30, swr=60)
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -492,9 +540,8 @@ def network_history():
         hours = float(request.args.get("hours", 24) or 24)
         limit = int(request.args.get("limit", 500) or 500)
         rows = mn2_network_stats.get_history(hours=hours, limit=limit)
-        resp = jsonify({"success": True, "history": rows, "count": len(rows)})
-        resp.headers["Cache-Control"] = "public, max-age=60"
-        return resp, 200
+        payload = {"success": True, "history": rows, "count": len(rows)}
+        return _json_response(payload, max_age=60, swr=120, gzip_min=1024)
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -608,13 +655,52 @@ def explorer_mempool():
 @mn2_staking_bp.route("/api/mn2/explorer/search", methods=["GET"])
 def explorer_search():
     try:
+        if not _search_rate_ok():
+            return jsonify({"success": False, "error": "rate_limit_exceeded"}), 429
         from backend.services import mn2_explorer_data
         q = (request.args.get("q") or "").strip()
         result = mn2_explorer_data.classify_search(q)
         ok = result.get("type") != "invalid"
         resp = jsonify({"success": ok, **result})
-        resp.headers["Cache-Control"] = "public, max-age=60"
+        _cache_public(resp, 60)
         return resp, 200 if ok else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/status", methods=["GET"])
+def explorer_status():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.explorer_status()
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/openapi.json", methods=["GET"])
+def explorer_openapi():
+    try:
+        from backend.services.mn2_explorer_data import EXPLORER_OPENAPI
+        resp = jsonify(EXPLORER_OPENAPI)
+        _cache_public(resp, 3600, swr=600)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/address/<address>/txs", methods=["GET"])
+def explorer_address_txs(address):
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 25) or 25)
+        offset = int(request.args.get("offset", 0) or 0)
+        data = mn2_explorer_data.address_transactions(address, limit=limit, offset=offset)
+        resp = jsonify({"success": True, **data})
+        _cache_public(resp, 30)
+        return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -628,8 +714,12 @@ def explorer_block_detail(ref):
         if not detail:
             return jsonify({"success": False, "error": "Block not found"}), 404
         detail["explorer_block_url"] = explorer_block_url(detail.get("hash") or ref)
+        prev = detail.get("previousblockhash")
+        if prev:
+            detail["previous_block_path"] = f"/explorer/block/{prev}"
+            detail["explorer_previous_block_url"] = explorer_block_url(prev)
         resp = jsonify({"success": True, "block": detail})
-        resp.headers["Cache-Control"] = "public, max-age=30"
+        _cache_public(resp, 30)
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

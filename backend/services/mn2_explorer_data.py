@@ -392,11 +392,13 @@ def block_detail(ref: str) -> Optional[Dict[str, Any]]:
             return None
         blk = b["result"]
         txs = blk.get("tx") if isinstance(blk.get("tx"), list) else []
+        txids = [str(t) for t in txs[:50] if t]
         out = {
             "height": blk.get("height"),
             "hash": blk.get("hash") or block_hash,
             "time": blk.get("time"),
             "tx_count": len(txs),
+            "txids": txids,
             "size": blk.get("size"),
             "difficulty": blk.get("difficulty"),
             "merkleroot": blk.get("merkleroot"),
@@ -456,3 +458,148 @@ def supply_stats() -> Dict[str, Any]:
     except Exception:
         pass
     return out
+
+
+def _parse_tx_ids(raw: Any) -> List[str]:
+    if not isinstance(raw, list):
+        return []
+    out: List[str] = []
+    for item in raw:
+        if isinstance(item, str) and item.strip():
+            out.append(item.strip())
+        elif isinstance(item, dict):
+            txid = item.get("txid") or item.get("hash")
+            if txid:
+                out.append(str(txid).strip())
+    return out
+
+
+def address_transactions(address: str, limit: int = 25, offset: int = 0) -> Dict[str, Any]:
+    """Paginated address transaction ids from eiquidus ext API."""
+    address = (address or "").strip()
+    limit = max(1, min(int(limit or 25), 100))
+    offset = max(0, int(offset or 0))
+    empty = {"address": address, "transactions": [], "count": 0, "limit": limit, "offset": offset, "source": "unavailable"}
+    if not is_valid_address(address):
+        return empty
+    key = f"addr_txs_{address}_{limit}_{offset}"
+    with _LOCK:
+        ent = _CACHE.get(key)
+        if ent and (time.time() - ent.get("ts", 0)) < _DETAIL_TTL:
+            return ent.get("value") or empty
+    rows: List[Dict[str, Any]] = []
+    total = 0
+    source = "unavailable"
+    for path in (
+        f"/getaddresstxs?address={address}&limit={limit}&offset={offset}",
+        f"/getaddresstxs?address={address}&limit={limit}&skip={offset}",
+        f"/getaddress/{address}?limit={limit}&offset={offset}",
+    ):
+        raw = _explorer_http_get(path, ttl=_DETAIL_TTL)
+        if raw is None:
+            continue
+        if isinstance(raw, dict):
+            txs = raw.get("transactions") or raw.get("txs") or raw.get("txids")
+            total = int(raw.get("txcount") or raw.get("tx_count") or raw.get("total") or 0)
+            ids = _parse_tx_ids(txs)
+            if ids or total:
+                source = "iquidus"
+                for txid in ids[:limit]:
+                    rows.append({"txid": txid})
+                break
+        elif isinstance(raw, list):
+            ids = _parse_tx_ids(raw)
+            if ids:
+                source = "iquidus"
+                total = len(ids)
+                for txid in ids[offset:offset + limit]:
+                    rows.append({"txid": txid})
+                break
+    out = {
+        "address": address,
+        "transactions": rows,
+        "count": total or len(rows),
+        "limit": limit,
+        "offset": offset,
+        "source": source,
+    }
+    with _LOCK:
+        _CACHE[key] = {"value": out, "ts": time.time()}
+    return out
+
+
+def explorer_status() -> Dict[str, Any]:
+    """Aggregate explorer health: RPC tip, eiquidus supply, rich-list, mempool."""
+    from backend.services.mn2_explorer_urls import (
+        explorer_base_url,
+        explorer_kind,
+        explorer_local_api_url,
+        load_explorer_config,
+    )
+    cfg = load_explorer_config()
+    kind = explorer_kind(cfg)
+    checks: Dict[str, Any] = {}
+    overall = "healthy"
+
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        r = rpc.getblockcount(timeout_sec=4)
+        if r.get("error") or r.get("result") is None:
+            checks["rpc"] = {"ok": False, "error": str(r.get("error") or "unreachable")}
+            overall = "degraded"
+        else:
+            checks["rpc"] = {"ok": True, "block_height": int(r["result"])}
+    except Exception as exc:
+        checks["rpc"] = {"ok": False, "error": str(exc)}
+        overall = "degraded"
+
+    iquidus: Dict[str, Any] = {
+        "kind": kind,
+        "base_url": explorer_base_url(cfg),
+        "local_api_url": explorer_local_api_url(cfg) or None,
+    }
+    if kind == "iquidus":
+        sup = _explorer_http_get("/getmoneysupply", ttl=60)
+        iquidus["supply_ok"] = sup is not None
+        if sup is None:
+            overall = "degraded"
+
+    rich = rich_list(limit=1)
+    checks["rich_list"] = {"ok": bool(rich), "sample_count": len(rich)}
+    checks["mempool"] = mempool_stats()
+
+    return {
+        "status": overall,
+        "explorer_kind": kind,
+        "explorer_base_url": explorer_base_url(cfg),
+        "checks": checks,
+        "iquidus": iquidus,
+    }
+
+
+EXPLORER_OPENAPI: Dict[str, Any] = {
+    "openapi": "3.0.3",
+    "info": {"title": "MN2 Explorer API", "version": "1.0.0"},
+    "paths": {
+        "/api/mn2/network-overview": {"get": {"summary": "Live network tiles"}},
+        "/api/mn2/network-history": {"get": {"summary": "Historical snapshots", "parameters": [
+            {"name": "hours", "in": "query", "schema": {"type": "number"}},
+            {"name": "limit", "in": "query", "schema": {"type": "integer"}},
+        ]}},
+        "/api/mn2/recent-blocks": {"get": {"summary": "Latest blocks via RPC"}},
+        "/api/mn2/masternodes": {"get": {"summary": "Masternode list"}},
+        "/api/mn2/rich-list": {"get": {"summary": "Top addresses by balance"}},
+        "/api/mn2/supply-stats": {"get": {"summary": "Circulating supply"}},
+        "/api/mn2/mempool": {"get": {"summary": "Mempool summary"}},
+        "/api/mn2/explorer/search": {"get": {"summary": "Classify search query", "parameters": [
+            {"name": "q", "in": "query", "required": True, "schema": {"type": "string"}},
+        ]}},
+        "/api/mn2/explorer/status": {"get": {"summary": "Explorer health aggregate"}},
+        "/api/mn2/explorer/openapi.json": {"get": {"summary": "This OpenAPI document"}},
+        "/api/mn2/explorer/tx/{txid}": {"get": {"summary": "Transaction detail"}},
+        "/api/mn2/explorer/address/{address}": {"get": {"summary": "Address detail"}},
+        "/api/mn2/explorer/address/{address}/txs": {"get": {"summary": "Paginated address txs"}},
+        "/api/mn2/explorer/block/{ref}": {"get": {"summary": "Block detail"}},
+        "/api/mn2/explorer/stream": {"get": {"summary": "SSE network overview"}},
+    },
+}

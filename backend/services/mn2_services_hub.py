@@ -256,7 +256,12 @@ _SERVICE_DEFS: List[Dict[str, Any]] = [
         "name": "Network Explorer",
         "category": "data",
         "description": "Live stats, blocks, masternodes; links to self-hosted eiquidus + Chainz.",
-        "api": ["/api/mn2/network-overview", "/api/mn2/recent-blocks"],
+        "api": [
+            "/api/mn2/network-overview",
+            "/api/mn2/recent-blocks",
+            "/api/mn2/explorer/status",
+            "/api/mn2/explorer/openapi.json",
+        ],
         "page_url": "/explorer",
         "probe": _probe_explorer,
     },

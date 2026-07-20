@@ -6,6 +6,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P0 — Critical fixes (1–30)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p0.py` — 19 automated checks covering all P0 items.
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 1 | Register `mn2_masternode_bp` in full blueprint registration (fixes `/api/mn2/services` 404) | done |
@@ -42,6 +44,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 ---
 
 ## P1 — API & backend (31–80)
+
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p1.py`
 
 | # | Upgrade | Status |
 |---|---------|--------|
@@ -85,16 +89,16 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | 68 | HTTP GET cache per explorer path | done |
 | 69 | Thread-safe explorer data cache lock | done |
 | 70 | All explorer data functions never raise | done |
-| 71 | Block detail previous-blockhash link | pending |
-| 72 | Paginated address tx history API | pending |
-| 73 | `/api/mn2/explorer/status` health aggregate | pending |
-| 74 | Webhook on block height milestone | pending |
-| 75 | GraphQL read layer for explorer | pending |
-| 76 | Rate limit on search API per IP | pending |
-| 77 | Redis-backed shared cache for multi-worker | pending |
-| 78 | Stale-while-revalidate for overview | pending |
-| 79 | Compress network-history responses (gzip) | pending |
-| 80 | OpenAPI spec for all explorer endpoints | pending |
+| 71 | Block detail previous-blockhash link | done |
+| 72 | Paginated address tx history API | done |
+| 73 | `/api/mn2/explorer/status` health aggregate | done |
+| 74 | Webhook on block height milestone | deferred |
+| 75 | GraphQL read layer for explorer | deferred |
+| 76 | Rate limit on search API per IP | done |
+| 77 | Redis-backed shared cache for multi-worker | deferred |
+| 78 | Stale-while-revalidate for overview | done |
+| 79 | Compress network-history responses (gzip) | done |
+| 80 | OpenAPI spec for all explorer endpoints | done |
 
 ---
 
@@ -315,13 +319,13 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | Priority | Done | Pending | Total |
 |----------|------|---------|-------|
 | P0 Critical | 30 | 0 | 30 |
-| P1 API | 40 | 10 | 50 |
+| P1 API | 47 | 3 | 50 |
 | P2 Hub UI | 35 | 15 | 50 |
 | P3 Detail pages | 20 | 10 | 30 |
 | P4 Ops | 9 | 21 | 30 |
 | P5 Tests | 13 | 7 | 20 |
 | P6 Docs | 7 | 13 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **154** | **96** | **250** |
+| **Total** | **161** | **89** | **250** |
 
 **Next deploy step:** push branch, merge PR #57, run the mn2_staking + static_pages deploy manifest, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.
