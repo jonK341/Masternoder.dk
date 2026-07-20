@@ -350,6 +350,21 @@ def mn2_health():
     except Exception as exc:
         out['components']['staking'] = {'status': 'unknown', 'error': str(exc)}
 
+    try:
+        from backend.services.mn2_explorer_data import explorer_status
+        ex = explorer_status()
+        ex_status = ex.get('status', 'unknown')
+        out['components']['explorer_probe'] = {
+            'status': 'healthy' if ex_status == 'healthy' else ('degraded' if ex_status == 'degraded' else 'unhealthy'),
+            'explorer_kind': ex.get('explorer_kind'),
+            'rich_list_index_synced': ((ex.get('checks') or {}).get('rich_list') or {}).get('index_synced'),
+            'detail': ex,
+        }
+        if ex_status != 'healthy':
+            degraded = True
+    except Exception as exc:
+        out['components']['explorer_probe'] = {'status': 'unknown', 'error': str(exc)}
+
     if degraded:
         out['status'] = 'degraded'
     code = 200 if out['status'] == 'healthy' else 503

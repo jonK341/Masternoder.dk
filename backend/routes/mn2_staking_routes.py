@@ -16,6 +16,44 @@ import backend.services.mn2_staking_service as staking
 
 mn2_staking_bp = Blueprint("mn2_staking", __name__)
 _SEARCH_RATE: Dict[str, List[int]] = {}
+_EXPLORER_METRIC_PREFIXES = (
+    "/api/mn2/network-overview",
+    "/api/mn2/network-history",
+    "/api/mn2/network-alerts",
+    "/api/mn2/recent-blocks",
+    "/api/mn2/masternodes",
+    "/api/mn2/rich-list",
+    "/api/mn2/supply-stats",
+    "/api/mn2/mempool",
+    "/api/mn2/explorer/",
+)
+
+
+def _should_record_explorer_metric(path: str) -> bool:
+    return any(path.startswith(prefix) for prefix in _EXPLORER_METRIC_PREFIXES)
+
+
+@mn2_staking_bp.before_request
+def _explorer_metrics_before():
+    if _should_record_explorer_metric(request.path):
+        request._mn2_metric_t0 = time.perf_counter()
+
+
+@mn2_staking_bp.after_request
+def _explorer_metrics_after(response):
+    t0 = getattr(request, "_mn2_metric_t0", None)
+    if t0 is not None:
+        try:
+            from backend.services.mn2_explorer_metrics import record_api_call
+            record_api_call(
+                request.path,
+                response.status_code,
+                (time.perf_counter() - t0) * 1000.0,
+                request.method,
+            )
+        except Exception:
+            pass
+    return response
 
 
 def _client_ip() -> str:
@@ -117,6 +155,11 @@ def _build_network_overview_payload() -> dict:
         overview["peer_health"] = peer_health_from_overview(overview)
     except Exception:
         overview["peer_health"] = None
+    try:
+        from backend.services.mn2_explorer_flags import hub_v2_enabled_for_client
+        overview["hub_v2_enabled"] = hub_v2_enabled_for_client(_client_ip())
+    except Exception:
+        overview["hub_v2_enabled"] = True
     return overview
 
 
@@ -673,6 +716,11 @@ def explorer_status():
     try:
         from backend.services import mn2_explorer_data
         stats = mn2_explorer_data.explorer_status()
+        try:
+            from backend.services.mn2_explorer_metrics import latency_summary
+            stats["api_latency"] = latency_summary()
+        except Exception:
+            pass
         resp = jsonify({"success": True, **stats})
         _cache_public(resp, 15, swr=30)
         return resp, 200

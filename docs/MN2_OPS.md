@@ -444,6 +444,8 @@ Expect `explorer_kind: "iquidus"`, services explorer `status: healthy` (or `degr
 
 See [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) and [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md).
 
+**P4 ops runbook:** [EXPLORER_OPS_P4.md](EXPLORER_OPS_P4.md) — smoke tests, nginx cache, crons, Discord probe, canary flags, CDN purge.
+
 ---
 
 ## 9. References

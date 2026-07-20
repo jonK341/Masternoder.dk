@@ -656,7 +656,15 @@ def explorer_status() -> Dict[str, Any]:
             overall = "degraded"
 
     rich = rich_list(limit=1)
-    checks["rich_list"] = {"ok": bool(rich), "sample_count": len(rich)}
+    rich_ok = bool(rich)
+    checks["rich_list"] = {
+        "ok": rich_ok,
+        "sample_count": len(rich),
+        "index_synced": rich_ok,
+        "note": None if rich_ok else "Rich list empty — eiquidus index may still be syncing",
+    }
+    if not rich_ok and kind == "iquidus":
+        overall = "degraded"
     checks["mempool"] = mempool_stats()
 
     return {

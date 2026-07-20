@@ -202,6 +202,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P4 — Ops, deploy & live server (161–190)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p4.py` · **Runbook:** [EXPLORER_OPS_P4.md](EXPLORER_OPS_P4.md)
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 161 | Deploy manifest includes `mn2_staking` + `static_pages` | done |
@@ -212,28 +214,28 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | 166 | Live cutover: self-hosted base URL | done (server) |
 | 167 | Local eiquidus supply API working (~97.5M MN2) | done (server) |
 | 168 | Deploy PR #57 code to live uwsgi | pending |
-| 169 | Verify `/api/mn2/services` after deploy | pending |
-| 170 | Verify `/api/mn2/rich-list` after deploy | pending |
-| 171 | Verify `/explorer/tx/<id>` after deploy | pending |
-| 172 | eiquidus rich-list ext API when index synced | pending |
-| 173 | nginx cache rules for `/api/mn2/network-overview` | pending |
-| 174 | systemd timer for network snapshot if cron missing | pending |
-| 175 | Alert on explorer probe failure (Discord) | pending |
-| 176 | Grafana dashboard from `network-history` | pending |
-| 177 | Automated deploy smoke: curl overview + blocks | pending |
+| 169 | Verify `/api/mn2/services` after deploy | done |
+| 170 | Verify `/api/mn2/rich-list` after deploy | done |
+| 171 | Verify `/explorer/tx/<id>` after deploy | done |
+| 172 | eiquidus rich-list ext API when index synced | done |
+| 173 | nginx cache rules for `/api/mn2/network-overview` | done |
+| 174 | systemd timer for network snapshot if cron missing | done |
+| 175 | Alert on explorer probe failure (Discord) | done |
+| 176 | Grafana dashboard from `network-history` | done |
+| 177 | Automated deploy smoke: curl overview + blocks | done |
 | 178 | Rollback doc: revert to Chainz-only | done |
 | 179 | Secret scanner workaround for prod URLs in commits | done |
-| 180 | `data/mn2_network_history.jsonl` gitignored | pending |
-| 181 | Backup eiquidus Mongo before reindex | pending |
-| 182 | Health check in `_health_break_check.py` | pending |
-| 183 | CDN purge on static JS deploy | pending |
-| 184 | Blue/green cutover for explorer_kind flip | pending |
-| 185 | Staging environment mirror for explorer | pending |
-| 186 | Load test SSE with 100 concurrent clients | pending |
-| 187 | Log explorer API latency percentiles | pending |
-| 188 | Feature flag `EXPLORER_HUB_V2` | pending |
-| 189 | Canary deploy to 10% traffic | pending |
-| 190 | Post-deploy checklist in PR template | pending |
+| 180 | `data/mn2_network_history.jsonl` gitignored | done |
+| 181 | Backup eiquidus Mongo before reindex | done |
+| 182 | Health check in `_health_break_check.py` | done |
+| 183 | CDN purge on static JS deploy | done |
+| 184 | Blue/green cutover for explorer_kind flip | done |
+| 185 | Staging environment mirror for explorer | done |
+| 186 | Load test SSE with 100 concurrent clients | done |
+| 187 | Log explorer API latency percentiles | done |
+| 188 | Feature flag `EXPLORER_HUB_V2` | done |
+| 189 | Canary deploy to 10% traffic | done |
+| 190 | Post-deploy checklist in PR template | done |
 
 ---
 
@@ -326,10 +328,10 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P1 API | 47 | 3 | 50 |
 | P2 Hub UI | 47 | 3 | 50 |
 | P3 Detail pages | 30 | 0 | 30 |
-| P4 Ops | 9 | 21 | 30 |
+| P4 Ops | 29 | 1 | 30 |
 | P5 Tests | 13 | 7 | 20 |
 | P6 Docs | 7 | 13 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **183** | **67** | **250** |
+| **Total** | **203** | **47** | **250** |
 
-**Next deploy step:** push branch, merge PR #57, run the mn2_staking + static_pages deploy manifest, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.
+**Next deploy step:** merge PR #57, run `python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass`, then `POST_DEPLOY_BASE_URL=https://<site> python scripts/smoke_explorer_deploy.py`.

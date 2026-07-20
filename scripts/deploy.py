@@ -554,6 +554,8 @@ MANIFESTS = {
         "backend/services/mn2_network_stats.py",
         "backend/services/mn2_explorer_data.py",
         "backend/services/mn2_explorer_urls.py",
+        "backend/services/mn2_explorer_metrics.py",
+        "backend/services/mn2_explorer_flags.py",
         "backend/services/mn2_staking_service.py",
         "backend/services/mn2_staking_reconcile_service.py",
         "backend/services/mn2_staking_agents_service.py",
@@ -663,12 +665,22 @@ MANIFESTS = {
         "scripts/mn2_test_ping_live.py",
         "scripts/mn2_hotfix_alias_provision_server.sh",
         "scripts/fix_explorer_subdomains_remote.py",
+        "scripts/smoke_explorer_deploy.py",
+        "scripts/mn2_explorer_probe_alert.py",
+        "scripts/load_test_explorer_sse.py",
+        "scripts/backup_eiquidus_mongo.sh",
+        "config/nginx/mn2-explorer-cache.conf.example",
+        "ops/grafana/mn2-network-history-dashboard.json",
+        "systemd/mn2-network-snapshot.service.example",
+        "systemd/mn2-network-snapshot.timer.example",
+        "docs/EXPLORER_OPS_P4.md",
         "systemd/mn2-fleet-autostart.service.example",
         "scripts/treasury_signoff.py",
         "scripts/trader_staking_join_server.sh",
         "explorer/index.html",
         "explorer/tx.html",
         "explorer/address.html",
+        "explorer/block.html",
         "static/js/mn2-explorer-overview.js",
         "static/js/mn2-explorer-detail.js",
         "static/js/mn2-internal-market.js",
@@ -689,6 +701,10 @@ MANIFESTS = {
         "cron/masternoder-margin-report.cron.d",
         "cron/discord_activity_funnel.sh",
         "cron/mn2_read_ops_secret.sh",
+        "cron/mn2_network_snapshot.sh",
+        "cron/masternoder-mn2-network-snapshot.cron.d",
+        "cron/mn2_explorer_probe.sh",
+        "cron/masternoder-mn2-explorer-probe.cron.d",
     ],
     "camgirls": [
         "backend/services/camgirls_service.py",
@@ -1022,6 +1038,22 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             out2 = (stdout.read() or b"").decode().strip()
             print("  [OK] /etc/cron.d/masternoder-mn2-accrue (hourly)" if out2 == "OK"
                   else "  [WARN] staking accrual cron.d install may have failed")
+
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_network_snapshot.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-mn2-network-snapshot.cron.d "
+                f"/etc/cron.d/masternoder-mn2-network-snapshot 2>/dev/null && "
+                f"chmod 644 /etc/cron.d/masternoder-mn2-network-snapshot 2>/dev/null || true",
+                timeout=10,
+            )
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_explorer_probe.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-mn2-explorer-probe.cron.d "
+                f"/etc/cron.d/masternoder-mn2-explorer-probe 2>/dev/null && "
+                f"chmod 644 /etc/cron.d/masternoder-mn2-explorer-probe 2>/dev/null || true",
+                timeout=10,
+            )
+            print("  [OK] MN2 network snapshot + explorer probe crons")
             print()
 
         if "mn2_staking" in _manifests and not upload_only:
@@ -1222,6 +1254,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             ssh.exec_command("nginx -t 2>&1 || true", timeout=10)
             ssh.exec_command("systemctl reload nginx 2>&1 || systemctl restart nginx 2>&1 || true", timeout=15)
             print("  [OK] Nginx reloaded (static_pages deploy; uwsgi not restarted)")
+            print("  [NOTE] Purge CDN cache for /static/js/mn2-* and /explorer/*.html if behind an edge cache")
         elif restart_services is not None:
             for svc in restart_services:
                 ssh.exec_command(f"systemctl restart {svc} 2>&1 || true", timeout=20)
