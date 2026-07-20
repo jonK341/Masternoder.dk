@@ -104,6 +104,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P2 — Hub UI (`explorer/index.html` + overview JS) (81–130)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p2.py`
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 81 | Network tiles: price, height, difficulty, masternodes | done |
@@ -141,21 +143,21 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | 113 | Responsive search row (flex-wrap) | done |
 | 114 | `aria-label` on search input | done |
 | 115 | Section titles with summary spans | done |
-| 116 | Skeleton loaders while fetching | pending |
-| 117 | Toast on copy/search errors | pending |
-| 118 | Keyboard shortcut `/` focuses search | pending |
-| 119 | Deep-link `?tab=explorer` from other pages | pending |
-| 120 | Export network history CSV button | pending |
-| 121 | Print-friendly explorer layout | pending |
-| 122 | i18n strings externalized | pending |
-| 123 | High-contrast mode toggle | pending |
-| 124 | Reduced-motion disables chart animations | pending |
-| 125 | PWA offline shell for cached overview | pending |
-| 126 | Share button for current search result | pending |
-| 127 | QR code for address search result | pending |
-| 128 | Compare two addresses side-by-side | pending |
-| 129 | Bookmark favorite addresses (localStorage) | pending |
-| 130 | Night-mode chart color palette option | pending |
+| 116 | Skeleton loaders while fetching | done |
+| 117 | Toast on copy/search errors | done |
+| 118 | Keyboard shortcut `/` focuses search | done |
+| 119 | Deep-link `?tab=explorer` from other pages | done |
+| 120 | Export network history CSV button | done |
+| 121 | Print-friendly explorer layout | done |
+| 122 | i18n strings externalized | deferred |
+| 123 | High-contrast mode toggle | done |
+| 124 | Reduced-motion disables chart animations | done |
+| 125 | PWA offline shell for cached overview | deferred |
+| 126 | Share button for current search result | done |
+| 127 | QR code for address search result | done |
+| 128 | Compare two addresses side-by-side | deferred |
+| 129 | Bookmark favorite addresses (localStorage) | done |
+| 130 | Night-mode chart color palette option | done |
 
 ---
 
@@ -320,12 +322,12 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 |----------|------|---------|-------|
 | P0 Critical | 30 | 0 | 30 |
 | P1 API | 47 | 3 | 50 |
-| P2 Hub UI | 35 | 15 | 50 |
+| P2 Hub UI | 47 | 3 | 50 |
 | P3 Detail pages | 20 | 10 | 30 |
 | P4 Ops | 9 | 21 | 30 |
 | P5 Tests | 13 | 7 | 20 |
 | P6 Docs | 7 | 13 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **161** | **89** | **250** |
+| **Total** | **173** | **77** | **250** |
 
 **Next deploy step:** push branch, merge PR #57, run the mn2_staking + static_pages deploy manifest, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.

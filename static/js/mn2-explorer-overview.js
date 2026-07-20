@@ -40,6 +40,100 @@
 
   var explorerBase = 'https://chainz.cryptoid.info/mn2/';
   var circulatingSupply = null;
+  var lastHistory = [];
+  var BOOKMARKS_KEY = 'mn2_explorer_bookmarks';
+  var ADDR_RE = /^[13mnMNJ][a-km-zA-HJ-NP-Z1-9]{25,62}$/;
+
+  function reducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function chartColor(up) {
+    if (document.body.classList.contains('ex-chart-alt')) {
+      return up ? '#00d4ff' : '#ff66cc';
+    }
+    return up ? '#00ff88' : '#ff7a7a';
+  }
+
+  function toast(msg, isBad) {
+    var el = q('ex-toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'ex-toast' + (isBad ? ' bad' : '');
+    el.hidden = false;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.hidden = true; }, 3200);
+  }
+
+  function setLoading(on) {
+    var page = q('ex-page') || document.querySelector('.explorer-page');
+    if (page) page.classList.toggle('is-loading', !!on);
+  }
+
+  function loadBookmarks() {
+    try {
+      var raw = localStorage.getItem(BOOKMARKS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveBookmarks(list) {
+    try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+    renderBookmarks();
+  }
+
+  function isBookmarked(addr) {
+    return loadBookmarks().indexOf(addr) >= 0;
+  }
+
+  function toggleBookmark(addr) {
+    if (!addr) return;
+    var list = loadBookmarks();
+    var i = list.indexOf(addr);
+    if (i >= 0) list.splice(i, 1);
+    else list.unshift(addr);
+    saveBookmarks(list.slice(0, 20));
+    toast(i >= 0 ? 'Removed bookmark' : 'Address saved');
+  }
+
+  function renderBookmarks() {
+    var wrap = q('ex-bookmarks');
+    var listEl = q('ex-bookmarks-list');
+    if (!wrap || !listEl) return;
+    var list = loadBookmarks();
+    if (!list.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    listEl.innerHTML = list.map(function (addr) {
+      return '<span class="ex-bookmark-chip"><a href="' + inPageAddressLink(addr) + '">' + shortHash(addr) + '</a>' +
+        '<button type="button" data-rm-bookmark="' + encodeURIComponent(addr) + '" aria-label="Remove">×</button></span>';
+    }).join('');
+    listEl.querySelectorAll('[data-rm-bookmark]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        toggleBookmark(decodeURIComponent(btn.getAttribute('data-rm-bookmark') || ''));
+        loadRichList();
+      });
+    });
+  }
+
+  function starBtn(addr) {
+    if (!addr || addr === '—') return '';
+    var on = isBookmarked(addr) ? ' on' : '';
+    return '<button type="button" class="ex-star' + on + '" data-star="' + encodeURIComponent(addr) + '" title="Save address">★</button>';
+  }
+
+  function bindStarButtons(root) {
+    if (!root) return;
+    root.querySelectorAll('.ex-star').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleBookmark(decodeURIComponent(btn.getAttribute('data-star') || ''));
+        btn.classList.toggle('on', isBookmarked(decodeURIComponent(btn.getAttribute('data-star') || '')));
+      });
+    });
+  }
 
   function renderMeta(d) {
     var el = q('ex-meta');
@@ -94,7 +188,8 @@
       return (i === 0 ? 'M' : 'L') + x + ',' + y;
     }).join(' ');
     var up = pts[pts.length - 1] >= pts[0];
-    var color = up ? '#00ff88' : '#ff7a7a';
+    if (reducedMotion()) { el.innerHTML = ''; return; }
+    var color = chartColor(up);
     el.innerHTML = '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
       '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.5"/></svg>';
   }
@@ -173,6 +268,7 @@
     renderDaemon(d.daemon);
 
     q('ex-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    setLoading(false);
   }
 
   function fmtBytes(n) {
@@ -203,10 +299,15 @@
   function refresh() {
     var upd = q('ex-updated');
     if (upd) upd.textContent = 'Loading network stats…';
+    setLoading(true);
     fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(render)
-      .catch(function () { q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
+      .catch(function () {
+        setLoading(false);
+        q('ex-updated').textContent = 'Stats temporarily unavailable.';
+        toast('Network stats unavailable', true);
+      });
   }
 
   function startExplorerStream() {
@@ -348,7 +449,10 @@
     var line = coords.map(function (c, i) { return (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1); }).join(' ');
     var area = line + ' L' + w + ',' + h + ' L0,' + h + ' Z';
     var up = pts[pts.length - 1] >= pts[0];
-    var color = up ? '#00ff88' : '#ff7a7a';
+    if (reducedMotion()) {
+      return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none"></svg>';
+    }
+    var color = chartColor(up);
     var gid = 'g' + Math.random().toString(36).slice(2, 8);
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
       '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
@@ -408,7 +512,10 @@
     // 5 days = 120h. Snapshots are throttled ~10 min, so cap is generous.
     fetch('/api/mn2/network-history?hours=120&limit=900', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
-      .then(function (d) { renderMonitor((d && d.success && d.history) ? d.history : []); })
+      .then(function (d) {
+        lastHistory = (d && d.success && d.history) ? d.history : [];
+        renderMonitor(lastHistory);
+      })
       .catch(function () {});
     fetch('/api/mn2/network-alerts?limit=5', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
@@ -453,10 +560,18 @@
       var v = (q('ex-q').value || '').trim();
       if (!v) return;
       fetch('/api/mn2/explorer/search?q=' + encodeURIComponent(v), { credentials: 'same-origin' })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; }); })
         .then(function (res) {
+          if (res.status === 429) {
+            toast('Search rate limit — try again shortly', true);
+            return;
+          }
           if (res.ok && res.d && res.d.path) {
             window.location.href = res.d.path;
+            return;
+          }
+          if (res.d && res.d.error) {
+            toast('Search: ' + res.d.error, true);
             return;
           }
           if (/^[0-9a-fA-F]{64}$/.test(v)) {
@@ -470,6 +585,7 @@
           window.location.href = '/explorer/address/' + encodeURIComponent(v);
         })
         .catch(function () {
+          toast('Search failed — trying address route', true);
           window.location.href = '/explorer/address/' + encodeURIComponent(v);
         });
     });
@@ -518,13 +634,136 @@
           var pct = (circulatingSupply && circulatingSupply > 0 && bal > 0)
             ? ((bal / circulatingSupply) * 100).toFixed(4) + '%'
             : '—';
-          return '<tr><td>' + (row.rank != null ? row.rank : '—') + '</td><td>' + link + '</td><td>' + fmtNum(row.balance, 4) + '</td><td>' + pct + '</td></tr>';
+          return '<tr><td>' + (row.rank != null ? row.rank : '—') + '</td><td>' + starBtn(addr) + link + '</td><td>' + fmtNum(row.balance, 4) + '</td><td>' + pct + '</td></tr>';
         }).join('');
+        bindStarButtons(body);
       })
       .catch(function () {});
   }
 
+  function exportHistoryCsv() {
+    if (!lastHistory.length) {
+      toast('No history loaded yet — wait for monitor', true);
+      return;
+    }
+    var keys = ['ts', 'block_height', 'mn2_usd_price', 'difficulty', 'masternode_count', 'connections', 'mempool_tx', 'pool_total_staked'];
+    var lines = [keys.join(',')];
+    lastHistory.forEach(function (row) {
+      lines.push(keys.map(function (k) {
+        var v = row[k];
+        if (v == null) return '';
+        var s = String(v);
+        return s.indexOf(',') >= 0 ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(','));
+    });
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mn2-network-history.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('CSV downloaded');
+  }
+
+  function shareExplorer() {
+    var v = (q('ex-q') && q('ex-q').value || '').trim();
+    var url = window.location.origin + '/explorer/';
+    if (v) {
+      if (/^[0-9a-fA-F]{64}$/.test(v)) url = window.location.origin + '/explorer/tx/' + v;
+      else if (/^\d+$/.test(v)) url = window.location.origin + '/explorer/block/' + v;
+      else if (ADDR_RE.test(v)) url = window.location.origin + '/explorer/address/' + encodeURIComponent(v);
+    }
+    if (navigator.share) {
+      navigator.share({ title: 'MN2 Explorer', url: url }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { toast('Link copied'); }).catch(function () { toast('Could not copy link', true); });
+      return;
+    }
+    toast(url);
+  }
+
+  function showAddressQr(addr) {
+    addr = (addr || '').trim();
+    if (!ADDR_RE.test(addr)) {
+      toast('Enter a valid MN2 address in search first', true);
+      return;
+    }
+    var modal = q('ex-qr-modal');
+    var canvas = q('ex-qr-canvas');
+    var label = q('ex-qr-addr');
+    if (!modal || !canvas) return;
+    canvas.innerHTML = '';
+    label.textContent = addr;
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(canvas, { text: addr, width: 160, height: 160 });
+    } else {
+      canvas.textContent = 'QR library unavailable';
+    }
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function initToolbar() {
+    var exportBtn = q('ex-export-csv');
+    if (exportBtn) exportBtn.addEventListener('click', exportHistoryCsv);
+    var shareBtn = q('ex-share');
+    if (shareBtn) shareBtn.addEventListener('click', shareExplorer);
+    var qrBtn = q('ex-qr');
+    if (qrBtn) qrBtn.addEventListener('click', function () {
+      showAddressQr((q('ex-q') && q('ex-q').value) || '');
+    });
+    var closeQr = q('ex-qr-close');
+    var qrModal = q('ex-qr-modal');
+    if (closeQr && qrModal) {
+      closeQr.addEventListener('click', function () {
+        qrModal.hidden = true;
+        qrModal.setAttribute('aria-hidden', 'true');
+      });
+    }
+    var contrastBtn = q('ex-contrast');
+    if (contrastBtn) {
+      if (localStorage.getItem('mn2_ex_contrast') === '1') document.body.classList.add('ex-high-contrast');
+      contrastBtn.addEventListener('click', function () {
+        document.body.classList.toggle('ex-high-contrast');
+        localStorage.setItem('mn2_ex_contrast', document.body.classList.contains('ex-high-contrast') ? '1' : '0');
+        toast(document.body.classList.contains('ex-high-contrast') ? 'High contrast on' : 'High contrast off');
+      });
+    }
+    var paletteBtn = q('ex-palette');
+    if (paletteBtn) {
+      if (localStorage.getItem('mn2_ex_chart_alt') === '1') document.body.classList.add('ex-chart-alt');
+      paletteBtn.addEventListener('click', function () {
+        document.body.classList.toggle('ex-chart-alt');
+        localStorage.setItem('mn2_ex_chart_alt', document.body.classList.contains('ex-chart-alt') ? '1' : '0');
+        loadSparklines();
+        if (lastHistory.length) renderMonitor(lastHistory);
+        toast('Chart palette updated');
+      });
+    }
+    var printBtn = q('ex-print');
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+  }
+
+  function initKeyboard() {
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      var tag = (e.target && e.target.tagName) || '';
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+      var panel = document.querySelector('.mn2-tab-panel[data-mn2-tab="explorer"]');
+      if (panel && panel.hidden) return;
+      e.preventDefault();
+      var input = q('ex-q');
+      if (input) input.focus();
+    });
+  }
+
   initSearch();
+  initToolbar();
+  initKeyboard();
+  renderBookmarks();
+  setLoading(true);
   refresh();
   loadSparklines();
   loadBlocks();

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 
-    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260720d">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
 
@@ -27,7 +27,7 @@
 
     <div class="bg-animated"></div>
 
-    <div class="mn2-hub-wrap explorer-page">
+    <div class="mn2-hub-wrap explorer-page" id="ex-page">
 
         <div class="mn2-hub-header">
 
@@ -92,6 +92,31 @@
             <div class="ex-updated" id="ex-updated">Loading…</div>
 
             <div class="ex-meta" id="ex-meta"></div>
+
+            <div class="ex-toolbar" aria-label="Explorer tools">
+                <button type="button" class="ex-tool-btn" id="ex-export-csv" title="Download 5-day network history as CSV">Export CSV</button>
+                <button type="button" class="ex-tool-btn" id="ex-share" title="Share explorer link">Share</button>
+                <button type="button" class="ex-tool-btn" id="ex-qr" title="Show QR for address in search box">QR</button>
+                <button type="button" class="ex-tool-btn" id="ex-contrast" title="Toggle high contrast">Contrast</button>
+                <button type="button" class="ex-tool-btn" id="ex-palette" title="Toggle chart color palette">Charts</button>
+                <button type="button" class="ex-tool-btn" id="ex-print" title="Print explorer overview">Print</button>
+            </div>
+
+            <div class="ex-bookmarks" id="ex-bookmarks" hidden>
+                <span class="ex-bookmarks-label">Saved addresses</span>
+                <div class="ex-bookmarks-list" id="ex-bookmarks-list"></div>
+            </div>
+
+            <div id="ex-toast" class="ex-toast" role="status" aria-live="polite" hidden></div>
+
+            <div id="ex-qr-modal" class="ex-qr-modal" hidden aria-hidden="true">
+                <div class="ex-qr-dialog">
+                    <button type="button" class="ex-qr-close" id="ex-qr-close" aria-label="Close">&times;</button>
+                    <p class="ex-qr-title">Address QR</p>
+                    <div id="ex-qr-canvas"></div>
+                    <p class="ex-qr-addr" id="ex-qr-addr"></p>
+                </div>
+            </div>
 
             <div class="ex-section-title">Network</div>
 
@@ -556,7 +581,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260720b" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260720d" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 
