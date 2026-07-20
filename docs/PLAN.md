@@ -14,6 +14,7 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 | Sync + DB health (today) | `docs/plans/sync_migration_database_health_today.plan.md` | DB health 200 → sync migration |
 | Gate A execution (today) | `docs/plans/gate_a_execution_today.plan.md` | Prod Gate A close: MN2 daemon + SSH verify |
 | Gate S hardening | `docs/plans/gate_s_execution.plan.md` | Atomic money path, audit, backup, treasury ops |
+| Gate B economy core | `docs/plans/gate_b_execution.plan.md` | Ledger, pricing, rewards, multi-address wallet |
 
 ## Build stages
 
@@ -73,6 +74,18 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 | Unified points idempotency | Pass (`test_gate_a_orchestrator.py`) |
 | Casino MN2 rail | Pass (`casino_service.py`) |
 | Sync DB-backed | Pass (`sync_state` sync_count 92784, 4 tables on prod) |
+
+## Stage 1 Gate B (economy core)
+
+| Check | Status |
+|-------|--------|
+| `mn2_ledger` append | Pass (`test_gate_b_orchestrator.py`) |
+| `activity_events.jsonl` | Pass |
+| `generator_pricing_service` | Pass |
+| `game_mn2_rewards` | Pass |
+| Wallet multi-address API | `GET/POST /api/mn2/wallet/*` |
+| Agent treasury | Ops-only `GET /api/agents/treasury/address` |
+| Gate B health | `GET /api/health/gate-b` |
 
 ## Shared backbone files
 
