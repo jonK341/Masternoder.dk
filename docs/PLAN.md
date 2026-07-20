@@ -13,6 +13,7 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 | Orchestrator | `docs/plans/master_build_orchestrator.plan.md` | Stage sequencing + gates |
 | Sync + DB health (today) | `docs/plans/sync_migration_database_health_today.plan.md` | DB health 200 → sync migration |
 | Gate A execution (today) | `docs/plans/gate_a_execution_today.plan.md` | Prod Gate A close: MN2 daemon + SSH verify |
+| Gate S hardening | `docs/plans/gate_s_execution.plan.md` | Atomic money path, audit, backup, treasury ops |
 
 ## Build stages
 
