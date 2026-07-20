@@ -47,9 +47,15 @@ def chainz_getblockcount() -> Optional[int]:
 
 
 def chainz_ticker_usd() -> Optional[float]:
-    """Chainz API MN2/USD price. Cached 10 min. Returns None on error."""
+    """Chainz API MN2/USD price. Cached 10 min. Returns None on error or zero price."""
     out = chainz_ticker_usd_with_updated()
-    return out.get("price") if isinstance(out, dict) else None
+    if not isinstance(out, dict):
+        return None
+    try:
+        px = float(out.get("price"))
+        return px if px > 0 else None
+    except (TypeError, ValueError):
+        return None
 
 
 _CACHE_TTL.update({"getdifficulty": 300, "mncount": 600})

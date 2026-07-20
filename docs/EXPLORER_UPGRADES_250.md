@@ -324,4 +324,4 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P7 Future | 0 | 20 | 20 |
 | **Total** | **154** | **96** | **250** |
 
-**Next deploy step:** push branch, merge PR #57, run `python scripts/deploy.py mn2_staking static_pages mn2_env`, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.
+**Next deploy step:** push branch, merge PR #57, run the mn2_staking + static_pages deploy manifest, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.
