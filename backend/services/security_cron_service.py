@@ -38,6 +38,12 @@ def run_security_sweep(*, drift_limit: int = 100) -> Dict[str, Any]:
     except Exception as exc:
         results["agent_kill_switch"] = {"error": str(exc)}
 
+    try:
+        from backend.services.customer_avatar_service import backfill_missing_avatars
+        results["customer_avatar_backfill"] = backfill_missing_avatars(limit=25)
+    except Exception as exc:
+        results["customer_avatar_backfill"] = {"error": str(exc)}
+
     ok = True
     for key, val in results.items():
         if isinstance(val, dict) and val.get("error") and key == "conservation":

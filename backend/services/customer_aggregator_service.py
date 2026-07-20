@@ -119,6 +119,11 @@ def emit_customer_new(user_id: str) -> None:
     if not uid:
         return
     try:
+        from backend.services.customer_avatar_service import ensure_avatar
+        ensure_avatar(uid)
+    except Exception:
+        pass
+    try:
         from backend.services.activity_events_service import emit
 
         emit(

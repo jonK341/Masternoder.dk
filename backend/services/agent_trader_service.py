@@ -24,6 +24,26 @@ def _trader_agent_ids() -> List[str]:
     return [f"trader_agent_{i + 1}" for i in range(max(1, count))]
 
 
+def trader_level_for_agent(agent_id: str) -> int:
+    """Level from unified points (500 XP per level) governing order caps."""
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        pts = unified_points_db.get_all_points(agent_id).get("points") or {}
+        xp = float(pts.get("xp_total") or 0)
+        return max(1, int(xp // 500) + 1)
+    except Exception:
+        return 1
+
+
+def _max_open_sells_for_level(level: int) -> int:
+    return min(12, 2 + max(0, int(level) - 1))
+
+
+def _sell_amount_for_level(base: float, level: int) -> float:
+    mult = 1.0 + (max(1, int(level)) - 1) * 0.08
+    return round(float(base or 0) * mult, 8)
+
+
 def _market_cfg() -> Dict[str, Any]:
     try:
         from backend.services.mn2_staking_service import get_config
@@ -68,7 +88,12 @@ def run_trader_sell_tick(agent_id: str, strategy: str = "market_maker") -> Dict[
 
     sell_amt = float(mcfg.get("sell_mn2_per_order") or 10)
     min_free = float(mcfg.get("min_free_mn2") or 5)
-    max_open = int(mcfg.get("max_open_sells_per_agent") or 2)
+    level = trader_level_for_agent(agent_id)
+    max_open = max(
+        int(mcfg.get("max_open_sells_per_agent") or 2),
+        _max_open_sells_for_level(level),
+    )
+    sell_amt = _sell_amount_for_level(sell_amt, level)
     base_price = float(mcfg.get("reference_price_coins_per_mn2") or 100)
     price = _strategy_price(base_price, strategy)
 
@@ -91,7 +116,13 @@ def run_trader_sell_tick(agent_id: str, strategy: str = "market_maker") -> Dict[
                 "trader_market_tick",
                 channel="market",
                 user_id=agent_id,
-                payload={"action": "sell", "strategy": strategy, "order_id": (result.get("order") or {}).get("order_id")},
+                payload={
+                    "action": "sell",
+                    "strategy": strategy,
+                    "order_id": (result.get("order") or {}).get("order_id"),
+                    "level": level,
+                    "sell_mn2": sell_amt,
+                },
             )
         except Exception:
             pass

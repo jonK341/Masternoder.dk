@@ -47,10 +47,18 @@ def get_control_status() -> Dict[str, Any]:
 
     treasury = get_treasury()
     traders = list_trader_agents_status()
-    wallets: List[Dict[str, Any]] = [
-        w for w in list_wallets()
-        if str(w.get("agent_id") or "").startswith("trader_agent_")
-    ]
+    wallets: List[Dict[str, Any]] = []
+    for w in list_wallets():
+        if not str(w.get("agent_id") or "").startswith("trader_agent_"):
+            continue
+        aid = str(w.get("agent_id"))
+        try:
+            from backend.services.agent_trader_service import trader_level_for_agent
+            w = dict(w)
+            w["level"] = trader_level_for_agent(aid)
+        except Exception:
+            pass
+        wallets.append(w)
     return {
         "success": True,
         "treasury": treasury,

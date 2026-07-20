@@ -630,8 +630,11 @@ MANIFESTS = {
         "backend/services/agent_wallet_service.py",
         "backend/services/gate_b_status_service.py",
         "backend/services/gate_c_status_service.py",
+        "backend/services/gate_d_status_service.py",
+        "backend/services/customer_avatar_service.py",
         "backend/services/agent_admin_service.py",
         "backend/services/security_cron_service.py",
+        "backend/routes/security_cron_routes.py",
         "backend/services/treasury_signoff_service.py",
         "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
@@ -754,6 +757,7 @@ MANIFESTS = {
         "cron/agents_api_service_skill.sh",
         "cron/agents_trader.sh",
         "cron/agents_treasury_distribute.sh",
+        "cron/security_sweep.sh",
         "cron/masternoder-agents-daily.cron.d",
         "cron/masternoder-agents-weekly.cron.d",
         "cron/masternoder-agents-monthly.cron.d",
@@ -761,6 +765,7 @@ MANIFESTS = {
         "cron/masternoder-agents-api-service.cron.d",
         "cron/masternoder-agents-trader.cron.d",
         "cron/masternoder-agents-treasury.cron.d",
+        "cron/masternoder-security-sweep.cron.d",
     ],
     # MN2 daemon config (masternoder2.conf); deploy config folder to server
     "config": [
@@ -1150,6 +1155,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 "agents_api_service_skill.sh",
                 "agents_trader.sh",
                 "agents_treasury_distribute.sh",
+                "security_sweep.sh",
             ):
                 ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/{sh} 2>/dev/null || true", timeout=5)
             for cd, remote_name in (
@@ -1160,13 +1166,14 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 ("masternoder-agents-api-service.cron.d", "masternoder-agents-api-service"),
                 ("masternoder-agents-trader.cron.d", "masternoder-agents-trader"),
                 ("masternoder-agents-treasury.cron.d", "masternoder-agents-treasury"),
+                ("masternoder-security-sweep.cron.d", "masternoder-security-sweep"),
             ):
                 ssh.exec_command(
                     f"cp {REMOTE_BASE}/cron/{cd} /etc/cron.d/{remote_name} && chmod 644 /etc/cron.d/{remote_name}",
                     timeout=10,
                 )
                 time.sleep(0.15)
-            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader, treasury)")
+            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader, treasury, security-sweep)")
             print()
 
         if "camgirls" in _manifests and not upload_only:

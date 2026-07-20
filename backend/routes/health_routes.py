@@ -122,6 +122,23 @@ def gate_c_health():
         }), 503
 
 
+@health_bp.route('/api/health/gate-d', methods=['GET'])
+def gate_d_health():
+    """Gate D readiness: Stage 3 cross-cutting (monitor, security cron, control board)."""
+    try:
+        from backend.services.gate_d_status_service import check_gate_d
+        result = check_gate_d()
+        status_code = 200 if result.get('ready_for_stage_4') else 503
+        return jsonify(result), status_code
+    except Exception as exc:
+        return jsonify({
+            'success': False,
+            'gate': 'D',
+            'status': 'error',
+            'error': str(exc),
+        }), 503
+
+
 def _mask_db_url(url: str) -> str:
     if not url:
         return ''
