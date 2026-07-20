@@ -411,6 +411,41 @@ python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
 
 ---
 
+## 10. Explorer live cutover (E2/E3)
+
+After merging the explorer E2/E3 work, point the live site at the self-hosted **eiquidus** host (same server as Flask). Chainz remains fallback via `explorer_fallback_base_url` / `MN2_EXPLORER_FALLBACK_BASE_URL`.
+
+**1. Add to the server `.env`** (then `python scripts/deploy.py mn2_env --ask-pass`):
+
+```bash
+MN2_EXPLORER_BASE_URL=https://<your-eiquidus-host>/
+MN2_EXPLORER_KIND=iquidus
+MN2_EXPLORER_LOCAL_API_URL=http://127.0.0.1:3000
+MN2_EXPLORER_FALLBACK_BASE_URL=https://chainz.cryptoid.info/mn2/
+```
+
+**2. Deploy code + static:**
+
+```bash
+python scripts/deploy.py mn2_staking static_pages --ask-pass
+```
+
+**3. Verify:**
+
+```bash
+curl -sS https://<site>/api/mn2/network-overview | jq '.explorer_kind, .explorer_base_url, .source'
+curl -sS https://<site>/api/mn2/services | jq '.services[] | select(.id=="explorer")'
+curl -sS https://<eiquidus-host>/ext/getmoneysupply
+```
+
+Expect `explorer_kind: "iquidus"`, services explorer `status: healthy` (or `degraded` if index still syncing), and numeric money supply from eiquidus.
+
+**4. If eiquidus homepage tx table is empty** after upgrade: `python scripts/fix_explorer_subdomains_remote.py --ask-pass`
+
+See [MN2_EXPLORER_PLAN.md](MN2_EXPLORER_PLAN.md) and [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md).
+
+---
+
 ## 9. References
 
 - [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) — Install and run the daemon.

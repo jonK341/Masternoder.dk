@@ -45,6 +45,10 @@
     el.style.display = 'block';
   }
 
+  function inPageAddressLink(addr) {
+    return '/explorer/address/' + encodeURIComponent(addr);
+  }
+
   function explorerLink(term) {
     var base = (explorerBase || 'https://chainz.cryptoid.info/mn2/').replace(/\/+$/, '');
     var isChainz = /chainz\.cryptoid/.test(base);
@@ -133,7 +137,11 @@
 
     if (d.explorer_base_url) {
       explorerBase = d.explorer_base_url;
-      q('ex-open').href = d.explorer_base_url;
+      var openEl = q('ex-open');
+      if (openEl) {
+        openEl.href = d.explorer_base_url;
+        openEl.textContent = (d.explorer_kind === 'iquidus' ? 'Open block explorer ↗' : 'Open Chainz explorer ↗');
+      }
     }
 
     renderHealth(d.staking_health);
@@ -267,7 +275,7 @@
         body.innerHTML = list.map(function (m) {
           var on = String(m.status || '').toUpperCase() === 'ENABLED';
           var pill = '<span class="pill ' + (on ? 'on' : 'off') + '">' + (m.status || '—') + '</span>';
-          var addr = m.addr ? '<a class="ex-open" href="' + explorerLink(m.addr) + '" target="_blank" rel="noopener">' + m.addr + '</a>' : '—';
+          var addr = m.addr ? '<a href="' + inPageAddressLink(m.addr) + '">' + m.addr + '</a>' : '—';
           return '<tr>' +
             '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
             '<td>' + addr + '</td>' +
