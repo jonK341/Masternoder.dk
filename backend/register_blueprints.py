@@ -337,6 +337,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP agent_treasury: {e}")
     try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            n += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_admin: {e}")
+    try:
         from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp
         if "agent_trader_staking" not in app.blueprints:
             app.register_blueprint(agent_trader_staking_bp)
@@ -1619,6 +1627,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import agent_treasury: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering agent_treasury: {e}")
+
+    try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_admin: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_admin: {e}")
 
     try:
         from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp

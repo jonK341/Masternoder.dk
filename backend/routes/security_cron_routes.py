@@ -18,18 +18,19 @@ def _ops_ok() -> bool:
 def security_sweep():
     if not _ops_ok():
         return jsonify({"success": False, "error": "unauthorized"}), 403
-    results = {}
+    body = request.get_json(silent=True) or {}
     try:
-        from backend.services.mn2_conservation_gate import conservation_gate
-        results["conservation"] = conservation_gate()
-    except Exception as exc:
-        results["conservation"] = {"error": str(exc)}
+        drift_limit = int(body.get("drift_limit") or request.args.get("drift_limit") or 100)
+    except (TypeError, ValueError):
+        drift_limit = 100
+    from backend.services.security_cron_service import run_security_sweep
+    results = run_security_sweep(drift_limit=drift_limit)
     try:
         from backend.services.activity_events_service import emit
         emit("security_cron_sweep", channel="ops", payload=results)
     except Exception:
         pass
-    return jsonify({"success": True, "results": results}), 200
+    return jsonify(results), 200
 
 
 @security_cron_bp.route("/api/security/cron/backup", methods=["POST"])

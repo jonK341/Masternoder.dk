@@ -133,6 +133,9 @@ def run_agent_cron_jobs(
             elif job == 'treasury_distribute':
                 from backend.services.agent_wallet_service import distribute_agent_funding
                 out['results'][job] = distribute_agent_funding()
+            elif job == 'security_sweep':
+                from backend.services.security_cron_service import run_security_sweep
+                out['results'][job] = run_security_sweep()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -173,6 +176,8 @@ def expand_preset(name: str) -> List[str]:
         return ['agent_trader']
     if n == 'treasury':
         return ['treasury_distribute']
+    if n == 'security':
+        return ['security_sweep']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
     return []
