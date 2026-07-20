@@ -80,6 +80,29 @@ def upsert_follower(
     return {"success": True, "follower": followers[uid]}
 
 
+def get_follower(follower_user_id: str) -> Dict[str, Any]:
+    """Return follow state for a user (test + API helper)."""
+    uid = str(follower_user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "follower_user_id required"}
+    data = _load()
+    followers = data.get("followers") or {}
+    cfg = followers.get(uid)
+    if not isinstance(cfg, dict):
+        return {"success": True, "following": False, "follower_user_id": uid}
+    return {
+        "success": True,
+        "following": bool(cfg.get("enabled")),
+        "follower": cfg,
+        "follower_user_id": uid,
+    }
+
+
+def unfollow(follower_user_id: str) -> Dict[str, Any]:
+    """Alias for remove_follower (API naming)."""
+    return remove_follower(follower_user_id)
+
+
 def remove_follower(follower_user_id: str) -> Dict[str, Any]:
     """Disable copy-trading for a follower."""
     uid = str(follower_user_id or "").strip()

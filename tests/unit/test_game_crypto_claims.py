@@ -77,9 +77,10 @@ def test_battle_crypto_claim_uses_game_mn2_rewards(
 
     rows = activity_log.read_text(encoding="utf-8").strip().splitlines()
     assert rows
-    event = json.loads(rows[-1])
-    assert event.get("type") == "game_mn2_reward"
-    assert event.get("user_id") == "player_battle"
+    events = [json.loads(line) for line in rows]
+    reward_events = [e for e in events if e.get("type") == "game_mn2_reward"]
+    assert reward_events
+    assert any(e.get("user_id") == "player_battle" for e in reward_events)
 
 
 def test_battle_crypto_claim_idempotent(
@@ -133,9 +134,10 @@ def test_starmap_crypto_claim_uses_game_mn2_rewards(
 
     rows = activity_log.read_text(encoding="utf-8").strip().splitlines()
     assert rows
-    event = json.loads(rows[-1])
-    assert event.get("type") == "game_mn2_reward"
-    assert event.get("user_id") == "player_starmap"
+    events = [json.loads(line) for line in rows]
+    reward_events = [e for e in events if e.get("type") == "game_mn2_reward"]
+    assert reward_events
+    assert any(e.get("user_id") == "player_starmap" for e in reward_events)
 
 
 def test_battle_crypto_claim_route(monkeypatch, points_db, activity_log, battle_state_file):

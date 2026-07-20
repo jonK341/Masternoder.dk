@@ -401,6 +401,30 @@ def mn2_health():
     except Exception as exc:
         out['components']['staking'] = {'status': 'unknown', 'error': str(exc)}
 
+    try:
+        from backend.services.mn2_rpc_client import staking_health
+        stake = staking_health()
+        stake_status = stake.get('status', 'unknown')
+        out['components']['daemon_staking'] = {
+            'status': stake_status,
+            'staking_active': stake.get('staking_active'),
+            'mnsync': stake.get('mnsync'),
+        }
+        if stake_status in ('inactive', 'unreachable', 'unsupported'):
+            degraded = True
+    except Exception as exc:
+        out['components']['daemon_staking'] = {'status': 'unknown', 'error': str(exc)}
+        degraded = True
+
+    try:
+        from backend.services.discord_service import outbox_stats
+        discord = outbox_stats(limit=30)
+        out['components']['discord_outbox'] = discord
+        if discord.get('failures_recent', 0) > 0:
+            degraded = True
+    except Exception as exc:
+        out['components']['discord_outbox'] = {'status': 'unknown', 'error': str(exc)}
+
     if degraded:
         out['status'] = 'degraded'
     code = 200 if out['status'] == 'healthy' else 503

@@ -507,6 +507,7 @@ def register_lite_blueprints(app):
         ("backend.routes.api_scanner_routes", "api_scanner_bp"),
         ("backend.routes.debugger_profile_routes", "debugger_profile_bp"),
         ("backend.routes.debugger_agent_tasks_routes", "debugger_agent_tasks_bp"),
+        ("backend.routes.debugger_quiz_routes", "debugger_quiz_bp"),
         ("backend.routes.debugger_agent_routes", "debugger_agent_bp"),
         ("backend.routes.debugger_agent_analytics_routes", "debugger_agent_analytics_bp"),
         ("backend.routes.master_fix_agent_get_routes", "master_fix_get_bp"),
@@ -1269,6 +1270,19 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import debugger_agent_tasks: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering debugger_agent_tasks: {e}")
+
+    try:
+        from backend.routes.debugger_quiz_routes import debugger_quiz_bp
+        if 'debugger_quiz' not in app.blueprints:
+            app.register_blueprint(debugger_quiz_bp)
+            registered_count += 1
+            print("  [OK] Registered debugger_quiz blueprint")
+        else:
+            print("  [SKIP] debugger_quiz blueprint already registered")
+    except ImportError as e:
+        print(f"  [WARN] Could not import debugger_quiz: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering debugger_quiz: {e}")
     
     # Agent Reengineering Routes
     try:

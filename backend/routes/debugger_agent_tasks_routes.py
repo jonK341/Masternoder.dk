@@ -78,6 +78,9 @@ TAB_POINTS = {
         'ops_agent_video_troubleshoot': {'xp': 45, 'activity_points': 18},
         'ops_verify_generator_jobs': {'xp': 32, 'activity_points': 13},
     },
+    'quiz': {
+        'submit_quiz': {'xp': 50, 'activity_points': 20, 'mn2_hint': 0.05},
+    },
 }
 
 # Free agents for rulebook / starmap25 todo assignments (round-robin)
