@@ -26,7 +26,18 @@ def treasury_address():
     from backend.services.agent_wallet_service import get_treasury
     treasury = get_treasury()
     if treasury.get("address"):
-        return jsonify({"success": True, **treasury}), 200
+        pool = 0.0
+        try:
+            from backend.services.agent_wallet_service import get_treasury_pool_balance
+            pool = get_treasury_pool_balance()
+        except Exception:
+            pass
+        return jsonify({
+            "success": True,
+            **treasury,
+            "pool_balance_mn2": pool,
+            "required_total_mn2": float(treasury.get("per_agent_mn2") or 100000) * int(treasury.get("trader_agent_count") or 6),
+        }), 200
     try:
         from backend.services.mn2_rpc_client import getnewaddress
         r = getnewaddress()
@@ -73,43 +84,53 @@ def treasury_signoff():
 def treasury_distribute():
     if not _ops_ok():
         return jsonify({"success": False, "error": "admin_required"}), 403
-    from backend.services.agent_wallet_service import get_treasury, credit, list_wallets
-    from backend.services.treasury_signoff_service import assert_distribution_allowed
+    from backend.services.agent_wallet_service import distribute_agent_funding
 
-    treasury = get_treasury()
-    per_agent = float(treasury.get("per_agent_mn2") or 100000)
-    count = int(treasury.get("trader_agent_count") or 6)
-    estimated_total = per_agent * count
-    block = assert_distribution_allowed(estimated_total_mn2=estimated_total)
-    if block:
-        return jsonify({"success": False, "error": block}), 403
-
-    agent_ids = [f"trader_agent_{i+1}" for i in range(count)]
-    existing = {w["agent_id"] for w in list_wallets()}
-    results = []
-    for aid in agent_ids:
-        ref = f"treasury-fund:{aid}"
-        if aid in existing and get_balance_safe(aid) >= per_agent:
-            results.append({"agent_id": aid, "skipped": True, "reason": "already_funded"})
-            continue
-        r = credit(aid, per_agent, reference=ref, source="agent_treasury")
-        results.append(r)
+    result = distribute_agent_funding()
+    if not result.get("success"):
+        return jsonify(result), 403
 
     try:
         from backend.services.admin_audit_service import log_action
         log_action(
             "agent_treasury_distribute",
             actor=request.headers.get("X-Ops-Actor") or "ops",
-            payload={"per_agent_mn2": per_agent, "agent_count": count, "results_count": len(results)},
+            payload={
+                "per_agent_mn2": result.get("per_agent_mn2"),
+                "pool_balance": result.get("pool_balance"),
+                "results_count": len(result.get("results") or []),
+            },
         )
     except Exception:
         pass
 
     from backend.services.activity_events_service import emit
-    emit("agent_treasury_distribute", channel="agents", payload={"results": results})
-    return jsonify({"success": True, "distributed": results, "per_agent_mn2": per_agent}), 200
+    emit("agent_treasury_distribute", channel="agents", payload=result)
+    return jsonify(result), 200
 
 
-def get_balance_safe(agent_id: str) -> float:
-    from backend.services.agent_wallet_service import get_balance
-    return get_balance(agent_id)
+@agent_treasury_bp.route("/api/agents/treasury/status", methods=["GET"])
+def treasury_status():
+    """Pool balance, per-agent targets, and wallet balances (ops or localhost)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.agent_wallet_service import (
+        get_treasury,
+        get_treasury_pool_balance,
+        list_wallets,
+    )
+    treasury = get_treasury()
+    per_agent = float(treasury.get("per_agent_mn2") or 100000)
+    count = int(treasury.get("trader_agent_count") or 6)
+    agents = []
+    for w in list_wallets():
+        aid = w.get("agent_id", "")
+        if aid.startswith("trader_agent_"):
+            agents.append(w)
+    return jsonify({
+        "success": True,
+        "treasury": treasury,
+        "pool_balance_mn2": get_treasury_pool_balance(),
+        "required_total_mn2": per_agent * count,
+        "trader_agents": agents,
+    }), 200
