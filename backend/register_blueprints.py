@@ -1000,6 +1000,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import mn2_p2p: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_p2p: {e}")
+    try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if 'mn2_masternode' not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
 
     # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
     try:

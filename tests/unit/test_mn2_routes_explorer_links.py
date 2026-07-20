@@ -65,3 +65,46 @@ def test_rich_list_api(monkeypatch):
     body = r.get_json()
     assert body["success"] is True
     assert body["count"] == 1
+
+
+def test_explorer_search_api(monkeypatch):
+    monkeypatch.setattr(
+        "backend.services.mn2_explorer_data.classify_search",
+        lambda q: {"type": "tx", "txid": "a" * 64, "path": "/explorer/tx/" + ("a" * 64)},
+    )
+    c = _staking_app().test_client()
+    r = c.get("/api/mn2/explorer/search?q=" + ("a" * 64))
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["success"] is True
+    assert body["type"] == "tx"
+
+
+def test_explorer_block_api(monkeypatch):
+    monkeypatch.setattr(
+        "backend.services.mn2_explorer_data.block_detail",
+        lambda ref: {"height": 100, "hash": "abc", "source": "rpc"},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_explorer_urls.explorer_block_url",
+        lambda ref, cfg=None: f"https://selfhosted.example/block/{ref}",
+    )
+    c = _staking_app().test_client()
+    r = c.get("/api/mn2/explorer/block/100")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["success"] is True
+    assert body["block"]["height"] == 100
+
+
+def test_mempool_api(monkeypatch):
+    monkeypatch.setattr(
+        "backend.services.mn2_explorer_data.mempool_stats",
+        lambda: {"size": 3, "bytes": 1200, "source": "rpc"},
+    )
+    c = _staking_app().test_client()
+    r = c.get("/api/mn2/mempool")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["success"] is True
+    assert body["size"] == 3

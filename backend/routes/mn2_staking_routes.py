@@ -28,6 +28,50 @@ def _ops_authorized() -> bool:
     return token == secret
 
 
+def _build_network_overview_payload() -> dict:
+    """Shared payload for network-overview JSON and SSE stream."""
+    from backend.services import mn2_chainz
+    overview = mn2_chainz.network_overview()
+    overview["pool_total_staked"] = staking.total_staked()
+    overview["pool_apr_percent"] = staking.dynamic_apr()
+    try:
+        from backend.services.mn2_explorer_urls import explorer_base_url, explorer_kind
+        overview["explorer_base_url"] = explorer_base_url()
+        overview["explorer_kind"] = explorer_kind()
+    except Exception:
+        overview["explorer_base_url"] = None
+        overview["explorer_kind"] = None
+    try:
+        from backend.services import mn2_onramp_service
+        overview["onramp"] = mn2_onramp_service.onramp_stats()
+    except Exception:
+        overview["onramp"] = None
+    try:
+        from backend.services import mn2_p2p_service
+        overview["p2p"] = mn2_p2p_service.p2p_stats()
+    except Exception:
+        overview["p2p"] = None
+    try:
+        from backend.services import mn2_rpc_client
+        overview["staking_health"] = mn2_rpc_client.staking_health()
+    except Exception:
+        overview["staking_health"] = None
+    try:
+        from backend.services.mn2_rpc_failover import status_summary
+        fo = status_summary()
+        overview["rpc_failover"] = fo
+        if fo.get("enabled") and fo.get("active") == "standby":
+            overview["rpc_degraded"] = True
+    except Exception:
+        overview["rpc_failover"] = None
+    try:
+        from backend.services.mn2_network_peers_service import peer_health_from_overview
+        overview["peer_health"] = peer_health_from_overview(overview)
+    except Exception:
+        overview["peer_health"] = None
+    return overview
+
+
 def _body() -> dict:
     return request.get_json(silent=True) or {}
 
@@ -386,45 +430,7 @@ def staking_monitor():
 @mn2_staking_bp.route("/api/mn2/network-overview", methods=["GET"])
 def network_overview():
     try:
-        from backend.services import mn2_chainz
-        overview = mn2_chainz.network_overview()
-        overview["pool_total_staked"] = staking.total_staked()
-        overview["pool_apr_percent"] = staking.dynamic_apr()
-        try:
-            from backend.services.mn2_explorer_urls import explorer_base_url, explorer_kind
-            overview["explorer_base_url"] = explorer_base_url()
-            overview["explorer_kind"] = explorer_kind()
-        except Exception:
-            overview["explorer_base_url"] = None
-            overview["explorer_kind"] = None
-        try:
-            from backend.services import mn2_onramp_service
-            overview["onramp"] = mn2_onramp_service.onramp_stats()
-        except Exception:
-            overview["onramp"] = None
-        try:
-            from backend.services import mn2_p2p_service
-            overview["p2p"] = mn2_p2p_service.p2p_stats()
-        except Exception:
-            overview["p2p"] = None
-        try:
-            from backend.services import mn2_rpc_client
-            overview["staking_health"] = mn2_rpc_client.staking_health()
-        except Exception:
-            overview["staking_health"] = None
-        try:
-            from backend.services.mn2_rpc_failover import status_summary
-            fo = status_summary()
-            overview["rpc_failover"] = fo
-            if fo.get("enabled") and fo.get("active") == "standby":
-                overview["rpc_degraded"] = True
-        except Exception:
-            overview["rpc_failover"] = None
-        try:
-            from backend.services.mn2_network_peers_service import peer_health_from_overview
-            overview["peer_health"] = peer_health_from_overview(overview)
-        except Exception:
-            overview["peer_health"] = None
+        overview = _build_network_overview_payload()
         # Record a throttled snapshot for sparklines + run stop-staking/stall alerts (best-effort).
         try:
             from backend.services import mn2_network_stats
@@ -460,10 +466,7 @@ def explorer_overview_stream():
         last_sig = None
         while True:
             try:
-                from backend.services import mn2_chainz
-                overview = mn2_chainz.network_overview()
-                overview["pool_total_staked"] = staking.total_staked()
-                overview["pool_apr_percent"] = staking.dynamic_apr()
+                overview = _build_network_overview_payload()
                 payload = {"success": True, **overview}
                 sig = json.dumps(payload, sort_keys=True, default=str)
                 if sig != last_sig:
@@ -585,6 +588,48 @@ def explorer_supply_stats():
         stats = mn2_explorer_data.supply_stats()
         resp = jsonify({"success": True, **stats})
         resp.headers["Cache-Control"] = "public, max-age=90"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/mempool", methods=["GET"])
+def explorer_mempool():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.mempool_stats()
+        resp = jsonify({"success": True, **stats})
+        resp.headers["Cache-Control"] = "public, max-age=15"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/search", methods=["GET"])
+def explorer_search():
+    try:
+        from backend.services import mn2_explorer_data
+        q = (request.args.get("q") or "").strip()
+        result = mn2_explorer_data.classify_search(q)
+        ok = result.get("type") != "invalid"
+        resp = jsonify({"success": ok, **result})
+        resp.headers["Cache-Control"] = "public, max-age=60"
+        return resp, 200 if ok else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/block/<ref>", methods=["GET"])
+def explorer_block_detail(ref):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_block_url
+        detail = mn2_explorer_data.block_detail(ref)
+        if not detail:
+            return jsonify({"success": False, "error": "Block not found"}), 404
+        detail["explorer_block_url"] = explorer_block_url(detail.get("hash") or ref)
+        resp = jsonify({"success": True, "block": detail})
+        resp.headers["Cache-Control"] = "public, max-age=30"
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

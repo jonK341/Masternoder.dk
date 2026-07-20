@@ -27,6 +27,29 @@ _RICH_TTL = 90
 
 _TXID_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _ADDRESS_RE = re.compile(r"^[13mnMNJ][a-km-zA-HJ-NP-Z1-9]{25,62}$")
+_BLOCK_HASH_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+def is_masternode_active(status: str) -> bool:
+    """MN2 RPC may report ENABLED or ACTIVE for live masternodes."""
+    s = str(status or "").strip().upper()
+    return s in ("ENABLED", "ACTIVE")
+
+
+def classify_search(query: str) -> Dict[str, Any]:
+    """Classify a hub search term into tx / address / block routes."""
+    q = (query or "").strip()
+    if not q:
+        return {"type": "invalid", "error": "empty query"}
+    if is_valid_txid(q):
+        return {"type": "tx", "txid": q, "path": f"/explorer/tx/{q}"}
+    if is_valid_address(q):
+        return {"type": "address", "address": q, "path": f"/explorer/address/{q}"}
+    if q.isdigit():
+        return {"type": "block", "height": int(q), "path": f"/explorer/block/{q}"}
+    if _BLOCK_HASH_RE.match(q):
+        return {"type": "block", "hash": q, "path": f"/explorer/block/{q}"}
+    return {"type": "invalid", "error": "unrecognized query"}
 
 
 def _cached(key: str, ttl: int):
@@ -119,7 +142,7 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
                 if not isinstance(mn, dict):
                     continue
                 status = str(mn.get("status") or "")
-                if status.upper() == "ENABLED":
+                if is_masternode_active(status):
                     enabled += 1
                 parsed.append({
                     "rank": mn.get("rank"),
@@ -343,6 +366,73 @@ def rich_list(limit: int = 100) -> List[Dict[str, Any]]:
     with _LOCK:
         _CACHE[key] = {"value": rows, "ts": time.time()}
     return rows
+
+
+def block_detail(ref: str) -> Optional[Dict[str, Any]]:
+    """Read-only block summary via daemon RPC (height or hash)."""
+    ref = (ref or "").strip()
+    if not ref:
+        return None
+    key = "blk_" + ref
+    with _LOCK:
+        ent = _CACHE.get(key)
+        if ent and (time.time() - ent.get("ts", 0)) < _BLOCKS_TTL:
+            return ent.get("value")
+    out: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        block_hash = ref
+        if ref.isdigit():
+            hh = rpc.getblockhash(int(ref))
+            if hh.get("error") or not hh.get("result"):
+                return None
+            block_hash = str(hh["result"])
+        b = _fetch_block(rpc, block_hash)
+        if b.get("error") or not isinstance(b.get("result"), dict):
+            return None
+        blk = b["result"]
+        txs = blk.get("tx") if isinstance(blk.get("tx"), list) else []
+        out = {
+            "height": blk.get("height"),
+            "hash": blk.get("hash") or block_hash,
+            "time": blk.get("time"),
+            "tx_count": len(txs),
+            "size": blk.get("size"),
+            "difficulty": blk.get("difficulty"),
+            "merkleroot": blk.get("merkleroot"),
+            "previousblockhash": blk.get("previousblockhash"),
+            "confirmations": blk.get("confirmations"),
+            "source": "rpc",
+        }
+    except Exception:
+        return None
+    if out is not None:
+        with _LOCK:
+            _CACHE[key] = {"value": out, "ts": time.time()}
+    return out
+
+
+def mempool_stats() -> Dict[str, Any]:
+    """Pending mempool summary from daemon RPC."""
+    key = "mempool"
+    with _LOCK:
+        ent = _CACHE.get(key)
+        if ent and (time.time() - ent.get("ts", 0)) < 15:
+            return ent.get("value") or {}
+    out: Dict[str, Any] = {"size": None, "bytes": None, "usage": None, "source": "rpc"}
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        r = rpc.getmempoolinfo()
+        if not r.get("error") and isinstance(r.get("result"), dict):
+            res = r["result"]
+            out["size"] = res.get("size")
+            out["bytes"] = res.get("bytes")
+            out["usage"] = res.get("usage")
+    except Exception:
+        pass
+    with _LOCK:
+        _CACHE[key] = {"value": out, "ts": time.time()}
+    return out
 
 
 def supply_stats() -> Dict[str, Any]:

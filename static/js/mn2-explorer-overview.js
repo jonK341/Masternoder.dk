@@ -6,6 +6,16 @@
 
   function q(id) { return document.getElementById(id); }
 
+  function isMnActive(status) {
+    var s = String(status || '').toUpperCase();
+    return s === 'ENABLED' || s === 'ACTIVE';
+  }
+
+  function shortHash(h) {
+    if (!h || h.length < 16) return h || '—';
+    return h.slice(0, 8) + '…' + h.slice(-8);
+  }
+
   function fmtNum(n, d) {
     if (n == null || n === '' || isNaN(Number(n))) return '—';
     return Number(n).toLocaleString(undefined, {
@@ -29,6 +39,19 @@
   }
 
   var explorerBase = 'https://chainz.cryptoid.info/mn2/';
+  var circulatingSupply = null;
+
+  function renderMeta(d) {
+    var el = q('ex-meta');
+    if (!el) return;
+    var parts = [];
+    if (d && d.explorer_kind) parts.push('Explorer: ' + d.explorer_kind);
+    if (d && d.source && Object.keys(d.source).length) {
+      parts.push(Object.keys(d.source).length + ' sourced fields');
+    }
+    if (d && d.rpc_degraded) parts.push('RPC standby');
+    el.textContent = parts.length ? parts.join(' · ') : '';
+  }
 
   function renderHealth(sh) {
     var el = q('ex-health');
@@ -96,7 +119,8 @@
     if (!d || !d.success) return;
     var src = d.source || {};
 
-    q('t-price').textContent = d.mn2_usd_price != null ? ('$' + fmtNum(d.mn2_usd_price, 4)) : '—';
+    var price = Number(d.mn2_usd_price || 0);
+    q('t-price').textContent = price > 0 ? ('$' + fmtNum(price, 4)) : '—';
     setSrc('s-price', src, 'mn2_usd_price');
 
     q('t-height').textContent = fmtNum(d.block_height, 0);
@@ -115,10 +139,10 @@
     q('t-pool').textContent = fmtNum(pool, 2) + ' MN2';
     q('t-poolapr').textContent = d.pool_apr_percent != null ? (fmtNum(d.pool_apr_percent, 2) + '%') : '—';
 
-    var price = Number(d.mn2_usd_price || 0);
     q('t-poolusd').textContent = (price > 0) ? ('$' + fmtNum(pool * price, 2)) : '—';
 
     var supply = d.circulating_supply;
+    circulatingSupply = supply != null ? Number(supply) : null;
     q('t-supply').textContent = supply != null ? (fmtCompact(supply) + ' MN2') : '—';
     setSrc('s-supply', src, 'circulating_supply');
     q('t-poolshare').textContent = (supply && Number(supply) > 0) ? ((pool / Number(supply)) * 100).toFixed(4) + '%' : '—';
@@ -144,6 +168,7 @@
       }
     }
 
+    renderMeta(d);
     renderHealth(d.staking_health);
     renderDaemon(d.daemon);
 
@@ -229,6 +254,12 @@
     return d + 'd ' + hr + 'h';
   }
 
+  function inPageBlockLink(height, hash) {
+    if (height != null) return '/explorer/block/' + encodeURIComponent(height);
+    if (hash) return '/explorer/block/' + encodeURIComponent(hash);
+    return '#';
+  }
+
   function blockLink(height, hash) {
     var base = (explorerBase || 'https://chainz.cryptoid.info/mn2/').replace(/\/+$/, '');
     var isChainz = /chainz\.cryptoid/.test(base);
@@ -243,10 +274,12 @@
         var body = q('ex-blocks');
         if (!body) return;
         var rows = (d && d.success && d.blocks) ? d.blocks : [];
-        if (!rows.length) { body.innerHTML = '<tr><td colspan="4">No block data (daemon unreachable).</td></tr>'; return; }
+        if (!rows.length) { body.innerHTML = '<tr><td colspan="5">No block data (daemon unreachable).</td></tr>'; return; }
         body.innerHTML = rows.map(function (b) {
+          var hash = b.hash || '';
           return '<tr>' +
-            '<td><a class="ex-open" href="' + blockLink(b.height, b.hash) + '" target="_blank" rel="noopener">' + (b.height != null ? b.height : '—') + '</a></td>' +
+            '<td><a class="ex-open" href="' + inPageBlockLink(b.height, hash) + '">' + (b.height != null ? b.height : '—') + '</a></td>' +
+            '<td><a class="ex-open" href="' + inPageBlockLink(b.height, hash) + '" title="' + hash + '">' + shortHash(hash) + '</a></td>' +
             '<td>' + ageStr(b.time) + '</td>' +
             '<td>' + (b.tx_count != null ? b.tx_count : '—') + '</td>' +
             '<td>' + (b.size != null ? fmtNum(b.size, 0) + ' B' : '—') + '</td>' +
@@ -273,7 +306,7 @@
           return;
         }
         body.innerHTML = list.map(function (m) {
-          var on = String(m.status || '').toUpperCase() === 'ENABLED';
+          var on = isMnActive(m.status);
           var pill = '<span class="pill ' + (on ? 'on' : 'off') + '">' + (m.status || '—') + '</span>';
           var addr = m.addr ? '<a href="' + inPageAddressLink(m.addr) + '">' + m.addr + '</a>' : '—';
           return '<tr>' +
@@ -419,12 +452,48 @@
       e.preventDefault();
       var v = (q('ex-q').value || '').trim();
       if (!v) return;
-      if (/^[0-9a-fA-F]{64}$/.test(v)) {
-        window.location.href = '/explorer/tx/' + encodeURIComponent(v);
-        return;
-      }
-      window.location.href = '/explorer/address/' + encodeURIComponent(v);
+      fetch('/api/mn2/explorer/search?q=' + encodeURIComponent(v), { credentials: 'same-origin' })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (res.ok && res.d && res.d.path) {
+            window.location.href = res.d.path;
+            return;
+          }
+          if (/^[0-9a-fA-F]{64}$/.test(v)) {
+            window.location.href = '/explorer/tx/' + encodeURIComponent(v);
+            return;
+          }
+          if (/^\d+$/.test(v)) {
+            window.location.href = '/explorer/block/' + encodeURIComponent(v);
+            return;
+          }
+          window.location.href = '/explorer/address/' + encodeURIComponent(v);
+        })
+        .catch(function () {
+          window.location.href = '/explorer/address/' + encodeURIComponent(v);
+        });
     });
+    var refresh = q('ex-refresh');
+    if (refresh) {
+      refresh.addEventListener('click', function () {
+        refresh.disabled = true;
+        refresh.textContent = '…';
+        refreshAll();
+        setTimeout(function () {
+          refresh.disabled = false;
+          refresh.textContent = '↻';
+        }, 1200);
+      });
+    }
+  }
+
+  function refreshAll() {
+    refresh();
+    loadSparklines();
+    loadBlocks();
+    loadRichList();
+    loadMasternodes();
+    loadMonitor();
   }
 
   function loadRichList() {
@@ -437,7 +506,7 @@
         var sum = q('rich-summary');
         if (sum) sum.textContent = rows.length ? ('— top ' + rows.length) : '';
         if (!rows.length) {
-          body.innerHTML = '<tr><td colspan="3">Rich list unavailable (eiquidus index syncing).</td></tr>';
+          body.innerHTML = '<tr><td colspan="4">Rich list unavailable (eiquidus index syncing).</td></tr>';
           return;
         }
         body.innerHTML = rows.map(function (row) {
@@ -445,7 +514,11 @@
           var link = addr !== '—'
             ? '<a href="/explorer/address/' + encodeURIComponent(addr) + '">' + addr + '</a>'
             : '—';
-          return '<tr><td>' + (row.rank != null ? row.rank : '—') + '</td><td>' + link + '</td><td>' + fmtNum(row.balance, 4) + '</td></tr>';
+          var bal = Number(row.balance || 0);
+          var pct = (circulatingSupply && circulatingSupply > 0 && bal > 0)
+            ? ((bal / circulatingSupply) * 100).toFixed(4) + '%'
+            : '—';
+          return '<tr><td>' + (row.rank != null ? row.rank : '—') + '</td><td>' + link + '</td><td>' + fmtNum(row.balance, 4) + '</td><td>' + pct + '</td></tr>';
         }).join('');
       })
       .catch(function () {});
