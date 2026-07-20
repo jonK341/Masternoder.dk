@@ -163,6 +163,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P3 — Detail pages (131–160)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p3.py`
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 131 | `tx.html` shell with back link | done |
@@ -185,16 +187,16 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | 148 | Error state when API 404 | done |
 | 149 | Loading state before fetch completes | done |
 | 150 | Cache-busted JS `?v=20260720b` | done |
-| 151 | Vin (inputs) table on tx detail | pending |
-| 152 | Fee display on tx detail | pending |
-| 153 | Confirmation progress bar | pending |
-| 154 | QR code for address page | pending |
-| 155 | Block tx list with links | pending |
-| 156 | Breadcrumb: Hub → Block → Tx | pending |
-| 157 | JSON-LD structured data for SEO | pending |
-| 158 | Open Graph meta for shared links | pending |
-| 159 | Raw JSON toggle on detail pages | pending |
-| 160 | Embed widget mode `?embed=1` | pending |
+| 151 | Vin (inputs) table on tx detail | done |
+| 152 | Fee display on tx detail | done |
+| 153 | Confirmation progress bar | done |
+| 154 | QR code for address page | done |
+| 155 | Block tx list with links | done |
+| 156 | Breadcrumb: Hub → Block → Tx | done |
+| 157 | JSON-LD structured data for SEO | done |
+| 158 | Open Graph meta for shared links | done |
+| 159 | Raw JSON toggle on detail pages | done |
+| 160 | Embed widget mode `?embed=1` | done |
 
 ---
 
@@ -323,11 +325,11 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P0 Critical | 30 | 0 | 30 |
 | P1 API | 47 | 3 | 50 |
 | P2 Hub UI | 47 | 3 | 50 |
-| P3 Detail pages | 20 | 10 | 30 |
+| P3 Detail pages | 30 | 0 | 30 |
 | P4 Ops | 9 | 21 | 30 |
 | P5 Tests | 13 | 7 | 20 |
 | P6 Docs | 7 | 13 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **173** | **77** | **250** |
+| **Total** | **183** | **67** | **250** |
 
 **Next deploy step:** push branch, merge PR #57, run the mn2_staking + static_pages deploy manifest, restart uwsgi, verify `/api/mn2/services` and new explorer endpoints on the live host.

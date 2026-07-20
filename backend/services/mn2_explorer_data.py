@@ -232,6 +232,89 @@ def _explorer_http_get(path: str, *, ttl: int = _DETAIL_TTL) -> Optional[Any]:
     return None
 
 
+def _normalize_vins(vins: Any) -> List[Dict[str, Any]]:
+    """Normalize vin entries from RPC or eiquidus for detail pages."""
+    if not isinstance(vins, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for v in vins[:50]:
+        if not isinstance(v, dict):
+            continue
+        if v.get("coinbase"):
+            out.append({
+                "n": v.get("n"),
+                "coinbase": True,
+                "value": None,
+                "addresses": [],
+                "prev_txid": None,
+                "prev_vout": None,
+            })
+            continue
+        addrs: List[str] = []
+        val = v.get("value")
+        prevout = v.get("prevout") if isinstance(v.get("prevout"), dict) else {}
+        if prevout:
+            if val is None:
+                val = prevout.get("value")
+            pspk = prevout.get("scriptPubKey") or {}
+            if isinstance(pspk, dict):
+                raw_addrs = pspk.get("addresses")
+                if isinstance(raw_addrs, list):
+                    addrs = [str(a) for a in raw_addrs if a]
+                elif pspk.get("address"):
+                    addrs = [str(pspk.get("address"))]
+        out.append({
+            "n": v.get("n"),
+            "coinbase": False,
+            "value": val,
+            "addresses": addrs,
+            "prev_txid": v.get("txid"),
+            "prev_vout": v.get("vout"),
+        })
+    return out
+
+
+def _tx_fee_from_raw(raw: Dict[str, Any]) -> Optional[float]:
+    """Extract fee from RPC/eiquidus tx payload when available."""
+    fee = raw.get("fee")
+    if fee is not None:
+        try:
+            return abs(float(fee))
+        except (TypeError, ValueError):
+            pass
+    vins = raw.get("vin") if isinstance(raw.get("vin"), list) else []
+    vouts = raw.get("vout") if isinstance(raw.get("vout"), list) else []
+    if not vins or not vouts:
+        return None
+    if any(isinstance(v, dict) and v.get("coinbase") for v in vins):
+        return None
+    vin_sum = 0.0
+    vout_sum = 0.0
+    has_vin_val = False
+    for v in vins:
+        if not isinstance(v, dict):
+            continue
+        val = v.get("value")
+        if val is None and isinstance(v.get("prevout"), dict):
+            val = v["prevout"].get("value")
+        if val is not None:
+            try:
+                vin_sum += float(val)
+                has_vin_val = True
+            except (TypeError, ValueError):
+                pass
+    for v in vouts:
+        if isinstance(v, dict) and v.get("value") is not None:
+            try:
+                vout_sum += float(v["value"])
+            except (TypeError, ValueError):
+                pass
+    if has_vin_val and vout_sum > 0:
+        diff = vin_sum - vout_sum
+        return round(diff, 8) if diff >= 0 else None
+    return None
+
+
 def _rpc_tx_detail(txid: str) -> Optional[Dict[str, Any]]:
     try:
         from backend.services import mn2_rpc_client as rpc
@@ -244,12 +327,15 @@ def _rpc_tx_detail(txid: str) -> Optional[Dict[str, Any]]:
         else:
             blk = r["result"]
         vouts = blk.get("vout") if isinstance(blk.get("vout"), list) else []
+        vins = blk.get("vin") if isinstance(blk.get("vin"), list) else []
         return {
             "txid": txid,
             "confirmations": blk.get("confirmations"),
             "time": blk.get("time") or blk.get("blocktime"),
             "blockhash": blk.get("blockhash"),
             "vout_count": len(vouts),
+            "vin_count": len(vins),
+            "fee": _tx_fee_from_raw(blk),
             "vout": [
                 {
                     "n": v.get("n"),
@@ -262,6 +348,7 @@ def _rpc_tx_detail(txid: str) -> Optional[Dict[str, Any]]:
                 for v in vouts[:50]
                 if isinstance(v, dict)
             ],
+            "vin": _normalize_vins(vins),
             "source": "rpc",
         }
     except Exception:
@@ -283,13 +370,17 @@ def tx_detail(txid: str) -> Optional[Dict[str, Any]]:
         raw = _explorer_http_get(path, ttl=_DETAIL_TTL)
         if isinstance(raw, dict):
             vouts = raw.get("vout") if isinstance(raw.get("vout"), list) else []
+            vins = raw.get("vin") if isinstance(raw.get("vin"), list) else []
             out = {
                 "txid": txid,
                 "confirmations": raw.get("confirmations"),
                 "time": raw.get("time") or raw.get("blocktime"),
                 "blockhash": raw.get("blockhash"),
                 "vout_count": len(vouts),
+                "vin_count": len(vins),
+                "fee": _tx_fee_from_raw(raw),
                 "vout": vouts[:50] if vouts else None,
+                "vin": _normalize_vins(vins) if vins else None,
                 "source": "iquidus",
             }
             break
