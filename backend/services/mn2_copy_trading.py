@@ -80,6 +80,21 @@ def upsert_follower(
     return {"success": True, "follower": followers[uid]}
 
 
+def remove_follower(follower_user_id: str) -> Dict[str, Any]:
+    """Disable copy-trading for a follower."""
+    uid = str(follower_user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "follower_user_id required"}
+    data = _load()
+    followers = data.get("followers") or {}
+    if uid not in followers:
+        return {"success": True, "removed": False}
+    del followers[uid]
+    data["followers"] = followers
+    _save(data)
+    return {"success": True, "removed": True}
+
+
 def mirror_agent_run(leader_agent_id: str, leader_user_id: str, actions: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Mirror stake/unstake steps from a leader agent run onto followers."""
     data = _load()

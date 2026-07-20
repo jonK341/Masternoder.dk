@@ -158,6 +158,15 @@ def apply_order_payment(
     return {"action": "underpaid_credited"}
 
 
+def maybe_distribute_treasury_after_deposit() -> Dict[str, Any]:
+    """Best-effort auto-distribute trader funding after a treasury pool credit."""
+    try:
+        from backend.services.agent_wallet_service import distribute_agent_funding
+        return distribute_agent_funding()
+    except Exception as exc:
+        return {"success": False, "error": str(exc)[:300]}
+
+
 def run_scanner() -> Dict[str, Any]:
     """
     Scan wallet listtransactions for receives to our deposit addresses; credit mn2_balance
@@ -303,6 +312,11 @@ def run_scanner() -> Dict[str, Any]:
                     metadata={"confirmations": confirmations},
                 )
                 credits += 1
+                try:
+                    dist = maybe_distribute_treasury_after_deposit()
+                    result["treasury_distribute"] = dist
+                except Exception as exc:
+                    result["treasury_distribute_error"] = str(exc)[:200]
                 continue
 
             unified_points_db.add_points(
