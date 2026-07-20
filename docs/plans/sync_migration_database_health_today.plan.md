@@ -10,16 +10,16 @@ todos:
     status: completed
   - id: db-health-smoke
     content: "Phase 1b: Run smoke_db_health_flows.sh — health before/after user create still 200, missing_tables empty"
-    status: pending
+    status: completed
   - id: sync-migration-run
     content: "Phase 2: Run scripts/sync_database_migration.py on server — confirm sync_state, sync_domain_state, sync_audit, sync_health exist"
-    status: pending
+    status: completed
   - id: sync-verify-api
     content: "Phase 2b: Verify GET /api/sync/status + POST /api/sync/now succeed; confirm DB rows update (not JSON-only fallback)"
     status: completed
   - id: sync-deploy
     content: "Phase 2c: Deploy sync stack via deploy_sync_changes.py (or deploy.py subset) if server code is stale"
-    status: pending
+    status: completed
   - id: registry-doc
     content: "Phase 3 (repo): Add sync_database_migration.py to docs/db/migration_registry.md as ops_script/active"
     status: completed
@@ -243,12 +243,12 @@ After `POST /api/sync/now`, `sync_count` or `last_sync_at` should change. Check 
 
 ## Done checklist
 
-- [ ] `verify_server_env_db.sh` → `[OK] database health endpoint: 200`
-- [ ] `smoke_db_health_flows.sh` → both DB health curls **200**, `missing_tables: []`
-- [ ] `sync_database_migration.py` → four tables exist on prod
-- [ ] `POST /api/sync/now` → success; `sync_state` row updates in DB
-- [ ] No `"JSON fallback"` in uwsgi logs during sync
-- [ ] `MASTERNODES_UDREDNING_SESSION_REPORT.md` updated with date + evidence
+- [x] `verify_server_env_db.sh` → `[OK] database health endpoint: 200`
+- [x] `smoke_db_health_flows.sh` → both DB health curls **200**, `missing_tables: []`
+- [x] `sync_database_migration.py` → four tables exist on prod
+- [x] `POST /api/sync/now` → success; `sync_state` row updates in DB
+- [x] No `"JSON fallback"` in uwsgi logs during sync
+- [x] `MASTERNODES_UDREDNING_SESSION_REPORT.md` updated with date + evidence
 
 ---
 

@@ -60,16 +60,18 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 
 **Compliance:** No custody on Discord; rewards on-site with auth; gambling promos geo-blocked; affiliate disclosure in embed footer.
 
-## Stage 0 Gate A (verified)
+## Stage 0 Gate A (verified — prod 2026-07-20)
 
 | Check | Status |
 |-------|--------|
-| `GET /api/health` | Pass |
-| `GET /api/mn2/health` | Pass (degraded OK if daemon offline) |
-| `GET /api/themes/user` | Pass |
+| `GET /api/health` | Pass (prod 200) |
+| `GET /api/health/database` | Pass (prod 200, `missing_tables: []`) |
+| `GET /api/mn2/health` | Pass (`mn2_rpc` healthy, block ~950915) |
+| `GET /api/themes/user` | Pass (prod 200) |
 | Battle URL tests | Pass (`test_02_battle.py`) |
 | Unified points idempotency | Pass (`test_gate_a_orchestrator.py`) |
 | Casino MN2 rail | Pass (`casino_service.py`) |
+| Sync DB-backed | Pass (`sync_state` sync_count 92784, 4 tables on prod) |
 
 ## Shared backbone files
 

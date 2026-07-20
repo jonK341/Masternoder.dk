@@ -20,7 +20,10 @@
 | **`GET /api/health/system`** | **Deferred** | Out of scope for Gate A today |
 | **Local Gate A tests** | **25/25 pass** | `test_gate_a_orchestrator.py` + `test_02_battle.py` |
 
-**Konklusion:** Database health og sync APIs er **grønne** på prod. **Gate A blocker:** MN2 RPC work-queue saturation — kræver SSH til daemon restart/diagnose. SSH verify: sync tables + `smoke_db_health_flows.sh`.
+
+| **SSH verify 2026-07-20** | **OK** | `verify_server_env_db.sh` 200; `smoke_db_health_flows.sh` both DB health 200; sync tables populated (`sync_count` 92784); `masternoder2d` active on :9332; `mn2_rpc` healthy |
+
+**Konklusion:** Database health og sync APIs er **grønne** på prod. **Gate A:** Closed on prod (2026-07-20 SSH verify) — kræver SSH til daemon restart/diagnose. SSH verify: sync tables + `smoke_db_health_flows.sh`.
 ---
 
 ## 1. Aim (north star)
