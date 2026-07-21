@@ -140,7 +140,7 @@ def test_withdraw_binance_paper_debits_sales_pool(binance_env):
 def test_withdraw_binance_insufficient_pool(binance_env):
     pay = binance_env["pay"]
     pay.configure_binance("", "", withdraw_address="TBinanceUSDTaddr1234567890", network="TRC20")
-    res = pay.withdraw_binance(50.0)
+    res = pay.withdraw_binance(50.0, min_amount=0)
     assert res["success"] is False
     assert res["error"] == "insufficient_sales_pool_usdt"
 

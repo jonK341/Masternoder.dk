@@ -634,6 +634,32 @@ def place_market_order(
     if qty <= 0:
         return {"success": False, "error": "invalid_quantity"}
 
+    vcfg = _venue_api_cfg(venue_id) or {}
+    creds = venue_credentials(venue_id)
+    has_creds = bool(creds.get("api_key") and creds.get("api_secret"))
+    gate_ok = live_gate_ok(rotation=rotation)
+    live_supported = bool(vcfg.get("live_supported", True))
+    use_paper = (
+        dry_run is True
+        or not gate_ok
+        or not has_creds
+        or not live_supported
+    )
+    if use_paper or not vcfg.get("live_supported", True):
+        return {
+            "success": True,
+            "mode": "paper",
+            "simulated": True,
+            "venue_id": venue_id,
+            "symbol": symbol.upper(),
+            "side": side_l,
+            "quantity": qty,
+            "pair": pair,
+            "market": pair,
+            "quote": resolved.get("quote"),
+            "order_id": f"paper-{venue_id}-{int(time.time())}",
+        }
+
     norm = normalize_order_qty(
         venue_id, symbol.upper(), side_l, qty,
         market=pair, quote=resolved.get("quote"),

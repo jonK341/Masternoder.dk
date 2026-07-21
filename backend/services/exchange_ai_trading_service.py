@@ -261,6 +261,34 @@ def run_ai_tick(
         )
     if not best and ranked and force_execute:
         best = ranked[0]
+    if not best:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state() or {}
+            state_net = float(state.get("best_net_bps") or 0)
+            if state.get("ready") and state_net >= min_net:
+                sym = str(state.get("top_symbol") or "").upper()
+                buy_v = str(state.get("buy_venue") or "")
+                sell_v = str(state.get("sell_venue") or "")
+                buy_tick = ((injected or {}).get(buy_v) or {}).get(sym) or {}
+                sell_tick = ((injected or {}).get(sell_v) or {}).get(sym) or {}
+                best = {
+                    "symbol": sym,
+                    "buy_venue": buy_v,
+                    "sell_venue": sell_v,
+                    "buy_ask": float(buy_tick.get("ask") or 0),
+                    "sell_bid": float(sell_tick.get("bid") or 0),
+                    "net_bps": state_net,
+                    "est_profit_usd": float(state.get("est_profit_usd") or 0),
+                    "profitable": True,
+                    "ai_score": min_score,
+                    "actionable": True,
+                    "sized_notional_usd": float(cfg.get("paper_trade_usd") or 75),
+                    "source": "arb_threshold_state",
+                }
+        except Exception:
+            pass
 
     acct = arb.read_account(agent_id)
     acct.setdefault("agent_id", agent_id)

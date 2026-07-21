@@ -46,6 +46,11 @@ def activity_log(monkeypatch):
         return {"success": True, "event": events[-1]}
 
     monkeypatch.setattr(aes, "emit", _capture_emit)
+    try:
+        import backend.services.game_mn2_rewards as gm
+        monkeypatch.setattr(gm, "emit", _capture_emit)
+    except Exception:
+        pass
     return events
 
 

@@ -457,6 +457,10 @@ def _pick_auto_action(actions: List[Dict[str, Any]], allowed_types: List[str]) -
     if not live:
         candidates = [a for a in candidates if str(a.get("type") or "") != "external_market_buy"
                         and str(a.get("type") or "") != "external_market_sell"]
+    if profit_first_enabled():
+        hot, _net = _hot_spread_ready()
+        if hot:
+            candidates = [a for a in candidates if str(a.get("type") or "") != "reduce_notional"]
     if not candidates:
         return None
     candidates.sort(key=lambda a: (_TYPE_ORDER.get(str(a.get("type") or ""), 9), -_action_score(a)))
