@@ -1716,13 +1716,19 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     purge_stale_provisioning_hosts(max_age_hours=stale_hours, dry_run=False)
     registry_hosts = list(_load_hosts_doc().get("hosts") or [])
     hosts = list_hosts(include_internal=False)
+    hosts_by_id = {
+        str(h.get("id")): h
+        for h in list_hosts(include_internal=True)
+        if isinstance(h, dict) and h.get("id")
+    }
     net = network_masternodes(limit=100, fresh=fresh)
     chain_list = net.get("list") if isinstance(net.get("list"), list) else []
 
     synced_hosts: List[Dict[str, Any]] = []
     enabled_platform = 0
     for h in hosts:
-        on_chain = _match_on_chain(h, chain_list)
+        match_host = hosts_by_id.get(str(h.get("id") or "")) or h
+        on_chain = _match_on_chain(match_host, chain_list)
         st = (on_chain or {}).get("status") or h.get("status") or "unknown"
         if str(st).upper() == "ENABLED":
             enabled_platform += 1
