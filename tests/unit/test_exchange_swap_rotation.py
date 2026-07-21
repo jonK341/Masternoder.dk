@@ -155,6 +155,19 @@ def test_execute_rotation_external_requires_live_flag(rotation_env, monkeypatch)
 
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: False)
     monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, side, sym, usd, **kw: {
+            "ok": True,
+            "venue_id": venue,
+            "base": sym,
+            "quote": "USDT",
+            "market": f"{sym}_USDT",
+            "side": side,
+            "quantity": float(kw.get("quantity") or 0.001),
+            "notional_usd": usd,
+        },
+    )
+    monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
         lambda venue, sym, side, qty, dry_run=None, **kw: {"success": True, "mode": "paper", "simulated": True},
     )

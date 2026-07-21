@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from datetime import datetime, timezone
 
 from backend.services.monetization_config_service import (
     credits_to_ref_eq_generations,
@@ -61,10 +62,11 @@ def test_usage_allowance_with_metering_and_subscription(monkeypatch):
             json.dump(bindings, f)
 
         metering = os.path.join(cogs_dir, "metering.jsonl")
+        recent_ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         with open(metering, "w", encoding="utf-8") as f:
             f.write(
                 json.dumps({
-                    "ts": "2026-06-15T12:00:00+00:00",
+                    "ts": recent_ts,
                     "user_id": "u_allow",
                     "ratio_vs_reference_job": 1.0,
                     "cogs_usd": {"total_usd": 0.5},
@@ -73,7 +75,7 @@ def test_usage_allowance_with_metering_and_subscription(monkeypatch):
 
         monkeypatch.setenv("MASTERNODER_LOG_DIR", os.path.join(tmp, "logs"))
         monkeypatch.setattr(
-            "backend.services.cogs_metering_service._cogs_log_path",
+            "backend.services.monetization_allowance_service._metering_path",
             lambda: metering,
         )
 
@@ -116,11 +118,12 @@ def test_nudge_scan_writes_log(monkeypatch):
             json.dump(bindings, f)
 
         metering = os.path.join(cogs_dir, "metering.jsonl")
+        recent_ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         with open(metering, "w", encoding="utf-8") as f:
             for _ in range(3):
                 f.write(
                     json.dumps({
-                        "ts": "2026-06-16T12:00:00+00:00",
+                        "ts": recent_ts,
                         "user_id": "u_high",
                         "ratio_vs_reference_job": 1.0,
                         "cogs_usd": {"total_usd": 0.5},
@@ -129,7 +132,7 @@ def test_nudge_scan_writes_log(monkeypatch):
 
         monkeypatch.setenv("MASTERNODER_LOG_DIR", os.path.join(tmp, "logs"))
         monkeypatch.setattr(
-            "backend.services.cogs_metering_service._cogs_log_path",
+            "backend.services.monetization_allowance_service._metering_path",
             lambda: metering,
         )
 

@@ -20,6 +20,17 @@ def arb_env(tmp_path, monkeypatch):
     monkeypatch.setattr(vault, "_VAULT_PATH", str(data / "secrets_vault.enc"))
     monkeypatch.setattr(vault, "_REGISTRY_PATH", str(data / "wallet_registry.json"))
 
+    monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
+    monkeypatch.setattr(arb, "live_enabled", lambda: False)
+    monkeypatch.setattr(
+        "backend.services.exchange_extended_profit_service.write_arb_threshold_state",
+        lambda **kw: None,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_extended_profit_service.read_arb_threshold_state",
+        lambda: {},
+    )
+
     return {"ex": ex, "conn": conn, "arb": arb, "vault": vault}
 
 
@@ -155,7 +166,7 @@ def test_run_paper_tick_attempts_when_net_bps_above_threshold(arb_env, monkeypat
         lambda **kw: None,
     )
 
-    res = arb.run_paper_tick(injected=injected)
+    res = arb.run_paper_tick(injected=injected, hot_symbols=["LINK"])
     assert res["success"] is True
     assert res["executed_count"] >= 1
     assert len(exec_calls) >= 1
@@ -223,7 +234,7 @@ def test_run_paper_tick_force_global_when_hot_spread(arb_env, monkeypatch):
         lambda **kw: None,
     )
 
-    res = arb.run_paper_tick(injected=injected)
+    res = arb.run_paper_tick(injected=injected, hot_symbols=["LINK"])
     assert res["success"] is True
     assert res["executed_count"] >= 1
     assert res.get("best_qualifying", {}).get("net_bps", 0) >= 18
@@ -346,7 +357,7 @@ def test_force_global_when_threshold_state_ready(arb_env, monkeypatch):
     monkeypatch.setattr("backend.services.exchange_profit_path_service.record_scan", lambda **kw: "path-state")
     monkeypatch.setattr("backend.services.exchange_profit_path_service.record_execution", lambda **kw: None)
 
-    res = arb.run_paper_tick(injected=injected)
+    res = arb.run_paper_tick(injected=injected, hot_symbols=["LINK"])
     assert res["success"] is True
     assert res["executed_count"] >= 1
     assert any(c["agent_id"] == "arb_live_dual_farm" for c in exec_calls)

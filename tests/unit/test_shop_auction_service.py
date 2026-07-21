@@ -106,10 +106,10 @@ def test_bid_flow_accepts_highest_offer_and_records_history():
             with patch("backend.services.shop_db_service.shop_tables_exist", return_value=False):
                 assert shopdb.add_to_inventory("seller", "item-bid", "Bid Item", 1)
                 listing = auction.create_listing("seller", "item-bid", 1, 200)
-                bid_result = auction.place_bid("buyer", listing["listing_id"], 150)
-                assert bid_result["listing"]["highest_bid_coins"] == 150
 
                 with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+                    bid_result = auction.place_bid("buyer", listing["listing_id"], 150)
+                    assert bid_result["listing"]["highest_bid_coins"] == 150
                     sale = auction.accept_bid("seller", listing["listing_id"], bid_result["bid"]["bid_id"])
 
                 assert sale["listing"]["status"] == "sold"

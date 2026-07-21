@@ -1,8 +1,48 @@
 # MN2 TODO
 
-Last updated: **2026-06-28** (exchange rental + shop linked to main catalog, auto-renew)
+Last updated: **2026-07-20** (Stage 4 ecosystem hardening)
 
-See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md) · [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md)
+
+---
+
+## Stage 4 — ecosystem hardening (2026-07-20)
+
+### Done ✓ (orchestrator Stages 2–4)
+
+- **Gate C** — P2P market, generator/game/casino crypto, activity_events on earn paths; `GET /api/health/gate-c`
+- **Gate D** — activity monitor, security cron, control board, avatars, trader leveling; `GET /api/health/gate-d`
+- **Activity monitor** — `GET /api/activity/monitor`, SSE stream, `mn2-activity-monitor.js` on profile + game social tab
+- **Game crypto claims** — battle + starmap via `game_mn2_rewards.credit_mn2` + `game_mn2_reward` events
+- **Casino buy-in emit** — `casino_mn2_buyin` on MN2 buy-in pack purchase
+- **Wallet rotate emit** — `wallet_deposit_address_rotated` on deposit address refresh
+- **Customer aggregator** — `customer_new` / `customer_active`, deterministic SVG avatars + backfill cron
+- **Agents control board** — `agent_admin_service`, trader leveling caps, treasury reconcile tile
+- **Debugger quiz rewards** — `POST /api/debugger/quiz/submit` + `TAB_POINTS['quiz']`
+- **Agent crons in deploy** — trader, treasury, security-sweep `cron.d` + `scripts/deploy.py` manifest
+- **Report** — `docs/MN2_ECOSYSTEM_REPORT.md` updated through Stage 4
+
+### Critical (ops)
+
+| Task | Owner | Note |
+| ---- | ----- | ---- |
+| Treasury 600k MN2 → 6×100k | Ops | `treasury_signoff.json` + on-chain deposit + `POST /api/agents/treasury/distribute` |
+| Install crons on prod | SSH | `deploy.py` — agents-trader, agents-treasury, security-sweep |
+| Verify Gate D on prod | SSH | `curl -sS /api/health/gate-d` after deploy |
+
+### Upgrades (pytest / code)
+
+| Cluster | Tests | Action |
+| ------- | ----- | ------ |
+| Exchange suite | `test_exchange_*` (~20) | Align venue API cache helpers, swap rotation profit-first, arbitrage live flags |
+| PayPal routes | `test_12_paypal.py` (~12) | Register PayPal blueprint in isolated test app or update route paths |
+| Agent crypto rewards | `test_agent_crypto_rewards.py` | Implement `agent_crypto_rewards_service` for routed-chat MN2 |
+| Lab hub | `test_lab_hub_v21.py`, `test_lab_v2_status.py` | Sync version/catalog fixtures |
+| Monetization | `test_monetization_allowance.py`, `test_monetization_overage.py` | Refresh config fixtures for ref_eq packs |
+
+**Ecosystem pytest (green):** `test_stage2_closeout`, `test_stage3_gate_d`, `test_stage3_control_security`, `test_game_crypto_claims` (isolated), `test_activity_stream`, `test_debugger_quiz_rewards`, `test_gate_c_status`, `test_customer_aggregator`, `test_12_paypal`, `test_monetization_allowance`, `test_lab_hub_v21`
+
+**Full suite (2026-07-21):** 1035 passed, 15 failed — remaining failures are exchange env/data drift (`live_enabled`, treasury stash amounts, rental shop catalog).
 
 ---
 

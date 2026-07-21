@@ -2487,14 +2487,14 @@ def unified_generate_video():
             'style_preset': data.get('style_preset'),
             'theme_tone': data.get('theme_tone'),
             'creative_twist': data.get('creative_twist'),
+            'quality_mode': (data.get('quality_mode') or '').strip().lower() or None,
+            'encode_profile': (data.get('encode_profile') or '').strip().lower() or None,
+            'pay_with_mn2': bool(data.get('pay_with_mn2', False)),
         }
+        if data.get('mn2_tier'):
+            config['mn2_tier'] = data.get('mn2_tier')
         if _scr_org:
             config['scr_org_label'] = _scr_org[:256]
-        _ensure_video_job(doc_id, 'processing')
-        job = _get_video_job(doc_id)
-        job['type'] = 'documentary'
-        job['config'] = config
-        _set_video_job(doc_id, job)
 
         try:
             from backend.services.monetization_tier_service import evaluate_generation_against_tier
@@ -2532,6 +2532,20 @@ def unified_generate_video():
                 }), st
         except Exception:
             pass
+
+        try:
+            from backend.services.generator_mn2_service import charge_if_requested
+            mn2_res = charge_if_requested(user_id, doc_id, config, data)
+            if not mn2_res.get('success'):
+                return jsonify({'success': False, **mn2_res}), 402
+        except ImportError:
+            pass
+
+        _ensure_video_job(doc_id, 'processing')
+        job = _get_video_job(doc_id)
+        job['type'] = 'documentary'
+        job['config'] = config
+        _set_video_job(doc_id, job)
 
         _start_documentary_encoding(doc_id, config)
 

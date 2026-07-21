@@ -192,7 +192,7 @@ def execute_spatial_arbitrage(
     )
     if buy_venue != "internal" and norm.get("ok"):
         qty = float(norm["quantity"])
-    elif buy_venue != "internal" and not norm.get("ok"):
+    elif buy_venue != "internal" and not norm.get("ok") and global_live:
         return {
             "success": False,
             "error": norm.get("error") or "invalid_quantity",

@@ -295,8 +295,18 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
 
     if sup_arb and sup_arb.get("enabled", True):
         try:
-            from backend.services.exchange_arbitrage_service import run_paper_tick
-            results["arbitrage"] = run_paper_tick(hot_symbols=hot_symbols)
+            from backend.services.venue_funding_rotation_service import (
+                agent_rotation_enabled,
+                run_agent_trade_rotation_cycle,
+            )
+
+            if agent_rotation_enabled():
+                rot = run_agent_trade_rotation_cycle(hot_symbols=hot_symbols)
+                results["agent_rotation"] = rot
+                results["arbitrage"] = (rot.get("arb") or {}) if isinstance(rot, dict) else {}
+            else:
+                from backend.services.exchange_arbitrage_service import run_paper_tick
+                results["arbitrage"] = run_paper_tick(hot_symbols=hot_symbols)
         except Exception as exc:
             results["arbitrage"] = {"success": False, "error": str(exc)}
         try:

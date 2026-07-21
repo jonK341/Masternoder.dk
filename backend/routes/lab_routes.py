@@ -50,7 +50,23 @@ def _load_lab_catalog() -> list:
             data = json.load(f)
         raw = data.get("upgrades") if isinstance(data, dict) else None
         if isinstance(raw, list):
-            _LAB_CATALOG_CACHE = [u for u in raw if isinstance(u, dict) and isinstance(u.get("id"), str)]
+            catalog = [u for u in raw if isinstance(u, dict) and isinstance(u.get("id"), str)]
+            existing_ids = {str(u.get("id")) for u in catalog}
+            for i in range(1, 26):
+                cid = f"c5_upgrade_{i:02d}"
+                if cid not in existing_ids:
+                    catalog.append({
+                        "id": cid,
+                        "chapter": 5,
+                        "icon": "🧪",
+                        "name": f"Chapter 5 Upgrade {i}",
+                        "desc": f"Lab hub upgrade node {i} for cross-system research.",
+                        "tier": "Hub",
+                        "unlock": {},
+                        "research_cooldown_sec": 3600,
+                        "first_research_points": {"activity_points": 1},
+                    })
+            _LAB_CATALOG_CACHE = catalog
             _LAB_CATALOG_MTIME = mtime
     except Exception:
         _LAB_CATALOG_CACHE = []
@@ -1044,7 +1060,7 @@ def lab_v2_status_get():
     )
     return jsonify({
         "success": True,
-        "version": "2.0-first-slice",
+        "version": "2.1-hub-upgrade",
         "user_id": user_id,
         "rulebook": {
             "id": "lab_v2",
@@ -1086,6 +1102,63 @@ def lab_v2_status_get():
             "bridges": ["star_map", "unified_points", "agents", "shop", "sync"],
         },
     }), 200
+
+
+@lab_bp.route("/api/lab/news", methods=["GET"])
+def lab_news():
+    """Lab-channel items from platform news (with bootstrap when empty)."""
+    limit = request.args.get("limit", 5, type=int)
+    items = []
+    try:
+        from backend.routes.platform_news_routes import _load_news
+
+        items = [
+            i for i in _load_news()
+            if str(i.get("channel") or i.get("category") or "").lower() == "lab"
+        ]
+    except Exception:
+        items = []
+    if not items:
+        items = [{
+            "id": "lab-bootstrap",
+            "title": "Lab V2.1 hub online",
+            "summary": "Research hub upgrades, systems check, and idea board are live.",
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "channel": "lab",
+            "category": "lab",
+        }]
+    if limit > 0:
+        items = items[:limit]
+    return jsonify({"success": True, "channel": "lab", "news": items, "count": len(items)}), 200
+
+
+@lab_bp.route("/api/lab/systems-check", methods=["GET"])
+def lab_systems_check():
+    """Lightweight systems check tiles for the Lab hub."""
+    checks = [
+        {"id": "catalog", "ok": len(_load_lab_catalog()) >= 25, "label": "Lab catalog"},
+        {"id": "rulebook", "ok": bool(_load_lab_v2_rulebook().get("available")), "label": "Lab rulebook"},
+        {"id": "news", "ok": True, "label": "Lab news feed"},
+    ]
+    return jsonify({
+        "success": True,
+        "checks": checks,
+        "total": len(checks),
+        "passed": sum(1 for c in checks if c.get("ok")),
+    }), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["GET"])
+def lab_idea_board_get():
+    """Read idea board entries (empty without DB profile storage)."""
+    user_id = _resolve_uid()
+    hp = _hp_read(user_id)
+    ideas = []
+    if hp.get("db"):
+        prof = hp.get("profile") or {}
+        raw = prof.get("lab_idea_board") if isinstance(prof.get("lab_idea_board"), list) else []
+        ideas = [i for i in raw if isinstance(i, dict)]
+    return jsonify({"success": True, "user_id": user_id, "ideas": ideas, "count": len(ideas)}), 200
 
 
 @lab_bp.route("/api/lab/projects", methods=["GET"])

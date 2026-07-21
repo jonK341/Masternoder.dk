@@ -69,7 +69,7 @@
   }
 
   function poll() {
-    fetch('/api/ops/public-snapshot', { credentials: 'same-origin' })
+    fetch('/api/ops/snapshot', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (j.success) render(j);
@@ -90,7 +90,7 @@
       return;
     }
     try {
-      es = new EventSource('/api/ops/public-stream?interval=15');
+      es = new EventSource('/api/ops/stream?interval=15');
       es.onmessage = function (ev) {
         try {
           var data = JSON.parse(ev.data);

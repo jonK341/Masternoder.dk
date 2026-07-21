@@ -220,11 +220,8 @@ def _get_app():
     from flask import Flask
     app = Flask(__name__)
     app.config["TESTING"] = True
-    try:
-        from backend.routes.paypal_routes import paypal_bp
-        app.register_blueprint(paypal_bp)
-    except Exception:
-        pass
+    from backend.routes.paypal_routes import paypal_bp
+    app.register_blueprint(paypal_bp)
     return app
 
 
@@ -232,7 +229,7 @@ def test_paypal_create_order_route_invalid_amount():
     """Create order with amount <= 0 returns 400."""
     app = _get_app()
     with app.test_client() as c:
-        r = c.post("/vidgenerator/api/paypal/create-order", json={
+        r = c.post("/api/paypal/create-order", json={
             "amount": 0,
             "item_name": "Test",
         })
@@ -245,7 +242,7 @@ def test_paypal_create_order_route_invalid_amount_negative():
     """Create order with negative amount returns 400."""
     app = _get_app()
     with app.test_client() as c:
-        r = c.post("/vidgenerator/api/paypal/create-order", json={
+        r = c.post("/api/paypal/create-order", json={
             "amount": -1.0,
             "item_name": "Test",
         })
@@ -256,7 +253,7 @@ def test_paypal_create_order_route_account_required():
     """Create order with default_user returns 400 ACCOUNT_REQUIRED."""
     app = _get_app()
     with app.test_client() as c:
-        r = c.post("/vidgenerator/api/paypal/create-order", json={
+        r = c.post("/api/paypal/create-order", json={
             "amount": 1.0,
             "item_name": "Test",
             "user_id": "default_user",
@@ -283,7 +280,7 @@ def test_paypal_create_order_route_success_mock():
         with patch.object(svc, "requests") as req:
             req.post.return_value = mock_response
             with app.test_client() as c:
-                r = c.post("/vidgenerator/api/paypal/create-order", json={
+                r = c.post("/api/paypal/create-order", json={
                     "amount": 2.99,
                     "item_id": "premium-pack",
                     "item_name": "Premium Pack",
@@ -300,7 +297,7 @@ def test_paypal_capture_route_missing_order_id():
     """Capture without order_id returns 400."""
     app = _get_app()
     with app.test_client() as c:
-        r = c.post("/vidgenerator/api/paypal/capture", json={})
+        r = c.post("/api/paypal/capture", json={})
         assert r.status_code == 400
         data = r.get_json()
         assert data.get("success") is False
@@ -327,7 +324,7 @@ def test_paypal_capture_route_order_id_in_query():
                 with patch("backend.services.purchase_notification_service.notify_purchase"):
                     with app.test_client() as c:
                         r = c.post(
-                            "/vidgenerator/api/paypal/capture",
+                            "/api/paypal/capture",
                             json={"user_id": "test_user", "item_id": "coin-pack-s"},
                             query_string={"order_id": "ORDER-FROM-QUERY"},
                         )
@@ -357,7 +354,7 @@ def test_paypal_capture_route_grants_coins_for_coin_pack():
             with patch("backend.services.unified_points_database.unified_points_db", MagicMock()) as mock_db:
                 with patch("backend.services.purchase_notification_service.notify_purchase"):
                     with app.test_client() as c:
-                        r = c.post("/vidgenerator/api/paypal/capture", json={
+                        r = c.post("/api/paypal/capture", json={
                             "order_id": "ORD-500",
                             "user_id": "buyer_123",
                             "item_id": "coin-pack-m",
@@ -393,7 +390,7 @@ def test_paypal_capture_route_grants_monetization_for_non_coin_pack():
             with patch("backend.services.unified_points_database.unified_points_db", MagicMock()) as mock_db:
                 with patch("backend.services.purchase_notification_service.notify_purchase"):
                     with app.test_client() as c:
-                        r = c.post("/vidgenerator/api/paypal/capture", json={
+                        r = c.post("/api/paypal/capture", json={
                             "order_id": "ORD-OTHER",
                             "user_id": "buyer_456",
                             "item_id": "premium-theme",
@@ -421,7 +418,7 @@ def test_paypal_capture_route_service_failure():
         with patch.object(svc, "requests") as req:
             req.post.return_value = mock_response
             with app.test_client() as c:
-                r = c.post("/vidgenerator/api/paypal/capture", json={
+                r = c.post("/api/paypal/capture", json={
                     "order_id": "ORD-500",
                     "user_id": "test_user",
                 })
@@ -447,7 +444,7 @@ def test_paypal_create_order_return_url_contains_item_and_user():
         with patch.object(svc, "requests") as req:
             req.post.return_value = mock_response
             with app.test_client() as c:
-                r = c.post("/vidgenerator/api/paypal/create-order", json={
+                r = c.post("/api/paypal/create-order", json={
                     "amount": 1.0,
                     "item_id": "coin-pack-s",
                     "item_name": "100 Coins",
@@ -481,7 +478,7 @@ def test_paypal_capture_calls_notify_purchase():
             with patch("backend.services.unified_points_database.unified_points_db", MagicMock()):
                 with patch("backend.services.purchase_notification_service.notify_purchase") as mock_notify:
                     with app.test_client() as c:
-                        r = c.post("/vidgenerator/api/paypal/capture", json={
+                        r = c.post("/api/paypal/capture", json={
                             "order_id": "ORD-NOTIFY",
                             "user_id": "user_xyz",
                             "item_id": "coin-pack-s",
@@ -519,7 +516,7 @@ def test_paypal_capture_grants_shop_item():
                             mock_record.return_value = 999
                             with app.test_client() as c:
                                 # Use a real shop item id from seed (e.g. shop-1 has coin price)
-                                r = c.post("/vidgenerator/api/paypal/capture", json={
+                                r = c.post("/api/paypal/capture", json={
                                     "order_id": "ORD-SHOP",
                                     "user_id": "buyer_shop",
                                     "item_id": "shop-1",
