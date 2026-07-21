@@ -123,16 +123,27 @@ def masternode_collateral_outputs():
 @mn2_masternode_bp.route("/api/mn2/masternode/checkout/config", methods=["GET"])
 def masternode_checkout_config():
     try:
+        user_id = resolve_user_id(from_body=False, from_query=True)
         result = mn_hosting.get_paypal_config()
         st = mn_service.get_service_status()
-        sample = mn_hosting.pricing_for_slots(1)
+        sample = mn_hosting.pricing_for_slots(1, user_id)
+        rails = mn_hosting.payment_rails_for_user(user_id)
+        shop = dict(result.get("shop_payments") or {})
+        shop["payment_rails"] = rails
+        is_customer = user_id not in mn_hosting._staff_user_ids()
         return jsonify({
             "success": True,
             **result,
+            "shop_payments": shop,
             "slots_available": st.get("slots_available"),
             "hosted_count": st.get("hosted_count"),
             "collateral_mn2": st.get("collateral_mn2"),
             "pricing_sample": sample,
+            "paypal_checkout_note": (
+                "You will sign in with your own PayPal account. "
+                "Do not use the merchant/seller PayPal account."
+                if is_customer else None
+            ),
         }), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

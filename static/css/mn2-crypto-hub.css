@@ -306,6 +306,7 @@ body.mn2-crypto-hub code {
 }
 .mn-checkout-card h3 { margin: 0 0 8px; color: #ffd166; font-size: 1.1rem; }
 .mn-checkout-lead { margin: 0 0 16px; color: #dce6ff; font-size: 0.92rem; line-height: 1.5; }
+.mn-checkout-paypal-note { margin: -8px 0 14px; color: #9ec5ff; font-size: 0.85rem; line-height: 1.45; }
 .mn-checkout-row {
   display: flex;
   flex-wrap: wrap;

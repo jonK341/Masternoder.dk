@@ -424,13 +424,20 @@
         renderMnRpcBanner('request failed');
       });
 
-    fetch('/api/mn2/masternode/checkout/config', { credentials: 'same-origin' })
+    fetch('/api/mn2/masternode/checkout/config?user_id=' + encodeURIComponent(uid()), { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (cfg) {
         if (cfg && cfg.success) {
           mnCheckoutConfig = cfg;
           applyMasternodeCheckoutPricing();
           applyMasternodeCheckoutRails();
+          var note = q('mn-checkout-paypal-note');
+          if (note && cfg.paypal_checkout_note) {
+            note.textContent = cfg.paypal_checkout_note;
+            note.hidden = false;
+          } else if (note) {
+            note.hidden = true;
+          }
         }
       }).catch(function () {});
 
@@ -535,7 +542,7 @@
 
   function payHostingPayPal(quote) {
     var msg = q('mn-checkout-msg');
-    if (msg) msg.textContent = 'Opening PayPal…';
+    if (msg) msg.textContent = 'Opening PayPal — sign in with your personal buyer account…';
     var returnUrl = window.location.origin + '/explorer?tab=masternodes&paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id);
     var cancelUrl = window.location.origin + '/explorer?tab=masternodes&paypal=cancel';
     return fetch('/api/mn2/masternode/checkout/order', {
