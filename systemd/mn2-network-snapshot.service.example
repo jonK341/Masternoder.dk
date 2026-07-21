@@ -1,0 +1,7 @@
+[Unit]
+Description=MN2 network overview snapshot curl
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/html
+ExecStart=/var/www/html/cron/mn2_network_snapshot.sh

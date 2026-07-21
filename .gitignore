@@ -66,3 +66,7 @@ tools/mn2-daemon/
 # MN2 verified users list (Phase 10); maintain on server or via ops API
 data/mn2_verified_users.json
 
+# MN2 network monitor snapshots (server runtime; P4 #180)
+data/mn2_network_history.jsonl
+data/mn2_explorer_probe_state.json
+

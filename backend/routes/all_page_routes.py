@@ -245,6 +245,66 @@ def casino_redirect():
     return redirect('/casino/', code=301)
 
 
+@all_page_bp.route('/explorer/tx/<txid>', methods=['GET'])
+def explorer_tx_page(txid):
+    """In-page MN2 transaction detail (read-only)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'explorer')
+        if os.path.isfile(os.path.join(page_dir, 'tx.html')):
+            resp = send_from_directory(page_dir, 'tx.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=60'
+            return resp
+    except Exception as exc:
+        return f'Error loading explorer tx page: {exc}', 500
+    return 'Transaction page not found', 404
+
+
+@all_page_bp.route('/explorer/status', methods=['GET'])
+def explorer_status_page():
+    """Public explorer health status page."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'explorer')
+        if os.path.isfile(os.path.join(page_dir, 'status.html')):
+            resp = send_from_directory(page_dir, 'status.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=60'
+            return resp
+    except Exception as exc:
+        return f'Error loading explorer status page: {exc}', 500
+    return 'Status page not found', 404
+
+
+@all_page_bp.route('/explorer/block/<ref>', methods=['GET'])
+def explorer_block_page(ref):
+    """In-page MN2 block detail (read-only)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'explorer')
+        if os.path.isfile(os.path.join(page_dir, 'block.html')):
+            resp = send_from_directory(page_dir, 'block.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=60'
+            return resp
+    except Exception as exc:
+        return f'Error loading explorer block page: {exc}', 500
+    return 'Block page not found', 404
+
+
+@all_page_bp.route('/explorer/address/<address>', methods=['GET'])
+def explorer_address_page(address):
+    """In-page MN2 address detail (read-only)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'explorer')
+        if os.path.isfile(os.path.join(page_dir, 'address.html')):
+            resp = send_from_directory(page_dir, 'address.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=60'
+            return resp
+    except Exception as exc:
+        return f'Error loading explorer address page: {exc}', 500
+    return 'Address page not found', 404
+
+
 @all_page_bp.route('/casino/', methods=['GET'])
 @all_page_bp.route('/casino/index.html', methods=['GET'])
 def casino_page():

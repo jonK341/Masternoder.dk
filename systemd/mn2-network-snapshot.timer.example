@@ -1,0 +1,9 @@
+[Unit]
+Description=MN2 network overview snapshot (fallback when cron.d missing)
+
+[Timer]
+OnCalendar=*:0/10
+Persistent=true
+
+[Install]
+WantedBy=timers.target

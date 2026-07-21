@@ -84,3 +84,84 @@ def test_network_masternodes_passes_fresh(monkeypatch):
     out = mn.network_masternodes(limit=25, fresh=True)
     assert out.get("success") is True
     assert seen == {"fresh": True, "limit": 25}
+
+
+def test_tx_detail_invalid_txid():
+    from backend.services import mn2_explorer_data as ex
+    assert ex.tx_detail("not-a-txid") is None
+
+
+def test_tx_detail_rpc_fallback(monkeypatch):
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    monkeypatch.setattr(ex, "_explorer_http_get", lambda path, ttl=45: None)
+    monkeypatch.setattr(
+        ex,
+        "_rpc_tx_detail",
+        lambda txid: {"txid": txid, "confirmations": 10, "source": "rpc"},
+    )
+    txid = "b" * 64
+    out = ex.tx_detail(txid)
+    assert out is not None
+    assert out["source"] == "rpc"
+
+
+def test_address_detail_valid_minimal():
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    addr = "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX"
+    out = ex.address_detail(addr)
+    assert out is not None
+    assert out["address"] == addr
+
+
+def test_rich_list_empty_on_failure(monkeypatch):
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+    monkeypatch.setattr(ex, "_explorer_http_get", lambda path, ttl=90: None)
+    assert ex.rich_list(limit=5) == []
+
+
+def test_is_masternode_active():
+    from backend.services import mn2_explorer_data as ex
+    assert ex.is_masternode_active("ACTIVE") is True
+    assert ex.is_masternode_active("ENABLED") is True
+    assert ex.is_masternode_active("MISSING") is False
+
+
+def test_classify_search_variants():
+    from backend.services import mn2_explorer_data as ex
+    txid = "a" * 64
+    assert ex.classify_search(txid)["type"] == "tx"
+    assert ex.classify_search("12345")["type"] == "block"
+    assert ex.classify_search("")["type"] == "invalid"
+
+
+def test_block_detail_mocked(monkeypatch):
+    from backend.services import mn2_explorer_data as ex
+    ex._CACHE.clear()
+
+    class _Rpc:
+        @staticmethod
+        def getblockhash(h):
+            return {"result": f"hash{h}"}
+
+        def _call(self, method, params):
+            if method == "getblock":
+                return {
+                    "result": {
+                        "height": 100,
+                        "hash": params[0],
+                        "time": 1,
+                        "tx": ["a", "b"],
+                        "size": 900,
+                    }
+                }
+            return {"error": "unsupported"}
+
+    monkeypatch.setattr("backend.services.mn2_rpc_client.getblockhash", _Rpc.getblockhash)
+    monkeypatch.setattr("backend.services.mn2_rpc_client._call", _Rpc()._call)
+    out = ex.block_detail("100")
+    assert out is not None
+    assert out.get("height") == 100
+    assert out.get("tx_count") == 2

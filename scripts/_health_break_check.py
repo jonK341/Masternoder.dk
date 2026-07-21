@@ -27,6 +27,10 @@ for u in \
   "http://127.0.0.1:5000/casino/" \
   "http://127.0.0.1:5000/api/exchange/sales-pool/status" \
   "http://127.0.0.1:5000/explorer/" \
+  "http://127.0.0.1:5000/api/mn2/network-overview" \
+  "http://127.0.0.1:5000/api/mn2/services" \
+  "http://127.0.0.1:5000/api/mn2/explorer/status" \
+  "http://127.0.0.1:5000/api/mn2/rich-list?limit=1" \
   "http://127.0.0.1:5001/"
 do
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 12 "$u" 2>/dev/null || echo curl-fail)

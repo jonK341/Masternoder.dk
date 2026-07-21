@@ -1,0 +1,74 @@
+name: Explorer tests
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'explorer/**'
+      - 'static/js/mn2-explorer*.js'
+      - 'static/js/mn2-crypto-hub.js'
+      - 'static/css/mn2-crypto-hub.css'
+      - 'tests/unit/test_explorer*.py'
+      - 'tests/unit/test_mn2_explorer*.py'
+      - 'tests/unit/test_mn2_routes_explorer_links.py'
+      - '.github/workflows/explorer-tests.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'explorer/**'
+      - 'static/js/mn2-explorer*.js'
+      - 'tests/unit/test_explorer*.py'
+
+jobs:
+  explorer-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest flask requests
+
+      - name: Run explorer unit tests
+        run: |
+          python -m pytest \
+            tests/unit/test_explorer_p0.py \
+            tests/unit/test_explorer_p1.py \
+            tests/unit/test_explorer_p2.py \
+            tests/unit/test_explorer_p3.py \
+            tests/unit/test_explorer_p4.py \
+            tests/unit/test_explorer_p5.py \
+            tests/unit/test_explorer_p6.py \
+            tests/unit/test_mn2_explorer_urls.py \
+            tests/unit/test_mn2_explorer_data.py \
+            tests/unit/test_mn2_routes_explorer_links.py \
+            -m "not integration" \
+            --tb=short -q
+
+  explorer-live-contract:
+    runs-on: ubuntu-latest
+    if: vars.EQUIDUS_LIVE_EXT_URL != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Live eiquidus contract (optional)
+        env:
+          EQUIDUS_LIVE_EXT_URL: ${{ vars.EQUIDUS_LIVE_EXT_URL }}
+        run: |
+          python -m pytest tests/unit/test_explorer_p5.py::test_p5_207_eiquidus_ext_contract_live -m integration -q

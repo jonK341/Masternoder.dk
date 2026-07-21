@@ -106,3 +106,24 @@ def explorer_block_url(block_hash_or_height: str, cfg: Optional[Dict[str, Any]] 
     if explorer_kind(cfg) == "chainz":
         return f"{base}/block.dws?id={ref}"
     return f"{base}/block/{ref}"
+
+
+def hub_address_url(address: str) -> str:
+    """In-page Crypto Hub address detail (on-site, read-only)."""
+    if not (address or "").strip():
+        return ""
+    return f"/explorer/address/{address.strip()}"
+
+
+def hub_tx_url(txid: str) -> str:
+    if not (txid or "").strip():
+        return ""
+    return f"/explorer/tx/{txid.strip()}"
+
+
+def hub_search_url(query: str) -> str:
+    """Open Crypto Hub explorer tab with search prefilled."""
+    if not (query or "").strip():
+        return "/explorer/?tab=explorer"
+    from urllib.parse import quote
+    return f"/explorer/?tab=explorer&q={quote(query.strip())}"

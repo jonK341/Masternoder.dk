@@ -223,6 +223,16 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
 - **GET** `/api/mn2/network-alerts?limit=20` → `{ success, alerts: [{ ts, type, message, ... }] }`. Edge-triggered `staking_stopped` / `height_stall` events (also written to `logs/mn2_network_alerts.jsonl`; admin-notified if `MN2_ALERT_USER_ID` is set).
 - **GET** `/api/mn2/recent-blocks?limit=10` → `{ success, blocks: [{ height, hash, time, tx_count, size }], count }`. Latest blocks walked from the tip via RPC (`getblockhash`/`getblock`), cached ~30s; `[]` if the daemon is unreachable.
 - **GET** `/api/mn2/masternodes?limit=50` → `{ success, total, enabled, list: [{ rank, addr, status, lastpaid, activetime, version }] }`. From `listmasternodes`, cached ~60s.
+- **GET** `/api/mn2/explorer/tx/<txid>` → `{ success, transaction: { txid, confirmations, vout_count, vout?, source, explorer_tx_url } }`. Read-only; eiquidus ext API with RPC fallback.
+- **GET** `/api/mn2/explorer/address/<address>` → `{ success, address: { address, balance, received?, sent?, source, explorer_address_url } }`. Read-only; display-only.
+- **GET** `/api/mn2/rich-list?limit=100` → `{ success, rich_list: [{ rank, address, balance }], count }`. Cached ~90s; empty list while eiquidus index syncs.
+- **GET** `/api/mn2/supply-stats` → `{ success, circulating_supply?, source: { circulating_supply: "iquidus"|"rpc" } }`.
+
+**URL shapes** (via `explorer_kind` in config / `MN2_EXPLORER_KIND`):
+- `chainz`: `/tx.dws?txid=…`, `/address.dws?addr=…`
+- `iquidus` (eiquidus): `/tx/<txid>`, `/address/<addr>`
+
+On-site pages: `/explorer/tx/<txid>`, `/explorer/address/<address>` (proxy summary + link to full block explorer).
 
 `network-overview` also includes `circulating_supply` (from `gettxoutsetinfo.total_amount`, cached ~10 min) enabling a "% of supply staked by the pool" figure.
 
@@ -242,6 +252,10 @@ For headless / cron / LLM personas acting **on behalf of** users, separate from 
 | Order payment status | GET | `/api/mn2/order-payment/status?payment_ref=...` | Poll until fulfilled |
 | Get price | GET | `/api/mn2/price` | Phase 9: MN2/USD + last_updated (no auth) |
 | Network overview | GET | `/api/mn2/network-overview` | Explorer + pool + on-ramp + P2P stats (no auth); backs `/explorer` page |
+| Explorer tx detail | GET | `/api/mn2/explorer/tx/<txid>` | Read-only transaction summary |
+| Explorer address detail | GET | `/api/mn2/explorer/address/<address>` | Read-only address summary |
+| Rich list | GET | `/api/mn2/rich-list?limit=100` | Top addresses by balance |
+| Supply stats | GET | `/api/mn2/supply-stats` | Circulating supply (iquidus → RPC) |
 | List verified users | GET | `/api/mn2/ops/verified-users` | Phase 10: ops only (token) |
 | Add/remove verified | POST | `/api/mn2/ops/verify-user` | Phase 10: body user_id, action=add\|remove (token) |
 

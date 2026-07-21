@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN2 Address — Explorer</title>
+    <meta name="description" content="MasterNoder2 address balance and transactions">
+    <meta property="og:title" content="MN2 Address — Explorer">
+    <meta property="og:description" content="MasterNoder2 address balance and transactions">
+    <meta property="og:type" content="profile">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260720e">
+</head>
+<body class="layout-standard mn2-crypto-hub">
+    <div class="mn2-hub-wrap explorer-page ex-detail-page">
+        <p class="ex-detail-back"><a href="/explorer/">← Back to Crypto Hub</a></p>
+        <nav id="ex-breadcrumb" class="ex-breadcrumb" aria-label="Breadcrumb"></nav>
+        <h1>Address</h1>
+        <div id="ex-detail-loading" class="ex-detail-loading">Loading…</div>
+        <div id="ex-detail-body" class="ex-detail-body" style="display:none"></div>
+        <button type="button" id="ex-raw-toggle" class="ex-raw-toggle" hidden aria-expanded="false">Show raw JSON</button>
+        <pre id="ex-raw-json" class="ex-raw-json" hidden></pre>
+        <p id="ex-detail-external" class="ex-detail-external"></p>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script src="/static/js/mn2-explorer-detail.js?v=20260720e" defer></script>
+</body>
+</html>

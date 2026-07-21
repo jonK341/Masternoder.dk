@@ -1,0 +1,40 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "testdata", "uid": "mn2-network-history" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "list" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "block_height"
+        }
+      ],
+      "title": "MN2 block height (wire to /api/mn2/network-history)",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 8 },
+      "id": 2,
+      "options": { "content": "Import this dashboard and point panels at your Prometheus/Loki source fed by `GET /api/mn2/network-history` or `data/mn2_network_history.jsonl`. Fields: block_height, mn2_usd_price, difficulty, network_hashps, staking_weight, masternode_count, pool_total_staked.", "mode": "markdown" },
+      "title": "Setup",
+      "type": "text"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["mn2", "explorer", "network-history"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "MN2 Network History",
+  "uid": "mn2-network-history",
+  "version": 1
+}

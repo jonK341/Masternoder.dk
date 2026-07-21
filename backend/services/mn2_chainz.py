@@ -47,9 +47,15 @@ def chainz_getblockcount() -> Optional[int]:
 
 
 def chainz_ticker_usd() -> Optional[float]:
-    """Chainz API MN2/USD price. Cached 10 min. Returns None on error."""
+    """Chainz API MN2/USD price. Cached 10 min. Returns None on error or zero price."""
     out = chainz_ticker_usd_with_updated()
-    return out.get("price") if isinstance(out, dict) else None
+    if not isinstance(out, dict):
+        return None
+    try:
+        px = float(out.get("price"))
+        return px if px > 0 else None
+    except (TypeError, ValueError):
+        return None
 
 
 _CACHE_TTL.update({"getdifficulty": 300, "mncount": 600})
@@ -340,12 +346,14 @@ def network_overview() -> Dict[str, Any]:
         if out["mn2_usd_price"] is None:
             px_bundle = mn2_usd_price_median()
             if isinstance(px_bundle, dict) and px_bundle.get("price") is not None:
-                out["mn2_usd_price"] = round(float(px_bundle["price"]), 8)
-                out["source"]["mn2_usd_price"] = px_bundle.get("source_label") or "median"
+                px_med = float(px_bundle["price"])
+                if px_med > 0:
+                    out["mn2_usd_price"] = round(px_med, 8)
+                    out["source"]["mn2_usd_price"] = px_bundle.get("source_label") or "median"
             else:
                 px = chainz_ticker_usd()
-                if px is not None:
-                    out["mn2_usd_price"] = round(px, 8); out["source"]["mn2_usd_price"] = "chainz"
+                if px is not None and float(px) > 0:
+                    out["mn2_usd_price"] = round(float(px), 8); out["source"]["mn2_usd_price"] = "chainz"
         if out["masternode_count"] is None:
             mc = chainz_masternode_count()
             if mc is not None:
@@ -451,6 +459,8 @@ def chainz_ticker_usd_with_updated() -> Optional[Dict[str, Any]]:
         try:
             from datetime import datetime, timezone
             price = float(raw) if isinstance(raw, (int, float)) else float(str(raw).strip())
+            if price <= 0:
+                return None
             last_iso = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
             return {"price": price, "last_updated_iso": last_iso}
         except (ValueError, TypeError):
@@ -472,7 +482,7 @@ def chainz_ticker_usd_with_updated() -> Optional[Dict[str, Any]]:
         except ValueError:
             value = None
         _CACHE[q] = {"value": value, "ts": time.time()}
-        if value is None:
+        if value is None or value <= 0:
             return None
         from datetime import datetime, timezone
         last_iso = datetime.fromtimestamp(_CACHE[q]["ts"], tz=timezone.utc).isoformat().replace("+00:00", "Z")

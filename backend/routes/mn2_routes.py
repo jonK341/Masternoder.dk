@@ -13,25 +13,14 @@ _log = logging.getLogger(__name__)
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
-
-
-def _explorer_base_url() -> str:
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(base, "data", "mn2_config.json")
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return (json.load(f).get("explorer_base_url") or "").strip() or "https://chainz.cryptoid.info/mn2/"
-        except Exception:
-            pass
-    return "https://chainz.cryptoid.info/mn2/"
-
-
-def _explorer_tx_url(txid: str) -> str:
-    if not (txid or "").strip():
-        return ""
-    base = _explorer_base_url().rstrip("/")
-    return f"{base}/tx.dws?txid={txid.strip()}"
+from backend.services.mn2_explorer_urls import (
+    explorer_address_url,
+    explorer_base_url,
+    explorer_tx_url,
+    hub_address_url,
+    hub_search_url,
+    hub_tx_url,
+)
 
 
 def _load_mn2_config() -> dict:
@@ -59,8 +48,7 @@ def mn2_balance():
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
-    base = _explorer_base_url().rstrip("/")
-    shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    shop_revenue_explorer_url = explorer_address_url(shop_revenue_address) if shop_revenue_address else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -68,6 +56,8 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "shop_revenue_hub_url": hub_address_url(shop_revenue_address) if shop_revenue_address else None,
+        "shop_revenue_hub_search_url": hub_search_url(shop_revenue_address) if shop_revenue_address else None,
     }
     if config.get("withdrawal_requires_verification"):
         try:
@@ -144,13 +134,13 @@ def mn2_deposit_address():
             "deposit_address": None,
         }), 200
     addr = result.get("deposit_address") or ""
-    base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={addr}" if addr else ""
     return jsonify({
         "success": True,
         "user_id": result.get("user_id"),
         "deposit_address": addr,
-        "explorer_address_url": explorer_address_url,
+        "explorer_address_url": explorer_address_url(addr),
+        "hub_address_url": hub_address_url(addr),
+        "hub_search_url": hub_search_url(addr),
     }), 200
 
 
@@ -162,19 +152,18 @@ def mn2_transactions():
     user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
     limit = min(100, max(1, int(request.args.get("limit", 50))))
     entries = get_entries_by_user(user_id, limit=limit)
-    base = _explorer_base_url().rstrip("/")
     out = []
     for e in entries:
         item = dict(e)
         if (e.get("txid") or "").strip():
-            item["explorer_tx_url"] = _explorer_tx_url(e["txid"])
+            item["explorer_tx_url"] = explorer_tx_url(e["txid"])
+            item["hub_tx_url"] = hub_tx_url(e["txid"])
         else:
             item["explorer_tx_url"] = None
+            item["hub_tx_url"] = None
         addr = (e.get("address") or "").strip()
-        if addr:
-            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
-        else:
-            item["explorer_address_url"] = None
+        item["explorer_address_url"] = explorer_address_url(addr) if addr else None
+        item["hub_address_url"] = hub_address_url(addr) if addr else None
         out.append(item)
     return jsonify({"success": True, "user_id": user_id, "transactions": out}), 200
 
@@ -218,7 +207,7 @@ def mn2_statement():
             "fee": meta.get("fee"),
             "txid": txid or None,
             "address": (e.get("address") or "") or None,
-            "explorer_tx_url": _explorer_tx_url(txid) if txid else None,
+            "explorer_tx_url": explorer_tx_url(txid) if txid else None,
         })
 
     year = (request.args.get("year") or "").strip()
@@ -335,8 +324,6 @@ def mn2_create_order_payment():
         price_mn2=price_mn2,
         address=address,
     )
-    base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={address}" if address else ""
     return jsonify({
         "success": True,
         "payment_ref": order["payment_ref"],
@@ -346,7 +333,7 @@ def mn2_create_order_payment():
         "item_id": item_id,
         "item_name": order["item_name"],
         "quantity": quantity,
-        "explorer_address_url": explorer_address_url,
+        "explorer_address_url": explorer_address_url(address),
     }), 200
 
 
@@ -381,7 +368,7 @@ def mn2_order_payment_status():
         "fulfilled_at": order.get("fulfilled_at"),
     }
     if order.get("txid"):
-        out["explorer_tx_url"] = _explorer_tx_url(order["txid"])
+        out["explorer_tx_url"] = explorer_tx_url(order["txid"])
     return jsonify(out), 200
 
 
@@ -1109,7 +1096,7 @@ def mn2_withdraw():
     return jsonify({
         "success": True,
         "txid": txid.strip(),
-        "explorer_tx_url": _explorer_tx_url(txid),
+        "explorer_tx_url": explorer_tx_url(txid),
         "amount_sent": amount_sent,
         "fee": fee,
     }), 200

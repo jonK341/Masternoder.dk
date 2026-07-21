@@ -271,6 +271,11 @@
     return '<span class="mn-badge ' + cls + '">' + (status || 'unknown') + '</span>';
   }
 
+  function isMnActive(status) {
+    var s = String(status || '').toUpperCase();
+    return s === 'ENABLED' || s === 'ACTIVE';
+  }
+
   function formatActivetime(seconds, status) {
     var s = Number(seconds);
     if (isNaN(s) || seconds == null || seconds === '') return '';
@@ -363,7 +368,7 @@
           } else {
             grid.innerHTML = hosts.map(function (h) {
               var st = h.on_chain_status || h.status || 'unknown';
-              var cls = String(st).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' :
+              var cls = isMnActive(st) ? 'mn-node-card--enabled' :
                 (h.status === 'queued' ? 'mn-node-card--queued' : 'mn-node-card--active');
               var act = h.on_chain_activetime != null ? h.on_chain_activetime : null;
               return renderNodeCard(
@@ -399,7 +404,7 @@
             tbody.innerHTML = list.map(function (m) {
               var st = m.status || '—';
               var addr = m.addr ? '<span class="mn-node-addr">' + m.addr + '</span>' : '—';
-              return '<tr class="' + (String(st).toUpperCase() === 'ENABLED' ? 'mn-row-enabled' : '') + '">' +
+              return '<tr class="' + (isMnActive(st) ? 'mn-row-enabled' : '') + '">' +
                 '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
                 '<td>' + addr + '</td>' +
                 '<td>' + mnBadge(st) + '</td>' +
@@ -414,7 +419,7 @@
               'Rank #' + (m.rank != null ? m.rank : '?'),
               m.addr || '—',
               mnBadge(m.status) + activetimeBadge(m.activetime, m.status),
-              String(m.status).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' : ''
+              isMnActive(m.status) ? 'mn-node-card--enabled' : ''
             );
           }).join('');
         }

@@ -7,12 +7,98 @@ plus ops accrual. See docs/MN2_STAKING_PLAN.md and docs/AGENTS_MN2.md.
 import os
 import json
 import time
+import gzip
+from typing import Dict, List
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 
 from backend.services.account_resolution_service import resolve_user_id
 import backend.services.mn2_staking_service as staking
 
 mn2_staking_bp = Blueprint("mn2_staking", __name__)
+_SEARCH_RATE: Dict[str, List[int]] = {}
+_EXPLORER_METRIC_PREFIXES = (
+    "/api/mn2/network-overview",
+    "/api/mn2/network-history",
+    "/api/mn2/network-alerts",
+    "/api/mn2/recent-blocks",
+    "/api/mn2/masternodes",
+    "/api/mn2/rich-list",
+    "/api/mn2/supply-stats",
+    "/api/mn2/mempool",
+    "/api/mn2/explorer/",
+)
+
+
+def _should_record_explorer_metric(path: str) -> bool:
+    return any(path.startswith(prefix) for prefix in _EXPLORER_METRIC_PREFIXES)
+
+
+@mn2_staking_bp.before_request
+def _explorer_metrics_before():
+    if _should_record_explorer_metric(request.path):
+        request._mn2_metric_t0 = time.perf_counter()
+
+
+@mn2_staking_bp.after_request
+def _explorer_metrics_after(response):
+    t0 = getattr(request, "_mn2_metric_t0", None)
+    if t0 is not None:
+        try:
+            from backend.services.mn2_explorer_metrics import record_api_call
+            record_api_call(
+                request.path,
+                response.status_code,
+                (time.perf_counter() - t0) * 1000.0,
+                request.method,
+            )
+        except Exception:
+            pass
+    return response
+
+
+def _client_ip() -> str:
+    fwd = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return fwd or request.remote_addr or "unknown"
+
+
+def _search_rate_ok() -> bool:
+    limit = max(5, int(os.environ.get("MN2_EXPLORER_SEARCH_RATE", "40") or 40))
+    window = 60
+    key = _client_ip()
+    now = int(time.time())
+    bucket = [t for t in _SEARCH_RATE.get(key, []) if t > now - window]
+    if len(bucket) >= limit:
+        _SEARCH_RATE[key] = bucket
+        return False
+    bucket.append(now)
+    _SEARCH_RATE[key] = bucket
+    return True
+
+
+def _cache_public(resp, max_age: int, swr: int = 0):
+    cc = f"public, max-age={max_age}"
+    if swr > 0:
+        cc += f", stale-while-revalidate={swr}"
+    resp.headers["Cache-Control"] = cc
+    return resp
+
+
+def _json_response(payload: dict, *, status: int = 200, max_age: int = 0, swr: int = 0, gzip_min: int = 0):
+    body = json.dumps(payload)
+    accept = (request.headers.get("Accept-Encoding") or "").lower()
+    if gzip_min and "gzip" in accept and len(body) >= gzip_min:
+        compressed = gzip.compress(body.encode("utf-8"))
+        resp = Response(compressed, status=status, mimetype="application/json")
+        resp.headers["Content-Encoding"] = "gzip"
+        resp.headers["Vary"] = "Accept-Encoding"
+        if max_age:
+            _cache_public(resp, max_age, swr)
+        return resp
+    resp = jsonify(payload)
+    resp.status_code = status
+    if max_age:
+        _cache_public(resp, max_age, swr)
+    return resp
 
 
 def _ops_authorized() -> bool:
@@ -26,6 +112,55 @@ def _ops_authorized() -> bool:
         or ""
     ).strip()
     return token == secret
+
+
+def _build_network_overview_payload() -> dict:
+    """Shared payload for network-overview JSON and SSE stream."""
+    from backend.services import mn2_chainz
+    overview = mn2_chainz.network_overview()
+    overview["pool_total_staked"] = staking.total_staked()
+    overview["pool_apr_percent"] = staking.dynamic_apr()
+    try:
+        from backend.services.mn2_explorer_urls import explorer_base_url, explorer_kind
+        overview["explorer_base_url"] = explorer_base_url()
+        overview["explorer_kind"] = explorer_kind()
+    except Exception:
+        overview["explorer_base_url"] = None
+        overview["explorer_kind"] = None
+    try:
+        from backend.services import mn2_onramp_service
+        overview["onramp"] = mn2_onramp_service.onramp_stats()
+    except Exception:
+        overview["onramp"] = None
+    try:
+        from backend.services import mn2_p2p_service
+        overview["p2p"] = mn2_p2p_service.p2p_stats()
+    except Exception:
+        overview["p2p"] = None
+    try:
+        from backend.services import mn2_rpc_client
+        overview["staking_health"] = mn2_rpc_client.staking_health()
+    except Exception:
+        overview["staking_health"] = None
+    try:
+        from backend.services.mn2_rpc_failover import status_summary
+        fo = status_summary()
+        overview["rpc_failover"] = fo
+        if fo.get("enabled") and fo.get("active") == "standby":
+            overview["rpc_degraded"] = True
+    except Exception:
+        overview["rpc_failover"] = None
+    try:
+        from backend.services.mn2_network_peers_service import peer_health_from_overview
+        overview["peer_health"] = peer_health_from_overview(overview)
+    except Exception:
+        overview["peer_health"] = None
+    try:
+        from backend.services.mn2_explorer_flags import hub_v2_enabled_for_client
+        overview["hub_v2_enabled"] = hub_v2_enabled_for_client(_client_ip())
+    except Exception:
+        overview["hub_v2_enabled"] = True
+    return overview
 
 
 def _body() -> dict:
@@ -386,46 +521,7 @@ def staking_monitor():
 @mn2_staking_bp.route("/api/mn2/network-overview", methods=["GET"])
 def network_overview():
     try:
-        from backend.services import mn2_chainz
-        overview = mn2_chainz.network_overview()
-        overview["pool_total_staked"] = staking.total_staked()
-        overview["pool_apr_percent"] = staking.dynamic_apr()
-        try:
-            from backend.routes.mn2_routes import _explorer_base_url
-            from backend.services.mn2_explorer_urls import explorer_kind
-            overview["explorer_base_url"] = _explorer_base_url()
-            overview["explorer_kind"] = explorer_kind()
-        except Exception:
-            overview["explorer_base_url"] = None
-            overview["explorer_kind"] = None
-        try:
-            from backend.services import mn2_onramp_service
-            overview["onramp"] = mn2_onramp_service.onramp_stats()
-        except Exception:
-            overview["onramp"] = None
-        try:
-            from backend.services import mn2_p2p_service
-            overview["p2p"] = mn2_p2p_service.p2p_stats()
-        except Exception:
-            overview["p2p"] = None
-        try:
-            from backend.services import mn2_rpc_client
-            overview["staking_health"] = mn2_rpc_client.staking_health()
-        except Exception:
-            overview["staking_health"] = None
-        try:
-            from backend.services.mn2_rpc_failover import status_summary
-            fo = status_summary()
-            overview["rpc_failover"] = fo
-            if fo.get("enabled") and fo.get("active") == "standby":
-                overview["rpc_degraded"] = True
-        except Exception:
-            overview["rpc_failover"] = None
-        try:
-            from backend.services.mn2_network_peers_service import peer_health_from_overview
-            overview["peer_health"] = peer_health_from_overview(overview)
-        except Exception:
-            overview["peer_health"] = None
+        overview = _build_network_overview_payload()
         # Record a throttled snapshot for sparklines + run stop-staking/stall alerts (best-effort).
         try:
             from backend.services import mn2_network_stats
@@ -445,7 +541,7 @@ def network_overview():
                 return ("", 304, {"ETag": etag, "Cache-Control": "public, max-age=30"})
         except Exception:
             pass
-        resp.headers["Cache-Control"] = "public, max-age=30"
+        _cache_public(resp, 30, swr=60)
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -461,10 +557,7 @@ def explorer_overview_stream():
         last_sig = None
         while True:
             try:
-                from backend.services import mn2_chainz
-                overview = mn2_chainz.network_overview()
-                overview["pool_total_staked"] = staking.total_staked()
-                overview["pool_apr_percent"] = staking.dynamic_apr()
+                overview = _build_network_overview_payload()
                 payload = {"success": True, **overview}
                 sig = json.dumps(payload, sort_keys=True, default=str)
                 if sig != last_sig:
@@ -490,9 +583,8 @@ def network_history():
         hours = float(request.args.get("hours", 24) or 24)
         limit = int(request.args.get("limit", 500) or 500)
         rows = mn2_network_stats.get_history(hours=hours, limit=limit)
-        resp = jsonify({"success": True, "history": rows, "count": len(rows)})
-        resp.headers["Cache-Control"] = "public, max-age=60"
-        return resp, 200
+        payload = {"success": True, "history": rows, "count": len(rows)}
+        return _json_response(payload, max_age=60, swr=120, gzip_min=1024)
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -529,6 +621,257 @@ def masternodes():
         data = mn2_explorer_data.masternodes(limit=limit, fresh=fresh)
         resp = jsonify({"success": True, **data})
         resp.headers["Cache-Control"] = "public, max-age=60"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/tx/<txid>", methods=["GET"])
+def explorer_tx_detail(txid):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_tx_url
+        detail = mn2_explorer_data.tx_detail(txid)
+        if not detail:
+            return jsonify({"success": False, "error": "Transaction not found"}), 404
+        detail["explorer_tx_url"] = explorer_tx_url(txid)
+        resp = jsonify({"success": True, "transaction": detail})
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/address/<address>", methods=["GET"])
+def explorer_address_detail(address):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_address_url
+        detail = mn2_explorer_data.address_detail(address)
+        if not detail:
+            return jsonify({"success": False, "error": "Invalid address"}), 404
+        detail["explorer_address_url"] = explorer_address_url(address)
+        resp = jsonify({"success": True, "address": detail})
+        resp.headers["Cache-Control"] = "public, max-age=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/rich-list", methods=["GET"])
+def explorer_rich_list():
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 100) or 100)
+        rows = mn2_explorer_data.rich_list(limit=limit)
+        resp = jsonify({"success": True, "rich_list": rows, "count": len(rows)})
+        resp.headers["Cache-Control"] = "public, max-age=90"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/supply-stats", methods=["GET"])
+def explorer_supply_stats():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.supply_stats()
+        resp = jsonify({"success": True, **stats})
+        resp.headers["Cache-Control"] = "public, max-age=90"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/mempool", methods=["GET"])
+def explorer_mempool():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.mempool_stats()
+        resp = jsonify({"success": True, **stats})
+        resp.headers["Cache-Control"] = "public, max-age=15"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/search", methods=["GET"])
+def explorer_search():
+    try:
+        if not _search_rate_ok():
+            return jsonify({"success": False, "error": "rate_limit_exceeded"}), 429
+        from backend.services import mn2_explorer_data
+        q = (request.args.get("q") or "").strip()
+        result = mn2_explorer_data.classify_search(q)
+        ok = result.get("type") != "invalid"
+        resp = jsonify({"success": ok, **result})
+        _cache_public(resp, 60)
+        return resp, 200 if ok else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/status", methods=["GET"])
+def explorer_status():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.explorer_status()
+        try:
+            from backend.services.mn2_explorer_metrics import latency_summary
+            stats["api_latency"] = latency_summary()
+        except Exception:
+            pass
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/openapi.json", methods=["GET"])
+def explorer_openapi():
+    try:
+        from backend.services.mn2_explorer_data import EXPLORER_OPENAPI
+        resp = jsonify(EXPLORER_OPENAPI)
+        _cache_public(resp, 3600, swr=600)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+_EXPLORER_DOCS_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MN2 Explorer API</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: '/api/mn2/explorer/openapi.json',
+      dom_id: '#swagger-ui',
+      deepLinking: true
+    });
+  </script>
+</body>
+</html>"""
+
+
+@mn2_staking_bp.route("/api/docs", methods=["GET"])
+def api_docs_index():
+    """API documentation index — explorer OpenAPI + links."""
+    if (request.headers.get("Accept") or "").find("application/json") >= 0:
+        return jsonify({
+            "success": True,
+            "docs": [
+                {"id": "explorer", "title": "MN2 Explorer API", "openapi": "/api/mn2/explorer/openapi.json", "ui": "/api/docs/explorer"},
+            ],
+        }), 200
+    html = (
+        "<!DOCTYPE html><html><head><title>MN2 API Docs</title></head><body>"
+        "<h1>MN2 API documentation</h1><ul>"
+        '<li><a href="/api/docs/explorer">Explorer API (Swagger UI)</a></li>'
+        '<li><a href="/api/mn2/explorer/openapi.json">Explorer OpenAPI JSON</a></li>'
+        "</ul></body></html>"
+    )
+    return Response(html, mimetype="text/html; charset=utf-8")
+
+
+@mn2_staking_bp.route("/api/docs/explorer", methods=["GET"])
+def explorer_api_docs_ui():
+    """Swagger UI for MN2 explorer endpoints."""
+    resp = Response(_EXPLORER_DOCS_HTML, mimetype="text/html; charset=utf-8")
+    _cache_public(resp, 300, swr=600)
+    return resp
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/address/<address>/txs", methods=["GET"])
+def explorer_address_txs(address):
+    try:
+        from backend.services import mn2_explorer_data
+        limit = int(request.args.get("limit", 25) or 25)
+        offset = int(request.args.get("offset", 0) or 0)
+        data = mn2_explorer_data.address_transactions(address, limit=limit, offset=offset)
+        resp = jsonify({"success": True, **data})
+        _cache_public(resp, 30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/fork-status", methods=["GET"])
+def explorer_fork_status():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.fork_status()
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/chain-sync", methods=["GET"])
+def explorer_chain_sync():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.chain_sync_status()
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/price-history", methods=["GET"])
+def explorer_price_history():
+    try:
+        from backend.services import mn2_explorer_data
+        data = mn2_explorer_data.price_history_30d()
+        resp = jsonify({"success": True, **data})
+        _cache_public(resp, 300, swr=600)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/discord-embed", methods=["GET"])
+def explorer_discord_embed():
+    try:
+        from backend.services import mn2_explorer_data
+        ref = (request.args.get("block") or request.args.get("ref") or "").strip()
+        if not ref:
+            return jsonify({"success": False, "error": "block required"}), 400
+        base = request.url_root.rstrip("/")
+        payload = mn2_explorer_data.discord_block_embed(ref, base_url=base)
+        if payload.get("error"):
+            return jsonify({"success": False, "error": payload["error"]}), 404
+        resp = jsonify({"success": True, **payload})
+        _cache_public(resp, 60)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/block/<ref>", methods=["GET"])
+def explorer_block_detail(ref):
+    try:
+        from backend.services import mn2_explorer_data
+        from backend.services.mn2_explorer_urls import explorer_block_url
+        detail = mn2_explorer_data.block_detail(ref)
+        if not detail:
+            return jsonify({"success": False, "error": "Block not found"}), 404
+        detail["explorer_block_url"] = explorer_block_url(detail.get("hash") or ref)
+        prev = detail.get("previousblockhash")
+        if prev:
+            detail["previous_block_path"] = f"/explorer/block/{prev}"
+            detail["explorer_previous_block_url"] = explorer_block_url(prev)
+        resp = jsonify({"success": True, "block": detail})
+        _cache_public(resp, 30)
         return resp, 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
