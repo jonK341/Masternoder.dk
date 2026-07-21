@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 
-    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260720d">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260721a">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
 
@@ -159,6 +159,44 @@
             <div class="mon-grid" id="mon-grid"><div class="mon-empty">Loading 5-day history…</div></div>
 
             <div class="mon-alerts" id="mon-alerts"></div>
+
+            <div id="ex-fork-alert" class="ex-fork-alert" hidden role="alert"></div>
+
+            <div class="ex-section-title">Insights <a href="/explorer/status" class="ex-status-link">System status ↗</a></div>
+
+            <div class="ex-p7-grid" id="ex-p7-grid">
+                <div class="ex-p7-card" id="ex-p7-mempool">
+                    <div class="ex-p7-head"><span>Mempool feed</span><span class="ex-p7-meta" id="ex-mempool-meta">—</span></div>
+                    <ul class="ex-mempool-feed" id="ex-mempool-feed"><li class="ex-p7-empty">Loading…</li></ul>
+                </div>
+                <div class="ex-p7-card" id="ex-p7-calc">
+                    <div class="ex-p7-head"><span>Staking calculator</span></div>
+                    <div class="ex-calc-form">
+                        <label>Amount (MN2) <input type="number" id="ex-calc-amount" min="0" step="0.01" value="1000"></label>
+                        <label>Days <input type="number" id="ex-calc-days" min="1" max="365" value="30"></label>
+                        <label>Uptime <input type="range" id="ex-calc-uptime" min="50" max="100" value="95"></label>
+                        <span class="ex-calc-uptime-label" id="ex-calc-uptime-label">95%</span>
+                    </div>
+                    <div class="ex-calc-result" id="ex-calc-result">—</div>
+                </div>
+                <div class="ex-p7-card ex-p7-card--wide" id="ex-p7-price">
+                    <div class="ex-p7-head"><span>MN2 price (30d)</span><span class="ex-p7-meta" id="ex-price-meta">—</span></div>
+                    <div class="ex-p7-chart" id="ex-price-chart"></div>
+                </div>
+                <div class="ex-p7-card ex-p7-card--wide" id="ex-p7-stake">
+                    <div class="ex-p7-head"><span>Pool vs network stake</span><span class="ex-p7-meta" id="ex-stake-meta">—</span></div>
+                    <div class="ex-p7-chart" id="ex-stake-chart"></div>
+                </div>
+                <div class="ex-p7-card" id="ex-p7-orderbook">
+                    <div class="ex-p7-head"><span>Order book</span><a href="/explorer?tab=market" class="ex-p7-link">Full market ↗</a></div>
+                    <div class="ex-ob-ticker" id="ex-ob-ticker">Loading…</div>
+                    <ul class="ex-ob-orders" id="ex-ob-orders"></ul>
+                </div>
+                <div class="ex-p7-card" id="ex-p7-sync">
+                    <div class="ex-p7-head"><span>Chain sync</span></div>
+                    <div class="ex-sync-stats" id="ex-sync-stats">Loading…</div>
+                </div>
+            </div>
 
             <div class="ex-section-title">Our staking pool</div>
 
@@ -581,7 +619,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260720d" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260721a" defer></script>
+    <script src="/static/js/mn2-address-validate.js?v=20260721a" defer></script>
+    <script src="/static/js/mn2-explorer-p7.js?v=20260721a" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 

@@ -299,28 +299,30 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P7 — Future / backlog (231–250)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p7.py -m "not integration"`
+
 | # | Upgrade | Status |
 |---|---------|--------|
-| 231 | Mempool visualizer (live tx feed) | pending |
-| 232 | Block reward breakdown per height | pending |
-| 233 | Staking calculator widget on hub | pending |
-| 234 | MN2 burn tracker tile | pending |
-| 235 | Cross-chain bridge status (if added) | pending |
-| 236 | NFT / token layer (if added) | pending |
-| 237 | Light client header sync status | pending |
-| 238 | Fork detection alert | pending |
-| 239 | Historical price chart (30d) | pending |
-| 240 | Whale alert on large movements | pending |
-| 241 | Masternode map by geo (anonymized) | pending |
-| 242 | Pool vs network stake comparison chart | pending |
-| 243 | Internal order book mini-widget on explorer tab | pending |
-| 244 | Discord rich embed for block links | pending |
-| 245 | Mobile app deep links | pending |
-| 246 | WASM client-side address validation | pending |
-| 247 | Tor/onion mirror for block explorer | pending |
-| 248 | IPFS archive of block snapshots | pending |
-| 249 | AI natural-language chain queries | pending |
-| 250 | Public status page at `status.mn2` | pending |
+| 231 | Mempool visualizer (live tx feed) | done |
+| 232 | Block reward breakdown per height | done |
+| 233 | Staking calculator widget on hub | done |
+| 234 | MN2 burn tracker tile | deferred |
+| 235 | Cross-chain bridge status (if added) | deferred |
+| 236 | NFT / token layer (if added) | deferred |
+| 237 | Light client header sync status | done |
+| 238 | Fork detection alert | done |
+| 239 | Historical price chart (30d) | done |
+| 240 | Whale alert on large movements | deferred |
+| 241 | Masternode map by geo (anonymized) | deferred |
+| 242 | Pool vs network stake comparison chart | done |
+| 243 | Internal order book mini-widget on explorer tab | done |
+| 244 | Discord rich embed for block links | done |
+| 245 | Mobile app deep links | done |
+| 246 | WASM client-side address validation | done |
+| 247 | Tor/onion mirror for block explorer | deferred |
+| 248 | IPFS archive of block snapshots | deferred |
+| 249 | AI natural-language chain queries | deferred |
+| 250 | Public status page at `status.mn2` | done |
 
 ---
 
@@ -335,7 +337,7 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P4 Ops | 29 | 1 | 30 |
 | P5 Tests | 20 | 0 | 20 |
 | P6 Docs | 19 | 1 | 20 |
-| P7 Future | 0 | 20 | 20 |
-| **Total** | **222** | **28** | **250** |
+| P7 Future | 12 | 8 | 20 |
+| **Total** | **234** | **16** | **250** |
 
 **Next deploy step:** merge PR #57, run `python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass`, then `POST_DEPLOY_BASE_URL=https://<site> python scripts/smoke_explorer_deploy.py`.

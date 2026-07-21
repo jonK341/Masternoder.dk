@@ -484,6 +484,18 @@ def block_detail(ref: str) -> Optional[Dict[str, Any]]:
         blk = b["result"]
         txs = blk.get("tx") if isinstance(blk.get("tx"), list) else []
         txids = [str(t) for t in txs[:50] if t]
+        block_reward = None
+        if txids:
+            try:
+                cb = rpc._call("getrawtransaction", [txids[0], True])
+                if not cb.get("error") and isinstance(cb.get("result"), dict):
+                    vouts = cb["result"].get("vout") if isinstance(cb["result"].get("vout"), list) else []
+                    block_reward = round(
+                        sum(float(v.get("value") or 0) for v in vouts if isinstance(v, dict)),
+                        8,
+                    )
+            except Exception:
+                pass
         out = {
             "height": blk.get("height"),
             "hash": blk.get("hash") or block_hash,
@@ -495,6 +507,7 @@ def block_detail(ref: str) -> Optional[Dict[str, Any]]:
             "merkleroot": blk.get("merkleroot"),
             "previousblockhash": blk.get("previousblockhash"),
             "confirmations": blk.get("confirmations"),
+            "block_reward": block_reward,
             "source": "rpc",
         }
     except Exception:
@@ -512,7 +525,7 @@ def mempool_stats() -> Dict[str, Any]:
         ent = _CACHE.get(key)
         if ent and (time.time() - ent.get("ts", 0)) < 15:
             return ent.get("value") or {}
-    out: Dict[str, Any] = {"size": None, "bytes": None, "usage": None, "source": "rpc"}
+    out: Dict[str, Any] = {"size": None, "bytes": None, "usage": None, "sample_txids": [], "source": "rpc"}
     try:
         from backend.services import mn2_rpc_client as rpc
         r = rpc.getmempoolinfo()
@@ -521,6 +534,9 @@ def mempool_stats() -> Dict[str, Any]:
             out["size"] = res.get("size")
             out["bytes"] = res.get("bytes")
             out["usage"] = res.get("usage")
+        raw = rpc._call("getrawmempool", [False])
+        if not raw.get("error") and isinstance(raw.get("result"), list):
+            out["sample_txids"] = [str(t) for t in raw["result"][:25] if t]
     except Exception:
         pass
     with _LOCK:
@@ -666,6 +682,12 @@ def explorer_status() -> Dict[str, Any]:
     if not rich_ok and kind == "iquidus":
         overall = "degraded"
     checks["mempool"] = mempool_stats()
+    sync = chain_sync_status()
+    checks["chain_sync"] = sync
+    fork = fork_status(sync)
+    checks["fork"] = fork
+    if fork.get("fork_risk"):
+        overall = "degraded"
 
     return {
         "status": overall,
@@ -673,6 +695,106 @@ def explorer_status() -> Dict[str, Any]:
         "explorer_base_url": explorer_base_url(cfg),
         "checks": checks,
         "iquidus": iquidus,
+    }
+
+
+def chain_sync_status() -> Dict[str, Any]:
+    """Header/light-client sync: blocks vs headers and verification progress."""
+    out: Dict[str, Any] = {
+        "blocks": None,
+        "headers": None,
+        "headers_behind": 0,
+        "verification_progress": None,
+        "synced": None,
+        "source": "rpc",
+    }
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        bi = rpc.getblockchaininfo(timeout_sec=4)
+        if not bi.get("error") and isinstance(bi.get("result"), dict):
+            r = bi["result"]
+            blocks = r.get("blocks")
+            headers = r.get("headers")
+            out["blocks"] = blocks
+            out["headers"] = headers
+            out["verification_progress"] = r.get("verificationprogress")
+            if isinstance(blocks, int) and isinstance(headers, int):
+                out["headers_behind"] = max(0, headers - blocks)
+                vp = out["verification_progress"]
+                out["synced"] = headers == blocks and (vp is None or float(vp) >= 0.999)
+    except Exception:
+        pass
+    return out
+
+
+def fork_status(sync: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Detect potential fork when headers exceed blocks by more than tolerance."""
+    sync = sync if isinstance(sync, dict) else chain_sync_status()
+    blocks = sync.get("blocks")
+    headers = sync.get("headers")
+    behind = int(sync.get("headers_behind") or 0)
+    fork_risk = (
+        isinstance(blocks, int)
+        and isinstance(headers, int)
+        and headers > blocks
+        and behind > 2
+    )
+    return {
+        "fork_risk": fork_risk,
+        "headers_behind": behind,
+        "blocks": blocks,
+        "headers": headers,
+        "message": (
+            "Headers ahead of blocks — possible fork or reorg in progress."
+            if fork_risk
+            else None
+        ),
+    }
+
+
+def price_history_30d() -> Dict[str, Any]:
+    """30-day MN2/USD price series from network history snapshots."""
+    try:
+        from backend.services import mn2_network_stats
+        rows = mn2_network_stats.get_history(hours=30 * 24, limit=2000)
+        series = []
+        for r in rows:
+            px = r.get("mn2_usd_price")
+            if px is not None:
+                series.append({"ts": r.get("ts"), "price": px})
+        return {"series": series, "count": len(series), "hours": 30 * 24}
+    except Exception:
+        return {"series": [], "count": 0, "hours": 30 * 24}
+
+
+def discord_block_embed(ref: str, base_url: str = "") -> Dict[str, Any]:
+    """Discord webhook-compatible embed payload for a block."""
+    blk = block_detail(ref)
+    if not blk:
+        return {"error": "block_not_found"}
+    height = blk.get("height")
+    hash_val = blk.get("hash") or ref
+    title = f"MN2 Block #{height}" if height is not None else f"MN2 Block {hash_val[:12]}…"
+    slug = height if height is not None else hash_val
+    url = f"{base_url.rstrip('/')}/explorer/block/{slug}" if base_url else f"/explorer/block/{slug}"
+    reward = blk.get("block_reward")
+    fields = [
+        {"name": "Transactions", "value": str(blk.get("tx_count") or "—"), "inline": True},
+        {
+            "name": "Reward",
+            "value": f"{reward} MN2" if reward is not None else "—",
+            "inline": True,
+        },
+        {"name": "Difficulty", "value": str(blk.get("difficulty") or "—"), "inline": True},
+    ]
+    return {
+        "embeds": [{
+            "title": title,
+            "url": url,
+            "color": 0x00FF88,
+            "fields": fields,
+            "footer": {"text": "MasterNoder2 Explorer"},
+        }]
     }
 
 
@@ -700,5 +822,11 @@ EXPLORER_OPENAPI: Dict[str, Any] = {
         "/api/mn2/explorer/address/{address}/txs": {"get": {"summary": "Paginated address txs"}},
         "/api/mn2/explorer/block/{ref}": {"get": {"summary": "Block detail"}},
         "/api/mn2/explorer/stream": {"get": {"summary": "SSE network overview"}},
+        "/api/mn2/explorer/fork-status": {"get": {"summary": "Fork detection"}},
+        "/api/mn2/explorer/chain-sync": {"get": {"summary": "Header sync status"}},
+        "/api/mn2/explorer/price-history": {"get": {"summary": "30-day MN2/USD history"}},
+        "/api/mn2/explorer/discord-embed": {"get": {"summary": "Discord embed for block", "parameters": [
+            {"name": "block", "in": "query", "required": True, "schema": {"type": "string"}},
+        ]}},
     },
 }

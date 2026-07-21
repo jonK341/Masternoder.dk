@@ -552,3 +552,52 @@ body.mn2-crypto-hub code {
   color: #ffcc88;
   font-size: 0.86rem;
 }
+
+/* P7 explorer widgets */
+.ex-fork-alert {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 80, 80, 0.45);
+  background: rgba(255, 80, 80, 0.12);
+  color: #ff9a9a;
+  font-size: 0.86rem;
+}
+.ex-status-link { font-size: 0.78rem; font-weight: 400; margin-left: 10px; opacity: 0.75; }
+.ex-p7-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.ex-p7-card { padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,212,255,0.16); }
+.ex-p7-card--wide { grid-column: span 2; }
+@media (max-width: 720px) { .ex-p7-card--wide { grid-column: span 1; } }
+.ex-p7-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.8; }
+.ex-p7-meta, .ex-p7-link { font-size: 0.72rem; text-transform: none; letter-spacing: 0; opacity: 0.7; }
+.ex-p7-empty { font-size: 0.82rem; opacity: 0.6; list-style: none; }
+.ex-mempool-feed, .ex-ob-orders { list-style: none; margin: 0; padding: 0; max-height: 140px; overflow-y: auto; font-size: 0.82rem; }
+.ex-mempool-feed li, .ex-ob-orders li { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.ex-mempool-feed a { color: #9ec5ff; text-decoration: none; font-family: ui-monospace, monospace; }
+.ex-calc-form { display: grid; gap: 8px; font-size: 0.82rem; }
+.ex-calc-form label { display: flex; flex-direction: column; gap: 4px; }
+.ex-calc-form input[type="number"] { padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.25); color: #fff; }
+.ex-calc-result { margin-top: 10px; font-size: 0.95rem; }
+.ex-calc-apr { opacity: 0.7; font-size: 0.82rem; }
+.ex-p7-chart { min-height: 72px; }
+.ex-p7-svg { width: 100%; height: 72px; display: block; }
+.ex-ob-ticker { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.78rem; margin-bottom: 8px; opacity: 0.85; }
+.ex-ob-side.buy { color: #5dffb0; }
+.ex-ob-side.sell { color: #ff9a9a; }
+.ex-stake-bars { display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem; }
+.ex-stake-row { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: center; }
+.ex-stake-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.ex-stake-fill.pool { height: 100%; background: linear-gradient(90deg, #00d4ff, #00ff88); }
+.ex-stake-fill.net { height: 100%; background: linear-gradient(90deg, #7a5cff, #c08cff); }
+.ex-sync-stats { font-size: 0.82rem; display: grid; gap: 6px; }
+.ex-sync-row { display: flex; justify-content: space-between; gap: 8px; }
+.ex-status-page h1 { margin-bottom: 8px; }
+.ex-status-pill { display: inline-block; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 0.82rem; margin: 12px 0 18px; }
+.ex-status-pill--healthy { background: rgba(0,255,136,0.16); color: #00ff88; border: 1px solid rgba(0,255,136,0.35); }
+.ex-status-pill--degraded { background: rgba(255,170,68,0.16); color: #ffcc88; border: 1px solid rgba(255,170,68,0.35); }
+.ex-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.ex-status-card { padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,212,255,0.16); }
+.ex-status-card h2 { font-size: 0.9rem; margin: 0 0 10px; color: #9ec5ff; }
+.ex-status-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; font-size: 0.78rem; }
+.ex-status-row span { opacity: 0.65; }
+.ex-status-row code { font-size: 0.72rem; word-break: break-all; }

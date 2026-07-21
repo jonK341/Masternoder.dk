@@ -803,6 +803,60 @@ def explorer_address_txs(address):
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_staking_bp.route("/api/mn2/explorer/fork-status", methods=["GET"])
+def explorer_fork_status():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.fork_status()
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/chain-sync", methods=["GET"])
+def explorer_chain_sync():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.chain_sync_status()
+        resp = jsonify({"success": True, **stats})
+        _cache_public(resp, 15, swr=30)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/price-history", methods=["GET"])
+def explorer_price_history():
+    try:
+        from backend.services import mn2_explorer_data
+        data = mn2_explorer_data.price_history_30d()
+        resp = jsonify({"success": True, **data})
+        _cache_public(resp, 300, swr=600)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/explorer/discord-embed", methods=["GET"])
+def explorer_discord_embed():
+    try:
+        from backend.services import mn2_explorer_data
+        ref = (request.args.get("block") or request.args.get("ref") or "").strip()
+        if not ref:
+            return jsonify({"success": False, "error": "block required"}), 400
+        base = request.url_root.rstrip("/")
+        payload = mn2_explorer_data.discord_block_embed(ref, base_url=base)
+        if payload.get("error"):
+            return jsonify({"success": False, "error": payload["error"]}), 404
+        resp = jsonify({"success": True, **payload})
+        _cache_public(resp, 60)
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_staking_bp.route("/api/mn2/explorer/block/<ref>", methods=["GET"])
 def explorer_block_detail(ref):
     try:

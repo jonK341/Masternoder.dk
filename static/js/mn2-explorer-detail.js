@@ -90,7 +90,22 @@
     }).join('');
   }
 
-  function setSeoMeta(opts) {
+  function setMobileDeepLink(path) {
+    if (!path) return;
+    var href = 'masternoder://' + String(path).replace(/^\//, '');
+    var link = document.querySelector('link[rel="alternate"][data-mn2-deep]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'alternate';
+      link.setAttribute('data-mn2-deep', '1');
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  }
+
+  function discordEmbedLink(ref) {
+    return '/api/mn2/explorer/discord-embed?block=' + encodeURIComponent(ref);
+  }
     opts = opts || {};
     if (opts.title) document.title = opts.title;
     function upsert(attr, key, val) {
@@ -261,6 +276,7 @@
     var ext = tx.explorer_tx_url
       ? '<a href="' + tx.explorer_tx_url + '" target="_blank" rel="noopener">View on full block explorer ↗</a>'
       : '';
+    setMobileDeepLink('/explorer/tx/' + txid);
     showBody(html, ext, data);
   }
 
@@ -303,6 +319,7 @@
     var ext = addr.explorer_address_url
       ? '<a href="' + addr.explorer_address_url + '" target="_blank" rel="noopener">View on full block explorer ↗</a>'
       : '';
+    setMobileDeepLink('/explorer/address/' + encodeURIComponent(address));
     showBody(html, ext, data);
     renderAddressQr(address);
   }
@@ -344,12 +361,16 @@
       row('Transactions', blk.tx_count != null ? fmtNum(blk.tx_count, 0) : '—') +
       row('Size', blk.size != null ? fmtNum(blk.size, 0) + ' B' : '—') +
       row('Difficulty', blk.difficulty != null ? fmtNum(blk.difficulty, 4) : '—') +
+      row('Block reward', blk.block_reward != null ? fmtNum(blk.block_reward, 8) + ' MN2' : '—') +
       row('Previous', prevHtml) +
       row('Source', blk.source || '—') +
       '</dl>' + renderBlockTxTable(txids);
     var ext = blk.explorer_block_url
       ? '<a href="' + blk.explorer_block_url + '" target="_blank" rel="noopener">View on full block explorer ↗</a>'
       : '';
+    ext += (ext ? ' · ' : '') +
+      '<a href="' + discordEmbedLink(blk.height != null ? blk.height : (blk.hash || ref)) + '" target="_blank" rel="noopener">Discord embed JSON ↗</a>';
+    setMobileDeepLink('/explorer/block/' + (height != null ? height : (blk.hash || ref)));
     showBody(html, ext, data);
   }
 

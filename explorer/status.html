@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MN2 Explorer Status</title>
+    <meta name="description" content="Public health status for the MasterNoder2 Crypto Hub explorer">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260721a">
+</head>
+<body class="layout-standard mn2-crypto-hub">
+    <div class="mn2-hub-wrap explorer-page ex-status-page">
+        <p class="ex-detail-back"><a href="/explorer/">← Back to Crypto Hub</a></p>
+        <h1>Explorer status</h1>
+        <p class="sub-note">Live aggregate from <code>GET /api/mn2/explorer/status</code>. Refreshes every 30s.</p>
+        <div id="ex-status-pill" class="ex-status-pill" aria-live="polite">Loading…</div>
+        <div id="ex-status-checks" class="ex-status-grid"></div>
+        <p class="ex-note" id="ex-status-updated"></p>
+    </div>
+    <script src="/static/js/mn2-explorer-status.js?v=20260721a" defer></script>
+</body>
+</html>
