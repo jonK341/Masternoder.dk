@@ -92,18 +92,32 @@ def get_customer(user_id: str) -> Dict[str, Any]:
 
 
 def stats() -> Dict[str, Any]:
-    listing = list_customers(limit=10000, offset=0)
-    customers = listing.get("customers") or []
+    """Lightweight aggregate counts — avoids per-customer identifier scans."""
+    if not os.path.isdir(_POINTS_DIR):
+        return {"success": True, "total": 0, "active_today": 0, "with_mn2": 0}
     now = datetime.now(timezone.utc).date().isoformat()
-    active_today = sum(
-        1 for c in customers
-        if str(c.get("last_active") or "").startswith(now)
-    )
+    total = active_today = with_mn2 = 0
+    for name in os.listdir(_POINTS_DIR):
+        if not name.endswith(".json"):
+            continue
+        total += 1
+        path = os.path.join(_POINTS_DIR, name)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f) or {}
+            systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
+            if float(raw.get("mn2_balance") or systems.get("mn2_balance") or 0) > 0:
+                with_mn2 += 1
+            last_active = str(raw.get("updated_at") or raw.get("last_source") or "")
+            if last_active.startswith(now):
+                active_today += 1
+        except Exception:
+            continue
     return {
         "success": True,
-        "total": listing.get("total", 0),
+        "total": total,
         "active_today": active_today,
-        "with_mn2": sum(1 for c in customers if float(c.get("mn2_balance") or 0) > 0),
+        "with_mn2": with_mn2,
     }
 
 
