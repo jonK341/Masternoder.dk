@@ -241,6 +241,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P5 — Tests (191–210)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p5.py tests/unit/test_mn2_explorer*.py tests/unit/test_mn2_routes_explorer_links.py -m "not integration"`
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 191 | `test_mn2_explorer_urls.py` Chainz vs iquidus shapes | done |
@@ -256,13 +258,13 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | 201 | `test_mn2_routes_explorer_links.py` search API | done |
 | 202 | `test_mn2_routes_explorer_links.py` block API | done |
 | 203 | `test_mn2_routes_explorer_links.py` mempool API | done |
-| 204 | Integration test: full overview JSON schema | pending |
-| 205 | Browser test: hub tiles render | pending |
-| 206 | Browser test: search routing | pending |
-| 207 | Contract test against live eiquidus ext | pending |
-| 208 | Regression: ACTIVE masternode pill green | pending |
-| 209 | Regression: zero price shows em-dash | pending |
-| 210 | CI job: explorer unit tests on every PR | pending |
+| 204 | Integration test: full overview JSON schema | done |
+| 205 | Browser test: hub tiles render | done |
+| 206 | Browser test: search routing | done |
+| 207 | Contract test against live eiquidus ext | done |
+| 208 | Regression: ACTIVE masternode pill green | done |
+| 209 | Regression: zero price shows em-dash | done |
+| 210 | CI job: explorer unit tests on every PR | done |
 
 ---
 
@@ -329,9 +331,9 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P2 Hub UI | 47 | 3 | 50 |
 | P3 Detail pages | 30 | 0 | 30 |
 | P4 Ops | 29 | 1 | 30 |
-| P5 Tests | 13 | 7 | 20 |
+| P5 Tests | 20 | 0 | 20 |
 | P6 Docs | 7 | 13 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **203** | **47** | **250** |
+| **Total** | **210** | **40** | **250** |
 
 **Next deploy step:** merge PR #57, run `python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass`, then `POST_DEPLOY_BASE_URL=https://<site> python scripts/smoke_explorer_deploy.py`.
