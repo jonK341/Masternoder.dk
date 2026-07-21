@@ -780,6 +780,69 @@ def exchange_swap_rotation_execute():
     return jsonify(execute_rotation(action, dry_run=bool(dry_run)))
 
 
+@crypto_exchange_bp.route("/api/exchange/venue-funding/sell", methods=["POST"])
+def exchange_venue_funding_sell():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.venue_funding_rotation_service import sell_coins_to_fund_venue
+
+    data = request.get_json(silent=True) or {}
+    venue_id = str(data.get("venue_id") or data.get("venue") or "").strip()
+    target_asset = str(data.get("target_asset") or data.get("asset") or data.get("quote") or "USDT").strip()
+    amount_usd = float(data.get("amount_usd") or data.get("amount") or 0)
+    dry_run = data.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.strip().lower() not in ("0", "false", "no", "off")
+    if not venue_id:
+        return jsonify({"success": False, "error": "venue_id required"}), 400
+    return jsonify(
+        sell_coins_to_fund_venue(venue_id, target_asset, amount_usd, dry_run=bool(dry_run))
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/venue-funding/fund-legs", methods=["POST"])
+def exchange_venue_funding_legs():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.venue_funding_rotation_service import fund_venue_legs_for_symbol
+
+    data = request.get_json(silent=True) or {}
+    agent_id = str(data.get("agent_id") or data.get("agent") or "").strip()
+    symbol = str(data.get("symbol") or "").strip().upper()
+    notional = float(data.get("notional_usd") or data.get("notional") or 0)
+    dry_run = data.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.strip().lower() not in ("0", "false", "no", "off")
+    if not agent_id or not symbol:
+        return jsonify({"success": False, "error": "agent_id and symbol required"}), 400
+    return jsonify(
+        fund_venue_legs_for_symbol(agent_id, symbol, notional, dry_run=bool(dry_run))
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/agent-rotation/status", methods=["GET"])
+def exchange_agent_rotation_status():
+    from backend.services.venue_funding_rotation_service import rotation_status
+
+    return jsonify(rotation_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/agent-rotation/cycle", methods=["POST"])
+def exchange_agent_rotation_cycle():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.venue_funding_rotation_service import run_agent_trade_rotation_cycle
+
+    data = request.get_json(silent=True) or {}
+    dry_run = data.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.strip().lower() not in ("0", "false", "no", "off")
+    force = bool(data.get("force"))
+    return jsonify(
+        run_agent_trade_rotation_cycle(dry_run=bool(dry_run), force=force)
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/profit-path/hit-rate", methods=["GET"])
 def exchange_profit_path_hit_rate():
     from backend.services.exchange_profit_agent_skills_service import hit_rate_by_route
