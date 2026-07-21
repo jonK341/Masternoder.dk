@@ -31,6 +31,10 @@ def binance_env(tmp_path, monkeypatch):
 
     monkeypatch.setenv("BINANCE_API_KEY", "test-key-abc")
     monkeypatch.setenv("BINANCE_API_SECRET", "test-secret-xyz")
+    monkeypatch.setattr(
+        "backend.services.exchange_secrets_vault_service.get_secret",
+        lambda _name: None,
+    )
     monkeypatch.delenv("EXCHANGE_PAYOUT_BINANCE_LIVE", raising=False)
     monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
 

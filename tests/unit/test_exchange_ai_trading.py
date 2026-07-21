@@ -63,6 +63,7 @@ def ai_env(tmp_path, monkeypatch):
     monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
     # Avoid MN2 RPC (127.0.0.1:9332) when a test temporarily enables live gates.
     monkeypatch.setenv("MN2_SPORK_GATES", "0")
+    monkeypatch.setattr(arb, "live_enabled", lambda: False)
     return {"ex": ex, "arb": arb, "ai": ai, "vapi": vapi, "vault": vault}
 
 

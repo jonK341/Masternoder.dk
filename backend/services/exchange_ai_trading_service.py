@@ -301,7 +301,7 @@ def run_ai_tick(
             "account": acct,
         }
 
-    exec_res = execute_opportunity(best, agent_id=agent_id)
+    exec_res = execute_opportunity(best, agent_id=agent_id, dry_run=not arb.live_enabled())
     profit = float(exec_res.get("est_profit_usd") or 0) if exec_res.get("success") else 0.0
 
     if exec_res.get("success") and profit > 0:

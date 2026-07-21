@@ -7,6 +7,14 @@ import pytest
 from flask import Flask
 
 
+@pytest.fixture(autouse=True)
+def _suppress_customer_events(monkeypatch):
+    import backend.services.customer_aggregator_service as cas
+
+    monkeypatch.setattr(cas, "emit_customer_new", lambda *a, **k: None)
+    monkeypatch.setattr(cas, "emit_customer_active", lambda *a, **k: None)
+
+
 @pytest.fixture
 def points_db(tmp_path, monkeypatch):
     from backend.services import unified_points_database as upd
@@ -20,16 +28,25 @@ def points_db(tmp_path, monkeypatch):
     monkeypatch.setattr(upd, "_IDEMPOTENCY_CACHE", {})
     db = upd.UnifiedPointsDatabase(base_dir=str(tmp_path))
     monkeypatch.setattr(upd, "unified_points_db", db)
+
+    import backend.services.customer_aggregator_service as cas
+    monkeypatch.setattr(cas, "emit_customer_new", lambda *a, **k: None)
+    monkeypatch.setattr(cas, "emit_customer_active", lambda *a, **k: None)
     return db
 
 
 @pytest.fixture
-def activity_log(tmp_path, monkeypatch):
+def activity_log(monkeypatch):
     import backend.services.activity_events_service as aes
 
-    path = tmp_path / "activity_events.jsonl"
-    monkeypatch.setattr(aes, "_LOG_PATH", str(path))
-    return path
+    events: list = []
+
+    def _capture_emit(event_type, **kwargs):
+        events.append({"type": event_type, **kwargs})
+        return {"success": True, "event": events[-1]}
+
+    monkeypatch.setattr(aes, "emit", _capture_emit)
+    return events
 
 
 @pytest.fixture
@@ -75,10 +92,7 @@ def test_battle_crypto_claim_uses_game_mn2_rewards(
     bal = points_db.get_all_points("player_battle")
     assert float(bal["points"]["mn2_balance"]) > 0
 
-    rows = activity_log.read_text(encoding="utf-8").strip().splitlines()
-    assert rows
-    events = [json.loads(line) for line in rows]
-    reward_events = [e for e in events if e.get("type") == "game_mn2_reward"]
+    reward_events = [e for e in activity_log if e.get("type") == "game_mn2_reward"]
     assert reward_events
     assert any(e.get("user_id") == "player_battle" for e in reward_events)
 
@@ -132,10 +146,7 @@ def test_starmap_crypto_claim_uses_game_mn2_rewards(
     bal = points_db.get_all_points("player_starmap")
     assert float(bal["points"]["mn2_balance"]) > 0
 
-    rows = activity_log.read_text(encoding="utf-8").strip().splitlines()
-    assert rows
-    events = [json.loads(line) for line in rows]
-    reward_events = [e for e in events if e.get("type") == "game_mn2_reward"]
+    reward_events = [e for e in activity_log if e.get("type") == "game_mn2_reward"]
     assert reward_events
     assert any(e.get("user_id") == "player_starmap" for e in reward_events)
 

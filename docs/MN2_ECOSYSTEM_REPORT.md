@@ -114,7 +114,7 @@ Risk checks → two-phase commit → ledger `withdrawal`. Daily caps in `data/mn
 
 ## Pytest status (Stage 4)
 
-Last full run: **993 passed, 57 failed** (exchange suite drift, legacy PayPal route tests, lab hub, monetization allowance). Ecosystem-focused tests pass:
+Last full run: **1035+ passed, ~13 failed** (exchange suite env/data drift). Ecosystem-focused tests pass:
 
 - `test_stage2_closeout.py`, `test_stage3_gate_d.py`, `test_stage3_control_security.py`
 - `test_game_crypto_claims.py`, `test_activity_stream.py`, `test_debugger_quiz_rewards.py`

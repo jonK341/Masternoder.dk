@@ -363,6 +363,8 @@ def list_subscription_plan_ids(*, public: bool = False) -> List[str]:
             if public:
                 if live:
                     out.append(live)
+                else:
+                    out.append(key)
             else:
                 out.append(live or key)
         elif key == SUBSCRIPTION_PLAN_PLACEHOLDER_MN_HOST:
@@ -370,6 +372,8 @@ def list_subscription_plan_ids(*, public: bool = False) -> List[str]:
             if public:
                 if live:
                     out.append(live)
+                else:
+                    out.append(key)
             else:
                 out.append(live or key)
         elif public and _is_placeholder_plan_id(key):

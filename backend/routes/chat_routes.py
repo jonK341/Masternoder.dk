@@ -111,52 +111,54 @@ def send_message():
         # Save user message
         save_message(user_id, message, username, is_ai=False)
         
-        # Generate AI response
-        llm = get_llm_service()
         ai_response = None
-        
-        if llm.is_available():
-            # Build context from recent messages
-            history = load_chat_history(user_id, limit=10)
-            context_messages = []
-            
-            # Add system prompt
+        reward = None
+        history = load_chat_history(user_id, limit=10)
+        context_messages = [{
+            'role': 'system',
+            'content': 'You are a helpful AI assistant in the MasterNoder chat room. Be friendly, concise, and helpful. Keep responses under 100 words unless asked for more detail.'
+        }]
+        for msg in history[-5:]:
             context_messages.append({
-                'role': 'system',
-                'content': 'You are a helpful AI assistant in the MasterNoder chat room. Be friendly, concise, and helpful. Keep responses under 100 words unless asked for more detail.'
+                'role': 'assistant' if msg.get('is_ai') else 'user',
+                'content': msg.get('message', '')
             })
-            
-            # Add recent history (last 5 messages for context)
-            for msg in history[-5:]:
-                role = 'assistant' if msg.get('is_ai') else 'user'
-                context_messages.append({
-                    'role': role,
-                    'content': msg.get('message', '')
-                })
-            
-            # Add current message
-            context_messages.append({
-                'role': 'user',
-                'content': message
-            })
-            
-            # Get AI response — route to fast providers (Groq/Cerebras) for low latency
-            result = llm.chat(
-                messages=context_messages,
-                temperature=0.7,
-                max_tokens=200,
-                task_type="speed",
-            )
-            
-            if result.success and result.content:
-                ai_response = result.content.strip()
-                # Save AI response
+        context_messages.append({'role': 'user', 'content': message})
+
+        try:
+            from backend.services.agent_ai_router import routed_chat
+            result, routing = routed_chat(context_messages, "routed_chat", user_id)
+            if getattr(result, "success", False) and getattr(result, "content", None):
+                ai_response = str(result.content).strip()
                 save_message('ai_assistant', ai_response, 'AI Assistant', is_ai=True)
+                reward = (routing or {}).get("crypto_reward")
+                if reward is None:
+                    try:
+                        from backend.services.agent_crypto_rewards_service import award_agent_action
+                        reward = award_agent_action(user_id, "routed_chat", reference=f"chat:{user_id}")
+                    except Exception:
+                        reward = None
+        except Exception:
+            reward = None
+
+        if ai_response is None:
+            llm = get_llm_service()
+            if llm.is_available():
+                result = llm.chat(
+                    messages=context_messages,
+                    temperature=0.7,
+                    max_tokens=200,
+                    task_type="speed",
+                )
+                if result.success and result.content:
+                    ai_response = result.content.strip()
+                    save_message('ai_assistant', ai_response, 'AI Assistant', is_ai=True)
         
         return jsonify({
             'success': True,
             'message_saved': True,
             'ai_response': ai_response,
+            'reward': reward,
             'timestamp': datetime.now().isoformat()
         }), 200
         
@@ -210,7 +212,13 @@ def chat_stream():
                     yield 'data: ' + json.dumps({'type': 'token', 'text': token}) + '\n\n'
                 if full_text:
                     save_message('ai_assistant', full_text, 'AI Assistant', is_ai=True)
-                yield 'data: ' + json.dumps({'type': 'done', 'full': full_text}) + '\n\n'
+                reward = None
+                try:
+                    from backend.services.agent_crypto_rewards_service import award_agent_action
+                    reward = award_agent_action(user_id, "routed_chat", reference=f"chat-stream:{user_id}")
+                except Exception:
+                    reward = None
+                yield 'data: ' + json.dumps({'type': 'done', 'full': full_text, 'reward': reward}) + '\n\n'
             except Exception as e:
                 yield 'data: ' + json.dumps({'type': 'error', 'error': str(e)}) + '\n\n'
 

@@ -51,6 +51,7 @@ def test_casino_mobile_config_route(tmp_path, monkeypatch):
 
 
 def test_casino_social_links_route(tmp_path, monkeypatch):
+    monkeypatch.delenv("META_PIXEL_ID", raising=False)
     app = _app(tmp_path, monkeypatch)
     with app.test_client() as client:
         resp = client.get("/api/casino/social/links")

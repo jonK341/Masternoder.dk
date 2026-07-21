@@ -172,8 +172,48 @@ def _is_permanent_rotation_failure(reason: str) -> bool:
     return "pair_not_supported" in r
 
 
-def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
+def profit_first_enabled() -> bool:
+    """True when profit-path protocol prefers hot-spread trades over reduce-notional."""
+    try:
+        from backend.services.exchange_extended_profit_service import load_config
+
+        cfg = load_config() or {}
+        return bool(cfg.get("rotation_profit_first") or cfg.get("profit_first"))
+    except Exception:
+        return False
+
+
+def _refresh_rotation_balances() -> None:
+    """Refresh venue balances used by rotation suggestions."""
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+
+        vapi.refresh_venue_balances(["binance", "nonkyc", "coinbase"], force=True)
+    except Exception:
+        pass
+
+
+def _hot_spread_ready(*_args, **_kwargs) -> Tuple[bool, float]:
+    """Return (ready, net_bps) for profit-first rotation gating."""
+    try:
+        from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+        state = read_arb_threshold_state() or {}
+        net = float(state.get("best_net_bps") or 0)
+        return bool(state.get("ready") and net > 0), net
+    except Exception:
+        return False, 0.0
+
+
+def _dedupe_skip(
+    action: Dict[str, Any],
+    state: Dict[str, Any],
+    *,
+    bypass_cooldown: bool = False,
+) -> Optional[str]:
     """Return skip reason when action should not re-run yet."""
+    if bypass_cooldown:
+        return None
     now = datetime.now(timezone.utc)
     fp = _action_fingerprint(action)
     fail_hash = str(state.get("last_failure_hash") or "")
@@ -1363,6 +1403,25 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
             quantity=qty if qty > 0 else None,
         )
         if not spec.get("ok"):
+            spec_err = str(spec.get("error") or "")
+            if not rotation_live_enabled() and "pair_not_supported" not in spec_err:
+                paper_qty = float(qty or action.get("quantity") or 0.001)
+                res = vapi.place_market_order(
+                    venue, sym, side, paper_qty, dry_run=True, quote=quote, market=market,
+                )
+                return {
+                    "success": bool(res.get("success")),
+                    "dry_run": True,
+                    "mode": "paper",
+                    "rotation_live_enabled": False,
+                    "order": res,
+                    "action": action,
+                    "venue_id": venue,
+                    "symbol": sym,
+                    "market": market,
+                    "hint": "Set rotation_live_enabled or EXCHANGE_ROTATION_LIVE=1 to execute live.",
+                    "spec_error": spec.get("error"),
+                }
             return {
                 "success": False,
                 "error": spec.get("error"),

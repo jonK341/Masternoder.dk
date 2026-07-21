@@ -40,7 +40,9 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 | Lab hub | `test_lab_hub_v21.py`, `test_lab_v2_status.py` | Sync version/catalog fixtures |
 | Monetization | `test_monetization_allowance.py`, `test_monetization_overage.py` | Refresh config fixtures for ref_eq packs |
 
-**Ecosystem pytest (green):** `test_stage2_closeout`, `test_stage3_gate_d`, `test_stage3_control_security`, `test_game_crypto_claims`, `test_activity_stream`, `test_debugger_quiz_rewards`, `test_gate_c_status`, `test_customer_aggregator`
+**Ecosystem pytest (green):** `test_stage2_closeout`, `test_stage3_gate_d`, `test_stage3_control_security`, `test_game_crypto_claims` (isolated), `test_activity_stream`, `test_debugger_quiz_rewards`, `test_gate_c_status`, `test_customer_aggregator`, `test_12_paypal`, `test_monetization_allowance`, `test_lab_hub_v21`
+
+**Full suite (2026-07-21):** 1035 passed, 15 failed — remaining failures are exchange env/data drift (`live_enabled`, treasury stash amounts, rental shop catalog).
 
 ---
 
