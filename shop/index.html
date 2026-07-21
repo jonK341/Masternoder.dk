@@ -3066,8 +3066,14 @@
                     if (revAddr && revBlock) {
                         revBlock.style.display = 'block';
                         if (revAddrEl) revAddrEl.textContent = revAddr;
-                        if (revExplorer && balData.shop_revenue_explorer_url) {
-                            revExplorer.href = balData.shop_revenue_explorer_url;
+                        if (revExplorer) {
+                            revExplorer.href = balData.shop_revenue_hub_url || balData.shop_revenue_hub_search_url || balData.shop_revenue_explorer_url || '#';
+                            revExplorer.textContent = balData.shop_revenue_hub_url ? 'View in Crypto Hub' : 'View on explorer';
+                            revExplorer.removeAttribute('target');
+                            if (!balData.shop_revenue_hub_url && balData.shop_revenue_explorer_url) {
+                                revExplorer.setAttribute('target', '_blank');
+                                revExplorer.setAttribute('rel', 'noopener');
+                            }
                             revExplorer.style.display = '';
                         }
                     } else if (revBlock) revBlock.style.display = 'none';
@@ -3090,8 +3096,14 @@
                 if (addrData.success && addrData.deposit_address) {
                     const addr = addrData.deposit_address;
                     if (addrEl) addrEl.textContent = addr;
-                    if (explorerLink && addrData.explorer_address_url) {
-                        explorerLink.href = addrData.explorer_address_url;
+                    if (explorerLink) {
+                        explorerLink.href = addrData.hub_address_url || addrData.hub_search_url || addrData.explorer_address_url || '#';
+                        explorerLink.textContent = addrData.hub_address_url ? 'View in Crypto Hub' : 'View on explorer';
+                        explorerLink.removeAttribute('target');
+                        if (!addrData.hub_address_url && addrData.explorer_address_url) {
+                            explorerLink.setAttribute('target', '_blank');
+                            explorerLink.setAttribute('rel', 'noopener');
+                        }
                         explorerLink.style.display = '';
                     }
                     const qrEl = document.getElementById('mn2-deposit-qr');

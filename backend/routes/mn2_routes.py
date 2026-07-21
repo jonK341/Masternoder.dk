@@ -17,6 +17,9 @@ from backend.services.mn2_explorer_urls import (
     explorer_address_url,
     explorer_base_url,
     explorer_tx_url,
+    hub_address_url,
+    hub_search_url,
+    hub_tx_url,
 )
 
 
@@ -53,6 +56,8 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "shop_revenue_hub_url": hub_address_url(shop_revenue_address) if shop_revenue_address else None,
+        "shop_revenue_hub_search_url": hub_search_url(shop_revenue_address) if shop_revenue_address else None,
     }
     if config.get("withdrawal_requires_verification"):
         try:
@@ -134,6 +139,8 @@ def mn2_deposit_address():
         "user_id": result.get("user_id"),
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url(addr),
+        "hub_address_url": hub_address_url(addr),
+        "hub_search_url": hub_search_url(addr),
     }), 200
 
 
@@ -150,10 +157,13 @@ def mn2_transactions():
         item = dict(e)
         if (e.get("txid") or "").strip():
             item["explorer_tx_url"] = explorer_tx_url(e["txid"])
+            item["hub_tx_url"] = hub_tx_url(e["txid"])
         else:
             item["explorer_tx_url"] = None
+            item["hub_tx_url"] = None
         addr = (e.get("address") or "").strip()
         item["explorer_address_url"] = explorer_address_url(addr) if addr else None
+        item["hub_address_url"] = hub_address_url(addr) if addr else None
         out.append(item)
     return jsonify({"success": True, "user_id": user_id, "transactions": out}), 200
 

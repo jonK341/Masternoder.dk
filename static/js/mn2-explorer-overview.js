@@ -11,6 +11,17 @@
     return s === 'ENABLED' || s === 'ACTIVE';
   }
 
+  /**
+   * Prefill explorer search from `?q=` (profile wallet / shop deep links).
+   */
+  function initUrlSearch() {
+    try {
+      var query = new URLSearchParams(window.location.search).get('q');
+      var input = q('ex-q');
+      if (query && input) input.value = query;
+    } catch (e) { /* ignore */ }
+  }
+
   function shortHash(h) {
     if (!h || h.length < 16) return h || '—';
     return h.slice(0, 8) + '…' + h.slice(-8);
@@ -296,6 +307,7 @@
     q('t-supply2').textContent = dm.money_supply != null ? (fmtCompact(dm.money_supply) + ' MN2') : '—';
   }
 
+  /** Fetch `/api/mn2/network-overview` and repaint network, daemon, and pool tiles. */
   function refresh() {
     var upd = q('ex-updated');
     if (upd) upd.textContent = 'Loading network stats…';
@@ -759,6 +771,7 @@
     });
   }
 
+  initUrlSearch();
   initSearch();
   initToolbar();
   initKeyboard();

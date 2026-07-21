@@ -46,6 +46,7 @@ jobs:
             tests/unit/test_explorer_p3.py \
             tests/unit/test_explorer_p4.py \
             tests/unit/test_explorer_p5.py \
+            tests/unit/test_explorer_p6.py \
             tests/unit/test_mn2_explorer_urls.py \
             tests/unit/test_mn2_explorer_data.py \
             tests/unit/test_mn2_routes_explorer_links.py \

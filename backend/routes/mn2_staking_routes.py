@@ -739,6 +739,56 @@ def explorer_openapi():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+_EXPLORER_DOCS_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MN2 Explorer API</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: '/api/mn2/explorer/openapi.json',
+      dom_id: '#swagger-ui',
+      deepLinking: true
+    });
+  </script>
+</body>
+</html>"""
+
+
+@mn2_staking_bp.route("/api/docs", methods=["GET"])
+def api_docs_index():
+    """API documentation index — explorer OpenAPI + links."""
+    if (request.headers.get("Accept") or "").find("application/json") >= 0:
+        return jsonify({
+            "success": True,
+            "docs": [
+                {"id": "explorer", "title": "MN2 Explorer API", "openapi": "/api/mn2/explorer/openapi.json", "ui": "/api/docs/explorer"},
+            ],
+        }), 200
+    html = (
+        "<!DOCTYPE html><html><head><title>MN2 API Docs</title></head><body>"
+        "<h1>MN2 API documentation</h1><ul>"
+        '<li><a href="/api/docs/explorer">Explorer API (Swagger UI)</a></li>'
+        '<li><a href="/api/mn2/explorer/openapi.json">Explorer OpenAPI JSON</a></li>'
+        "</ul></body></html>"
+    )
+    return Response(html, mimetype="text/html; charset=utf-8")
+
+
+@mn2_staking_bp.route("/api/docs/explorer", methods=["GET"])
+def explorer_api_docs_ui():
+    """Swagger UI for MN2 explorer endpoints."""
+    resp = Response(_EXPLORER_DOCS_HTML, mimetype="text/html; charset=utf-8")
+    _cache_public(resp, 300, swr=600)
+    return resp
+
+
 @mn2_staking_bp.route("/api/mn2/explorer/address/<address>/txs", methods=["GET"])
 def explorer_address_txs(address):
     try:

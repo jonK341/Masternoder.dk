@@ -270,28 +270,30 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 
 ## P6 — Documentation (211–230)
 
+**Verification:** `python3 -m pytest tests/unit/test_explorer_p6.py`
+
 | # | Upgrade | Status |
 |---|---------|--------|
 | 211 | Big-time plan doc `2026-07-20-001-feat-mn2-explorer-big-time-plan.md` | done |
 | 212 | This 250-upgrades catalog | done |
 | 213 | Explorer reinstall checklist exists | done |
 | 214 | API endpoint table in AGENTS_MN2 | done |
-| 215 | Architecture diagram hub ↔ eiquidus ↔ RPC | pending |
-| 216 | Sequence diagram: search → classify → page | pending |
-| 217 | Runbook: eiquidus index stuck | pending |
-| 218 | Runbook: Chainz fallback activation | pending |
-| 219 | FAQ: why price shows em-dash | pending |
-| 220 | FAQ: rich list empty | pending |
-| 221 | Changelog entry per explorer release | pending |
-| 222 | Video walkthrough of crypto hub | pending |
-| 223 | Inline JSDoc on overview module | pending |
-| 224 | OpenAPI publish to `/api/docs` | pending |
-| 225 | Contributor guide: adding explorer tile | pending |
+| 215 | Architecture diagram hub ↔ eiquidus ↔ RPC | done |
+| 216 | Sequence diagram: search → classify → page | done |
+| 217 | Runbook: eiquidus index stuck | done |
+| 218 | Runbook: Chainz fallback activation | done |
+| 219 | FAQ: why price shows em-dash | done |
+| 220 | FAQ: rich list empty | done |
+| 221 | Changelog entry per explorer release | done |
+| 222 | Video walkthrough of crypto hub | deferred |
+| 223 | Inline JSDoc on overview module | done |
+| 224 | OpenAPI publish to `/api/docs` | done |
+| 225 | Contributor guide: adding explorer tile | done |
 | 226 | Security note: read-only explorer data | done |
 | 227 | Privacy note: pool figures custodial | done |
 | 228 | Disclaimer: not financial advice | done |
-| 229 | Link from profile wallet to explorer search | pending |
-| 230 | Link from shop revenue address to explorer | pending |
+| 229 | Link from profile wallet to explorer search | done |
+| 230 | Link from shop revenue address to explorer | done |
 
 ---
 
@@ -332,8 +334,8 @@ Holistic audit of the MN2 Crypto Hub (`/explorer/`) and self-hosted eiquidus lay
 | P3 Detail pages | 30 | 0 | 30 |
 | P4 Ops | 29 | 1 | 30 |
 | P5 Tests | 20 | 0 | 20 |
-| P6 Docs | 7 | 13 | 20 |
+| P6 Docs | 19 | 1 | 20 |
 | P7 Future | 0 | 20 | 20 |
-| **Total** | **210** | **40** | **250** |
+| **Total** | **222** | **28** | **250** |
 
 **Next deploy step:** merge PR #57, run `python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass`, then `POST_DEPLOY_BASE_URL=https://<site> python scripts/smoke_explorer_deploy.py`.

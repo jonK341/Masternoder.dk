@@ -98,8 +98,14 @@
     if (revAddr && revBlock) {
       revBlock.style.display = 'block';
       if (revAddrEl) revAddrEl.textContent = revAddr;
-      if (revExplorer && balData.shop_revenue_explorer_url) {
-        revExplorer.href = balData.shop_revenue_explorer_url;
+      if (revExplorer) {
+        revExplorer.href = balData.shop_revenue_hub_url || balData.shop_revenue_hub_search_url || balData.shop_revenue_explorer_url || '#';
+        revExplorer.textContent = balData.shop_revenue_hub_url ? 'View in Crypto Hub' : 'View on explorer';
+        revExplorer.removeAttribute('target');
+        if (!balData.shop_revenue_hub_url && balData.shop_revenue_explorer_url) {
+          revExplorer.setAttribute('target', '_blank');
+          revExplorer.setAttribute('rel', 'noopener');
+        }
         revExplorer.style.display = '';
       }
     } else if (revBlock) revBlock.style.display = 'none';
@@ -137,8 +143,14 @@
       if (depositHintEl) depositHintEl.style.display = 'none';
       if (depositRetryBtn) depositRetryBtn.style.display = 'none';
       if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
-      if (explorerLink && addrData.explorer_address_url) {
-        explorerLink.href = addrData.explorer_address_url;
+      if (explorerLink) {
+        explorerLink.href = addrData.hub_address_url || addrData.hub_search_url || addrData.explorer_address_url || '#';
+        explorerLink.textContent = addrData.hub_address_url ? 'View in Crypto Hub' : 'View on explorer';
+        explorerLink.removeAttribute('target');
+        if (!addrData.hub_address_url && addrData.explorer_address_url) {
+          explorerLink.setAttribute('target', '_blank');
+          explorerLink.setAttribute('rel', 'noopener');
+        }
         explorerLink.style.display = '';
       }
       if (qrEl && typeof QRCode !== 'undefined') {
@@ -178,11 +190,13 @@
         .map(function (t) {
           var type = t.type || '—';
           var amt = t.amount != null ? Number(t.amount).toFixed(4) : '—';
-          var txLink = t.explorer_tx_url
-            ? '<a href="' + t.explorer_tx_url + '" target="_blank" rel="noopener" style="color:#00d4ff;">Explorer tx</a>'
+          var txHref = t.hub_tx_url || t.explorer_tx_url;
+          var txLink = txHref
+            ? '<a href="' + txHref + '"' + (t.hub_tx_url ? '' : ' target="_blank" rel="noopener"') + ' style="color:#00d4ff;">Hub tx</a>'
             : '';
-          var addrLink = t.explorer_address_url
-            ? ' <a href="' + t.explorer_address_url + '" target="_blank" rel="noopener" style="color:#88ccff;">Explorer address</a>'
+          var addrHref = t.hub_address_url || t.explorer_address_url;
+          var addrLink = addrHref
+            ? ' <a href="' + addrHref + '"' + (t.hub_address_url ? '' : ' target="_blank" rel="noopener"') + ' style="color:#88ccff;">Hub address</a>'
             : '';
           var date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
           return '<li>' + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
