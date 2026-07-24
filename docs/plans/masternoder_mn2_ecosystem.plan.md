@@ -4,7 +4,7 @@ overview: "Retarget the whole effort to the real Masternoder.dk Flask app: audit
 todos:
   - id: audit
     content: "Phase 0: Audit MN2 mechanics end-to-end; start docs/MN2_ECOSYSTEM_REPORT.md"
-    status: pending
+    status: completed
   - id: daemon-health
     content: "Phase 1: mn2_health_routes.py (/api/mn2/health, /api/health), harden scanner/overview, add RPC-mocked tests"
     status: completed
