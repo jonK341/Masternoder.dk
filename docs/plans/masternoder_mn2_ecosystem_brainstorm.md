@@ -18,7 +18,7 @@ The ecosystem plan’s YAML todos still say Phase 0–14 `pending`. The repo dis
 | Plan phase | Actual status | Evidence |
 |------------|---------------|----------|
 | 0 Audit + report | **Done** | `docs/MN2_ECOSYSTEM_REPORT.md` (money path + Gate A) |
-| 1 Daemon health | **Partial** | `/api/mn2/health` exists; Hub keys + tests drift |
+| 1 Daemon health | **Done (code)** | Hub keys wired: `daemon_staking`, `discord_outbox`, `network_alerts`; `test_mn2_health` green |
 | 2–8 Wallet / market / agents / explorer / monitor / Discord | **Mostly built** | Services + routes + tests present; ops/TODO is the backlog |
 | 9–13 Security / generator / game / customers / AI | **Largely shipped** | Report + MN2_TODO Done section |
 | Live ops focus | **Exchange + multi-ping + health warn** | `MN2_TODO.md` P1 sprint |
@@ -83,10 +83,10 @@ The ecosystem plan’s YAML todos still say Phase 0–14 `pending`. The repo dis
 Audit already exists. Re-auditing burns cycles without new product value. The plan’s own Phase 0 deliverable (`MN2_ECOSYSTEM_REPORT.md`) is already there; the valuable “first” is the unfinished Phase 1 health contract that ops still watches as degraded/warn.
 
 ### Success criteria for “first done”
-- [ ] `pytest tests/unit/test_mn2_health.py` green  
-- [ ] `/api/mn2/health` returns Hub-expected components  
-- [ ] Ecosystem plan todos updated (no blanket pending)  
-- [ ] Short note in report: Phase 1 residual closed / still open
+- [x] `pytest tests/unit/test_mn2_health.py` green  
+- [x] `/api/mn2/health` returns Hub-expected components  
+- [x] Ecosystem plan Phase 1 marked done (code); remaining todos still need full sync (Option D)  
+- [x] Short note in report: Phase 1 Hub contract closed
 
 ---
 

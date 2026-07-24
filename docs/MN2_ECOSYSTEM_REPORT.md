@@ -69,7 +69,7 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 | Check | Endpoint / test | Status |
 |-------|-----------------|--------|
 | Basic health | `GET /api/health` | Pass |
-| MN2 health | `GET /api/mn2/health` | Added |
+| MN2 health | `GET /api/mn2/health` | Pass (Hub contract: `daemon_staking`, `discord_outbox`, `network_alerts`; inactive mint → 503 degraded) |
 | Themes user | `GET /api/themes/user` | Pass |
 | Battle URLs | `tests/unit/test_02_battle.py` | Pass |
 | Unified points | Gate S atomic `add_points` | Pass |

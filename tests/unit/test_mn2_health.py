@@ -38,5 +38,11 @@ def test_mn2_health(monkeypatch):
     assert r.status_code == 503  # degraded when minting inactive
     data = r.get_json()
     assert data.get("success") is True
-    assert "discord_outbox" in data.get("components", {})
-    assert "daemon_staking" in data.get("components", {})
+    assert data.get("status") == "degraded"
+    comps = data.get("components", {})
+    assert "discord_outbox" in comps
+    assert "daemon_staking" in comps
+    assert "network_alerts" in comps
+    assert comps["daemon_staking"].get("status") == "inactive"
+    assert comps["discord_outbox"].get("status") == "unconfigured"
+    assert comps["network_alerts"].get("recent_count") == 0

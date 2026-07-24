@@ -7,7 +7,7 @@ todos:
     status: pending
   - id: daemon-health
     content: "Phase 1: mn2_health_routes.py (/api/mn2/health, /api/health), harden scanner/overview, add RPC-mocked tests"
-    status: pending
+    status: completed
   - id: wallet
     content: "Phase 2: Multi-address rotation/refresh + multi-wallet connect + top 10 wallet features (profile UI)"
     status: pending
