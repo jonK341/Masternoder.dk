@@ -46,6 +46,7 @@ The ecosystem plan’s YAML todos still say Phase 0–14 `pending`. The repo dis
 
 ### B — Gate S load + conservation proof
 **What:** Critical from the report — concurrency/idempotency tests on `unified_points` + ledger conservation under parallel deposit/withdraw/escrow.
+**Status (2026-07-24):** **Done** — `admin_audit_service` restored; `mn2_ledger.append_entry` atomic + deposit txid unique; `test_gate_s_orchestrator.py` covers same-ref storm, credit/debit net, escrow roundtrip, concurrent ledger appends, deposit+points conservation (11 passed).
 **Why:** Money integrity is the real floor before any treasury distribution.
 **Risk:** Medium (test harness / flaky RPC mocks). Still no live fund moves.
 **Depends on:** A preferred first so failures are attributed correctly (daemon vs app).

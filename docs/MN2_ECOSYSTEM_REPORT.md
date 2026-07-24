@@ -48,7 +48,7 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 - Append-only: `data/mn2_ledger.json`
 - Conservation check: `mn2_conservation_gate.conservation_gate()`
 
-**Status:** Implemented. Reconciliation cron via `security_cron_routes`.
+**Status:** Implemented. Reconciliation cron via `security_cron_routes`. Gate S: `append_entry` is atomic under one lock; deposit/treasury_deposit txids are unique under concurrency.
 
 ## Generator MN2
 
@@ -77,5 +77,5 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 ## Critical / upgrades (see MN2_TODO.md)
 
-- **Critical:** Gate S concurrency tests under load; treasury cold-wallet policy for 600k agent funding
-- **Upgrades:** Discord M8 streams 51–60 full rollout; customer avatar backfill cron; Health Ops Hub tile for MN2 health
+- **Critical:** Gate S concurrency/conservation under load — **proven** (`test_gate_s_orchestrator.py`); treasury cold-wallet policy for 600k agent funding still open
+- **Upgrades:** Discord M8 streams 51–60 full rollout; customer avatar backfill cron; Health Ops Hub tile for MN2 health (Hub contract closed 2026-07-24)
