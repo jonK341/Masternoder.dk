@@ -33,7 +33,7 @@ def _parse_jobs() -> list:
         if preset in (
             'daily', 'weekly', 'monthly', 'knowledge',
             'blueprint_route', 'api_service', 'routes',
-            'trader', 'treasury',
+            'trader', 'treasury', 'security',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)
@@ -64,7 +64,7 @@ def agents_cron_run():
     if not jobs:
         return jsonify({
             'success': False,
-            'error': 'no jobs: use jobs=daily|weekly|monthly|knowledge|blueprint_route|api_service|routes|trader|treasury or a list',
+            'error': 'no jobs: use jobs=daily|weekly|monthly|knowledge|blueprint_route|api_service|routes|trader|treasury|security or a list',
         }), 400
 
     data = request.get_json(silent=True) or {}
@@ -117,5 +117,6 @@ def agents_cron_presets():
             'routes': expand_preset('routes'),
             'trader': expand_preset('trader'),
             'treasury': expand_preset('treasury'),
+            'security': expand_preset('security'),
         },
     }), 200

@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-07-25** (Phase 5 residual — news/channels + explorer top-10)
+Last updated: **2026-07-25** (Phases 9/11/13/14 residuals closed; plan synced)
 
 See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -29,9 +29,9 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 | **U1** | Agent trader strategies + `agents_trader` cron + admin board | **Done 2026-07-25** (code) · live fund blocked by C3 | `agent_trader_service` (6 strategies), `cron/agents_trader.sh`, `/api/agents/control/*`, staking join/status; fund stays dry-run until sign-off |
 | **U2** | `GET /api/news/channels` + explorer top-10 polish | **Done 2026-07-25** | Channels/publish/RSS; tx/address/block/search/rich-list/mempool/supply APIs + pages |
 | **U3** | Casino MN2 cashback + crypto policy doc | Phase 7 residual | Jackpots/tournaments already MN2 |
-| **U4** | Security cron full presets + `test_security_cron.py` | Phase 9 residual | Sweep route exists |
-| **U5** | Game unified Monitor tab + quest arg-order fix + top-10 earn | Phase 11 residual | `game_mn2_rewards` done |
-| **U6** | AI intelligence remaining core/monetization waves | Phase 13 residual | M7/M8 infra present |
+| **U4** | Security cron full presets + `test_security_cron.py` | **Done 2026-07-25** | presets full/sweep/risk/reconcile/backup + cron.d |
+| **U5** | Game unified Monitor tab + quest arg-order fix + top-10 earn | **Done 2026-07-25** | Monitor tab, quest XP fix, top-10 earn + check-in |
+| **U6** | AI intelligence wave inventory (core 25 + monetization) | **Done 2026-07-25** | `GET /api/ai-intelligence/waves`; deferred waves tracked |
 | **U7** | Customer avatar backfill cron | Upgrade | Aggregator page done |
 | **U8** | Exchange P1 product track | See Next sprint | Gateway / arb / trust — separate from ecosystem phase map |
 

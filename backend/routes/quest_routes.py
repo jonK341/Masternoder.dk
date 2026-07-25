@@ -277,11 +277,21 @@ def complete_quest():
         xp_reward = quest.get("xp_reward", 100)
         mn2_reward = _mn2_reward_for_quest(quest)
 
-        # Award XP
+        # Award XP (point_type, amount, source=...)
         awarded = False
         try:
             from backend.services.unified_points_database import unified_points_db
-            unified_points_db.add_points(user_id, xp_reward, "quest_complete", quest.get("title", "Quest"))
+            unified_points_db.add_points(
+                user_id,
+                "activity_points",
+                float(xp_reward),
+                source="quest_complete",
+                metadata={
+                    "reference": f"quest-xp:{quest_id}:{user_id}",
+                    "quest_id": quest_id,
+                    "quest_title": quest.get("title", "Quest"),
+                },
+            )
             awarded = True
         except Exception:
             pass
@@ -427,5 +437,36 @@ def active_quests():
             },
         }), 200
 
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@quest_bp.route("/api/quests/user/<user_id>", methods=["GET"])
+def user_quests_alias(user_id):
+    """Alias for GET /api/quests/active?user_id=… (Phase 11)."""
+    # Reuse active_quests by injecting query arg.
+    try:
+        uid = (user_id or "").strip()
+        if not uid:
+            return jsonify({"success": False, "error": "user_id required"}), 200
+        today = _today_str()
+        daily = _daily_cache.get(today) or []
+        personal = [q for q in (_user_quests.get(uid) or []) if q.get("personalised")]
+        completed_ids = {uq["quest_id"] for uq in (_user_quests.get(uid) or []) if uq.get("completed")}
+        all_quests = [dict(q, completed=q["quest_id"] in completed_ids) for q in daily] + personal
+        total_xp_available = sum(q.get("xp_reward", 0) for q in all_quests if not q.get("completed"))
+        total_xp_earned = sum(q.get("xp_reward", 0) for q in all_quests if q.get("completed"))
+        return jsonify({
+            "success": True,
+            "user_id": uid,
+            "date": today,
+            "quests": all_quests,
+            "stats": {
+                "total": len(all_quests),
+                "completed": len(completed_ids),
+                "xp_earned_today": total_xp_earned,
+                "xp_available": total_xp_available,
+            },
+        }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

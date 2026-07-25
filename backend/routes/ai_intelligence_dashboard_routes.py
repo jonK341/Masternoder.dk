@@ -230,3 +230,13 @@ def get_ai_intelligence_stats():
             'error': str(e),
             'stats': {}
         }), 500
+
+
+@ai_intelligence_dashboard_bp.route('/api/ai-intelligence/waves', methods=['GET'])
+def ai_intelligence_waves():
+    """Phase 13 inventory: core 25 + monetization wave status."""
+    try:
+        from backend.services.ai_wave_inventory_service import wave_inventory
+        return jsonify(wave_inventory()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

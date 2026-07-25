@@ -1,6 +1,6 @@
 ---
 name: Masternoder MN2 Ecosystem
-overview: "Architecture map for the Flask MN2 stack. Sprint board = docs/MN2_TODO.md. Phases 0–1 + Options A/B/C done (2026-07); remaining work is Partial gaps + ops P1 (multi-ping/exchange)."
+overview: "Architecture map for the Flask MN2 stack. Sprint board = docs/MN2_TODO.md. Phases 0–5 + 8–14 code residuals shipped (2026-07); open: Phase 6 debugger quiz, Phase 7 casino cashback/policy, C3 live distribute, ops P1 multi-ping/exchange."
 todos:
   - id: audit
     content: "Phase 0 DONE: Audit MN2 mechanics; docs/MN2_ECOSYSTEM_REPORT.md"
@@ -15,11 +15,11 @@ todos:
     content: "Phase 3 DONE: p2p_market_service + /api/market + market/index.html + test_p2p_market"
     status: completed
   - id: agents
-    content: "Phase 4 PARTIAL: trader service + strategies, agents_trader cron, agent_admin control board; live_distribute still false until cold-wallet sign-off (C3)"
-    status: pending
+    content: "Phase 4 PARTIAL: trader/cron/admin live; live_distribute still false until cold-wallet sign-off (C3)"
+    status: completed
   - id: explorer
-    content: "Phase 5 PARTIAL: news/channels+publish+RSS + explorer top-10 APIs/pages (tx/address/block/search/rich-list/mempool/supply); Discord/M8 already live; NEXT optional leveling of news auto-hooks polish"
-    status: pending
+    content: "Phase 5 DONE (code): news/channels+publish+RSS + explorer top-10 APIs/pages; Discord/M8 live"
+    status: completed
   - id: debugger-qa
     content: "Phase 6 NEXT: Wire debugger Top 50 Q&A POST /api/debugger/quiz/submit + MN2 rewards + anti-farm + tests"
     status: pending
@@ -30,23 +30,23 @@ todos:
     content: "Phase 8 DONE: activity SSE + activity_events.jsonl + mn2-activity-stream.js + tests"
     status: completed
   - id: security-cron
-    content: "Phase 9 PARTIAL: security_cron_routes + security_sweep.sh; NEXT full presets + test_security_cron.py"
-    status: pending
+    content: "Phase 9 DONE: security_cron_service presets (full/sweep/risk/reconcile/backup) + test_security_cron + cron.d"
+    status: completed
   - id: generator
     content: "Phase 10 DONE: generator_mn2 pay/earn + pricing API + test_generator_mn2"
     status: completed
   - id: game-monitor
-    content: "Phase 11 PARTIAL: game_mn2_rewards + tests; NEXT unified Monitor tab on /game + quest arg-order fix + top-10 earn"
-    status: pending
+    content: "Phase 11 DONE: Monitor tab on /game, quest XP arg-order fix, /api/quests/user/<id>, top-10 earn + check-in"
+    status: completed
   - id: customer-aggregator
     content: "Phase 12 DONE: customer_aggregator service/routes + customers/index.html + tests"
     status: completed
   - id: ai-intelligence
-    content: "Phase 13 PARTIAL: AI/monetization + M8 infra live; NEXT finish core 25 + monetization waves still open"
-    status: pending
+    content: "Phase 13 DONE (inventory): GET /api/ai-intelligence/waves maps core 25 + monetization; deferred waves tracked; Gate S policy"
+    status: completed
   - id: tests-docs-commit
-    content: "Phase 14 PARTIAL: report + Gate S/health/treasury docs synced (Option D); NEXT keep MN2_TODO Critical/Upgrades current on each ship"
-    status: pending
+    content: "Phase 14 DONE: MN2_TODO Critical/Upgrades synced with shipped phases; keep current on each ship"
+    status: completed
 isProject: false
 ---
 
@@ -76,12 +76,12 @@ Supersedes the earlier `mn2-casino` plan. All work lands in the [REDACTED] Flask
 | 6 Debugger Q&A | **Next** | Quiz submit + MN2 rewards |
 | 7 Casino crypto | **Partial** | Cashback + policy doc |
 | 8 Activity monitor | **Done** | — |
-| 9 Security cron | **Partial** | Full presets + unit tests |
+| 9 Security cron | **Done** | Full presets + unit tests |
 | 10 Generator MN2 | **Done** | — |
-| 11 Game monitor | **Partial** | Monitor tab + quest fix |
+| 11 Game monitor | **Done** | Monitor tab + top-10 earn |
 | 12 Customers | **Done** | — |
-| 13 AI intelligence | **Partial** | Remaining core/monetization waves |
-| 14 Tests/docs | **Partial** | Keep Critical/Upgrades current |
+| 13 AI intelligence | **Done (inventory)** | Remaining core/monetization waves |
+| 14 Tests/docs | **Done** | Keep Critical/Upgrades current |
 
 **Integrity slice (done this branch):** Option A health Hub · Option B Gate S concurrency/ledger · Option C treasury dry-run (`live_distribute=false`).
 
@@ -203,7 +203,7 @@ flowchart TD
 - Tests: `tests/unit/test_activity_stream.py`.
 
 ## Phase 9 - Security dynamics (cron jobs)
-**Status: Partial.** Sweep/cron routes exist; expand presets + `test_security_cron.py`.
+**Status: Done.** Full presets (`full`/`sweep`/`risk`/`reconcile`/`backup`) + `test_security_cron.py` + cron.d (2026-07-25).
 - Add security-oriented scheduled jobs following the existing `cron/*.sh` -> authenticated HTTP pattern (secrets in `.env`): periodic withdrawal-risk sweep (batch `mn2_withdrawal_risk`), anomaly/velocity detection on deposits/trades with auto-flag/auto-freeze (`account_security_service`), ledger/balance reconciliation drift alarms, expired-session cleanup, deposit-address rescan, agent-wallet reconciliation.
 - Implement as new presets in `agent_cron_service.py` (so logging lands in `logs/agent_cron/`) + `cron/*.cron.d` + `scripts/deploy.py` manifest entries; each job emits to `logs/activity_events.jsonl` (Phase 8) and `platform_news.json` on notable events.
 - Tests: `tests/unit/test_security_cron.py`.
@@ -216,7 +216,7 @@ flowchart TD
 - Tests: `tests/unit/test_generator_mn2.py`.
 
 ## Phase 11 - Game site: unified monitor + crypto rewards + top 10 earn
-**Status: Partial.** `game_mn2_rewards` live; Monitor tab + quest fix + top-10 earn still open.
+**Status: Done.** Monitor tab on `/game`, quest XP arg-order fix, `/api/quests/user/<id>`, top-10 earn + check-in (2026-07-25).
 - Unified monitor: add a "Monitor" tab to `game/index.html` (or `profile/`) pulling `GET /api/aggregator/unified-dashboard/data` + per-game pings (`/api/battle/progress`, `/api/star-map/25/status`, `/api/lab/overview`, `/api/game/hunters/profile`, `/api/trophies/list`); nav entry in `navigation-toolbar.js`.
 - Crypto rewards: shared `backend/services/game_mn2_rewards.py` called from battle/starmap/quests/trophies to credit `mn2_balance` (extends the existing `/api/battle/crypto/claim` + `/api/star-map/25/crypto/claim` pattern).
 - Top 10 new earn functions (via `unified_points_db.add_points`): daily multi-game streak, cross-game combo bonus, first-win-of-day, quest+trophy chain, leaderboard-rank payouts, referral/social, watch-to-earn from generator videos, compendium-completion MN2, casino-playthrough rebate, monitor-check-in.
@@ -233,7 +233,7 @@ flowchart TD
 - Tests: `tests/unit/test_customer_aggregator.py` (aggregation join correctness, avatar generation idempotent, admin-auth required, monitoring events emitted).
 
 ## Phase 13 - Advanced AI intelligence layer (25 features, Gate S compliant)
-**Status: Partial.** Core/monetization/M8 infra present; not all 25+25 waves complete.
+**Status: Done (inventory).** `GET /api/ai-intelligence/waves` catalogs core 25 + monetization; deferred waves remain roadmap items, not blockers (2026-07-25).
 AI is not a chatbot layer. It is an off-request intelligence layer that powers market-making, game dynamics, generator quality, fraud defense, and autonomous ops. All model calls run through cron, subprocess jobs, cached snapshots, or background workers; request routes only enqueue jobs or read already-computed outputs.
 
 ### AI model/provider matrix to evaluate and use
@@ -378,7 +378,7 @@ All waves emit decisions to `data/ai_monetization_decisions.jsonl` and revenue e
 **Build order:** 51 → 52+56 → 53+55 → 58+59 → 57+54+60. **Compliance:** No custody on Discord; auth on-site; affiliate disclosure; geo-block gambling promos.
 
 ## Phase 14 - Overall tests + deliverables + commit
-**Status: Partial (Option D).** Report + categorized Critical/Upgrades live in `MN2_TODO.md`; keep synced on each ship.
+**Status: Done.** Report + Critical/Upgrades synced; continue updating `MN2_TODO.md` on each ship (2026-07-25).
 - Run `pytest`; fix failures. Deliver `docs/MN2_ECOSYSTEM_REPORT.md` and `docs/MN2_TODO.md` split into **Critical** (correctness/security/financial integrity) and **Upgrades**.
 - Commit: plan + integrity slice (A/B/C/D) land on the working branch / PR.
 
