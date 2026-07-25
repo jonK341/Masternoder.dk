@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-07-25** (Option E — multi-ping safety gate; plan ↔ TODO sync)
+Last updated: **2026-07-25** (Phase 4 agents residual — trader + cron + admin board)
 
 See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -26,7 +26,7 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 
 | Pri | Item | Status | Note |
 | --- | ---- | ------ | ---- |
-| **U1** | Agent trader strategies + `agents_trader` cron + admin board | Phase 4 residual | After C3 policy respected |
+| **U1** | Agent trader strategies + `agents_trader` cron + admin board | **Done 2026-07-25** (code) · live fund blocked by C3 | `agent_trader_service` (6 strategies), `cron/agents_trader.sh`, `/api/agents/control/*`, staking join/status; fund stays dry-run until sign-off |
 | **U2** | `GET /api/news/channels` + explorer top-10 polish | Phase 5 residual | Discord/M8 infra largely live |
 | **U3** | Casino MN2 cashback + crypto policy doc | Phase 7 residual | Jackpots/tournaments already MN2 |
 | **U4** | Security cron full presets + `test_security_cron.py` | Phase 9 residual | Sweep route exists |

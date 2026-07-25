@@ -80,6 +80,66 @@ def upsert_follower(
     return {"success": True, "follower": followers[uid]}
 
 
+def get_follower(follower_user_id: str) -> Dict[str, Any]:
+    """Return one follower record (or following=False)."""
+    uid = str(follower_user_id or "").strip()
+    if not uid:
+        return {"following": False}
+    data = _load()
+    cfg = (data.get("followers") or {}).get(uid)
+    if not isinstance(cfg, dict):
+        return {"following": False, "follower_user_id": uid}
+    return {"following": True, **cfg}
+
+
+def mirror_leader_reward(
+    leader_agent_id: str,
+    reward_mn2: float,
+    *,
+    interval_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Credit scaled staking rewards to copy-trading followers of a trader agent."""
+    lid = str(leader_agent_id or "").strip()
+    reward = float(reward_mn2 or 0)
+    if not lid or reward <= 0:
+        return {"success": True, "mirrored": 0, "results": []}
+
+    import backend.services.mn2_staking_service as staking
+
+    data = _load()
+    followers = data.get("followers") or {}
+    mirrored: List[Dict[str, Any]] = []
+
+    for uid, cfg in followers.items():
+        if not isinstance(cfg, dict) or not cfg.get("enabled"):
+            continue
+        if cfg.get("leader_agent_id") != lid:
+            continue
+        scale = float(cfg.get("scale") or 0.25)
+        cap = float(cfg.get("max_mn2_per_step") or 0)
+        share = round(reward * scale, 8)
+        if cap > 0:
+            share = min(share, cap)
+        if share <= 0:
+            continue
+        staking.accept_terms(uid)
+        staking._points().add_points(
+            uid, "mn2_balance", share,
+            source="copy_trade_reward",
+            metadata={"leader_agent_id": lid, "interval_id": interval_id},
+        )
+        stakes = staking._load_stakes()
+        rec = staking._get_record(stakes, uid)
+        rec["total_earned"] = round(float(rec.get("total_earned", 0) or 0) + share, 8)
+        stakes[uid] = rec
+        staking._save_stakes(stakes)
+        row = {"follower": uid, "share_mn2": share, "leader_agent_id": lid}
+        mirrored.append(row)
+        _append({"ts": _iso(), "type": "mirror_leader_reward", **row, "interval_id": interval_id})
+
+    return {"success": True, "mirrored": len(mirrored), "results": mirrored}
+
+
 def mirror_agent_run(leader_agent_id: str, leader_user_id: str, actions: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Mirror stake/unstake steps from a leader agent run onto followers."""
     data = _load()

@@ -15,7 +15,7 @@ todos:
     content: "Phase 3 DONE: p2p_market_service + /api/market + market/index.html + test_p2p_market"
     status: completed
   - id: agents
-    content: "Phase 4 PARTIAL: Option C treasury ready (live_distribute=false); NEXT agent_trader_service, agents_trader cron, agent_admin_routes, live distribute after sign-off"
+    content: "Phase 4 PARTIAL: trader service + strategies, agents_trader cron, agent_admin control board; live_distribute still false until cold-wallet sign-off (C3)"
     status: pending
   - id: explorer
     content: "Phase 5 PARTIAL: explorer data + discord_service + news channel filter; NEXT GET /api/news/channels + remaining explorer top-10 polish"
@@ -135,7 +135,7 @@ flowchart TD
 - Tests: `tests/unit/test_p2p_market.py` (matching, escrow, no negative balances, idempotency).
 
 ## Phase 4 - Agents: wallets, points, levels, trader skills, control board
-**Status: Partial.** Option C treasury ready (`live_distribute=false`); still need trader service/cron/admin + signed live distribute.
+**Status: Partial.** Trader service/cron/admin board shipped (2026-07-25). Live 600k distribute still gated by C3 (`live_distribute=false` until cold-wallet sign-off). Remaining polish: leveling unlocks, point_control_board restore, skillset expansion.
 - Agent wallets: new `backend/services/agent_wallet_service.py` + table `agent_wallets` (agent_id, coins, mn2) funded from the treasury; record via `agent_db_service.record_agent_activity`.
 - Trader agents: new `backend/services/agent_trader_service.py` with strategies (market-maker, momentum, mean-reversion, liquidity/random-walk, arbitrage, sniper) that place/fill `/api/market` orders to keep it liquid and trade with real users; expand skills in `agent_skillset.py`. Default fleet = one agent per strategy (configurable `trader_agent_count`, default 6).
 - Agent treasury funding (real on-chain, fund trader agents only, 100,000 MN2 each):
