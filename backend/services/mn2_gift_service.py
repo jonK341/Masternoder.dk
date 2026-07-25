@@ -124,11 +124,22 @@ def transfer(from_user: str, to: str, amount: float, note: str = "") -> Dict[str
     if liquid - amt < min_after:
         return {"success": False, "error": f"Must keep at least {min_after} MN2 after transfer.", "code": "min_balance"}
 
-    meta = {"to_user": recipient, "from_user": sender, "note": (note or "")[:200]}
-    dr = unified_points_db.add_points(sender, "mn2_balance", -amt, source="mn2_gift_sent", metadata=meta)
+    meta = {
+        "to_user": recipient,
+        "from_user": sender,
+        "note": (note or "")[:200],
+        "reference": f"gift:{sender}:{recipient}:{amt}:{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+    }
+    dr = unified_points_db.add_points(
+        sender, "mn2_balance", -amt, source="mn2_gift_sent",
+        metadata={**meta, "reference": meta["reference"] + ":debit"},
+    )
     if not dr.get("success"):
         return {"success": False, "error": dr.get("error", "debit failed")}
-    cr = unified_points_db.add_points(recipient, "mn2_balance", amt, source="mn2_gift_received", metadata=meta)
+    cr = unified_points_db.add_points(
+        recipient, "mn2_balance", amt, source="mn2_gift_received",
+        metadata={**meta, "reference": meta["reference"] + ":credit"},
+    )
     if not cr.get("success"):
         unified_points_db.add_points(sender, "mn2_balance", amt, source="mn2_gift_rollback", metadata=meta)
         return {"success": False, "error": cr.get("error", "credit failed")}

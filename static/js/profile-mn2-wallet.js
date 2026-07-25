@@ -225,6 +225,98 @@
     }
   }
 
+  function renderAddressList(data) {
+    var el = document.getElementById('profile-mn2-address-list');
+    if (!el) return;
+    var rows = (data && data.addresses) || [];
+    if (!rows.length) {
+      el.innerHTML = '<p style="margin:0;opacity:0.7;">No addresses yet. Request or rotate a deposit address.</p>';
+      return;
+    }
+    el.innerHTML = rows
+      .map(function (a) {
+        var addr = (a.address || '').trim();
+        var label = a.label || (a.external ? a.type || 'external' : 'deposit');
+        var active = a.active === false ? '' : ' · <span style="color:#00ff88;">active</span>';
+        var ext = a.external ? ' · external' : '';
+        var short = addr.length > 18 ? addr.slice(0, 10) + '…' + addr.slice(-6) : addr;
+        var link = a.explorer_address_url
+          ? ' <a href="' + a.explorer_address_url + '" target="_blank" rel="noopener" style="color:#00d4ff;">explorer</a>'
+          : '';
+        return (
+          '<div style="margin:5px 0;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,0.25);">' +
+          '<strong style="opacity:0.85;">' +
+          label +
+          '</strong>' +
+          active +
+          ext +
+          '<br><code style="font-size:0.78rem;">' +
+          short +
+          '</code>' +
+          link +
+          '</div>'
+        );
+      })
+      .join('');
+  }
+
+  function loadAddressList() {
+    return fetchJson(base() + '/api/mn2/wallet/addresses?user_id=' + encodeURIComponent(uid())).then(function (res) {
+      renderAddressList(res.data || {});
+    });
+  }
+
+  function wireWalletSettings() {
+    var rotateBtn = document.getElementById('profile-mn2-rotate-addr');
+    if (rotateBtn && !rotateBtn._mn2Wired) {
+      rotateBtn._mn2Wired = true;
+      rotateBtn.addEventListener('click', function () {
+        rotateBtn.disabled = true;
+        requestDepositAddress(true).finally(function () {
+          rotateBtn.disabled = false;
+          loadAddressList();
+        });
+      });
+    }
+    var connectBtn = document.getElementById('profile-mn2-connect-btn');
+    if (connectBtn && !connectBtn._mn2Wired) {
+      connectBtn._mn2Wired = true;
+      connectBtn.addEventListener('click', function () {
+        var addr = ((document.getElementById('profile-mn2-connect-address') || {}).value || '').trim();
+        var wtype = ((document.getElementById('profile-mn2-connect-type') || {}).value || 'watch').trim();
+        var msg = document.getElementById('profile-mn2-connect-msg');
+        if (!addr) {
+          if (msg) {
+            msg.textContent = 'Enter an MN2 address';
+            msg.style.color = '#ffaa44';
+          }
+          return;
+        }
+        connectBtn.disabled = true;
+        fetchJson(base() + '/api/mn2/wallet/connect', {
+          method: 'POST',
+          body: { user_id: uid(), address: addr, wallet_type: wtype },
+          timeout: 15000,
+        })
+          .then(function (res) {
+            var d = res.data || {};
+            if (msg) {
+              msg.textContent = d.success ? 'Connected ' + wtype + ' wallet.' : d.error || 'Connect failed';
+              msg.style.color = d.success ? '#00ff88' : '#ffaa44';
+            }
+            if (d.success) {
+              var inp = document.getElementById('profile-mn2-connect-address');
+              if (inp) inp.value = '';
+              loadAddressList();
+            }
+          })
+          .finally(function () {
+            connectBtn.disabled = false;
+          });
+      });
+    }
+  }
+
   function requestDepositAddress(forceNew) {
     var user = uid();
     var addrEl = document.getElementById('profile-mn2-deposit-address');
@@ -373,6 +465,7 @@
     wireControls();
     wireFiatToggle();
     initWalletSubTabs();
+    wireWalletSettings();
 
     fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
       renderBalance(res.data);
@@ -386,6 +479,7 @@
     fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
       renderActivity(res.data);
     });
+    loadAddressList();
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };

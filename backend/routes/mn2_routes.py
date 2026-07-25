@@ -11,7 +11,13 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    get_or_create_deposit_address,
+    refresh_deposit_address,
+    connect_external_wallet,
+    list_user_addresses,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -152,6 +158,143 @@ def mn2_deposit_address():
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    """List labeled deposit / connected addresses for the current user (Phase 2)."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = list_user_addresses(user_id)
+    if not result.get("success"):
+        return jsonify(result), 400
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("addresses") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "wallet_type": result.get("wallet_type"),
+        "addresses": rows,
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Rotate primary deposit address (Phase 2). Best-effort deposit rescan after rotate."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        err = result.get("error", "Unknown error")
+        return jsonify({
+            "success": False,
+            "error": _user_facing_rpc_error(err),
+            "user_id": user_id,
+        }), 200
+    rescanned = False
+    try:
+        from backend.services.mn2_deposit_scanner import run_scanner
+        run_scanner()
+        rescanned = True
+    except Exception:
+        rescanned = False
+    addr = result.get("deposit_address") or ""
+    base = _explorer_base_url().rstrip("/")
+    listed = list_user_addresses(user_id)
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "rescanned": rescanned,
+        "addresses": listed.get("addresses") or [],
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/connect", methods=["POST"])
+def mn2_wallet_connect():
+    """Connect an external/watch address (extension/hardware/web stubs). No key custody."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    result = connect_external_wallet(
+        user_id,
+        (data.get("address") or "").strip(),
+        wallet_type=(data.get("wallet_type") or data.get("type") or "watch"),
+    )
+    code = 200 if result.get("success") else 400
+    if result.get("success"):
+        listed = list_user_addresses(user_id)
+        result["addresses"] = listed.get("addresses") or []
+    return jsonify(result), code
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["GET", "POST", "DELETE"])
+def mn2_address_book():
+    """Trusted withdrawal address book (Phase 2 top-10 #6/#8)."""
+    from backend.services import mn2_address_book as book
+
+    if request.method == "GET":
+        user_id = resolve_user_id(from_body=False, from_query=True)
+        return jsonify({"success": True, "user_id": user_id, "addresses": book.list_addresses(user_id)}), 200
+
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in required.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+
+    if request.method == "DELETE":
+        r = book.remove_address(user_id, (data.get("address") or request.args.get("address") or "").strip())
+        return jsonify(r), 200 if r.get("success") else 400
+
+    # POST — require profile password or verification token when password protection is enabled.
+    pwd = (data.get("password") or "").strip()
+    token = (data.get("verification_token") or data.get("verify_token") or "").strip() or None
+    try:
+        from backend.services.password_protection_service import get_password_status, verify_password
+        status = get_password_status(user_id) or {}
+        if status.get("has_password") or status.get("password_set") or status.get("enabled"):
+            ok = False
+            if pwd:
+                vr = verify_password(user_id, pwd)
+                ok = bool(vr.get("success"))
+            if not ok and token:
+                from backend.services.account_security_service import check_real_money_action
+                ok = check_real_money_action(user_id, verification_token=token) is None
+            if not ok:
+                return jsonify({
+                    "success": False,
+                    "error": "Profile password or verification token required.",
+                    "code": "auth_required",
+                }), 403
+    except Exception:
+        pass
+
+    r = book.add_address(user_id, (data.get("address") or "").strip(), label=(data.get("label") or "").strip())
+    return jsonify(r), 200 if r.get("success") else 400
+
+
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_transfer():
+    """Internal user-to-user MN2 gift (Phase 2 top-10 #5)."""
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to send MN2.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        from backend.services.mn2_gift_service import transfer
+        r = transfer(
+            user_id,
+            (data.get("to") or data.get("to_user") or "").strip(),
+            float(data.get("amount") or data.get("amount_mn2") or 0),
+            note=(data.get("note") or "")[:200],
+        )
+        return jsonify(r), 200 if r.get("success") else 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
