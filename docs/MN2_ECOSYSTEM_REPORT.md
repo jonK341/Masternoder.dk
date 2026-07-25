@@ -61,8 +61,12 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 - `casino_service.py` supports `mn2_balance`, `coins`, `casino_fiat_balance`
 - PayPal USD on-ramp via `mn2_onramp_routes` / `paypal_routes`
+- Progressive jackpots / tournaments on MN2 rail
+- Playthrough cashback: `casino_mn2_cashback_service` + `/api/casino/mn2/cashback` (claim once/day)
+- MN2↔coins swap surfaced on `/casino` via `/api/mn2/swap/*`
+- Policy: [`docs/CASINO_CRYPTO_POLICY.md`](CASINO_CRYPTO_POLICY.md)
 
-**Status:** Confirmed — MN2 rail active for casino play.
+**Status:** Confirmed — MN2 rail + cashback + swap + policy (Phase 7 Done).
 
 ## Stage 0 Gate A checklist
 
@@ -79,6 +83,6 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 Canonical board: **`docs/MN2_TODO.md` → Critical / Upgrades** (synced Option D, 2026-07-25).
 
-- **Critical done:** Gate S load tests (B); health Hub contract (A); treasury config-only with `live_distribute=false` (C)
-- **Critical open:** do not arm live agent distribute; daemon multi-ping; wallet refresh/connect routes; debugger quiz rewards
-- **Upgrades:** Phase residuals (trader cron, news channels, casino cashback, security cron tests, game Monitor tab, AI waves, avatar backfill) + exchange P1 track
+- **Critical done:** Gate S load tests (B); health Hub contract (A); treasury config-only with `live_distribute=false` (C); wallet refresh/connect (C6); debugger quiz rewards (C7)
+- **Critical open / policy:** do not arm live agent distribute (C3/C4); daemon multi-ping ops (C5)
+- **Upgrades open:** avatar backfill (U7) + exchange P1 track (U8)

@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-07-25** (Phases 9/11/13/14 residuals closed; plan synced)
+Last updated: **2026-07-25** (Phases 4–7 residuals closed; plan synced)
 
 See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -18,7 +18,7 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 | **C4** | Do not auto-move 600k MN2 / agent wallets | **Policy** | Sign-off + `live_distribute=true` required; dry-run via `GET /api/agents/treasury/status` |
 | **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Code gate Done 2026-07-25** · **Ops open** | Option E: `multi_ping_enabled` requires daemon ≥1.3 (flag alone no longer skips local start). Repo flag reset to `false`. Still need build/deploy v1.3 + QA then flip flag |
 | **C6** | Wallet refresh/connect API routes | **Done 2026-07-25** | `POST /api/mn2/wallet/refresh|connect`, `GET .../addresses`, address-book + transfer; profile settings UX |
-| **C7** | Debugger quiz MN2 rewards + anti-farm | **Open (Phase 6)** | `POST /api/debugger/quiz/submit` missing |
+| **C7** | Debugger quiz MN2 rewards + anti-farm | **Done 2026-07-25** | `POST /api/debugger/quiz/submit` + daily idempotent MN2 + `TAB_POINTS['quiz']` |
 
 ---
 
@@ -26,9 +26,9 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 
 | Pri | Item | Status | Note |
 | --- | ---- | ------ | ---- |
-| **U1** | Agent trader strategies + `agents_trader` cron + admin board | **Done 2026-07-25** (code) · live fund blocked by C3 | `agent_trader_service` (6 strategies), `cron/agents_trader.sh`, `/api/agents/control/*`, staking join/status; fund stays dry-run until sign-off |
-| **U2** | `GET /api/news/channels` + explorer top-10 polish | **Done 2026-07-25** | Channels/publish/RSS; tx/address/block/search/rich-list/mempool/supply APIs + pages |
-| **U3** | Casino MN2 cashback + crypto policy doc | Phase 7 residual | Jackpots/tournaments already MN2 |
+| **U1** | Agent trader strategies + `agents_trader` cron + admin board | **Done 2026-07-25** (code) · live fund blocked by C3 | `agent_trader_service` (6 strategies + level gates), trader skillsets, `cron/agents_trader.sh`, `/api/agents/control/*`, staking join/status; fund stays dry-run until sign-off |
+| **U2** | `GET /api/news/channels` + explorer top-10 polish | **Done 2026-07-25** | Channels/publish/RSS + auto-publish hooks; tx/address/block/search/rich-list/mempool/supply APIs + pages |
+| **U3** | Casino MN2 cashback + crypto policy doc | **Done 2026-07-25** | Cashback accrue/claim + casino swap UI + `docs/CASINO_CRYPTO_POLICY.md` |
 | **U4** | Security cron full presets + `test_security_cron.py` | **Done 2026-07-25** | presets full/sweep/risk/reconcile/backup + cron.d |
 | **U5** | Game unified Monitor tab + quest arg-order fix + top-10 earn | **Done 2026-07-25** | Monitor tab, quest XP fix, top-10 earn + check-in |
 | **U6** | AI intelligence wave inventory (core 25 + monetization) | **Done 2026-07-25** | `GET /api/ai-intelligence/waves`; deferred waves tracked |

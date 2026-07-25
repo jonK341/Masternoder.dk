@@ -5,9 +5,92 @@ from typing import Any, Dict, List, Optional
 
 _STRATEGIES = ("market_maker", "momentum", "mean_reversion", "liquidity", "arbitrage", "sniper")
 
+# Level-gated unlocks (Phase 4): strategy access + order-size multipliers.
+_STRATEGY_MIN_LEVEL = {
+    "market_maker": 1,
+    "momentum": 2,
+    "mean_reversion": 2,
+    "liquidity": 3,
+    "arbitrage": 3,
+    "sniper": 4,
+}
+_LEVEL_SIZE_MULT = {1: 0.5, 2: 0.75, 3: 1.0, 4: 1.25, 5: 1.5}
+
 
 def list_strategies() -> List[str]:
     return list(_STRATEGIES)
+
+
+def agent_level(agent_id: str) -> int:
+    """Best-effort agent level (defaults via stable bootstrap from agent id)."""
+    # Prefer lightweight skillset file read — never construct AgentSkillset (side-effect heavy).
+    try:
+        import json
+        import os
+
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "logs",
+            "agent_skillsets",
+            "skillsets.json",
+        )
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+            row = ((data.get("agents") or {}).get(agent_id)) or {}
+            if row.get("level"):
+                return max(1, int(row.get("level") or 1))
+            xp = int(row.get("experience") or row.get("xp") or 0)
+            if xp > 0:
+                return max(1, xp // 500 + 1)
+    except Exception:
+        pass
+    # Stable bootstrap: later fleet indices start slightly higher for variety.
+    try:
+        n = int(str(agent_id).rsplit("_", 1)[-1])
+        return max(1, min(5, 1 + (n - 1) // 2))
+    except Exception:
+        return 1
+
+
+def unlocked_strategies(level: int) -> List[str]:
+    lvl = max(1, int(level or 1))
+    return [s for s in _STRATEGIES if int(_STRATEGY_MIN_LEVEL.get(s, 99)) <= lvl]
+
+
+def resolve_strategy(agent_id: str, strategy: str) -> Dict[str, Any]:
+    """Clamp requested strategy to what the agent's level unlocks."""
+    level = agent_level(agent_id)
+    allowed = unlocked_strategies(level)
+    req = (strategy or "market_maker").strip().lower()
+    if req not in _STRATEGIES:
+        return {
+            "strategy": "market_maker",
+            "level": level,
+            "allowed": allowed,
+            "downgraded": True,
+            "reason": "unknown_strategy",
+        }
+    if req not in allowed:
+        fallback = allowed[-1] if allowed else "market_maker"
+        return {
+            "strategy": fallback,
+            "level": level,
+            "allowed": allowed,
+            "downgraded": True,
+            "reason": "level_locked",
+            "requested": req,
+        }
+    return {"strategy": req, "level": level, "allowed": allowed, "downgraded": False}
+
+
+def size_multiplier(level: int) -> float:
+    lvl = max(1, int(level or 1))
+    if lvl in _LEVEL_SIZE_MULT:
+        return float(_LEVEL_SIZE_MULT[lvl])
+    if lvl > 5:
+        return 1.75
+    return 1.0
 
 
 def _market_cfg() -> Dict[str, Any]:
@@ -117,46 +200,54 @@ def run_trader_sell_tick(*, agent_id: str, strategy: str = "market_maker") -> Di
     if not cfg.get("enabled"):
         return {"success": True, "skipped": True, "reason": "market_disabled", "agent_id": agent_id}
 
-    strategy = (strategy or "market_maker").strip().lower()
-    if strategy not in _STRATEGIES:
-        return {"success": False, "error": "unknown_strategy", "agent_id": agent_id}
+    resolved = resolve_strategy(agent_id, strategy)
+    strategy = resolved["strategy"]
+    level = int(resolved["level"])
+    mult = size_multiplier(level)
 
     free = _free_mn2(agent_id)
-    if free < cfg["min_free_mn2"]:
+    min_free = max(0.01, float(cfg["min_free_mn2"]) * (0.5 if level <= 1 else 1.0))
+    if free < min_free:
         return {
             "success": True,
             "skipped": True,
             "reason": "insufficient_free_mn2",
             "agent_id": agent_id,
             "free_mn2": free,
+            "level": level,
         }
 
     sells = list_orders(side="sell", limit=40).get("orders") or []
     own = [o for o in sells if o.get("user_id") == agent_id and o.get("status") == "open"]
-    if len(own) >= cfg["max_open_sells_per_agent"]:
+    max_open = max(1, int(cfg["max_open_sells_per_agent"] + (1 if level >= 4 else 0)))
+    if len(own) >= max_open:
         return {
             "success": True,
             "skipped": True,
             "reason": "depth_sufficient",
             "agent_id": agent_id,
             "open_orders": len(own),
+            "level": level,
         }
 
     if len(own) > 0 and float(own[0].get("remaining_mn2") or 0) > cfg["sell_mn2_per_order"] * 0.25:
-        return {"success": True, "skipped": True, "reason": "existing_sell_active", "agent_id": agent_id}
+        return {"success": True, "skipped": True, "reason": "existing_sell_active", "agent_id": agent_id, "level": level}
 
     for stale in own:
         cancel_order(agent_id, stale.get("order_id", ""))
 
     others = [float(o.get("price_coins_per_mn2") or 0) for o in sells if o.get("user_id") != agent_id]
     price = _strategy_price(strategy, others, cfg["reference_price_coins_per_mn2"])
-    amount = min(cfg["sell_mn2_per_order"], free * 0.2)
+    amount = min(cfg["sell_mn2_per_order"] * mult, free * 0.2 * mult)
     amount = round(max(0.01, amount), 8)
     created = create_order(agent_id, "sell", amount, price)
     return {
         "success": bool(created.get("success")),
         "agent_id": agent_id,
         "strategy": strategy,
+        "level": level,
+        "size_mult": mult,
+        "downgraded": resolved.get("downgraded"),
         "phase": "sell",
         "result": created,
     }
@@ -239,7 +330,8 @@ def run_all_traders() -> Dict[str, Any]:
             wallet_sync.append({"success": False, "agent_id": aid, "error": str(exc)})
 
     for i, aid in enumerate(ids):
-        strat = _STRATEGIES[i % len(_STRATEGIES)]
+        preferred = _STRATEGIES[i % len(_STRATEGIES)]
+        strat = resolve_strategy(aid, preferred)["strategy"]
         try:
             sell_results.append(run_trader_sell_tick(agent_id=aid, strategy=strat))
         except Exception as exc:

@@ -17,19 +17,19 @@
 |------------|--------|----------|
 | 0 Audit + report | **Done** | `MN2_ECOSYSTEM_REPORT.md` |
 | 1 Daemon health | **Done** | Hub contract + `test_mn2_health` (Option A) |
-| 2 Wallet | **Partial** | Service helpers; routes refresh/connect next |
+| 2 Wallet | **Done** | refresh/connect/address-book/transfer + profile UX |
 | 3 Market | **Done** | `p2p_market_*` + page + tests |
-| 4 Agents | **Partial** | Option C treasury dry-run; trader/cron/admin next |
-| 5 Explorer/news/Discord | **Partial** | Infra live; `/api/news/channels` next |
-| 6 Debugger Q&A | **Next** | Quiz submit + MN2 rewards |
-| 7 Casino crypto | **Partial** | Jackpots/tournaments; cashback/policy next |
+| 4 Agents | **Done (code)** | Trader level-gates + skills + control board; C3 live distribute blocked |
+| 5 Explorer/news/Discord | **Done (code)** | channels/publish/RSS + auto-hooks; Discord/M8 live |
+| 6 Debugger Q&A | **Done** | Quiz submit + MN2 + anti-farm |
+| 7 Casino crypto | **Done** | Cashback + swap UI + `CASINO_CRYPTO_POLICY.md` |
 | 8 Activity monitor | **Done** | SSE + UI + tests |
-| 9 Security cron | **Partial** | Sweep exists; full presets/tests next |
+| 9 Security cron | **Done** | Full presets + `test_security_cron` |
 | 10 Generator MN2 | **Done** | Pay/earn + tests |
-| 11 Game monitor | **Partial** | Rewards done; Monitor tab + quest fix next |
+| 11 Game monitor | **Done** | Monitor tab + quest fix + top-10 earn |
 | 12 Customers | **Done** | Aggregator + page + tests |
-| 13 AI intelligence | **Partial** | Waves incomplete |
-| 14 Tests/docs | **Partial** | Critical/Upgrades board in `MN2_TODO.md` (Option D) |
+| 13 AI intelligence | **Done (inventory)** | `GET /api/ai-intelligence/waves`; deferred waves tracked |
+| 14 Tests/docs | **Done** | Critical/Upgrades board in `MN2_TODO.md` (Option D) |
 
 **Doc roles:** ecosystem plan = architecture map · `MN2_TODO.md` = sprint board · report = money-path audit.
 

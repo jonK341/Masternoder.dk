@@ -739,6 +739,98 @@
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+    let lastSwapQuote = null;
+
+    async function refreshCashback() {
+        const pendingEl = $('casino-cashback-pending');
+        const statusEl = $('casino-cashback-status');
+        try {
+            const data = await api('/api/casino/mn2/cashback?user_id=' + encodeURIComponent(userId), null, 8000);
+            if (pendingEl) {
+                pendingEl.textContent = 'Pending: ' + Number(data.pending_mn2 || 0).toFixed(6) +
+                    ' MN2 · rate ' + ((Number(data.rate || 0) * 100).toFixed(2)) + '%';
+            }
+            if (statusEl && data.last_claim_day) {
+                statusEl.textContent = 'Last claim: ' + data.last_claim_day;
+            }
+        } catch (e) {
+            if (pendingEl) pendingEl.textContent = 'Pending: unavailable';
+        }
+    }
+
+    async function claimCashback() {
+        const statusEl = $('casino-cashback-status');
+        const data = await api('/api/casino/mn2/cashback/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
+        });
+        if (statusEl) {
+            statusEl.textContent = data.success
+                ? ('Claimed +' + Number(data.mn2_awarded || data.amount_mn2 || 0).toFixed(6) + ' MN2')
+                : (data.error || 'Claim failed');
+        }
+        await refreshCashback();
+        await refreshBalance();
+    }
+
+    async function quoteSwap() {
+        const side = ($('casino-swap-side') || {}).value || 'sell';
+        const amt = Number(($('casino-swap-amount') || {}).value || 0);
+        const statusEl = $('casino-swap-status');
+        const data = await api('/api/mn2/swap/quote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ side: side, mn2_amount: amt }),
+        });
+        lastSwapQuote = data;
+        if (statusEl) {
+            if (data.success === false) {
+                statusEl.textContent = data.error || 'Quote failed';
+            } else {
+                statusEl.textContent = 'Quote: ' + JSON.stringify({
+                    side: side,
+                    mn2: amt,
+                    coins: data.coins || data.coins_out || data.coins_in,
+                    quote_id: data.quote_id,
+                    rate: data.rate || data.coins_per_mn2,
+                });
+            }
+        }
+        return data;
+    }
+
+    async function executeSwap() {
+        const statusEl = $('casino-swap-status');
+        let quote = lastSwapQuote;
+        if (!quote || !quote.quote_id) {
+            quote = await quoteSwap();
+        }
+        if (!quote || quote.success === false) {
+            if (statusEl) statusEl.textContent = (quote && quote.error) || 'Need a valid quote';
+            return;
+        }
+        const side = ($('casino-swap-side') || {}).value || 'sell';
+        const amt = Number(($('casino-swap-amount') || {}).value || 0);
+        const data = await api('/api/mn2/swap/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                quote_id: quote.quote_id,
+                side: side,
+                mn2_amount: amt,
+            }),
+        });
+        if (statusEl) {
+            statusEl.textContent = data.success
+                ? ('Swap OK · MN2 ' + Number(data.mn2_balance != null ? data.mn2_balance : amt).toFixed(4))
+                : (data.error || 'Swap failed');
+        }
+        lastSwapQuote = null;
+        await refreshBalance();
+    }
+
     async function refreshBalance() {
         const data = await api('/api/casino/balance', null, 12000);
         const el = $('casino-balance');
@@ -4453,6 +4545,9 @@
         bindClick('mystery-play', playMysteryFlip);
         bindClick('scratch-play', playScratch);
         bindClick('casino-security-verify', verifyCasinoSecurity);
+        bindClick('casino-swap-quote', quoteSwap);
+        bindClick('casino-swap-execute', executeSwap);
+        bindClick('casino-cashback-claim', claimCashback);
         bindClick('outcome-play', playBattleOutcome);
         bindClick('counter-play', playCounterPick);
         bindClick('free-bet-play', playFreeBet);
@@ -4571,6 +4666,7 @@
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);
+        safeRefresh('cashback', refreshCashback);
         safeRefresh('vpLadder', refreshVideoPokerLadder);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);

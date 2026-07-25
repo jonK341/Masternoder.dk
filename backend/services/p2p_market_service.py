@@ -186,6 +186,16 @@ def fill_order(buyer_id: str, order_id: str, mn2_amount: Optional[float] = None)
         _write_orders(rows)
 
     _emit("p2p_market_fill", channel="market", payload=trade)
+    try:
+        from backend.services.news_auto_hooks import on_market_fill
+        on_market_fill(
+            mn2_amount=float(trade.get("mn2") or 0),
+            price=float(order.get("price_coins_per_mn2") or 0),
+            buyer=str(trade.get("buyer") or ""),
+            seller=str(trade.get("seller") or ""),
+        )
+    except Exception:
+        pass
     _award_activity_points(buyer, 10.0)
     _award_activity_points(seller, 10.0)
     return {"success": True, "trade": trade, "order": order}

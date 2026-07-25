@@ -1183,6 +1183,29 @@ def casino_jackpots_reconcile():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/mn2/cashback", methods=["GET"])
+def casino_mn2_cashback_status():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        from backend.services.casino_mn2_cashback_service import status as cashback_status
+        return jsonify(cashback_status(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/mn2/cashback/claim", methods=["POST"])
+def casino_mn2_cashback_claim():
+    try:
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        body = request.get_json(silent=True) or {}
+        from backend.services.casino_mn2_cashback_service import claim as cashback_claim
+        result = cashback_claim(user_id, day=body.get("day"))
+        code = 200 if result.get("success") else (403 if result.get("error") == "authenticated_user_required" else 400)
+        return jsonify(result), code
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/activity-feed", methods=["GET"])
 def casino_activity_feed():
     try:

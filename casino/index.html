@@ -153,6 +153,29 @@
             <p style="font-size:0.88rem;opacity:0.85;margin:0 0 8px;">Buy labeled packs — MN2 debited from your wallet, USD play balance credited instantly.</p>
             <div id="casino-mn2-buyin-packs" class="casino-deposit-packs">Loading MN2 packs…</div>
         </div>
+        <div id="casino-mn2-swap" class="casino-paypal-deposit" aria-label="MN2 coins swap">
+            <h3>Swap MN2 ↔ coins</h3>
+            <p style="font-size:0.88rem;opacity:0.85;margin:0 0 8px;">Internal AMM (Phase 2) — quote then execute. Same rails as profile wallet.</p>
+            <div class="casino-controls" style="flex-wrap:wrap;gap:8px;">
+                <select id="casino-swap-side" aria-label="Swap side">
+                    <option value="sell">Sell MN2 → coins</option>
+                    <option value="buy">Buy MN2 ← coins</option>
+                </select>
+                <input id="casino-swap-amount" type="number" min="0.01" step="0.01" value="1" placeholder="MN2 amount" aria-label="MN2 amount">
+                <button type="button" id="casino-swap-quote">Quote</button>
+                <button type="button" id="casino-swap-execute">Execute</button>
+            </div>
+            <div id="casino-swap-status" class="casino-security-status" aria-live="polite"></div>
+        </div>
+        <div id="casino-mn2-cashback" class="casino-paypal-deposit" aria-label="MN2 cashback">
+            <h3>MN2 playthrough cashback</h3>
+            <p style="font-size:0.88rem;opacity:0.85;margin:0 0 8px;">Earn a small MN2 rebate on MN2 wagers — claim once per day.</p>
+            <div class="casino-controls" style="gap:8px;">
+                <span id="casino-cashback-pending">Pending: …</span>
+                <button type="button" id="casino-cashback-claim">Claim</button>
+            </div>
+            <div id="casino-cashback-status" class="casino-security-status" aria-live="polite"></div>
+        </div>
         <div id="casino-security-bar" class="casino-security-bar hidden">
             <h3>Real-money security</h3>
             <p id="casino-security-msg">Verify your account password before MN2 or USD bets.</p>

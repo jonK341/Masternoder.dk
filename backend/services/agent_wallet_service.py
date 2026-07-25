@@ -343,6 +343,11 @@ def distribute_agent_funding(*, dry_run: Optional[bool] = None, allow_live: bool
             )
         except Exception:
             pass
+        try:
+            from backend.services.news_auto_hooks import on_agent_funding
+            on_agent_funding(agent_id=aid, amount=gap, dry_run=False)
+        except Exception:
+            pass
         debited += gap
         results.append({**credited, "debited_from_pool": gap})
 

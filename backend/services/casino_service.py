@@ -603,6 +603,15 @@ def _finalize_bet(
                     })
             except Exception:
                 pass
+        # Phase 7: accrue MN2 cashback on every MN2 wager (claim separately).
+        if not skip_stake and bet > 0:
+            try:
+                from backend.services.casino_mn2_cashback_service import accrue as cashback_accrue
+                cashback = cashback_accrue(user_id, bet, game=game, bet_id=row["bet_id"])
+                if cashback:
+                    row["mn2_cashback"] = cashback
+            except Exception:
+                pass
     if net > 0 and outcome in ("win", "jackpot", "payout"):
         try:
             from backend.services.casino_social_service import on_big_win
@@ -682,6 +691,8 @@ def _finalize_bet(
     if trophy_rebate:
         result["trophy_rebate"] = trophy_rebate
         result["balance"] = _user_balance(user_id, currency)
+    if row.get("mn2_cashback"):
+        result["mn2_cashback"] = row["mn2_cashback"]
     if podcast_bonus:
         result["podcast_bonus"] = podcast_bonus
         result["balance"] = _user_balance(user_id, currency)
