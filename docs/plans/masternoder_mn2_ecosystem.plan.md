@@ -17,6 +17,7 @@ todos:
   - id: agents
     content: "Phase 4: Agent wallets + treasury funding (one address auto-distributes 100k MN2 per trader agent), trader strategies, cron runner, leveling, restore point control board + agents_control dashboard, tests"
     status: pending
+    # Option C done 2026-07-25: agent_funding config + dry-run status; live_distribute=false
   - id: explorer
     content: "Phase 5: Explorer top 10 + multi-channel news (platform_news channels) + Discord outbound/inbound + Discord income streams (M8); resync news page; tests"
     status: pending

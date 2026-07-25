@@ -77,5 +77,5 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 ## Critical / upgrades (see MN2_TODO.md)
 
-- **Critical:** Gate S concurrency/conservation under load — **proven** (`test_gate_s_orchestrator.py`); treasury cold-wallet policy for 600k agent funding still open
+- **Critical:** Gate S concurrency/conservation under load — **proven**; treasury cold-wallet policy + `agent_funding.live_distribute=false` ready (Option C) — do **not** flip live until sign-off
 - **Upgrades:** Discord M8 streams 51–60 full rollout; customer avatar backfill cron; Health Ops Hub tile for MN2 health (Hub contract closed 2026-07-24)

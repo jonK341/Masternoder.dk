@@ -53,6 +53,7 @@ The ecosystem plan’s YAML todos still say Phase 0–14 `pending`. The repo dis
 
 ### C — Agent treasury readiness (config only)
 **What:** Add `agent_funding` block to `mn2_config.json`, document cold-wallet policy, dry-run distribution status endpoints — **no** auto-send 600k MN2.
+**Status (2026-07-25):** **Done** — `agent_funding.live_distribute=false` in config; `treasury_status` + ops-gated routes; `distribute_agent_funding` dry-run by default; sign-off/reconcile endpoints; CLI `scripts/treasury_signoff.py`; tests green.
 **Why:** Unblocks Phase 4 funding design without spending treasury.
 **Risk:** Medium if someone enables distribute too early.
 **Depends on:** A + B before any distribute job runs live.
