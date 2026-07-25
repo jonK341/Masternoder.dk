@@ -1,8 +1,39 @@
 # MN2 TODO
 
-Last updated: **2026-06-28** (exchange rental + shop linked to main catalog, auto-renew)
+Last updated: **2026-07-25** (Option D — plan ↔ TODO sync; Critical/Upgrades board)
 
-See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+
+**Doc roles:** `MN2_TODO.md` = sprint board · ecosystem plan = architecture map · report = money-path audit.
+
+---
+
+## Critical (correctness / security / financial integrity)
+
+| Pri | Item | Status | Note |
+| --- | ---- | ------ | ---- |
+| **C1** | Gate S concurrency + ledger conservation under load | **Done 2026-07-24** | `test_gate_s_orchestrator.py` (Option B); `mn2_ledger` atomic append + deposit txid unique |
+| **C2** | `/api/mn2/health` Hub contract | **Done 2026-07-24** | `daemon_staking`, `discord_outbox`, `network_alerts` (Option A) |
+| **C3** | Agent treasury live distribute | **Blocked / config-only** | `agent_funding.live_distribute=false` (Option C). Arm only after cold-wallet sign-off (`MN2_OPS` §8.6) + reconcile green |
+| **C4** | Do not auto-move 600k MN2 / agent wallets | **Policy** | Sign-off + `live_distribute=true` required; dry-run via `GET /api/agents/treasury/status` |
+| **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Open (ops P1)** | See P1 daemon v1.3 below — site PR #30 merged; binary/enable still open |
+| **C6** | Wallet refresh/connect API routes | **Open (Phase 2 residual)** | Service helpers exist; wire `/api/mn2/wallet/refresh` + `connect` |
+| **C7** | Debugger quiz MN2 rewards + anti-farm | **Open (Phase 6)** | `POST /api/debugger/quiz/submit` missing |
+
+---
+
+## Upgrades (product / polish — not blocking money integrity)
+
+| Pri | Item | Status | Note |
+| --- | ---- | ------ | ---- |
+| **U1** | Agent trader strategies + `agents_trader` cron + admin board | Phase 4 residual | After C3 policy respected |
+| **U2** | `GET /api/news/channels` + explorer top-10 polish | Phase 5 residual | Discord/M8 infra largely live |
+| **U3** | Casino MN2 cashback + crypto policy doc | Phase 7 residual | Jackpots/tournaments already MN2 |
+| **U4** | Security cron full presets + `test_security_cron.py` | Phase 9 residual | Sweep route exists |
+| **U5** | Game unified Monitor tab + quest arg-order fix + top-10 earn | Phase 11 residual | `game_mn2_rewards` done |
+| **U6** | AI intelligence remaining core/monetization waves | Phase 13 residual | M7/M8 infra present |
+| **U7** | Customer avatar backfill cron | Upgrade | Aggregator page done |
+| **U8** | Exchange P1 product track | See Next sprint | Gateway / arb / trust — separate from ecosystem phase map |
 
 ---
 
