@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260725a">
-    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260726a">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260726b">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -21,31 +21,33 @@
                 </div>
             </div>
             <div class="cex-legal" id="cex-legal-notice">Loading compliance notice…</div>
-            <nav class="cex-shortcuts" aria-label="Exchange shortcuts">
-                <a href="/exchange?tab=onramp" class="cex-mini-link">PayPal buy</a>
-                <a href="/exchange?tab=limit" class="cex-mini-link">Limit order</a>
-                <a href="/exchange?tab=tax" class="cex-mini-link">Tax report</a>
-                <a href="#cex-control-center" class="cex-mini-link" data-cex-goto="marketplace">Agent control</a>
-                <a href="#cex-daemon-control" class="cex-mini-link" data-cex-goto="bots">Daemon control</a>
-                <a href="#cex-rental-hub" class="cex-mini-link" data-cex-goto="marketplace">Rent bots</a>
-                <a href="#cex-exchange-shop" class="cex-mini-link" data-cex-goto="marketplace">Exchange shop</a>
-                <a href="#cex-profit-oracle" class="cex-mini-link" data-cex-goto="overview">Profit Oracle</a>
-                <a href="#cex-gateway-layer" class="cex-mini-link" data-cex-goto="overview">Gateway layer</a>
-                <a href="#cex-agent-cross-trading" class="cex-mini-link" data-cex-goto="bots">Bot daemon</a>
-                <a href="#cex-agent-marketplace" class="cex-mini-link" data-cex-goto="marketplace">Agent marketplace</a>
-            </nav>
         </header>
 
-        <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
-            <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
-        </nav>
-        <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+        <div class="cex-nav-dock" id="cex-nav-dock">
+            <div class="cex-nav-dock-top">
+                <nav class="cex-breadcrumb" id="cex-breadcrumb" aria-label="You are here">
+                    <a href="/exchange" class="cex-breadcrumb-root" data-cex-goto="trade">Exchange</a>
+                    <span class="cex-breadcrumb-sep" aria-hidden="true">›</span>
+                    <span id="cex-breadcrumb-hub">Trade</span>
+                    <span class="cex-breadcrumb-sep cex-breadcrumb-section-sep" id="cex-breadcrumb-section-sep" hidden aria-hidden="true">›</span>
+                    <span id="cex-breadcrumb-section" class="cex-breadcrumb-section"></span>
+                </nav>
+                <a href="#" class="cex-overview-pin" id="cex-overview-pin" data-cex-goto="overview" role="button">
+                    <i class="fas fa-chart-pie" aria-hidden="true"></i> Overview
+                </a>
+            </div>
+            <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
+                <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
+            </nav>
+            <nav class="cex-sub-nav" id="cex-sub-nav" aria-label="Section shortcuts" hidden></nav>
+        </div>
+        <p class="cex-route-note" id="cex-route-note">Trade · pick a section below — at most two panels on screen.</p>
 
         <section class="cex-top-monitor" id="cex-top-monitor" aria-label="Exchange live monitor">
             <div class="cex-top-monitor-bar">
@@ -69,9 +71,9 @@
             </div>
         </section>
 
-        <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
+        <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade" data-cex-focus="off">
         <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
-        <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
+        <section class="mn2-page-strip cex-trade-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
             <h2>Platform wallet (MN2)</h2>
             <div class="mn2-page-metrics">
                 <div class="mn2-page-metric"><span>MN2 balance</span><strong id="cex-mn2-balance">—</strong></div>
@@ -85,14 +87,20 @@
             </p>
         </section>
 
-        <div class="cex-grid">
-            <aside class="cex-panel cex-assets">
+        <nav class="cex-trade-focus-nav" id="cex-trade-focus-nav" aria-label="Trade panels">
+            <button type="button" class="cex-trade-focus-btn" data-trade-pane="markets">Markets</button>
+            <button type="button" class="cex-trade-focus-btn active" data-trade-pane="trade">Swap &amp; orders</button>
+            <button type="button" class="cex-trade-focus-btn" data-trade-pane="wallet">Wallet</button>
+        </nav>
+
+        <div class="cex-grid cex-grid--focus" id="cex-trade-grid" data-trade-panes="markets,trade">
+            <aside class="cex-panel cex-assets" data-trade-pane="markets">
                 <h2>Markets <span id="cex-asset-count" class="cex-badge">—</span></h2>
                 <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
                 <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
             </aside>
 
-            <main class="cex-panel cex-trade" id="cex-trading-desk">
+            <main class="cex-panel cex-trade" id="cex-trading-desk" data-trade-pane="trade">
                 <div class="cex-tabs">
                     <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
                     <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
@@ -175,7 +183,7 @@
                 <p id="cex-msg" class="cex-msg"></p>
             </main>
 
-            <aside class="cex-panel cex-wallet">
+            <aside class="cex-panel cex-wallet" data-trade-pane="wallet">
                 <h2>Exchange wallet</h2>
                 <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
 
@@ -195,32 +203,34 @@
         <div class="cex-tab-shell" data-cex-tab="overview" id="cex-shell-overview" hidden>
             <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
             <section class="cex-panel cex-overview-panel">
+                <div class="cex-focus-block cex-focus-block--active" data-cex-block="health" id="cex-overview-health">
                 <h2>Exchange health</h2>
                 <div id="cex-health-summary" class="cex-monitor-totals">Open this tab to load health…</div>
-                <div class="cex-profile-card cex-blockers-card" id="cex-profit-blockers-overview">
+                </div>
+                <div class="cex-profile-card cex-blockers-card cex-focus-block" data-cex-block="blockers" id="cex-profit-blockers-overview">
                     <h3>Profit blockers <span class="cex-badge" id="cex-blockers-open-count">—</span></h3>
                     <p class="cex-market-sub" style="margin:0 0 8px">Critical path items blocking full profit readiness.</p>
                     <ul id="cex-blockers-list-overview" class="cex-blockers-list"><li class="cex-muted">Open Overview to load…</li></ul>
                     <p style="margin:8px 0 0"><a href="/profit/" class="cex-mini-link">Full profit monitor →</a></p>
                 </div>
-                <div class="cex-profile-card cex-progress-card" id="cex-progress-monitor">
+                <div class="cex-profile-card cex-progress-card cex-focus-block" data-cex-block="progress" id="cex-progress-monitor">
                     <h3>User progress monitor</h3>
                     <div id="cex-progress-summary" class="cex-progress-summary">—</div>
                     <div class="cex-progress-bar"><span id="cex-progress-fill"></span></div>
                     <div id="cex-high-scores" class="cex-high-scores"></div>
                     <div id="cex-status-report" class="cex-status-report"></div>
                 </div>
-                <div class="cex-profile-card cex-profit-card" id="cex-profit-oracle">
+                <div class="cex-profile-card cex-profit-card cex-focus-block" data-cex-block="profit" id="cex-profit-oracle">
                     <h3>Profit Oracle Agent</h3>
                     <div id="cex-profit-summary" class="cex-progress-summary">—</div>
                     <div id="cex-profit-insights" class="cex-status-report"></div>
                     <div id="cex-agent-performance" class="cex-agent-list"></div>
                 </div>
-                <div class="cex-profile-card" id="cex-gateway-layer">
+                <div class="cex-profile-card cex-focus-block" data-cex-block="gateway" id="cex-gateway-layer">
                     <h3>Gateway layer</h3>
                     <div id="cex-gateway-status" class="cex-progress-summary">—</div>
                 </div>
-                <div class="cex-profile-card" id="cex-social-links">
+                <div class="cex-profile-card cex-focus-block" data-cex-block="social" id="cex-social-links">
                     <h3>Social profile lane</h3>
                     <p>Build trust before trading: view your public profile, casino social board, and camgirls fan perks.</p>
                     <a href="/profile" class="cex-mini-link">Profile</a>
@@ -233,32 +243,32 @@
         <div class="cex-tab-shell" data-cex-tab="bots" id="cex-shell-bots" hidden>
             <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
             <section class="cex-panel cex-bots-panel">
-                <div class="cex-profile-card cex-blockers-card" id="cex-profit-blockers-bots">
+                <div class="cex-profile-card cex-blockers-card cex-focus-block cex-focus-block--active" data-cex-block="checklist" id="cex-profit-blockers-bots">
                     <h3>What's left <span class="cex-badge" id="cex-blockers-open-count-bots">—</span></h3>
                     <p class="cex-market-sub" style="margin:0 0 8px">Top critical checklist — close these to unlock full profit path.</p>
                     <ul id="cex-blockers-list-bots" class="cex-blockers-list"><li class="cex-muted">Open Bots tab to load…</li></ul>
                     <p style="margin:8px 0 0"><a href="/profit/" class="cex-mini-link">Full profit monitor →</a></p>
                 </div>
-                <div class="cex-profile-card cex-monitor-card" id="cex-live-monitor">
+                <div class="cex-profile-card cex-monitor-card cex-focus-block" data-cex-block="monitor" id="cex-live-monitor">
                     <h3>Live trading monitor <span class="cex-live-dot" id="cex-live-dot"></span></h3>
                     <div id="cex-monitor-totals" class="cex-monitor-totals">—</div>
                     <div id="cex-monitor-bots" class="cex-monitor-bots"></div>
                     <h4 class="cex-monitor-h4">Activity feed</h4>
                     <div id="cex-monitor-feed" class="cex-monitor-feed"></div>
                 </div>
-                <div class="cex-profile-card cex-watch-card" id="cex-live-watch">
+                <div class="cex-profile-card cex-watch-card cex-focus-block" data-cex-block="watch" id="cex-live-watch">
                     <h3>Live Watch · trust review</h3>
                     <p class="cex-market-sub" style="margin:0 0 10px">Review activations, composite IQ, and trust before bots trade.</p>
                     <div id="cex-watch-summary" class="cex-monitor-totals">—</div>
                     <div id="cex-watch-agents" class="cex-watch-agents"></div>
                 </div>
-                <div class="cex-profile-card" id="cex-agent-cross-trading">
+                <div class="cex-profile-card cex-focus-block" data-cex-block="agents" id="cex-agent-cross-trading">
                     <h3>Agent cross-trading</h3>
                     <p id="cex-agent-summary">—</p>
                     <div id="cex-agent-list" class="cex-agent-list"></div>
                     <button type="button" id="cex-agent-tick-btn" class="cex-btn cex-btn--ghost" disabled>Daemon controlled</button>
                 </div>
-                <div class="cex-profile-card cex-daemon-card" id="cex-daemon-control">
+                <div class="cex-profile-card cex-daemon-card cex-focus-block" data-cex-block="daemon" id="cex-daemon-control">
                     <h3>Your trading daemon <span class="cex-badge" id="cex-daemon-badge">—</span></h3>
                     <p class="cex-market-sub" style="margin:0 0 10px">Rent a bot below, then choose exchanges and assets to farm. Runs on live public prices (paper profit by default).</p>
                     <div id="cex-daemon-status" class="cex-monitor-totals muted">—</div>
@@ -291,14 +301,14 @@
                     </div>
                     <label class="cex-trust-toggle" style="display:block;margin-top:10px"><input type="checkbox" id="cex-daemon-auto" checked /> Auto-run with “Run my bots”</label>
                 </div>
-                <div class="cex-profile-card cex-ai-trading-card" id="cex-ai-trading">
+                <div class="cex-profile-card cex-ai-trading-card cex-focus-block" data-cex-block="ai" id="cex-ai-trading">
                     <h3>AI multi-venue trader <span class="cex-badge" id="cex-ai-mode">—</span></h3>
                     <p class="cex-market-sub" style="margin:0 0 8px">Analyzes all major exchanges, scores with super-skills, executes API calls (paper by default).</p>
                     <div id="cex-ai-status" class="cex-monitor-totals">—</div>
                     <div id="cex-ai-top-pick" class="cex-ai-pick muted"></div>
                     <button type="button" id="cex-ai-analyze-btn" class="cex-btn cex-btn--ghost">Analyze market</button>
                 </div>
-                <div class="cex-profile-card cex-profit-path-card" id="cex-profit-path-research">
+                <div class="cex-profile-card cex-profit-path-card cex-focus-block" data-cex-block="ppp" id="cex-profit-path-research">
                     <h3>Profit Path research <span class="cex-badge">PPP</span></h3>
                     <p class="cex-market-sub" style="margin:0 0 10px">Searchable arb/trade paths — scans, attempts, fills, and skip reasons for route re-engineering.</p>
                     <div id="cex-ppp-summary" class="cex-monitor-totals">Open Bots tab to load…</div>
@@ -534,8 +544,8 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20260726a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260726a"></script>
-    <script src="/static/js/agent-marketplace.js?v=20260726a"></script>
+    <script src="/static/js/exchange-hub.js?v=20260726b"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260726b"></script>
+    <script src="/static/js/agent-marketplace.js?v=20260726b"></script>
 </body>
 </html>

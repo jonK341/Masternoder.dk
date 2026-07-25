@@ -557,8 +557,57 @@
     }
   }
 
+  function initTradeFocus() {
+    var grid = q('cex-trade-grid');
+    if (!grid) return;
+
+    function applyPanes(panes) {
+      grid.setAttribute('data-trade-panes', panes.join(','));
+      document.querySelectorAll('.cex-trade-focus-btn').forEach(function (btn) {
+        var p = btn.getAttribute('data-trade-pane');
+        btn.classList.toggle('active', panes.length === 1 ? panes[0] === p : (p === 'trade' || panes.indexOf(p) >= 0));
+      });
+    }
+
+    function showPane(pane, innerTab) {
+      var panes;
+      if (pane === 'trade') {
+        panes = window.matchMedia('(min-width: 1024px)').matches ? ['markets', 'trade'] : ['trade'];
+      } else {
+        panes = [pane];
+      }
+      applyPanes(panes);
+      if (innerTab) {
+        var tabBtn = document.querySelector('.cex-tab[data-tab="' + innerTab + '"]');
+        if (tabBtn) tabBtn.click();
+      }
+      if (window.ExchangeHub && window.ExchangeHub.updateBreadcrumb) {
+        var lab = 'Swap';
+        if (pane === 'markets') lab = 'Markets';
+        else if (pane === 'wallet') lab = 'Wallet';
+        else if (innerTab === 'onramp') lab = 'PayPal';
+        window.ExchangeHub.updateBreadcrumb('trade', lab);
+      }
+    }
+
+    document.querySelectorAll('.cex-trade-focus-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pane = btn.getAttribute('data-trade-pane');
+        showPane(pane, pane === 'trade' ? 'swap' : null);
+        if (window.ExchangeHub && window.ExchangeHub.syncSubNavActive) {
+          var key = pane === 'trade' ? 'swap' : pane;
+          window.ExchangeHub.syncSubNavActive('trade', key);
+        }
+      });
+    });
+
+    window.CexTradeFocus = { showPane: showPane, applyPanes: applyPanes };
+    showPane('trade', 'swap');
+  }
+
   function init() {
     initTabs();
+    initTradeFocus();
     q('cex-swap-btn').addEventListener('click', doSwap);
     q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });
     q('cex-limit-btn').addEventListener('click', doLimit);
