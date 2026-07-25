@@ -280,14 +280,18 @@
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
-        var n = catalog.asset_count || 0;
-        q('cex-asset-count').textContent = String(n || '—');
+        var assets = catalog.assets || [];
+        var n = catalog.asset_count != null ? Number(catalog.asset_count) : assets.length;
+        if (!isFinite(n) || n < 0) n = assets.length;
+        var countEl = q('cex-asset-count');
+        if (countEl) countEl.textContent = String(n || '—');
         var heroSub = q('cex-hero-sub');
         if (heroSub) {
           heroSub.textContent = (n ? n + ' cryptocurrencies' : 'Multi-asset') +
             ' · instant swap · limit orders · staking rewards · tax records';
         }
-        q('cex-legal-notice').textContent = catalog.legal_notice || '';
+        var legal = q('cex-legal-notice');
+        if (legal) legal.textContent = catalog.legal_notice || '';
         if (catalog.lawful_bonus && catalog.lawful_bonus.terms_version) {
           termsVersion = catalog.lawful_bonus.terms_version;
         }
@@ -575,6 +579,17 @@
       window.ExchangeHub.onTab('bots', refreshBots);
     } else {
       refresh();
+    }
+    if (window.ExchangeHub && window.ExchangeHub.loadTab) {
+      var params = new URLSearchParams(window.location.search);
+      var hub = params.get('hub');
+      var innerTab = params.get('tab');
+      if (innerTab && { swap: 1, onramp: 1, limit: 1, staking: 1, tax: 1 }[innerTab]) {
+        hub = 'trade';
+      }
+      if (!hub || hub === 'trade') {
+        window.ExchangeHub.loadTab('trade', true);
+      }
     }
     handlePayPalReturn();
     handleCryptoPayPalReturn();

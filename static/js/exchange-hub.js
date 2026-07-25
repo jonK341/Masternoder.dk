@@ -188,9 +188,20 @@
         }
       });
     });
-    var hub = new URLSearchParams(window.location.search).get('hub');
-    var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, hub);
+    var params = new URLSearchParams(window.location.search);
+    var hub = params.get('hub');
+    var innerTab = params.get('tab');
+    if (innerTab && Object.prototype.hasOwnProperty.call({
+      swap: 1, onramp: 1, limit: 1, staking: 1, tax: 1,
+    }, innerTab)) {
+      hub = 'trade';
+    }
+    var valid = hub && Object.prototype.hasOwnProperty.call(TAB_LABELS, hub);
     applyTab(valid ? hub : 'trade');
+  }
+
+  function scheduleInitNav() {
+    setTimeout(initNav, 0);
   }
 
   function renderProfitBlockers(data, listId, countId) {
@@ -445,8 +456,8 @@
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initNav);
+    document.addEventListener('DOMContentLoaded', scheduleInitNav);
   } else {
-    initNav();
+    scheduleInitNav();
   }
 })();
