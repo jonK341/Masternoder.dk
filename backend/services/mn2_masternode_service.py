@@ -806,7 +806,10 @@ def _relay_network_broadcast(alias: str) -> Optional[str]:
     br = rpc.createmasternodebroadcast("alias", alias)
     if br.get("error"):
         return str(br.get("error"))
-    hx = _broadcast_hex_from_rpc_result(br.get("result"))
+    payload = br.get("result")
+    if isinstance(payload, dict) and payload.get("success") is False:
+        return str(payload.get("error") or "createmasternodebroadcast failed")
+    hx = _broadcast_hex_from_rpc_result(payload)
     if not hx:
         return "createmasternodebroadcast returned no hex"
     rel = rpc.relaymasternodebroadcast(hx)
