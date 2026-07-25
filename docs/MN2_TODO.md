@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-07-25** (Option D — plan ↔ TODO sync; Critical/Upgrades board)
+Last updated: **2026-07-25** (Option E — multi-ping safety gate; plan ↔ TODO sync)
 
 See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
 
@@ -16,7 +16,7 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 | **C2** | `/api/mn2/health` Hub contract | **Done 2026-07-24** | `daemon_staking`, `discord_outbox`, `network_alerts` (Option A) |
 | **C3** | Agent treasury live distribute | **Blocked / config-only** | `agent_funding.live_distribute=false` (Option C). Arm only after cold-wallet sign-off (`MN2_OPS` §8.6) + reconcile green |
 | **C4** | Do not auto-move 600k MN2 / agent wallets | **Policy** | Sign-off + `live_distribute=true` required; dry-run via `GET /api/agents/treasury/status` |
-| **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Open (ops P1)** | See P1 daemon v1.3 below — site PR #30 merged; binary/enable still open |
+| **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Code gate Done 2026-07-25** · **Ops open** | Option E: `multi_ping_enabled` requires daemon ≥1.3 (flag alone no longer skips local start). Repo flag reset to `false`. Still need build/deploy v1.3 + QA then flip flag |
 | **C6** | Wallet refresh/connect API routes | **Open (Phase 2 residual)** | Service helpers exist; wire `/api/mn2/wallet/refresh` + `connect` |
 | **C7** | Debugger quiz MN2 rewards + anti-farm | **Open (Phase 6)** | `POST /api/debugger/quiz/submit` missing |
 

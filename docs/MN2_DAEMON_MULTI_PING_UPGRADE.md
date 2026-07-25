@@ -23,7 +23,7 @@
 | Build + regtest on Linux | **In progress** | See [build checklist](#build--deploy-checklist-v1300) below |
 | GitHub release v1.3.0.0 assets | **Pending** | `mn2_build_release_remote.py --ask-pass --publish --draft` |
 | Prod deploy | **Pending** | `mn2_daemon_upgrade_remote.py --apply` |
-| Enable `ops.multi_ping_enabled: true` | **Pending** | After QA: 4+ ENABLED with rising activetime |
+| Enable `ops.multi_ping_enabled: true` | **Pending** | After QA: 4+ ENABLED with rising activetime. **Code (2026-07-25):** flag alone no longer activates multi-ping — `multi_ping_enabled()` also requires daemon ≥1.3; repo default `false`. |
 | Retire `primary_ping_alias` privkey hack | **Pending** | Optional once multi-ping stable |
 
 ---

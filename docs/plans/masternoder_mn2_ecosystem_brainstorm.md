@@ -43,6 +43,7 @@
 ### D — Sync plan ↔ TODO — **Done 2026-07-25**
 ### E — Jump to exchange / multi-ping P1 (ops product)
 **What:** Follow `MN2_TODO.md` P1 (daemon v1.3 multi-ping, exchange gateway).  
+**Status (2026-07-25):** **Code slice done** — multi-ping safety gate (`multi_ping_enabled` requires daemon ≥1.3; config flag `false`). **Still ops:** build/deploy v1.3 binary, QA probes, then flip flag. Exchange PayPal webhook rail = next code slice after ops binary (see U8 / P1).  
 **Only if:** User priority is fleet ENABLED / exchange.
 
 ---
