@@ -109,6 +109,7 @@ a.mn2-hub-tab--link {
 .mn2-hub-wrap td.num, .mn2-hub-wrap th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .mn2-hub-wrap .pill { padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
 .mn2-hub-wrap .pill.on { background: rgba(0,255,136,0.18); color: #00ff88; }
+.mn2-hub-wrap .pill.active { background: rgba(0, 212, 255, 0.18); color: #7ec8ff; }
 .mn2-hub-wrap .pill.off { background: rgba(255,170,68,0.18); color: #ffaa44; }
 .mn2-hub-wrap .tier { font-weight: 600; color: #00ff88; }
 .mn2-hub-wrap .rank { opacity: 0.6; width: 48px; }
@@ -449,6 +450,9 @@ body.mn2-crypto-hub code {
 }
 .mn-net-table th { color: #9ec5ff; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .mn-net-table tr.mn-row-enabled { background: rgba(93, 255, 176, 0.06); }
+.mn-net-table tr.mn-row-active { background: rgba(0, 212, 255, 0.05); }
+.mn2-hub-wrap table tr.ex-mn-row-enabled { background: rgba(93, 255, 176, 0.06); }
+.mn2-hub-wrap table tr.ex-mn-row-active { background: rgba(0, 212, 255, 0.05); }
 .mn-node-grid--compact { display: none; }
 .mn-hub-links {
   display: flex;

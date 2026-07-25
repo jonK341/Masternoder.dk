@@ -331,6 +331,51 @@
     }
   }
 
+  function mnStatusCounts(d) {
+    var enabled = d && d.enabled != null ? Number(d.enabled) : NaN;
+    var active = d && d.active != null ? Number(d.active) : NaN;
+    var list = (d && d.list) || [];
+    if (!isFinite(enabled) || !isFinite(active)) {
+      enabled = 0;
+      active = 0;
+      list.forEach(function (m) {
+        var st = String((m && m.status) || '').toUpperCase();
+        if (st === 'ENABLED') enabled += 1;
+        else if (st === 'ACTIVE') active += 1;
+      });
+    }
+    var total = d && d.total != null ? Number(d.total) : (enabled + active);
+    if (!isFinite(total)) total = list.length;
+    return { total: total, enabled: enabled, active: active };
+  }
+
+  function updateMnNetworkStatTiles(d) {
+    if (!d || !d.success) return;
+    var c = mnStatusCounts(d);
+    if (q('mn-net-total-val')) q('mn-net-total-val').textContent = fmtNum(c.total, 0);
+    if (q('mn-net-enabled')) {
+      q('mn-net-enabled').textContent = fmtNum(c.enabled, 0) + ' ENABLED · ' +
+        fmtNum(c.active, 0) + ' ACTIVE';
+    }
+  }
+
+  function sortMasternodeList(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var sa = String((a && a.status) || '').toUpperCase();
+      var sb = String((b && b.status) || '').toUpperCase();
+      if (sa !== sb) {
+        if (sa === 'ENABLED') return -1;
+        if (sb === 'ENABLED') return 1;
+        if (sa === 'ACTIVE') return -1;
+        if (sb === 'ACTIVE') return 1;
+      }
+      var ta = Number((a && a.activetime) || 0);
+      var tb = Number((b && b.activetime) || 0);
+      if (tb !== ta) return tb - ta;
+      return (Number(a.rank) || 0) - (Number(b.rank) || 0);
+    });
+  }
+
   function renderNodeCard(title, addr, badges, extraClass) {
     return '<div class="mn-node-card ' + (extraClass || '') + '">' +
       '<div class="mn-node-title">' + title + '</div>' +
@@ -355,11 +400,6 @@
 
         if (q('mn-meter-label')) q('mn-meter-label').textContent = used + ' / ' + max + ' slots used';
         if (q('mn-meter-fill')) q('mn-meter-fill').style.width = pct + '%';
-        if (q('mn-net-total-val')) q('mn-net-total-val').textContent = fmtNum(net.total, 0);
-        if (q('mn-net-enabled')) {
-          q('mn-net-enabled').textContent = fmtNum(net.enabled, 0) + ' ENABLED · ' +
-            fmtNum((d.daemon || {}).enabled_with_activetime, 0) + ' with ping time';
-        }
         if (q('mn-platform-onchain')) q('mn-platform-onchain').textContent = fmtNum(syncedOnChain, 0);
         if (q('mn-platform-enabled')) {
           q('mn-platform-enabled').textContent = fmtNum(d.platform_enabled_on_chain, 0) + ' ENABLED in fleet';
@@ -422,13 +462,10 @@
       .then(function (d) {
         var tbody = q('mn-net-table');
         var grid = q('mn-net-grid');
-        var list = (d && d.list) || [];
+        var list = sortMasternodeList((d && d.list) || []);
         var rpcErr = (d && d.rpc_error) ? String(d.rpc_error) : '';
         if (d && d.success) {
-          if (q('mn-net-total-val')) q('mn-net-total-val').textContent = fmtNum(d.total, 0);
-          if (q('mn-net-enabled')) {
-            q('mn-net-enabled').textContent = fmtNum(d.enabled, 0) + ' ENABLED';
-          }
+          updateMnNetworkStatTiles(d);
         }
         renderMnRpcBanner(rpcErr || null);
         if (tbody) {
@@ -439,8 +476,10 @@
           } else {
             tbody.innerHTML = list.map(function (m) {
               var st = m.status || '—';
+              var stU = String(st).toUpperCase();
+              var rowCls = stU === 'ENABLED' ? 'mn-row-enabled' : (stU === 'ACTIVE' ? 'mn-row-active' : '');
               var addr = m.addr ? '<span class="mn-node-addr">' + m.addr + '</span>' : '—';
-              return '<tr class="' + (String(st).toUpperCase() === 'ENABLED' ? 'mn-row-enabled' : '') + '">' +
+              return '<tr class="' + rowCls + '">' +
                 '<td class="num">' + (m.rank != null ? m.rank : '—') + '</td>' +
                 '<td>' + addr + '</td>' +
                 '<td>' + mnBadge(st) + '</td>' +
