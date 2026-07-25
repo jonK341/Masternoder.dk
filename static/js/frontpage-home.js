@@ -399,7 +399,7 @@
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
             const [platformRes, profitRes, feedRes] = await Promise.all([
-                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/news/platform?limit=5&channel=home`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
             ]);

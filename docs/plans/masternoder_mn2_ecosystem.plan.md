@@ -18,7 +18,7 @@ todos:
     content: "Phase 4 PARTIAL: trader service + strategies, agents_trader cron, agent_admin control board; live_distribute still false until cold-wallet sign-off (C3)"
     status: pending
   - id: explorer
-    content: "Phase 5 PARTIAL: explorer data + discord_service + news channel filter; NEXT GET /api/news/channels + remaining explorer top-10 polish"
+    content: "Phase 5 PARTIAL: news/channels+publish+RSS + explorer top-10 APIs/pages (tx/address/block/search/rich-list/mempool/supply); Discord/M8 already live; NEXT optional leveling of news auto-hooks polish"
     status: pending
   - id: debugger-qa
     content: "Phase 6 NEXT: Wire debugger Top 50 Q&A POST /api/debugger/quiz/submit + MN2 rewards + anti-farm + tests"
@@ -151,7 +151,7 @@ flowchart TD
 - Tests: `tests/unit/test_agent_trader.py`, `tests/unit/test_agent_wallets.py`.
 
 ## Phase 5 - Explorer + multi-channel news + Discord integration
-**Status: Partial.** Explorer + Discord + news channel filter; still need `/api/news/channels` and polish.
+**Status: Partial.** `/api/news/channels` + publish/RSS + explorer on-site detail APIs/pages shipped (2026-07-25). Discord/M8 infra already live. Remaining: more auto-publish hook coverage polish if needed.
 ### Explorer (unchanged scope)
 - Implement iquidus-first branch in `mn2_chainz.network_overview()` per `docs/MN2_EXPLORER_PLAN.md`; add in-page tx/address detail routes in `mn2_explorer_data.py` + `mn2_staking_routes.py`; wire `explorer/index.html` + `static/js/mn2-explorer-overview.js`.
 - Top 10 explorer features: (1) in-page tx detail, (2) in-page address detail, (3) internal search, (4) rich list, (5) supply/emission stats, (6) masternode detail, (7) mempool/pending, (8) tx-volume charts, (9) auto-refresh, (10) JSON API parity.

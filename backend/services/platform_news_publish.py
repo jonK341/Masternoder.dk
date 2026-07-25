@@ -20,14 +20,25 @@ def publish(
     channel: str,
     href: str = "/",
     featured: bool = False,
+    channels: Optional[list] = None,
 ) -> Dict[str, Any]:
+    primary = (channel or "ops").strip().lower() or "ops"
+    chan_list: list = []
+    if isinstance(channels, list):
+        for c in channels:
+            s = str(c or "").strip().lower()
+            if s and s not in chan_list:
+                chan_list.append(s)
+    if primary not in chan_list:
+        chan_list.insert(0, primary)
     row = {
         "id": item_id,
         "title": title,
         "summary": summary,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "category": channel,
-        "channel": channel,
+        "category": primary,
+        "channel": primary,
+        "channels": chan_list,
         "href": href,
         "featured": featured,
     }
