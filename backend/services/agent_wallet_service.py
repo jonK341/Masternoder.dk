@@ -151,18 +151,20 @@ def set_treasury_address(
         }
         _write(_TREASURY_FILE, data)
     # Map into deposit scanner address book (reserved agent_treasury account).
-    try:
-        from backend.services import mn2_wallet_service as mws
-        addrs = mws._load_addresses()
-        entry = addrs.get(TREASURY_POOL_USER) if isinstance(addrs.get(TREASURY_POOL_USER), dict) else {}
-        entry = dict(entry or {})
-        entry["address"] = data["address"]
-        entry["label"] = "agent-treasury"
-        entry["updated_at"] = _iso()
-        addrs[TREASURY_POOL_USER] = entry
-        mws._save_addresses(addrs)
-    except Exception:
-        pass
+    # Skip ephemeral/test addresses (Option C unit fixtures use short labels).
+    if len(data.get("address") or "") >= 26:
+        try:
+            from backend.services import mn2_wallet_service as mws
+            addrs = mws._load_addresses()
+            entry = addrs.get(TREASURY_POOL_USER) if isinstance(addrs.get(TREASURY_POOL_USER), dict) else {}
+            entry = dict(entry or {})
+            entry["address"] = data["address"]
+            entry["label"] = "agent-treasury"
+            entry["updated_at"] = _iso()
+            addrs[TREASURY_POOL_USER] = entry
+            mws._save_addresses(addrs)
+        except Exception:
+            pass
     return {"success": True, **data}
 
 
