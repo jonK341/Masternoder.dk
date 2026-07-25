@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 
-    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260725a">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
 
@@ -354,7 +354,7 @@
             <div class="mn-hero">
                 <div class="mn-hero-copy">
                     <h2>🏛️ Masternode Hosting</h2>
-                    <p>We run your MN2 masternode on shared infrastructure — one chain, <strong>10,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
+                    <p>We run your MN2 masternode on shared infrastructure — one chain, <strong id="mn-hero-collateral">5,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
                 </div>
                 <div class="mn-slot-meter" aria-label="Platform slot capacity">
                     <div class="mn-slot-meter-label"><span id="mn-meter-label">— / — slots</span></div>
@@ -364,16 +364,22 @@
 
             <p class="mn-rpc-banner" id="mn-rpc-banner" hidden aria-live="polite"></p>
 
+            <nav class="mn-hub-links" aria-label="MN2 ecosystem links">
+                <a href="/shop?tab=mn2">Shop checkout</a>
+                <a href="/hosting/">Hosting overview</a>
+                <a href="/exchange?tab=trade">Exchange · MN2 wallet</a>
+                <button type="button" class="mn-hub-refresh" id="mn-refresh-btn" title="Refresh fleet and network list">↻ Refresh</button>
+            </nav>
             <div class="ex-tiles mn-stat-tiles" id="mn-host-tiles">
-                <div class="ex-tile"><div class="label">Live on network</div><div class="value" id="mn-net-enabled">--</div><div class="sub" id="mn-net-total">enabled masternodes</div></div>
-                <div class="ex-tile"><div class="label">Platform fleet</div><div class="value" id="mn-slots">--</div><div class="sub" id="mn-collateral">registered hosts</div></div>
+                <div class="ex-tile"><div class="label">On chain (network)</div><div class="value" id="mn-net-total-val">--</div><div class="sub" id="mn-net-enabled">— ENABLED</div></div>
+                <div class="ex-tile"><div class="label">Platform on-chain</div><div class="value" id="mn-platform-onchain">--</div><div class="sub" id="mn-platform-enabled">matched to fleet</div></div>
+                <div class="ex-tile"><div class="label">Slots used</div><div class="value" id="mn-slots">--</div><div class="sub" id="mn-collateral">in registry</div></div>
                 <div class="ex-tile"><div class="label">Slots open</div><div class="value" id="mn-open-slots">--</div><div class="sub" id="mn-slots-cap">capacity loading…</div></div>
-                <div class="ex-tile"><div class="label">Daemon</div><div class="value" id="mn-daemon">--</div><div class="sub" id="mn-daemon-sub">minting status</div></div>
             </div>
 
             <div class="mn-checkout-card" id="mn-checkout-card">
                 <h3>Reserve a slot</h3>
-                <p class="mn-checkout-lead">Fully automated — pay with PayPal, coins, in-wallet MN2, or on-chain MN2. We reserve your slot, lock 10k MN2 collateral, and bring your node online without manual steps.</p>
+                <p class="mn-checkout-lead">Fully automated — pay with PayPal, coins, in-wallet MN2, or on-chain MN2. We reserve your slot, lock <span id="mn-checkout-collateral">5,000</span> MN2 collateral, broadcast to the network, and bring your node online.</p>
                 <div class="mn-checkout-row">
                     <label>Slots <input type="number" id="mn-checkout-slots" min="1" max="5" value="1"></label>
                     <div class="mn-checkout-price">
@@ -391,12 +397,21 @@
                 <p class="mn-checkout-msg" id="mn-checkout-msg" aria-live="polite"></p>
             </div>
 
+            <div class="ex-section-title">Your hosting orders</div>
+            <p class="sub-note mn-orders-note">Recent purchases for this account — provisioning runs automatically after payment.</p>
+            <div class="mn-orders-wrap">
+                <table class="mn-net-table mn-orders-table">
+                    <thead><tr><th>Order</th><th>Status</th><th>Slots</th><th class="num">Total</th><th>When</th></tr></thead>
+                    <tbody id="mn-my-orders"><tr><td colspan="5">Loading orders…</td></tr></tbody>
+                </table>
+            </div>
+
             <div class="ex-section-title">Platform fleet <span id="mn-host-summary" class="mn-section-meta"></span></div>
             <div class="mn-node-grid" id="mn-node-grid"><div class="mn-node-card mn-node-card--empty">Loading fleet…</div></div>
 
             <div class="ex-section-title">Network masternodes <span class="mn-section-meta">active time = ping uptime toward ENABLED</span></div>
-            <table class="mn-net-table">
-                <thead><tr><th>Rank</th><th>Collateral</th><th>Status</th><th>Active time</th></tr></thead>
+            <table class="mn-net-table mn-net-table--full">
+                <thead><tr><th class="num">Rank</th><th>Address</th><th>Status</th><th class="num">Active time</th></tr></thead>
                 <tbody id="mn-net-table"><tr><td colspan="4">Loading network…</td></tr></tbody>
             </table>
             <div class="mn-node-grid mn-node-grid--network mn-node-grid--compact" id="mn-net-grid" hidden></div>
@@ -540,9 +555,9 @@
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="explorer" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20260725a" defer></script>
 
-    <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
+    <script src="/static/js/mn2-explorer-overview.js?v=20260725a" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 

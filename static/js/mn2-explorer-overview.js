@@ -256,7 +256,10 @@
         if (!body) return;
         if (!d || !d.success) { return; }
         var sum = q('mn-summary');
-        if (sum) sum.textContent = '— ' + (d.enabled || 0) + ' enabled / ' + (d.total || 0) + ' total';
+        if (sum) {
+          sum.innerHTML = ' — <a href="/explorer?tab=masternodes">hosting</a> · ' +
+            (d.enabled || 0) + ' ENABLED / ' + (d.total || 0) + ' on chain';
+        }
         var list = d.list || [];
         if (!list.length) {
           var err = d.rpc_error ? String(d.rpc_error) : '';

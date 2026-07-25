@@ -398,6 +398,9 @@ body.mn2-crypto-hub code {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
   margin-bottom: 24px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .mn-node-card {
   padding: 14px 16px;
@@ -447,6 +450,40 @@ body.mn2-crypto-hub code {
 .mn-net-table th { color: #9ec5ff; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .mn-net-table tr.mn-row-enabled { background: rgba(93, 255, 176, 0.06); }
 .mn-node-grid--compact { display: none; }
+.mn-hub-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  font-size: 0.88rem;
+}
+.mn-hub-links a { color: #00d4ff; text-decoration: none; font-weight: 600; }
+.mn-hub-links a:hover { text-decoration: underline; }
+.mn-hub-refresh {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.1);
+  color: #5dffb0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.mn-orders-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 160, 220, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+}
+.mn-orders-note { margin-top: -4px; margin-bottom: 10px; }
+.mn-net-table--full { margin-bottom: 20px; }
 .mn-rpc-banner {
   margin: 0 0 14px;
   padding: 10px 14px;
