@@ -201,7 +201,10 @@
   }
 
   function scheduleInitNav() {
-    setTimeout(initNav, 0);
+    setTimeout(function () {
+      initNav();
+      initTopMonitor();
+    }, 0);
   }
 
   function renderProfitBlockers(data, listId, countId) {
@@ -235,6 +238,104 @@
         renderProfitBlockers(data, 'cex-blockers-list-overview', 'cex-blockers-open-count');
         renderProfitBlockers(data, 'cex-blockers-list-bots', 'cex-blockers-open-count-bots');
       });
+  }
+
+  function fmtNum(n, d) {
+    var x = Number(n);
+    if (!isFinite(x)) return '—';
+    return x.toLocaleString(undefined, {
+      minimumFractionDigits: d == null ? 0 : d,
+      maximumFractionDigits: d == null ? 2 : d,
+    });
+  }
+
+  function topKpi(label, value, tone) {
+    return '<div class="cex-top-kpi' + (tone ? ' cex-top-kpi--' + tone : '') + '">' +
+      '<span>' + label + '</span><strong>' + value + '</strong></div>';
+  }
+
+  function renderTopMonitor(health, live, gateway) {
+    var kpis = q('cex-top-monitor-kpis');
+    var feedEl = q('cex-top-monitor-feed');
+    var updated = q('cex-top-monitor-updated');
+    var dot = q('cex-top-live-dot');
+    if (!kpis) return;
+
+    var h = health || {};
+    var g = (gateway && gateway.success) ? gateway : {};
+    var gt = g.totals || {};
+    var liveOk = live && live.success !== false;
+    var t = (liveOk && live.totals) ? live.totals : {};
+
+    var status = (h.status || 'unknown').toString();
+    var statusTone = status === 'healthy' ? 'ok' : (status === 'degraded' ? 'warn' : 'bad');
+    var markets = h.asset_count != null ? h.asset_count : '—';
+    var bots = liveOk
+      ? (fmtNum(t.active_bots, 0) + ' / ' + fmtNum(t.bot_count, 0) + ' live')
+      : '—';
+    var gatewayLine = g.ready
+      ? ('Ready · ' + fmtNum(gt.pending_count, 0) + ' pending')
+      : (g.success === false ? 'Check ops' : (fmtNum(gt.pending_count, 0) + ' pending'));
+
+    kpis.innerHTML =
+      topKpi('Service', status, statusTone) +
+      topKpi('Markets', fmtNum(markets, 0), 'ok') +
+      topKpi('Bots', bots, liveOk ? 'ok' : 'warn') +
+      topKpi('Gateway', gatewayLine, g.ready ? 'ok' : 'warn') +
+      topKpi('Treasury fees', fmtNum(h.treasury_fees_mn2, 2) + ' MN2', '');
+
+    if (feedEl) {
+      var rows = (liveOk && live.feed) ? live.feed.slice(0, 6) : [];
+      if (!rows.length) {
+        feedEl.innerHTML = '<div class="cex-mon-empty">' +
+          (liveOk ? 'No recent activity — run bots or place a trade.' : 'Activity feed unavailable.') +
+          '</div>';
+      } else {
+        feedEl.innerHTML = rows.map(function (f) {
+          var when = f.ts ? new Date(f.ts).toLocaleTimeString() : '';
+          return '<div class="cex-mon-feed-row ' + (f.scope === 'you' ? 'you' : 'market') + '">' +
+            '<span class="cex-mon-feed-ic">' + (f.icon || '•') + '</span>' +
+            '<span class="cex-mon-feed-tx">' + (f.text || '') + '</span>' +
+            '<span class="cex-mon-feed-ts">' + when + '</span></div>';
+        }).join('');
+      }
+    }
+
+    if (updated) updated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    if (dot) {
+      dot.style.background = liveOk ? '#00ff88' : '#ffaa44';
+      dot.style.boxShadow = liveOk ? '0 0 8px #00ff88' : '0 0 8px #ffaa44';
+    }
+  }
+
+  function loadTopMonitor() {
+    if (!q('cex-top-monitor')) return Promise.resolve();
+    return Promise.all([
+      fetchJson('/api/exchange/health', { timeout: 8000 }).catch(function () { return {}; }),
+      fetchJson('/api/exchange/monitor/live?limit=12', { timeout: 12000 }).catch(function () { return {}; }),
+      fetchJson('/api/exchange/gateway/status', { timeout: 8000 }).catch(function () { return {}; }),
+    ]).then(function (res) {
+      renderTopMonitor(res[0], res[1], res[2]);
+    }).catch(function () {
+      renderTopMonitor({}, { success: false }, { success: false });
+    });
+  }
+
+  var topMonitorTimer = null;
+
+  function initTopMonitor() {
+    if (!q('cex-top-monitor')) return;
+    loadTopMonitor();
+    if (topMonitorTimer) clearInterval(topMonitorTimer);
+    topMonitorTimer = setInterval(loadTopMonitor, 30000);
+    var btn = q('cex-top-monitor-refresh');
+    if (btn && !btn._cexTopBound) {
+      btn._cexTopBound = true;
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        loadTopMonitor().finally(function () { btn.disabled = false; });
+      });
+    }
   }
 
   function renderHealth(data) {
@@ -452,6 +553,7 @@
     setLoading: setLoading,
     setError: setError,
     clearSlot: clearSlot,
+    loadTopMonitor: loadTopMonitor,
     TAB_LABELS: TAB_LABELS,
   };
 

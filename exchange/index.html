@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260725a">
-    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260726a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -19,11 +19,6 @@
                     <h1><i class="fas fa-chart-line"></i> MasterNoder Exchange</h1>
                     <p class="cex-sub" id="cex-hero-sub">Loading markets… · instant swap · limit orders · staking rewards · tax records</p>
                 </div>
-            </div>
-            <div class="cex-visual-row" aria-hidden="true">
-                <img src="/static/img/exchange/visual-agents.svg" alt="Trading agents" width="280" height="160" />
-                <img src="/static/img/exchange/visual-arbitrage.svg" alt="Cross-venue arbitrage" width="280" height="160" />
-                <img src="/static/img/exchange/visual-profit.svg" alt="Profit tracking" width="280" height="160" />
             </div>
             <div class="cex-legal" id="cex-legal-notice">Loading compliance notice…</div>
             <nav class="cex-shortcuts" aria-label="Exchange shortcuts">
@@ -51,6 +46,28 @@
             <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
         </nav>
         <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+
+        <section class="cex-top-monitor" id="cex-top-monitor" aria-label="Exchange live monitor">
+            <div class="cex-top-monitor-bar">
+                <div class="cex-top-monitor-title">
+                    <span class="cex-live-dot" id="cex-top-live-dot" aria-hidden="true"></span>
+                    Live exchange monitor
+                </div>
+                <div class="cex-top-monitor-actions">
+                    <span id="cex-top-monitor-updated" class="cex-muted">Loading…</span>
+                    <button type="button" class="cex-btn cex-btn--ghost cex-top-monitor-refresh" id="cex-top-monitor-refresh">Refresh</button>
+                </div>
+            </div>
+            <div id="cex-top-monitor-kpis" class="cex-top-monitor-kpis">
+                <div class="cex-top-kpi cex-top-kpi--loading"><span>Status</span><strong>…</strong></div>
+                <div class="cex-top-kpi cex-top-kpi--loading"><span>Markets</span><strong>…</strong></div>
+                <div class="cex-top-kpi cex-top-kpi--loading"><span>Bots</span><strong>…</strong></div>
+                <div class="cex-top-kpi cex-top-kpi--loading"><span>Gateway</span><strong>…</strong></div>
+            </div>
+            <div id="cex-top-monitor-feed" class="cex-top-monitor-feed" aria-live="polite">
+                <div class="cex-mon-empty">Activity feed loading…</div>
+            </div>
+        </section>
 
         <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
         <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
@@ -517,8 +534,8 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20260725b"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260725b"></script>
-    <script src="/static/js/agent-marketplace.js?v=20260725b"></script>
+    <script src="/static/js/exchange-hub.js?v=20260726a"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260726a"></script>
+    <script src="/static/js/agent-marketplace.js?v=20260726a"></script>
 </body>
 </html>

@@ -489,10 +489,99 @@
 .cex-route-note {
   font-size: 0.75rem;
   opacity: 0.65;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
 }
+
+/* Top-of-page live monitor (replaces decorative visual row) */
+.cex-top-monitor {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 212, 255, 0.28);
+  background: linear-gradient(135deg, rgba(8, 14, 32, 0.95), rgba(12, 22, 40, 0.88));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+}
+.cex-top-monitor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.cex-top-monitor-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #a8d4ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cex-top-monitor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+}
+.cex-top-monitor-refresh {
+  padding: 5px 12px !important;
+  font-size: 0.75rem !important;
+}
+.cex-top-monitor-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cex-top-kpi {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 52px;
+}
+.cex-top-kpi span {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+.cex-top-kpi strong {
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 700;
+}
+.cex-top-kpi--ok strong { color: #5dffb0; }
+.cex-top-kpi--warn strong { color: #ffcc66; }
+.cex-top-kpi--bad strong { color: #ff8a8a; }
+.cex-top-kpi--loading strong { opacity: 0.45; }
+.cex-top-monitor-feed {
+  max-height: 132px;
+  overflow-y: auto;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.cex-top-monitor-feed .cex-mon-feed-row {
+  grid-template-columns: 20px 1fr auto;
+  padding: 5px 0;
+}
+
 .cex-tab-shell { margin-top: 4px; }
-.cex-tab-shell[hidden] { display: none !important; }
+.cex-tab-shell[hidden] {
+  display: none !important;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.cex-tab-shell[hidden] table,
+.cex-tab-shell[hidden] .cex-ppp-table-wrap {
+  display: none !important;
+}
 .cex-tab-load-slot {
   margin: 8px 0 12px;
   padding: 12px;
@@ -535,6 +624,7 @@
 .cex-ppp-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
 .cex-ppp-table th, .cex-ppp-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
 .cex-ppp-table th { color: rgba(255,255,255,0.55); font-weight: 600; position: sticky; top: 0; background: rgba(8,12,24,0.95); }
+.cex-tab-shell[hidden] .cex-ppp-table th { position: static; }
 .cex-ppp-suggestions { display: flex; flex-direction: column; gap: 8px; }
 .cex-ppp-suggestion { font-size: 0.8rem; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); }
 .cex-ppp-suggestion--high { border-color: rgba(255,100,100,0.35); }
