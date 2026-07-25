@@ -658,6 +658,7 @@ MANIFESTS = {
         "scripts/mn2_fix_config_permissions.sh",
         "scripts/mn2_unlock_collateral.sh",
         "scripts/mn2_repair_masternode_conf.sh",
+        "scripts/mn2_relay_missing_masternodes.py",
         "scripts/mn2_fleet_autostart.sh",
         "scripts/mn2_masternode_fleet_ops_remote.py",
         "scripts/mn2_recover_pending_masternodes_remote.py",

@@ -543,6 +543,28 @@ def createmasternodekey() -> Dict[str, Any]:
     return _call("createmasternodekey")
 
 
+def listmasternodeconf() -> Dict[str, Any]:
+    """Local masternode.conf entries with network status (ENABLED/ACTIVE/MISSING)."""
+    return _call("listmasternodeconf")
+
+
+def createmasternodebroadcast(command: str, alias: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Build a signed masternode broadcast for ``masternode.conf`` entries.
+
+    command: ``alias`` (requires alias) or ``all``.
+    """
+    params: List[Any] = [command]
+    if alias is not None:
+        params.append(alias)
+    return _call("createmasternodebroadcast", params)
+
+
+def relaymasternodebroadcast(hex_message: str) -> Dict[str, Any]:
+    """Relay a hex broadcast from ``createmasternodebroadcast`` to the P2P network."""
+    return _call("relaymasternodebroadcast", [hex_message])
+
+
 def startmasternode(
     set_type: str,
     lock_wallet: bool = False,

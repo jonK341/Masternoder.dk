@@ -15,6 +15,7 @@ from backend.services import mn2_rpc_client as rpc
 @pytest.fixture(autouse=True)
 def _rpc_ready(monkeypatch):
     monkeypatch.setattr(mn, "_wait_for_rpc_ready", lambda timeout_sec=None: None)
+    monkeypatch.setattr(mn, "_relay_network_broadcast", lambda alias: None)
     monkeypatch.setattr(
         rpc,
         "getblockcount",
@@ -429,8 +430,52 @@ def test_provision_keeps_collateral_when_rpc_busy(monkeypatch, tmp_path):
 def test_process_pending_skips_ping_when_rpc_unhealthy(monkeypatch):
     monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: False)
     monkeypatch.setattr(mn, "_rpc_probe_detail", lambda: {"ok": False, "error": "busy"})
+    monkeypatch.setattr(mn, "relay_missing_masternode_broadcasts", lambda **kw: {"success": False, "relayed": []})
     monkeypatch.setattr(mn, "list_hosts", lambda include_internal=False: [])
     monkeypatch.setattr(mn, "maintain_ping_loop", lambda: (_ for _ in ()).throw(AssertionError("ping should not run")))
     out = mn.process_pending_hosts(limit=5)
     assert out["ping_loop"]["skipped"] is True
     assert "RPC unavailable" in out["ping_loop"]["reason"]
+
+
+def test_relay_network_broadcast_success(monkeypatch):
+    monkeypatch.setattr(
+        rpc,
+        "createmasternodebroadcast",
+        lambda cmd, alias=None: {"result": {"success": True, "hex": "abc123"}, "error": None},
+    )
+    monkeypatch.setattr(
+        rpc,
+        "relaymasternodebroadcast",
+        lambda hx: {"result": "Masternode broadcast sent", "error": None},
+    )
+    assert mn._relay_network_broadcast("platformmn2") is None
+
+
+def test_relay_missing_targets_missing_status(monkeypatch):
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: True)
+    monkeypatch.setattr(
+        rpc,
+        "listmasternodeconf",
+        lambda: {
+            "result": [
+                {"alias": "platformmn2", "status": "MISSING", "txHash": "aa" * 32},
+                {"alias": "platformmn3", "status": "ACTIVE", "txHash": "bb" * 32},
+            ],
+            "error": None,
+        },
+    )
+    monkeypatch.setattr(rpc, "listmasternodes", lambda timeout_sec=None: {
+        "result": [{"txhash": "b" * 64, "status": "ACTIVE"}],
+        "error": None,
+    })
+    relayed = []
+
+    def fake_relay(alias: str):
+        relayed.append(alias)
+        return None
+
+    monkeypatch.setattr(mn, "_relay_network_broadcast", fake_relay)
+    out = mn.relay_missing_masternode_broadcasts(limit=10)
+    assert relayed == ["platformmn2"]
+    assert out["relayed"] == ["platformmn2"]

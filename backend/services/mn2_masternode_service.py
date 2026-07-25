@@ -778,6 +778,111 @@ def _unlock_collateral_utxos() -> int:
     return len(outputs)
 
 
+def _broadcast_hex_from_rpc_result(result: Any) -> Optional[str]:
+    if isinstance(result, dict):
+        hx = (result.get("hex") or "").strip()
+        if hx:
+            return hx
+        if result.get("success") and isinstance(result.get("hex"), str):
+            return result.get("hex")
+    if isinstance(result, str) and result.strip():
+        return result.strip()
+    return None
+
+
+def _relay_network_broadcast(alias: str) -> Optional[str]:
+    """
+    Register alias on the P2P masternode list (required for listmasternodes / explorer).
+
+    ``startmasternode`` alone does not always relay; MISSING in listmasternodeconf means
+  collateral exists but the network has not accepted a broadcast yet.
+    """
+    from backend.services import mn2_rpc_client as rpc
+
+    alias = (alias or "").strip()
+    if not alias:
+        return "masternode alias required"
+
+    br = rpc.createmasternodebroadcast("alias", alias)
+    if br.get("error"):
+        return str(br.get("error"))
+    hx = _broadcast_hex_from_rpc_result(br.get("result"))
+    if not hx:
+        return "createmasternodebroadcast returned no hex"
+    rel = rpc.relaymasternodebroadcast(hx)
+    if rel.get("error"):
+        return str(rel.get("error"))
+    return None
+
+
+def relay_missing_masternode_broadcasts(*, limit: int = 50) -> Dict[str, Any]:
+    """
+    Ops/cron: relay broadcasts for conf entries not on the synced network list (status MISSING)
+    or whose collateral txhash is absent from ``listmasternodes``.
+    """
+    from backend.services import mn2_rpc_client as rpc
+
+    limit = max(1, int(limit))
+    if not _rpc_is_healthy():
+        probe = _rpc_probe_detail()
+        return {
+            "success": False,
+            "error": probe.get("error") or "RPC unavailable",
+            "relayed": [],
+            "failed": [],
+        }
+
+    conf_r = rpc.listmasternodeconf()
+    if conf_r.get("error"):
+        return {"success": False, "error": conf_r.get("error"), "relayed": [], "failed": []}
+    conf_rows = conf_r.get("result")
+    if not isinstance(conf_rows, list):
+        conf_rows = []
+
+    mn_r = rpc.listmasternodes()
+    on_chain: set = set()
+    if not mn_r.get("error"):
+        mn_rows = mn_r.get("result")
+        if isinstance(mn_rows, list):
+            for row in mn_rows:
+                if isinstance(row, dict):
+                    tx = str(row.get("txhash") or row.get("proTxHash") or "").lower()
+                    if tx:
+                        on_chain.add(tx)
+
+    todo: List[str] = []
+    seen_alias: set = set()
+    for row in conf_rows:
+        if not isinstance(row, dict):
+            continue
+        alias = (row.get("alias") or "").strip()
+        if not alias or alias in seen_alias:
+            continue
+        seen_alias.add(alias)
+        status = (row.get("status") or "").upper()
+        tx = str(row.get("txHash") or row.get("collateralHash") or "").lower()
+        if status == "MISSING" or (tx and tx not in on_chain):
+            todo.append(alias)
+        if len(todo) >= limit:
+            break
+
+    relayed: List[str] = []
+    failed: List[Dict[str, str]] = []
+    for alias in todo:
+        err = _relay_network_broadcast(alias)
+        if err:
+            failed.append({"alias": alias, "error": err[:200]})
+        else:
+            relayed.append(alias)
+
+    return {
+        "success": not failed or bool(relayed),
+        "relayed": relayed,
+        "failed": failed,
+        "candidates": len(todo),
+    }
+
+
 def _ping_watch_path() -> str:
     return _data_path("mn2_ping_watch.json")
 
@@ -1294,6 +1399,9 @@ def _start_masternode(
             r = rpc.startmasternode(set_type, lock)
         if not r.get("error"):
             rpc_ok = True
+            relay_err = _relay_network_broadcast(alias)
+            if relay_err:
+                _LOGGER.warning("network broadcast relay for %s: %s", alias, relay_err)
             if multi_ping_enabled():
                 reg_err = _register_fleet_ping_targets()
                 if reg_err:
@@ -1514,6 +1622,10 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
         return {"success": False, "error": f"masternode.conf write failed: {exc}", "status": "provisioning"}
 
     start_err = _start_masternode(alias, str(privkey), conf_changed=conf_added)
+    if not start_err:
+        relay_err = _relay_network_broadcast(alias)
+        if relay_err:
+            _LOGGER.warning("provision relay for %s: %s", alias, relay_err)
     broadcast_address = ip_port
     register_host({
         "id": host_id,
@@ -1594,6 +1706,7 @@ def rebind_hosts_collateral_from_conf() -> Dict[str, Any]:
 
 def process_pending_hosts(limit: int = 20, *, skip_ping: bool = False) -> Dict[str, Any]:
     """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
+    relay = relay_missing_masternode_broadcasts(limit=max(50, int(limit)))
     ping: Dict[str, Any]
     if skip_ping:
         ping = {"success": True, "skipped": True, "reason": "skip_ping requested"}
@@ -1616,7 +1729,13 @@ def process_pending_hosts(limit: int = 20, *, skip_ping: bool = False) -> Dict[s
         if not hid:
             continue
         results.append({"host_id": hid, **provision_host(str(hid))})
-    return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
+    return {
+        "success": True,
+        "processed": len(results),
+        "results": results,
+        "ping_loop": ping,
+        "relay_missing": relay,
+    }
 
 
 def recover_fleet(*, limit: int = 50, restart_daemon: bool = True) -> Dict[str, Any]:

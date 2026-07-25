@@ -278,6 +278,22 @@ def masternode_maintain_ping():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/relay-missing", methods=["POST"])
+def masternode_relay_missing():
+    """Ops: create + relay broadcasts for masternode.conf entries not on the network list."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        raw_limit = request.args.get("limit", 50)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 50
+        return jsonify(mn_service.relay_missing_masternode_broadcasts(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/provision-pending", methods=["POST"])
 def masternode_provision_pending():
     if not _ops_authorized():
