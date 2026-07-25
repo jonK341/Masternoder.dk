@@ -8,7 +8,9 @@ todos:
   - id: daemon-health
     content: "Phase 1 DONE: /api/mn2/health Hub contract (daemon_staking, discord_outbox, network_alerts) + test_mn2_health"
     status: completed
-fini
+  - id: wallet
+    content: "Phase 2 DONE: multi-address refresh/connect routes + address-book/transfer + profile Wallet settings UX"
+    status: completed
   - id: market
     content: "Phase 3 DONE: p2p_market_service + /api/market + market/index.html + test_p2p_market"
     status: completed
