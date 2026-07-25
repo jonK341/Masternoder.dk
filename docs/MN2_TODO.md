@@ -17,7 +17,7 @@ See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2
 | **C3** | Agent treasury live distribute | **Blocked / config-only** | `agent_funding.live_distribute=false` (Option C). Arm only after cold-wallet sign-off (`MN2_OPS` §8.6) + reconcile green |
 | **C4** | Do not auto-move 600k MN2 / agent wallets | **Policy** | Sign-off + `live_distribute=true` required; dry-run via `GET /api/agents/treasury/status` |
 | **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Code gate Done 2026-07-25** · **Ops open** | Option E: `multi_ping_enabled` requires daemon ≥1.3 (flag alone no longer skips local start). Repo flag reset to `false`. Still need build/deploy v1.3 + QA then flip flag |
-| **C6** | Wallet refresh/connect API routes | **Open (Phase 2 residual)** | Service helpers exist; wire `/api/mn2/wallet/refresh` + `connect` |
+| **C6** | Wallet refresh/connect API routes | **Done 2026-07-25** | `POST /api/mn2/wallet/refresh|connect`, `GET .../addresses`, address-book + transfer; profile settings UX |
 | **C7** | Debugger quiz MN2 rewards + anti-farm | **Open (Phase 6)** | `POST /api/debugger/quiz/submit` missing |
 
 ---

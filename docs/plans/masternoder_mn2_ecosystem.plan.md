@@ -67,7 +67,7 @@ Supersedes the earlier `mn2-casino` plan. All work lands in the [REDACTED] Flask
 |-------|--------|-----------------|
 | 0 Audit | **Done** | Report live |
 | 1 Daemon health | **Done** | Hub contract + tests (Option A) |
-| 2 Wallet | **Partial** | Wire refresh/connect API routes + top-10 UX |
+| 2 Wallet | **Done** | `/api/mn2/wallet/refresh|connect|addresses` + address-book/transfer + profile settings |
 | 3 Market | **Done** | — |
 | 4 Agents | **Partial** | Trader service/cron/admin; live distribute only after sign-off (Option C) |
 | 5 Explorer + news + Discord | **Partial** | `/api/news/channels`; explorer polish |
@@ -120,7 +120,7 @@ flowchart TD
 - Tests: `tests/unit/test_mn2_health.py` plus fill coverage gaps for `recent_blocks()` / `masternodes()` (mock RPC).
 
 ## Phase 2 - Wallet: multi-connect, address refresh, top 10 features
-**Status: Partial.** Service helpers exist; wire `/api/mn2/wallet/refresh` + `connect` and finish top-10 profile UX.
+**Status: Done.** Routes: `POST /api/mn2/wallet/refresh`, `POST /api/mn2/wallet/connect`, `GET /api/mn2/wallet/addresses`, address-book + transfer; profile Wallet settings (rotate/connect/list). Swap, gift, QR, CSV, staking already wired.
 - Address rotation: extend `mn2_wallet_service.py` + `data/mn2_user_addresses.json` to hold multiple labeled addresses per user; add `POST /api/mn2/wallet/refresh` (rotate/derive + rescan) and `POST /api/mn2/wallet/connect` for external wallet types (Core/QT via RPC, web, extension stub, hardware stub).
 - Top 10 wallet features: (1) multi-wallet connect, (2) address rotation/refresh, (3) richer withdrawals UX on existing `/api/mn2/withdraw`, (4) MN2<->coins swap (config `coins_per_mn2`), (5) user-to-user MN2 send, (6) QR + address book, (7) per-wallet balance/history split, (8) labels/notes, (9) staking/masternode rewards view (reuse `staking-monitor`), (10) CSV export from `mn2_ledger`.
 - UI: extend `profile/index.html` wallet panel + `static/js`.
