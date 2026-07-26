@@ -4,7 +4,7 @@ from backend.services.exchange_fleet_bot_skills_service import (
     fleet_skills_catalog,
     profit_execution_threshold_bps,
 )
-from backend.services.exchange_supervisor_fleet_service import default_fleet_bots, fleet_overview, merge_fleet_into_controls
+from backend.services.exchange_supervisor_fleet_service import fleet_overview, merge_fleet_into_controls
 
 
 def test_fleet_roster_has_ten_monetization_skills():

@@ -53,6 +53,20 @@ AGENT_TOOLS: List[Dict[str, Any]] = [
         "description": "Current rotating stream chapter with decoded AI content.",
     },
     {
+        "action": "fix_no_obs",
+        "method": "POST",
+        "path": "/api/exchange/youtube-stream/agent-action",
+        "mutating": True,
+        "description": "No OBS: assign agent, start browser→RTMP ingest path, return Studio steps.",
+    },
+    {
+        "action": "ingest_status",
+        "method": "GET",
+        "path": "/api/exchange/fleet-stream/ingest/status",
+        "mutating": False,
+        "description": "ffmpeg + stream key status for server ingest (no OBS).",
+    },
+    {
         "action": "start_youtube_stream",
         "method": "POST",
         "path": "/api/exchange/youtube-stream/agent-action",
@@ -104,6 +118,9 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
     rtmp = live.get("youtube_rtmp") if isinstance(live.get("youtube_rtmp"), dict) else {}
     stream_meta = live.get("stream") if isinstance(live.get("stream"), dict) else {}
     studio_da = live.get("studio_edit_da") if isinstance(live.get("studio_edit_da"), list) else []
+    from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook
+
+    no_obs = no_obs_playbook()
     return {
         "success": True,
         "primary_agent": cfg.get("primary_agent") or "youtube_stream_agent",
@@ -143,7 +160,7 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
             "studio_live_url": yt_urls.get("studio_url") or "https://studio.youtube.com/",
             "watch_url": yt_urls.get("watch_url") or "",
             "video_id": yt_urls.get("video_id") or "",
-            "ingest_note": "Create stream in YouTube Studio → paste RTMP key in OBS (never commit keys).",
+            "ingest_note": "No OBS: use browser tab capture on stream layout, or set YOUTUBE_STREAM_KEY for server ffmpeg relay.",
             "recommended": obs_cfg.get("resolution", "1920×1080")
             + " · "
             + str(obs_cfg.get("fps", 30))
@@ -154,6 +171,8 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
             "episodes": _abs(base, "/podcast#episodes"),
             "news_comments": _abs(base, "/podcast#news"),
         },
+        "no_obs": no_obs,
+        "ingest": ingest_status(),
     }
 
 
@@ -257,6 +276,7 @@ def execute_agent_action(body: Dict[str, Any], *, base_url: Optional[str] = None
         }
     if action == "start_youtube_stream":
         from backend.services.fleet_stream_geo_service import start_livestream_session
+        from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook
 
         session = start_livestream_session(uid)
         ctrl = stream_controls(base_url=base_url)
@@ -275,11 +295,44 @@ def execute_agent_action(body: Dict[str, Any], *, base_url: Optional[str] = None
             "watch_url": yt.get("watch_url"),
             "monitor_stream_layout": (ctrl.get("monitor") or {}).get("stream_layout"),
             "operator_note": (
-                "YouTube RTMP/OBS must be LIVE in Studio — this agent assigns skills, "
-                "posts Discord + site events, and verifies monitor URLs."
+                "Without OBS: open stream layout → Share monitor tab → YouTube. "
+                "Set YOUTUBE_STREAM_KEY on server .env from Studio streamnøgle."
+            ),
+            "no_obs": no_obs_playbook(),
+            "ingest": ingest_status(),
+            "http_status": 200,
+        }
+    if action == "fix_no_obs":
+        from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook, start_ingest
+
+        assign = assign_youtube_stream_agents(uid, body.get("agent_id") or "youtube_stream_agent")
+        playbook = no_obs_playbook()
+        ingest = start_ingest() if body.get("start_ingest") else ingest_status()
+        session = None
+        if body.get("go_live", True):
+            from backend.services.fleet_stream_geo_service import start_livestream_session
+
+            session = start_livestream_session(uid)
+        return {
+            "success": True,
+            "assign": assign,
+            "playbook": playbook,
+            "ingest": ingest,
+            "session": session,
+            "monitor_stream_layout": (stream_controls(base_url=base_url).get("monitor") or {}).get(
+                "stream_layout"
+            ),
+            "operator_note": (
+                "1) Put stream key in server .env as YOUTUBE_STREAM_KEY. "
+                "2) On /fleet-progress-monitor/?mode=stream click Share tab → YouTube. "
+                "3) When Studio shows video, Go live."
             ),
             "http_status": 200,
         }
+    if action == "ingest_status":
+        from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook
+
+        return {**no_obs_playbook(), "ingest": ingest_status(), "http_status": 200}
     if action == "preflight_urls":
         import urllib.request
 

@@ -113,5 +113,6 @@ Uploads Business Control HTML/CSS/JS, control-board services, fleet + preflight,
 - **`/streamer/`** — broadcast hub: iframe to latest stream monitor, Camgirl co-host strip, copy OBS URL (`?obs=1` hides chrome). Alias **`/fleet-stream/`** → stream layout only.
 - Podcast co-broadcast on streamer: latest verified episode audio + portal strip; discuss launches via platform news.
 - **YouTube stream agents** — `youtube_stream_agent` skill set, `GET /api/exchange/youtube-stream/controls`, assign + preflight on Streamer hub and `?mode=stream` monitor layout.
+- **Stream chapter composer** — six rotating chapters with base64-encoded AI copy (decoded server-side), `composer` block on public monitor + `GET /api/exchange/fleet-stream/composer`, live dock on streamer and stream layout.
 - Homepage embed section loads stream iframe + summary pill.
 - Stream merges **fleet**, **casino** (anonymized wins + daily stats), and **agents** (ability tracker + casino spectator lines).

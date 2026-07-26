@@ -188,6 +188,9 @@
         if (status && d.assign && d.assign.success) {
           status.textContent = "YouTube stream agents assigned · GPS/GPRS live";
         }
+        if (status && d.discord && d.discord.success) {
+          status.textContent += " · Discord main chat updated";
+        }
         document.dispatchEvent(new CustomEvent("mn:fleet-go-live", { detail: d }));
         return d;
       })

@@ -721,13 +721,13 @@ _BALANCE_CACHE_TTL_SEC = 45.0
 
 
 def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
-  if venue_id:
-      vid = str(venue_id).lower()
-      _BALANCE_CACHE.pop(vid, None)
-      _BALANCE_CACHE_TS.pop(vid, None)
-  else:
-      _BALANCE_CACHE.clear()
-      _BALANCE_CACHE_TS.clear()
+    if venue_id:
+        vid = str(venue_id).lower()
+        _BALANCE_CACHE.pop(vid, None)
+        _BALANCE_CACHE_TS.pop(vid, None)
+    else:
+        _BALANCE_CACHE.clear()
+        _BALANCE_CACHE_TS.clear()
 
 
 def balance_cache_age_sec(venue_id: str) -> Optional[float]:

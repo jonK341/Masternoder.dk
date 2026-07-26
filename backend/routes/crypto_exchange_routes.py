@@ -670,6 +670,49 @@ def exchange_fleet_stream_start_youtube():
     return exchange_fleet_stream_go_live()
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/status", methods=["GET"])
+def exchange_fleet_stream_ingest_status():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify({**no_obs_playbook(), "ingest": ingest_status()})
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/start", methods=["POST"])
+def exchange_fleet_stream_ingest_start():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import start_ingest
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(start_ingest())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/stop", methods=["POST"])
+def exchange_fleet_stream_ingest_stop():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import stop_ingest
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(stop_ingest())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/webm", methods=["POST"])
+def exchange_fleet_stream_ingest_webm():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import write_webm_chunk
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_data() or b""
+    res = write_webm_chunk(data)
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
 @crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/preview", methods=["GET"])
 def exchange_fleet_stream_discord_preview():
     from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled

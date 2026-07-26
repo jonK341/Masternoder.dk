@@ -366,6 +366,9 @@
     getLastChapter: function () {
       return state.lastChapter;
     },
+    getLeadSpeakerId: function () {
+      return state.leadSpeakerId;
+    },
     setAutoChapters: function (v) {
       state.autoChapters = !!v;
       savePrefs();

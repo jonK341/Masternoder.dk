@@ -16,6 +16,8 @@
         "youtube_live_preflight",
         "fleet_monitor_scene",
         "stream_url_playbook",
+        "browser_tab_ingest",
+        "server_rtmp_relay",
         "audience_safe_overlay"
       ]
     },
@@ -56,11 +58,10 @@
     }
   ],
   "checklist": [
-    "Open Studio live dashboard: studio.youtube.com/video/MBjG7hq_YZA/livestreaming — confirm status LIVE.",
-    "In OBS: Browser Source → /fleet-progress-monitor/?mode=stream at 1920×1080 · 30fps · ~4500 kbps video.",
-    "On the monitor: enable sound + Camgirl voice (opt-in); confirm fleet ticker and chapter composer update.",
-    "Site chat rail embeds the same video ID (MBjG7hq_YZA); viewers unmute in-browser or watch on YouTube.",
-    "Assign youtube_stream_agent (below) for URL preflight and narration lines.",
-    "Never paste RTMP stream keys into chat or commits — use Studio only."
+    "No OBS: stream layout → No OBS → YouTube (share tab) after YOUTUBE_STREAM_KEY is in server .env.",
+    "Studio streamnøgle: Streamindstillinger → copy key → server .env only (never git).",
+    "When Studio leaves 'Ingen data', click Go live in YouTube Studio.",
+    "Assign youtube_stream_agent for preflight, Discord, GPS/GPRS, and narration.",
+    "Broadcast video ID on site: MBjG7hq_YZA — update fleet_stream_live.json if you create a new broadcast."
   ]
 }
