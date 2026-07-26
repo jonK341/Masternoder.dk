@@ -137,3 +137,16 @@ def test_merge_supervisors_adds_extended(ctl_env):
     merged = ctl._load_controls()
     ids = [s["id"] for s in merged["supervisors"]]
     assert "sup_extended" in ids
+
+
+def test_invoke_bot_tick_hot_symbols_compat(ctl_env):
+    ctl = ctl_env["ctl"]
+
+    def legacy_tick():
+        return {"legacy": True}
+
+    def modern_tick(*, hot_symbols=None):
+        return {"hot": hot_symbols}
+
+    assert ctl._invoke_bot_tick(legacy_tick, hot_symbols=["BTC"]) == {"legacy": True}
+    assert ctl._invoke_bot_tick(modern_tick, hot_symbols=["DOGE"]) == {"hot": ["DOGE"]}

@@ -22,6 +22,19 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _invoke_bot_tick(fn, *, hot_symbols: Optional[List[str]] = None) -> Any:
+    """Call run_paper_tick / run_ai_tick; pass hot_symbols only when supported."""
+    import inspect
+
+    if hot_symbols is not None:
+        try:
+            if "hot_symbols" in inspect.signature(fn).parameters:
+                return fn(hot_symbols=hot_symbols)
+        except (TypeError, ValueError):
+            pass
+    return fn()
+
+
 def _default_controls() -> Dict[str, Any]:
     return {
         "supervisors": [
@@ -675,12 +688,12 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     if sup_arb and sup_arb.get("enabled", True):
         try:
             from backend.services.exchange_arbitrage_service import run_paper_tick
-            results["arbitrage"] = run_paper_tick(hot_symbols=hot_symbols)
+            results["arbitrage"] = _invoke_bot_tick(run_paper_tick, hot_symbols=hot_symbols)
         except Exception as exc:
             results["arbitrage"] = {"success": False, "error": str(exc)}
         try:
             from backend.services.exchange_ai_trading_service import run_ai_tick
-            results["ai_trading"] = run_ai_tick(hot_symbols=hot_symbols)
+            results["ai_trading"] = _invoke_bot_tick(run_ai_tick, hot_symbols=hot_symbols)
         except Exception as exc:
             results["ai_trading"] = {"success": False, "error": str(exc)}
     else:
