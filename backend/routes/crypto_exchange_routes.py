@@ -519,6 +519,47 @@ def exchange_fleet_progress_monitor_public():
     return jsonify(public_fleet_progress_monitor(light=light))
 
 
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
+def exchange_youtube_stream_controls():
+    from backend.services.youtube_stream_agent_service import stream_controls
+
+    return jsonify(stream_controls(base_url=_base_url()))
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/agent-tools", methods=["GET"])
+def exchange_youtube_stream_agent_tools():
+    from backend.services.youtube_stream_agent_service import AGENT_TOOLS
+
+    return jsonify({
+        "success": True,
+        "tools": AGENT_TOOLS,
+        "note": "Mutating actions via /api/exchange/youtube-stream/agent-action require approved=true.",
+    })
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/assign-agent", methods=["POST"])
+def exchange_youtube_stream_assign_agent():
+    from backend.services.youtube_stream_agent_service import assign_youtube_stream_agents
+
+    data = request.get_json(silent=True) or {}
+    uid = _uid(from_body=True)
+    result = assign_youtube_stream_agents(uid, data.get("agent_id") or "youtube_stream_agent")
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/agent-action", methods=["POST"])
+def exchange_youtube_stream_agent_action():
+    from backend.services.youtube_stream_agent_service import execute_agent_action
+
+    data = request.get_json(silent=True) or {}
+    if not data.get("user_id"):
+        data["user_id"] = _uid(from_body=True)
+    result = execute_agent_action(data, base_url=_base_url())
+    code = int(result.pop("http_status", 200))
+    return jsonify(result), code
+
+
 @crypto_exchange_bp.route("/api/exchange/bot-skills", methods=["GET"])
 def exchange_bot_skills():
     from backend.services.exchange_bot_skills_service import list_skills

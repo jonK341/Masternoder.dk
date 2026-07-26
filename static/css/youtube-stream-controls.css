@@ -1,0 +1,120 @@
+/* YouTube stream agent — monitor + OBS controls */
+.yt-stream-panel {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  background: rgba(12, 8, 16, 0.72);
+  font-size: 12px;
+  color: #f0e8ff;
+}
+
+.yt-stream-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ff6b6b;
+  margin-bottom: 4px;
+}
+
+.yt-stream-meta {
+  margin: 4px 0 0;
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+.yt-stream-urls,
+.yt-stream-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.yt-stream-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.yt-stream-btn.primary {
+  border-color: rgba(255, 80, 80, 0.55);
+  background: rgba(255, 80, 80, 0.2);
+  color: #ffc9c9;
+}
+
+.yt-stream-checklist {
+  margin: 8px 0;
+  padding-left: 18px;
+  opacity: 0.88;
+  line-height: 1.45;
+}
+
+.yt-stream-label {
+  margin: 8px 0 4px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+}
+
+.yt-stream-scenes ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.yt-stream-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.yt-stream-skill-chip {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(93, 255, 176, 0.1);
+  border: 1px solid rgba(93, 255, 176, 0.25);
+  font-size: 10px;
+}
+
+.yt-stream-status {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #9dffd4;
+}
+
+.yt-stream-narration {
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+}
+
+.streamer-youtube-wrap {
+  max-width: 1400px;
+  margin: 10px auto 0;
+}
+
+.f5-youtube-dock {
+  flex: 1 1 100%;
+  margin-top: 10px;
+}
+
+.f5-stream .f5-youtube-dock {
+  margin-top: 8px;
+}
+
+.streamer-body.streamer-obs .streamer-youtube-wrap {
+  display: none;
+}

@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-07-26",
+  "primary_agent": "youtube_stream_agent",
+  "agents": [
+    "youtube_stream_agent",
+    "podcast_producer_agent",
+    "reporter_agent",
+    "content_generator_agent"
+  ],
+  "skill_set": [
+    {
+      "agent_id": "youtube_stream_agent",
+      "skills": [
+        "obs_browser_capture",
+        "youtube_live_preflight",
+        "fleet_monitor_scene",
+        "stream_url_playbook",
+        "audience_safe_overlay"
+      ]
+    },
+    {
+      "agent_id": "podcast_producer_agent",
+      "skills": ["distribute_episode", "encode_audio", "youtube_syndicate"]
+    },
+    {
+      "agent_id": "reporter_agent",
+      "skills": ["broadcast", "news_report_ingredients", "live_ticker_narration"]
+    },
+    {
+      "agent_id": "content_generator_agent",
+      "skills": ["ai_stream_title", "thumbnail_prompt"]
+    }
+  ],
+  "obs_scenes": [
+    {
+      "id": "fleet_5d_main",
+      "label": "5D Fleet monitor (browser)",
+      "source": "Browser",
+      "url_hint": "/fleet-progress-monitor/?mode=stream",
+      "resolution": "1920x1080"
+    },
+    {
+      "id": "streamer_obs_chrome",
+      "label": "Streamer hub (OBS hide)",
+      "source": "Browser",
+      "url_hint": "/streamer/?obs=1",
+      "resolution": "1920x1080"
+    },
+    {
+      "id": "podcast_audio",
+      "label": "Podcast co-host audio",
+      "source": "Audio",
+      "url_hint": "/streamer/ — queue podcast under monitor",
+      "resolution": "n/a"
+    }
+  ],
+  "checklist": [
+    "Open YouTube Studio → Create → Go live → Stream (or use OBS custom ingest).",
+    "In OBS: add Browser Source → paste clean stream URL or /streamer/?obs=1.",
+    "On the monitor: enable sound + Camgirl voice (opt-in); confirm fleet ticker updates.",
+    "Assign youtube_stream_agent (below) so agents can preflight URLs and narrate ticks.",
+    "Never paste RTMP stream keys into chat or commits — use Studio only."
+  ]
+}

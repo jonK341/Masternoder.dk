@@ -2,6 +2,16 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "news-youtube-stream-agent-5d-20260726",
+      "title": "YouTube stream agents wired to the 5D fleet monitor",
+      "summary": "Assign youtube_stream_agent from the Streamer hub or monitor stream layout: OBS browser URLs, go-live checklist, fleet narration lines, and podcast co-broadcast — no stream keys on-site.",
+      "date": "2026-07-26",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/streamer/",
+      "featured": true
+    },
+    {
       "id": "news-streamer-podcast-5d-monitor-20260726",
       "title": "Streamer hub: 5D fleet monitor + podcast co-broadcast",
       "summary": "The new /streamer/ hub embeds the live 5D fleet progress monitor for OBS and YouTube, pairs Camgirl co-hosts with verified podcast audio, and links platform news comments for MN2 rewards.",

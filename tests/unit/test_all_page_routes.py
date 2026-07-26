@@ -70,6 +70,7 @@ def test_streamer_hub_embeds_fleet_monitor():
     assert "Streamer hub" in body
     assert "/fleet-progress-monitor/?mode=stream" in body
     assert "streamer-podcast" in body
+    assert "youtube-stream-panel" in body or "youtube-stream-mount" in body
 
 
 def test_wallet_and_staking_pages_are_first_class():
