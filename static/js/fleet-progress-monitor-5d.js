@@ -24,6 +24,17 @@
     if (el) el.textContent = msg || "";
   }
 
+  function buildExtraNodes(d) {
+    var nodes = [];
+    (d.casino && d.casino.recent || []).slice(0, 6).forEach(function (r, i) {
+      nodes.push({ label: "🎰", kind: "casino", i: i, hue: "#ff64ff" });
+    });
+    (d.agents && d.agents.recent || []).slice(0, 6).forEach(function (r, i) {
+      nodes.push({ label: "🤖", kind: "agents", i: i + 0.5, hue: "#00d4ff" });
+    });
+    return nodes;
+  }
+
   function fetchData() {
     return fetch(API, { credentials: "same-origin" })
       .then(function (r) {
@@ -33,11 +44,18 @@
         if (!d || !d.success) throw new Error((d && d.error) || "monitor_unavailable");
         state.data = d;
         state.bots = (d.fleet && d.fleet.bots) || [];
+        state.extraNodes = buildExtraNodes(d);
         renderPanels(d);
         renderHud(d);
         maybeNarrate(d.narration);
         return d;
       });
+  }
+
+    function sourceTag(src) {
+    if (src === "casino") return '<span class="f5-src casino">casino</span> ';
+    if (src === "agents") return '<span class="f5-src agents">agents</span> ';
+    return '<span class="f5-src fleet">fleet</span> ';
   }
 
   function renderHud(d) {
@@ -46,12 +64,16 @@
     var fl = d.fleet || {};
     var el = $("f5-hud-stats");
     if (el) {
+      var cas = (d.casino && d.casino.stats) || {};
+      var ag = (d.agents && d.agents.stats) || {};
       el.innerHTML =
         "<strong>Cmd Lv " + (prog.commander_level || 1) + "</strong> · " +
         (prog.fleet_total_xp || 0) + " XP<br>" +
         (fl.active_bots || 0) + "/" + (fl.bot_count || 0) + " bots · " +
         (tr.total_trades || 0) + " trades<br>" +
-        "P&amp;L band: " + (tr.profit_band || "—");
+        "P&amp;L band: " + (tr.profit_band || "—") + "<br>" +
+        "🎰 " + (cas.bets_today || 0) + " casino bets today · " +
+        "🤖 " + (ag.total_executions || 0) + " agent runs";
     }
     var tk = $("f5-ticker-text");
     if (tk) {
@@ -73,9 +95,30 @@
         .slice(-10)
         .reverse()
         .map(function (a) {
-          return '<div class="f5-row">' + (a.headline || a.action || "—") + "</div>";
+          return '<div class="f5-row">' + sourceTag(a.source) + (a.headline || a.action || "—") + "</div>";
         })
-        .join("") || '<div class="f5-row muted">Waiting for fleet signals…</div>';
+        .join("") || '<div class="f5-row muted">Waiting for signals…</div>';
+    }
+    var casinoEl = $("f5-casino");
+    if (casinoEl) {
+      var cs = (d.casino && d.casino.stats) || {};
+      casinoEl.innerHTML =
+        '<div class="f5-row">Bets today: <strong>' + (cs.bets_today || 0) + "</strong></div>" +
+        '<div class="f5-row">Tournament joins: ' + (cs.tournament_joins || 0) + "</div>" +
+        '<div class="f5-row">Volume band: ' + (cs.volume_band || "—") + "</div>" +
+        ((d.casino.recent || []).slice(0, 5).map(function (r) {
+          return '<div class="f5-row">' + sourceTag("casino") + (r.headline || "") + "</div>";
+        }).join(""));
+    }
+    var agentsEl = $("f5-agents");
+    if (agentsEl) {
+      var ags = (d.agents && d.agents.stats) || {};
+      agentsEl.innerHTML =
+        '<div class="f5-row">Tracked agents: <strong>' + (ags.total_agents || 0) + "</strong></div>" +
+        '<div class="f5-row">Skill executions: ' + (ags.total_executions || 0) + "</div>" +
+        ((d.agents.recent || []).slice(0, 6).map(function (r) {
+          return '<div class="f5-row">' + sourceTag("agents") + (r.headline || "") + "</div>";
+        }).join(""));
     }
     var bots = $("f5-bots");
     if (bots) {
@@ -217,6 +260,21 @@
         ctx.font = "11px system-ui,sans-serif";
         ctx.fillText(b.label || "?", px + r + 4, py + 4);
       }
+    });
+
+    (state.extraNodes || []).forEach(function (n, idx) {
+      var px = w * (0.08 + ((idx % 6) + 0.5) / 7);
+      var py = h * (0.14 + Math.sin(state.w * 1.7 + idx) * 0.035);
+      var r = 5 + (idx % 3);
+      ctx.beginPath();
+      ctx.fillStyle = n.hue || "#00d4ff";
+      ctx.globalAlpha = 0.55 + Math.sin(state.w + idx) * 0.15;
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.font = "10px system-ui,sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.fillText(n.label || "•", px + r + 2, py + 3);
     });
 
     /* time ring (w dimension) */

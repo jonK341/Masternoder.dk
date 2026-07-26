@@ -40,6 +40,8 @@ def test_public_monitor_shape(ctl_env, monkeypatch):
     assert "fleet" in out and "bots" in out["fleet"]
     assert "progression" in out
     assert "@" not in out["narration"]
+    assert "casino" in out and "agents" in out
+    assert isinstance(out.get("activity"), list)
 
 
 def test_public_monitor_route(monitor_client, monkeypatch):

@@ -1,6 +1,7 @@
 """Public-safe 5D fleet progress monitor — no PII, no admin secrets."""
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 from datetime import datetime, timezone
@@ -41,6 +42,28 @@ def _scrub_text(text: str, *, max_len: int = 160) -> str:
     if _SENSITIVE_RE.search(t):
         return "Fleet activity signal"
     return t[:max_len]
+
+
+def _anon_handle(seed: str, *, prefix: str = "Player") -> str:
+    raw = (seed or "").strip()
+    if not raw or _SENSITIVE_RE.search(raw):
+        return prefix
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:6]
+    return f"{prefix}-{digest}"
+
+
+def _coarse_amount(val: Any) -> str:
+    try:
+        v = float(val or 0)
+    except (TypeError, ValueError):
+        return "—"
+    if v < 1:
+        return "<1"
+    if v < 100:
+        return f"~{int(round(v))}"
+    if v < 10000:
+        return f"~{int(round(v / 10) * 10)}"
+    return "1k+"
 
 
 def _coarse_profit_band(usd: float) -> str:
@@ -139,10 +162,133 @@ def _public_audit_ticks(limit: int = 12) -> List[Dict[str, Any]]:
     return out
 
 
+def _public_casino_snapshot() -> Dict[str, Any]:
+    recent: List[Dict[str, Any]] = []
+    stats: Dict[str, Any] = {"bets_today": 0, "tournament_joins": 0, "currencies": []}
+    try:
+        from backend.services.casino_service import get_activity_feed, get_activity_stats
+
+        feed = get_activity_feed(limit=10)
+        for row in feed.get("feed") or []:
+            game = _scrub_text(str(row.get("game") or "casino"))
+            cur = str(row.get("currency") or "coins")
+            recent.append(
+                {
+                    "at": row.get("created_at"),
+                    "source": "casino",
+                    "headline": _scrub_text(
+                        f"Casino · {game} · {_anon_handle(str(row.get('user_id') or ''))} · "
+                        f"payout {_coarse_amount(row.get('payout'))} {cur}"
+                    ),
+                    "game": game,
+                    "currency": cur,
+                }
+            )
+        st = get_activity_stats(days=1)
+        daily = st.get("daily") or []
+        day_row = daily[-1] if daily else {}
+        stats = {
+            "bets_today": int(day_row.get("bets") or 0),
+            "tournament_joins": int(st.get("tournament_joins") or 0),
+            "wins_today": int(day_row.get("wins") or 0),
+        }
+        stats["volume_band"] = _coarse_amount(abs(float(day_row.get("total_net") or 0)))
+    except Exception:
+        pass
+
+    try:
+        from backend.services import casino_global_controller
+
+        g = casino_global_controller.get_global_stats()
+        totals = g.get("totals") or {}
+        stats["total_bets"] = int(totals.get("bets") or 0)
+        stats["active_players_band"] = _coarse_amount(totals.get("unique_players"))
+        stats["house_band"] = _coarse_profit_band(float(totals.get("house_edge_profit") or 0))
+    except Exception:
+        pass
+
+    return {"stats": stats, "recent": recent}
+
+
+def _public_agents_snapshot() -> Dict[str, Any]:
+    recent: List[Dict[str, Any]] = []
+    stats: Dict[str, Any] = {"total_agents": 0, "total_executions": 0, "skills_tracked": 0}
+    try:
+        from backend.services.agent_ability_tracker import agent_ability_tracker
+
+        platform = agent_ability_tracker.get_all_stats()
+        stats = {
+            "total_agents": int(platform.get("total_agents") or 0),
+            "total_executions": int(platform.get("total_executions") or 0),
+            "skills_tracked": int(platform.get("total_skills_tracked") or 0),
+        }
+        for row in reversed(agent_ability_tracker.get_recent_activity(12)):
+            aid = _scrub_text(str(row.get("agent_id") or "agent"), max_len=40)
+            skill = _scrub_text(str(row.get("skill") or "skill"), max_len=40)
+            ok = row.get("success")
+            recent.append(
+                {
+                    "at": row.get("timestamp"),
+                    "source": "agents",
+                    "headline": _scrub_text(
+                        f"Agent · {aid} · {skill} · {'ok' if ok else 'retry'}"
+                    ),
+                    "agent": aid,
+                    "skill": skill,
+                }
+            )
+    except Exception:
+        pass
+
+    try:
+        from backend.services import casino_agents_service as agents_svc
+
+        spec = agents_svc.get_spectator_feed(limit=8)
+        for row in spec.get("events") or spec.get("feed") or []:
+            if not isinstance(row, dict):
+                continue
+            name = _scrub_text(str(row.get("agent_name") or row.get("agent_id") or "Agent"), max_len=48)
+            game = _scrub_text(str(row.get("game") or "casino"))
+            line = row.get("spectator_line") or f"{name} on {game}"
+            recent.append(
+                {
+                    "at": row.get("ts"),
+                    "source": "agents",
+                    "headline": _scrub_text(f"Casino agent · {line}"),
+                    "game": game,
+                }
+            )
+    except Exception:
+        pass
+
+    return {"stats": stats, "recent": recent[:16]}
+
+
+def _merge_activity_streams(
+    fleet: List[Dict[str, Any]],
+    casino: List[Dict[str, Any]],
+    agents: List[Dict[str, Any]],
+    *,
+    limit: int = 28,
+) -> List[Dict[str, Any]]:
+    merged: List[Dict[str, Any]] = []
+    for block in fleet, casino, agents:
+        for row in block:
+            item = dict(row)
+            item.setdefault("source", "fleet")
+            merged.append(item)
+    merged.sort(key=lambda r: str(r.get("at") or ""), reverse=True)
+    return merged[:limit]
+
+
 def build_narration(payload: Dict[str, Any]) -> str:
     ps = payload.get("progression") or {}
     trades = payload.get("trades") or {}
     fleet = payload.get("fleet") or {}
+    casino = payload.get("casino") or {}
+    agents = payload.get("agents") or {}
+    cstats = casino.get("stats") or {}
+    astats = agents.get("stats") or {}
     mode = "paper simulation" if payload.get("paper_mode") else "live operations"
     return (
         f"Fleet progress monitor. Commander level {ps.get('commander_level', 1)}, "
@@ -150,6 +296,9 @@ def build_narration(payload: Dict[str, Any]) -> str:
         f"{fleet.get('active_bots', 0)} of {fleet.get('bot_count', 0)} bots active. "
         f"Aggregate trades {trades.get('total_trades', 0)}. "
         f"Profit band {trades.get('profit_band', 'under one dollar')}. "
+        f"Casino bets today {cstats.get('bets_today', 0)}. "
+        f"Agents online {astats.get('total_agents', 0)} with "
+        f"{astats.get('total_executions', 0)} skill executions. "
         f"Running in {mode}."
     )
 
@@ -201,6 +350,12 @@ def public_fleet_progress_monitor(*, light: bool = True) -> Dict[str, Any]:
     except Exception:
         pass
 
+    casino_snap = _public_casino_snapshot()
+    agents_snap = _public_agents_snapshot()
+    fleet_activity = _activity_from_fleet_meta(meta) + _public_audit_ticks()
+    for row in fleet_activity:
+        row.setdefault("source", "fleet")
+
     payload: Dict[str, Any] = {
         "success": True,
         "generated_at": _iso(),
@@ -234,7 +389,13 @@ def public_fleet_progress_monitor(*, light: bool = True) -> Dict[str, Any]:
             "bot_count": len(bots),
         },
         "lanes": {"hot_symbols": hot},
-        "activity": _activity_from_fleet_meta(meta) + _public_audit_ticks(),
+        "casino": casino_snap,
+        "agents": agents_snap,
+        "activity": _merge_activity_streams(
+            fleet_activity,
+            casino_snap.get("recent") or [],
+            agents_snap.get("recent") or [],
+        ),
         "dimensions_5d": {
             "x": "fleet lane spread",
             "y": "supervisor depth",

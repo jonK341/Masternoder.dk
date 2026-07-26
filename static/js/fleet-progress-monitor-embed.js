@@ -30,8 +30,10 @@
         if (!d.success) return;
         var pill = document.getElementById("fp-fleet-5d-pill");
         if (pill && d.progression) {
+          var cas = (d.casino && d.casino.stats) || {};
           pill.textContent =
-            "Cmd Lv " + d.progression.commander_level + " · " + d.progression.fleet_total_xp + " XP · audience-safe";
+            "Cmd Lv " + d.progression.commander_level + " · " + d.progression.fleet_total_xp + " XP · " +
+            (cas.bets_today || 0) + " casino bets today · audience-safe";
         }
       })
       .catch(function () {});
