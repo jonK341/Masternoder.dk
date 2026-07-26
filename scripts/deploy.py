@@ -833,6 +833,7 @@ MANIFESTS = {
         "backend/services/exchange_fleet_progress_monitor_service.py",
         "backend/services/youtube_stream_agent_service.py",
         "backend/services/youtube_stream_ingest_service.py",
+        "backend/services/youtube_ingest_daemon.py",
         "static/js/fleet-youtube-ingest.js",
         "data/youtube_stream_agent.json",
         "static/js/youtube-stream-controls.js",

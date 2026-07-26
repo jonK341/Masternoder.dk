@@ -4,10 +4,10 @@
   "chat_enabled": true,
   "chat_poll_ms": 3500,
   "reward_events_enabled": true,
-  "youtube_video_id": "MBjG7hq_YZA",
+  "youtube_video_id": "0LS8G-s_CL4",
   "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
-  "youtube_watch_url": "https://www.youtube.com/watch?v=MBjG7hq_YZA",
-  "youtube_studio_url": "https://studio.youtube.com/video/MBjG7hq_YZA/livestreaming",
+  "youtube_watch_url": "https://www.youtube.com/watch?v=0LS8G-s_CL4",
+  "youtube_studio_url": "https://studio.youtube.com/video/0LS8G-s_CL4/livestreaming",
   "youtube_embed_domain": "https://www.youtube.com",
   "stream": {
     "title": "MasterNoder2 Activity Livestream 5D Monitor",
@@ -15,7 +15,7 @@
     "status_badge": "LIVE",
     "default_chat_placeholder": "Comment on the fleet stream…",
     "suggested_display_names": ["FleetFan", "MN2Pilot", "NodeRunner"],
-    "studio_title_note": "Title in YouTube Studio (Rediger) can differ slightly; video ID MBjG7hq_YZA must stay the same broadcast."
+    "studio_title_note": "Title in YouTube Studio (Rediger) can differ slightly; video ID 0LS8G-s_CL4 must stay the same broadcast."
   },
   "youtube_rtmp": {
     "server_url": "rtmp://a.rtmp.youtube.com/live2",

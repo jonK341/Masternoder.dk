@@ -45,6 +45,8 @@
     fetch(API_STOP, { method: "POST", credentials: "same-origin" }).catch(function () {});
   }
 
+  var uploadFails = 0;
+
   function uploadChunk(blob) {
     if (!blob || !blob.size) return Promise.resolve();
     return fetch(API_WEBM, {
@@ -52,7 +54,27 @@
       credentials: "same-origin",
       headers: { "Content-Type": "video/webm" },
       body: blob,
-    }).catch(function () {});
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok || !d.success) {
+            uploadFails += 1;
+            if (uploadFails <= 3) {
+              setStatus(
+                "Upload fejl: " + (d.error || d.hint || r.status) + " — prøv No OBS igen."
+              );
+            }
+            throw new Error(d.error || "upload_failed");
+          }
+          uploadFails = 0;
+        });
+      })
+      .catch(function (e) {
+        if (e && e.message && e.message !== "upload_failed") {
+          uploadFails += 1;
+          if (uploadFails <= 3) setStatus("Netværksfejl mod server ingest — " + e.message);
+        }
+      });
   }
 
   function startTabCapture() {
@@ -90,8 +112,8 @@
           stopCapture();
         });
         state.active = true;
-        state.recorder.start(1000);
-        setStatus("Sending tab to YouTube — when Studio shows video, click Go live.");
+        state.recorder.start(500);
+        setStatus("Sender fane til YouTube — vent til Studio viser billede (ikke Ingen data), så Go live.");
       });
   }
 
