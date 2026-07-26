@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 SECRET="${DISCORD_OPS_SECRET:-${MN2_OPS_SECRET:-}}"
-URL="${FLEET_STREAM_FANOUT_URL:-http://127.0.0.1:5000/api/discord/fleet-stream/fanout}"
+URL="${FLEET_STREAM_FANOUT_URL:-http://127.0.0.1:5000/api/exchange/fleet-stream/discord/fanout}"
 if [[ -z "$SECRET" ]]; then
   echo "discord fleet stream fanout skipped: DISCORD_OPS_SECRET not set" >&2
   exit 0

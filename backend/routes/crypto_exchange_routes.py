@@ -669,6 +669,22 @@ def exchange_fleet_stream_discord_preview():
     return jsonify({"success": True, "payload": build_discord_live_payload()})
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/fanout", methods=["POST"])
+def exchange_fleet_stream_discord_fanout():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_discord_service import run_fanout
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    secret = os.environ.get("DISCORD_OPS_SECRET", "")
+    got = request.headers.get("X-Ops-Secret") or request.args.get("ops_secret") or ""
+    if secret and got != secret:
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    dry_run = True if "dry_run" not in data else bool(data.get("dry_run"))
+    return jsonify(run_fanout(dry_run=dry_run))
+
+
 @crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
 def exchange_youtube_stream_controls():
     from backend.services.youtube_stream_agent_service import stream_controls
