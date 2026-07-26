@@ -82,11 +82,15 @@ def _coarse_profit_band(usd: float) -> str:
 
 
 def _sanitize_bot(fb: Dict[str, Any]) -> Dict[str, Any]:
+    from backend.services.fleet_bot_visuals_service import enrich_bot_visuals
+
     prog = fb.get("progression") or {}
+    visuals = enrich_bot_visuals(fb)
     return {
         "id": _scrub_text(str(fb.get("id") or "bot"), max_len=48),
         "label": fb.get("label") or "Fleet",
         "kind": fb.get("kind") or "fleet",
+        "badge": visuals.get("badge") or fb.get("badge") or "",
         "type_label": fb.get("type_label") or "",
         "role_label": _scrub_text(str(fb.get("role_label") or ""), max_len=80),
         "enabled": bool(fb.get("enabled", True)),
@@ -95,6 +99,10 @@ def _sanitize_bot(fb: Dict[str, Any]) -> Dict[str, Any]:
         "rank_title": prog.get("rank_title") or "Recruit",
         "xp_progress_pct": float(prog.get("xp_progress_pct") or 0),
         "rewards_unlocked": int(prog.get("rewards_unlocked_count") or 0),
+        "avatar_url": visuals.get("avatar_url"),
+        "progress_image_url": visuals.get("progress_image_url"),
+        "progress_tier": visuals.get("progress_tier"),
+        "progress_label": visuals.get("progress_label"),
     }
 
 
@@ -226,6 +234,8 @@ def _public_agents_snapshot() -> Dict[str, Any]:
             aid = _scrub_text(str(row.get("agent_id") or "agent"), max_len=40)
             skill = _scrub_text(str(row.get("skill") or "skill"), max_len=40)
             ok = row.get("success")
+            from backend.services.fleet_bot_visuals_service import agent_activity_avatar
+
             recent.append(
                 {
                     "at": row.get("timestamp"),
@@ -235,6 +245,7 @@ def _public_agents_snapshot() -> Dict[str, Any]:
                     ),
                     "agent": aid,
                     "skill": skill,
+                    "avatar_url": agent_activity_avatar(aid),
                 }
             )
     except Exception:

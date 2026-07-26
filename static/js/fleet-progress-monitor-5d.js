@@ -23,7 +23,12 @@
     speaking: false,
     lastNarrationKey: "",
     extraNodes: [],
+    imgCache: {},
+    hotBotIndex: 0,
   };
+
+  var DEFAULT_BOT_AVATAR = "/static/img/fleet/default-bot.svg";
+  var DEFAULT_PROGRESS_IMG = "/static/img/fleet/progress-tier-1.svg";
 
   var VOICE_PROFILE = {
     performer_nova: { rate: 1.05, pitch: 1.15 },
@@ -55,13 +60,87 @@
     return '<span class="f5-src fleet">fleet</span> ';
   }
 
+  function loadImage(url) {
+    var src = url || DEFAULT_BOT_AVATAR;
+    if (!state.imgCache[src]) {
+      var img = new Image();
+      img.decoding = "async";
+      img.src = src;
+      state.imgCache[src] = img;
+    }
+    return state.imgCache[src];
+  }
+
+  function preloadBotImages(bots) {
+    (bots || []).forEach(function (b) {
+      loadImage(b.avatar_url || DEFAULT_BOT_AVATAR);
+      loadImage(b.progress_image_url || DEFAULT_PROGRESS_IMG);
+    });
+  }
+
+  function botStreamAlpha(b, i) {
+    if (!streamMode) return b.enabled === false ? 0.35 : 1;
+    if (b.enabled === false) return 0.2;
+    if (i === state.hotBotIndex) return 1;
+    if ((b.xp_progress_pct || 0) >= 8) return 0.95;
+    if (b.last_tick_ok) return 0.85;
+    return 0.55 + 0.15 * Math.sin(state.tick * 0.04 + i);
+  }
+
+  function shouldDrawBotPortrait(b, i) {
+    if (!streamMode && i >= 10) return false;
+    if (streamMode && b.enabled === false && i !== state.hotBotIndex) return false;
+    return botStreamAlpha(b, i) > 0.25;
+  }
+
+  function drawBotPortrait(ctx, b, px, py, r, i) {
+    var alpha = botStreamAlpha(b, i);
+    if (alpha < 0.2) return;
+    var av = loadImage(b.avatar_url || DEFAULT_BOT_AVATAR);
+    var pr = loadImage(b.progress_image_url || DEFAULT_PROGRESS_IMG);
+    var size = Math.max(18, r * 2.2);
+    if (streamMode && i === state.hotBotIndex) size *= 1.15;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    if (av.complete && av.naturalWidth) {
+      ctx.beginPath();
+      ctx.arc(px, py, size * 0.5, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(av, px - size * 0.5, py - size * 0.5, size, size);
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = i === state.hotBotIndex ? "rgba(255,100,255,0.75)" : "rgba(93,255,176,0.45)";
+      ctx.lineWidth = i === state.hotBotIndex ? 2.5 : 1.5;
+      ctx.beginPath();
+      ctx.arc(px, py, size * 0.5 + 1, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (pr.complete && pr.naturalWidth && (streamMode || i === state.hotBotIndex)) {
+      var ps = size * 0.42;
+      ctx.drawImage(pr, px + size * 0.22, py + size * 0.22, ps, ps);
+    }
+
+    ctx.restore();
+  }
+
   function buildExtraNodes(d) {
     var nodes = [];
     (d.casino && d.casino.recent || []).slice(0, 6).forEach(function (r, i) {
       nodes.push({ label: "🎰", kind: "casino", i: i, hue: "#ff64ff" });
     });
     (d.agents && d.agents.recent || []).slice(0, 6).forEach(function (r, i) {
-      nodes.push({ label: "🤖", kind: "agents", i: i + 0.5, hue: "#00d4ff" });
+      nodes.push({
+        label: "🤖",
+        kind: "agents",
+        i: i + 0.5,
+        hue: "#00d4ff",
+        avatar: r.avatar_url || "/static/img/agents/ai_intelligence_agent.svg",
+      });
     });
     return nodes;
   }
@@ -144,8 +223,9 @@
         .map(function (b, i) {
           var pct = Math.round(b.xp_progress_pct || 0);
           return (
-            '<div class="f5-roster-card' + (i === hotIdx ? " is-hot" : "") + '" data-idx="' + i + '">' +
-            '<span class="f5-roster-dot"></span>' +
+            '<div class="f5-roster-card' + (i === hotIdx ? " is-hot" : "") + (b.enabled === false ? " is-idle" : "") + '" data-idx="' + i + '">' +
+            '<img class="f5-roster-avatar" src="' + (b.avatar_url || DEFAULT_BOT_AVATAR) + '" alt="" width="36" height="36" loading="lazy" />' +
+            '<img class="f5-roster-progress" src="' + (b.progress_image_url || DEFAULT_PROGRESS_IMG) + '" alt="" width="20" height="20" loading="lazy" />' +
             "<div><strong>" + (b.label || "?") + "</strong><br>Lv " + (b.level || 1) +
             " · " + (b.rank_title || "") + "</div>" +
             '<div class="f5-roster-xp"><span style="width:' + pct + '%"></span></div></div>'
@@ -243,7 +323,23 @@
         state.data = d;
         state.bots = (d.fleet && d.fleet.bots) || [];
         state.extraNodes = buildExtraNodes(d);
-        state.hotBotIndex = Math.floor((state.tick / 90) % Math.max(1, state.bots.length));
+        preloadBotImages(state.bots);
+        (state.extraNodes || []).forEach(function (n) {
+          if (n.avatar) loadImage(n.avatar);
+        });
+        var hot = 0;
+        if (state.bots.length) {
+          state.bots.forEach(function (b, i) {
+            var bl = state.bots[hot];
+            if ((b.level || 0) > (bl.level || 0)) hot = i;
+            else if ((b.level || 0) === (bl.level || 0) && (b.xp_progress_pct || 0) > (bl.xp_progress_pct || 0)) {
+              hot = i;
+            }
+          });
+          state.hotBotIndex = streamMode
+            ? hot
+            : Math.floor((state.tick / 90) % Math.max(1, state.bots.length));
+        }
         renderPanels(d);
         renderHud(d);
         renderFloatingRoster(d);
@@ -318,8 +414,11 @@
         .slice(0, 12)
         .map(function (b) {
           return (
-            '<div class="f5-row"><strong>' + (b.label || "?") + "</strong> Lv" + (b.level || 1) +
-            " · " + Math.round(b.xp_progress_pct || 0) + "%</div>"
+            '<div class="f5-bot-row">' +
+            '<img class="f5-bot-row-avatar" src="' + (b.avatar_url || DEFAULT_BOT_AVATAR) + '" alt="" width="32" height="32" loading="lazy" />' +
+            '<img class="f5-bot-row-progress" src="' + (b.progress_image_url || DEFAULT_PROGRESS_IMG) + '" alt="" width="18" height="18" loading="lazy" />' +
+            "<span><strong>" + (b.label || "?") + "</strong> Lv" + (b.level || 1) +
+            " · " + Math.round(b.xp_progress_pct || 0) + "%</span></div>"
           );
         })
         .join("");
@@ -464,6 +563,10 @@
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fill();
 
+      if (shouldDrawBotPortrait(b, i)) {
+        drawBotPortrait(ctx, b, px, py, r, i);
+      }
+
       ctx.strokeStyle = "rgba(93,255,176,0.28)";
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -479,22 +582,43 @@
         ctx.stroke();
       }
 
-      if (streamMode || i < 10) {
-        ctx.fillStyle = "rgba(232,238,252,0.88)";
+      if (streamMode || i < 8) {
+        ctx.fillStyle = "rgba(232,238,252," + botStreamAlpha(b, i).toFixed(2) + ")";
         ctx.font = "10px system-ui,sans-serif";
-        ctx.fillText(b.label || "?", px + r + 3, py + 3);
+        var labelY = py + (shouldDrawBotPortrait(b, i) ? r + 14 : 3);
+        ctx.fillText(b.label || "?", px + r + 3, labelY);
       }
     });
 
     (state.extraNodes || []).forEach(function (n, idx) {
       var px = 20 + ((idx % 5) + 0.5) / 5 * (usableW * 0.35);
       var py = h * 0.12 + Math.sin(state.w * 1.7 + idx) * 12;
-      ctx.beginPath();
-      ctx.fillStyle = n.hue || "#00d4ff";
-      ctx.globalAlpha = 0.5 + Math.sin(state.w + idx) * 0.2;
-      ctx.arc(px, py, 4 + (idx % 2), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      var pulse = 0.5 + Math.sin(state.w + idx) * 0.2;
+      if (n.avatar && streamMode) {
+        var img = loadImage(n.avatar);
+        var s = 14 + (idx % 2) * 2;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        if (img.complete && img.naturalWidth) {
+          ctx.beginPath();
+          ctx.arc(px, py, s * 0.5, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(img, px - s * 0.5, py - s * 0.5, s, s);
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = n.hue || "#00d4ff";
+          ctx.arc(px, py, 4 + (idx % 2), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.fillStyle = n.hue || "#00d4ff";
+        ctx.globalAlpha = pulse;
+        ctx.arc(px, py, 4 + (idx % 2), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
     });
 
     ctx.strokeStyle = "rgba(0,212,255,0.22)";

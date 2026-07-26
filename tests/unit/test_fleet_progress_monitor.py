@@ -38,6 +38,10 @@ def test_public_monitor_shape(ctl_env, monkeypatch):
     assert out["privacy"]["pii"] is False
     assert "narration" in out
     assert "fleet" in out and "bots" in out["fleet"]
+    bot0 = (out["fleet"]["bots"] or [None])[0]
+    if bot0:
+        assert bot0.get("avatar_url")
+        assert bot0.get("progress_image_url")
     assert "progression" in out
     assert "@" not in out["narration"]
     assert "casino" in out and "agents" in out
