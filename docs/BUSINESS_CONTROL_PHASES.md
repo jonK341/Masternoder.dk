@@ -98,3 +98,9 @@ Uploads Business Control HTML/CSS/JS, control-board services, fleet + preflight,
 - `tests/unit/test_exchange_control_board.py`
 - `tests/unit/test_supervisor_fleet.py`
 
+## Phase 7 — Fleet rewards & leveling
+
+- **`exchange_fleet_progression_service.py`** — per-bot XP from fleet ticks (success, executions, streaks) and account trade/profit sync; level bands (200 XP/level); reward catalog M26–M27.
+- Overview **`supervisor_fleet.progression_summary`** — fleet commander level/rank from total XP, avg bot level, rewards unlocked.
+- Roster cards show **Lv**, rank title, XP bar, and reward tier count; Fleet ops tab shows commander XP strip.
+- Tests: `tests/unit/test_fleet_progression.py`
