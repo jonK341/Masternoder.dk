@@ -196,6 +196,7 @@ def _tune_ai_trader() -> None:
 
 def _tune_profit_path_and_pair_search() -> None:
     path = os.path.join(ROOT, "data", "crypto_exchange", "profit_path_protocol.json")
+    micro = float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75") or 75)
     cfg: dict = {}
     if os.path.isfile(path):
         with open(path, encoding="utf-8") as fh:
@@ -209,6 +210,15 @@ def _tune_profit_path_and_pair_search() -> None:
         "min_live_net_bps": 10.0,
         "ledger_weight": 0.5,
         "live_weight": 0.5,
+    }
+    cfg["winnable_pairs_supervisor"] = {
+        "enabled": True,
+        "min_net_bps": 12,
+        "min_search_score": 18,
+        "max_executions_per_tick": 3,
+        "notional_usd": max(micro, 75.0),
+        "agent_id": "arb_winnable_pairs",
+        "refresh_search_each_tick": True,
     }
     _write_json(path, cfg)
 

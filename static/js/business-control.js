@@ -89,7 +89,7 @@
       var state = b.enabled ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>';
       tr.innerHTML =
         "<td>" + (b.name || b.id) + "</td>" +
-        "<td>" + (b.kind === "arbitrage_paper" ? "Arbitrage" : "Cross-trade") + "</td>" +
+        "<td>" + (b.kind === "arbitrage_paper" ? "Arbitrage" : b.kind === "winnable_pairs" ? "Winnable pairs" : "Cross-trade") + "</td>" +
         "<td>" + (b.supervisor || "") + "</td>" +
         '<td class="' + cls(b.realized_pnl_usd) + '">' + money(b.realized_pnl_usd) + "</td>" +
         '<td class="' + cls(b.unrealized_pnl_usd) + '">' + money(b.unrealized_pnl_usd) + "</td>" +

@@ -21,6 +21,7 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 
 - `run_all_bots()` persists `orchestration.last_run_*` and per-supervisor `last_run_at` / `last_run_ok` in `data/crypto_exchange/trading_bots_control.json`.
 - Risk, Profit Analyst, and Treasury supervisors run lightweight ticks each orchestrator cycle (withdrawal risk summary, P&amp;L rollup, treasury ledger snapshot).
+- **Winnable Pairs Executor** (`sup_winnable`) runs profit pair search and executes spatial arb on ranked winnable routes only (`exchange_winnable_pairs_service`).
 - Business Control UI shows last tick on supervisor cards and an **Orchestration** tab with step results.
 
 ## Phase 2 — Live profit pack

@@ -39,7 +39,7 @@ def test_overview_aggregates_bot_profits(ctl_env):
     assert sup["profit_usd"] >= 42.5
     assert "arb_agent_btc_eth" in sup["bot_ids"]
     # Five supervisor agents control the business.
-    assert len(ov["supervisors"]) == 6
+    assert len(ov["supervisors"]) == 7
 
 
 def test_set_bot_enabled_override(ctl_env):
@@ -85,6 +85,7 @@ def test_run_all_persists_orchestration(ctl_env):
     assert "risk" in run["results"]
     assert "analytics" in run["results"]
     assert "treasury" in run["results"]
+    assert "winnable_pairs" in run["results"]
     ov = ctl.business_overview()
     assert ov["orchestration"].get("last_run_at")
     sup_risk = next(s for s in ov["supervisors"] if s["id"] == "sup_risk")

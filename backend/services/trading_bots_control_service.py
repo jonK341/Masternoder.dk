@@ -37,6 +37,9 @@ def _default_controls() -> Dict[str, Any]:
             {"id": "sup_profit", "name": "Profit Analyst",
              "role": "Aggregates realized/unrealized P&L and projections.",
              "controls_kind": "analytics", "enabled": True},
+            {"id": "sup_winnable", "name": "Winnable Pairs Executor",
+             "role": "Profit pair search — executes spatial arb only on ranked winnable routes.",
+             "controls_kind": "winnable_pairs", "enabled": True},
             {"id": "sup_extended", "name": "Extended Profit Director",
              "role": "Stablecoin peg, triangular loops, meme/defi/payments specialty farms.",
              "controls_kind": "extended_profit", "enabled": True},
@@ -154,7 +157,7 @@ def _tick_risk_officer(controls: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _tick_profit_analyst() -> Dict[str, Any]:
-    bots = _arbitrage_bots() + _cross_trade_bots()
+    bots = list_bots()
     realized = round(sum(float(b.get("realized_pnl_usd") or 0) for b in bots), 4)
     unrealized = round(sum(float(b.get("unrealized_pnl_usd") or 0) for b in bots), 4)
     trades = sum(int(b.get("trade_count") or 0) for b in bots)
@@ -255,9 +258,47 @@ def _effective_enabled(bot: Dict[str, Any], controls: Dict[str, Any]) -> bool:
     return bool(bot.get("config_enabled", True))
 
 
+def _winnable_executor_bot() -> Optional[Dict[str, Any]]:
+    try:
+        from backend.services.exchange_winnable_pairs_service import load_config
+
+        agent_id = str(load_config().get("agent_id") or "arb_winnable_pairs")
+        for a in _arbitrage_bots():
+            if a.get("id") == agent_id:
+                row = dict(a)
+                row["supervisor"] = "sup_winnable"
+                row["kind"] = "winnable_pairs"
+                row["name"] = row.get("name") or "Winnable Pairs Executor"
+                return row
+        from backend.services import exchange_arbitrage_service as arb_svc
+
+        raw = arb_svc.read_account(agent_id)
+        if not raw.get("agent_id"):
+            return None
+        return {
+            "id": agent_id,
+            "name": "Winnable Pairs Executor",
+            "kind": "winnable_pairs",
+            "supervisor": "sup_winnable",
+            "config_enabled": True,
+            "realized_pnl_usd": round(float(raw.get("realized_profit_usd") or 0), 4),
+            "unrealized_pnl_usd": 0.0,
+            "trade_count": int(raw.get("trade_count") or 0),
+            "notional_traded_usd": round(float(raw.get("notional_traded_usd") or 0), 2),
+            "wallet_label": raw.get("wallet_label") or "",
+            "last_action": raw.get("last_action"),
+        }
+    except Exception:
+        return None
+
+
 def list_bots() -> List[Dict[str, Any]]:
     controls = _load_controls()
     bots = _arbitrage_bots() + _cross_trade_bots()
+    wb = _winnable_executor_bot()
+    if wb:
+        bots = [b for b in bots if b.get("id") != wb["id"]]
+        bots.append(wb)
     for b in bots:
         b["enabled"] = _effective_enabled(b, controls)
         b["total_pnl_usd"] = round(float(b.get("realized_pnl_usd") or 0) + float(b.get("unrealized_pnl_usd") or 0), 4)
@@ -499,10 +540,26 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     results: Dict[str, Any] = {}
     sup_arb = _supervisor_for_kind(controls, "arbitrage_paper")
     sup_cross = _supervisor_for_kind(controls, "cross_trade")
+    sup_winnable = _supervisor_for_kind(controls, "winnable_pairs")
 
     pair_search: Optional[Dict[str, Any]] = None
     hot_symbols: Optional[List[str]] = None
-    if sup_arb and sup_arb.get("enabled", True):
+
+    if sup_winnable and sup_winnable.get("enabled", True):
+        try:
+            from backend.services.exchange_winnable_pairs_service import run_winnable_pairs_tick
+
+            results["winnable_pairs"] = run_winnable_pairs_tick()
+            ps = (results["winnable_pairs"] or {}).get("profit_pair_search") or {}
+            if ps.get("success") or ps.get("hot_symbols"):
+                pair_search = ps
+                hot_symbols = list(ps.get("hot_symbols") or [])
+        except Exception as exc:
+            results["winnable_pairs"] = {"success": False, "error": str(exc)}
+    else:
+        results["winnable_pairs"] = {"success": False, "error": "supervisor_paused"}
+
+    if not hot_symbols and sup_arb and sup_arb.get("enabled", True):
         try:
             from backend.services.exchange_profit_pair_search_service import run_profit_pair_search
 
@@ -572,6 +629,7 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     else:
         results["treasury"] = {"success": False, "error": "supervisor_paused"}
 
+    _mark_supervisor_run(controls, "sup_winnable", results.get("winnable_pairs") or {})
     _mark_supervisor_run(controls, "sup_arbitrage", {
         "success": bool((results.get("arbitrage") or {}).get("success"))
         and bool((results.get("ai_trading") or {}).get("success", True)),

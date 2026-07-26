@@ -30,5 +30,14 @@
     "ledger_weight": 0.5,
     "live_weight": 0.5
   },
+  "winnable_pairs_supervisor": {
+    "enabled": true,
+    "min_net_bps": 12,
+    "min_search_score": 18,
+    "max_executions_per_tick": 3,
+    "notional_usd": 75,
+    "agent_id": "arb_winnable_pairs",
+    "refresh_search_each_tick": true
+  },
   "note": "Local profit-max defaults: rotation_auto_execute + rotation_live_enabled true. Production should set both false unless opted in. Env override: EXCHANGE_ROTATION_AUTO=1, EXCHANGE_ROTATION_LIVE=1."
 }
