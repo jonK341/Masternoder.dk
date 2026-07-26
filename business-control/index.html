@@ -51,9 +51,10 @@
           <div class="sup-grid" id="supervisors"></div>
         </div>
         <div class="section">
-          <h2>Fleet bots (25 mechanics)</h2>
-          <p class="muted" style="font-size:12px;margin:0 0 8px">5 Profit Analyst · 6 Extended · 3 Treasury · 5 Risk · 4 Winnable executors</p>
+          <h2>Fleet bots (27 mechanics)</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 8px">5 Profit Analyst · 6 Extended · 3 Treasury · 5 Risk · 4 Winnable executors · XP & reward tiers</p>
           <div id="fleetSummary" class="muted">—</div>
+          <div id="fleetCommander" class="fleet-commander muted" style="margin-top:8px;display:none"></div>
           <div id="fleetRoster" style="margin-top:12px"></div>
         </div>
         <div class="section">
@@ -148,7 +149,7 @@
       <div class="tabpane" id="pane-fleet">
         <div class="section">
           <h2>Supervisor fleet — operations</h2>
-          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. Results persist in <code>fleet_meta</code> and per-bot <code>last_run_*</code>.</p>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. XP and levels update on each tick; commander rank reflects total fleet XP.</p>
           <div id="fleetOpsPanel" class="muted">Loading…</div>
           <div id="fleetPreflightPanel" class="muted" style="margin-top:12px"></div>
           <div id="fleetRunStatus" class="status" style="min-height:18px;margin-top:8px"></div>
@@ -163,6 +164,7 @@
         </div>
         <div class="section">
           <h2>Fleet roster</h2>
+          <div id="fleetCommanderTab" class="fleet-commander muted" style="margin-bottom:10px;display:none"></div>
           <div id="fleetRosterTab"></div>
         </div>
       </div>
@@ -181,6 +183,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260726i"></script>
+  <script src="/static/js/business-control.js?v=20260726j"></script>
 </body>
 </html>

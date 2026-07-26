@@ -37,6 +37,8 @@ FLEET_MECHANICS: List[Dict[str, str]] = [
     {"id": "M23", "name": "Winnable agent isolation", "desc": "Separate agent_id per winnable executor bot."},
     {"id": "M24", "name": "Fleet profit rollup", "desc": "Supervisor profit_usd sums fleet bot P&L in overview."},
     {"id": "M25", "name": "Owner Live Watch feed", "desc": "Trust feed includes fleet tick audit actions."},
+    {"id": "M26", "name": "Fleet XP & levels", "desc": "Per-bot XP from ticks, executions, and profit sync."},
+    {"id": "M27", "name": "Fleet reward unlocks", "desc": "Level-gated reward catalog on roster cards."},
 ]
 
 _EXTENDED_SAME_DIRECTION = "buy_cheap_sell_rich"
@@ -131,6 +133,9 @@ def default_fleet_bots() -> List[Dict[str, Any]]:
 
 def fleet_bot_as_trading_row(fb: Dict[str, Any], acct: Dict[str, Any]) -> Dict[str, Any]:
     """Shape fleet bot for control-board bot table (names/labels like arb agents)."""
+    from backend.services.exchange_fleet_progression_service import enrich_fleet_bot, progression_view
+
+    enrich_fleet_bot(fb, acct)
     return {
         "id": fb.get("id"),
         "name": fb.get("name") or fb.get("id"),
@@ -150,6 +155,7 @@ def fleet_bot_as_trading_row(fb: Dict[str, Any], acct: Dict[str, Any]) -> Dict[s
         "last_action": acct.get("last_action"),
         "last_run_at": fb.get("last_run_at"),
         "last_run_ok": fb.get("last_run_ok"),
+        "progression": progression_view(fb),
     }
 
 
@@ -168,7 +174,7 @@ def merge_fleet_into_controls(controls: Dict[str, Any]) -> None:
         else:
             merged.append(bot)
     controls["fleet_bots"] = merged
-    controls.setdefault("fleet_meta", {})["mechanics_version"] = 25
+    controls.setdefault("fleet_meta", {})["mechanics_version"] = 27
     controls["fleet_meta"]["extended_direction"] = _EXTENDED_SAME_DIRECTION
 
 
@@ -190,6 +196,8 @@ def _fleet_enabled(bot: Dict[str, Any], controls: Dict[str, Any]) -> bool:
 
 
 def _mark_fleet_bot(controls: Dict[str, Any], bot_id: str, result: Dict[str, Any]) -> None:
+    from backend.services.exchange_fleet_progression_service import apply_tick_progression
+
     for b in controls.get("fleet_bots") or []:
         if b.get("id") == bot_id:
             b["last_run_at"] = _iso()
@@ -198,6 +206,9 @@ def _mark_fleet_bot(controls: Dict[str, Any], bot_id: str, result: Dict[str, Any
                 b["last_run_error"] = str(result["error"])[:200]
             else:
                 b.pop("last_run_error", None)
+            prog_delta = apply_tick_progression(b, result)
+            result["xp_gain"] = prog_delta.get("xp_gain")
+            result["fleet_level"] = prog_delta.get("level")
             break
 
 
@@ -421,17 +432,41 @@ def _save_fleet_controls(controls: Dict[str, Any]) -> None:
     _save_controls(controls)
 
 
-def fleet_overview(controls: Dict[str, Any]) -> Dict[str, Any]:
+def fleet_overview(controls: Dict[str, Any], *, persist_sync: bool = True) -> Dict[str, Any]:
+    from backend.services import exchange_arbitrage_service as arb_svc
+    from backend.services.exchange_fleet_progression_service import (
+        enrich_fleet_bot,
+        fleet_progression_summary,
+        progression_view,
+        reward_catalog,
+    )
+
     merge_fleet_into_controls(controls)
     bots = list(controls.get("fleet_bots") or [])
+    dirty = False
+    api_bots: List[Dict[str, Any]] = []
+    for b in bots:
+        acct = arb_svc.read_account(b.get("id"))
+        if enrich_fleet_bot(b, acct):
+            dirty = True
+        row = dict(b)
+        row["progression"] = progression_view(b)
+        api_bots.append(row)
+
+    if dirty and persist_sync:
+        _save_fleet_controls(controls)
+
     failing = sum(1 for b in bots if b.get("last_run_at") and b.get("last_run_ok") is False)
     never = sum(1 for b in bots if not b.get("last_run_at"))
     meta = dict(controls.get("fleet_meta") or {})
+    prog_summary = fleet_progression_summary(api_bots)
     return {
         "mechanics": FLEET_MECHANICS,
         "mechanics_count": len(FLEET_MECHANICS),
-        "bots": bots,
+        "bots": api_bots,
         "meta": meta,
+        "progression_summary": prog_summary,
+        "rewards": reward_catalog(),
         "health": {
             "bot_count": len(bots),
             "last_tick_failed_bots": failing,

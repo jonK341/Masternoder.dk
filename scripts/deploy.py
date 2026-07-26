@@ -785,6 +785,7 @@ MANIFESTS = {
         "static/js/business-control.js",
         "backend/services/trading_bots_control_service.py",
         "backend/services/exchange_supervisor_fleet_service.py",
+        "backend/services/exchange_fleet_progression_service.py",
         "backend/services/business_control_preflight_service.py",
         "backend/services/exchange_arbitrage_service.py",
         "backend/services/exchange_ai_trading_service.py",

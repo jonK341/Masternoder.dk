@@ -126,6 +126,39 @@
       rows + "</tbody></table></div>";
   }
 
+  function fleetXpBar(prog) {
+    prog = prog || {};
+    var pct = Math.max(0, Math.min(100, prog.xp_progress_pct || 0));
+    var inLv = prog.xp_in_level != null ? prog.xp_in_level : 0;
+    var need = prog.xp_to_next != null ? prog.xp_to_next : 200;
+    return (
+      '<div class="fleet-xp-wrap">' +
+      '<div class="muted" style="font-size:11px">XP ' + inLv + " / " + need + "</div>" +
+      '<div class="fleet-xp-bar"><span style="width:' + pct + '%"></span></div></div>'
+    );
+  }
+
+  function renderFleetCommander(fleet, elId) {
+    var el = $(elId);
+    if (!el) return;
+    var ps = (fleet && fleet.progression_summary) || {};
+    if (!ps.fleet_total_xp && ps.fleet_total_xp !== 0) {
+      el.style.display = "none";
+      el.innerHTML = "";
+      return;
+    }
+    el.style.display = "block";
+    var rewards = fleet.rewards || [];
+    var unlocked = ps.total_rewards_unlocked || 0;
+    var catalog = ps.reward_catalog_size || rewards.length || 0;
+    el.innerHTML =
+      "<strong>Fleet commander</strong> " +
+      '<span class="fleet-level-pill">Lv ' + (ps.fleet_commander_level || 1) + " · " + (ps.fleet_commander_rank || "Recruit") + "</span>" +
+      '<p class="muted" style="margin:8px 0 0">' +
+      (ps.fleet_total_xp || 0) + " total XP · avg bot Lv " + (ps.avg_bot_level || 1) +
+      " · " + unlocked + "/" + catalog + " reward tiers unlocked fleet-wide</p>";
+  }
+
   function renderFleetOps(fleet) {
     var el = $("fleetOpsPanel");
     if (!el) return;
@@ -142,7 +175,16 @@
       (health.bot_count || 0) + " bots · " + (health.last_tick_failed_bots || 0) + " last tick failed · " +
       (health.never_ran_bots || 0) + " never ran</p></div>" +
       "<div><strong style='font-size:12px'>Mechanics</strong><p class='muted' style='margin:6px 0 0'>" +
-      (fleet.mechanics_count || 25) + " registered (M01–M25)</p></div></div>";
+      (fleet.mechanics_count || 27) + " registered (M01–M" + String(fleet.mechanics_count || 27).padStart(2, "0") + ")</p></div></div>";
+    var ps = fleet.progression_summary;
+    if (ps) {
+      stats +=
+        "<div class='fleet-commander' style='margin-top:10px'><strong>Fleet XP</strong> " +
+        '<span class="fleet-level-pill">Cmd Lv ' + (ps.fleet_commander_level || 1) + "</span>" +
+        "<p class='muted' style='margin:6px 0 0'>" +
+        (ps.fleet_total_xp || 0) + " XP · avg Lv " + (ps.avg_bot_level || 1) +
+        " · " + (ps.total_rewards_unlocked || 0) + " rewards unlocked</p></div>";
+    }
     var rows = "";
     var lr = meta.last_results || {};
     Object.keys(lr).forEach(function (k) {
@@ -313,9 +355,22 @@
           lastRun = '<div class="muted" style="margin-top:6px">Last ' +
             (ok ? "ok" : (b.last_run_error || "fail")) + "</div>";
         }
+        var prog = b.progression || {};
+        var lvl = prog.level || 1;
+        var rank = prog.rank_title || "";
+        var levelPill = '<span class="fleet-level-pill">Lv ' + lvl + (rank ? " · " + rank : "") + "</span>";
+        var rewardsLine = "";
+        if (prog.rewards_unlocked_count != null) {
+          rewardsLine = '<div class="fleet-rewards-mini muted">' + prog.rewards_unlocked_count + " reward tiers unlocked</div>";
+        }
+        if (prog.last_xp_gain) {
+          lastRun += '<div class="muted" style="font-size:11px">+' + prog.last_xp_gain + " XP last tick</div>";
+        }
         d.innerHTML =
-          '<div class="top"><strong>' + (b.name || b.id) + "</strong>" + tag + pill + "</div>" +
+          '<div class="top"><strong>' + (b.name || b.id) + "</strong>" + tag + levelPill + pill + "</div>" +
           '<div class="role">' + (b.role_label || b.badge || "") + "</div>" +
+          fleetXpBar(prog) +
+          rewardsLine +
           lastRun;
         inner.appendChild(d);
       });
@@ -364,7 +419,7 @@
       el.style.color = isErr ? "#f87171" : "#8b93a7";
     }
     var fleetSt = $("fleetRunStatus");
-    if (fleetSt && runInFlight) {
+    if (fleetSt && (runInFlight || (msg && /run|fleet|bot/i.test(msg)))) {
       fleetSt.textContent = msg || "";
       fleetSt.style.color = isErr ? "#f87171" : "#4ade80";
     }
@@ -475,10 +530,14 @@
         renderFleetRoster(d.supervisor_fleet);
         renderFleetRoster(d.supervisor_fleet, "fleetRosterTab");
         renderFleetOps(d.supervisor_fleet);
+        renderFleetCommander(d.supervisor_fleet, "fleetCommander");
+        renderFleetCommander(d.supervisor_fleet, "fleetCommanderTab");
         var fs = $("fleetSummary");
         if (fs) {
           var fc = (d.supervisor_fleet.bots || []).length;
-          fs.textContent = fc + " fleet bots registered · " + (d.supervisor_fleet.mechanics_count || 25) + " mechanics active";
+          var ps = d.supervisor_fleet.progression_summary || {};
+          var xpBit = ps.fleet_total_xp != null ? " · " + ps.fleet_total_xp + " fleet XP · cmd Lv " + (ps.fleet_commander_level || 1) : "";
+          fs.textContent = fc + " fleet bots · " + (d.supervisor_fleet.mechanics_count || 27) + " mechanics" + xpBit;
         }
       }
   }
