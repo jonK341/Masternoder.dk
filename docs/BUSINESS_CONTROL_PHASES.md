@@ -31,4 +31,8 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 - Business Control overview includes `live_pack` (mode, blockers, venue readiness).
 
 
-See [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) for live-profit blockers (XeggeX 401, spreads, PayPal live, dual-venue farm).
+## Phase 3 — Live pack & winnable UI
+
+- **Live pack** tab: env flags, venue readiness, blockers, winnable pairs radar (top hits from pair search).
+- Ops smoke: `python3 scripts/mn2_winnable_pairs_smoke.py` (exit 0 when tick succeeds).
+

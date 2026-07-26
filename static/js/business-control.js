@@ -111,6 +111,44 @@
     el.style.color = isErr ? "#f87171" : "#8b93a7";
   }
 
+  function renderLivePack(lp, win) {
+    var el = $("livePackPanel");
+    if (!el) return;
+    lp = lp || {};
+    var mode = lp.mode || "unknown";
+    var ready = lp.profit_live_ready ? '<span class="pill on">ready</span>' : '<span class="pill off">not ready</span>';
+    var env = lp.env || {};
+    var envRows = Object.keys(env).map(function (k) {
+      return "<tr><td>" + k + "</td><td>" + (env[k] ? "on" : "off") + "</td></tr>";
+    }).join("");
+    var venues = ((lp.live_readiness || {}).venues || []).map(function (v) {
+      return "<tr><td>" + (v.venue_id || "") + "</td><td>" + (v.live_ready ? "ready" : "—") + "</td><td>" +
+        (v.credentials_configured ? "keys" : "no keys") + "</td></tr>";
+    }).join("");
+    var blockers = (lp.blockers || []).join(", ") || "none";
+    el.innerHTML =
+      "<div class='big'>" + mode.toUpperCase() + " " + ready + "</div>" +
+      "<p class='muted'>Blockers: " + blockers + "</p>" +
+      "<div class='grid2' style='margin-top:12px'>" +
+      "<div><strong style='font-size:12px'>Env flags</strong><table><tbody>" + envRows + "</tbody></table></div>" +
+      "<div><strong style='font-size:12px'>Venues</strong><table><thead><tr><th>Venue</th><th>Live</th><th>Creds</th></tr></thead><tbody>" +
+      (venues || "<tr><td colspan='3'>No venue data</td></tr>") + "</tbody></table></div></div>";
+    var wp = $("winnablePanel");
+    if (!wp) return;
+    win = win || {};
+    var hits = win.top_hits || [];
+    var hitRows = hits.map(function (h) {
+      return "<tr><td>" + (h.symbol || "") + "</td><td>" + (h.buy_venue || "") + "→" + (h.sell_venue || "") +
+        "</td><td>" + (h.avg_net_bps || h.net_bps || "—") + "</td><td>" + (h.search_score || "—") + "</td></tr>";
+    }).join("");
+    var hot = (win.hot_symbols || []).join(", ") || "—";
+    wp.innerHTML =
+      "<p class='muted'>Index " + (win.index_updated_at || "—") + " · " + (win.hit_count || 0) + " hits · hot: " + hot + "</p>" +
+      "<p class='muted'>Thresholds: " + JSON.stringify(win.thresholds || {}) + "</p>" +
+      "<table><thead><tr><th>Symbol</th><th>Route</th><th>Net bps</th><th>Score</th></tr></thead><tbody>" +
+      (hitRows || "<tr><td colspan='4'>No ranked hits yet — run all bots.</td></tr>") + "</tbody></table>";
+  }
+
   function renderOrchestration(orch) {
     var el = $("orchPanel");
     if (!el) return;
@@ -144,6 +182,7 @@
       renderKpis(d.totals || {}, d.kill_switch);
       renderSupervisors(d.supervisors || []);
       renderOrchestration(d.orchestration);
+      renderLivePack(d.live_pack, d.winnable_pairs);
       renderBots(d.bots || []);
       var note = "Updated " + new Date().toLocaleTimeString();
       if (d.live_pack) {
@@ -294,6 +333,7 @@
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
     if (name === "orchestration") load();
+    if (name === "livepack") load();
   }
 
   function init() {

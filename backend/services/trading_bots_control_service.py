@@ -462,6 +462,27 @@ def business_overview() -> Dict[str, Any]:
     except Exception:
         pass
 
+    try:
+        from backend.services.exchange_profit_pair_search_service import read_index
+        from backend.services.exchange_winnable_pairs_service import load_config as win_cfg
+
+        idx = read_index()
+        wc = win_cfg()
+        hits = list(idx.get("hits") or [])[:12]
+        extras["winnable_pairs"] = {
+            "index_updated_at": idx.get("updated_at"),
+            "hot_symbols": list(idx.get("hot_symbols") or [])[:16],
+            "hit_count": len(idx.get("hits") or []),
+            "top_hits": hits,
+            "thresholds": {
+                "min_net_bps": wc.get("min_net_bps"),
+                "min_search_score": wc.get("min_search_score"),
+                "max_executions_per_tick": wc.get("max_executions_per_tick"),
+            },
+        }
+    except Exception:
+        pass
+
     if "paper_mode" not in extras:
         try:
             from backend.services.exchange_arbitrage_service import live_enabled

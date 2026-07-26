@@ -33,7 +33,7 @@
   "winnable_pairs_supervisor": {
     "enabled": true,
     "min_net_bps": 12,
-    "min_search_score": 18,
+    "min_search_score": 15,
     "max_executions_per_tick": 3,
     "notional_usd": 75,
     "agent_id": "arb_winnable_pairs",

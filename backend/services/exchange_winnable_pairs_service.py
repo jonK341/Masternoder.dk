@@ -21,7 +21,7 @@ def load_config() -> Dict[str, Any]:
     raw = dict((ppp_cfg().get(_CFG_KEY) or {}))
     raw.setdefault("enabled", True)
     raw.setdefault("min_net_bps", 12.0)
-    raw.setdefault("min_search_score", 18.0)
+    raw.setdefault("min_search_score", 15.0)
     raw.setdefault("max_executions_per_tick", 3)
     raw.setdefault("notional_usd", float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75") or 75))
     raw.setdefault("agent_id", _DEFAULT_AGENT)
@@ -124,6 +124,12 @@ def run_winnable_pairs_tick(
 
     hits = list(search.get("hits") or [])
     winnable = _filter_winnable(hits, min_bps=min_bps, min_score=min_score)
+    near_winnable = [
+        h for h in hits
+        if isinstance(h, dict)
+        and _hit_net_bps(h) >= min_bps
+        and float(h.get("search_score") or 0) < min_score
+    ]
 
     from backend.services.exchange_live_execution_service import book_agent_profit, execute_spatial_arbitrage
 
@@ -212,6 +218,7 @@ def run_winnable_pairs_tick(
         "success": True,
         "agent_id": agent_id,
         "winnable_count": len(winnable),
+        "near_winnable_count": len(near_winnable),
         "executed_count": executed_count,
         "executions": executions,
         "profit_pair_search": {
