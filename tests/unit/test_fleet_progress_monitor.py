@@ -46,6 +46,7 @@ def test_public_monitor_shape(ctl_env, monkeypatch):
     assert "@" not in out["narration"]
     assert "casino" in out and "agents" in out
     assert isinstance(out.get("activity"), list)
+    assert out.get("composer", {}).get("chapter_count", 0) >= 1
 
 
 def test_public_monitor_route(monitor_client, monkeypatch):

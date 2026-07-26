@@ -8,8 +8,9 @@
   <link rel="stylesheet" href="/static/css/modern-design-system.css">
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726g">
-  <link rel="stylesheet" href="/static/css/youtube-stream-controls.css?v=20260726f">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726h">
+  <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726h">
+  <link rel="stylesheet" href="/static/css/youtube-stream-controls.css?v=20260726h">
 </head>
 <body class="f5-body">
   <div id="navigation-toolbar" class="f5-nav-toolbar"></div>
@@ -36,6 +37,7 @@
 
     <div class="f5-stage-wrap">
       <section class="f5-stage" aria-label="5D fleet projection">
+        <div id="f5-composer-dock" class="f5-composer-dock" data-stream-composer data-stream-only="1" hidden></div>
         <canvas id="f5-canvas" width="900" height="380" aria-hidden="true"></canvas>
         <aside class="f5-roster-orbit" id="f5-roster-orbit" aria-label="Fleet roster live"></aside>
         <div class="f5-hud">
@@ -76,7 +78,8 @@
     </p>
   </div>
   <script src="/static/js/navigation-toolbar.js" defer></script>
-  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726g" defer></script>
-  <script src="/static/js/youtube-stream-controls.js?v=20260726f" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726h" defer></script>
+  <script src="/static/js/youtube-stream-controls.js?v=20260726h" defer></script>
+  <script src="/static/js/stream-chapter-composer.js?v=20260726h" defer></script>
 </body>
 </html>

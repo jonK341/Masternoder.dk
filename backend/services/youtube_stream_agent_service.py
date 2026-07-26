@@ -46,6 +46,13 @@ AGENT_TOOLS: List[Dict[str, Any]] = [
         "description": "Agent checks monitor + stream pages are reachable (same origin).",
     },
     {
+        "action": "compose_chapter",
+        "method": "GET",
+        "path": "/api/exchange/fleet-stream/composer",
+        "mutating": False,
+        "description": "Current rotating stream chapter with decoded AI content.",
+    },
+    {
         "action": "narration_line",
         "method": "GET",
         "path": "/api/exchange/youtube-stream/agent-action",
@@ -228,5 +235,11 @@ def execute_agent_action(body: Dict[str, Any], *, base_url: Optional[str] = None
         return {"success": True, "checks": results, "http_status": 200}
     if action == "narration_line":
         return {"success": True, "line": _monitor_narration_line(), "http_status": 200}
+    if action == "compose_chapter":
+        from backend.services.fleet_stream_composer_service import list_chapters_public
+        from backend.services.exchange_fleet_progress_monitor_service import public_fleet_progress_monitor
+
+        snap = public_fleet_progress_monitor(light=True)
+        return {**list_chapters_public(snap, stream_mode=True), "http_status": 200}
 
     return {"success": False, "error": "not_implemented", "http_status": 501}

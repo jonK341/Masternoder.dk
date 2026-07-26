@@ -519,6 +519,24 @@ def exchange_fleet_progress_monitor_public():
     return jsonify(public_fleet_progress_monitor(light=light))
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/composer", methods=["GET"])
+def exchange_fleet_stream_composer():
+    from backend.services.fleet_stream_composer_service import list_chapters_public
+    from backend.services.exchange_fleet_progress_monitor_service import (
+        monitor_public_enabled,
+        public_fleet_progress_monitor,
+    )
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    stream_mode = request.args.get("stream", "1").strip().lower() in ("1", "true", "yes", "on")
+    idx = request.args.get("index", type=int)
+    snap = None
+    if request.args.get("live", "1").strip().lower() in ("1", "true", "yes", "on"):
+        snap = public_fleet_progress_monitor(light=True)
+    return jsonify(list_chapters_public(snap, stream_mode=stream_mode, index=idx))
+
+
 @crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
 def exchange_youtube_stream_controls():
     from backend.services.youtube_stream_agent_service import stream_controls

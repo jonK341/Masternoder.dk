@@ -416,4 +416,10 @@ def public_fleet_progress_monitor(*, light: bool = True) -> Dict[str, Any]:
         },
     }
     payload["narration"] = build_narration(payload)
+    try:
+        from backend.services.fleet_stream_composer_service import composer_for_monitor_payload
+
+        payload["composer"] = composer_for_monitor_payload(payload, stream_mode=True)
+    except Exception:
+        payload["composer"] = {"success": False, "chapters": []}
     return payload

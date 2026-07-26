@@ -344,6 +344,10 @@
         renderHud(d);
         renderFloatingRoster(d);
         maybeNarrate(d);
+        if (streamMode && d.composer && d.composer.current) {
+          var dock = $("f5-composer-dock");
+          if (dock) dock.hidden = false;
+        }
         if (state.soundOn && state.audio) {
           state.audio.contextualPing(d);
         }
@@ -690,6 +694,22 @@
 
   function init() {
     if (streamMode) document.body.classList.add("f5-stream");
+    var dock = $("f5-composer-dock");
+    if (dock && streamMode) dock.hidden = false;
+    document.addEventListener("mn:stream-chapter", function (ev) {
+      var ch = ev.detail && ev.detail.chapter;
+      if (!ch) return;
+      var line = (ch.title || "") + ". " + (ch.ai_content || "");
+      if (ev.detail.speak || state.voiceOn) {
+        speakLine(line, pickSpeaker(true), true);
+      } else if (state.voiceOn) {
+        queueCommentary([line]);
+      }
+      var vl = $("f5-voice-line");
+      if (vl && !state.voiceOn) {
+        vl.textContent = "Chapter: " + (ch.title || "") + " — enable Camgirl voice to narrate.";
+      }
+    });
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     bindControls();
