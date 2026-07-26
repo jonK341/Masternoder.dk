@@ -240,6 +240,12 @@ def _tune_treasury_and_payout() -> None:
 
 
 def main() -> int:
+    import argparse
+
+    p = argparse.ArgumentParser(description="Tune configs + env for live profit max")
+    p.add_argument("--fast", action="store_true", help="Apply env/config only; skip slow treasury/live_status report")
+    args = p.parse_args()
+
     load_dotenv()
     _ensure_env_flag("EXCHANGE_ARBITRAGE_LIVE", "1")
     _ensure_env_flag("EXCHANGE_ROTATION_LIVE", "1")
@@ -261,6 +267,13 @@ def main() -> int:
     _tune_profit_path_and_pair_search()
     _tune_treasury_and_payout()
 
+    if args.fast:
+        print("=== Live profit MAX configured (fast) ===")
+        print(f"Vault keys imported: {imported or '(none — add API keys to .env)'}")
+        print(f"XeggeX API probe: ok={xeggex_ok} reason={xeggex_reason}")
+        print("Run: python3 scripts/mn2_live_pack_verify.py")
+        return 0
+
     try:
         from backend.services.exchange_binance_time_service import sync_binance_time
         clock = sync_binance_time()
@@ -269,11 +282,15 @@ def main() -> int:
 
     try:
         from backend.services.exchange_treasury_service import treasury_status
+
         treasury = treasury_status()
     except Exception as exc:
         treasury = {"error": str(exc), "ledger_stashed_usd": 0}
 
-    st = live_status()
+    try:
+        st = live_status()
+    except Exception as exc:
+        st = {"success": False, "error": str(exc)}
     print("=== Live profit MAX configured ===")
     print(f"Vault keys imported: {imported or '(none — add API keys to .env)'}")
     print(f"XeggeX API probe: ok={xeggex_ok} reason={xeggex_reason}")
