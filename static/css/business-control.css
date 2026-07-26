@@ -422,7 +422,20 @@ code {
     animation: none;
   }
 
-  .bc-btn:active {
+  .bc-btn:active,
+  .btn:active {
     transform: none;
   }
+}
+
+.bc-run-busy #runAll,
+.bc-run-busy #runFleet,
+.bc-run-busy #fleetRunBar button {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+#fleetRunStatus {
+  font-size: 13px;
+  font-weight: 600;
 }

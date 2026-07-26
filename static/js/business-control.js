@@ -7,6 +7,7 @@
   var RUN_TIMEOUT_MS = 300000;
   var lastOverview = null;
   var loadGen = 0;
+  var runInFlight = false;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -33,7 +34,7 @@
       if (err && err.name === "AbortError") {
         return { ok: false, status: 0, data: { success: false, error: "timeout" }, timedOut: true };
       }
-      throw err;
+      return { ok: false, status: 0, data: { success: false, error: (err && err.message) || "network_error" } };
     }).finally(function () {
       if (timer) clearTimeout(timer);
     });
@@ -166,37 +167,107 @@
   }
 
   function runFleetKind(kind, btn) {
-    if (btn) btn.disabled = true;
+    if (runInFlight) {
+      status("A run is already in progress — wait for it to finish.", true);
+      return;
+    }
+    if (!getKey()) {
+      status("Enter admin key to run fleet.", true);
+      showGate();
+      return;
+    }
+    runInFlight = true;
+    setRunButtonsDisabled(true);
     status(kind ? "Running fleet: " + (FLEET_KIND_LABELS[kind] || kind) + "…" : "Running full supervisor fleet…");
     var body = kind ? { kind: kind } : {};
     api("/api/exchange/control-board/run-fleet", { method: "POST", body: body, timeoutMs: RUN_TIMEOUT_MS })
       .then(function (res) {
-        if (btn) btn.disabled = false;
+        if (handleRunAuth(res)) return;
         if (res.timedOut) {
-          status("Fleet run timed out — refresh shortly.", true);
+          status("Fleet run timed out — server may still be working. Refresh in a minute.", true);
           load({ force: true, timeoutMs: 90000 });
           return;
         }
-        status(res.data && res.data.success ? "Fleet tick finished." : ("Fleet: " + ((res.data && res.data.error) || "partial fail")), !res.data || !res.data.success);
+        status(
+          res.data && res.data.success ? "Fleet tick finished." : ("Fleet: " + ((res.data && res.data.error) || "partial fail")),
+          !res.data || !res.data.success
+        );
         load({ force: true, timeoutMs: 90000 });
       })
       .catch(function () {
-        if (btn) btn.disabled = false;
-        status("Fleet run failed.", true);
+        status("Fleet run failed — network error.", true);
         load({ force: true, timeoutMs: 90000 });
+      })
+      .finally(function () {
+        runInFlight = false;
+        setRunButtonsDisabled(false);
+      });
+  }
+
+  function startRunAll(btn) {
+    if (runInFlight) {
+      status("A run is already in progress — wait for it to finish.", true);
+      return;
+    }
+    if (!getKey()) {
+      status("Enter admin key to run bots.", true);
+      showGate();
+      return;
+    }
+    runInFlight = true;
+    setRunButtonsDisabled(true);
+    status("Running all bots on server (1–3 min)…");
+    api("/api/exchange/control-board/run", { method: "POST", body: {}, timeoutMs: RUN_TIMEOUT_MS })
+      .then(function (res) {
+        if (handleRunAuth(res)) return;
+        if (res.timedOut) {
+          status("Run still processing — refresh overview in a minute.", true);
+          load({ force: true, timeoutMs: 90000 });
+          return;
+        }
+        if (res.data && res.data.success) {
+          status("Run finished · refreshing overview…");
+        } else {
+          status("Run returned: " + ((res.data && res.data.error) || "see orchestration tab"), true);
+        }
+        load({ force: true, timeoutMs: 90000 });
+      })
+      .catch(function () {
+        status("Run request failed — network error.", true);
+        load({ force: true, timeoutMs: 90000 });
+      })
+      .finally(function () {
+        runInFlight = false;
+        setRunButtonsDisabled(false);
       });
   }
 
   function bindFleetRunButtons() {
-    var bar = $("fleetRunBar");
-    if (!bar || bar.getAttribute("data-bound")) return;
-    bar.setAttribute("data-bound", "1");
-    Array.prototype.forEach.call(bar.querySelectorAll("button[data-fleet-kind]"), function (b) {
-      b.addEventListener("click", function () {
-        var k = b.getAttribute("data-fleet-kind");
-        runFleetKind(k || null, b);
-      });
-    });
+    /* Delegated in init — kept for tab switch compatibility */
+  }
+
+  function onAppClick(e) {
+    var app = $("app");
+    if (!app || app.classList.contains("hidden")) return;
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var btn = t.closest("button");
+    if (!btn) return;
+    if (btn.id === "runAll") {
+      e.preventDefault();
+      startRunAll(btn);
+      return;
+    }
+    if (btn.id === "runFleet") {
+      e.preventDefault();
+      runFleetKind(null, btn);
+      return;
+    }
+    if (btn.getAttribute("data-fleet-kind") != null) {
+      e.preventDefault();
+      var k = btn.getAttribute("data-fleet-kind");
+      runFleetKind(k === "all" || k === "" ? null : k, btn);
+    }
   }
 
   function botTypeLabel(b) {
@@ -288,8 +359,42 @@
 
   function status(msg, isErr) {
     var el = $("topStatus");
-    el.textContent = msg || "";
-    el.style.color = isErr ? "#f87171" : "#8b93a7";
+    if (el) {
+      el.textContent = msg || "";
+      el.style.color = isErr ? "#f87171" : "#8b93a7";
+    }
+    var fleetSt = $("fleetRunStatus");
+    if (fleetSt && runInFlight) {
+      fleetSt.textContent = msg || "";
+      fleetSt.style.color = isErr ? "#f87171" : "#4ade80";
+    }
+  }
+
+  function setRunButtonsDisabled(disabled) {
+    ["runAll", "runFleet"].forEach(function (id) {
+      var b = $(id);
+      if (b) b.disabled = !!disabled;
+    });
+    var bar = $("fleetRunBar");
+    if (bar) {
+      Array.prototype.forEach.call(bar.querySelectorAll("button"), function (b) {
+        b.disabled = !!disabled;
+      });
+    }
+    if ($("app")) {
+      $("app").classList.toggle("bc-run-busy", !!disabled);
+    }
+  }
+
+  function handleRunAuth(res) {
+    if (res && res.status === 401) {
+      clearKey();
+      showGate();
+      var gs = $("gateStatus");
+      if (gs) gs.textContent = "Session expired — enter admin key again.";
+      return true;
+    }
+    return false;
   }
 
   function renderLivePack(lp, win) {
@@ -396,6 +501,9 @@
 
   function load(opts) {
     opts = opts || {};
+    if (runInFlight && !opts.force) {
+      return Promise.resolve();
+    }
     var gen = ++loadGen;
     if (lastOverview && !opts.force) {
       applyOverview(lastOverview);
@@ -603,48 +711,22 @@
   }
 
   function init() {
-    $("unlock").addEventListener("click", function () {
+    document.addEventListener("click", onAppClick, true);
+    var unlock = $("unlock");
+    if (unlock) unlock.addEventListener("click", function () {
       var k = $("key").value.trim();
       if (!k) return;
       setKey(k);
       load().then(function () { if (getKey()) showApp(); });
     });
-    $("key").addEventListener("keydown", function (e) { if (e.key === "Enter") $("unlock").click(); });
-    $("lock").addEventListener("click", function () { clearKey(); showGate(); });
-    $("refresh").addEventListener("click", function () { load({ force: true }); });
-    $("runAll").addEventListener("click", function () {
-      var btn = $("runAll");
-      if (btn) btn.disabled = true;
-      status("Running all bots on server (1–3 min)…");
-      api("/api/exchange/control-board/run", { method: "POST", body: {}, timeoutMs: RUN_TIMEOUT_MS })
-        .then(function (res) {
-          if (btn) btn.disabled = false;
-          if (res.timedOut) {
-            status("Run still processing — refresh overview in a minute.", true);
-            load({ force: true, timeoutMs: 90000 });
-            return;
-          }
-          if (res.data && res.data.success && res.data.results) {
-            status("Run finished · refreshing overview…");
-          } else {
-            status("Run returned: " + ((res.data && res.data.error) || "see orchestration tab"), true);
-          }
-          load({ force: true, timeoutMs: 90000 });
-        })
-        .catch(function () {
-          if (btn) btn.disabled = false;
-          status("Run request failed — server may still be busy. Refresh shortly.", true);
-          load({ force: true, timeoutMs: 90000 });
-        });
-    });
-    var runFleetBtn = $("runFleet");
-    if (runFleetBtn) {
-      runFleetBtn.addEventListener("click", function () {
-        runFleetKind(null, runFleetBtn);
-      });
-    }
-    bindFleetRunButtons();
-    $("kill").addEventListener("click", function () {
+    var keyEl = $("key");
+    if (keyEl) keyEl.addEventListener("keydown", function (e) { if (e.key === "Enter" && $("unlock")) $("unlock").click(); });
+    var lockBtn = $("lock");
+    if (lockBtn) lockBtn.addEventListener("click", function () { clearKey(); showGate(); });
+    var refreshBtn = $("refresh");
+    if (refreshBtn) refreshBtn.addEventListener("click", function () { load({ force: true }); });
+    var killBtn = $("kill");
+    if (killBtn) killBtn.addEventListener("click", function () {
       if (!confirm("Toggle the global kill switch? This pauses/resumes ALL bots.")) return;
       api("/api/exchange/control-board/overview").then(function (res) {
         var on = !(res.data && res.data.kill_switch);
