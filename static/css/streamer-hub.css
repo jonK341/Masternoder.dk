@@ -1,0 +1,148 @@
+/* Streamer hub — wraps latest 5D fleet monitor for OBS / YouTube */
+.streamer-body {
+  margin: 0;
+  min-height: 100vh;
+  background: #03060f;
+  color: #e8eefc;
+  padding-top: 52px;
+}
+
+.streamer-body.streamer-obs {
+  padding-top: 0;
+}
+
+.streamer-body.streamer-obs #navigation-toolbar {
+  display: none !important;
+}
+
+.streamer-body.streamer-obs .streamer-chrome {
+  display: none;
+}
+
+.streamer-chrome {
+  position: sticky;
+  top: 52px;
+  z-index: 100;
+  border-bottom: 1px solid rgba(93, 255, 176, 0.2);
+  background: linear-gradient(180deg, rgba(6, 12, 24, 0.98), rgba(6, 12, 24, 0.88));
+  backdrop-filter: blur(10px);
+  padding: 12px 16px 10px;
+}
+
+.streamer-body.streamer-obs .streamer-chrome.is-forced {
+  display: block;
+  top: 0;
+}
+
+.streamer-chrome-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.streamer-kicker {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.65;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.streamer-chrome h1 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  color: #5dffb0;
+}
+
+.streamer-meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.streamer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.streamer-btn {
+  border: 1px solid rgba(93, 255, 176, 0.28);
+  background: rgba(93, 255, 176, 0.08);
+  color: #5dffb0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.streamer-btn.primary {
+  background: linear-gradient(135deg, rgba(93, 255, 176, 0.28), rgba(0, 212, 255, 0.15));
+  color: #e8eefc;
+}
+
+.streamer-hosts {
+  max-width: 1400px;
+  margin: 10px auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.streamer-host {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 100, 255, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+}
+
+.streamer-host img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.streamer-main {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 8px 12px;
+  height: calc(100vh - 52px - 120px);
+  min-height: 480px;
+}
+
+.streamer-body.streamer-obs .streamer-main {
+  height: 100vh;
+  padding: 0;
+  max-width: none;
+}
+
+#streamer-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: #03060f;
+}
+
+.streamer-body.streamer-obs #streamer-frame {
+  border-radius: 0;
+}
+
+@media (max-width: 720px) {
+  .streamer-main {
+    height: calc(100vh - 52px - 160px);
+  }
+}

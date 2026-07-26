@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MasterNoder Streamer — 5D fleet progress monitor for YouTube and OBS with Camgirl co-hosts.">
+  <title>Streamer — 5D Fleet Monitor — MasterNoder</title>
+  <link rel="stylesheet" href="/static/css/modern-design-system.css">
+  <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+  <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+  <link rel="stylesheet" href="/static/css/streamer-hub.css?v=20260726d">
+</head>
+<body class="streamer-body">
+  <div id="navigation-toolbar"></div>
+
+  <header class="streamer-chrome" id="streamer-chrome">
+    <div class="streamer-chrome-inner">
+      <div>
+        <p class="streamer-kicker">Live broadcast · fleet · casino · agents</p>
+        <h1>Streamer hub</h1>
+        <p class="streamer-meta" id="streamer-status">Loading 5D monitor…</p>
+      </div>
+      <div class="streamer-actions">
+        <button type="button" class="streamer-btn primary" id="streamer-copy-obs">Copy OBS browser URL</button>
+        <button type="button" class="streamer-btn" id="streamer-copy-clean">Copy clean stream URL</button>
+        <a class="streamer-btn" href="/fleet-stream/" target="_blank" rel="noopener">Open full stream</a>
+        <a class="streamer-btn" href="/camgirls/" target="_blank" rel="noopener">Camgirl hosts</a>
+        <a class="streamer-btn" href="/business-control/" target="_blank" rel="noopener">Business Control</a>
+        <button type="button" class="streamer-btn" id="streamer-toggle-chrome" aria-pressed="false">OBS hide bar</button>
+      </div>
+    </div>
+    <div class="streamer-hosts" id="streamer-hosts" aria-label="Camgirl co-hosts"></div>
+  </header>
+
+  <main class="streamer-main">
+    <iframe
+      id="streamer-frame"
+      title="5D Fleet Progress Monitor stream"
+      src="/fleet-progress-monitor/?mode=stream"
+      loading="eager"
+      allow="autoplay"
+      referrerpolicy="same-origin"
+    ></iframe>
+  </main>
+
+  <script src="/static/js/navigation-toolbar.js" defer></script>
+  <script src="/static/js/streamer-hub.js?v=20260726d" defer></script>
+</body>
+</html>

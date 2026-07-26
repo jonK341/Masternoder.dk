@@ -782,6 +782,9 @@ MANIFESTS = {
     "business_control": [
         "business-control/index.html",
         "fleet-progress-monitor/index.html",
+        "streamer/index.html",
+        "static/css/streamer-hub.css",
+        "static/js/streamer-hub.js",
         "static/css/fleet-progress-monitor-5d.css",
         "static/js/fleet-progress-monitor-5d.js",
         "static/js/fleet-progress-monitor-embed.js",

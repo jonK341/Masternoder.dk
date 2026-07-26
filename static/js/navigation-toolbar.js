@@ -79,6 +79,7 @@
             { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
             { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
             { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },
+            { name: 'Streamer', icon: '📺', url: APP_BASE + '/streamer/', id: 'streamer', title: 'OBS / YouTube hub — latest 5D fleet progress monitor + Camgirl co-hosts' },
             { name: 'Agents Control', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
             { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
             { name: 'Hosting', icon: '🖥️', url: APP_BASE + '/hosting', id: 'hosting', title: 'Masternode hosting' },

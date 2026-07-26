@@ -61,6 +61,16 @@ def test_fleet_progress_monitor_page_and_stream_alias():
     assert "mode=stream" in stream.headers["Location"]
 
 
+def test_streamer_hub_embeds_fleet_monitor():
+    client = _app().test_client()
+
+    response = client.get("/streamer/")
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "Streamer hub" in body
+    assert "/fleet-progress-monitor/?mode=stream" in body
+
+
 def test_wallet_and_staking_pages_are_first_class():
     client = _app().test_client()
 
