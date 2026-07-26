@@ -8,36 +8,43 @@
   <link rel="stylesheet" href="/static/css/modern-design-system.css">
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726b">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726c">
 </head>
 <body class="f5-body">
-  <div id="navigation-toolbar"></div>
+  <div id="navigation-toolbar" class="f5-nav-toolbar"></div>
   <div class="f5-shell">
     <header class="f5-header">
-      <div>
-        <p class="muted" style="margin:0 0 4px;font-size:12px">Progress navigation · 5 dimensions (lane · depth · reward · time · XP)</p>
+      <div class="f5-header-copy">
+        <p class="f5-kicker">Progress navigation · lane · depth · reward · time · XP</p>
         <h1>5D Fleet Progress Monitor</h1>
-        <p id="f5-generated" class="muted" style="margin:6px 0 0;font-size:12px">Loading…</p>
-        <p id="f5-status" class="muted" style="margin:4px 0 0;font-size:12px"></p>
+        <p id="f5-generated" class="f5-meta">Loading…</p>
+        <p id="f5-status" class="f5-meta"></p>
       </div>
       <div class="f5-controls">
         <span class="f5-live-badge">LIVE STREAM READY</span>
         <button type="button" class="f5-btn" id="f5-sound">Enable sound</button>
-        <button type="button" class="f5-btn primary" id="f5-voice" aria-pressed="false">Voice narrator</button>
+        <button type="button" class="f5-btn primary" id="f5-voice" aria-pressed="false">Camgirl voice</button>
+        <select class="f5-btn f5-select" id="f5-speaker-pick" title="Lead speaker" aria-label="Lead speaker"></select>
         <button type="button" class="f5-btn" id="f5-refresh">Refresh</button>
         <a class="f5-btn" href="?mode=stream">YouTube layout</a>
         <a class="f5-btn f5-home-link" href="/">Home</a>
       </div>
     </header>
 
-    <section class="f5-stage" aria-label="5D fleet projection">
-      <canvas id="f5-canvas" width="900" height="380" aria-hidden="true"></canvas>
-      <div class="f5-hud">
-        <div class="f5-hud-ticker"><span id="f5-ticker-text">Connecting to fleet telemetry…</span></div>
-        <div class="f5-stat-col" id="f5-hud-stats"></div>
-        <div class="f5-voice-line" id="f5-voice-line" aria-live="polite">Voice off — enable narrator to hear progress (opt-in).</div>
-      </div>
-    </section>
+    <div class="f5-stage-wrap">
+      <section class="f5-stage" aria-label="5D fleet projection">
+        <canvas id="f5-canvas" width="900" height="380" aria-hidden="true"></canvas>
+        <aside class="f5-roster-orbit" id="f5-roster-orbit" aria-label="Fleet roster live"></aside>
+        <div class="f5-hud">
+          <div class="f5-hud-stats-wrap">
+            <div class="f5-stat-col" id="f5-hud-stats"></div>
+          </div>
+          <div class="f5-speaker-dock" id="f5-speakers" aria-live="polite"></div>
+          <div class="f5-hud-ticker"><span id="f5-ticker-text">Connecting to fleet telemetry…</span></div>
+          <div class="f5-voice-line" id="f5-voice-line">Voice off — enable Camgirl voice for live commentary (opt-in).</div>
+        </div>
+      </section>
+    </div>
 
     <div class="f5-grid-panels">
       <article class="f5-panel">
@@ -66,6 +73,6 @@
     </p>
   </div>
   <script src="/static/js/navigation-toolbar.js" defer></script>
-  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726b" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726c" defer></script>
 </body>
 </html>
