@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "chat_enabled": true,
-  "youtube_video_id": "",
+  "youtube_video_id": "MBjG7hq_YZA",
   "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
   "youtube_embed_domain": "https://www.youtube.com",
   "chat_poll_ms": 4000,
