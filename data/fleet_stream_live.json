@@ -1,18 +1,47 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "updated_at": "2026-07-26",
   "chat_enabled": true,
+  "chat_poll_ms": 3500,
+  "reward_events_enabled": true,
   "youtube_video_id": "MBjG7hq_YZA",
   "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
+  "youtube_watch_url": "https://www.youtube.com/watch?v=MBjG7hq_YZA",
+  "youtube_studio_url": "https://studio.youtube.com/video/MBjG7hq_YZA/livestreaming",
   "youtube_embed_domain": "https://www.youtube.com",
-  "chat_poll_ms": 4000,
-  "reward_events_enabled": true,
+  "stream": {
+    "title": "MasterNoder 5D Fleet Live",
+    "subtitle": "Fleet XP · agents · casino · MN2 rewards",
+    "status_badge": "LIVE",
+    "default_chat_placeholder": "Comment on the fleet stream…",
+    "suggested_display_names": ["FleetFan", "MN2Pilot", "NodeRunner"]
+  },
+  "embed": {
+    "autoplay": true,
+    "mute": true,
+    "modest_branding": true,
+    "rel": false,
+    "playsinline": true,
+    "controls": true,
+    "fs": true,
+    "use_nocookie": false,
+    "iv_load_policy": 3
+  },
+  "obs": {
+    "browser_source_url": "/fleet-progress-monitor/?mode=stream",
+    "resolution": "1920x1080",
+    "fps": 30,
+    "recommended_bitrate_kbps": 4500,
+    "keyframe_interval_sec": 2,
+    "audio_kbps": 160,
+    "note": "Capture the monitor in stream layout; keep chat on-site rail, not in OBS browser."
+  },
   "youtube_live_setup": [
-    "In YouTube Studio go to Create → Go live → choose Stream (or use OBS with your stream key).",
-    "Start the broadcast so the stream status is LIVE (not just scheduled).",
-    "Open the live watch page in a browser; the URL is youtube.com/watch?v=VIDEO_ID — copy the value after v=.",
-    "On the server edit /var/www/html/data/fleet_stream_live.json and set youtube_video_id to that ID (letters, numbers, hyphen, underscore only).",
-    "Redeploy or save the file; hard-refresh /fleet-progress-monitor/ and the frontpage chat rail — the YouTube player loads the embed for that video ID.",
-    "For premieres, use the scheduled video ID before go-live; swap to the live broadcast ID when YouTube switches to live.",
-    "Never put RTMP stream keys in this JSON — only the public video ID."
+    "Studio broadcast: studio.youtube.com/video/MBjG7hq_YZA/livestreaming — go LIVE before expecting the embed to play.",
+    "Watch page: youtube.com/watch?v=MBjG7hq_YZA (same video ID as youtube_video_id in this file).",
+    "Site embed: muted autoplay in the chat rail (browser policy); viewers tap Unmute or open Watch on YouTube.",
+    "OBS: Browser Source → /fleet-progress-monitor/?mode=stream at 1920×1080 · 30fps; stream to YouTube with your Studio stream key (never commit keys).",
+    "After changing youtube_video_id, deploy business_control and hard-refresh monitor + frontpage.",
+    "Only the public video ID belongs in this JSON — never RTMP keys or stream secrets."
   ]
 }

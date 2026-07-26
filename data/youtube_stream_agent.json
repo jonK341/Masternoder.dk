@@ -56,10 +56,11 @@
     }
   ],
   "checklist": [
-    "Open YouTube Studio → Create → Go live → Stream (or use OBS custom ingest).",
-    "In OBS: add Browser Source → paste clean stream URL or /streamer/?obs=1.",
-    "On the monitor: enable sound + Camgirl voice (opt-in); confirm fleet ticker updates.",
-    "Assign youtube_stream_agent (below) so agents can preflight URLs and narrate ticks.",
+    "Open Studio live dashboard: studio.youtube.com/video/MBjG7hq_YZA/livestreaming — confirm status LIVE.",
+    "In OBS: Browser Source → /fleet-progress-monitor/?mode=stream at 1920×1080 · 30fps · ~4500 kbps video.",
+    "On the monitor: enable sound + Camgirl voice (opt-in); confirm fleet ticker and chapter composer update.",
+    "Site chat rail embeds the same video ID (MBjG7hq_YZA); viewers unmute in-browser or watch on YouTube.",
+    "Assign youtube_stream_agent (below) for URL preflight and narration lines.",
     "Never paste RTMP stream keys into chat or commits — use Studio only."
   ]
 }

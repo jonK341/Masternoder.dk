@@ -68,6 +68,27 @@ def test_bootstrap_has_rewards(chat_env):
     b = bootstrap()
     assert b["success"] is True
     assert b["rewards"]["event_count"] >= 10
+    assert b["youtube"]["video_id"] == "MBjG7hq_YZA"
+    assert "embed=" in b["youtube"]["embed_url"] or "/embed/" in b["youtube"]["embed_url"]
+    assert "mute=1" in b["youtube"]["embed_url"]
+    assert b["youtube"]["watch_url"]
+
+
+def test_youtube_embed_builder():
+    from backend.services.fleet_stream_chat_service import (
+        build_youtube_embed_url,
+        sanitize_youtube_video_id,
+    )
+
+    assert sanitize_youtube_video_id("MBjG7hq_YZA") == "MBjG7hq_YZA"
+    assert sanitize_youtube_video_id("bad id!") == ""
+    url = build_youtube_embed_url(
+        "MBjG7hq_YZA",
+        {"embed": {"autoplay": True, "mute": True, "modest_branding": True, "rel": False}},
+    )
+    assert "MBjG7hq_YZA" in url
+    assert "autoplay=1" in url
+    assert "modestbranding=1" in url
 
 
 def test_chat_routes(monitor_client, chat_env, monkeypatch):

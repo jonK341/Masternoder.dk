@@ -84,7 +84,17 @@ def _abs(base: str, path: str) -> str:
 def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
     cfg = _load_config()
     base = _public_base(base_url)
-    channel = os.environ.get("YOUTUBE_CHANNEL_URL", "").strip() or "https://youtube.com/@MasterNoder"
+    from backend.services.fleet_stream_chat_service import live_config, youtube_public_urls
+
+    live = live_config()
+    yt_urls = youtube_public_urls(live)
+    channel = (
+        os.environ.get("YOUTUBE_CHANNEL_URL", "").strip()
+        or live.get("youtube_channel_url")
+        or "https://youtube.com/@MasterNoder"
+    )
+    obs_cfg = live.get("obs") if isinstance(live.get("obs"), dict) else {}
+    stream_meta = live.get("stream") if isinstance(live.get("stream"), dict) else {}
     return {
         "success": True,
         "primary_agent": cfg.get("primary_agent") or "youtube_stream_agent",
@@ -92,6 +102,13 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
         "skill_set": cfg.get("skill_set") or [],
         "obs_scenes": cfg.get("obs_scenes") or [],
         "checklist": cfg.get("checklist") or [],
+        "live_broadcast": {
+            "title": stream_meta.get("title") or "",
+            "video_id": yt_urls.get("video_id") or "",
+            "watch_url": yt_urls.get("watch_url") or "",
+            "studio_url": yt_urls.get("studio_url") or "",
+            "embed_url": yt_urls.get("embed_url") or "",
+        },
         "monitor": {
             "full": _abs(base, "/fleet-progress-monitor/"),
             "stream_layout": _abs(base, "/fleet-progress-monitor/?mode=stream"),
@@ -102,9 +119,14 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
         },
         "youtube": {
             "channel_url": channel,
-            "studio_live_url": "https://studio.youtube.com/",
+            "studio_live_url": yt_urls.get("studio_url") or "https://studio.youtube.com/",
+            "watch_url": yt_urls.get("watch_url") or "",
+            "video_id": yt_urls.get("video_id") or "",
             "ingest_note": "Create stream in YouTube Studio → paste RTMP key in OBS (never commit keys).",
-            "recommended": "1920×1080 · 30fps · browser source for 5D canvas",
+            "recommended": obs_cfg.get("resolution", "1920×1080")
+            + " · "
+            + str(obs_cfg.get("fps", 30))
+            + "fps · browser source for 5D canvas",
         },
         "podcast": {
             "hub": _abs(base, "/streamer/"),

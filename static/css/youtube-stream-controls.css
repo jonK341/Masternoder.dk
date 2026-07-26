@@ -24,6 +24,25 @@
   font-size: 11px;
 }
 
+.yt-stream-live-title {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(240, 232, 255, 0.9);
+}
+
+.yt-stream-live-dot {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1a0a0e;
+  background: #ff4d6d;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 .yt-stream-urls,
 .yt-stream-actions {
   display: flex;

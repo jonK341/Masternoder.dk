@@ -196,11 +196,51 @@
         state.boot = d;
         var yt = el.querySelector("#f5-chat-yt");
         if (!yt || !d.youtube) return;
+        var ph = el.querySelector(".f5-stream-chat-text");
+        if (ph && d.stream && d.stream.chat_placeholder) {
+          ph.placeholder = d.stream.chat_placeholder;
+        }
         if (d.youtube.embed_url) {
+          var title = (d.stream && d.stream.title) || "YouTube live";
+          var badge = (d.stream && d.stream.status_badge) || "LIVE";
+          var watch = d.youtube.watch_url || d.youtube.channel_url || "";
+          var studio = d.youtube.studio_url || "";
           yt.innerHTML =
-            '<iframe title="YouTube live" src="' +
+            '<div class="f5-stream-chat-yt-bar">' +
+            '<span class="f5-stream-chat-yt-badge">' +
+            esc(badge) +
+            "</span>" +
+            '<span class="f5-stream-chat-yt-title">' +
+            esc(title) +
+            "</span>" +
+            "</div>" +
+            '<iframe class="f5-stream-chat-yt-frame" title="' +
+            esc(title) +
+            '" src="' +
             esc(d.youtube.embed_url) +
-            '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>';
+            '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>' +
+            '<div class="f5-stream-chat-yt-actions">' +
+            '<button type="button" class="f5-stream-chat-yt-btn f5-stream-chat-yt-unmute">Unmute</button>' +
+            (watch
+              ? '<a class="f5-stream-chat-yt-btn" href="' +
+                esc(watch) +
+                '" target="_blank" rel="noopener noreferrer">Watch on YouTube</a>'
+              : "") +
+            (studio
+              ? '<a class="f5-stream-chat-yt-btn subtle" href="' +
+                esc(studio) +
+                '" target="_blank" rel="noopener noreferrer">Studio</a>'
+              : "") +
+            "</div>";
+          var unmuteBtn = yt.querySelector(".f5-stream-chat-yt-unmute");
+          var frame = yt.querySelector(".f5-stream-chat-yt-frame");
+          if (unmuteBtn && frame && d.youtube.embed_url_unmuted) {
+            unmuteBtn.addEventListener("click", function () {
+              frame.src = d.youtube.embed_url_unmuted;
+              unmuteBtn.textContent = "Sound on";
+              unmuteBtn.disabled = true;
+            });
+          }
         } else {
           yt.innerHTML =
             '<div class="f5-stream-chat-yt-placeholder">YouTube live ID not set — watch on ' +

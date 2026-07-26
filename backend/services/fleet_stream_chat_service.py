@@ -10,6 +10,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _LIVE_PATH = os.path.join(_BASE, "data", "fleet_stream_live.json")
@@ -25,6 +26,72 @@ _MAX_MSG = 420
 _MAX_STORE = 800
 
 _CHANNELS = frozenset({"live", "news", "events"})
+_VIDEO_ID_RE = re.compile(r"^[\w-]{6,32}$")
+
+
+def sanitize_youtube_video_id(raw: str) -> str:
+    vid = (raw or "").strip()
+    return vid if _VIDEO_ID_RE.match(vid) else ""
+
+
+def build_youtube_embed_url(
+    video_id: str,
+    cfg: Optional[Dict[str, Any]] = None,
+    *,
+    mute: Optional[bool] = None,
+    site_origin: Optional[str] = None,
+) -> str:
+    vid = sanitize_youtube_video_id(video_id)
+    if not vid:
+        return ""
+    cfg = cfg or {}
+    emb = cfg.get("embed") if isinstance(cfg.get("embed"), dict) else {}
+    domain = (cfg.get("youtube_embed_domain") or "https://www.youtube.com").rstrip("/")
+    if emb.get("use_nocookie"):
+        domain = "https://www.youtube-nocookie.com"
+    params: List[str] = []
+    if emb.get("autoplay", True):
+        params.append("autoplay=1")
+    else:
+        params.append("autoplay=0")
+    muted = emb.get("mute", True) if mute is None else bool(mute)
+    params.append("mute=1" if muted else "mute=0")
+    if emb.get("modest_branding", True):
+        params.append("modestbranding=1")
+    if emb.get("rel") is False:
+        params.append("rel=0")
+    if emb.get("playsinline", True):
+        params.append("playsinline=1")
+    if emb.get("controls", True):
+        params.append("controls=1")
+    if emb.get("fs", True):
+        params.append("fs=1")
+    iv = emb.get("iv_load_policy")
+    if iv in (1, 3):
+        params.append(f"iv_load_policy={iv}")
+    origin = (site_origin or os.environ.get("PUBLIC_SITE_URL") or "").strip().rstrip("/")
+    if origin:
+        params.append("origin=" + quote(origin, safe=""))
+    return f"{domain}/embed/{vid}?" + "&".join(params)
+
+
+def youtube_public_urls(cfg: Dict[str, Any]) -> Dict[str, str]:
+    vid = sanitize_youtube_video_id(cfg.get("youtube_video_id") or "")
+    watch = (cfg.get("youtube_watch_url") or "").strip()
+    studio = (cfg.get("youtube_studio_url") or "").strip()
+    channel = (cfg.get("youtube_channel_url") or "").strip()
+    if vid and not watch:
+        watch = f"https://www.youtube.com/watch?v={vid}"
+    if vid and not studio:
+        studio = f"https://studio.youtube.com/video/{vid}/livestreaming"
+    return {
+        "video_id": vid,
+        "watch_url": watch,
+        "studio_url": studio,
+        "channel_url": channel,
+        "embed_url": build_youtube_embed_url(vid, cfg, mute=True),
+        "embed_url_unmuted": build_youtube_embed_url(vid, cfg, mute=False),
+    }
 
 
 def _iso() -> str:
@@ -347,16 +414,27 @@ def bootstrap() -> Dict[str, Any]:
     ingest_news_to_chat(limit=6)
     cfg = live_config()
     rc = rewards_config()
-    vid = (cfg.get("youtube_video_id") or "").strip()
+    yt = youtube_public_urls(cfg)
+    stream_meta = cfg.get("stream") if isinstance(cfg.get("stream"), dict) else {}
     return {
         "success": True,
         "chat_enabled": bool(cfg.get("chat_enabled", True)),
         "poll_ms": int(cfg.get("chat_poll_ms") or 4000),
         "channels": list(_CHANNELS),
+        "stream": {
+            "title": stream_meta.get("title") or "Fleet live",
+            "subtitle": stream_meta.get("subtitle") or "",
+            "status_badge": stream_meta.get("status_badge") or "LIVE",
+            "chat_placeholder": stream_meta.get("default_chat_placeholder")
+            or "Comment on the fleet stream…",
+        },
         "youtube": {
-            "video_id": vid,
-            "embed_url": f"https://www.youtube.com/embed/{vid}?autoplay=0&mute=1" if vid else "",
-            "channel_url": cfg.get("youtube_channel_url") or "",
+            "video_id": yt["video_id"],
+            "embed_url": yt["embed_url"],
+            "embed_url_unmuted": yt["embed_url_unmuted"],
+            "watch_url": yt["watch_url"],
+            "studio_url": yt["studio_url"],
+            "channel_url": yt["channel_url"],
         },
         "rewards": {
             "event_count": len(rc.get("events") or []),

@@ -51,8 +51,22 @@
       '<span class="yt-stream-kicker">▶️ YouTube agent</span>' +
       '<strong>' + esc(data.primary_agent || "youtube_stream_agent") + '</strong>' +
       '<p class="yt-stream-meta">OBS browser capture · 5D monitor · podcast co-host</p>' +
+      (data.live_broadcast && data.live_broadcast.title
+        ? '<p class="yt-stream-live-title"><span class="yt-stream-live-dot">LIVE</span> ' +
+          esc(data.live_broadcast.title) +
+          (data.live_broadcast.video_id ? ' · <code>' + esc(data.live_broadcast.video_id) + "</code>" : "") +
+          "</p>"
+        : "") +
       "</div>" +
       '<div class="yt-stream-urls">' +
+      (data.live_broadcast && data.live_broadcast.watch_url
+        ? '<a class="yt-stream-btn primary" href="' +
+          esc(data.live_broadcast.watch_url) +
+          '" target="_blank" rel="noopener">Open live watch</a>' +
+          '<button type="button" class="yt-stream-btn" data-copy-url="' +
+          esc(data.live_broadcast.watch_url) +
+          '">Copy watch URL</button>'
+        : "") +
       '<button type="button" class="yt-stream-btn primary" data-copy-url="' +
       esc(mon.stream_layout || "") +
       '">Copy YouTube layout URL</button>' +
@@ -60,7 +74,11 @@
       esc(mon.obs_browser || "") +
       '">Copy OBS browser URL</button>' +
       '<a class="yt-stream-btn" href="' +
-      esc(data.youtube && data.youtube.studio_live_url ? data.youtube.studio_live_url : "https://studio.youtube.com/") +
+      esc(
+        (data.live_broadcast && data.live_broadcast.studio_url) ||
+          (data.youtube && data.youtube.studio_live_url) ||
+          "https://studio.youtube.com/"
+      ) +
       '" target="_blank" rel="noopener">YouTube Studio</a>' +
       '<a class="yt-stream-btn" href="' +
       esc((data.youtube && data.youtube.channel_url) || "https://youtube.com/@MasterNoder") +
