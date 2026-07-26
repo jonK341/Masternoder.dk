@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "daily_cap_mn2": 0.5,
+  "comment_mn2": 0.0015,
+  "news_reaction_mn2": 0.001,
+  "onchain": {
+    "enabled": false,
+    "min_mn2": 0.001,
+    "max_per_event_mn2": 0.01,
+    "comment": "Set enabled true + daemon wallet funded to push micro on-chain sends after in-app credit."
+  },
+  "events": [
+    {"id": "evt_first_chat", "title": "First fleet chat", "mn2": 0.002, "once_per_user": true, "weight": 0},
+    {"id": "evt_fleet_pulse", "title": "Fleet pulse drop", "mn2": 0.003, "weight": 25},
+    {"id": "evt_lane_runner", "title": "Lane runner bonus", "mn2": 0.004, "weight": 20},
+    {"id": "evt_hot_symbol", "title": "Hot symbol shower", "mn2": 0.005, "weight": 18},
+    {"id": "evt_stream_raid", "title": "Stream raid reward", "mn2": 0.006, "weight": 15},
+    {"id": "evt_casino_bridge", "title": "Casino bridge chip", "mn2": 0.004, "weight": 14},
+    {"id": "evt_podcast_echo", "title": "Podcast echo tip", "mn2": 0.003, "weight": 12},
+    {"id": "evt_commodore", "title": "Commodore drop", "mn2": 0.008, "weight": 8},
+    {"id": "evt_legend_tier", "title": "Legend tier burst", "mn2": 0.01, "weight": 5},
+    {"id": "evt_chain_micro", "title": "Chain micro-tx", "mn2": 0.001, "weight": 30, "prefer_onchain": true},
+    {"id": "evt_news_streak", "title": "News channel streak", "mn2": 0.0025, "weight": 16},
+    {"id": "evt_youtube_sync", "title": "YouTube sync bonus", "mn2": 0.0035, "weight": 14},
+    {"id": "evt_fleet_xp", "title": "Fleet XP cheer", "mn2": 0.002, "weight": 22},
+    {"id": "evt_mn2_staker", "title": "Staker shout-out", "mn2": 0.007, "weight": 6},
+    {"id": "evt_double_drop", "title": "Double MN2 drop", "mn2": 0.012, "weight": 3}
+  ]
+}

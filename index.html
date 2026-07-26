@@ -23,7 +23,8 @@
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260726e">
     <link rel="stylesheet" href="/static/css/game-hub-panel.css?v=20260726e">
-    <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726g">
+    <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726k">
+    <link rel="stylesheet" href="/static/css/fleet-stream-chat.css?v=20260726k">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -50,6 +51,23 @@
                 <div class="fp-core-node fp-core-node-a">AI</div>
                 <div class="fp-core-node fp-core-node-b">SND</div>
                 <div class="fp-core-node fp-core-node-c">XP</div>
+            </div>
+        </section>
+
+        <section class="fp-fleet-live-top fp-fleet-5d" id="fp-fleet-5d" aria-labelledby="fp-fleet-5d-title">
+            <div class="fp-fleet-5d-head">
+                <div>
+                    <p class="fp-kicker"><span>Fleet</span><span>5D monitor + live chat</span></p>
+                    <h2 id="fp-fleet-5d-title">Progress navigation livestream</h2>
+                    <p class="fp-hero-text" style="margin:8px 0 0">Watch the fleet monitor, YouTube live (when configured), and chat on the right — MN2 drops for logged-in comments and event claims.</p>
+                    <p class="fp-muted" id="fp-fleet-5d-pill" style="margin-top:8px;font-size:12px">Loading fleet telemetry…</p>
+                </div>
+                <a class="fp-secondary-action" id="fp-fleet-5d-open" href="/fleet-progress-monitor/?mode=stream">Open full monitor →</a>
+                <a class="fp-secondary-action" href="/streamer/" style="margin-left:8px">Streamer hub →</a>
+            </div>
+            <div class="fp-fleet-live-shell">
+                <div class="fp-fleet-live-monitor fp-fleet-5d-embed" id="fp-fleet-5d-embed" aria-label="Embedded 5D fleet monitor"></div>
+                <aside id="fp-fleet-chat" class="fp-fleet-live-chat f5-stream-chat" aria-label="Fleet live chat"></aside>
             </div>
         </section>
 
@@ -153,20 +171,6 @@
             <h2 id="fp-smart-title" class="fp-section-title">Smart links</h2>
             <div id="fp-smart-links"></div>
             <div data-ptc-placement="home_smartlinks" data-ptc-limit="2"></div>
-        </section>
-
-        <section class="fp-fleet-5d" id="fp-fleet-5d" aria-labelledby="fp-fleet-5d-title">
-            <div class="fp-fleet-5d-head">
-                <div>
-                    <p class="fp-kicker"><span>Fleet</span><span>5D monitor</span></p>
-                    <h2 id="fp-fleet-5d-title">Progress navigation livestream</h2>
-                    <p class="fp-hero-text" style="margin:8px 0 0">Audience-safe fleet XP, trades, and lane activity — no user accounts or payout details. Opt-in sound and voice on the full monitor.</p>
-                    <p class="fp-muted" id="fp-fleet-5d-pill" style="margin-top:8px;font-size:12px">Loading fleet telemetry…</p>
-                </div>
-                <a class="fp-secondary-action" id="fp-fleet-5d-open" href="/fleet-progress-monitor/">Open full monitor →</a>
-                <a class="fp-secondary-action" href="/streamer/" style="margin-left:8px">Streamer hub →</a>
-            </div>
-            <div class="fp-fleet-5d-embed" id="fp-fleet-5d-embed" aria-label="Embedded 5D fleet monitor"></div>
         </section>
 
         <section class="fp-starmap" aria-labelledby="fp-starmap-title">
@@ -300,7 +304,8 @@
     <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260726e" defer></script>
-    <script src="/static/js/fleet-progress-monitor-embed.js?v=20260726g" defer></script>
+    <script src="/static/js/fleet-progress-monitor-embed.js?v=20260726k" defer></script>
+    <script src="/static/js/fleet-stream-chat.js?v=20260726k" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20260726e" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

@@ -722,6 +722,9 @@
       },
     }).then(function (speakers) {
       state.speakers = speakers || state.speakers;
+      if (window.MNCamgirlsStreamVoice.getLeadSpeakerId) {
+        state.leadSpeakerId = window.MNCamgirlsStreamVoice.getLeadSpeakerId() || state.leadSpeakerId;
+      }
       fillSpeakerSelect();
       renderSpeakerDock(state.leadSpeakerId);
     });
@@ -745,6 +748,7 @@
   function init() {
     if (streamMode) document.body.classList.add("f5-stream");
     if (qs("embed") === "1") document.body.classList.add("f5-embed");
+    document.body.classList.add("f5-has-chat");
     var dock = $("f5-composer-dock");
     if (dock && streamMode) dock.hidden = false;
     document.addEventListener("mn:stream-chapter", function (ev) {

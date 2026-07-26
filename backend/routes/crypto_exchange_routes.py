@@ -537,6 +537,75 @@ def exchange_fleet_stream_composer():
     return jsonify(list_chapters_public(snap, stream_mode=stream_mode, index=idx))
 
 
+def _fleet_chat_uid() -> str:
+    try:
+        from backend.services.account_resolution_service import resolve_user_id
+
+        return resolve_user_id(from_body=True, from_query=True)
+    except Exception:
+        data = request.get_json(silent=True) or {}
+        return request.args.get("user_id") or data.get("user_id") or "default_user"
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/bootstrap", methods=["GET"])
+def exchange_fleet_stream_chat_bootstrap():
+    from backend.services.fleet_stream_chat_service import bootstrap
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(bootstrap())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/messages", methods=["GET"])
+def exchange_fleet_stream_chat_messages():
+    from backend.services.fleet_stream_chat_service import list_messages
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    ch = request.args.get("channel") or "live"
+    since = request.args.get("since_id") or request.args.get("since")
+    limit = request.args.get("limit", 80, type=int)
+    msgs = list_messages(channel=ch, since_id=since, limit=limit)
+    return jsonify({"success": True, "channel": ch, "messages": msgs, "count": len(msgs)})
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/messages", methods=["POST"])
+def exchange_fleet_stream_chat_post():
+    from backend.services.fleet_stream_chat_service import post_message
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_json(silent=True) or {}
+    uid = _fleet_chat_uid()
+    guest = (data.get("guest_id") or request.headers.get("X-Fleet-Guest") or "").strip()
+    res = post_message(
+        channel=data.get("channel") or "live",
+        text=data.get("text") or data.get("message") or "",
+        handle=data.get("handle") or data.get("name") or "Guest",
+        user_id=uid if uid and uid != "default_user" else None,
+        guest_id=guest,
+    )
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/claim-event", methods=["POST"])
+def exchange_fleet_stream_chat_claim_event():
+    from backend.services.fleet_stream_chat_service import claim_random_event
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    uid = _fleet_chat_uid()
+    data = request.get_json(silent=True) or {}
+    res = claim_random_event(uid, guest_id=data.get("guest_id"))
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
 @crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
 def exchange_youtube_stream_controls():
     from backend.services.youtube_stream_agent_service import stream_controls
