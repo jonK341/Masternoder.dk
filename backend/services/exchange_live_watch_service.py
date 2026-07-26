@@ -80,7 +80,8 @@ def owner_live_watch(*, feed_limit: int = 80) -> Dict[str, Any]:
     tail = ex.get_audit_tail(limit=300).get("records") or []
     feed: List[Dict[str, Any]] = []
     trust_actions = {"trust_agent_activation", "trust_controls_updated", "trust_policy_updated",
-                     "agent_paper_profit", "arbitrage_paper_trade", "agent_purchased", "payout_sweep"}
+                     "agent_paper_profit", "arbitrage_paper_trade", "agent_purchased", "payout_sweep",
+                     "control_board_run_all", "winnable_pairs_tick", "control_board_bot_toggle"}
     for rec in tail:
         if (rec.get("action") or "") not in trust_actions:
             continue

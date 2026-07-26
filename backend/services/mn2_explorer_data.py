@@ -84,7 +84,7 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
             cached = _cached(key, _MN_TTL)
             if cached is not None:
                 return cached
-        result: Dict[str, Any] = {"total": 0, "enabled": 0, "list": []}
+        result: Dict[str, Any] = {"total": 0, "enabled": 0, "active": 0, "list": []}
         try:
             from backend.services import mn2_rpc_client as rpc
             r = rpc.listmasternodes(timeout_sec=12)
@@ -100,13 +100,17 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
                     _CACHE.pop(key, None)
                 return result
             enabled = 0
+            active = 0
             parsed: List[Dict[str, Any]] = []
             for mn in rows:
                 if not isinstance(mn, dict):
                     continue
                 status = str(mn.get("status") or "")
-                if status.upper() == "ENABLED":
+                st = status.upper()
+                if st == "ENABLED":
                     enabled += 1
+                elif st == "ACTIVE":
+                    active += 1
                 parsed.append({
                     "rank": mn.get("rank"),
                     "addr": mn.get("addr"),
@@ -117,7 +121,7 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
                     "txhash": mn.get("txhash") or mn.get("proTxHash"),
                 })
             parsed.sort(key=lambda m: (m.get("rank") is None, m.get("rank") or 0))
-            result = {"total": len(parsed), "enabled": enabled, "list": parsed[:limit]}
+            result = {"total": len(parsed), "enabled": enabled, "active": active, "list": parsed[:limit]}
         except Exception:
             return _store(key, result)
         return _store(key, result)

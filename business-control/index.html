@@ -87,6 +87,7 @@
           <a class="nav" href="/exchange">Exchange</a>
           <a class="nav" href="/command-center">Command Center</a>
           <button class="btn small" id="refresh">Refresh</button>
+          <button class="btn small" id="runFleet" title="Supervisor fleet only (no arb/AI/cross)">Run fleet</button>
           <button class="btn small primary" id="runAll">Run all bots</button>
           <button class="btn small danger" id="kill">Kill switch</button>
           <button class="btn small" id="lock">Lock</button>
@@ -100,6 +101,9 @@
         <div class="tab" data-tab="predictions">Predictions</div>
         <div class="tab" data-tab="boost">Profit Boost</div>
         <div class="tab" data-tab="payout">Payout · PayPal</div>
+        <div class="tab" data-tab="livepack">Live pack</div>
+        <div class="tab" data-tab="orchestration">Orchestration</div>
+        <div class="tab" data-tab="fleet">Fleet ops</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
@@ -108,6 +112,12 @@
         <div class="section">
           <h2>Supervisor agents</h2>
           <div class="sup-grid" id="supervisors"></div>
+        </div>
+        <div class="section">
+          <h2>Fleet bots (25 mechanics)</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 8px">5 Profit Analyst · 6 Extended · 3 Treasury · 5 Risk · 4 Winnable executors</p>
+          <div id="fleetSummary" class="muted">—</div>
+          <div id="fleetRoster" style="margin-top:12px"></div>
         </div>
         <div class="section">
           <h2>Trading bots — profit calculator</h2>
@@ -175,6 +185,47 @@
         </div>
       </div>
 
+      <div class="tabpane" id="pane-livepack">
+        <div class="section">
+          <h2>Live profit pack</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Arb live gate, venue credentials, pair search, payout mode. Fix blockers to move from paper to full live.</p>
+          <div id="livePackPanel" class="muted">Loading…</div>
+        </div>
+        <div class="section">
+          <h2>Winnable pairs radar</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Ranked routes from profit pair search — Winnable Pairs Executor trades these when score and spread thresholds pass.</p>
+          <div id="winnablePanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-orchestration">
+        <div class="section">
+          <h2>Orchestrator — last run-all tick</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Each daemon or manual <em>Run all bots</em> executes trading ticks plus risk, analytics, and treasury supervisor passes.</p>
+          <div id="orchPanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-fleet">
+        <div class="section">
+          <h2>Supervisor fleet — operations</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. Results persist in <code>fleet_meta</code> and per-bot <code>last_run_*</code>.</p>
+          <div id="fleetOpsPanel" class="muted">Loading…</div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap" id="fleetRunBar">
+            <button class="btn small primary" data-fleet-kind="">Run all fleet kinds</button>
+            <button class="btn small" data-fleet-kind="winnable_pairs">Winnable</button>
+            <button class="btn small" data-fleet-kind="analytics">Profit analyst</button>
+            <button class="btn small" data-fleet-kind="extended_profit">Extended</button>
+            <button class="btn small" data-fleet-kind="treasury">Treasury</button>
+            <button class="btn small" data-fleet-kind="risk">Risk</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Fleet roster</h2>
+          <div id="fleetRosterTab"></div>
+        </div>
+      </div>
+
       <div class="tabpane" id="pane-watch">
         <div class="section">
           <h2>Live Watch — trust & activations (all users)</h2>
@@ -189,6 +240,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260627a"></script>
+  <script src="/static/js/business-control.js?v=20260726g"></script>
 </body>
 </html>
