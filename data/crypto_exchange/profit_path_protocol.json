@@ -22,5 +22,13 @@
     "external_market_sell",
     "reduce_notional"
   ],
+  "profit_pair_search": {
+    "enabled": true,
+    "top_n": 16,
+    "catalog_venues": ["binance", "nonkyc", "xeggex"],
+    "min_live_net_bps": 10.0,
+    "ledger_weight": 0.5,
+    "live_weight": 0.5
+  },
   "note": "Local profit-max defaults: rotation_auto_execute + rotation_live_enabled true. Production should set both false unless opted in. Env override: EXCHANGE_ROTATION_AUTO=1, EXCHANGE_ROTATION_LIVE=1."
 }

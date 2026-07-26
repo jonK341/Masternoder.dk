@@ -215,3 +215,14 @@ def test_execution_hits_exclude_scan_only_venues(pps_env, monkeypatch):
     assert "DOGE" in res["hot_symbols"]
     assert "ADA" not in res["hot_symbols"]
     assert all(h["buy_venue"] != "bingx" for h in res["hits"])
+
+
+def test_venue_search_eligible_fallback_without_execution_helper(pps_env, monkeypatch):
+    pps = pps_env["pps"]
+    from backend.services import exchange_venue_api_service as vapi
+
+    monkeypatch.delattr(vapi, "venue_execution_eligible", raising=False)
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda vid: str(vid).lower() == "binance")
+    monkeypatch.setattr(vapi, "load_api_config", lambda: {"venues": {"binance": {"live_supported": True}}})
+    assert pps._venue_search_eligible("binance") is True
+    assert pps._venue_search_eligible("bingx") is False

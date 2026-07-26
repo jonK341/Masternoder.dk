@@ -194,6 +194,25 @@ def _tune_ai_trader() -> None:
     _write_json(path, cfg)
 
 
+def _tune_profit_path_and_pair_search() -> None:
+    path = os.path.join(ROOT, "data", "crypto_exchange", "profit_path_protocol.json")
+    cfg: dict = {}
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            cfg = json.load(fh)
+    cfg["rotation_live_enabled"] = True
+    cfg["rotation_auto_execute"] = True
+    cfg["profit_pair_search"] = {
+        "enabled": True,
+        "top_n": 16,
+        "catalog_venues": ["binance", "nonkyc", "xeggex"],
+        "min_live_net_bps": 10.0,
+        "ledger_weight": 0.5,
+        "live_weight": 0.5,
+    }
+    _write_json(path, cfg)
+
+
 def _tune_treasury_and_payout() -> None:
     tpath = os.path.join(ROOT, "data", "exchange_treasury_config.json")
     with open(tpath, encoding="utf-8") as fh:
@@ -223,6 +242,8 @@ def _tune_treasury_and_payout() -> None:
 def main() -> int:
     load_dotenv()
     _ensure_env_flag("EXCHANGE_ARBITRAGE_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_ROTATION_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_PROFIT_PAIR_SEARCH", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_PAYPAL_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_BINANCE_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PROFIT_PROFILE", "max")
@@ -237,6 +258,7 @@ def main() -> int:
     _tune_connectors(xeggex_ok=xeggex_ok, xeggex_reason=xeggex_reason)
     _tune_extended_profit(xeggex_ok=xeggex_ok)
     _tune_ai_trader()
+    _tune_profit_path_and_pair_search()
     _tune_treasury_and_payout()
 
     try:

@@ -145,7 +145,17 @@
       renderSupervisors(d.supervisors || []);
       renderOrchestration(d.orchestration);
       renderBots(d.bots || []);
-      var note = "Updated " + new Date().toLocaleTimeString() + (d.arbitrage_live ? " · LIVE" : " · paper");
+      var note = "Updated " + new Date().toLocaleTimeString();
+      if (d.live_pack) {
+        note += " · " + (d.live_pack.mode === "live" ? "LIVE pack ready" : "paper / partial");
+        if (d.live_pack.blockers && d.live_pack.blockers.length) {
+          note += " · blockers: " + d.live_pack.blockers.slice(0, 4).join(", ");
+        }
+      } else if (d.arbitrage_live) {
+        note += " · LIVE";
+      } else {
+        note += " · paper";
+      }
       if (d.paper_mode && d.treasury) {
         note += " · treasury paper $" + Number(d.treasury.ledger_stashed_usd_paper || 0).toFixed(2);
         if (d.treasury.ledger_stashed_usd_live > 0) {

@@ -23,6 +23,11 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 - Risk, Profit Analyst, and Treasury supervisors run lightweight ticks each orchestrator cycle (withdrawal risk summary, P&amp;L rollup, treasury ledger snapshot).
 - Business Control UI shows last tick on supervisor cards and an **Orchestration** tab with step results.
 
-## Phase 2+ — Profit backlog
+## Phase 2 — Live profit pack
+
+- `scripts/configure_live_profit_max.py` — env flags, vault import, connectors/extended/AI tuning, **profit pair search** enabled in PPP config.
+- `scripts/mn2_live_pack_verify.py` — JSON report; exit `0` when `profit_live_ready`.
+- Business Control overview includes `live_pack` (mode, blockers, venue readiness).
+
 
 See [PROFIT_CRITICAL_TOP25.md](./PROFIT_CRITICAL_TOP25.md) for live-profit blockers (XeggeX 401, spreads, PayPal live, dual-venue farm).

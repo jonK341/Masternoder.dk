@@ -89,3 +89,50 @@ def test_run_all_persists_orchestration(ctl_env):
     assert ov["orchestration"].get("last_run_at")
     sup_risk = next(s for s in ov["supervisors"] if s["id"] == "sup_risk")
     assert sup_risk.get("last_run_at")
+
+
+def test_set_bot_enabled_missing_id(ctl_env):
+    ctl = ctl_env["ctl"]
+    assert ctl.set_bot_enabled("", True)["success"] is False
+    assert ctl.set_bot_enabled("  ", False)["error"] == "missing_bot_id"
+
+
+def test_set_supervisor_not_found(ctl_env):
+    ctl = ctl_env["ctl"]
+    assert ctl.set_supervisor_enabled("nope", True)["success"] is False
+
+
+def test_set_kill_switch_roundtrip(ctl_env):
+    ctl = ctl_env["ctl"]
+    assert ctl.set_kill_switch(True)["kill_switch"] is True
+    assert ctl.set_kill_switch(False)["kill_switch"] is False
+
+
+def test_list_bots_includes_totals(ctl_env):
+    ctl = ctl_env["ctl"]
+    bots = ctl.list_bots()
+    assert any(b["id"] == "arb_agent_btc_eth" for b in bots)
+    bot = next(b for b in bots if b["id"] == "arb_agent_btc_eth")
+    assert bot["total_pnl_usd"] == bot["realized_pnl_usd"]
+
+
+def test_live_pack_status_structure(ctl_env, monkeypatch):
+    ctl = ctl_env["ctl"]
+    monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "0")
+    lp = ctl.live_pack_status()
+    assert lp["success"] is True
+    assert lp["mode"] == "paper"
+    assert "arbitrage_live_gate_off" in lp["blockers"]
+    ov = ctl.business_overview()
+    assert ov.get("live_pack")
+    assert ov.get("paper_mode") is True
+
+
+def test_merge_supervisors_adds_extended(ctl_env):
+    ctl = ctl_env["ctl"]
+    data = ctl._load_controls()
+    data["supervisors"] = [s for s in data["supervisors"] if s.get("id") != "sup_extended"]
+    ctl._save_controls(data)
+    merged = ctl._load_controls()
+    ids = [s["id"] for s in merged["supervisors"]]
+    assert "sup_extended" in ids

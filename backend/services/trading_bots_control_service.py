@@ -264,6 +264,96 @@ def list_bots() -> List[Dict[str, Any]]:
     return bots
 
 
+def _env_flag_on(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def live_pack_status() -> Dict[str, Any]:
+    """Live profit gates: arb, rotation, pair search, venues, payout — for the control board."""
+    blockers: List[str] = []
+    out: Dict[str, Any] = {
+        "success": True,
+        "generated_at": _iso(),
+        "env": {
+            "EXCHANGE_ARBITRAGE_LIVE": _env_flag_on("EXCHANGE_ARBITRAGE_LIVE"),
+            "EXCHANGE_ROTATION_LIVE": _env_flag_on("EXCHANGE_ROTATION_LIVE"),
+            "EXCHANGE_PAYOUT_PAYPAL_LIVE": _env_flag_on("EXCHANGE_PAYOUT_PAYPAL_LIVE"),
+            "EXCHANGE_PAYOUT_BINANCE_LIVE": _env_flag_on("EXCHANGE_PAYOUT_BINANCE_LIVE"),
+            "EXCHANGE_PROFIT_PAIR_SEARCH": _env_flag_on("EXCHANGE_PROFIT_PAIR_SEARCH"),
+            "EXCHANGE_LIVE_PROFIT_MAX": _env_flag_on("EXCHANGE_LIVE_PROFIT_MAX"),
+        },
+    }
+    try:
+        from backend.services.exchange_arbitrage_service import live_enabled
+
+        out["arbitrage_live"] = live_enabled()
+        if not live_enabled():
+            blockers.append("arbitrage_live_gate_off")
+    except Exception as exc:
+        out["arbitrage_live"] = False
+        blockers.append(f"arbitrage_gate_error:{exc}")
+
+    try:
+        from backend.services.exchange_swap_rotation_service import rotation_live_enabled
+
+        out["rotation_live"] = rotation_live_enabled()
+        if not rotation_live_enabled():
+            blockers.append("rotation_live_off")
+    except Exception:
+        out["rotation_live"] = False
+        blockers.append("rotation_live_unknown")
+
+    try:
+        from backend.services.exchange_live_execution_service import live_readiness
+
+        ready = live_readiness()
+        out["live_readiness"] = ready
+        if not ready.get("can_trade_external"):
+            blockers.append("need_two_live_venues")
+    except Exception as exc:
+        out["live_readiness"] = {"success": False, "error": str(exc)}
+        blockers.append("live_readiness_error")
+
+    try:
+        from backend.services.exchange_profit_pair_search_service import enabled as pair_search_enabled
+
+        out["profit_pair_search_enabled"] = pair_search_enabled()
+        if not pair_search_enabled():
+            blockers.append("profit_pair_search_disabled")
+    except Exception:
+        out["profit_pair_search_enabled"] = False
+        blockers.append("profit_pair_search_error")
+
+    try:
+        from backend.services.exchange_payout_service import payout_status
+
+        ps = payout_status()
+        out["payout"] = {
+            "mode": ps.get("mode"),
+            "ready_to_sweep": ps.get("ready_to_sweep"),
+            "live_enabled": ps.get("live_enabled"),
+            "paypal_live": (ps.get("paypal") or {}).get("live_enabled"),
+        }
+        if str(ps.get("mode") or "").lower() != "live":
+            blockers.append("payout_not_live")
+    except Exception as exc:
+        out["payout"] = {"error": str(exc)}
+        blockers.append("payout_status_error")
+
+    controls = _load_controls()
+    if controls.get("kill_switch"):
+        blockers.append("kill_switch_on")
+
+    out["blockers"] = list(dict.fromkeys(blockers))
+    out["profit_live_ready"] = (
+        bool(out.get("arbitrage_live"))
+        and bool((out.get("live_readiness") or {}).get("can_trade_external"))
+        and not controls.get("kill_switch")
+    )
+    out["mode"] = "live" if out["profit_live_ready"] else "paper"
+    return out
+
+
 def business_overview() -> Dict[str, Any]:
     controls = _load_controls()
     bots = list_bots()
@@ -310,14 +400,34 @@ def business_overview() -> Dict[str, Any]:
         from backend.services.exchange_arbitrage_service import live_enabled
         tre = treasury_status()
         extras["treasury"] = tre
-        if not live_enabled():
-            extras["paper_mode"] = True
-            extras["paper_projection_cap_usd"] = round(float(tre.get("ledger_stashed_usd_paper") or 0), 4)
-            extras["monthly_projection_note"] = (
-                "Paper mode — projections capped to on-ledger paper stash until live gates are on."
-            )
     except Exception:
         pass
+
+    try:
+        lp = live_pack_status()
+        extras["live_pack"] = lp
+        extras["arbitrage_live"] = lp.get("arbitrage_live", extras.get("arbitrage_live"))
+        if lp.get("mode") != "live":
+            extras["paper_mode"] = True
+            tre = extras.get("treasury") or {}
+            extras["paper_projection_cap_usd"] = round(float(tre.get("ledger_stashed_usd_paper") or 0), 4)
+            extras["monthly_projection_note"] = (
+                "Paper or partial-live — fix live_pack blockers before trusting external profit."
+            )
+            if lp.get("blockers"):
+                extras["live_blockers"] = lp["blockers"]
+        else:
+            extras["paper_mode"] = False
+    except Exception:
+        pass
+
+    if "paper_mode" not in extras:
+        try:
+            from backend.services.exchange_arbitrage_service import live_enabled
+            if not live_enabled():
+                extras["paper_mode"] = True
+        except Exception:
+            extras["paper_mode"] = True
 
     monthly_projection = round((total_realized + total_unrealized), 4)
     if extras.get("paper_mode"):
