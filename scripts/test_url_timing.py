@@ -17,6 +17,7 @@ import os
 import sys
 import time
 import json
+from typing import Optional
 
 try:
     import requests
@@ -48,9 +49,8 @@ FRONT_PAGE_URLS = [
     ("/api/news/platform", "GET", "Platform news", {"limit": "5"}),
 ]
 
-# URLs used by profile page (profile/index.html)
+# URLs used by profile page (profile/index.html) — run after bind-session (see main())
 PROFILE_PAGE_URLS = [
-    ("/api/user/bind-session", "POST", "Bind session", {"_body": {"user_id": USER_ID}}),
     ("/api/user/profile/" + USER_ID + "/aggregated", "GET", "Profile aggregated"),
     ("/api/user/identity", "GET", "User identity", {"user_id": USER_ID}),
     ("/api/user/account-summary/points", "GET", "Account summary points", {"user_id": USER_ID}),
@@ -65,7 +65,13 @@ PROFILE_PAGE_URLS = [
 ]
 
 
-def time_request(path: str, method: str, name: str, params: dict = None) -> dict:
+def time_request(
+    path: str,
+    method: str,
+    name: str,
+    params: dict = None,
+    http: Optional[requests.Session] = None,
+) -> dict:
     url = BASE_URL + path
     body = None
     query = dict(params) if params else {}
@@ -74,12 +80,13 @@ def time_request(path: str, method: str, name: str, params: dict = None) -> dict
     if query and "?" not in path:
         q = "&".join(f"{k}={v}" for k, v in query.items())
         url = url + ("?" + q)
+    client = http if http is not None else requests
     start = time.perf_counter()
     try:
         if method == "GET":
-            r = requests.get(url, timeout=TIMEOUT, headers={"Accept": "application/json"})
+            r = client.get(url, timeout=TIMEOUT, headers={"Accept": "application/json"})
         else:
-            r = requests.post(
+            r = client.post(
                 url, timeout=TIMEOUT, json=body or {}, headers={"Content-Type": "application/json"}
             )
         elapsed = time.perf_counter() - start
@@ -137,14 +144,27 @@ def main():
     print("Timeout: connect %ss, read %ss" % (CONNECT_TIMEOUT, READ_TIMEOUT))
     print("=" * 70)
 
-    all_results = []
+    http = requests.Session()
+    bind = time_request(
+        "/api/user/bind-session",
+        "POST",
+        "Bind session",
+        {"_body": {"user_id": USER_ID}},
+        http=http,
+    )
+    sym = "OK" if bind["ok"] else "FAIL"
+    print(f"  [{sym}] {bind['elapsed_sec']:>6.2f}s  {bind['status'] or '—':>4}  Bind session (cookie for profile APIs)")
+    if not bind["ok"]:
+        print("  # Profile URLs may return 401 without a bound session")
+
+    all_results = [bind]
     for item in FRONT_PAGE_URLS:
         if len(item) == 4:
             path, method, name, params = item
         else:
             path, method, name = item
             params = None
-        res = time_request(path, method, name, params)
+        res = time_request(path, method, name, params, http=http)
         all_results.append(res)
         sym = "OK" if res["ok"] else "FAIL"
         err = f"  # {res['error']}" if res.get("error") else ""
@@ -158,7 +178,7 @@ def main():
         else:
             path, method, name = item
             params = None
-        res = time_request(path, method, name, params)
+        res = time_request(path, method, name, params, http=http)
         all_results.append(res)
         sym = "OK" if res["ok"] else "FAIL"
         err = f"  # {res['error']}" if res.get("error") else ""
