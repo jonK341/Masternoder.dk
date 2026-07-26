@@ -43,3 +43,11 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 - **`POST /api/exchange/control-board/run-fleet`** — optional JSON `{ "kind": "analytics" | "extended_profit" | "treasury" | "risk" | "winnable_pairs" }`; omit `kind` to tick all fleet kinds. Runs pair search when needed for winnable/analyst/extended lanes. Lighter than **Run all bots** (skips arbitrage paper, AI, cross-trade).
 - UI **Run fleet** button triggers the fleet-only tick.
 
+## Phase 5 — Fleet operations console
+
+- **`fleet_meta`** persists last fleet-only run (`last_run_at`, `last_run_kind`, `last_results` with per-kind `ok_count`/`bot_count`, rolling `history`).
+- Overview **`supervisor_fleet.health`** — bot counts, failed/never-ran telemetry; fleet roster cards respect kill-switch + supervisor pause (`enabled`).
+- **Orchestration** tab shows fleet step detail as `ok/total bots` when `run_all_bots` includes fleet kinds.
+- **Fleet ops** tab — health panel, per-kind run buttons, roster duplicate, recent fleet run history.
+- Ops smoke: `python3 scripts/mn2_supervisor_fleet_smoke.py --local` (optional `--kind risk`).
+

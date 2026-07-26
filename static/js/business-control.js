@@ -99,6 +99,82 @@
     });
   }
 
+  var FLEET_KIND_LABELS = {
+    analytics: "Profit Analyst",
+    extended_profit: "Extended Profit",
+    treasury: "Treasury",
+    risk: "Risk Officer",
+    winnable_pairs: "Winnable Pairs",
+  };
+
+  function renderFleetOps(fleet) {
+    var el = $("fleetOpsPanel");
+    if (!el) return;
+    fleet = fleet || {};
+    var health = fleet.health || {};
+    var meta = fleet.meta || {};
+    var lastAt = meta.last_run_at || health.last_fleet_run_at;
+    var head = lastAt
+      ? "Last fleet run " + new Date(lastAt).toLocaleString() + " · " + (meta.last_run_kind || "all") +
+        (meta.last_run_ok === false ? " · some kinds failed" : meta.last_run_ok ? " · ok" : "")
+      : "No fleet-only run yet — use Run fleet or buttons below.";
+    var stats =
+      "<div class='grid2' style='margin-top:10px'><div><strong style='font-size:12px'>Health</strong><p class='muted' style='margin:6px 0 0'>" +
+      (health.bot_count || 0) + " bots · " + (health.last_tick_failed_bots || 0) + " last tick failed · " +
+      (health.never_ran_bots || 0) + " never ran</p></div>" +
+      "<div><strong style='font-size:12px'>Mechanics</strong><p class='muted' style='margin:6px 0 0'>" +
+      (fleet.mechanics_count || 25) + " registered (M01–M25)</p></div></div>";
+    var rows = "";
+    var lr = meta.last_results || {};
+    Object.keys(lr).forEach(function (k) {
+      var r = lr[k] || {};
+      var detail = r.bot_count != null ? (r.ok_count + "/" + r.bot_count + " bots ok") : (r.success ? "ok" : "fail");
+      rows += "<tr><td>" + (FLEET_KIND_LABELS[k] || k) + "</td><td>" + detail + "</td><td>" + (r.error || "—") + "</td></tr>";
+    });
+    var hist = (meta.history || []).slice().reverse().slice(0, 8).map(function (h) {
+      return "<div class='muted'>" + (h.ran_at || "") + " · " + (h.kind || "all") + " · " + (h.ok ? "ok" : "fail") + "</div>";
+    }).join("");
+    el.innerHTML =
+      "<p class='muted'>" + head + "</p>" + stats +
+      "<table style='margin-top:12px'><thead><tr><th>Kind</th><th>Status</th><th>Error</th></tr></thead><tbody>" +
+      (rows || "<tr><td colspan='3'>No fleet run results yet.</td></tr>") + "</tbody></table>" +
+      (hist ? "<div style='margin-top:12px'><strong style='font-size:12px'>Recent fleet runs</strong>" + hist + "</div>" : "");
+  }
+
+  function runFleetKind(kind, btn) {
+    if (btn) btn.disabled = true;
+    status(kind ? "Running fleet: " + (FLEET_KIND_LABELS[kind] || kind) + "…" : "Running full supervisor fleet…");
+    var body = kind ? { kind: kind } : {};
+    api("/api/exchange/control-board/run-fleet", { method: "POST", body: body, timeoutMs: RUN_TIMEOUT_MS })
+      .then(function (res) {
+        if (btn) btn.disabled = false;
+        if (res.timedOut) {
+          status("Fleet run timed out — refresh shortly.", true);
+          load({ force: true, timeoutMs: 90000 });
+          return;
+        }
+        status(res.data && res.data.success ? "Fleet tick finished." : ("Fleet: " + ((res.data && res.data.error) || "partial fail")), !res.data || !res.data.success);
+        load({ force: true, timeoutMs: 90000 });
+      })
+      .catch(function () {
+        if (btn) btn.disabled = false;
+        status("Fleet run failed.", true);
+        load({ force: true, timeoutMs: 90000 });
+      });
+  }
+
+  function bindFleetRunButtons() {
+    var bar = $("fleetRunBar");
+    if (!bar || bar.getAttribute("data-bound")) return;
+    bar.setAttribute("data-bound", "1");
+    Array.prototype.forEach.call(bar.querySelectorAll("button[data-fleet-kind]"), function (b) {
+      b.addEventListener("click", function () {
+        var k = b.getAttribute("data-fleet-kind");
+        runFleetKind(k || null, b);
+      });
+    });
+  }
+
   function botTypeLabel(b) {
     if (b.type_label) return b.type_label;
     if (b.kind === "arbitrage_paper") return "Arbitrage";
@@ -111,8 +187,8 @@
     return "Cross-trade";
   }
 
-  function renderFleetRoster(fleet) {
-    var grid = $("fleetRoster");
+  function renderFleetRoster(fleet, containerId) {
+    var grid = $(containerId || "fleetRoster");
     if (!grid) return;
     grid.innerHTML = "";
     fleet = fleet || {};
@@ -242,7 +318,11 @@
     var lr = orch.last_results || {};
     Object.keys(lr).forEach(function (k) {
       var r = lr[k] || {};
-      rows += "<tr><td>" + k + "</td><td>" + (r.success ? "ok" : "fail") + "</td><td>" + (r.error || "—") + "</td></tr>";
+      var detail = r.success ? "ok" : "fail";
+      if (r.bot_count != null) {
+        detail = (r.ok_count != null ? r.ok_count : "?") + "/" + r.bot_count + " bots · " + detail;
+      }
+      rows += "<tr><td>" + (FLEET_KIND_LABELS[k] || k) + "</td><td>" + detail + "</td><td>" + (r.error || "—") + "</td></tr>";
     });
     var hist = (orch.history || []).slice().reverse().slice(0, 10).map(function (h) {
       return "<div class='muted'>" + (h.ran_at || "") + " · " + (h.ok ? "ok" : "fail") + " · " + (h.keys || []).join(", ") + "</div>";
@@ -264,6 +344,8 @@
       renderBots(d.bots || []);
       if (d.supervisor_fleet) {
         renderFleetRoster(d.supervisor_fleet);
+        renderFleetRoster(d.supervisor_fleet, "fleetRosterTab");
+        renderFleetOps(d.supervisor_fleet);
         var fs = $("fleetSummary");
         if (fs) {
           var fc = (d.supervisor_fleet.bots || []).length;
@@ -483,12 +565,13 @@
     if (name === "payout") loadPayout();
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
-    if (name === "orchestration" || name === "livepack") {
+    if (name === "orchestration" || name === "livepack" || name === "fleet") {
       if (lastOverview) {
         applyOverview(lastOverview);
       } else {
         load();
       }
+      if (name === "fleet") bindFleetRunButtons();
     }
   }
 
@@ -530,26 +613,10 @@
     var runFleetBtn = $("runFleet");
     if (runFleetBtn) {
       runFleetBtn.addEventListener("click", function () {
-        runFleetBtn.disabled = true;
-        status("Running supervisor fleet…");
-        api("/api/exchange/control-board/run-fleet", { method: "POST", body: {}, timeoutMs: RUN_TIMEOUT_MS })
-          .then(function (res) {
-            runFleetBtn.disabled = false;
-            if (res.timedOut) {
-              status("Fleet run timed out — refresh shortly.", true);
-              load({ force: true, timeoutMs: 90000 });
-              return;
-            }
-            status(res.data && res.data.success ? "Fleet tick finished." : ("Fleet: " + ((res.data && res.data.error) || "partial fail")), !res.data || !res.data.success);
-            load({ force: true, timeoutMs: 90000 });
-          })
-          .catch(function () {
-            runFleetBtn.disabled = false;
-            status("Fleet run failed.", true);
-            load({ force: true, timeoutMs: 90000 });
-          });
+        runFleetKind(null, runFleetBtn);
       });
     }
+    bindFleetRunButtons();
     $("kill").addEventListener("click", function () {
       if (!confirm("Toggle the global kill switch? This pauses/resumes ALL bots.")) return;
       api("/api/exchange/control-board/overview").then(function (res) {

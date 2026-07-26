@@ -33,6 +33,27 @@ def test_fleet_merge_into_controls(tmp_path, monkeypatch):
     assert len(ov["bots"]) == 23
 
 
+def test_fleet_ops_meta_on_tick(tmp_path, monkeypatch):
+    from backend.services import crypto_exchange_service as ex
+    from backend.services import trading_bots_control_service as ctl
+    from backend.services.exchange_supervisor_fleet_service import (
+        fleet_overview,
+        run_fleet_tick,
+    )
+
+    data = tmp_path / "crypto_exchange"
+    data.mkdir(parents=True)
+    monkeypatch.setattr(ex, "_DATA_DIR", str(data))
+    monkeypatch.setattr(ctl, "_CONTROL_PATH", str(data / "trading_bots_control.json"))
+
+    controls = ctl._load_controls()
+    run_fleet_tick(controls, kind="risk")
+    ov = fleet_overview(controls)
+    assert ov["health"]["bot_count"] == 23
+    assert ov["meta"].get("last_run_at")
+    assert ov["meta"].get("last_results", {}).get("risk")
+
+
 def test_fleet_bot_labels():
     from backend.services.exchange_supervisor_fleet_service import default_fleet_bots
 

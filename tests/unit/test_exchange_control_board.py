@@ -98,6 +98,23 @@ def test_control_board_bot_supervisor_kill_run(board_client):
     assert "results" in run2.get_json()
 
 
+def test_control_board_run_fleet(board_client, monkeypatch):
+    client, headers, _ctl = board_client
+    monkeypatch.setenv("EXCHANGE_ADMIN_KEY", "board-test-key")
+    res = client.post(
+        "/api/exchange/control-board/run-fleet",
+        headers=headers,
+        json={"kind": "risk"},
+    )
+    assert res.status_code == 200
+    body = res.get_json()
+    assert "success" in body
+    assert "results" in body
+    ov = client.get("/api/exchange/control-board/overview", headers=headers).get_json()
+    sf = ov.get("supervisor_fleet") or {}
+    assert sf.get("health", {}).get("bot_count") == 23
+
+
 def test_control_board_bot_missing_id(board_client):
     client, headers, _ctl = board_client
     res = client.post("/api/exchange/control-board/bot", headers=headers, json={"enabled": True})

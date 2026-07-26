@@ -103,6 +103,7 @@
         <div class="tab" data-tab="payout">Payout · PayPal</div>
         <div class="tab" data-tab="livepack">Live pack</div>
         <div class="tab" data-tab="orchestration">Orchestration</div>
+        <div class="tab" data-tab="fleet">Fleet ops</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
@@ -205,6 +206,26 @@
         </div>
       </div>
 
+      <div class="tabpane" id="pane-fleet">
+        <div class="section">
+          <h2>Supervisor fleet — operations</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. Results persist in <code>fleet_meta</code> and per-bot <code>last_run_*</code>.</p>
+          <div id="fleetOpsPanel" class="muted">Loading…</div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap" id="fleetRunBar">
+            <button class="btn small primary" data-fleet-kind="">Run all fleet kinds</button>
+            <button class="btn small" data-fleet-kind="winnable_pairs">Winnable</button>
+            <button class="btn small" data-fleet-kind="analytics">Profit analyst</button>
+            <button class="btn small" data-fleet-kind="extended_profit">Extended</button>
+            <button class="btn small" data-fleet-kind="treasury">Treasury</button>
+            <button class="btn small" data-fleet-kind="risk">Risk</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Fleet roster</h2>
+          <div id="fleetRosterTab"></div>
+        </div>
+      </div>
+
       <div class="tabpane" id="pane-watch">
         <div class="section">
           <h2>Live Watch — trust & activations (all users)</h2>
@@ -219,6 +240,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260726f"></script>
+  <script src="/static/js/business-control.js?v=20260726g"></script>
 </body>
 </html>

@@ -135,6 +135,9 @@ def _record_orchestration(controls: Dict[str, Any], results: Dict[str, Any]) -> 
             "success": ok,
             "error": res.get("error"),
         }
+        if res.get("bot_count") is not None:
+            summary[key]["bot_count"] = res.get("bot_count")
+            summary[key]["ok_count"] = res.get("ok_count")
     orch["last_run_ok"] = all_ok
     orch["last_results"] = summary
     history = list(orch.get("history") or [])
@@ -502,7 +505,17 @@ def business_overview(*, light: bool = True) -> Dict[str, Any]:
     try:
         from backend.services.exchange_supervisor_fleet_service import fleet_overview
 
-        extras["supervisor_fleet"] = fleet_overview(controls)
+        sf = fleet_overview(controls)
+        for fb in sf.get("bots") or []:
+            fb["enabled"] = _effective_enabled(
+                {
+                    "id": fb.get("id"),
+                    "supervisor": fb.get("supervisor"),
+                    "config_enabled": bool(fb.get("enabled", True)),
+                },
+                controls,
+            )
+        extras["supervisor_fleet"] = sf
     except Exception:
         pass
 

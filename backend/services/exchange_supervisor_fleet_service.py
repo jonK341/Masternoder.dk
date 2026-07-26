@@ -356,6 +356,40 @@ def run_fleet_for_kind(
     }
 
 
+def _record_fleet_ops(
+    controls: Dict[str, Any],
+    results: Dict[str, Any],
+    *,
+    kind: Optional[str],
+    ok: bool,
+    ran_at: str,
+) -> None:
+    """Persist last fleet-only tick for Business Control Phase 5 ops console."""
+    meta = controls.setdefault("fleet_meta", {})
+    meta["last_run_at"] = ran_at
+    meta["last_run_kind"] = kind or "all"
+    meta["last_run_ok"] = bool(ok)
+    per_kind: Dict[str, Any] = {}
+    for key, res in results.items():
+        if not isinstance(res, dict):
+            continue
+        per_kind[key] = {
+            "success": bool(res.get("success")),
+            "ok_count": res.get("ok_count"),
+            "bot_count": res.get("bot_count"),
+            "error": res.get("error"),
+        }
+    meta["last_results"] = per_kind
+    history = list(meta.get("history") or [])
+    history.append({
+        "ran_at": ran_at,
+        "kind": kind or "all",
+        "ok": bool(ok),
+        "kinds": list(per_kind.keys()),
+    })
+    meta["history"] = history[-30:]
+
+
 def run_fleet_tick(
     controls: Dict[str, Any],
     *,
@@ -373,9 +407,11 @@ def run_fleet_tick(
         results[k] = run_fleet_for_kind(
             controls, k, hot_symbols=hot_symbols, pair_search=pair_search,
         )
-    _save_fleet_controls(controls)
+    ran_at = _iso()
     ok = all((r or {}).get("success") for r in results.values())
-    return {"success": ok, "results": results, "ran_at": _iso()}
+    _record_fleet_ops(controls, results, kind=kind, ok=ok, ran_at=ran_at)
+    _save_fleet_controls(controls)
+    return {"success": ok, "results": results, "ran_at": ran_at}
 
 
 def _save_fleet_controls(controls: Dict[str, Any]) -> None:
@@ -387,9 +423,20 @@ def _save_fleet_controls(controls: Dict[str, Any]) -> None:
 
 def fleet_overview(controls: Dict[str, Any]) -> Dict[str, Any]:
     merge_fleet_into_controls(controls)
+    bots = list(controls.get("fleet_bots") or [])
+    failing = sum(1 for b in bots if b.get("last_run_at") and b.get("last_run_ok") is False)
+    never = sum(1 for b in bots if not b.get("last_run_at"))
+    meta = dict(controls.get("fleet_meta") or {})
     return {
         "mechanics": FLEET_MECHANICS,
         "mechanics_count": len(FLEET_MECHANICS),
-        "bots": controls.get("fleet_bots") or [],
-        "meta": controls.get("fleet_meta") or {},
+        "bots": bots,
+        "meta": meta,
+        "health": {
+            "bot_count": len(bots),
+            "last_tick_failed_bots": failing,
+            "never_ran_bots": never,
+            "last_fleet_run_at": meta.get("last_run_at"),
+            "last_fleet_run_ok": meta.get("last_run_ok"),
+        },
     }
