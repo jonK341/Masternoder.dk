@@ -519,6 +519,17 @@ def exchange_fleet_progress_monitor_public():
     return jsonify(public_fleet_progress_monitor(light=light))
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-progress-monitor/visual", methods=["GET"])
+def exchange_fleet_progress_monitor_visual():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_monitor_visual_service import visual_payload
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    theme_id = (request.args.get("theme") or "").strip() or None
+    return jsonify(visual_payload(theme_id=theme_id))
+
+
 @crypto_exchange_bp.route("/api/exchange/fleet-stream/composer", methods=["GET"])
 def exchange_fleet_stream_composer():
     from backend.services.fleet_stream_composer_service import list_chapters_public

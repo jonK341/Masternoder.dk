@@ -5,5 +5,14 @@
   "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
   "youtube_embed_domain": "https://www.youtube.com",
   "chat_poll_ms": 4000,
-  "reward_events_enabled": true
+  "reward_events_enabled": true,
+  "youtube_live_setup": [
+    "In YouTube Studio go to Create → Go live → choose Stream (or use OBS with your stream key).",
+    "Start the broadcast so the stream status is LIVE (not just scheduled).",
+    "Open the live watch page in a browser; the URL is youtube.com/watch?v=VIDEO_ID — copy the value after v=.",
+    "On the server edit /var/www/html/data/fleet_stream_live.json and set youtube_video_id to that ID (letters, numbers, hyphen, underscore only).",
+    "Redeploy or save the file; hard-refresh /fleet-progress-monitor/ and the frontpage chat rail — the YouTube player loads the embed for that video ID.",
+    "For premieres, use the scheduled video ID before go-live; swap to the live broadcast ID when YouTube switches to live.",
+    "Never put RTMP stream keys in this JSON — only the public video ID."
+  ]
 }

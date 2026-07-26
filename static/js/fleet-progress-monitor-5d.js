@@ -25,6 +25,7 @@
     extraNodes: [],
     imgCache: {},
     hotBotIndex: 0,
+    encodedScroll: 0,
   };
 
   var DEFAULT_BOT_AVATAR = "/static/img/fleet/default-bot.svg";
@@ -516,6 +517,82 @@
     return this.tick();
   };
 
+  function themeColors() {
+    if (window.F5MonitorVisual && window.F5MonitorVisual.getTheme) {
+      return window.F5MonitorVisual.getTheme();
+    }
+    return {
+      primary: "#5dffb0",
+      secondary: "#00d4ff",
+      accent: "#ff64ff",
+      arc_outer: "rgba(0,212,255,0.28)",
+      arc_inner: "rgba(255,100,255,0.35)",
+      encoded_tint: "rgba(93,255,176,0.12)",
+    };
+  }
+
+  function hexToRgb(hex) {
+    var h = (hex || "#5dffb0").replace("#", "");
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function drawEncodedBackground(ctx, w, h, padR) {
+    var pool = window.F5MonitorVisual && window.F5MonitorVisual.getEncodedPool ? window.F5MonitorVisual.getEncodedPool() : [];
+    if (!pool.length) return;
+    var th = themeColors();
+    state.encodedScroll = (state.encodedScroll + 0.35) % 10000;
+    var usableW = w - padR - 24;
+    ctx.save();
+    ctx.font = "9px ui-monospace, monospace";
+    ctx.textBaseline = "top";
+    var cols = Math.ceil(usableW / 52);
+    var rows = Math.ceil(h / 14);
+    for (var row = 0; row < rows; row++) {
+      for (var col = 0; col < cols; col++) {
+        var idx = (row * cols + col + Math.floor(state.encodedScroll / 3)) % pool.length;
+        var snippet = pool[idx] || "";
+        if (snippet.length > 18) snippet = snippet.slice(0, 18);
+        var alpha = 0.04 + ((row + col) % 5) * 0.012;
+        var rgb = hexToRgb(th.primary);
+        ctx.fillStyle = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + alpha + ")";
+        ctx.fillText(snippet, 8 + col * 52, (row * 14 + (state.encodedScroll % 14)) % (h + 14) - 14);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawCenterRings(ctx, w, h, usableW) {
+    var th = themeColors();
+    var cx = w * 0.42;
+    var cy = h * 0.45;
+    var rad = Math.min(usableW, h) * 0.28;
+    var inner = rad * 0.62;
+
+    ctx.strokeStyle = th.arc_outer || "rgba(0,212,255,0.28)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, state.w, state.w + Math.PI * 1.15);
+    ctx.stroke();
+
+    ctx.strokeStyle = th.arc_inner || "rgba(255,100,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 10]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, -state.w * 1.25, -state.w * 1.25 - Math.PI * 1.08, true);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = th.accent || "#ff64ff";
+    ctx.globalAlpha = 0.18;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, (rad + inner) * 0.5, -state.w * 0.85, -state.w * 0.85 + Math.PI * 2, true);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
   function resizeCanvas() {
     var c = $("f5-canvas");
     if (!c) return;
@@ -540,6 +617,12 @@
 
     ctx.fillStyle = "rgba(3, 6, 15, 0.4)";
     ctx.fillRect(0, 0, w, h);
+    drawEncodedBackground(ctx, w, h, padR);
+
+    var th = themeColors();
+    var pRgb = hexToRgb(th.primary);
+    var sRgb = hexToRgb(th.secondary);
+    var aRgb = hexToRgb(th.accent);
 
     var bots = state.bots.length ? state.bots : [{ label: "…", level: 1, xp_progress_pct: 0, kind: "fleet" }];
     var kinds = {};
@@ -566,9 +649,9 @@
       state.botPositions[i] = { px: px, py: py, r: r };
 
       var grd = ctx.createRadialGradient(px, py, 0, px, py, r * 2.4);
-      grd.addColorStop(0, "rgba(93,255,176," + (0.35 + v * 0.5) + ")");
-      grd.addColorStop(0.55, "rgba(0,212,255," + (0.12 + z * 0.28) + ")");
-      grd.addColorStop(1, "rgba(255,100,255,0)");
+      grd.addColorStop(0, "rgba(" + pRgb.r + "," + pRgb.g + "," + pRgb.b + "," + (0.35 + v * 0.5) + ")");
+      grd.addColorStop(0.55, "rgba(" + sRgb.r + "," + sRgb.g + "," + sRgb.b + "," + (0.12 + z * 0.28) + ")");
+      grd.addColorStop(1, "rgba(" + aRgb.r + "," + aRgb.g + "," + aRgb.b + ",0)");
 
       ctx.beginPath();
       ctx.fillStyle = grd;
@@ -579,7 +662,7 @@
         drawBotPortrait(ctx, b, px, py, r, i);
       }
 
-      ctx.strokeStyle = "rgba(93,255,176,0.28)";
+      ctx.strokeStyle = "rgba(" + pRgb.r + "," + pRgb.g + "," + pRgb.b + ",0.28)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(px, py);
@@ -587,7 +670,7 @@
       ctx.stroke();
 
       if (i === state.hotBotIndex) {
-        ctx.strokeStyle = "rgba(255,100,255,0.5)";
+        ctx.strokeStyle = "rgba(" + aRgb.r + "," + aRgb.g + "," + aRgb.b + ",0.5)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(px, py, r + 6 + Math.sin(state.w * 2) * 2, 0, Math.PI * 2);
@@ -633,11 +716,7 @@
       }
     });
 
-    ctx.strokeStyle = "rgba(0,212,255,0.22)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(w * 0.42, h * 0.45, Math.min(usableW, h) * 0.28, state.w, state.w + Math.PI * 1.15);
-    ctx.stroke();
+    drawCenterRings(ctx, w, h, usableW);
 
     requestAnimationFrame(drawFrame);
   }
@@ -702,6 +781,12 @@
       sel.addEventListener("change", function () {
         state.leadSpeakerId = sel.value;
         if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.setLeadSpeaker(sel.value);
+      });
+    }
+    var themeNext = $("f5-theme-next");
+    if (themeNext && window.F5MonitorVisual) {
+      themeNext.addEventListener("click", function () {
+        window.F5MonitorVisual.cycleTheme(1);
       });
     }
   }
