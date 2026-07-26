@@ -7,6 +7,7 @@
   var API_CONTROLS = "/api/exchange/youtube-stream/controls";
   var API_ASSIGN = "/api/exchange/youtube-stream/assign-agent";
   var API_ACTION = "/api/exchange/youtube-stream/agent-action";
+  var API_START = "/api/exchange/fleet-stream/start-youtube";
 
   function $(id) {
     return document.getElementById(id);
@@ -45,8 +46,17 @@
     var checklist = data.checklist || [];
     var skills = data.skill_set || [];
 
+    var enc = data.encoder || {};
+    var encSteps = (enc.studio_edit_da || []).concat(enc.youtube_live_setup || []).slice(0, 8);
+
     el.innerHTML =
       '<div class="yt-stream-panel">' +
+      '<div class="yt-stream-encoder-warn">' +
+      "<strong>Ingen data i Studio?</strong> " +
+      esc(
+        "Rediger (titel) går ikke live alene — start OBS med streamnøgle + RTMP nedenfor."
+      ) +
+      "</div>" +
       '<div class="yt-stream-head">' +
       '<span class="yt-stream-kicker">▶️ YouTube agent</span>' +
       '<strong>' + esc(data.primary_agent || "youtube_stream_agent") + '</strong>' +
@@ -84,6 +94,30 @@
       esc((data.youtube && data.youtube.channel_url) || "https://youtube.com/@MasterNoder") +
       '" target="_blank" rel="noopener">Channel</a>' +
       "</div>" +
+      '<div class="yt-stream-encoder">' +
+      '<p class="yt-stream-label">OBS / RTMP (fix “Ingen data”)</p>' +
+      '<button type="button" class="yt-stream-btn primary" data-copy-url="' +
+      esc(enc.rtmp_server || "rtmp://a.rtmp.youtube.com/live2") +
+      '">Copy RTMP server</button>' +
+      '<button type="button" class="yt-stream-btn" data-copy-url="' +
+      esc(enc.obs_browser_url || mon.stream_layout || "") +
+      '">Copy browser source URL</button>' +
+      "<p class=\"yt-stream-meta\">" +
+      esc(enc.stream_key_note || "") +
+      " · " +
+      esc(enc.resolution || "1920x1080") +
+      " · " +
+      esc(String(enc.fps || 30)) +
+      "fps · ~" +
+      esc(String(enc.bitrate_kbps || 4500)) +
+      " kbps</p>" +
+      '<ul class="yt-stream-checklist yt-stream-encoder-steps">' +
+      encSteps
+        .map(function (line) {
+          return "<li>" + esc(line) + "</li>";
+        })
+        .join("") +
+      "</ul></div>" +
       '<ul class="yt-stream-checklist">' +
       checklist.map(function (line) {
         return "<li>" + esc(line) + "</li>";
@@ -115,6 +149,7 @@
         .join("") +
       "</div>" +
       '<div class="yt-stream-actions">' +
+      '<button type="button" class="yt-stream-btn primary" id="yt-stream-start">Start stream (agent)</button>' +
       '<button type="button" class="yt-stream-btn primary" id="yt-stream-assign">Assign stream agents</button>' +
       '<button type="button" class="yt-stream-btn" id="yt-stream-preflight">Preflight URLs</button>' +
       '<button type="button" class="yt-stream-btn" id="yt-stream-narration">Narration line</button>' +
@@ -137,6 +172,37 @@
     });
 
     var assignBtn = el.querySelector("#yt-stream-assign");
+    var startBtn = el.querySelector("#yt-stream-start");
+    if (startBtn) {
+      startBtn.addEventListener("click", function () {
+        startBtn.disabled = true;
+        fetch(API_START, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var ok = d.success && (d.session || d).assign;
+            var aok = (d.session && d.session.assign && d.session.assign.success) || d.assign;
+            setStatus(
+              el,
+              aok || d.success
+                ? "Agent started — now Start streaming in OBS, then Go live in Studio."
+                : d.error || "Start failed"
+            );
+          })
+          .catch(function () {
+            setStatus(el, "Start stream request failed.");
+          })
+          .finally(function () {
+            startBtn.disabled = false;
+          });
+      });
+    }
     if (assignBtn) {
       assignBtn.addEventListener("click", function () {
         assignBtn.disabled = true;

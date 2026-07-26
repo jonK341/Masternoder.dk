@@ -101,7 +101,9 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
         or "https://youtube.com/@MasterNoder"
     )
     obs_cfg = live.get("obs") if isinstance(live.get("obs"), dict) else {}
+    rtmp = live.get("youtube_rtmp") if isinstance(live.get("youtube_rtmp"), dict) else {}
     stream_meta = live.get("stream") if isinstance(live.get("stream"), dict) else {}
+    studio_da = live.get("studio_edit_da") if isinstance(live.get("studio_edit_da"), list) else []
     return {
         "success": True,
         "primary_agent": cfg.get("primary_agent") or "youtube_stream_agent",
@@ -109,6 +111,18 @@ def stream_controls(*, base_url: Optional[str] = None) -> Dict[str, Any]:
         "skill_set": cfg.get("skill_set") or [],
         "obs_scenes": cfg.get("obs_scenes") or [],
         "checklist": cfg.get("checklist") or [],
+        "encoder": {
+            "waiting_for_data_label": "Ingen data",
+            "rtmp_server": rtmp.get("server_url") or "rtmp://a.rtmp.youtube.com/live2",
+            "rtmp_backup": rtmp.get("backup_server_url") or "rtmp://b.rtmp.youtube.com/live2?backup=1",
+            "obs_browser_url": _abs(base, obs_cfg.get("browser_source_url") or "/fleet-progress-monitor/?mode=stream"),
+            "resolution": obs_cfg.get("resolution") or "1920x1080",
+            "fps": obs_cfg.get("fps") or 30,
+            "bitrate_kbps": obs_cfg.get("recommended_bitrate_kbps") or 4500,
+            "stream_key_note": "Copy stream key from Studio → Streamindstillinger (never paste in chat or git).",
+            "studio_edit_da": studio_da,
+            "youtube_live_setup": live.get("youtube_live_setup") or [],
+        },
         "live_broadcast": {
             "title": stream_meta.get("title") or "",
             "video_id": yt_urls.get("video_id") or "",

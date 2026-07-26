@@ -43,7 +43,29 @@
   vertical-align: middle;
 }
 
-.yt-stream-urls,
+.yt-stream-encoder-warn {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 180, 80, 0.45);
+  background: rgba(255, 140, 0, 0.12);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.yt-stream-encoder {
+  margin: 8px 0 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  background: rgba(0, 40, 60, 0.35);
+}
+
+.yt-stream-encoder-steps {
+  max-height: 120px;
+  overflow: auto;
+}
+
 .yt-stream-actions {
   display: flex;
   flex-wrap: wrap;
