@@ -39,9 +39,15 @@ def run_preflight(*, light_overview: bool = True) -> Dict[str, Any]:
             checks, "fleet_count", len(fleet_bots) == 23,
             f"{len(fleet_bots)} fleet bots (expected 23)",
         )
+        mech = int(sf.get("mechanics_count") or 0)
         all_ok &= _check(
-            checks, "fleet_mechanics", int(sf.get("mechanics_count") or 0) == 25,
-            "M01–M25 registry",
+            checks, "fleet_mechanics", mech >= 27,
+            f"M01–M{mech:02d} registry" if mech else "M01–M27 registry",
+        )
+        all_ok &= _check(
+            checks, "fleet_progression",
+            bool((sf.get("progression_summary") or {}).get("fleet_total_xp") is not None),
+            "progression_summary on fleet",
         )
         health = sf.get("health") or {}
         all_ok &= _check(
@@ -105,8 +111,28 @@ def run_http_preflight(base_url: str, admin_key: str, *, timeout: float = 60.0) 
             len(sf.get("bots") or []) == 23,
             f"fleet bots={len(sf.get('bots') or [])}",
         )
+        all_ok &= _check(
+            checks, "http_fleet_progression",
+            int((sf.get("progression_summary") or {}).get("fleet_commander_level") or 0) >= 1,
+            "fleet commander level present",
+        )
     except Exception as exc:
         all_ok = False
         _check(checks, "http_overview", False, str(exc)[:200])
+
+    try:
+        import urllib.request
+
+        req = urllib.request.Request(base + "/api/exchange/fleet-progress-monitor/public?light=1")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            mon = json.loads(resp.read().decode())
+        all_ok &= _check(
+            checks, "http_fleet_monitor_public",
+            bool(mon.get("success")) and bool(mon.get("casino")) and bool(mon.get("agents")),
+            "public 5D monitor",
+        )
+    except Exception as exc:
+        all_ok = False
+        _check(checks, "http_fleet_monitor_public", False, str(exc)[:200])
 
     return {"success": all_ok, "checks": checks, "base": base}
