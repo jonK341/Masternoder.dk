@@ -11,7 +11,8 @@
             '/explorer': 'explorer', '/shop': 'shop', '/compendium': 'compendium', '/rights-law': 'rights-law',
             '/camgirls': 'camgirls', '/battle': 'battle', '/game': 'game', '/casino': 'casino',
             '/quests': 'quests', '/market': 'market', '/starmap25': 'starmap25', '/profile': 'profile',
-            '/debugger': 'debugger', '/agent_support': 'agent_support', '/hosting': 'hosting', '/podcast': 'podcast'
+            '/debugger': 'debugger', '/agent_support': 'agent_support', '/hosting': 'hosting', '/podcast': 'podcast',
+            '/streamer': 'streamer', '/fleet-progress-monitor': 'fleet-progress-monitor'
         };
         siteId = map[path] || '';
     }

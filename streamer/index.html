@@ -8,7 +8,8 @@
   <link rel="stylesheet" href="/static/css/modern-design-system.css">
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-  <link rel="stylesheet" href="/static/css/streamer-hub.css?v=20260726d">
+  <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260726e">
+  <link rel="stylesheet" href="/static/css/streamer-hub.css?v=20260726e">
 </head>
 <body class="streamer-body">
   <div id="navigation-toolbar"></div>
@@ -25,11 +26,23 @@
         <button type="button" class="streamer-btn" id="streamer-copy-clean">Copy clean stream URL</button>
         <a class="streamer-btn" href="/fleet-stream/" target="_blank" rel="noopener">Open full stream</a>
         <a class="streamer-btn" href="/camgirls/" target="_blank" rel="noopener">Camgirl hosts</a>
+        <a class="streamer-btn" href="/podcast#episodes" target="_blank" rel="noopener">Podcast</a>
         <a class="streamer-btn" href="/business-control/" target="_blank" rel="noopener">Business Control</a>
         <button type="button" class="streamer-btn" id="streamer-toggle-chrome" aria-pressed="false">OBS hide bar</button>
       </div>
     </div>
     <div class="streamer-hosts" id="streamer-hosts" aria-label="Camgirl co-hosts"></div>
+    <aside class="streamer-podcast" id="streamer-podcast" aria-label="Podcast co-broadcast">
+      <div class="streamer-podcast-head">
+        <span class="streamer-podcast-kicker">🎙️ Podcast co-broadcast</span>
+        <p class="streamer-meta" id="streamer-podcast-meta">Loading verified episode…</p>
+      </div>
+      <div class="streamer-podcast-controls">
+        <audio id="streamer-podcast-audio" controls preload="none" class="streamer-podcast-audio"></audio>
+        <a class="streamer-btn" href="/podcast#news" target="_blank" rel="noopener">News &amp; komment</a>
+        <button type="button" class="streamer-btn" id="streamer-podcast-queue" hidden>Queue for stream</button>
+      </div>
+    </aside>
   </header>
 
   <main class="streamer-main">
@@ -44,6 +57,7 @@
   </main>
 
   <script src="/static/js/navigation-toolbar.js" defer></script>
-  <script src="/static/js/streamer-hub.js?v=20260726d" defer></script>
+  <script src="/static/js/podcast-portal-lines.js?v=20260726e" data-site="streamer" defer></script>
+  <script src="/static/js/streamer-hub.js?v=20260726e" defer></script>
 </body>
 </html>

@@ -48,6 +48,26 @@ def test_platform_news_announces_wallet_staking_pages():
     assert "staking" in item["summary"].lower()
 
 
+def test_platform_news_streamer_podcast_story():
+    data = json.loads((ROOT / "data/platform_news.json").read_text(encoding="utf-8"))
+    items = data.get("items") or []
+    story = next((i for i in items if i.get("id") == "news-streamer-podcast-5d-monitor-20260726"), None)
+    assert story is not None
+    assert story["href"] == "/streamer/"
+    assert "podcast" in story["summary"].lower()
+
+
+def test_frontpage_includes_game_hub_stylesheet():
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert "game-hub-panel.css" in index
+
+
+def test_podcast_portal_lines_include_streamer():
+    data = json.loads((ROOT / "data/podcast_portal_lines.json").read_text(encoding="utf-8"))
+    sites = data.get("sites") or []
+    assert any(s.get("id") == "streamer" for s in sites)
+
+
 def test_reader_launcher_stylesheet_exists():
     assert (ROOT / "static/css/calm-reader.css").is_file()
 

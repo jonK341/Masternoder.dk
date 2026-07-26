@@ -6,6 +6,7 @@
 
   var MONITOR_API = "/api/exchange/fleet-progress-monitor/public?light=1";
   var PERFORMERS_API = "/api/camgirls/performers";
+  var EPISODES_API = "/api/podcast/episodes";
 
   function $(id) {
     return document.getElementById(id);
@@ -123,10 +124,51 @@
     }
   }
 
+  function loadPodcast() {
+    var meta = $("streamer-podcast-meta");
+    var audio = $("streamer-podcast-audio");
+    var queueBtn = $("streamer-podcast-queue");
+    if (!audio) return;
+
+    fetch(EPISODES_API, { credentials: "same-origin" })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (d) {
+        var eps = (d && d.episodes) || [];
+        if (!eps.length) {
+          if (meta) meta.textContent = "No episodes yet — open Podcast to generate.";
+          return;
+        }
+        var ep = eps[0];
+        var playUrl = ep.audio_play_url || ep.audio_url || ("/api/podcast/episodes/" + ep.id + "/audio");
+        audio.src = playUrl;
+        if (meta) {
+          meta.textContent =
+            (ep.title || "Latest episode") +
+            (ep.channel_name ? " · " + ep.channel_name : "") +
+            " — verified sound";
+        }
+        if (queueBtn) {
+          queueBtn.hidden = false;
+          queueBtn.onclick = function () {
+            try {
+              audio.play();
+            } catch (_) {}
+            setStatus("Podcast queued — audio plays alongside the 5D monitor.");
+          };
+        }
+      })
+      .catch(function () {
+        if (meta) meta.textContent = "Podcast API offline — use /podcast for full hub.";
+      });
+  }
+
   function init() {
     if (obsMode) document.body.classList.add("streamer-obs");
     bindChrome();
     loadHosts();
+    loadPodcast();
     loadMonitorSummary();
     setInterval(loadMonitorSummary, 60000);
   }

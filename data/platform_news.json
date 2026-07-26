@@ -2,6 +2,16 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "news-streamer-podcast-5d-monitor-20260726",
+      "title": "Streamer hub: 5D fleet monitor + podcast co-broadcast",
+      "summary": "The new /streamer/ hub embeds the live 5D fleet progress monitor for OBS and YouTube, pairs Camgirl co-hosts with verified podcast audio, and links platform news comments for MN2 rewards.",
+      "date": "2026-07-26",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/streamer/",
+      "featured": true
+    },
+    {
       "id": "news-page-portal-wallet-staking-20260706",
       "title": "Portal cleanup: wallets and staking pages are live",
       "summary": "Wallets, staking leaderboard, and staking teams now have first-class pages in the main portal with versioned uWSGI page serving instead of missing-page fallbacks.",

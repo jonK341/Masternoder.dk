@@ -34,6 +34,50 @@
   top: 0;
 }
 
+.streamer-body.streamer-obs .streamer-podcast {
+  display: none;
+}
+
+.streamer-podcast {
+  max-width: 1400px;
+  margin: 12px auto 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 167, 255, 0.28);
+  background: rgba(8, 12, 24, 0.55);
+}
+
+.streamer-podcast-head {
+  margin-bottom: 8px;
+}
+
+.streamer-podcast-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c4a7ff;
+}
+
+.streamer-podcast-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.streamer-podcast-audio {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 480px;
+  height: 36px;
+}
+
+.streamer-chrome .podcast-portal-strip {
+  max-width: 1400px;
+  margin: 10px auto 0;
+}
+
 .streamer-chrome-inner {
   max-width: 1400px;
   margin: 0 auto;

@@ -327,6 +327,7 @@
         { href: '/quests', label: 'Quests', icon: '📜', tags: ['progress'] },
         { href: '/trophies', label: 'Trophies', icon: '🏆', tags: ['collect'] },
         { href: '/agents', label: 'AI Agents', icon: '🤖', tags: ['agents'] },
+        { href: '/streamer/', label: 'Streamer', icon: '📺', tags: ['read', 'evening'] },
         { href: '/podcast', label: 'Podcast', icon: '🎙️', tags: ['read'] },
         { href: '/news', label: 'News', icon: '📰', tags: ['read'] },
         { href: '/compendium/?calm=1', label: 'Library', icon: '📖', tags: ['read'] },

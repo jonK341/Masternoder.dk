@@ -111,5 +111,6 @@ Uploads Business Control HTML/CSS/JS, control-board services, fleet + preflight,
 - **`FLEET_PROGRESS_MONITOR_PUBLIC`** (default on); **`FLEET_MONITOR_EMBED_TOKEN`** optional for `?embed=1` API calls.
 - Page **`/fleet-progress-monitor/`** — canvas 5D projection, opt-in Web Audio + speech narrator, `?mode=stream` for YouTube layout.
 - **`/streamer/`** — broadcast hub: iframe to latest stream monitor, Camgirl co-host strip, copy OBS URL (`?obs=1` hides chrome). Alias **`/fleet-stream/`** → stream layout only.
+- Podcast co-broadcast on streamer: latest verified episode audio + portal strip; discuss launches via platform news.
 - Homepage embed section loads stream iframe + summary pill.
 - Stream merges **fleet**, **casino** (anonymized wins + daily stats), and **agents** (ability tracker + casino spectator lines).

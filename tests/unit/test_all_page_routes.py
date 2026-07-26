@@ -69,6 +69,7 @@ def test_streamer_hub_embeds_fleet_monitor():
     body = response.get_data(as_text=True)
     assert "Streamer hub" in body
     assert "/fleet-progress-monitor/?mode=stream" in body
+    assert "streamer-podcast" in body
 
 
 def test_wallet_and_staking_pages_are_first_class():
