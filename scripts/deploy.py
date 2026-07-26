@@ -799,6 +799,7 @@ MANIFESTS = {
         "backend/services/exchange_profit_pair_search_service.py",
         "backend/services/exchange_winnable_pairs_service.py",
         "backend/routes/crypto_exchange_routes.py",
+        "backend/routes/all_page_routes.py",
         "docs/BUSINESS_CONTROL_PHASES.md",
         "scripts/mn2_business_control_activate.py",
         "scripts/mn2_business_control_preflight.py",

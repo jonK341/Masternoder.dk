@@ -50,7 +50,7 @@ PAGES = [
     'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'wallets', 'podcast', 'business-control',
+    'wallets', 'podcast', 'business-control', 'fleet-progress-monitor',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.
@@ -237,6 +237,13 @@ def create_page_route(page_name):
 # Create routes for all pages
 for page in PAGES:
     create_page_route(page)
+
+
+@all_page_bp.route('/fleet-stream', methods=['GET'], strict_slashes=False)
+@all_page_bp.route('/fleet-stream/', methods=['GET'])
+def fleet_progress_monitor_youtube_layout():
+    """Bookmark-friendly URL for OBS / YouTube (same page as ?mode=stream)."""
+    return redirect('/fleet-progress-monitor/?mode=stream', code=302)
 
 
 @all_page_bp.route('/casino', methods=['GET'])
