@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726i">
   <link rel="stylesheet" href="/static/css/fleet-stream-chat.css?v=20260726n">
   <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726i">
-  <link rel="stylesheet" href="/static/css/youtube-stream-controls.css?v=20260726n">
+  <link rel="stylesheet" href="/static/css/fleet-stream-geo.css?v=20260726p">
 </head>
 <body class="f5-body">
   <div id="navigation-toolbar" class="f5-nav-toolbar"></div>
@@ -39,6 +39,7 @@
         <button type="button" class="f5-btn" id="f5-theme-next" title="Next theme">Theme →</button>
         <a class="f5-btn" href="/streamer/">Streamer hub</a>
         <a class="f5-btn" href="?mode=stream">YouTube layout</a>
+        <button type="button" class="f5-btn primary" id="f5-go-live" data-stream-only="1" hidden title="Assign YouTube stream agents and start GPS/GPRS">Go live</button>
         <a class="f5-btn f5-home-link" href="/">Home</a>
       </div>
       <div id="f5-youtube-stream" class="f5-youtube-dock" data-youtube-stream-mount data-stream-only="1" hidden></div>
@@ -56,6 +57,7 @@
           </div>
           <div class="f5-speaker-dock" id="f5-speakers" aria-live="polite"></div>
           <div class="f5-hud-ticker"><span id="f5-ticker-text">Connecting to fleet telemetry…</span></div>
+          <div class="f5-hud-geo" id="f5-geo-hud" aria-live="polite">GPS · GPRS linking…</div>
           <div class="f5-voice-line" id="f5-voice-line">Voice off — enable Camgirl voice for live commentary (opt-in).</div>
         </div>
       </section>
@@ -73,6 +75,10 @@
       <article class="f5-panel">
         <h2>Fleet activity</h2>
         <div id="f5-activity">Loading…</div>
+      </article>
+      <article class="f5-panel f5-geo-panel">
+        <h2>GPS · GPRS live <span class="f5-geo-hud-inline" id="f5-geo-hud-title">real-time</span></h2>
+        <div id="f5-geo-panel" class="f5-geo-panel-body">Loading geo telemetry…</div>
       </article>
       <article class="f5-panel">
         <h2>Bot levels (public)</h2>
@@ -94,7 +100,8 @@
   <script src="/static/js/fleet-stream-chat.js?v=20260726n" defer></script>
   <script src="/static/js/fleet-monitor-visual.js?v=20260726m" defer></script>
   <script src="/static/js/camgirls-stream-voice.js?v=20260726j" defer></script>
-  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726m" defer></script>
+  <script src="/static/js/fleet-stream-geo.js?v=20260726p" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726p" defer></script>
   <script src="/static/js/youtube-stream-controls.js?v=20260726n" defer></script>
   <script src="/static/js/stream-chapter-composer.js?v=20260726j" defer></script>
 </body>

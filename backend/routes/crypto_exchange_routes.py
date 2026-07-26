@@ -617,6 +617,48 @@ def exchange_fleet_stream_chat_claim_event():
     return jsonify(res), code
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/geo/public", methods=["GET"])
+def exchange_fleet_stream_geo_public():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_geo_service import public_geo_snapshot
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(public_geo_snapshot())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/geo/ping", methods=["POST"])
+def exchange_fleet_stream_geo_ping():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_geo_service import record_geo_ping
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_json(silent=True) or {}
+    guest = (data.get("guest_id") or request.headers.get("X-Fleet-Guest") or "").strip()
+    res = record_geo_ping(
+        latitude=data.get("latitude"),
+        longitude=data.get("longitude"),
+        accuracy_m=data.get("accuracy") or data.get("accuracy_m"),
+        source=str(data.get("source") or "browser_gps"),
+        kind=str(data.get("kind") or "gps"),
+        guest_ref=guest,
+    )
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/go-live", methods=["POST"])
+def exchange_fleet_stream_go_live():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_geo_service import start_livestream_session
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    uid = _fleet_chat_uid()
+    return jsonify(start_livestream_session(uid))
+
+
 @crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
 def exchange_youtube_stream_controls():
     from backend.services.youtube_stream_agent_service import stream_controls

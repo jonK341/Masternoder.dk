@@ -438,4 +438,16 @@ def public_fleet_progress_monitor(*, light: bool = True) -> Dict[str, Any]:
         payload["composer"] = composer_for_monitor_payload(payload, stream_mode=True)
     except Exception:
         payload["composer"] = {"success": False, "chapters": []}
+    try:
+        from backend.services.fleet_stream_geo_service import public_geo_snapshot
+
+        geo = public_geo_snapshot()
+        if geo.get("enabled"):
+            payload["geo"] = {
+                "counts": geo.get("counts"),
+                "center": geo.get("center"),
+                "markers": (geo.get("markers") or [])[:24],
+            }
+    except Exception:
+        pass
     return payload

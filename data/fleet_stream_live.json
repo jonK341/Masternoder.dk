@@ -36,6 +36,15 @@
     "audio_kbps": 160,
     "note": "Capture the monitor in stream layout; keep chat on-site rail, not in OBS browser."
   },
+  "geo": {
+    "enabled": true,
+    "gps_poll_ms": 15000,
+    "gprs_poll_ms": 20000,
+    "map_zoom": 11,
+    "coarse_decimals": 2,
+    "auto_assign_agent_on_stream": true,
+    "default_center": { "latitude": 55.6761, "longitude": 12.5683 }
+  },
   "youtube_live_setup": [
     "Studio broadcast: studio.youtube.com/video/MBjG7hq_YZA/livestreaming — go LIVE before expecting the embed to play.",
     "Watch page: youtube.com/watch?v=MBjG7hq_YZA (same video ID as youtube_video_id in this file).",

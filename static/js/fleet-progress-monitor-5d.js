@@ -26,6 +26,7 @@
     imgCache: {},
     hotBotIndex: 0,
     encodedScroll: 0,
+    geoMarkers: [],
   };
 
   var DEFAULT_BOT_AVATAR = "/static/img/fleet/default-bot.svg";
@@ -351,6 +352,7 @@
         }
         renderPanels(d);
         renderHud(d);
+        if (d.geo && d.geo.markers) state.geoMarkers = d.geo.markers;
         renderFloatingRoster(d);
         maybeNarrate(d);
         if (streamMode && d.composer && d.composer.current) {
@@ -379,6 +381,11 @@
         (tr.total_trades || 0) + " trades<br>" +
         "P&amp;L " + (tr.profit_band || "—") + " · 🎰 " + (cas.bets_today || 0) +
         " · 🤖 " + (ag.total_executions || 0);
+      var geo = d.geo && d.geo.counts;
+      if (geo) {
+        el.innerHTML +=
+          "<br><span class=\"f5-hud-geo-inline\">📍 GPS " + (geo.gps || 0) + " · GPRS " + (geo.gprs || 0) + "</span>";
+      }
     }
     var tk = $("f5-ticker-text");
     if (tk) {
@@ -563,6 +570,44 @@
     ctx.restore();
   }
 
+  function drawGeoMarkers(ctx, w, h, usableW) {
+    var markers = state.geoMarkers.length ? state.geoMarkers : (window.F5StreamGeo && window.F5StreamGeo.getMarkers ? window.F5StreamGeo.getMarkers() : []);
+    if (!markers.length) return;
+    var lats = markers.map(function (m) {
+      return m.latitude;
+    });
+    var lons = markers.map(function (m) {
+      return m.longitude;
+    });
+    var minLat = Math.min.apply(null, lats);
+    var maxLat = Math.max.apply(null, lats);
+    var minLon = Math.min.apply(null, lons);
+    var maxLon = Math.max.apply(null, lons);
+    var padLat = Math.max(0.02, (maxLat - minLat) * 0.2);
+    var padLon = Math.max(0.02, (maxLon - minLon) * 0.2);
+    minLat -= padLat;
+    maxLat += padLat;
+    minLon -= padLon;
+    maxLon += padLon;
+
+    markers.forEach(function (m, i) {
+      var nx = (m.longitude - minLon) / (maxLon - minLon || 1);
+      var ny = 1 - (m.latitude - minLat) / (maxLat - minLat || 1);
+      var px = 12 + nx * usableW * 0.55;
+      var py = h * 0.58 + ny * h * 0.32;
+      var isGprs = m.kind === "gprs";
+      ctx.beginPath();
+      ctx.fillStyle = isGprs ? "rgba(0,212,255,0.85)" : "rgba(93,255,176,0.9)";
+      ctx.arc(px, py, isGprs ? 4 : 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      if (streamMode && i < 6) {
+        ctx.fillStyle = "rgba(232,238,252,0.55)";
+        ctx.font = "8px ui-monospace,monospace";
+        ctx.fillText((m.kind || "gps").toUpperCase(), px + 5, py + 2);
+      }
+    });
+  }
+
   function drawCenterRings(ctx, w, h, usableW) {
     var th = themeColors();
     var cx = w * 0.42;
@@ -716,6 +761,7 @@
       }
     });
 
+    drawGeoMarkers(ctx, w, h, usableW);
     drawCenterRings(ctx, w, h, usableW);
 
     requestAnimationFrame(drawFrame);
@@ -834,6 +880,16 @@
     if (streamMode) document.body.classList.add("f5-stream");
     if (qs("embed") === "1") document.body.classList.add("f5-embed");
     document.body.classList.add("f5-has-chat");
+    var goLiveBtn = $("f5-go-live");
+    if (goLiveBtn) goLiveBtn.hidden = !streamMode;
+    if (goLiveBtn && window.F5StreamGeo) {
+      goLiveBtn.addEventListener("click", function () {
+        window.F5StreamGeo.goLive();
+      });
+    }
+    window.F5MonitorGeoHook = function (snap) {
+      state.geoMarkers = snap.markers || [];
+    };
     var dock = $("f5-composer-dock");
     if (dock && streamMode) dock.hidden = false;
     document.addEventListener("mn:stream-chapter", function (ev) {
