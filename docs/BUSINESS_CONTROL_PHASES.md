@@ -36,3 +36,10 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 - **Live pack** tab: env flags, venue readiness, blockers, winnable pairs radar (top hits from pair search).
 - Ops smoke: `python3 scripts/mn2_winnable_pairs_smoke.py` (exit 0 when tick succeeds).
 
+## Phase 4 — Supervisor fleet console
+
+- **23 labeled fleet bots** (PA-α…ε, EXT-1…6, TRE-1…3, RSK-1…5, WIN-A…D) with `name`, `label`, `type_label`, `supervisor_name`, and `role_label` merged into `trading_bots_control.json` (`fleet_bots`).
+- Business Control **Overview** shows a fleet roster (cards grouped by supervisor) and bot table columns use human names instead of raw `sup_*` ids.
+- **`POST /api/exchange/control-board/run-fleet`** — optional JSON `{ "kind": "analytics" | "extended_profit" | "treasury" | "risk" | "winnable_pairs" }`; omit `kind` to tick all fleet kinds. Runs pair search when needed for winnable/analyst/extended lanes. Lighter than **Run all bots** (skips arbitrage paper, AI, cross-trade).
+- UI **Run fleet** button triggers the fleet-only tick.
+

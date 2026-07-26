@@ -41,48 +41,56 @@ FLEET_MECHANICS: List[Dict[str, str]] = [
 
 _EXTENDED_SAME_DIRECTION = "buy_cheap_sell_rich"
 
-_FLEET_BLUEPRINTS: Dict[str, List[Dict[str, Any]]] = {
-    "analytics": [
-        {"suffix": "alpha", "name": "Profit Analyst Alpha", "symbols": ["DOGE", "XRP"]},
-        {"suffix": "beta", "name": "Profit Analyst Beta", "symbols": ["LTC", "SOL"]},
-        {"suffix": "gamma", "name": "Profit Analyst Gamma", "symbols": ["AVAX", "LINK"]},
-        {"suffix": "delta", "name": "Profit Analyst Delta", "symbols": ["BTC", "ETH"]},
-        {"suffix": "epsilon", "name": "Profit Analyst Epsilon", "symbols": ["TRX", "SHIB"]},
-    ],
-    "extended_profit": [
-        {"suffix": "dual", "strategy": "live_dual_venue"},
-        {"suffix": "fast", "strategy": "fast_arb_rescan"},
-        {"suffix": "peg", "strategy": "stablecoin_peg"},
-        {"suffix": "meme", "strategy": "meme_momentum"},
-        {"suffix": "pay", "strategy": "payments_spread"},
-        {"suffix": "tri", "strategy": "triangular_paper"},
-    ],
-    "treasury": [
-        {"suffix": "ledger", "role": "ledger_audit"},
-        {"suffix": "payout", "role": "payout_readiness"},
-        {"suffix": "sync", "role": "mid_sync"},
-    ],
-    "risk": [
-        {"suffix": "withdraw", "role": "withdrawal_risk"},
-        {"suffix": "velocity", "role": "velocity"},
-        {"suffix": "caps", "role": "caps"},
-        {"suffix": "audit", "role": "audit_denials"},
-        {"suffix": "steady", "role": "steady_heartbeat"},
-    ],
-    "winnable_pairs": [
-        {"suffix": "prime", "shard": 0},
-        {"suffix": "beta", "shard": 1},
-        {"suffix": "gamma", "shard": 2},
-        {"suffix": "delta", "shard": 3},
-    ],
-}
-
 _KIND_TO_SUP = {
     "analytics": "sup_profit",
     "extended_profit": "sup_extended",
     "treasury": "sup_treasury",
     "risk": "sup_risk",
     "winnable_pairs": "sup_winnable",
+}
+
+_KIND_DISPLAY: Dict[str, Dict[str, str]] = {
+    "analytics": {"type_label": "Profit Analyst", "supervisor_name": "Profit Analyst"},
+    "extended_profit": {"type_label": "Extended Profit", "supervisor_name": "Extended Profit Director"},
+    "treasury": {"type_label": "Treasury", "supervisor_name": "Treasury Manager"},
+    "risk": {"type_label": "Risk Officer", "supervisor_name": "Risk Officer"},
+    "winnable_pairs": {"type_label": "Winnable Pairs", "supervisor_name": "Winnable Pairs Executor"},
+}
+
+_FLEET_BLUEPRINTS: Dict[str, List[Dict[str, Any]]] = {
+    "analytics": [
+        {"suffix": "alpha", "name": "Profit Analyst Alpha", "label": "PA-α", "role_label": "DOGE · XRP trade lane", "badge": "lane", "symbols": ["DOGE", "XRP"]},
+        {"suffix": "beta", "name": "Profit Analyst Beta", "label": "PA-β", "role_label": "LTC · SOL trade lane", "badge": "lane", "symbols": ["LTC", "SOL"]},
+        {"suffix": "gamma", "name": "Profit Analyst Gamma", "label": "PA-γ", "role_label": "AVAX · LINK trade lane", "badge": "lane", "symbols": ["AVAX", "LINK"]},
+        {"suffix": "delta", "name": "Profit Analyst Delta", "label": "PA-δ", "role_label": "BTC · ETH trade lane", "badge": "lane", "symbols": ["BTC", "ETH"]},
+        {"suffix": "epsilon", "name": "Profit Analyst Epsilon", "label": "PA-ε", "role_label": "TRX · SHIB trade lane", "badge": "lane", "symbols": ["TRX", "SHIB"]},
+    ],
+    "extended_profit": [
+        {"suffix": "dual", "name": "Extended Dual-Farm Runner", "label": "EXT-1", "role_label": "Live dual-venue · same direction", "badge": "dual", "strategy": "live_dual_venue"},
+        {"suffix": "fast", "name": "Extended Fast-Rescan Scout", "label": "EXT-2", "role_label": "Fast arb rescan · same direction", "badge": "scan", "strategy": "fast_arb_rescan"},
+        {"suffix": "peg", "name": "Extended Stablecoin Peg", "label": "EXT-3", "role_label": "USDT/USDC peg capture", "badge": "peg", "strategy": "stablecoin_peg"},
+        {"suffix": "meme", "name": "Extended Meme Momentum", "label": "EXT-4", "role_label": "Meme momentum farms", "badge": "meme", "strategy": "meme_momentum"},
+        {"suffix": "pay", "name": "Extended Payments Spread", "label": "EXT-5", "role_label": "Payments rail spreads", "badge": "pay", "strategy": "payments_spread"},
+        {"suffix": "tri", "name": "Extended Triangular Loop", "label": "EXT-6", "role_label": "Triangular paper loops", "badge": "tri", "strategy": "triangular_paper"},
+    ],
+    "treasury": [
+        {"suffix": "ledger", "name": "Treasury Ledger Sentinel", "label": "TRE-1", "role_label": "Ledger audit & stash totals", "badge": "ledger", "role": "ledger_audit"},
+        {"suffix": "payout", "name": "Treasury Payout Watch", "label": "TRE-2", "role_label": "PayPal / sweep readiness", "badge": "payout", "role": "payout_readiness"},
+        {"suffix": "sync", "name": "Treasury Price Sync", "label": "TRE-3", "role_label": "Internal ↔ external mid sync", "badge": "sync", "role": "mid_sync"},
+    ],
+    "risk": [
+        {"suffix": "withdraw", "name": "Risk Withdrawal Guard", "label": "RSK-1", "role_label": "Withdrawal risk log", "badge": "withdraw", "role": "withdrawal_risk"},
+        {"suffix": "velocity", "name": "Risk Velocity Monitor", "label": "RSK-2", "role_label": "Velocity & frequency caps", "badge": "velocity", "role": "velocity"},
+        {"suffix": "caps", "name": "Risk Cap Enforcer", "label": "RSK-3", "role_label": "Position & notional caps", "badge": "caps", "role": "caps"},
+        {"suffix": "audit", "name": "Risk Audit Scanner", "label": "RSK-4", "role_label": "Recent risk denials", "badge": "audit", "role": "audit_denials"},
+        {"suffix": "steady", "name": "Risk Steady Pulse", "label": "RSK-5", "role_label": "Always-on heartbeat", "badge": "steady", "role": "steady_heartbeat"},
+    ],
+    "winnable_pairs": [
+        {"suffix": "prime", "name": "Winnable Executor Prime", "label": "WIN-A", "role_label": "Pair-search shard A", "badge": "shard", "shard": 0},
+        {"suffix": "beta", "name": "Winnable Executor Beta", "label": "WIN-B", "role_label": "Pair-search shard B", "badge": "shard", "shard": 1},
+        {"suffix": "gamma", "name": "Winnable Executor Gamma", "label": "WIN-C", "role_label": "Pair-search shard C", "badge": "shard", "shard": 2},
+        {"suffix": "delta", "name": "Winnable Executor Delta", "label": "WIN-D", "role_label": "Pair-search shard D", "badge": "shard", "shard": 3},
+    ],
 }
 
 
@@ -95,13 +103,23 @@ def default_fleet_bots() -> List[Dict[str, Any]]:
     bots: List[Dict[str, Any]] = []
     for kind, rows in _FLEET_BLUEPRINTS.items():
         sup = _KIND_TO_SUP[kind]
+        meta = _KIND_DISPLAY.get(kind) or {}
         for row in rows:
+            if not row.get("suffix"):
+                continue
             suffix = row["suffix"]
             bid = f"fleet_{kind}_{suffix}".replace("winnable_pairs", "winnable")
             name = row.get("name") or f"Fleet {kind} {suffix}"
+            label = row.get("label") or suffix.upper()
             bots.append({
                 "id": bid,
                 "name": name,
+                "label": label,
+                "type_label": meta.get("type_label") or kind,
+                "supervisor_name": meta.get("supervisor_name") or sup,
+                "role_label": row.get("role_label") or "",
+                "wallet_label": label,
+                "badge": row.get("badge") or "fleet",
                 "kind": kind,
                 "supervisor": sup,
                 "enabled": True,
@@ -109,6 +127,30 @@ def default_fleet_bots() -> List[Dict[str, Any]]:
                 "config": dict(row),
             })
     return bots
+
+
+def fleet_bot_as_trading_row(fb: Dict[str, Any], acct: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape fleet bot for control-board bot table (names/labels like arb agents)."""
+    return {
+        "id": fb.get("id"),
+        "name": fb.get("name") or fb.get("id"),
+        "label": fb.get("label"),
+        "type_label": fb.get("type_label"),
+        "supervisor_name": fb.get("supervisor_name"),
+        "role_label": fb.get("role_label"),
+        "kind": fb.get("kind") or "fleet",
+        "supervisor": fb.get("supervisor"),
+        "config_enabled": bool(fb.get("enabled", True)),
+        "fleet": True,
+        "wallet_label": fb.get("wallet_label") or fb.get("label") or "",
+        "realized_pnl_usd": round(float(acct.get("realized_profit_usd") or 0), 4),
+        "unrealized_pnl_usd": 0.0,
+        "trade_count": int(acct.get("trade_count") or 0),
+        "notional_traded_usd": round(float(acct.get("notional_traded_usd") or 0), 2),
+        "last_action": acct.get("last_action"),
+        "last_run_at": fb.get("last_run_at"),
+        "last_run_ok": fb.get("last_run_ok"),
+    }
 
 
 def merge_fleet_into_controls(controls: Dict[str, Any]) -> None:
@@ -119,6 +161,9 @@ def merge_fleet_into_controls(controls: Dict[str, Any]) -> None:
         if bid in existing:
             row = {**bot, **existing[bid]}
             row["id"] = bid
+            for key in ("name", "label", "type_label", "supervisor_name", "role_label", "wallet_label", "badge"):
+                if bot.get(key):
+                    row[key] = bot[key]
             merged.append(row)
         else:
             merged.append(bot)
@@ -309,6 +354,35 @@ def run_fleet_for_kind(
         "ok_count": ok,
         "results": results,
     }
+
+
+def run_fleet_tick(
+    controls: Dict[str, Any],
+    *,
+    kind: Optional[str] = None,
+    hot_symbols: Optional[List[str]] = None,
+    pair_search: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Run one or all supervisor fleet kinds (Phase 4 — lighter than full run_all)."""
+    kinds = [kind] if kind else list(_FLEET_BLUEPRINTS.keys())
+    results: Dict[str, Any] = {}
+    for k in kinds:
+        if k not in _FLEET_BLUEPRINTS:
+            results[k] = {"success": False, "error": "unknown_fleet_kind"}
+            continue
+        results[k] = run_fleet_for_kind(
+            controls, k, hot_symbols=hot_symbols, pair_search=pair_search,
+        )
+    _save_fleet_controls(controls)
+    ok = all((r or {}).get("success") for r in results.values())
+    return {"success": ok, "results": results, "ran_at": _iso()}
+
+
+def _save_fleet_controls(controls: Dict[str, Any]) -> None:
+    from backend.services.trading_bots_control_service import _save_controls
+
+    merge_fleet_into_controls(controls)
+    _save_controls(controls)
 
 
 def fleet_overview(controls: Dict[str, Any]) -> Dict[str, Any]:

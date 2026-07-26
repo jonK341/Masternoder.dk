@@ -99,19 +99,79 @@
     });
   }
 
+  function botTypeLabel(b) {
+    if (b.type_label) return b.type_label;
+    if (b.kind === "arbitrage_paper") return "Arbitrage";
+    if (b.kind === "winnable_pairs") return "Winnable Pairs";
+    if (b.kind === "analytics") return "Profit Analyst";
+    if (b.kind === "extended_profit") return "Extended Profit";
+    if (b.kind === "treasury") return "Treasury";
+    if (b.kind === "risk") return "Risk Officer";
+    if (b.fleet) return "Fleet";
+    return "Cross-trade";
+  }
+
+  function renderFleetRoster(fleet) {
+    var grid = $("fleetRoster");
+    if (!grid) return;
+    grid.innerHTML = "";
+    fleet = fleet || {};
+    var bots = fleet.bots || [];
+    var byKind = {};
+    bots.forEach(function (b) {
+      var k = b.kind || "fleet";
+      if (!byKind[k]) byKind[k] = [];
+      byKind[k].push(b);
+    });
+    Object.keys(byKind).forEach(function (kind) {
+      var group = document.createElement("div");
+      group.className = "section";
+      var sample = byKind[kind][0] || {};
+      group.innerHTML = "<h3 style='font-size:13px;margin:0 0 8px'>" +
+        (sample.supervisor_name || sample.type_label || kind) + "</h3>";
+      var inner = document.createElement("div");
+      inner.className = "sup-grid";
+      byKind[kind].forEach(function (b) {
+        var d = document.createElement("div");
+        d.className = "sup";
+        var pill = b.enabled !== false ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>';
+        var tag = b.label ? '<span class="pill on" style="margin-left:6px;opacity:.85">' + b.label + "</span>" : "";
+        var lastRun = "";
+        if (b.last_run_at) {
+          var ok = b.last_run_ok !== false;
+          lastRun = '<div class="muted" style="margin-top:6px">Last ' +
+            (ok ? "ok" : (b.last_run_error || "fail")) + "</div>";
+        }
+        d.innerHTML =
+          '<div class="top"><strong>' + (b.name || b.id) + "</strong>" + tag + pill + "</div>" +
+          '<div class="role">' + (b.role_label || b.badge || "") + "</div>" +
+          lastRun;
+        inner.appendChild(d);
+      });
+      group.appendChild(inner);
+      grid.appendChild(group);
+    });
+    if (!bots.length) {
+      grid.innerHTML = "<p class='muted'>No fleet bots registered.</p>";
+    }
+  }
+
   function renderBots(bots) {
     var tb = $("bots");
     tb.innerHTML = "";
     (bots || []).forEach(function (b) {
       var tr = document.createElement("tr");
       var state = b.enabled ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>';
+      var nameCell = (b.name || b.id);
+      if (b.label) nameCell += ' <span class="pill on" style="font-size:10px">' + b.label + "</span>";
+      if (b.wallet_label && b.wallet_label !== b.label) {
+        nameCell += ' <span class="muted" style="font-size:11px">(' + b.wallet_label + ")</span>";
+      }
+      var supName = b.supervisor_name || b.supervisor || "";
       tr.innerHTML =
-        "<td>" + (b.name || b.id) + "</td>" +
-        "<td>" + (b.kind === "arbitrage_paper" ? "Arbitrage" : b.kind === "winnable_pairs" ? "Winnable" :
-          b.kind === "analytics" ? "Profit analyst" : b.kind === "extended_profit" ? "Extended" :
-          b.kind === "treasury" ? "Treasury" : b.kind === "risk" ? "Risk" : b.fleet ? "Fleet" :
-          "Cross-trade") + (b.fleet ? " · fleet" : "") + "</td>" +
-        "<td>" + (b.supervisor || "") + "</td>" +
+        "<td>" + nameCell + "</td>" +
+        "<td>" + botTypeLabel(b) + (b.role_label ? "<br><span class='muted' style='font-size:11px'>" + b.role_label + "</span>" : "") + "</td>" +
+        "<td>" + supName + "</td>" +
         '<td class="' + cls(b.realized_pnl_usd) + '">' + money(b.realized_pnl_usd) + "</td>" +
         '<td class="' + cls(b.unrealized_pnl_usd) + '">' + money(b.unrealized_pnl_usd) + "</td>" +
         '<td class="' + cls(b.total_pnl_usd) + '">' + money(b.total_pnl_usd) + "</td>" +
@@ -202,10 +262,13 @@
     renderOrchestration(d.orchestration);
     renderLivePack(d.live_pack, d.winnable_pairs);
       renderBots(d.bots || []);
-      var fs = $("fleetSummary");
-      if (fs && d.supervisor_fleet) {
-        var fc = (d.supervisor_fleet.bots || []).length;
-        fs.textContent = fc + " fleet bots registered · " + (d.supervisor_fleet.mechanics_count || 25) + " mechanics active";
+      if (d.supervisor_fleet) {
+        renderFleetRoster(d.supervisor_fleet);
+        var fs = $("fleetSummary");
+        if (fs) {
+          var fc = (d.supervisor_fleet.bots || []).length;
+          fs.textContent = fc + " fleet bots registered · " + (d.supervisor_fleet.mechanics_count || 25) + " mechanics active";
+        }
       }
   }
 
@@ -464,6 +527,29 @@
           load({ force: true, timeoutMs: 90000 });
         });
     });
+    var runFleetBtn = $("runFleet");
+    if (runFleetBtn) {
+      runFleetBtn.addEventListener("click", function () {
+        runFleetBtn.disabled = true;
+        status("Running supervisor fleet…");
+        api("/api/exchange/control-board/run-fleet", { method: "POST", body: {}, timeoutMs: RUN_TIMEOUT_MS })
+          .then(function (res) {
+            runFleetBtn.disabled = false;
+            if (res.timedOut) {
+              status("Fleet run timed out — refresh shortly.", true);
+              load({ force: true, timeoutMs: 90000 });
+              return;
+            }
+            status(res.data && res.data.success ? "Fleet tick finished." : ("Fleet: " + ((res.data && res.data.error) || "partial fail")), !res.data || !res.data.success);
+            load({ force: true, timeoutMs: 90000 });
+          })
+          .catch(function () {
+            runFleetBtn.disabled = false;
+            status("Fleet run failed.", true);
+            load({ force: true, timeoutMs: 90000 });
+          });
+      });
+    }
     $("kill").addEventListener("click", function () {
       if (!confirm("Toggle the global kill switch? This pauses/resumes ALL bots.")) return;
       api("/api/exchange/control-board/overview").then(function (res) {

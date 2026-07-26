@@ -31,3 +31,16 @@ def test_fleet_merge_into_controls(tmp_path, monkeypatch):
     ov = fleet_overview(controls)
     assert ov["mechanics_count"] == 25
     assert len(ov["bots"]) == 23
+
+
+def test_fleet_bot_labels():
+    from backend.services.exchange_supervisor_fleet_service import default_fleet_bots
+
+    bots = default_fleet_bots()
+    alpha = next(b for b in bots if b["id"] == "fleet_analytics_alpha")
+    assert alpha["label"] == "PA-α"
+    assert alpha["name"] == "Profit Analyst Alpha"
+    assert alpha["type_label"] == "Profit Analyst"
+    assert alpha["supervisor_name"] == "Profit Analyst"
+    ext = next(b for b in bots if b["label"] == "EXT-1")
+    assert ext["supervisor_name"] == "Extended Profit Director"

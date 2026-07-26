@@ -302,27 +302,14 @@ def list_bots(*, light: bool = False) -> List[Dict[str, Any]]:
     controls = _load_controls()
     bots = _arbitrage_bots() + _cross_trade_bots(light=light)
     try:
-        from backend.services.exchange_supervisor_fleet_service import list_fleet_bots
+        from backend.services.exchange_supervisor_fleet_service import fleet_bot_as_trading_row, list_fleet_bots
         from backend.services import exchange_arbitrage_service as arb_svc
 
         for fb in list_fleet_bots(controls):
             if any(b.get("id") == fb.get("id") for b in bots):
                 continue
             acct = arb_svc.read_account(fb.get("id"))
-            bots.append({
-                "id": fb.get("id"),
-                "name": fb.get("name") or fb.get("id"),
-                "kind": fb.get("kind") or "fleet",
-                "supervisor": fb.get("supervisor"),
-                "config_enabled": bool(fb.get("enabled", True)),
-                "fleet": True,
-                "realized_pnl_usd": round(float(acct.get("realized_profit_usd") or 0), 4),
-                "unrealized_pnl_usd": 0.0,
-                "trade_count": int(acct.get("trade_count") or 0),
-                "notional_traded_usd": round(float(acct.get("notional_traded_usd") or 0), 2),
-                "wallet_label": "",
-                "last_action": acct.get("last_action"),
-            })
+            bots.append(fleet_bot_as_trading_row(fb, acct))
     except Exception:
         pass
     for b in bots:
@@ -587,6 +574,38 @@ def set_kill_switch(on: bool) -> Dict[str, Any]:
     _save_controls(controls)
     ex._audit("control_board_kill_switch", user_id="owner", on=bool(on))
     return {"success": True, "kill_switch": bool(on)}
+
+
+def run_supervisor_fleet(kind: Optional[str] = None) -> Dict[str, Any]:
+    """Phase 4 — run supervisor fleet ticks without full orchestrator (arb/AI/cross)."""
+    kind = (kind or "").strip() or None
+    controls = _load_controls()
+    if controls.get("kill_switch"):
+        return {"success": False, "error": "kill_switch_active"}
+
+    pair_search: Optional[Dict[str, Any]] = None
+    hot_symbols: Optional[List[str]] = None
+    needs_search = not kind or kind in ("winnable_pairs", "analytics", "extended_profit")
+    if needs_search:
+        try:
+            from backend.services.exchange_profit_pair_search_service import run_profit_pair_search
+
+            pair_search = run_profit_pair_search()
+            if pair_search.get("success"):
+                hot_symbols = list(pair_search.get("hot_symbols") or [])
+        except Exception as exc:
+            pair_search = {"success": False, "error": str(exc)}
+
+    from backend.services.exchange_supervisor_fleet_service import run_fleet_tick
+
+    out = run_fleet_tick(
+        controls,
+        kind=kind,
+        hot_symbols=hot_symbols,
+        pair_search=pair_search if (pair_search or {}).get("success") else None,
+    )
+    ex._audit("control_board_run_fleet", user_id="owner", kind=kind or "all", success=bool(out.get("success")))
+    return out
 
 
 def run_all_bots(force: bool = False) -> Dict[str, Any]:
