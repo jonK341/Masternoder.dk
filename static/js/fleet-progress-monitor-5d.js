@@ -275,7 +275,13 @@
   }
 
   function speakLine(text, speaker, rotate) {
-    if (!state.voiceOn || !text || !window.speechSynthesis) return;
+    if (!text) return;
+    if (window.MNCamgirlsStreamVoice) {
+      if (!window.MNCamgirlsStreamVoice.isEnabled()) return;
+      window.MNCamgirlsStreamVoice.speak(text, { rotate: rotate, queue: true });
+      return;
+    }
+    if (!state.voiceOn || !window.speechSynthesis) return;
     var sp = speaker || pickSpeaker(rotate);
     if (!sp) return;
     renderSpeakerDock(sp.id);
@@ -300,13 +306,15 @@
   }
 
   function processCommentaryQueue() {
-    if (!state.voiceOn || state.speaking || !state.commentaryQueue.length) return;
+    var voiceOn = window.MNCamgirlsStreamVoice ? window.MNCamgirlsStreamVoice.isEnabled() : state.voiceOn;
+    if (!voiceOn || state.speaking || !state.commentaryQueue.length) return;
     var line = state.commentaryQueue.shift();
     speakLine(line, pickSpeaker(true), true);
   }
 
   function maybeNarrate(d) {
-    if (!state.voiceOn || !d) return;
+    var voiceOn = window.MNCamgirlsStreamVoice ? window.MNCamgirlsStreamVoice.isEnabled() : state.voiceOn;
+    if (!voiceOn || !d) return;
     var key = (d.generated_at || "") + "|" + ((d.progression && d.progression.fleet_total_xp) || 0);
     if (key === state.lastNarrationKey) return;
     state.lastNarrationKey = key;
@@ -641,6 +649,8 @@
         if (!state.audio) state.audio = new FleetAudio();
         state.audio.ensure().then(function () {
           state.soundOn = true;
+          var wrap = $("f5-sfx-vol-wrap");
+          if (wrap) wrap.hidden = false;
           return state.audio.startAmbient();
         }).then(function () {
           state.audio.tick();
@@ -650,17 +660,35 @@
         });
       });
     }
+    var sfxVol = $("f5-sfx-volume");
+    if (sfxVol) {
+      sfxVol.addEventListener("input", function () {
+        if (state.audio && state.audio.master) {
+          state.audio.master.gain.value = parseInt(sfxVol.value, 10) / 100;
+        }
+      });
+    }
     var voiceBtn = $("f5-voice");
     if (voiceBtn) {
       voiceBtn.addEventListener("click", function () {
         state.voiceOn = !state.voiceOn;
+        if (window.MNCamgirlsStreamVoice) {
+          window.MNCamgirlsStreamVoice.setEnabled(state.voiceOn);
+        }
         voiceBtn.setAttribute("aria-pressed", state.voiceOn ? "true" : "false");
         voiceBtn.textContent = state.voiceOn ? "Voice on" : "Camgirl voice";
         if (state.voiceOn && state.data) {
           state.lastNarrationKey = "";
           maybeNarrate(state.data);
+          var ch = window.MNCamgirlsStreamVoice && window.MNCamgirlsStreamVoice.getLastChapter();
+          if (ch && window.MNCamgirlsStreamVoice) {
+            window.MNCamgirlsStreamVoice.speakChapter(ch, { force: true, interrupt: true });
+          }
         }
-        if (!state.voiceOn && window.speechSynthesis) window.speechSynthesis.cancel();
+        if (!state.voiceOn) {
+          if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.cancel();
+          else if (window.speechSynthesis) window.speechSynthesis.cancel();
+        }
       });
     }
     $("f5-refresh") &&
@@ -673,8 +701,30 @@
     if (sel) {
       sel.addEventListener("change", function () {
         state.leadSpeakerId = sel.value;
+        if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.setLeadSpeaker(sel.value);
       });
     }
+  }
+
+  function initVoiceModule() {
+    if (!window.MNCamgirlsStreamVoice) return Promise.resolve();
+    return window.MNCamgirlsStreamVoice.init({
+      performersApi: PERFORMERS_API,
+      profiles: VOICE_PROFILE,
+      storageKey: "mn-f5-voice",
+      deckId: "f5-voice-deck-wrap",
+      onActiveSpeaker: renderSpeakerDock,
+      onLine: function (speaker, text) {
+        var voiceLine = $("f5-voice-line");
+        if (!voiceLine) return;
+        if (speaker && speaker.name) voiceLine.textContent = speaker.name + ": " + text;
+        else voiceLine.textContent = text;
+      },
+    }).then(function (speakers) {
+      state.speakers = speakers || state.speakers;
+      fillSpeakerSelect();
+      renderSpeakerDock(state.leadSpeakerId);
+    });
   }
 
   function poll() {
@@ -700,21 +750,23 @@
     document.addEventListener("mn:stream-chapter", function (ev) {
       var ch = ev.detail && ev.detail.chapter;
       if (!ch) return;
-      var line = (ch.title || "") + ". " + (ch.ai_content || "");
-      if (ev.detail.speak || state.voiceOn) {
-        speakLine(line, pickSpeaker(true), true);
-      } else if (state.voiceOn) {
-        queueCommentary([line]);
-      }
+      var voiceOn = window.MNCamgirlsStreamVoice ? window.MNCamgirlsStreamVoice.isEnabled() : state.voiceOn;
       var vl = $("f5-voice-line");
-      if (vl && !state.voiceOn) {
-        vl.textContent = "Chapter: " + (ch.title || "") + " — enable Camgirl voice to narrate.";
+      if (vl && !voiceOn && !ev.detail.speak) {
+        vl.textContent =
+          "Chapter: " +
+          (ch.title || "") +
+          " — " +
+          (ch.ai_content || "").slice(0, 140) +
+          " — enable Camgirl voice to narrate.";
       }
     });
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     bindControls();
-    loadSpeakers();
+    initVoiceModule().catch(function () {
+      return loadSpeakers();
+    });
     requestAnimationFrame(drawFrame);
     fetchData().finally(function () {
       poll();

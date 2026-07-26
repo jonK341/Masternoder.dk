@@ -69,6 +69,8 @@
       '<div class="sc-actions">' +
       '<button type="button" class="sc-btn" id="sc-prev">Prev</button>' +
       '<button type="button" class="sc-btn primary" id="sc-speak">Speak chapter</button>' +
+      '<button type="button" class="sc-btn" id="sc-read-encoded">Read encoded</button>' +
+      '<button type="button" class="sc-btn" id="sc-stop-voice">Stop</button>' +
       '<button type="button" class="sc-btn" id="sc-next">Next</button>' +
       "</div></aside>";
 
@@ -81,6 +83,8 @@
     var prev = el.querySelector("#sc-prev");
     var next = el.querySelector("#sc-next");
     var speak = el.querySelector("#sc-speak");
+    var readEnc = el.querySelector("#sc-read-encoded");
+    var stopV = el.querySelector("#sc-stop-voice");
     if (prev) {
       prev.addEventListener("click", function () {
         var n = ((data.current_index || 0) - 1 + chapters.length) % chapters.length;
@@ -95,13 +99,37 @@
     }
     if (speak) {
       speak.addEventListener("click", function () {
-        announceChapter(cur);
+        announceChapter(cur, true);
+      });
+    }
+    if (readEnc) {
+      readEnc.addEventListener("click", function () {
+        if (window.MNCamgirlsStreamVoice) {
+          window.MNCamgirlsStreamVoice.setEnabled(true);
+          document.dispatchEvent(
+            new CustomEvent("mn:voice-state", { detail: { enabled: true } })
+          );
+          window.MNCamgirlsStreamVoice.speakChapter(cur, { force: true, interrupt: true });
+        } else {
+          announceChapter(cur, true);
+        }
+      });
+    }
+    if (stopV) {
+      stopV.addEventListener("click", function () {
+        if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.cancel();
+        else if (window.speechSynthesis) window.speechSynthesis.cancel();
       });
     }
   }
 
-  function announceChapter(ch) {
+  function announceChapter(ch, forceVoice) {
     if (!ch) return;
+    if (forceVoice && window.MNCamgirlsStreamVoice) {
+      window.MNCamgirlsStreamVoice.setEnabled(true);
+      window.MNCamgirlsStreamVoice.speakChapter(ch, { force: true, interrupt: true });
+      return;
+    }
     document.dispatchEvent(
       new CustomEvent("mn:stream-chapter", {
         detail: { chapter: ch, speak: true },

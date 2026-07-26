@@ -94,8 +94,12 @@
 }
 
 .f5-stream .f5-header {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+  margin-bottom: 12px;
+  padding: 10px 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(93, 255, 176, 0.14);
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.65), rgba(4, 8, 18, 0.4));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .f5-header-copy {
@@ -169,6 +173,19 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.f5-sfx-vol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--f5-muted);
+}
+
+.f5-sfx-vol input[type="range"] {
+  width: 72px;
+  accent-color: var(--f5-cyan);
 }
 
 .f5-btn {
