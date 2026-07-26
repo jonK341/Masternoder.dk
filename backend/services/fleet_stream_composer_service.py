@@ -94,7 +94,7 @@ def chapter_public_view(
         "encode_profile": chapter.get("encode_profile") or "broadcast",
         "duration_sec": int(chapter.get("duration_sec") or 75),
         "visual": chapter.get("visual") or "/static/img/fleet/default-bot.svg",
-        "ai_content": _scrub(decoded),
+        "ai_content": _scrub_composer(decoded),
         "encoded": True,
     }
 
