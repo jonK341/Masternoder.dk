@@ -120,6 +120,9 @@
 
 .f5-composer-dock .sc-panel {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  border-color: rgba(93, 255, 176, 0.28);
+  background: linear-gradient(155deg, rgba(6, 12, 24, 0.92), rgba(14, 8, 28, 0.88));
 }
 
 .f5-stream .f5-composer-dock {

@@ -694,6 +694,7 @@
 
   function init() {
     if (streamMode) document.body.classList.add("f5-stream");
+    if (qs("embed") === "1") document.body.classList.add("f5-embed");
     var dock = $("f5-composer-dock");
     if (dock && streamMode) dock.hidden = false;
     document.addEventListener("mn:stream-chapter", function (ev) {

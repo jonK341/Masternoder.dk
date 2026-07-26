@@ -8,6 +8,10 @@
   --f5-text: #e8eefc;
   --f5-muted: rgba(232, 238, 252, 0.62);
   --f5-nav-offset: 52px;
+  --f5-frame-radius: 22px;
+  --f5-frame-pad: 3px;
+  --f5-corner: 26px;
+  --f5-corner-thick: 2px;
 }
 
 .f5-body {
@@ -49,7 +53,20 @@
 
 .f5-stream .f5-shell {
   max-width: 1920px;
-  padding: 16px 24px 28px;
+  padding: 18px 22px 22px;
+  margin: 10px auto;
+  border-radius: calc(var(--f5-frame-radius) + 6px);
+  border: 1px solid rgba(93, 255, 176, 0.14);
+  background: linear-gradient(165deg, rgba(5, 10, 22, 0.92) 0%, rgba(3, 6, 14, 0.98) 55%, rgba(8, 6, 20, 0.94) 100%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.f5-stream .f5-grid-panels,
+.f5-stream .f5-privacy {
+  display: none;
 }
 
 .f5-kicker {
@@ -175,21 +192,142 @@
 
 .f5-stage-wrap {
   position: relative;
+  padding: var(--f5-frame-pad);
+  border-radius: var(--f5-frame-radius);
+  background: linear-gradient(
+    135deg,
+    rgba(93, 255, 176, 0.42) 0%,
+    rgba(0, 212, 255, 0.28) 38%,
+    rgba(255, 100, 255, 0.32) 72%,
+    rgba(93, 255, 176, 0.38) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 22px 56px rgba(0, 0, 0, 0.5),
+    0 0 72px rgba(0, 212, 255, 0.07);
+}
+
+.f5-stage-wrap::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--f5-frame-pad) + 5px);
+  border-radius: calc(var(--f5-frame-radius) - 4px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+  z-index: 7;
+}
+
+/* HUD corner brackets — outer wrap (TL + BR) */
+.f5-stage-wrap::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--f5-frame-pad) + 10px);
+  pointer-events: none;
+  z-index: 8;
+  border-radius: calc(var(--f5-frame-radius) - 6px);
+  background:
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 6px rgba(93, 255, 176, 0.35));
 }
 
 .f5-stage {
   position: relative;
-  border: 1px solid var(--f5-line);
-  border-radius: 16px;
-  background: rgba(4, 10, 22, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: calc(var(--f5-frame-radius) - 2px);
+  background: rgba(4, 10, 22, 0.96);
   overflow: hidden;
   min-height: 380px;
   isolation: isolate;
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(93, 255, 176, 0.12);
+}
+
+/* Inner corners (TR + BL) */
+.f5-stage::before,
+.f5-stage::after {
+  content: "";
+  position: absolute;
+  width: var(--f5-corner);
+  height: var(--f5-corner);
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.65;
+}
+
+.f5-stage::before {
+  top: 10px;
+  right: 10px;
+  border-top: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-right: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-radius: 0 6px 0 0;
+}
+
+.f5-stage::after {
+  bottom: 10px;
+  left: 10px;
+  border-bottom: var(--f5-corner-thick) solid var(--f5-accent);
+  border-left: var(--f5-corner-thick) solid var(--f5-accent);
+  border-radius: 0 0 0 6px;
+}
+
+.f5-stream .f5-stage-wrap {
+  --f5-frame-pad: 4px;
+  --f5-corner: 32px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 28px 72px rgba(0, 0, 0, 0.62),
+    0 0 96px rgba(255, 100, 255, 0.06),
+    0 0 120px rgba(0, 212, 255, 0.05);
 }
 
 .f5-stream .f5-stage {
   min-height: min(72vh, 640px);
-  border-radius: 20px;
+  border-radius: calc(var(--f5-frame-radius) - 1px);
+}
+
+.f5-stream .f5-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+}
+
+.f5-stream .f5-stage::after {
+  top: 12px;
+  right: auto;
+  left: 12px;
+  bottom: auto;
+  width: var(--f5-corner);
+  height: var(--f5-corner);
+  border: 0;
+  border-top: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-left: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-radius: 6px 0 0 0;
+}
+
+/* Stream: TR bracket via extra layer on canvas container — use roster side flip + wrap gradient */
+.f5-stream .f5-stage-wrap::after {
+  background:
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-magenta), var(--f5-magenta)) right top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-magenta), var(--f5-magenta)) right top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat;
 }
 
 #f5-canvas {
@@ -200,6 +338,14 @@
 }
 
 /* Floating fleet roster — orbits with canvas */
+.f5-stream .f5-roster-orbit {
+  left: 12px;
+  right: auto;
+  top: 12px;
+  bottom: 112px;
+  width: min(210px, 30vw);
+}
+
 .f5-roster-orbit {
   position: absolute;
   top: 10px;
@@ -290,6 +436,10 @@
 .f5-roster-card.is-hot {
   border-color: rgba(255, 100, 255, 0.5);
   transform: translateX(-2px);
+}
+
+.f5-stream .f5-roster-card.is-hot {
+  transform: translateX(2px);
 }
 
 .f5-roster-card.is-hot .f5-roster-avatar {
@@ -483,10 +633,37 @@
 }
 
 .fp-fleet-5d-embed {
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.28);
   min-height: 280px;
+  padding: 3px;
+  background: linear-gradient(135deg, rgba(93, 255, 176, 0.35), rgba(0, 212, 255, 0.22), rgba(255, 100, 255, 0.28));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+/* Iframe embed — stage fills viewport, minimal chrome */
+.f5-body.f5-embed {
+  min-height: 100%;
+  background: var(--f5-bg);
+}
+
+.f5-body.f5-embed .f5-shell {
+  max-width: none;
+  margin: 0;
+  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.f5-body.f5-embed .f5-header {
+  display: none;
+}
+
+.f5-body.f5-embed .f5-stage {
+  min-height: min(calc(100vh - 24px), 720px);
 }
 
 .fp-fleet-5d-embed iframe {
