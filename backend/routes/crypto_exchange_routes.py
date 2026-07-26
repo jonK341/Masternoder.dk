@@ -427,9 +427,20 @@ def exchange_daemon_mesh_run():
 def exchange_control_board_overview():
     if not _admin_authorized():
         return jsonify({"success": False, "error": "unauthorized"}), 401
+    from flask import request
     from backend.services.trading_bots_control_service import business_overview
 
-    return jsonify(business_overview())
+    light = request.args.get("light", "1").strip().lower() in ("1", "true", "yes", "on")
+    return jsonify(business_overview(light=light))
+
+
+@crypto_exchange_bp.route("/api/exchange/control-board/preflight", methods=["GET"])
+def exchange_control_board_preflight():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.business_control_preflight_service import run_preflight
+
+    return jsonify(run_preflight())
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/run", methods=["POST"])
@@ -440,6 +451,17 @@ def exchange_control_board_run():
 
     data = request.get_json(silent=True) or {}
     return jsonify(run_all_bots(force=bool(data.get("force"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/control-board/run-fleet", methods=["POST"])
+def exchange_control_board_run_fleet():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.trading_bots_control_service import run_supervisor_fleet
+
+    data = request.get_json(silent=True) or {}
+    kind = (data.get("kind") or "").strip() or None
+    return jsonify(run_supervisor_fleet(kind=kind))
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/bot", methods=["POST"])

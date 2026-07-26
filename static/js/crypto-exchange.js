@@ -280,8 +280,18 @@
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
-        q('cex-asset-count').textContent = String(catalog.asset_count || 25);
-        q('cex-legal-notice').textContent = catalog.legal_notice || '';
+        var assets = catalog.assets || [];
+        var n = catalog.asset_count != null ? Number(catalog.asset_count) : assets.length;
+        if (!isFinite(n) || n < 0) n = assets.length;
+        var countEl = q('cex-asset-count');
+        if (countEl) countEl.textContent = String(n || '—');
+        var heroSub = q('cex-hero-sub');
+        if (heroSub) {
+          heroSub.textContent = (n ? n + ' cryptocurrencies' : 'Multi-asset') +
+            ' · instant swap · limit orders · staking rewards · tax records';
+        }
+        var legal = q('cex-legal-notice');
+        if (legal) legal.textContent = catalog.legal_notice || '';
         if (catalog.lawful_bonus && catalog.lawful_bonus.terms_version) {
           termsVersion = catalog.lawful_bonus.terms_version;
         }
@@ -547,8 +557,57 @@
     }
   }
 
+  function initTradeFocus() {
+    var grid = q('cex-trade-grid');
+    if (!grid) return;
+
+    function applyPanes(panes) {
+      grid.setAttribute('data-trade-panes', panes.join(','));
+      document.querySelectorAll('.cex-trade-focus-btn').forEach(function (btn) {
+        var p = btn.getAttribute('data-trade-pane');
+        btn.classList.toggle('active', panes.length === 1 ? panes[0] === p : (p === 'trade' || panes.indexOf(p) >= 0));
+      });
+    }
+
+    function showPane(pane, innerTab) {
+      var panes;
+      if (pane === 'trade') {
+        panes = window.matchMedia('(min-width: 1024px)').matches ? ['markets', 'trade'] : ['trade'];
+      } else {
+        panes = [pane];
+      }
+      applyPanes(panes);
+      if (innerTab) {
+        var tabBtn = document.querySelector('.cex-tab[data-tab="' + innerTab + '"]');
+        if (tabBtn) tabBtn.click();
+      }
+      if (window.ExchangeHub && window.ExchangeHub.updateBreadcrumb) {
+        var lab = 'Swap';
+        if (pane === 'markets') lab = 'Markets';
+        else if (pane === 'wallet') lab = 'Wallet';
+        else if (innerTab === 'onramp') lab = 'PayPal';
+        window.ExchangeHub.updateBreadcrumb('trade', lab);
+      }
+    }
+
+    document.querySelectorAll('.cex-trade-focus-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pane = btn.getAttribute('data-trade-pane');
+        showPane(pane, pane === 'trade' ? 'swap' : null);
+        if (window.ExchangeHub && window.ExchangeHub.syncSubNavActive) {
+          var key = pane === 'trade' ? 'swap' : pane;
+          window.ExchangeHub.syncSubNavActive('trade', key);
+        }
+      });
+    });
+
+    window.CexTradeFocus = { showPane: showPane, applyPanes: applyPanes };
+    showPane('trade', 'swap');
+  }
+
   function init() {
     initTabs();
+    initTradeFocus();
     q('cex-swap-btn').addEventListener('click', doSwap);
     q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });
     q('cex-limit-btn').addEventListener('click', doLimit);
@@ -569,6 +628,17 @@
       window.ExchangeHub.onTab('bots', refreshBots);
     } else {
       refresh();
+    }
+    if (window.ExchangeHub && window.ExchangeHub.loadTab) {
+      var params = new URLSearchParams(window.location.search);
+      var hub = params.get('hub');
+      var innerTab = params.get('tab');
+      if (innerTab && { swap: 1, onramp: 1, limit: 1, staking: 1, tax: 1 }[innerTab]) {
+        hub = 'trade';
+      }
+      if (!hub || hub === 'trade') {
+        window.ExchangeHub.loadTab('trade', true);
+      }
     }
     handlePayPalReturn();
     handleCryptoPayPalReturn();

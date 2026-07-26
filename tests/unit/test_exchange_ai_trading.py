@@ -193,6 +193,24 @@ def test_ai_tick_uses_global_threshold_state(ai_env, monkeypatch):
     assert res["executed"] is True
 
 
+def test_run_ai_tick_accepts_hot_symbols(ai_env, monkeypatch):
+    ai = ai_env["ai"]
+    seen = {}
+
+    def fake_analyze(**kwargs):
+        seen["symbols"] = kwargs.get("symbols")
+        return {
+            "success": True,
+            "ranked_opportunities": [],
+            "scan": {},
+        }
+
+    monkeypatch.setattr(ai, "analyze_market", fake_analyze)
+    res = ai.run_ai_tick(hot_symbols=["DOGE", "AVAX"])
+    assert res["success"] is True
+    assert seen.get("symbols")
+
+
 def test_venue_api_paper_order_without_keys(ai_env):
     vapi = ai_env["vapi"]
     res = vapi.place_market_order("binance", "BTC", "buy", 0.01)

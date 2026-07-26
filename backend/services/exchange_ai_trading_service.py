@@ -232,6 +232,7 @@ def run_ai_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     force_execute: bool = False,
+    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Full AI trading cycle: analyze → pick best → execute → book P&L."""
     cfg = load_ai_config()
@@ -239,7 +240,16 @@ def run_ai_tick(
         return {"success": False, "error": "ai_trading_disabled"}
 
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
-    analysis = analyze_market(injected=injected, probe_venues=False)
+    base_symbols = [str(s).upper() for s in (cfg.get("symbols") or [])]
+    symbols = base_symbols
+    if hot_symbols:
+        try:
+            from backend.services.exchange_profit_pair_search_service import resolve_agent_symbols
+
+            symbols = resolve_agent_symbols(base_symbols, hot_symbols=hot_symbols)
+        except Exception:
+            symbols = list(dict.fromkeys([*(hot_symbols or []), *base_symbols]))[:16]
+    analysis = analyze_market(injected=injected, symbols=symbols or None, probe_venues=False)
     ranked = analysis.get("ranked_opportunities") or []
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
@@ -343,7 +353,7 @@ def run_ai_tick(
     acct["last_action"] = action
     arb.write_account(acct)
 
-    return {
+    out: Dict[str, Any] = {
         "success": True,
         "executed": action["executed"],
         "ticked_at": _iso(),
@@ -353,6 +363,9 @@ def run_ai_tick(
         "action": action,
         "account": acct,
     }
+    if hot_symbols:
+        out["hot_symbols"] = hot_symbols
+    return out
 
 
 def ai_trading_status() -> Dict[str, Any]:

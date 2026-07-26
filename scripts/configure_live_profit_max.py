@@ -194,6 +194,35 @@ def _tune_ai_trader() -> None:
     _write_json(path, cfg)
 
 
+def _tune_profit_path_and_pair_search() -> None:
+    path = os.path.join(ROOT, "data", "crypto_exchange", "profit_path_protocol.json")
+    micro = float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75") or 75)
+    cfg: dict = {}
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            cfg = json.load(fh)
+    cfg["rotation_live_enabled"] = True
+    cfg["rotation_auto_execute"] = True
+    cfg["profit_pair_search"] = {
+        "enabled": True,
+        "top_n": 16,
+        "catalog_venues": ["binance", "nonkyc", "xeggex"],
+        "min_live_net_bps": 10.0,
+        "ledger_weight": 0.5,
+        "live_weight": 0.5,
+    }
+    cfg["winnable_pairs_supervisor"] = {
+        "enabled": True,
+        "min_net_bps": 12,
+        "min_search_score": 18,
+        "max_executions_per_tick": 3,
+        "notional_usd": max(micro, 75.0),
+        "agent_id": "arb_winnable_pairs",
+        "refresh_search_each_tick": True,
+    }
+    _write_json(path, cfg)
+
+
 def _tune_treasury_and_payout() -> None:
     tpath = os.path.join(ROOT, "data", "exchange_treasury_config.json")
     with open(tpath, encoding="utf-8") as fh:
@@ -221,8 +250,16 @@ def _tune_treasury_and_payout() -> None:
 
 
 def main() -> int:
+    import argparse
+
+    p = argparse.ArgumentParser(description="Tune configs + env for live profit max")
+    p.add_argument("--fast", action="store_true", help="Apply env/config only; skip slow treasury/live_status report")
+    args = p.parse_args()
+
     load_dotenv()
     _ensure_env_flag("EXCHANGE_ARBITRAGE_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_ROTATION_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_PROFIT_PAIR_SEARCH", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_PAYPAL_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_BINANCE_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PROFIT_PROFILE", "max")
@@ -237,7 +274,15 @@ def main() -> int:
     _tune_connectors(xeggex_ok=xeggex_ok, xeggex_reason=xeggex_reason)
     _tune_extended_profit(xeggex_ok=xeggex_ok)
     _tune_ai_trader()
+    _tune_profit_path_and_pair_search()
     _tune_treasury_and_payout()
+
+    if args.fast:
+        print("=== Live profit MAX configured (fast) ===")
+        print(f"Vault keys imported: {imported or '(none — add API keys to .env)'}")
+        print(f"XeggeX API probe: ok={xeggex_ok} reason={xeggex_reason}")
+        print("Run: python3 scripts/mn2_live_pack_verify.py")
+        return 0
 
     try:
         from backend.services.exchange_binance_time_service import sync_binance_time
@@ -247,11 +292,15 @@ def main() -> int:
 
     try:
         from backend.services.exchange_treasury_service import treasury_status
+
         treasury = treasury_status()
     except Exception as exc:
         treasury = {"error": str(exc), "ledger_stashed_usd": 0}
 
-    st = live_status()
+    try:
+        st = live_status()
+    except Exception as exc:
+        st = {"success": False, "error": str(exc)}
     print("=== Live profit MAX configured ===")
     print(f"Vault keys imported: {imported or '(none — add API keys to .env)'}")
     print(f"XeggeX API probe: ok={xeggex_ok} reason={xeggex_reason}")
