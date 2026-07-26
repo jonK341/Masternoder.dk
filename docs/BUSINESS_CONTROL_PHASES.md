@@ -104,3 +104,10 @@ Uploads Business Control HTML/CSS/JS, control-board services, fleet + preflight,
 - Overview **`supervisor_fleet.progression_summary`** — fleet commander level/rank from total XP, avg bot level, rewards unlocked.
 - Roster cards show **Lv**, rank title, XP bar, and reward tier count; Fleet ops tab shows commander XP strip.
 - Tests: `tests/unit/test_fleet_progression.py`
+
+## Phase 8 — 5D progress navigation monitor (public)
+
+- **`GET /api/exchange/fleet-progress-monitor/public`** — audience-safe fleet XP, coarse trade bands, activity ticker; no PII.
+- **`FLEET_PROGRESS_MONITOR_PUBLIC`** (default on); **`FLEET_MONITOR_EMBED_TOKEN`** optional for `?embed=1` API calls.
+- Page **`/fleet-progress-monitor/`** — canvas 5D projection, opt-in Web Audio + speech narrator, `?mode=stream` for YouTube layout.
+- Homepage embed section loads stream iframe + summary pill.

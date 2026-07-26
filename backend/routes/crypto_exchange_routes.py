@@ -494,6 +494,31 @@ def exchange_control_board_kill_switch():
     return jsonify(set_kill_switch(bool(data.get("on"))))
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-progress-monitor/public", methods=["GET"])
+def exchange_fleet_progress_monitor_public():
+    """Audience-safe fleet XP, trades, and activity — no users, emails, or admin fields."""
+    from backend.services.exchange_fleet_progress_monitor_service import (
+        embed_authorized,
+        embed_token_required,
+        monitor_public_enabled,
+        public_fleet_progress_monitor,
+    )
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    embed = request.args.get("embed", "").strip().lower() in ("1", "true", "yes", "on")
+    if embed and embed_token_required():
+        got = (
+            request.args.get("embed_token")
+            or request.headers.get("X-Fleet-Monitor-Token")
+            or ""
+        )
+        if not embed_authorized(got):
+            return jsonify({"success": False, "error": "embed_unauthorized"}), 403
+    light = request.args.get("light", "1").strip().lower() in ("1", "true", "yes", "on")
+    return jsonify(public_fleet_progress_monitor(light=light))
+
+
 @crypto_exchange_bp.route("/api/exchange/bot-skills", methods=["GET"])
 def exchange_bot_skills():
     from backend.services.exchange_bot_skills_service import list_skills

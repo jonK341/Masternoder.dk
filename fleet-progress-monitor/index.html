@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="5D Fleet Progress Navigation Monitor — public fleet XP, trades, and livestream view.">
+  <title>5D Fleet Progress Monitor — MasterNoder</title>
+  <link rel="stylesheet" href="/static/css/modern-design-system.css">
+  <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+  <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726a">
+</head>
+<body class="f5-body">
+  <div id="navigation-toolbar"></div>
+  <div class="f5-shell">
+    <header class="f5-header">
+      <div>
+        <p class="muted" style="margin:0 0 4px;font-size:12px">Progress navigation · 5 dimensions (lane · depth · reward · time · XP)</p>
+        <h1>5D Fleet Progress Monitor</h1>
+        <p id="f5-generated" class="muted" style="margin:6px 0 0;font-size:12px">Loading…</p>
+        <p id="f5-status" class="muted" style="margin:4px 0 0;font-size:12px"></p>
+      </div>
+      <div class="f5-controls">
+        <span class="f5-live-badge">LIVE STREAM READY</span>
+        <button type="button" class="f5-btn" id="f5-sound">Enable sound</button>
+        <button type="button" class="f5-btn primary" id="f5-voice" aria-pressed="false">Voice narrator</button>
+        <button type="button" class="f5-btn" id="f5-refresh">Refresh</button>
+        <a class="f5-btn" href="?mode=stream">YouTube layout</a>
+        <a class="f5-btn f5-home-link" href="/">Home</a>
+      </div>
+    </header>
+
+    <section class="f5-stage" aria-label="5D fleet projection">
+      <canvas id="f5-canvas" width="900" height="380" aria-hidden="true"></canvas>
+      <div class="f5-hud">
+        <div class="f5-hud-ticker"><span id="f5-ticker-text">Connecting to fleet telemetry…</span></div>
+        <div class="f5-stat-col" id="f5-hud-stats"></div>
+        <div class="f5-voice-line" id="f5-voice-line" aria-live="polite">Voice off — enable narrator to hear progress (opt-in).</div>
+      </div>
+    </section>
+
+    <div class="f5-grid-panels">
+      <article class="f5-panel">
+        <h2>Fleet activity</h2>
+        <div id="f5-activity">Loading…</div>
+      </article>
+      <article class="f5-panel">
+        <h2>Bot levels (public)</h2>
+        <div id="f5-bots">Loading…</div>
+      </article>
+    </div>
+
+    <p class="f5-privacy">
+      <strong>Privacy:</strong> This monitor never shows user accounts, emails, PayPal, wallet addresses, or admin keys.
+      Profit figures are coarse bands only. For operator controls use Business Control (authenticated).
+      External embeds may require <code>FLEET_MONITOR_EMBED_TOKEN</code>. Set <code>FLEET_PROGRESS_MONITOR_PUBLIC=0</code> to disable the public API.
+      Not financial advice.
+    </p>
+  </div>
+  <script src="/static/js/navigation-toolbar.js" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726a" defer></script>
+</body>
+</html>
