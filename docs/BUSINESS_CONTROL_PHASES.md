@@ -51,3 +51,50 @@ This turns off the kill switch, enables all supervisors and bots, clears per-bot
 - **Fleet ops** tab — health panel, per-kind run buttons, roster duplicate, recent fleet run history.
 - Ops smoke: `python3 scripts/mn2_supervisor_fleet_smoke.py --local` (optional `--kind risk`).
 
+## Phase 6 — Finish (tests, preflight, deploy, UI)
+
+### Automated gate
+
+On the app host (or CI with repo checkout):
+
+```bash
+cd /var/www/html   # or repo root
+DAEMON_QUIET=1 LITE_APP=1 python3 scripts/mn2_business_control_finish.py
+```
+
+Runs Phase 6 unit tests, local preflight, prints deploy/activate hints. Options:
+
+- `--skip-tests` / `--skip-preflight`
+- `--http --base <app-url>` — also hits `GET /api/exchange/control-board/preflight` and light overview (needs `EXCHANGE_ADMIN_KEY`)
+- `--deploy` — runs `python3 scripts/deploy.py business_control`
+- `--prod-tick` — one local `run_supervisor_fleet(kind=risk)` smoke
+
+### Preflight only
+
+```bash
+python3 scripts/mn2_business_control_preflight.py
+python3 scripts/mn2_business_control_preflight.py --http --base <app-url>
+```
+
+`GET /api/exchange/control-board/preflight` (admin key) returns the same local check bundle.
+
+### Deploy manifest
+
+```bash
+python3 scripts/deploy.py business_control
+```
+
+Uploads Business Control HTML/CSS/JS, control-board services, fleet + preflight, ops scripts, and restarts app workers.
+
+### UI
+
+- Styles moved to `static/css/business-control.css` (responsive tables, sticky header, focus rings, reduced motion).
+- **Fleet ops** tab includes live **Preflight** panel.
+
+### Unit test bundle (Phase 6)
+
+- `tests/unit/test_business_control_preflight.py`
+- `tests/unit/test_trading_bots_control.py`
+- `tests/unit/test_exchange_control_board.py`
+- `tests/unit/test_supervisor_fleet.py`
+

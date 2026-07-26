@@ -50,6 +50,16 @@ def test_control_board_overview(board_client):
     assert body["success"] is True
     assert "supervisors" in body
     assert "live_pack" in body
+    assert (body.get("supervisor_fleet") or {}).get("health")
+
+
+def test_control_board_preflight(board_client):
+    client, headers, _ctl = board_client
+    res = client.get("/api/exchange/control-board/preflight", headers=headers)
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["success"] is True
+    assert body["check_count"] >= 5
 
 
 def test_control_board_bot_supervisor_kill_run(board_client):

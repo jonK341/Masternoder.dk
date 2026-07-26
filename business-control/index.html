@@ -5,72 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Business Control · Owner Only</title>
-  <style>
-    :root {
-      --bg: #07080d; --panel: #11131d; --panel2: #161a27; --line: #232838;
-      --txt: #e7ecf6; --muted: #8b93a7; --accent: #4ade80; --accent2: #38bdf8;
-      --danger: #f87171; --warn: #fbbf24;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: radial-gradient(1200px 600px at 80% -10%, #15203a 0, var(--bg) 60%);
-      color: var(--txt); font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      padding: 28px 18px 80px;
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
-    h1 small { color: var(--muted); font-weight: 500; font-size: 12px; display: block; margin-top: 2px; }
-    .btn {
-      background: var(--panel2); color: var(--txt); border: 1px solid var(--line);
-      border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; transition: .15s;
-    }
-    .btn:hover { border-color: var(--accent2); }
-    .btn.primary { background: linear-gradient(135deg, #16a34a, #15803d); border-color: #16a34a; }
-    .btn.danger { background: linear-gradient(135deg, #b91c1c, #7f1d1d); border-color: #b91c1c; }
-    .btn.small { padding: 5px 10px; font-size: 12px; }
-    .gate { max-width: 420px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line);
-      border-radius: 16px; padding: 26px; text-align: center; }
-    .gate input { width: 100%; padding: 11px 12px; margin: 14px 0; background: #0c0e16; border: 1px solid var(--line);
-      border-radius: 10px; color: var(--txt); font-size: 14px; }
-    .hidden { display: none !important; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin: 20px 0; }
-    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-    .card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-    .card .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
-    .pos { color: var(--accent); } .neg { color: var(--danger); }
-    .section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 16px 0; }
-    .section h2 { font-size: 14px; margin: 0 0 12px; color: var(--accent2); }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
-    .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
-    .pill.on { color: var(--accent); border-color: #1f4d33; background: #0f2419; }
-    .pill.off { color: var(--muted); }
-    .toggle { cursor: pointer; }
-    .sup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; }
-    .sup { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-    .sup .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .sup .role { color: var(--muted); font-size: 12px; margin: 8px 0; }
-    .sup .stat { font-size: 13px; }
-    .status { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
-    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    a.nav { color: var(--accent2); text-decoration: none; font-size: 12px; }
-    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 6px; border-bottom: 1px solid var(--line); }
-    .tab { padding: 10px 16px; cursor: pointer; color: var(--muted); border: 1px solid transparent; border-bottom: none;
-      border-radius: 10px 10px 0 0; font-size: 13px; }
-    .tab.active { color: var(--txt); background: var(--panel); border-color: var(--line); }
-    .tabpane { display: none; }
-    .tabpane.active { display: block; }
-    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
-    .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .field input { padding: 9px 10px; background: #0c0e16; border: 1px solid var(--line); border-radius: 9px; color: var(--txt); font-size: 13px; }
-    .big { font-size: 22px; font-weight: 800; color: var(--accent); }
-    .muted { color: var(--muted); font-size: 12px; }
-    .warn { color: var(--warn); }
-  </style>
+  <link rel="stylesheet" href="/static/css/business-control.css?v=20260726h" />
 </head>
-<body>
+<body class="bc-body">
   <div class="wrap">
     <div id="gate" class="gate">
       <h1>Business Control</h1>
@@ -81,7 +18,7 @@
     </div>
 
     <div id="app" class="hidden">
-      <header>
+      <header class="bc-header">
         <h1>Business Control <small>All trading bots · profit & controls</small></h1>
         <div class="bar">
           <a class="nav" href="/exchange">Exchange</a>
@@ -121,12 +58,14 @@
         </div>
         <div class="section">
           <h2>Trading bots — profit calculator</h2>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Bot</th><th>Type</th><th>Supervisor</th><th>Realized $</th><th>Unrealized $</th><th>Total $</th><th>Trades</th><th>State</th></tr>
             </thead>
             <tbody id="bots"></tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -211,6 +150,7 @@
           <h2>Supervisor fleet — operations</h2>
           <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. Results persist in <code>fleet_meta</code> and per-bot <code>last_run_*</code>.</p>
           <div id="fleetOpsPanel" class="muted">Loading…</div>
+          <div id="fleetPreflightPanel" class="muted" style="margin-top:12px"></div>
           <div class="bar" style="margin-top:12px;flex-wrap:wrap" id="fleetRunBar">
             <button class="btn small primary" data-fleet-kind="">Run all fleet kinds</button>
             <button class="btn small" data-fleet-kind="winnable_pairs">Winnable</button>
@@ -240,6 +180,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260726g"></script>
+  <script src="/static/js/business-control.js?v=20260726h"></script>
 </body>
 </html>

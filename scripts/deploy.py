@@ -779,6 +779,23 @@ MANIFESTS = {
         "scripts/server_prune_remote.sh",
         "scripts/server_cleanup_scan.py",
     ],
+    "business_control": [
+        "business-control/index.html",
+        "static/css/business-control.css",
+        "static/js/business-control.js",
+        "backend/services/trading_bots_control_service.py",
+        "backend/services/exchange_supervisor_fleet_service.py",
+        "backend/services/business_control_preflight_service.py",
+        "backend/services/exchange_winnable_pairs_service.py",
+        "backend/routes/crypto_exchange_routes.py",
+        "docs/BUSINESS_CONTROL_PHASES.md",
+        "scripts/mn2_business_control_activate.py",
+        "scripts/mn2_business_control_preflight.py",
+        "scripts/mn2_business_control_finish.py",
+        "scripts/mn2_live_pack_verify.py",
+        "scripts/mn2_supervisor_fleet_smoke.py",
+        "scripts/mn2_winnable_pairs_smoke.py",
+    ],
 }
 
 # Built at import: every root */index.html + static/js|css|html|data (see _static_pages_manifest)
@@ -799,6 +816,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "config",
     "agent_daemon_env",
     "service_check_backend",
+    "business_control",
 })
 # HTML/CSS/JS under /var/www/html — clear nginx cache + reload nginx only (no uwsgi/python-proxy)
 RESTART_NGINX_ONLY_FOR = frozenset({"static_pages", "well_known"})

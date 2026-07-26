@@ -4,7 +4,7 @@
 Exit 0 when fleet tick reports success.
 
   python3 scripts/mn2_supervisor_fleet_smoke.py --local
-  python3 scripts/mn2_supervisor_fleet_smoke.py --base http://127.0.0.1:5000 --kind risk
+  python3 scripts/mn2_supervisor_fleet_smoke.py --kind risk
 """
 from __future__ import annotations
 

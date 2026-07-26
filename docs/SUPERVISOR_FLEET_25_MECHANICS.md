@@ -10,6 +10,8 @@ Operational fleet under Business Control supervisors (see `exchange_supervisor_f
 | Risk Officer | 5 | Withdrawal, velocity, caps, audit, steady heartbeat |
 | Winnable Pairs Executor | 4 | Sharded pair-search hit execution |
 
-Orchestrator `run_all_bots` runs the full fleet each tick. Overview lists fleet bots in the trading table (`fleet ·` badge).
+Orchestrator `run_all_bots` runs the full fleet each tick. Overview lists fleet bots in the trading table with labels (PA-α, EXT-1, …).
+
+**Phase 6:** `python3 scripts/mn2_business_control_finish.py` runs the unit bundle + preflight; deploy with `python3 scripts/deploy.py business_control`.
 
 Live Watch owner tab: fixed API response handling (`res.data`); feed includes control-board audit actions.

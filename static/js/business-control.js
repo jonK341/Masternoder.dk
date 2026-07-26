@@ -107,6 +107,24 @@
     winnable_pairs: "Winnable Pairs",
   };
 
+  function renderFleetPreflight(pf) {
+    var el = $("fleetPreflightPanel");
+    if (!el) return;
+    if (!pf || !pf.checks) {
+      el.innerHTML = "";
+      return;
+    }
+    var rows = (pf.checks || []).map(function (c) {
+      var st = c.ok ? '<span class="pill on">ok</span>' : (c.optional ? '<span class="pill off">warn</span>' : '<span class="pill off">fail</span>');
+      return "<tr><td>" + c.id + "</td><td>" + st + "</td><td class='muted'>" + (c.detail || "") + "</td></tr>";
+    }).join("");
+    el.innerHTML =
+      "<strong style='font-size:12px'>Preflight</strong> " +
+      (pf.success ? '<span class="pill on">pass</span>' : '<span class="pill off">fail</span>') +
+      "<div class='table-wrap' style='margin-top:8px'><table><thead><tr><th>Check</th><th></th><th>Detail</th></tr></thead><tbody>" +
+      rows + "</tbody></table></div>";
+  }
+
   function renderFleetOps(fleet) {
     var el = $("fleetOpsPanel");
     if (!el) return;
@@ -139,6 +157,12 @@
       "<table style='margin-top:12px'><thead><tr><th>Kind</th><th>Status</th><th>Error</th></tr></thead><tbody>" +
       (rows || "<tr><td colspan='3'>No fleet run results yet.</td></tr>") + "</tbody></table>" +
       (hist ? "<div style='margin-top:12px'><strong style='font-size:12px'>Recent fleet runs</strong>" + hist + "</div>" : "");
+  }
+
+  function loadFleetPreflight() {
+    api("/api/exchange/control-board/preflight", { timeoutMs: 90000 }).then(function (res) {
+      if (res.ok && res.data) renderFleetPreflight(res.data);
+    });
   }
 
   function runFleetKind(kind, btn) {
@@ -239,7 +263,7 @@
       var tr = document.createElement("tr");
       var state = b.enabled ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>';
       var nameCell = (b.name || b.id);
-      if (b.label) nameCell += ' <span class="pill on" style="font-size:10px">' + b.label + "</span>";
+      if (b.label) nameCell += ' <span class="pill on label-tag">' + b.label + "</span>";
       if (b.wallet_label && b.wallet_label !== b.label) {
         nameCell += ' <span class="muted" style="font-size:11px">(' + b.wallet_label + ")</span>";
       }
@@ -571,7 +595,10 @@
       } else {
         load();
       }
-      if (name === "fleet") bindFleetRunButtons();
+      if (name === "fleet") {
+        bindFleetRunButtons();
+        loadFleetPreflight();
+      }
     }
   }
 
