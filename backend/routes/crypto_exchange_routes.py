@@ -659,6 +659,16 @@ def exchange_fleet_stream_go_live():
     return jsonify(start_livestream_session(uid))
 
 
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/preview", methods=["GET"])
+def exchange_fleet_stream_discord_preview():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_discord_service import build_discord_live_payload
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify({"success": True, "payload": build_discord_live_payload()})
+
+
 @crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
 def exchange_youtube_stream_controls():
     from backend.services.youtube_stream_agent_service import stream_controls

@@ -285,10 +285,21 @@ def start_livestream_session(user_id: str) -> Dict[str, Any]:
     except Exception:
         pass
 
+    discord_result: Dict[str, Any] = {}
+    try:
+        from backend.services.fleet_stream_discord_service import publish_fleet_live_to_discord
+
+        discord_result = publish_fleet_live_to_discord(
+            message_id=f"fleet-live:go-live:{_iso()[:13]}",
+        )
+    except Exception:
+        discord_result = {"success": False, "error": "discord_publish_failed"}
+
     return {
         "success": True,
         "assign": assign,
         "geo": geo,
         "youtube": yt,
         "event_message": event_msg,
+        "discord": discord_result,
     }

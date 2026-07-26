@@ -797,6 +797,7 @@ MANIFESTS = {
         "data/fleet_stream_rewards.json",
         "backend/services/fleet_stream_chat_service.py",
         "backend/services/fleet_stream_geo_service.py",
+        "backend/services/fleet_stream_discord_service.py",
         "data/fleet_gprs_nodes.json",
         "static/js/fleet-stream-geo.js",
         "static/css/fleet-stream-geo.css",
