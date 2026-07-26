@@ -149,7 +149,7 @@
         .join("") +
       "</div>" +
       '<div class="yt-stream-actions">' +
-      '<button type="button" class="yt-stream-btn primary" id="yt-stream-no-obs">No OBS — share tab → YouTube</button>' +
+      '<button type="button" class="yt-stream-btn primary" id="yt-stream-no-obs" data-no-obs-stream="1">No OBS — share tab → YouTube</button>' +
       '<button type="button" class="yt-stream-btn primary" id="yt-stream-start">Start stream (agent)</button>' +
       '<button type="button" class="yt-stream-btn primary" id="yt-stream-assign">Assign stream agents</button>' +
       '<button type="button" class="yt-stream-btn" id="yt-stream-preflight">Preflight URLs</button>' +
@@ -305,6 +305,9 @@
       })
       .then(function (d) {
         renderPanel(target, d);
+        if (window.MNFleetYoutubeIngest && window.MNFleetYoutubeIngest.bind) {
+          window.MNFleetYoutubeIngest.bind();
+        }
       })
       .catch(function () {
         target.innerHTML = '<p class="yt-stream-meta">YouTube stream controls offline.</p>';

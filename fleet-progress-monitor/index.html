@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
   <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20260726j">
-  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726i">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726s">
   <link rel="stylesheet" href="/static/css/fleet-stream-chat.css?v=20260726n">
   <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726i">
   <link rel="stylesheet" href="/static/css/fleet-stream-geo.css?v=20260726p">
@@ -39,9 +39,9 @@
         <button type="button" class="f5-btn" id="f5-theme-next" title="Next theme">Theme →</button>
         <a class="f5-btn" href="/streamer/">Streamer hub</a>
         <a class="f5-btn" href="?mode=stream">YouTube layout</a>
-        <button type="button" class="f5-btn primary" id="f5-no-obs-stream" data-stream-only="1" hidden title="Share this tab to YouTube without OBS">No OBS → YouTube</button>
-        <button type="button" class="f5-btn" id="f5-go-live" data-stream-only="1" hidden title="Assign YouTube stream agents">Go live (agent)</button>
-        <button type="button" class="f5-btn" id="f5-ingest-stop" data-stream-only="1" hidden title="Stop tab stream">Stop ingest</button>
+        <button type="button" class="f5-btn primary f5-stream-cta" id="f5-no-obs-stream" data-no-obs-stream="1" title="Share this tab to YouTube without OBS">No OBS → YouTube</button>
+        <button type="button" class="f5-btn f5-stream-only-btn" id="f5-go-live" data-stream-only="1" hidden title="Assign YouTube stream agents">Go live (agent)</button>
+        <button type="button" class="f5-btn f5-stream-only-btn" id="f5-ingest-stop" data-ingest-stop="1" data-stream-only="1" hidden title="Stop tab stream">Stop ingest</button>
         <a class="f5-btn f5-home-link" href="/">Home</a>
       </div>
       <div id="f5-youtube-stream" class="f5-youtube-dock" data-youtube-stream-mount data-stream-only="1" hidden></div>
@@ -103,9 +103,9 @@
   <script src="/static/js/fleet-monitor-visual.js?v=20260726m" defer></script>
   <script src="/static/js/camgirls-stream-voice.js?v=20260726j" defer></script>
   <script src="/static/js/fleet-stream-geo.js?v=20260726p" defer></script>
-  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726p" defer></script>
-  <script src="/static/js/fleet-youtube-ingest.js?v=20260726r" defer></script>
-  <script src="/static/js/youtube-stream-controls.js?v=20260726r" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726s" defer></script>
+  <script src="/static/js/fleet-youtube-ingest.js?v=20260726s" defer></script>
+  <script src="/static/js/youtube-stream-controls.js?v=20260726s" defer></script>
   <script src="/static/js/stream-chapter-composer.js?v=20260726j" defer></script>
 </body>
 </html>

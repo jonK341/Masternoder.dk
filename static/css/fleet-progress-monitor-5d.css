@@ -173,6 +173,28 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  position: relative;
+  z-index: 20;
+}
+
+.f5-stream-cta {
+  pointer-events: auto;
+  position: relative;
+  z-index: 21;
+}
+
+.f5-stream-only-btn {
+  display: none;
+}
+
+.f5-stream .f5-stream-only-btn:not([hidden]) {
+  display: inline-flex;
+}
+
+.f5-header .f5-youtube-dock {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
 }
 
 .f5-sfx-vol {

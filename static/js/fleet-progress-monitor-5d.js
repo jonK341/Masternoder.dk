@@ -882,9 +882,7 @@
     document.body.classList.add("f5-has-chat");
     var goLiveBtn = $("f5-go-live");
     if (goLiveBtn) goLiveBtn.hidden = !streamMode;
-    var noObsBtn = $("f5-no-obs-stream");
     var ingestStop = $("f5-ingest-stop");
-    if (noObsBtn) noObsBtn.hidden = !streamMode;
     if (ingestStop) ingestStop.hidden = !streamMode;
     if (goLiveBtn && window.F5StreamGeo) {
       goLiveBtn.addEventListener("click", function () {

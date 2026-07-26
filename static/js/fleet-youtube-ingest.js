@@ -10,15 +10,20 @@
   var API_FIX = "/api/exchange/youtube-stream/agent-action";
   var API_STATUS = "/api/exchange/fleet-stream/ingest/status";
 
-  var state = { recorder: null, stream: null, active: false };
+  var state = { recorder: null, stream: null, active: false, bound: false };
 
   function $(id) {
     return document.getElementById(id);
   }
 
   function setStatus(msg) {
-    var el = $("f5-ingest-status") || $("yt-stream-status");
+    var el = $("f5-status") || $("f5-ingest-status") || $("yt-stream-status");
     if (el) el.textContent = msg || "";
+  }
+
+  function isNoObsClick(target) {
+    if (!target || !target.closest) return null;
+    return target.closest("#f5-no-obs-stream, #yt-stream-no-obs, [data-no-obs-stream]");
   }
 
   function stopCapture() {
@@ -116,23 +121,41 @@
       });
   }
 
+  function onNoObsClick(btn) {
+    if (!btn || btn.disabled) return;
+    setStatus("Starting YouTube agent + tab capture…");
+    btn.disabled = true;
+    assignAndFixNoObs().finally(function () {
+      btn.disabled = false;
+    });
+  }
+
+  function bindDelegation() {
+    if (state.bound) return;
+    state.bound = true;
+    document.addEventListener(
+      "click",
+      function (ev) {
+        var noObs = isNoObsClick(ev.target);
+        if (noObs) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          onNoObsClick(noObs);
+          return;
+        }
+        var stopBtn = ev.target.closest("#f5-ingest-stop, [data-ingest-stop]");
+        if (stopBtn) {
+          ev.preventDefault();
+          stopCapture();
+          setStatus("Ingest stopped.");
+        }
+      },
+      true
+    );
+  }
+
   function bind() {
-    var btn = $("f5-no-obs-stream") || $("yt-stream-no-obs");
-    if (btn) {
-      btn.addEventListener("click", function () {
-        btn.disabled = true;
-        assignAndFixNoObs().finally(function () {
-          btn.disabled = false;
-        });
-      });
-    }
-    var stopBtn = $("f5-ingest-stop");
-    if (stopBtn) {
-      stopBtn.addEventListener("click", function () {
-        stopCapture();
-        setStatus("Ingest stopped.");
-      });
-    }
+    bindDelegation();
     fetch(API_STATUS, { credentials: "same-origin" })
       .then(function (r) {
         return r.json();
@@ -150,6 +173,7 @@
     start: startTabCapture,
     stop: stopCapture,
     assignAndFix: assignAndFixNoObs,
+    bind: bindDelegation,
   };
 
   if (document.readyState === "loading") {
