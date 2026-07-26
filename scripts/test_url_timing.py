@@ -7,7 +7,7 @@ Run from project root. Requires server running (or set BASE_URL to production).
   BASE_URL=https://masternoder.dk python scripts/test_url_timing.py
 
 Endpoints tested (see FRONT_PAGE_URLS and PROFILE_PAGE_URLS below):
-  Front: frontpage/init, stats/summary, points/all, battle/stats, agent-skillset/all, aggregator/frontend
+  Front: frontpage/init, stats/summary, points/all, battle/stats, mn2, game-hub/overview, news
   Profile: user/bind-session, user/profile/<id>/aggregated, user/identity, account-summary/points,
            gallery/recent-temp, game/hunters/geo-ref, shop/paypal/control-panel, agents/activity-feed,
            agents/my-agents, trophies/list, game/achievements, battle/pvp/trophies
@@ -26,7 +26,7 @@ except ImportError:
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_URL = os.environ.get("BASE_URL", "https://masternoder.dk").rstrip("/")
-# Paths below start with /vidgenerator/api/...; avoid double /vidgenerator if BASE_URL already has it
+# Paths below use /api/ (index.html, profile/index.html). /vidgenerator/api/ returns 410.
 if BASE_URL.rstrip("/").endswith("/vidgenerator"):
     BASE_URL = BASE_URL.rstrip("/").rsplit("/vidgenerator", 1)[0]
 USER_ID = os.environ.get("USER_ID", "default_user")
@@ -36,31 +36,32 @@ _read = os.environ.get("READ_TIMEOUT")
 READ_TIMEOUT = int(_read) if (_read and _read.isdigit()) else (15 if "masternoder.dk" in BASE_URL else 60)
 TIMEOUT = (CONNECT_TIMEOUT, READ_TIMEOUT)
 
-# URLs used by front page (vidgenerator/index.html)
+# URLs used by front page (index.html + frontpage-home.js + game-hub-panel.js)
 FRONT_PAGE_URLS = [
-    ("/vidgenerator/api/frontpage/init", "GET", "Front page init"),
-    ("/vidgenerator/api/stats/summary", "GET", "Stats summary"),
-    ("/vidgenerator/api/points/all", "GET", "Points all", {"user_id": USER_ID}),
-    ("/vidgenerator/api/battle/stats", "GET", "Battle stats", {"user_id": USER_ID}),
-    ("/vidgenerator/api/agent-skillset/all", "GET", "Agent skillset all"),
-    ("/vidgenerator/api/aggregator/frontend", "GET", "Aggregator frontend", {"user_id": USER_ID}),
+    ("/api/frontpage/init", "GET", "Front page init"),
+    ("/api/stats/summary", "GET", "Stats summary"),
+    ("/api/points/all", "GET", "Points all", {"user_id": USER_ID}),
+    ("/api/battle/stats", "GET", "Battle stats", {"user_id": USER_ID}),
+    ("/api/mn2/balance", "GET", "MN2 balance", {"user_id": USER_ID}),
+    ("/api/mn2/price", "GET", "MN2 price"),
+    ("/api/game-hub/overview", "GET", "Game hub overview", {"user_id": USER_ID}),
+    ("/api/news/platform", "GET", "Platform news", {"limit": "5"}),
 ]
 
-# URLs used by profile page (vidgenerator/profile/index.html)
-# POST body for bind-session is JSON { user_id: ... }
+# URLs used by profile page (profile/index.html)
 PROFILE_PAGE_URLS = [
-    ("/vidgenerator/api/user/bind-session", "POST", "Bind session", {"_body": {"user_id": USER_ID}}),
-    ("/vidgenerator/api/user/profile/" + USER_ID + "/aggregated", "GET", "Profile aggregated"),
-    ("/vidgenerator/api/user/identity", "GET", "User identity", {"user_id": USER_ID}),
-    ("/vidgenerator/api/user/account-summary/points", "GET", "Account summary points", {"user_id": USER_ID}),
-    ("/vidgenerator/api/gallery/recent-temp", "GET", "Gallery recent"),
-    ("/vidgenerator/api/game/hunters/geo-ref", "GET", "Geo ref", {"user_id": USER_ID}),
-    ("/vidgenerator/api/shop/paypal/control-panel", "GET", "PayPal control panel", {"user_id": USER_ID}),
-    ("/vidgenerator/api/agents/activity-feed", "GET", "Agents activity feed", {"user_id": USER_ID, "limit": "20"}),
-    ("/vidgenerator/api/agents/my-agents", "GET", "My agents", {"user_id": USER_ID}),
-    ("/vidgenerator/api/trophies/list", "GET", "Trophies list", {"user_id": USER_ID}),
-    ("/vidgenerator/api/game/achievements", "GET", "Game achievements", {"user_id": USER_ID}),
-    ("/vidgenerator/api/battle/pvp/trophies", "GET", "Battle PVP trophies", {"user_id": USER_ID}),
+    ("/api/user/bind-session", "POST", "Bind session", {"_body": {"user_id": USER_ID}}),
+    ("/api/user/profile/" + USER_ID + "/aggregated", "GET", "Profile aggregated"),
+    ("/api/user/identity", "GET", "User identity", {"user_id": USER_ID}),
+    ("/api/user/account-summary/points", "GET", "Account summary points", {"user_id": USER_ID}),
+    ("/api/gallery/recent-temp", "GET", "Gallery recent"),
+    ("/api/game/hunters/geo-ref", "GET", "Geo ref", {"user_id": USER_ID}),
+    ("/api/shop/paypal/control-panel", "GET", "PayPal control panel", {"user_id": USER_ID}),
+    ("/api/agents/activity-feed", "GET", "Agents activity feed", {"user_id": USER_ID, "limit": "20"}),
+    ("/api/agents/my-agents", "GET", "My agents", {"user_id": USER_ID}),
+    ("/api/trophies/list", "GET", "Trophies list", {"user_id": USER_ID}),
+    ("/api/game/achievements", "GET", "Game achievements", {"user_id": USER_ID}),
+    ("/api/battle/pvp/trophies", "GET", "Battle PVP trophies", {"user_id": USER_ID}),
 ]
 
 
