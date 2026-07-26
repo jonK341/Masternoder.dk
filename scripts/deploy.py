@@ -788,6 +788,7 @@ MANIFESTS = {
         "backend/services/business_control_preflight_service.py",
         "backend/services/exchange_arbitrage_service.py",
         "backend/services/exchange_ai_trading_service.py",
+        "backend/services/exchange_venue_api_service.py",
         "backend/services/exchange_profit_pair_search_service.py",
         "backend/services/exchange_winnable_pairs_service.py",
         "backend/routes/crypto_exchange_routes.py",

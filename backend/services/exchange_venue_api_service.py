@@ -715,11 +715,56 @@ def venue_quote_asset(venue_id: str) -> str:
     return conn.venue_quote(venue_id)
 
 
+_BALANCE_CACHE: Dict[str, Dict[str, float]] = {}
+_BALANCE_CACHE_TS: Dict[str, float] = {}
+_BALANCE_CACHE_TTL_SEC = 45.0
+
+
+def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
+  if venue_id:
+      vid = str(venue_id).lower()
+      _BALANCE_CACHE.pop(vid, None)
+      _BALANCE_CACHE_TS.pop(vid, None)
+  else:
+      _BALANCE_CACHE.clear()
+      _BALANCE_CACHE_TS.clear()
+
+
+def balance_cache_age_sec(venue_id: str) -> Optional[float]:
+    vid = str(venue_id or "").lower()
+    ts = _BALANCE_CACHE_TS.get(vid)
+    if ts is None:
+        return None
+    return round(max(0.0, time.time() - ts), 3)
+
+
+def refresh_venue_balances(venue_ids: List[str], *, force: bool = False) -> Dict[str, Any]:
+    """Prefetch spot balances for credentialed venues (used before live arb ticks)."""
+    refreshed: List[str] = []
+    for raw in venue_ids or []:
+        vid = str(raw or "").lower()
+        if not vid or vid == "internal":
+            continue
+        if not venue_has_credentials(vid):
+            continue
+        if force:
+            invalidate_venue_balance_cache(vid)
+        parse_spot_balances(vid, dry_run=False)
+        refreshed.append(vid)
+    return {"success": True, "refreshed": refreshed}
+
+
 def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
     """Return asset -> free spot balance for a credentialed venue."""
-    if not venue_has_credentials(venue_id):
+    vid = str(venue_id or "").lower()
+    if not venue_has_credentials(vid):
         return {}
-    res = get_account_balance(venue_id, dry_run=dry_run)
+    if dry_run is False:
+        now = time.time()
+        cached = _BALANCE_CACHE.get(vid)
+        if cached is not None and (now - _BALANCE_CACHE_TS.get(vid, 0)) < _BALANCE_CACHE_TTL_SEC:
+            return dict(cached)
+    res = get_account_balance(vid, dry_run=dry_run)
     if not res.get("success"):
         return {}
     body = res.get("body")
@@ -754,6 +799,9 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
             free = 0.0
         if sym and free > 0:
             out[sym] = free
+    if dry_run is False:
+        _BALANCE_CACHE[vid] = dict(out)
+        _BALANCE_CACHE_TS[vid] = time.time()
     return out
 
 
