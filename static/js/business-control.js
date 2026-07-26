@@ -56,11 +56,20 @@
       var d = document.createElement("div");
       d.className = "sup";
       var pill = s.enabled ? '<span class="pill on">active</span>' : '<span class="pill off">paused</span>';
+      var lastRun = "";
+      if (s.last_run_at) {
+        var lr = new Date(s.last_run_at);
+        var ok = s.last_run_ok !== false;
+        lastRun = '<div class="muted" style="margin-top:6px">Last tick ' +
+          (isNaN(lr.getTime()) ? s.last_run_at : lr.toLocaleString()) +
+          (ok ? " · ok" : " · " + (s.last_run_error || "failed")) + "</div>";
+      }
       d.innerHTML =
         '<div class="top"><strong>' + s.name + "</strong>" + pill + "</div>" +
         '<div class="role">' + (s.role || "") + "</div>" +
         '<div class="stat">Profit <span class="' + cls(s.profit_usd) + '">' + money(s.profit_usd) + "</span> · " +
         (s.active_bot_count || 0) + "/" + (s.bot_count || 0) + " bots · " + (s.trade_count || 0) + " trades</div>" +
+        lastRun +
         '<div style="margin-top:10px"><button class="btn small" data-sup="' + s.id + '" data-on="' + (!s.enabled) + '">' +
         (s.enabled ? "Pause" : "Resume") + "</button></div>";
       c.appendChild(d);
@@ -102,6 +111,30 @@
     el.style.color = isErr ? "#f87171" : "#8b93a7";
   }
 
+  function renderOrchestration(orch) {
+    var el = $("orchPanel");
+    if (!el) return;
+    orch = orch || {};
+    var head = orch.last_run_at
+      ? "Last orchestrator run " + new Date(orch.last_run_at).toLocaleString() +
+        (orch.last_run_ok === false ? " · some steps failed" : " · all steps ok")
+      : "No orchestrator run recorded yet — use Run all bots.";
+    var rows = "";
+    var lr = orch.last_results || {};
+    Object.keys(lr).forEach(function (k) {
+      var r = lr[k] || {};
+      rows += "<tr><td>" + k + "</td><td>" + (r.success ? "ok" : "fail") + "</td><td>" + (r.error || "—") + "</td></tr>";
+    });
+    var hist = (orch.history || []).slice().reverse().slice(0, 10).map(function (h) {
+      return "<div class='muted'>" + (h.ran_at || "") + " · " + (h.ok ? "ok" : "fail") + " · " + (h.keys || []).join(", ") + "</div>";
+    }).join("");
+    el.innerHTML =
+      "<p class='muted'>" + head + "</p>" +
+      "<table><thead><tr><th>Step</th><th>Status</th><th>Error</th></tr></thead><tbody>" +
+      (rows || "<tr><td colspan='3'>No step results yet.</td></tr>") + "</tbody></table>" +
+      (hist ? "<div style='margin-top:12px'><strong style='font-size:12px'>Recent runs</strong>" + hist + "</div>" : "");
+  }
+
   function load() {
     status("Loading…");
     return api("/api/exchange/control-board/overview").then(function (res) {
@@ -110,6 +143,7 @@
       var d = res.data;
       renderKpis(d.totals || {}, d.kill_switch);
       renderSupervisors(d.supervisors || []);
+      renderOrchestration(d.orchestration);
       renderBots(d.bots || []);
       var note = "Updated " + new Date().toLocaleTimeString() + (d.arbitrage_live ? " · LIVE" : " · paper");
       if (d.paper_mode && d.treasury) {
@@ -249,6 +283,7 @@
     if (name === "payout") loadPayout();
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
+    if (name === "orchestration") load();
   }
 
   function init() {

@@ -37,14 +37,34 @@ def _default_controls() -> Dict[str, Any]:
             {"id": "sup_profit", "name": "Profit Analyst",
              "role": "Aggregates realized/unrealized P&L and projections.",
              "controls_kind": "analytics", "enabled": True},
+            {"id": "sup_extended", "name": "Extended Profit Director",
+             "role": "Stablecoin peg, triangular loops, meme/defi/payments specialty farms.",
+             "controls_kind": "extended_profit", "enabled": True},
             {"id": "sup_treasury", "name": "Treasury Manager",
              "role": "Tracks profit accounts, wallet registry, and sweeps.",
              "controls_kind": "treasury", "enabled": True},
         ],
         "bot_overrides": {},
         "kill_switch": False,
+        "orchestration": {},
         "updated_at": _iso(),
     }
+
+
+def _merge_supervisors(data: Dict[str, Any]) -> None:
+    """Ensure new supervisor rows from defaults exist without dropping owner toggles."""
+    default = _default_controls()
+    by_id = {s.get("id"): s for s in data.get("supervisors") or [] if s.get("id")}
+    merged: List[Dict[str, Any]] = []
+    for s in default["supervisors"]:
+        sid = s["id"]
+        if sid in by_id:
+            row = {**s, **by_id[sid]}
+            row["id"] = sid
+            merged.append(row)
+        else:
+            merged.append(dict(s))
+    data["supervisors"] = merged
 
 
 def _load_controls() -> Dict[str, Any]:
@@ -54,6 +74,8 @@ def _load_controls() -> Dict[str, Any]:
         ex._write_json(_CONTROL_PATH, data)
     data.setdefault("bot_overrides", {})
     data.setdefault("kill_switch", False)
+    data.setdefault("orchestration", {})
+    _merge_supervisors(data)
     return data
 
 
@@ -67,6 +89,100 @@ def _supervisor_for_kind(controls: Dict[str, Any], kind: str) -> Optional[Dict[s
         if s.get("controls_kind") == kind:
             return s
     return None
+
+
+def _supervisor_by_id(controls: Dict[str, Any], supervisor_id: str) -> Optional[Dict[str, Any]]:
+    for s in controls.get("supervisors") or []:
+        if s.get("id") == supervisor_id:
+            return s
+    return None
+
+
+def _mark_supervisor_run(controls: Dict[str, Any], supervisor_id: str, result: Dict[str, Any]) -> None:
+    sup = _supervisor_by_id(controls, supervisor_id)
+    if not sup:
+        return
+    sup["last_run_at"] = _iso()
+    sup["last_run_ok"] = bool(result.get("success"))
+    err = result.get("error")
+    if err:
+        sup["last_run_error"] = str(err)[:240]
+    else:
+        sup.pop("last_run_error", None)
+
+
+def _record_orchestration(controls: Dict[str, Any], results: Dict[str, Any]) -> None:
+    orch = controls.setdefault("orchestration", {})
+    ran_at = _iso()
+    orch["last_run_at"] = ran_at
+    summary: Dict[str, Any] = {}
+    all_ok = True
+    for key, res in results.items():
+        if not isinstance(res, dict):
+            continue
+        ok = bool(res.get("success"))
+        if not ok:
+            all_ok = False
+        summary[key] = {
+            "success": ok,
+            "error": res.get("error"),
+        }
+    orch["last_run_ok"] = all_ok
+    orch["last_results"] = summary
+    history = list(orch.get("history") or [])
+    history.append({"ran_at": ran_at, "ok": all_ok, "keys": list(summary.keys())})
+    orch["history"] = history[-30:]
+
+
+def _tick_risk_officer(controls: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        from backend.services.mn2_risk_ops_service import risk_summary
+
+        summary = risk_summary()
+    except Exception as exc:
+        summary = {"success": False, "error": str(exc)}
+    denials = [
+        r for r in (ex.get_audit_tail(limit=80).get("records") or [])
+        if r.get("action") == "risk_denied"
+    ]
+    return {
+        "success": True,
+        "kill_switch": bool(controls.get("kill_switch")),
+        "recent_risk_denials": len(denials[:20]),
+        "withdrawal_risk": summary if summary.get("success") else {"error": summary.get("error")},
+    }
+
+
+def _tick_profit_analyst() -> Dict[str, Any]:
+    bots = _arbitrage_bots() + _cross_trade_bots()
+    realized = round(sum(float(b.get("realized_pnl_usd") or 0) for b in bots), 4)
+    unrealized = round(sum(float(b.get("unrealized_pnl_usd") or 0) for b in bots), 4)
+    trades = sum(int(b.get("trade_count") or 0) for b in bots)
+    return {
+        "success": True,
+        "bot_count": len(bots),
+        "total_realized_pnl_usd": realized,
+        "total_unrealized_pnl_usd": unrealized,
+        "total_profit_usd": round(realized + unrealized, 4),
+        "trade_count": trades,
+    }
+
+
+def _tick_treasury_manager() -> Dict[str, Any]:
+    try:
+        from backend.services.exchange_treasury_service import treasury_status
+
+        st = treasury_status()
+        if not isinstance(st, dict):
+            return {"success": False, "error": "treasury_status_invalid"}
+        return {
+            "success": True,
+            "ledger_stashed_usd_paper": round(float(st.get("ledger_stashed_usd_paper") or 0), 4),
+            "ledger_stashed_usd_live": round(float(st.get("ledger_stashed_usd_live") or 0), 4),
+            "mode": st.get("mode"),
+        }
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
 
 
 def _arbitrage_bots() -> List[Dict[str, Any]]:
@@ -213,6 +329,7 @@ def business_overview() -> Dict[str, Any]:
         "success": True,
         "generated_at": _iso(),
         "kill_switch": bool(controls.get("kill_switch")),
+        "orchestration": controls.get("orchestration") or {},
         "totals": {
             "bot_count": len(bots),
             "active_bots": active,
@@ -326,6 +443,37 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
             results["extended_profit"] = {"success": False, "error": str(exc)}
     else:
         results["extended_profit"] = {"success": False, "error": "supervisor_paused"}
+
+    sup_risk = _supervisor_for_kind(controls, "risk")
+    if sup_risk and sup_risk.get("enabled", True):
+        results["risk"] = _tick_risk_officer(controls)
+    else:
+        results["risk"] = {"success": False, "error": "supervisor_paused"}
+
+    sup_profit = _supervisor_for_kind(controls, "analytics")
+    if sup_profit and sup_profit.get("enabled", True):
+        results["analytics"] = _tick_profit_analyst()
+    else:
+        results["analytics"] = {"success": False, "error": "supervisor_paused"}
+
+    sup_treasury = _supervisor_for_kind(controls, "treasury")
+    if sup_treasury and sup_treasury.get("enabled", True):
+        results["treasury"] = _tick_treasury_manager()
+    else:
+        results["treasury"] = {"success": False, "error": "supervisor_paused"}
+
+    _mark_supervisor_run(controls, "sup_arbitrage", {
+        "success": bool((results.get("arbitrage") or {}).get("success"))
+        and bool((results.get("ai_trading") or {}).get("success", True)),
+        "error": (results.get("arbitrage") or {}).get("error") or (results.get("ai_trading") or {}).get("error"),
+    })
+    _mark_supervisor_run(controls, "sup_crosstrade", results.get("cross_trade") or {})
+    _mark_supervisor_run(controls, "sup_extended", results.get("extended_profit") or {})
+    _mark_supervisor_run(controls, "sup_risk", results.get("risk") or {})
+    _mark_supervisor_run(controls, "sup_profit", results.get("analytics") or {})
+    _mark_supervisor_run(controls, "sup_treasury", results.get("treasury") or {})
+    _record_orchestration(controls, results)
+    _save_controls(controls)
 
     ex._audit("control_board_run_all", user_id="owner",
               arbitrage_ok=bool(results.get("arbitrage", {}).get("success")),
