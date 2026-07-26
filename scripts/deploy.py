@@ -813,6 +813,8 @@ MANIFESTS = {
         "backend/services/trading_bots_control_service.py",
         "backend/services/exchange_supervisor_fleet_service.py",
         "backend/services/exchange_fleet_progression_service.py",
+        "backend/services/exchange_fleet_bot_skills_service.py",
+        "data/exchange_bot_skills.json",
         "backend/services/exchange_fleet_progress_monitor_service.py",
         "backend/services/youtube_stream_agent_service.py",
         "data/youtube_stream_agent.json",

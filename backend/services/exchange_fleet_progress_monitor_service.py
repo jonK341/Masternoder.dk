@@ -81,6 +81,20 @@ def _coarse_profit_band(usd: float) -> str:
     return f"{sign}$1k+"
 
 
+def _coarse_skill_edge(bps: Any) -> str:
+    try:
+        v = float(bps or 0)
+    except (TypeError, ValueError):
+        return "—"
+    if v < 20:
+        return "low"
+    if v < 50:
+        return "mid"
+    if v < 90:
+        return "high"
+    return "elite"
+
+
 def _sanitize_bot(fb: Dict[str, Any]) -> Dict[str, Any]:
     from backend.services.fleet_bot_visuals_service import enrich_bot_visuals
 
@@ -103,6 +117,8 @@ def _sanitize_bot(fb: Dict[str, Any]) -> Dict[str, Any]:
         "progress_image_url": visuals.get("progress_image_url"),
         "progress_tier": visuals.get("progress_tier"),
         "progress_label": visuals.get("progress_label"),
+        "skill_count": int((fb.get("skill_meta") or {}).get("skill_count") or len(fb.get("skills") or [])),
+        "skill_edge_band": _coarse_skill_edge((fb.get("skill_meta") or {}).get("blended_edge_bps")),
     }
 
 

@@ -39,6 +39,7 @@ FLEET_MECHANICS: List[Dict[str, str]] = [
     {"id": "M25", "name": "Owner Live Watch feed", "desc": "Trust feed includes fleet tick audit actions."},
     {"id": "M26", "name": "Fleet XP & levels", "desc": "Per-bot XP from ticks, executions, and profit sync."},
     {"id": "M27", "name": "Fleet reward unlocks", "desc": "Level-gated reward catalog on roster cards."},
+    {"id": "M28", "name": "Fleet roster skill monetization", "desc": "Ten monetization skills per bot; blended edge lowers profit thresholds."},
 ]
 
 _EXTENDED_SAME_DIRECTION = "buy_cheap_sell_rich"
@@ -134,7 +135,9 @@ def default_fleet_bots() -> List[Dict[str, Any]]:
 def fleet_bot_as_trading_row(fb: Dict[str, Any], acct: Dict[str, Any]) -> Dict[str, Any]:
     """Shape fleet bot for control-board bot table (names/labels like arb agents)."""
     from backend.services.exchange_fleet_progression_service import enrich_fleet_bot, progression_view
+    from backend.services.exchange_fleet_bot_skills_service import enrich_fleet_bot_skills
 
+    enrich_fleet_bot_skills(fb)
     enrich_fleet_bot(fb, acct)
     return {
         "id": fb.get("id"),
@@ -156,6 +159,8 @@ def fleet_bot_as_trading_row(fb: Dict[str, Any], acct: Dict[str, Any]) -> Dict[s
         "last_run_at": fb.get("last_run_at"),
         "last_run_ok": fb.get("last_run_ok"),
         "progression": progression_view(fb),
+        "skill_meta": fb.get("skill_meta"),
+        "skills": fb.get("skills") or [],
     }
 
 
@@ -174,8 +179,12 @@ def merge_fleet_into_controls(controls: Dict[str, Any]) -> None:
         else:
             merged.append(bot)
     controls["fleet_bots"] = merged
-    controls.setdefault("fleet_meta", {})["mechanics_version"] = 27
+    controls.setdefault("fleet_meta", {})
+    controls["fleet_meta"]["mechanics_version"] = 28
     controls["fleet_meta"]["extended_direction"] = _EXTENDED_SAME_DIRECTION
+    from backend.services.exchange_fleet_bot_skills_service import assign_skills_to_fleet_controls
+
+    assign_skills_to_fleet_controls(controls)
 
 
 def list_fleet_bots(controls: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -227,8 +236,18 @@ def _tick_profit_analyst_bot(bot: Dict[str, Any], *, hot_symbols: Optional[List[
     if not opps:
         return {"success": True, "executed": False, "reason": "no_opps", "bot_id": agent_id}
     opp = opps[0]
-    if float(opp.get("net_bps") or 0) < 10:
-        return {"success": True, "executed": False, "reason": "below_threshold", "bot_id": agent_id}
+    from backend.services.exchange_fleet_bot_skills_service import profit_execution_threshold_bps
+
+    min_bps = profit_execution_threshold_bps(bot, base=10.0)
+    if float(opp.get("net_bps") or 0) < min_bps:
+        return {
+            "success": True,
+            "executed": False,
+            "reason": "below_threshold",
+            "bot_id": agent_id,
+            "min_net_bps": min_bps,
+            "skill_edge_bps": (bot.get("skill_meta") or {}).get("blended_edge_bps"),
+        }
     trade = opp
     if arb.live_enabled():
         prep = arb.prepare_live_opportunity(opp, configured_usd=notional, min_live_usd=10.0)
@@ -244,6 +263,7 @@ def _tick_profit_analyst_bot(bot: Dict[str, Any], *, hot_symbols: Optional[List[
         "symbol": trade.get("symbol"),
         "mode": ex_res.get("mode"),
         "error": ex_res.get("error"),
+        "skill_edge_bps": (bot.get("skill_meta") or {}).get("blended_edge_bps"),
     }
 
 
@@ -440,12 +460,18 @@ def fleet_overview(controls: Dict[str, Any], *, persist_sync: bool = True) -> Di
         progression_view,
         reward_catalog,
     )
+    from backend.services.exchange_fleet_bot_skills_service import (
+        fleet_monetization_snapshot,
+        fleet_skills_catalog,
+        enrich_fleet_bot_skills,
+    )
 
     merge_fleet_into_controls(controls)
     bots = list(controls.get("fleet_bots") or [])
     dirty = False
     api_bots: List[Dict[str, Any]] = []
     for b in bots:
+        enrich_fleet_bot_skills(b)
         acct = arb_svc.read_account(b.get("id"))
         if enrich_fleet_bot(b, acct):
             dirty = True
@@ -467,6 +493,8 @@ def fleet_overview(controls: Dict[str, Any], *, persist_sync: bool = True) -> Di
         "meta": meta,
         "progression_summary": prog_summary,
         "rewards": reward_catalog(),
+        "fleet_skills": fleet_skills_catalog(),
+        "monetization_skills": fleet_monetization_snapshot(api_bots),
         "health": {
             "bot_count": len(bots),
             "last_tick_failed_bots": failing,

@@ -29,7 +29,7 @@ def test_fleet_merge_into_controls(tmp_path, monkeypatch):
 
     controls = ctl._load_controls()
     ov = fleet_overview(controls)
-    assert ov["mechanics_count"] == 27
+    assert ov["mechanics_count"] == 28
     assert len(ov["bots"]) == 23
     assert "progression_summary" in ov
     assert ov["bots"][0].get("progression", {}).get("level") == 1

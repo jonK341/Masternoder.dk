@@ -89,6 +89,24 @@
       "icon": "🎰"
     },
     {
+      "id": "fleet-roster-skills",
+      "name": "Fleet Roster Skill Monetization",
+      "category": "exchange_automation",
+      "status": "live",
+      "priority": 6,
+      "enabled": true,
+      "recurring": true,
+      "interval": "month",
+      "price": 0,
+      "description": "Supervisor fleet bots run a 10-skill monetization set (stream, PayPal, casino bridge, rentals) to lift micro-arb profit.",
+      "features": ["Blended edge bps on roster", "Lower profit thresholds", "Business Control fleet overview", "5D monitor roster cards"],
+      "payment_rails": ["paypal", "mn2", "credits"],
+      "revenue_track_ids": ["B2", "E4", "A9"],
+      "checkout_url": "/business-control/",
+      "api_status": "/api/exchange/control-board/overview",
+      "icon": "🤖"
+    },
+    {
       "id": "youtube-monetization",
       "name": "YouTube Revenue",
       "category": "content_distribution",

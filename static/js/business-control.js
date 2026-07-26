@@ -366,10 +366,20 @@
         if (prog.last_xp_gain) {
           lastRun += '<div class="muted" style="font-size:11px">+' + prog.last_xp_gain + " XP last tick</div>";
         }
+        var skillLine = "";
+        if (b.skill_meta && b.skill_meta.blended_edge_bps != null) {
+          skillLine =
+            '<div class="fleet-skills-mini muted">' +
+            (b.skill_meta.skill_count || 0) +
+            " skills · ~" +
+            b.skill_meta.blended_edge_bps +
+            " bps edge</div>";
+        }
         d.innerHTML =
           '<div class="top"><strong>' + (b.name || b.id) + "</strong>" + tag + levelPill + pill + "</div>" +
           '<div class="role">' + (b.role_label || b.badge || "") + "</div>" +
           fleetXpBar(prog) +
+          skillLine +
           rewardsLine +
           lastRun;
         inner.appendChild(d);
