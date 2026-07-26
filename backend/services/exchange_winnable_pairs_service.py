@@ -83,16 +83,18 @@ def _ensure_agent_account(agent_id: str) -> None:
 def run_winnable_pairs_tick(
     *,
     pair_search: Optional[Dict[str, Any]] = None,
+    agent_id: Optional[str] = None,
+    max_executions_per_tick: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Rank winnable routes and execute up to max_executions_per_tick."""
     if not enabled():
         return {"success": False, "error": "winnable_pairs_disabled"}
 
     cfg = load_config()
-    agent_id = str(cfg.get("agent_id") or _DEFAULT_AGENT)
+    agent_id = str(agent_id or cfg.get("agent_id") or _DEFAULT_AGENT)
     min_bps = float(cfg.get("min_net_bps") or 12)
-    min_score = float(cfg.get("min_search_score") or 18)
-    max_exec = max(1, int(cfg.get("max_executions_per_tick") or 3))
+    min_score = float(cfg.get("min_search_score") or 15)
+    max_exec = max(1, int(max_executions_per_tick if max_executions_per_tick is not None else cfg.get("max_executions_per_tick") or 3))
     notional = float(cfg.get("notional_usd") or 75)
 
     search = pair_search

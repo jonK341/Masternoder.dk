@@ -79,6 +79,11 @@ def _load_controls() -> Dict[str, Any]:
     data.setdefault("kill_switch", False)
     data.setdefault("orchestration", {})
     _merge_supervisors(data)
+    try:
+        from backend.services.exchange_supervisor_fleet_service import merge_fleet_into_controls
+        merge_fleet_into_controls(data)
+    except Exception:
+        pass
     return data
 
 
@@ -296,10 +301,30 @@ def _winnable_executor_bot() -> Optional[Dict[str, Any]]:
 def list_bots(*, light: bool = False) -> List[Dict[str, Any]]:
     controls = _load_controls()
     bots = _arbitrage_bots() + _cross_trade_bots(light=light)
-    wb = _winnable_executor_bot()
-    if wb:
-        bots = [b for b in bots if b.get("id") != wb["id"]]
-        bots.append(wb)
+    try:
+        from backend.services.exchange_supervisor_fleet_service import list_fleet_bots
+        from backend.services import exchange_arbitrage_service as arb_svc
+
+        for fb in list_fleet_bots(controls):
+            if any(b.get("id") == fb.get("id") for b in bots):
+                continue
+            acct = arb_svc.read_account(fb.get("id"))
+            bots.append({
+                "id": fb.get("id"),
+                "name": fb.get("name") or fb.get("id"),
+                "kind": fb.get("kind") or "fleet",
+                "supervisor": fb.get("supervisor"),
+                "config_enabled": bool(fb.get("enabled", True)),
+                "fleet": True,
+                "realized_pnl_usd": round(float(acct.get("realized_profit_usd") or 0), 4),
+                "unrealized_pnl_usd": 0.0,
+                "trade_count": int(acct.get("trade_count") or 0),
+                "notional_traded_usd": round(float(acct.get("notional_traded_usd") or 0), 2),
+                "wallet_label": "",
+                "last_action": acct.get("last_action"),
+            })
+    except Exception:
+        pass
     for b in bots:
         b["enabled"] = _effective_enabled(b, controls)
         b["total_pnl_usd"] = round(float(b.get("realized_pnl_usd") or 0) + float(b.get("unrealized_pnl_usd") or 0), 4)
@@ -487,6 +512,13 @@ def business_overview(*, light: bool = True) -> Dict[str, Any]:
     except Exception:
         pass
 
+    try:
+        from backend.services.exchange_supervisor_fleet_service import fleet_overview
+
+        extras["supervisor_fleet"] = fleet_overview(controls)
+    except Exception:
+        pass
+
     if "paper_mode" not in extras:
         try:
             from backend.services.exchange_arbitrage_service import live_enabled
@@ -572,13 +604,19 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
 
     if sup_winnable and sup_winnable.get("enabled", True):
         try:
-            from backend.services.exchange_winnable_pairs_service import run_winnable_pairs_tick
+            from backend.services.exchange_profit_pair_search_service import run_profit_pair_search
 
-            results["winnable_pairs"] = run_winnable_pairs_tick()
-            ps = (results["winnable_pairs"] or {}).get("profit_pair_search") or {}
-            if ps.get("success") or ps.get("hot_symbols"):
-                pair_search = ps
-                hot_symbols = list(ps.get("hot_symbols") or [])
+            pair_search = run_profit_pair_search()
+            if pair_search.get("success"):
+                hot_symbols = list(pair_search.get("hot_symbols") or [])
+            from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
+
+            results["winnable_pairs"] = run_fleet_for_kind(
+                controls, "winnable_pairs", pair_search=pair_search,
+            )
+            ps = pair_search if (pair_search or {}).get("success") else {}
+            if ps.get("hot_symbols"):
+                hot_symbols = list(ps.get("hot_symbols") or hot_symbols or [])
         except Exception as exc:
             results["winnable_pairs"] = {"success": False, "error": str(exc)}
     else:
@@ -628,9 +666,9 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     sup_ext = _supervisor_for_kind(controls, "extended_profit")
     if sup_ext and sup_ext.get("enabled", True):
         try:
-            from backend.services.exchange_extended_profit_service import run_extended_profit_tick
-            profile = os.environ.get("EXCHANGE_PROFIT_PROFILE", "max")
-            results["extended_profit"] = run_extended_profit_tick(profile=profile)
+            from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
+
+            results["extended_profit"] = run_fleet_for_kind(controls, "extended_profit", hot_symbols=hot_symbols)
         except Exception as exc:
             results["extended_profit"] = {"success": False, "error": str(exc)}
     else:
@@ -638,19 +676,34 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
 
     sup_risk = _supervisor_for_kind(controls, "risk")
     if sup_risk and sup_risk.get("enabled", True):
-        results["risk"] = _tick_risk_officer(controls)
+        try:
+            from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
+
+            results["risk"] = run_fleet_for_kind(controls, "risk")
+        except Exception as exc:
+            results["risk"] = {"success": False, "error": str(exc)}
     else:
         results["risk"] = {"success": False, "error": "supervisor_paused"}
 
     sup_profit = _supervisor_for_kind(controls, "analytics")
     if sup_profit and sup_profit.get("enabled", True):
-        results["analytics"] = _tick_profit_analyst()
+        try:
+            from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
+
+            results["analytics"] = run_fleet_for_kind(controls, "analytics", hot_symbols=hot_symbols)
+        except Exception as exc:
+            results["analytics"] = {"success": False, "error": str(exc)}
     else:
         results["analytics"] = {"success": False, "error": "supervisor_paused"}
 
     sup_treasury = _supervisor_for_kind(controls, "treasury")
     if sup_treasury and sup_treasury.get("enabled", True):
-        results["treasury"] = _tick_treasury_manager()
+        try:
+            from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
+
+            results["treasury"] = run_fleet_for_kind(controls, "treasury")
+        except Exception as exc:
+            results["treasury"] = {"success": False, "error": str(exc)}
     else:
         results["treasury"] = {"success": False, "error": "supervisor_paused"}
 

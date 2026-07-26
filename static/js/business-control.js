@@ -107,7 +107,10 @@
       var state = b.enabled ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>';
       tr.innerHTML =
         "<td>" + (b.name || b.id) + "</td>" +
-        "<td>" + (b.kind === "arbitrage_paper" ? "Arbitrage" : b.kind === "winnable_pairs" ? "Winnable pairs" : "Cross-trade") + "</td>" +
+        "<td>" + (b.kind === "arbitrage_paper" ? "Arbitrage" : b.kind === "winnable_pairs" ? "Winnable" :
+          b.kind === "analytics" ? "Profit analyst" : b.kind === "extended_profit" ? "Extended" :
+          b.kind === "treasury" ? "Treasury" : b.kind === "risk" ? "Risk" : b.fleet ? "Fleet" :
+          "Cross-trade") + (b.fleet ? " · fleet" : "") + "</td>" +
         "<td>" + (b.supervisor || "") + "</td>" +
         '<td class="' + cls(b.realized_pnl_usd) + '">' + money(b.realized_pnl_usd) + "</td>" +
         '<td class="' + cls(b.unrealized_pnl_usd) + '">' + money(b.unrealized_pnl_usd) + "</td>" +
@@ -198,7 +201,12 @@
     renderSupervisors(d.supervisors || []);
     renderOrchestration(d.orchestration);
     renderLivePack(d.live_pack, d.winnable_pairs);
-    renderBots(d.bots || []);
+      renderBots(d.bots || []);
+      var fs = $("fleetSummary");
+      if (fs && d.supervisor_fleet) {
+        var fc = (d.supervisor_fleet.bots || []).length;
+        fs.textContent = fc + " fleet bots registered · " + (d.supervisor_fleet.mechanics_count || 25) + " mechanics active";
+      }
   }
 
   function renderStalePanels(message) {
@@ -365,23 +373,39 @@
   }
 
   function loadOwnerWatch() {
-    api("/api/exchange/live-watch/owner?limit=60").then(function (d) {
-      var el = $("watchTotals");
-      if (!el || !d || !d.success) return;
+    var totalsEl = $("watchTotals");
+    var usersEl = $("watchUsers");
+    var feedEl = $("watchFeed");
+    if (totalsEl) totalsEl.textContent = "Loading Live Watch…";
+    api("/api/exchange/live-watch/owner?limit=60", { timeoutMs: 90000 }).then(function (res) {
+      var d = res.data;
+      if (res.timedOut || !res.ok || !d || !d.success) {
+        if (totalsEl) totalsEl.textContent = "Live Watch failed — " + (res.timedOut ? "timed out" : (d && d.error) || "error");
+        if (usersEl) usersEl.innerHTML = "<tr><td colspan='8'>Could not load users.</td></tr>";
+        if (feedEl) feedEl.textContent = "No feed.";
+        return;
+      }
       var t = d.totals || {};
-      el.textContent = t.users + " users · " + t.agents + " agents · " + t.active_agents + " active · " + t.pending_activation + " pending activation";
-      var tb = $("watchUsers");
-      if (tb) tb.innerHTML = (d.users || []).map(function (u) {
-        return "<tr><td>" + u.user_id + "</td><td>" + u.trust_score + "</td><td>" +
-          (u.tier && u.tier.icon ? u.tier.icon + " " : "") + (u.tier ? u.tier.name : "") + "</td><td>" + u.agent_count +
-          "</td><td>" + u.active_agents + "</td><td>" + u.pending_activation + "</td><td>" + money(u.realized_profit_usd) +
-          "</td><td>" + u.avg_composite_iq + "</td></tr>";
-      }).join("") || "<tr><td colspan='8'>No user agents yet.</td></tr>";
-      var ff = $("watchFeed");
-      if (ff) ff.innerHTML = (d.feed || []).map(function (f) {
-        return "<div style='padding:4px 0;border-top:1px solid var(--line);font-size:12px'>" +
-          (f.ts || "") + " · " + (f.action || "") + " · " + (f.user_id || "") + " · $" + Number(f.amount_usd || 0).toFixed(2) + "</div>";
-      }).join("") || "No trust/trading events yet.";
+      if (totalsEl) {
+        totalsEl.textContent = (t.users || 0) + " users · " + (t.agents || 0) + " agents · " +
+          (t.active_agents || 0) + " active · " + (t.pending_activation || 0) + " pending activation";
+      }
+      if (usersEl) {
+        usersEl.innerHTML = (d.users || []).map(function (u) {
+          return "<tr><td>" + u.user_id + "</td><td>" + u.trust_score + "</td><td>" +
+            (u.tier && u.tier.icon ? u.tier.icon + " " : "") + (u.tier ? u.tier.name : "") + "</td><td>" + u.agent_count +
+            "</td><td>" + u.active_agents + "</td><td>" + u.pending_activation + "</td><td>" + money(u.realized_profit_usd) +
+            "</td><td>" + u.avg_composite_iq + "</td></tr>";
+        }).join("") || "<tr><td colspan='8'>No user agents yet.</td></tr>";
+      }
+      if (feedEl) {
+        feedEl.innerHTML = (d.feed || []).map(function (f) {
+          return "<div style='padding:4px 0;border-top:1px solid var(--line);font-size:12px'>" +
+            (f.ts || "") + " · " + (f.action || "") + " · " + (f.user_id || "") + " · $" + Number(f.amount_usd || 0).toFixed(2) + "</div>";
+        }).join("") || "No trust/trading events yet.";
+      }
+    }).catch(function () {
+      if (totalsEl) totalsEl.textContent = "Live Watch network error.";
     });
   }
 
