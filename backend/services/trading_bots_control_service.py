@@ -212,7 +212,7 @@ def _arbitrage_bots() -> List[Dict[str, Any]]:
     return bots
 
 
-def _cross_trade_bots() -> List[Dict[str, Any]]:
+def _cross_trade_bots(*, light: bool = False) -> List[Dict[str, Any]]:
     try:
         from backend.services.crypto_exchange_agent_service import list_agents
         agents = list_agents().get("agents") or []
@@ -221,7 +221,8 @@ def _cross_trade_bots() -> List[Dict[str, Any]]:
     perf_map: Dict[str, Dict[str, Any]] = {}
     try:
         from backend.services.crypto_exchange_profit_agent_service import _agent_performance, _read_trades
-        for row in _agent_performance(_read_trades()):
+        trade_limit = 250 if light else 1000
+        for row in _agent_performance(_read_trades(limit=trade_limit)):
             perf_map[row.get("agent_id")] = row
     except Exception:
         perf_map = {}
@@ -292,9 +293,9 @@ def _winnable_executor_bot() -> Optional[Dict[str, Any]]:
         return None
 
 
-def list_bots() -> List[Dict[str, Any]]:
+def list_bots(*, light: bool = False) -> List[Dict[str, Any]]:
     controls = _load_controls()
-    bots = _arbitrage_bots() + _cross_trade_bots()
+    bots = _arbitrage_bots() + _cross_trade_bots(light=light)
     wb = _winnable_executor_bot()
     if wb:
         bots = [b for b in bots if b.get("id") != wb["id"]]
@@ -309,8 +310,8 @@ def _env_flag_on(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def live_pack_status() -> Dict[str, Any]:
-    """Live profit gates: arb, rotation, pair search, venues, payout — for the control board."""
+def live_pack_status(*, light: bool = False) -> Dict[str, Any]:
+    """Live profit gates. Use ``light=True`` for control-board overview (no Binance preflight)."""
     blockers: List[str] = []
     out: Dict[str, Any] = {
         "success": True,
@@ -368,7 +369,7 @@ def live_pack_status() -> Dict[str, Any]:
     try:
         from backend.services.exchange_payout_service import payout_status
 
-        ps = payout_status()
+        ps = payout_status(light=True)
         out["payout"] = {
             "mode": ps.get("mode"),
             "ready_to_sweep": ps.get("ready_to_sweep"),
@@ -395,9 +396,9 @@ def live_pack_status() -> Dict[str, Any]:
     return out
 
 
-def business_overview() -> Dict[str, Any]:
+def business_overview(*, light: bool = True) -> Dict[str, Any]:
     controls = _load_controls()
-    bots = list_bots()
+    bots = list_bots(light=light)
 
     total_realized = round(sum(float(b.get("realized_pnl_usd") or 0) for b in bots), 4)
     total_unrealized = round(sum(float(b.get("unrealized_pnl_usd") or 0) for b in bots), 4)
@@ -423,35 +424,38 @@ def business_overview() -> Dict[str, Any]:
             "bot_ids": [b["id"] for b in sup_bots],
         })
 
-    extras: Dict[str, Any] = {}
+    extras: Dict[str, Any] = {"overview_light": bool(light)}
     try:
         from backend.services.exchange_arbitrage_service import live_enabled
-        from backend.services.exchange_secrets_vault_service import vault_status
+
         extras["arbitrage_live"] = live_enabled()
-        extras["vault"] = vault_status()
+        if not light:
+            from backend.services.exchange_secrets_vault_service import vault_status
+            extras["vault"] = vault_status()
     except Exception:
         pass
-    try:
-        from backend.services.agent_marketplace_service import sales_summary
-        extras["marketplace"] = sales_summary()
-    except Exception:
-        pass
-    try:
-        from backend.services.exchange_treasury_service import treasury_status
-        from backend.services.exchange_arbitrage_service import live_enabled
-        tre = treasury_status()
-        extras["treasury"] = tre
-    except Exception:
-        pass
+    if not light:
+        try:
+            from backend.services.agent_marketplace_service import sales_summary
+            extras["marketplace"] = sales_summary()
+        except Exception:
+            pass
+        try:
+            from backend.services.exchange_treasury_service import treasury_status
+
+            extras["treasury"] = treasury_status()
+        except Exception:
+            pass
 
     try:
-        lp = live_pack_status()
+        lp = live_pack_status(light=light)
         extras["live_pack"] = lp
         extras["arbitrage_live"] = lp.get("arbitrage_live", extras.get("arbitrage_live"))
         if lp.get("mode") != "live":
             extras["paper_mode"] = True
-            tre = extras.get("treasury") or {}
-            extras["paper_projection_cap_usd"] = round(float(tre.get("ledger_stashed_usd_paper") or 0), 4)
+            if not light:
+                tre = extras.get("treasury") or {}
+                extras["paper_projection_cap_usd"] = round(float(tre.get("ledger_stashed_usd_paper") or 0), 4)
             extras["monthly_projection_note"] = (
                 "Paper or partial-live — fix live_pack blockers before trusting external profit."
             )

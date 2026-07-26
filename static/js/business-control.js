@@ -3,6 +3,11 @@
   "use strict";
 
   var KEY_STORE = "mn_exchange_admin_key";
+  var OVERVIEW_TIMEOUT_MS = 55000;
+  var RUN_TIMEOUT_MS = 300000;
+  var lastOverview = null;
+  var loadGen = 0;
+
   var $ = function (id) { return document.getElementById(id); };
 
   function getKey() { return sessionStorage.getItem(KEY_STORE) || ""; }
@@ -14,11 +19,24 @@
     var headers = opts.headers || {};
     headers["X-Exchange-Admin-Key"] = getKey();
     if (opts.body) headers["Content-Type"] = "application/json";
+    var timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : OVERVIEW_TIMEOUT_MS;
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
     return fetch(path, {
       method: opts.method || "GET",
       headers: headers,
       body: opts.body ? JSON.stringify(opts.body) : undefined,
-    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, data: j }; }); });
+      signal: ctrl ? ctrl.signal : undefined,
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, data: j }; });
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") {
+        return { ok: false, status: 0, data: { success: false, error: "timeout" }, timedOut: true };
+      }
+      throw err;
+    }).finally(function () {
+      if (timer) clearTimeout(timer);
+    });
   }
 
   function money(n) {
@@ -173,18 +191,60 @@
       (hist ? "<div style='margin-top:12px'><strong style='font-size:12px'>Recent runs</strong>" + hist + "</div>" : "");
   }
 
-  function load() {
-    status("Loading…");
-    return api("/api/exchange/control-board/overview").then(function (res) {
+  function applyOverview(d) {
+    if (!d || !d.success) return;
+    lastOverview = d;
+    renderKpis(d.totals || {}, d.kill_switch);
+    renderSupervisors(d.supervisors || []);
+    renderOrchestration(d.orchestration);
+    renderLivePack(d.live_pack, d.winnable_pairs);
+    renderBots(d.bots || []);
+  }
+
+  function renderStalePanels(message) {
+    if (lastOverview) {
+      applyOverview(lastOverview);
+      return;
+    }
+    renderOrchestration({});
+    renderLivePack({}, {});
+    var m = message || "Could not load data.";
+    var lp = $("livePackPanel");
+    var wp = $("winnablePanel");
+    var op = $("orchPanel");
+    if (lp) lp.innerHTML = "<p class='warn'>" + m + "</p>";
+    if (wp) wp.innerHTML = "<p class='warn'>" + m + "</p>";
+    if (op) op.innerHTML = "<p class='warn'>" + m + "</p>";
+  }
+
+  function load(opts) {
+    opts = opts || {};
+    var gen = ++loadGen;
+    if (lastOverview && !opts.force) {
+      applyOverview(lastOverview);
+      status("Showing cached data · refreshing…");
+    } else {
+      status("Loading…");
+    }
+    var url = "/api/exchange/control-board/overview?light=1";
+    if (opts.full) url = "/api/exchange/control-board/overview?light=0";
+    return api(url, { timeoutMs: opts.timeoutMs || OVERVIEW_TIMEOUT_MS }).then(function (res) {
+      if (gen !== loadGen) return;
       if (res.status === 401) { clearKey(); showGate(); $("gateStatus").textContent = "Invalid key."; return; }
-      if (!res.ok || !res.data || !res.data.success) { status("Failed to load.", true); return; }
+      if (res.timedOut) {
+        status("Overview timed out — showing last data if any. Try Refresh.", true);
+        renderStalePanels("Request timed out.");
+        return;
+      }
+      if (!res.ok || !res.data || !res.data.success) {
+        status("Failed to load overview.", true);
+        renderStalePanels("Failed to load overview.");
+        return;
+      }
       var d = res.data;
-      renderKpis(d.totals || {}, d.kill_switch);
-      renderSupervisors(d.supervisors || []);
-      renderOrchestration(d.orchestration);
-      renderLivePack(d.live_pack, d.winnable_pairs);
-      renderBots(d.bots || []);
+      applyOverview(d);
       var note = "Updated " + new Date().toLocaleTimeString();
+      if (d.overview_light) note += " · fast overview";
       if (d.live_pack) {
         note += " · " + (d.live_pack.mode === "live" ? "LIVE pack ready" : "paper / partial");
         if (d.live_pack.blockers && d.live_pack.blockers.length) {
@@ -203,7 +263,11 @@
       }
       if (d.monthly_projection_note) note += " — " + d.monthly_projection_note;
       status(note);
-    }).catch(function () { status("Network error.", true); });
+    }).catch(function () {
+      if (gen !== loadGen) return;
+      status("Network error — check connection or try Refresh.", true);
+      renderStalePanels("Network error.");
+    });
   }
 
   function toggleBot(botId, on) {
@@ -332,8 +396,13 @@
     if (name === "payout") loadPayout();
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
-    if (name === "orchestration") load();
-    if (name === "livepack") load();
+    if (name === "orchestration" || name === "livepack") {
+      if (lastOverview) {
+        applyOverview(lastOverview);
+      } else {
+        load();
+      }
+    }
   }
 
   function init() {
@@ -345,10 +414,31 @@
     });
     $("key").addEventListener("keydown", function (e) { if (e.key === "Enter") $("unlock").click(); });
     $("lock").addEventListener("click", function () { clearKey(); showGate(); });
-    $("refresh").addEventListener("click", load);
+    $("refresh").addEventListener("click", function () { load({ force: true }); });
     $("runAll").addEventListener("click", function () {
-      status("Running all bots…");
-      api("/api/exchange/control-board/run", { method: "POST", body: {} }).then(load);
+      var btn = $("runAll");
+      if (btn) btn.disabled = true;
+      status("Running all bots on server (1–3 min)…");
+      api("/api/exchange/control-board/run", { method: "POST", body: {}, timeoutMs: RUN_TIMEOUT_MS })
+        .then(function (res) {
+          if (btn) btn.disabled = false;
+          if (res.timedOut) {
+            status("Run still processing — refresh overview in a minute.", true);
+            load({ force: true, timeoutMs: 90000 });
+            return;
+          }
+          if (res.data && res.data.success && res.data.results) {
+            status("Run finished · refreshing overview…");
+          } else {
+            status("Run returned: " + ((res.data && res.data.error) || "see orchestration tab"), true);
+          }
+          load({ force: true, timeoutMs: 90000 });
+        })
+        .catch(function () {
+          if (btn) btn.disabled = false;
+          status("Run request failed — server may still be busy. Refresh shortly.", true);
+          load({ force: true, timeoutMs: 90000 });
+        });
     });
     $("kill").addEventListener("click", function () {
       if (!confirm("Toggle the global kill switch? This pauses/resumes ALL bots.")) return;

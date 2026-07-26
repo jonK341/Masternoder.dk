@@ -427,9 +427,11 @@ def exchange_daemon_mesh_run():
 def exchange_control_board_overview():
     if not _admin_authorized():
         return jsonify({"success": False, "error": "unauthorized"}), 401
+    from flask import request
     from backend.services.trading_bots_control_service import business_overview
 
-    return jsonify(business_overview())
+    light = request.args.get("light", "1").strip().lower() in ("1", "true", "yes", "on")
+    return jsonify(business_overview(light=light))
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/run", methods=["POST"])
