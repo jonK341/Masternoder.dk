@@ -10,7 +10,14 @@
   var API_FIX = "/api/exchange/youtube-stream/agent-action";
   var API_STATUS = "/api/exchange/fleet-stream/ingest/status";
 
-  var state = { recorder: null, stream: null, active: false, bound: false };
+  var state = {
+    recorder: null,
+    stream: null,
+    active: false,
+    bound: false,
+    uploadChain: Promise.resolve(),
+    chunksSent: 0,
+  };
 
   function $(id) {
     return document.getElementById(id);
@@ -42,6 +49,7 @@
     }
     state.recorder = null;
     state.stream = null;
+    state.uploadChain = Promise.resolve();
     fetch(API_STOP, { method: "POST", credentials: "same-origin" }).catch(function () {});
   }
 
@@ -49,17 +57,17 @@
 
   function uploadChunk(blob) {
     if (!blob || !blob.size) return Promise.resolve();
-    return fetch(API_WEBM, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "video/webm" },
-      body: blob,
-    })
-      .then(function (r) {
+    state.uploadChain = state.uploadChain.then(function () {
+      return fetch(API_WEBM, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "video/webm" },
+        body: blob,
+      }).then(function (r) {
         return r.json().then(function (d) {
           if (!r.ok || !d.success) {
             uploadFails += 1;
-            if (uploadFails <= 3) {
+            if (uploadFails <= 5) {
               setStatus(
                 "Upload fejl: " + (d.error || d.hint || r.status) + " — prøv No OBS igen."
               );
@@ -67,14 +75,33 @@
             throw new Error(d.error || "upload_failed");
           }
           uploadFails = 0;
+          state.chunksSent += 1;
+          if (state.chunksSent === 1) {
+            setStatus("Første video-chunk sendt — vent 10–30 sek. i Studio (Masternoder2-nøgle).");
+          } else if (state.chunksSent % 10 === 0) {
+            setStatus("Sender stadig (" + state.chunksSent + " chunks) — tjek Studio forhåndsvisning.");
+          }
         });
-      })
-      .catch(function (e) {
-        if (e && e.message && e.message !== "upload_failed") {
-          uploadFails += 1;
-          if (uploadFails <= 3) setStatus("Netværksfejl mod server ingest — " + e.message);
-        }
       });
+    });
+    return state.uploadChain.catch(function (e) {
+      if (e && e.message && e.message !== "upload_failed") {
+        uploadFails += 1;
+        if (uploadFails <= 5) setStatus("Netværksfejl mod server ingest — " + e.message);
+      }
+    });
+  }
+
+  function pickMimeType() {
+    var candidates = [
+      "video/webm;codecs=vp8,opus",
+      "video/webm;codecs=vp9,opus",
+      "video/webm",
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      if (MediaRecorder.isTypeSupported(candidates[i])) return candidates[i];
+    }
+    return "video/webm";
   }
 
   function startTabCapture() {
@@ -82,6 +109,8 @@
       setStatus("Browser tab capture not supported — use Chrome/Edge on desktop.");
       return Promise.reject(new Error("no_getDisplayMedia"));
     }
+    state.chunksSent = 0;
+    state.uploadChain = Promise.resolve();
     return fetch(API_START, { method: "POST", credentials: "same-origin" })
       .then(function (r) {
         return r.json();
@@ -92,16 +121,18 @@
           throw new Error(d.error || "start_failed");
         }
         return navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: 30 },
-          audio: true,
+          video: { frameRate: 30, displaySurface: "browser" },
+          audio: false,
+          preferCurrentTab: true,
         });
       })
       .then(function (mediaStream) {
         state.stream = mediaStream;
-        var mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-          ? "video/webm;codecs=vp9,opus"
-          : "video/webm";
-        state.recorder = new MediaRecorder(mediaStream, { mimeType: mime, videoBitsPerSecond: 4500000 });
+        var mime = pickMimeType();
+        state.recorder = new MediaRecorder(mediaStream, {
+          mimeType: mime,
+          videoBitsPerSecond: 2800000,
+        });
         state.recorder.ondataavailable = function (ev) {
           if (ev.data && ev.data.size && state.active) uploadChunk(ev.data);
         };
@@ -112,8 +143,10 @@
           stopCapture();
         });
         state.active = true;
-        state.recorder.start(500);
-        setStatus("Sender fane til YouTube — vent til Studio viser billede (ikke Ingen data), så Go live.");
+        state.recorder.start(400);
+        setStatus(
+          "Deler fane → server → YouTube. Vælg DENNE monitor-fane (ikke Studio). Studio: streamnøgle Masternoder2."
+        );
       });
   }
 
@@ -185,7 +218,15 @@
       .then(function (d) {
         var ing = d.ingest || {};
         if (!ing.stream_key_configured) {
-          setStatus("Add YOUTUBE_STREAM_KEY on server (.env) from Studio streamnøgle — then click No OBS stream.");
+          setStatus(
+            "Kopiér streamnøgle «Masternoder2» fra Studio → YOUTUBE_STREAM_KEY på server — klik derefter No OBS."
+          );
+        } else if (ing.stream_key_profile && ing.stream_key_profile !== "Masternoder2") {
+          setStatus(
+            "Server stream-profil: " +
+              ing.stream_key_profile +
+              " — i Studio skal dropdown matche, ellers Ingen data."
+          );
         }
       })
       .catch(function () {});

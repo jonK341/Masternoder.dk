@@ -19,7 +19,24 @@ _DATA = os.path.join(_BASE, "data")
 _DAEMON_LOCK = os.path.join(_DATA, "youtube_ingest_daemon.lock")
 _DAEMON_PID = os.path.join(_DATA, "youtube_ingest_daemon.pid")
 _DAEMON_SOCK = os.path.join(_DATA, "youtube_ingest.sock")
+_DAEMON_CTL = _DAEMON_SOCK + ".ctl"
+_STATS_PATH = os.path.join(_DATA, "youtube_ingest_stats.json")
 _USE_DAEMON = os.environ.get("YT_INGEST_IN_PROCESS", "").strip().lower() not in ("1", "true", "yes")
+
+
+def _stream_key_profile() -> str:
+    return (os.environ.get("YOUTUBE_STREAM_KEY_PROFILE") or "").strip()
+
+
+def _read_ingest_stats() -> Dict[str, Any]:
+    try:
+        import json
+
+        with open(_STATS_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def _stream_key() -> str:
@@ -118,6 +135,19 @@ def ensure_daemon() -> Dict[str, Any]:
         lockf.close()
 
 
+def reset_daemon_pipeline() -> None:
+    if not os.path.exists(_DAEMON_CTL):
+        return
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(3.0)
+        sock.connect(_DAEMON_CTL)
+        sock.sendall(b"R")
+        sock.close()
+    except OSError:
+        pass
+
+
 def stop_daemon() -> Dict[str, Any]:
     pid = _read_daemon_pid()
     if not pid or not _pid_alive(pid):
@@ -147,6 +177,7 @@ def _send_chunk_to_daemon(data: bytes) -> Dict[str, Any]:
 
 
 def ingest_status() -> Dict[str, Any]:
+    stats = _read_ingest_stats()
     if _USE_DAEMON:
         running = _daemon_running()
         pid = _read_daemon_pid() if running else None
@@ -158,15 +189,25 @@ def ingest_status() -> Dict[str, Any]:
             running = True
             pid = _PROC.pid
         mode = "browser_webm_pipe"
+    profile = _stream_key_profile()
     return {
         "success": True,
         "ffmpeg_path": shutil.which("ffmpeg"),
         "stream_key_configured": bool(_stream_key()),
+        "stream_key_profile": profile or None,
+        "studio_stream_key_hint": (
+            f"Studio dropdown skal stå på «{profile}» — kopier den nøgle til YOUTUBE_STREAM_KEY på serveren."
+            if profile
+            else "Vælg streamnøgle i Studio (fx Masternoder2) og kopier samme nøgle til YOUTUBE_STREAM_KEY i server .env."
+        ),
         "running": running,
         "pid": pid,
         "mode": mode,
         "obs_required": False,
         "socket_path": _DAEMON_SOCK if _USE_DAEMON else None,
+        "bytes_in": stats.get("bytes_in"),
+        "chunks_in": stats.get("chunks_in"),
+        "last_chunk_at": stats.get("last_chunk_at"),
     }
 
 
@@ -213,6 +254,7 @@ def start_ingest() -> Dict[str, Any]:
         }
 
     if _USE_DAEMON:
+        reset_daemon_pipeline()
         res = ensure_daemon()
         if not res.get("success"):
             return res

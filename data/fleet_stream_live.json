@@ -21,7 +21,8 @@
     "server_url": "rtmp://a.rtmp.youtube.com/live2",
     "backup_server_url": "rtmp://b.rtmp.youtube.com/live2?backup=1",
     "stream_key_env": "YOUTUBE_STREAM_KEY",
-    "encoder": "OBS Studio (or Streamlabs)"
+    "stream_key_profile": "Masternoder2",
+    "encoder": "Browser tab → server ffmpeg (No OBS)"
   },
   "embed": {
     "autoplay": true,

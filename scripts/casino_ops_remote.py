@@ -273,6 +273,14 @@ def main() -> int:
     p.add_argument("--discord-general-webhook", help="Full #general Discord webhook URL (fleet livestream)")
     p.add_argument("--discord-ops-secret", help="Set DISCORD_OPS_SECRET on server (upsert)")
     p.add_argument("--meta-pixel-id", help="Optional META_PIXEL_ID value")
+    p.add_argument(
+        "--youtube-stream-key",
+        help="Set YOUTUBE_STREAM_KEY on server (Studio streamnøgle — never commit locally)",
+    )
+    p.add_argument(
+        "--youtube-stream-profile",
+        help="Set YOUTUBE_STREAM_KEY_PROFILE (fx Masternoder2) so ops matches Studio dropdown",
+    )
     p.add_argument("--install-cron", action="store_true", help="Install /etc/cron.d/masternoder-discord-casino")
     p.add_argument(
         "--install-fleet-stream-cron",
@@ -318,6 +326,8 @@ def main() -> int:
             args.discord_ops_secret,
             args.meta_pixel_id,
             args.install_fleet_stream_cron,
+            args.youtube_stream_key,
+            args.youtube_stream_profile,
             args.all,
         ]
     ):
@@ -336,6 +346,12 @@ def main() -> int:
         extra_lines.append(_shell_upsert("DISCORD_OPS_SECRET", args.discord_ops_secret.strip()))
     if args.meta_pixel_id:
         extra_lines.append(_shell_export("META_PIXEL_ID", args.meta_pixel_id.strip()))
+    if args.youtube_stream_key:
+        extra_lines.append(_shell_upsert("YOUTUBE_STREAM_KEY", args.youtube_stream_key.strip()))
+    if args.youtube_stream_profile:
+        extra_lines.append(
+            _shell_upsert("YOUTUBE_STREAM_KEY_PROFILE", args.youtube_stream_profile.strip())
+        )
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
     ssh, auth_method, _ = connect_deploy_ssh(pw)
