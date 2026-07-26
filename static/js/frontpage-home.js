@@ -614,10 +614,19 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         buildSmartLinks();
-        loadNews();
         wireVisitTracking();
         wireSoundSystem();
-        const sm = new StarMap4D('fp-starmap4d');
-        sm.load();
+        const runWhenIdle = (fn) => {
+            if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(fn, { timeout: 4000 });
+            } else {
+                setTimeout(fn, 300);
+            }
+        };
+        runWhenIdle(() => {
+            loadNews();
+            const sm = new StarMap4D('fp-starmap4d');
+            sm.load();
+        });
     });
 })();

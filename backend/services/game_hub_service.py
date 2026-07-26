@@ -5,7 +5,11 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+_OVERVIEW_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_OVERVIEW_CACHE_TTL_SEC = 45.0
 
 
 def _resolve_uid_fallback(user_id: str) -> str:
@@ -57,6 +61,16 @@ def _active_mission(quests: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
 
 def get_overview(user_id: str) -> Dict[str, Any]:
     user_id = _resolve_uid_fallback(user_id)
+    now = time.time()
+    cached = _OVERVIEW_CACHE.get(user_id)
+    if cached and (now - cached[0]) < _OVERVIEW_CACHE_TTL_SEC:
+        return cached[1]
+    payload = _build_overview(user_id)
+    _OVERVIEW_CACHE[user_id] = (now, payload)
+    return payload
+
+
+def _build_overview(user_id: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'success': True, 'user_id': user_id, 'tabs': {}, 'summary': {}}
 
     unified_quests: List[Dict[str, Any]] = []
