@@ -31,3 +31,20 @@ def test_list_chapters_public_count():
     assert out["success"] is True
     assert out["chapter_count"] >= 6
     assert out["current"] and out["current"].get("title")
+
+
+def test_profit_chapter_hot_symbols_template():
+    from backend.services.fleet_stream_composer_service import _load_catalog
+
+    rows = _load_catalog().get("chapters") or []
+    profit = next((c for c in rows if c.get("id") == "ch_profit_lanes"), None)
+    assert profit is not None
+    raw = decode_chapter_content(profit)
+    assert "{hot_symbols}" in raw
+    assert "{hot_symbols]" not in raw
+    view = chapter_public_view(
+        profit,
+        fleet_snapshot={"lanes": {"hot_symbols": ["DOGE", "BTC"]}, "trades": {"profit_band": "up"}},
+    )
+    assert "DOGE" in view["ai_content"]
+    assert "BTC" in view["ai_content"]

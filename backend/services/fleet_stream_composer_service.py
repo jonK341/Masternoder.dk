@@ -22,10 +22,9 @@ def _load_catalog() -> Dict[str, Any]:
         return {"chapters": [], "rotate_sec_stream": 75, "rotate_sec_default": 120}
 
 
-def _scrub(text: str, *, max_len: int = 420) -> str:
-    from backend.services.exchange_fleet_progress_monitor_service import _scrub_text
-
-    return _scrub_text(text, max_len=max_len)
+def _scrub_composer(text: str, *, max_len: int = 420) -> str:
+    """Curated chapter copy — length cap only (no PII regex on templates)."""
+    return (text or "").strip()[:max_len]
 
 
 def decode_chapter_content(chapter: Dict[str, Any]) -> str:
