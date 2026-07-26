@@ -53,6 +53,13 @@ AGENT_TOOLS: List[Dict[str, Any]] = [
         "description": "Current rotating stream chapter with decoded AI content.",
     },
     {
+        "action": "start_youtube_stream",
+        "method": "POST",
+        "path": "/api/exchange/youtube-stream/agent-action",
+        "mutating": True,
+        "description": "Assign youtube_stream_agent, preflight URLs, go-live hub (Discord + chat events).",
+    },
+    {
         "action": "narration_line",
         "method": "GET",
         "path": "/api/exchange/youtube-stream/agent-action",
@@ -232,6 +239,31 @@ def execute_agent_action(body: Dict[str, Any], *, base_url: Optional[str] = None
     if action == "assign_agent":
         return {
             **assign_youtube_stream_agents(uid, body.get("agent_id") or "youtube_stream_agent"),
+            "http_status": 200,
+        }
+    if action == "start_youtube_stream":
+        from backend.services.fleet_stream_geo_service import start_livestream_session
+
+        session = start_livestream_session(uid)
+        ctrl = stream_controls(base_url=base_url)
+        preflight = execute_agent_action(
+            {"action": "preflight_urls", "approved": True, "user_id": uid},
+            base_url=base_url,
+        )
+        narration = _monitor_narration_line()
+        yt = (session.get("youtube") or {})
+        return {
+            "success": True,
+            "session": session,
+            "preflight": preflight,
+            "narration_line": narration,
+            "youtube_studio_url": yt.get("studio_url") or (ctrl.get("live_broadcast") or {}).get("studio_url"),
+            "watch_url": yt.get("watch_url"),
+            "monitor_stream_layout": (ctrl.get("monitor") or {}).get("stream_layout"),
+            "operator_note": (
+                "YouTube RTMP/OBS must be LIVE in Studio — this agent assigns skills, "
+                "posts Discord + site events, and verifies monitor URLs."
+            ),
             "http_status": 200,
         }
     if action == "preflight_urls":

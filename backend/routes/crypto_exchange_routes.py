@@ -651,12 +651,23 @@ def exchange_fleet_stream_geo_ping():
 @crypto_exchange_bp.route("/api/exchange/fleet-stream/go-live", methods=["POST"])
 def exchange_fleet_stream_go_live():
     from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
-    from backend.services.fleet_stream_geo_service import start_livestream_session
+    from backend.services.youtube_stream_agent_service import execute_agent_action
 
     if not monitor_public_enabled():
         return jsonify({"success": False, "error": "monitor_disabled"}), 404
     uid = _fleet_chat_uid()
-    return jsonify(start_livestream_session(uid))
+    result = execute_agent_action(
+        {"action": "start_youtube_stream", "approved": True, "user_id": uid},
+        base_url=_base_url(),
+    )
+    code = int(result.pop("http_status", 200))
+    return jsonify(result), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/start-youtube", methods=["POST"])
+def exchange_fleet_stream_start_youtube():
+    """Alias of go-live — full YouTube stream agent startup."""
+    return exchange_fleet_stream_go_live()
 
 
 @crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/preview", methods=["GET"])
