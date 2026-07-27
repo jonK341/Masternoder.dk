@@ -1,11 +1,11 @@
 {
-  "best_net_bps": 34.0,
-  "threshold_bps": 14.0,
-  "ready": true,
-  "top_symbol": "LINK",
+  "best_net_bps": 3.96,
+  "threshold_bps": 12.0,
+  "ready": false,
+  "top_symbol": "SHIB",
   "buy_venue": "nonkyc",
-  "sell_venue": "binance",
-  "est_profit_usd": 0.08,
-  "updated_at": "2026-07-04T20:10:00.478391Z",
-  "source": "exchange_arb_tick"
+  "sell_venue": "okx",
+  "est_profit_usd": 0.004,
+  "updated_at": "2026-07-26T17:24:07.147110Z",
+  "source": "fast_arb_rescan"
 }

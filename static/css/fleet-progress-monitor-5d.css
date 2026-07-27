@@ -1,0 +1,833 @@
+/* 5D Fleet Progress Navigation Monitor — stream + embed */
+:root {
+  --f5-bg: #03060f;
+  --f5-line: rgba(93, 255, 176, 0.22);
+  --f5-accent: #5dffb0;
+  --f5-cyan: #00d4ff;
+  --f5-magenta: #ff64ff;
+  --f5-text: #e8eefc;
+  --f5-muted: rgba(232, 238, 252, 0.62);
+  --f5-nav-offset: 52px;
+  --f5-frame-radius: 22px;
+  --f5-frame-pad: 3px;
+  --f5-corner: 26px;
+  --f5-corner-thick: 2px;
+}
+
+.f5-body {
+  margin: 0;
+  min-height: 100vh;
+  padding-top: var(--f5-nav-offset);
+  background: radial-gradient(circle at 20% 0%, rgba(0, 212, 255, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(255, 100, 255, 0.1), transparent 45%),
+    var(--f5-bg);
+  color: var(--f5-text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+
+.f5-body.f5-stream {
+  padding-top: 0;
+}
+
+.f5-nav-toolbar {
+  z-index: 1200;
+}
+
+.f5-stream #navigation-toolbar,
+.f5-stream .f5-nav-toolbar {
+  display: none !important;
+}
+
+.f5-stream .f5-home-link {
+  display: none;
+}
+
+.f5-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 16px 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.f5-stream .f5-shell {
+  max-width: 1920px;
+  padding: 18px 22px 22px;
+  margin: 10px auto;
+  border-radius: calc(var(--f5-frame-radius) + 6px);
+  border: 1px solid rgba(93, 255, 176, 0.14);
+  background: linear-gradient(165deg, rgba(5, 10, 22, 0.92) 0%, rgba(3, 6, 14, 0.98) 55%, rgba(8, 6, 20, 0.94) 100%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.f5-stream .f5-grid-panels,
+.f5-stream .f5-privacy {
+  display: none;
+}
+
+.f5-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--f5-muted);
+  letter-spacing: 0.04em;
+}
+
+.f5-meta {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--f5-muted);
+}
+
+.f5-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.f5-stream .f5-header {
+  margin-bottom: 12px;
+  padding: 10px 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(93, 255, 176, 0.14);
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.65), rgba(4, 8, 18, 0.4));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.f5-header-copy {
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.f5-header h1 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+  line-height: 1.2;
+  background: linear-gradient(90deg, var(--f5-accent), var(--f5-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.f5-stream .f5-kicker,
+.f5-stream #f5-generated {
+  display: none;
+}
+
+.f5-select {
+  appearance: none;
+  min-width: 120px;
+  padding-right: 22px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--f5-accent) 50%),
+    linear-gradient(135deg, var(--f5-accent) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.f5-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.f5-live-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f87171;
+  animation: f5-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes f5-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.f5-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  position: relative;
+  z-index: 20;
+}
+
+.f5-stream-cta {
+  pointer-events: auto;
+  position: relative;
+  z-index: 21;
+}
+
+.f5-stream .f5-stream-cta {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10050;
+  font-size: 1.05rem;
+  padding: 12px 22px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(56, 189, 248, 0.65);
+}
+
+/* Fixed ingest bar — outside transformed shells so clicks always work */
+.f5-ingest-bar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(4, 8, 18, 0.2), rgba(4, 8, 18, 0.94));
+  border-top: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.f5-body.f5-stream .f5-ingest-bar {
+  display: flex;
+}
+
+.f5-ingest-status {
+  flex: 1 1 200px;
+  max-width: 100%;
+  font-size: 13px;
+  color: #a5f3fc;
+  text-align: center;
+}
+
+.f5-ingest-bar-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.f5-ingest-bar-btn.primary {
+  border-color: rgba(56, 189, 248, 0.75);
+  background: linear-gradient(180deg, #0ea5e9, #0284c7);
+  color: #fff;
+}
+
+.f5-ingest-bar-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.f5-stream .f5-stage-wrap {
+  padding-bottom: 72px;
+}
+
+.f5-stream-only-btn {
+  display: none;
+}
+
+.f5-stream .f5-stream-only-btn:not([hidden]) {
+  display: inline-flex;
+}
+
+.f5-header .f5-youtube-dock {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.f5-sfx-vol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--f5-muted);
+}
+
+.f5-sfx-vol input[type="range"] {
+  width: 72px;
+  accent-color: var(--f5-cyan);
+}
+
+.f5-btn {
+  border: 1px solid var(--f5-line);
+  background: rgba(93, 255, 176, 0.08);
+  color: var(--f5-accent);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.f5-btn.primary {
+  background: linear-gradient(135deg, rgba(93, 255, 176, 0.25), rgba(0, 212, 255, 0.15));
+}
+
+.f5-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.f5-stage-wrap {
+  position: relative;
+  padding: var(--f5-frame-pad);
+  border-radius: var(--f5-frame-radius);
+  background: linear-gradient(
+    135deg,
+    rgba(93, 255, 176, 0.42) 0%,
+    rgba(0, 212, 255, 0.28) 38%,
+    rgba(255, 100, 255, 0.32) 72%,
+    rgba(93, 255, 176, 0.38) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 22px 56px rgba(0, 0, 0, 0.5),
+    0 0 72px rgba(0, 212, 255, 0.07);
+}
+
+.f5-stage-wrap::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--f5-frame-pad) + 5px);
+  border-radius: calc(var(--f5-frame-radius) - 4px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+  z-index: 7;
+}
+
+/* HUD corner brackets — outer wrap (TL + BR) */
+.f5-stage-wrap::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--f5-frame-pad) + 10px);
+  pointer-events: none;
+  z-index: 8;
+  border-radius: calc(var(--f5-frame-radius) - 6px);
+  background:
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 6px rgba(93, 255, 176, 0.35));
+}
+
+.f5-stage {
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: calc(var(--f5-frame-radius) - 2px);
+  background: rgba(4, 10, 22, 0.96);
+  overflow: hidden;
+  min-height: 380px;
+  isolation: isolate;
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(93, 255, 176, 0.12);
+}
+
+/* Inner corners (TR + BL) */
+.f5-stage::before,
+.f5-stage::after {
+  content: "";
+  position: absolute;
+  width: var(--f5-corner);
+  height: var(--f5-corner);
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.65;
+}
+
+.f5-stage::before {
+  top: 10px;
+  right: 10px;
+  border-top: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-right: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-radius: 0 6px 0 0;
+}
+
+.f5-stage::after {
+  bottom: 10px;
+  left: 10px;
+  border-bottom: var(--f5-corner-thick) solid var(--f5-accent);
+  border-left: var(--f5-corner-thick) solid var(--f5-accent);
+  border-radius: 0 0 0 6px;
+}
+
+.f5-stream .f5-stage-wrap {
+  --f5-frame-pad: 4px;
+  --f5-corner: 32px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 28px 72px rgba(0, 0, 0, 0.62),
+    0 0 96px rgba(255, 100, 255, 0.06),
+    0 0 120px rgba(0, 212, 255, 0.05);
+}
+
+.f5-stream .f5-stage {
+  min-height: min(72vh, 640px);
+  border-radius: calc(var(--f5-frame-radius) - 1px);
+}
+
+.f5-stream .f5-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+}
+
+.f5-stream .f5-stage::after {
+  top: 12px;
+  right: auto;
+  left: 12px;
+  bottom: auto;
+  width: var(--f5-corner);
+  height: var(--f5-corner);
+  border: 0;
+  border-top: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-left: var(--f5-corner-thick) solid var(--f5-magenta);
+  border-radius: 6px 0 0 0;
+}
+
+/* Stream: TR bracket via extra layer on canvas container — use roster side flip + wrap gradient */
+.f5-stream .f5-stage-wrap::after {
+  background:
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-magenta), var(--f5-magenta)) right top / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-magenta), var(--f5-magenta)) right top / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-cyan), var(--f5-cyan)) right bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left bottom / var(--f5-corner) var(--f5-corner-thick) no-repeat,
+    linear-gradient(var(--f5-accent), var(--f5-accent)) left bottom / var(--f5-corner-thick) var(--f5-corner) no-repeat;
+}
+
+#f5-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+/* Floating fleet roster — orbits with canvas */
+.f5-stream .f5-roster-orbit {
+  left: 12px;
+  right: auto;
+  top: 12px;
+  bottom: 112px;
+  width: min(210px, 30vw);
+}
+
+.f5-roster-orbit {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 108px;
+  width: min(220px, 34vw);
+  pointer-events: auto;
+  overflow: hidden auto;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(93, 255, 176, 0.28);
+  background: linear-gradient(160deg, rgba(6, 12, 24, 0.88), rgba(12, 8, 28, 0.75));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  z-index: 3;
+}
+
+.f5-roster-orbit h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--f5-cyan);
+}
+
+.f5-roster-card {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 11px;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.f5-roster-card.is-idle {
+  opacity: 0.55;
+}
+
+.f5-roster-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(93, 255, 176, 0.35);
+  grid-row: 1 / span 2;
+}
+
+.f5-roster-progress {
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.f5-bot-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  position: relative;
+  padding-left: 4px;
+}
+
+.f5-bot-row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(93, 255, 176, 0.3);
+}
+
+.f5-bot-row-progress {
+  position: absolute;
+  left: 22px;
+  top: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.f5-roster-card.is-hot {
+  border-color: rgba(255, 100, 255, 0.5);
+  transform: translateX(-2px);
+}
+
+.f5-stream .f5-roster-card.is-hot {
+  transform: translateX(2px);
+}
+
+.f5-roster-card.is-hot .f5-roster-avatar {
+  border-color: rgba(255, 100, 255, 0.75);
+  box-shadow: 0 0 14px rgba(255, 100, 255, 0.35);
+}
+
+.f5-roster-card strong {
+  font-size: 12px;
+  color: var(--f5-text);
+}
+
+.f5-roster-xp {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.f5-roster-xp span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, var(--f5-accent));
+}
+
+.f5-hud {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 4;
+  background: linear-gradient(0deg, rgba(3, 6, 15, 0.92) 0%, rgba(3, 6, 15, 0.55) 55%, transparent 100%);
+}
+
+.f5-hud-stats-wrap {
+  align-self: flex-start;
+  max-width: min(280px, 42vw);
+  pointer-events: none;
+}
+
+.f5-hud-ticker {
+  font-size: 11px;
+  color: var(--f5-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  order: 3;
+}
+
+.f5-hud-ticker span {
+  display: inline-block;
+  padding-right: 48px;
+  animation: f5-marquee 28s linear infinite;
+}
+
+@keyframes f5-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.f5-stat-col {
+  font-size: 11px;
+  line-height: 1.45;
+  text-shadow: 0 1px 8px #000;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.f5-speaker-dock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  pointer-events: auto;
+  order: 1;
+}
+
+.f5-speaker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 10px;
+  opacity: 0.65;
+  transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.f5-speaker.is-active {
+  opacity: 1;
+  border-color: rgba(255, 100, 255, 0.55);
+  box-shadow: 0 0 16px rgba(255, 100, 255, 0.25);
+}
+
+.f5-speaker img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.f5-stat-col strong {
+  color: var(--f5-accent);
+  font-size: 12px;
+}
+
+.f5-voice-line {
+  order: 2;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 100, 255, 0.2);
+  min-height: 2.4em;
+  max-width: calc(100% - min(240px, 36vw) - 16px);
+  pointer-events: auto;
+}
+
+.f5-grid-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.f5-panel {
+  border: 1px solid var(--f5-line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(6, 12, 24, 0.72);
+}
+
+.f5-panel h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--f5-cyan);
+}
+
+.f5-row {
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.f5-row:last-child {
+  border-bottom: 0;
+}
+
+.f5-privacy {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--f5-muted);
+  line-height: 1.45;
+}
+
+/* Homepage embed */
+.fp-fleet-5d {
+  margin: 32px 0;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(93, 255, 176, 0.2);
+  background: linear-gradient(145deg, rgba(8, 14, 28, 0.95), rgba(4, 8, 18, 0.98));
+}
+
+.fp-fleet-5d-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fp-fleet-5d-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #5dffb0;
+}
+
+.fp-fleet-5d-embed {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 212, 255, 0.28);
+  min-height: 280px;
+  padding: 3px;
+  background: linear-gradient(135deg, rgba(93, 255, 176, 0.35), rgba(0, 212, 255, 0.22), rgba(255, 100, 255, 0.28));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+/* Iframe embed — stage fills viewport, minimal chrome */
+.f5-body.f5-embed {
+  min-height: 100%;
+  background: var(--f5-bg);
+}
+
+.f5-body.f5-embed .f5-shell {
+  max-width: none;
+  margin: 0;
+  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.f5-body.f5-embed .f5-header {
+  display: none;
+}
+
+.f5-body.f5-embed .f5-stage {
+  min-height: min(calc(100vh - 24px), 720px);
+}
+
+.fp-fleet-5d-embed iframe {
+  display: block;
+  width: 100%;
+  height: 320px;
+  border: 0;
+  background: #03060f;
+}
+
+@media (max-width: 720px) {
+  .f5-roster-orbit {
+    width: min(160px, 40vw);
+    font-size: 10px;
+  }
+
+  .f5-voice-line {
+    max-width: 100%;
+  }
+
+  .f5-controls {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .f5-live-badge::before,
+  .f5-hud-ticker span {
+    animation: none;
+  }
+}
+
+.f5-src {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.f5-src.fleet {
+  color: #5dffb0;
+  background: rgba(93, 255, 176, 0.12);
+}
+
+.f5-src.casino {
+  color: #ff64ff;
+  background: rgba(255, 100, 255, 0.12);
+}
+
+.f5-src.agents {
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.12);
+}

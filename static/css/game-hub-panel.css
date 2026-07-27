@@ -1,0 +1,429 @@
+/* Frontpage game hub — tabs + panels (no HTML tables) */
+.fp-game-hub {
+    margin-bottom: 32px;
+    padding: 22px;
+    border-radius: 20px;
+    border: 1px solid rgba(196, 167, 255, 0.28);
+    background:
+        radial-gradient(circle at 12% 0%, rgba(0, 255, 136, 0.08), transparent 40%),
+        linear-gradient(145deg, rgba(14, 16, 30, 0.96), rgba(10, 12, 24, 0.94));
+}
+
+.fp-game-hub-head h2 {
+    margin: 8px 0 0;
+    font-size: clamp(1.2rem, 2.5vw, 1.65rem);
+    color: #e8f0ff;
+}
+
+.fp-gh-lead {
+    margin: 8px 0 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 640px;
+}
+
+.gh-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 14px;
+}
+
+.gh-tab {
+    position: relative;
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.gh-tab:hover {
+    border-color: rgba(0, 212, 255, 0.4);
+    color: #dff8ff;
+}
+
+.gh-tab.is-active {
+    border-color: rgba(0, 255, 136, 0.55);
+    background: rgba(0, 255, 136, 0.14);
+    color: #9dffd4;
+}
+
+.gh-tab-dot {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+    color: #041018;
+    background: #00ff88;
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.45);
+}
+
+.gh-panel {
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.2);
+    min-height: 120px;
+}
+
+.gh-empty {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.gh-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.gh-stat-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+    .gh-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.gh-stat {
+    padding: 12px 10px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    background: rgba(0, 212, 255, 0.06);
+}
+
+.gh-stat-v {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #00ff88;
+}
+
+.gh-stat-l {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.gh-block-title {
+    margin: 0 0 8px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.gh-lb-block {
+    margin-bottom: 12px;
+}
+
+.gh-lb {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-lb li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.85rem;
+}
+
+.gh-lb li:last-child {
+    border-bottom: none;
+}
+
+.gh-lb-rank {
+    min-width: 2rem;
+}
+
+.gh-lb-user {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #e8f0ff;
+}
+
+.gh-lb-pts {
+    color: #00d4ff;
+    font-weight: 700;
+}
+
+.gh-lb-you {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    color: #c4a7ff;
+}
+
+.gh-open-link,
+.gh-secondary-link {
+    display: inline-block;
+    margin-top: 12px;
+    margin-right: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #00ff88;
+}
+
+.gh-secondary-link {
+    color: #00d4ff;
+}
+
+.gh-library-link {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gh-summary {
+    margin: 0 0 10px;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.gh-streak {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(196, 167, 255, 0.25);
+    background: rgba(196, 167, 255, 0.06);
+}
+
+.gh-streak-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.gh-streak-note {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.gh-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.gh-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #00ff88, #00d4ff);
+}
+
+.gh-progress-fill--streak {
+    background: linear-gradient(90deg, #c4a7ff, #00ff88);
+}
+
+.gh-quest-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.gh-quest-filter {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.gh-quest-filter.is-active {
+    border-color: rgba(0, 255, 136, 0.5);
+    background: rgba(0, 255, 136, 0.12);
+    color: #9dffd4;
+}
+
+.gh-filter-count {
+    opacity: 0.75;
+}
+
+.gh-quest-row {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.gh-quest-row.is-done {
+    border-color: rgba(0, 255, 136, 0.25);
+}
+
+.gh-quest-row.is-claimed {
+    opacity: 0.72;
+}
+
+.gh-quest-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.gh-quest-badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+}
+
+.gh-quest-desc {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.gh-quest-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 6px;
+}
+
+.gh-claim-btn {
+    margin-top: 10px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    color: #041018;
+    font-weight: 800;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.gh-claimed-label {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: #9dffd4;
+}
+
+.gh-mission {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px dashed rgba(0, 255, 136, 0.35);
+}
+
+.gh-mission-title {
+    margin: 0;
+    font-weight: 700;
+    color: #e8f0ff;
+}
+
+.gh-mission-meta {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.gh-match-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-match {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.84rem;
+}
+
+.gh-match.is-win .gh-match-result {
+    color: #00ff88;
+}
+
+.gh-match.is-loss .gh-match-result {
+    color: #ff6b8a;
+}
+
+.gh-match-result {
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+}
+
+.gh-match-meta {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.gh-match-delta {
+    color: #00d4ff;
+    font-weight: 700;
+}
+
+.gh-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gh-continue-cta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    padding: 14px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: #e8f0ff;
+    border: 1px solid rgba(196, 167, 255, 0.35);
+    background: rgba(196, 167, 255, 0.08);
+}
+
+.gh-continue-icon {
+    font-size: 1.6rem;
+}
+
+.gh-continue-sub {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.6);
+}

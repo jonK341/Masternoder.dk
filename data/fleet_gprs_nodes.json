@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "gprs_cph_01",
+      "label": "GPRS · CPH core",
+      "mcc_mnc": "238/01",
+      "latitude": 55.6761,
+      "longitude": 12.5683,
+      "radius_m": 1200
+    },
+    {
+      "id": "gprs_oresund",
+      "label": "GPRS · Øresund link",
+      "mcc_mnc": "238/02",
+      "latitude": 55.609,
+      "longitude": 12.824,
+      "radius_m": 800
+    },
+    {
+      "id": "gprs_malm",
+      "label": "GPRS · Malmö edge",
+      "mcc_mnc": "240/07",
+      "latitude": 55.605,
+      "longitude": 13.0038,
+      "radius_m": 900
+    },
+    {
+      "id": "gprs_fleet_relay",
+      "label": "GPRS · Fleet relay",
+      "mcc_mnc": "fleet/gprs",
+      "latitude": 55.72,
+      "longitude": 12.45,
+      "radius_m": 1500
+    }
+  ]
+}

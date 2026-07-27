@@ -110,6 +110,19 @@ def discord_casino_fanout():
     return jsonify(result), 200
 
 
+@discord_bp.route("/api/discord/fleet-stream/fanout", methods=["POST"])
+def discord_fleet_stream_fanout():
+    """Cron — post fleet monitor hub + GPRS tick to main Discord chat (#general webhook)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services import fleet_stream_discord_service
+
+    data = request.get_json(silent=True) or {}
+    dry_run = True if "dry_run" not in data else bool(data.get("dry_run"))
+    result = fleet_stream_discord_service.run_fanout(dry_run=dry_run)
+    return jsonify(result), 200
+
+
 @discord_bp.route("/api/discord/link/status", methods=["GET"])
 def discord_link_status():
     user_id = (request.args.get("user_id") or "").strip()

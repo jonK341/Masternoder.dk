@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "rotate_sec_stream": 75,
+  "rotate_sec_default": 120,
+  "chapters": [
+    {
+      "id": "ch_fleet_open",
+      "title": "Chapter I — 5D fleet opening",
+      "encode_profile": "broadcast",
+      "duration_sec": 75,
+      "visual": "/static/img/fleet/default-bot.svg",
+      "content_b64": "Q29tbWFuZGVyIGxldmVsIHtjb21tYW5kZXJfbGV2ZWx9LiBGbGVldCBYUCB7ZmxlZXRfdG90YWxfeHB9LiB7YWN0aXZlX2JvdHN9IG9mIHtib3RfY291bnR9IGJvdHMgb24gbGFuZS4gQXVkaWVuY2Utc2FmZSA1RCBwcm9qZWN0aW9uIGZvciB0aGlzIGxpdmUgc3RyZWFtLg=="
+    },
+    {
+      "id": "ch_profit_lanes",
+      "title": "Chapter II — Profit analyst lanes",
+      "encode_profile": "studio",
+      "duration_sec": 75,
+      "visual": "/static/img/agents/analytics_agent.svg",
+      "content_b64": "UHJvZml0IGFuYWx5c3RzIHNjYW4gaG90IHN5bWJvbHM6IHtob3Rfc3ltYm9sc30uIFRyYWRlIGJhbmQge3Byb2ZpdF9iYW5kfS4gQUkgZW5jb2RlciBwcm9maWxlIHN0dWRpbyBncmFkZSB2b2ljZSBkb2NrIGZlZWRzIHRoaXMgY2hhcHRlci4="
+    },
+    {
+      "id": "ch_casino_floor",
+      "title": "Chapter III — Casino floor pulse",
+      "encode_profile": "premium",
+      "duration_sec": 75,
+      "visual": "/static/img/agents/social_engagement_agent.svg",
+      "content_b64": "Q2FzaW5vIGZsb29yOiB7YmV0c190b2RheX0gYmV0cyB0b2RheS4gVm9sdW1lIGJhbmQge3ZvbHVtZV9iYW5kfS4gQ29tcG9zZXIgcm90YXRlcyBjYXNpbm8gc2lnbmFscyB3aXRoIGZsZWV0IFhQLg=="
+    },
+    {
+      "id": "ch_agent_mesh",
+      "title": "Chapter IV — Agent skill mesh",
+      "encode_profile": "ultra",
+      "duration_sec": 75,
+      "visual": "/static/img/agents/ai_intelligence_agent.svg",
+      "content_b64": "QWdlbnQgbWVzaDoge2FnZW50X2V4ZWN1dGlvbnN9IHNraWxsIHJ1bnMgYWNyb3NzIHt0b3RhbF9hZ2VudHN9IG9wZXJhdG9ycy4gWW91VHViZSBzdHJlYW0gYWdlbnRzIHN5bmMgcm90YXRpb25zIHdpdGggdGhlIGZsZWV0IG1vbml0b3Iu"
+    },
+    {
+      "id": "ch_progress_rewards",
+      "title": "Chapter V — Progress & rewards",
+      "encode_profile": "broadcast",
+      "duration_sec": 75,
+      "visual": "/static/img/fleet/progress-tier-4.svg",
+      "content_b64": "RmxlZXQgcmV3YXJkcyB1bmxvY2tlZCB7cmV3YXJkc191bmxvY2tlZH0uIEF2ZXJhZ2UgYm90IGxldmVsIHthdmdfYm90X2xldmVsfS4gQ2hhcHRlciBlbmNvZGVzIHRpZXIgaW1hZ2VzIG9uIHJvc3RlciBjYXJkcyBmb3IgbGl2ZSBPQlMu"
+    },
+    {
+      "id": "ch_stream_outro",
+      "title": "Chapter VI — Stream composer outro",
+      "encode_profile": "opus_web",
+      "duration_sec": 75,
+      "visual": "/static/img/agents/reporter_agent.svg",
+      "content_b64": "VGhhbmtzIGZvciB3YXRjaGluZy4gT3BlbiB0aGUgc3RyZWFtZXIgaHViIGZvciBPQlMsIHBvZGNhc3QgY28tYnJvYWRjYXN0LCBhbmQgUG9kY2FzdCBOZXdzIGNvbW1lbnRzIGZvciBNTjIgcmV3YXJkcy4gTmV4dCBjaGFwdGVyIHJvdGF0ZXMgYXV0b21hdGljYWxseS4="
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "version": "1.1.0",
+  "updated_at": "2026-07-26",
+  "chat_enabled": true,
+  "chat_poll_ms": 3500,
+  "reward_events_enabled": true,
+  "youtube_video_id": "-iSYSBSn_8E",
+  "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
+  "youtube_watch_url": "https://www.youtube.com/watch?v=-iSYSBSn_8E",
+  "youtube_studio_url": "https://studio.youtube.com/video/-iSYSBSn_8E/livestreaming",
+  "youtube_embed_domain": "https://www.youtube.com",
+  "stream": {
+    "title": "MasterNoder2 Activity Livestream 5D Monitor",
+    "subtitle": "Fleet XP · agents · casino · MN2 rewards",
+    "status_badge": "LIVE",
+    "default_chat_placeholder": "Comment on the fleet stream…",
+    "suggested_display_names": ["FleetFan", "MN2Pilot", "NodeRunner"],
+    "studio_title_note": "Title in YouTube Studio (Rediger) can differ slightly; video ID -iSYSBSn_8E must stay the same broadcast."
+  },
+  "youtube_rtmp": {
+    "server_url": "rtmp://a.rtmp.youtube.com/live2",
+    "backup_server_url": "rtmp://b.rtmp.youtube.com/live2?backup=1",
+    "stream_key_env": "YOUTUBE_STREAM_KEY",
+    "stream_key_profile": "Masternoder2",
+    "encoder": "Browser tab → server ffmpeg (No OBS)"
+  },
+  "embed": {
+    "autoplay": true,
+    "mute": true,
+    "modest_branding": true,
+    "rel": false,
+    "playsinline": true,
+    "controls": true,
+    "fs": true,
+    "use_nocookie": false,
+    "iv_load_policy": 3
+  },
+  "obs": {
+    "browser_source_url": "/fleet-progress-monitor/?mode=stream",
+    "resolution": "1920x1080",
+    "fps": 30,
+    "recommended_bitrate_kbps": 4500,
+    "keyframe_interval_sec": 2,
+    "audio_kbps": 160,
+    "note": "Capture the monitor in stream layout; keep chat on-site rail, not in OBS browser."
+  },
+  "geo": {
+    "enabled": true,
+    "gps_poll_ms": 15000,
+    "gprs_poll_ms": 20000,
+    "map_zoom": 11,
+    "coarse_decimals": 2,
+    "auto_assign_agent_on_stream": true,
+    "default_center": { "latitude": 55.6761, "longitude": 12.5683 }
+  },
+  "discord": {
+    "enabled": true,
+    "channel": "general",
+    "mode": "youtube_and_monitor",
+    "prefer_youtube_in_chat": true,
+    "monitor_path": "/fleet-progress-monitor/?mode=stream",
+    "frontpage_path": "/",
+    "include_gprs_markers": true,
+    "max_markers_in_post": 6,
+    "setup_note": "Set DISCORD_CHANNEL_ID_GENERAL to your main chat room webhook URL (Server Settings → Integrations → Webhooks). Falls back to DISCORD_WEBHOOK_URL. YouTube link unfurls in chat; monitor opens via embed link."
+  },
+  "youtube_live_setup": [
+    "«Administrer streams» viser Forbindelse som «-» indtil encoder sender — åbn den planlagte udsendelse → Livestreaming (URL med video-ID).",
+    "Én planlagt stream ad gangen: slet dubletter, ellers ved YouTube ikke hvilken der skal have RTMP.",
+    "No OBS på sitet: hold monitor-fanen åben 30+ sek. efter klik — RTMP stopper hvis du lukker fanen.",
+    "Streamnøgle i Studio = Masternoder2 (samme som YOUTUBE_STREAM_KEY på server).",
+    "Når forhåndsvisning viser billede (ikke Ingen data), klik Gå live.",
+    "Aktivt broadcast-ID på sitet: -iSYSBSn_8E — opdater fleet_stream_live.json hvis du laver ny udsendelse."
+  ],
+  "studio_edit_da": [
+    "Rediger = kun metadata. Forbindelse kommer fra RTMP (No OBS / OBS), ikke fra Rediger.",
+    "Gå til: studio.youtube.com/video/-iSYSBSn_8E/livestreaming — ikke kun «Administrer streams».",
+    "Vælg streamnøgle Masternoder2 under Streamindstillinger.",
+    "Planlagt dato (27. jul.) betyder ikke automatisk forbindelse — encoder skal sende før Gå live."
+  ]
+}

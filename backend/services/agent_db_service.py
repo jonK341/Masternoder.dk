@@ -66,6 +66,7 @@ _AGENT_DISPLAY = {
     'user_experience_agent': ('✨', 'UX Agent', '#c084fc'),
     'learning_agent': ('🧠', 'Learning Agent', '#38bdf8'),
     'reporter_agent': ('📡', 'Reporter Agent', '#f472b6'),
+    'youtube_stream_agent': ('▶️', 'YouTube Stream Agent', '#ff6b6b'),
     'ai_intelligence_agent': ('🤖', 'AI Intelligence', '#818cf8'),
     'tester_agent': ('🧪', 'Tester Agent', '#4ade80'),
     'error_migration_agent': ('🔄', 'Migration Agent', '#facc15'),

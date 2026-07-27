@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0",
+  "default_theme_id": "fleet_neon",
+  "themes": [
+    {
+      "id": "fleet_neon",
+      "name": "Fleet neon",
+      "encode_profile": "broadcast",
+      "primary": "#5dffb0",
+      "secondary": "#00d4ff",
+      "accent": "#ff64ff",
+      "arc_outer": "rgba(0,212,255,0.28)",
+      "arc_inner": "rgba(255,100,255,0.35)",
+      "encoded_tint": "rgba(93,255,176,0.12)"
+    },
+    {
+      "id": "generator_standard",
+      "name": "Generator standard",
+      "encode_profile": "standard",
+      "primary": "#7dd3fc",
+      "secondary": "#38bdf8",
+      "accent": "#f0abfc",
+      "arc_outer": "rgba(56,189,248,0.3)",
+      "arc_inner": "rgba(240,171,252,0.28)",
+      "encoded_tint": "rgba(125,211,252,0.14)"
+    },
+    {
+      "id": "generator_fast_ai",
+      "name": "Generator fast AI",
+      "encode_profile": "fast_ai",
+      "primary": "#86efac",
+      "secondary": "#4ade80",
+      "accent": "#fde047",
+      "arc_outer": "rgba(74,222,128,0.32)",
+      "arc_inner": "rgba(253,224,71,0.26)",
+      "encoded_tint": "rgba(134,239,172,0.13)"
+    },
+    {
+      "id": "generator_premium",
+      "name": "Generator premium",
+      "encode_profile": "premium",
+      "primary": "#c4b5fd",
+      "secondary": "#a78bfa",
+      "accent": "#f472b6",
+      "arc_outer": "rgba(167,139,250,0.32)",
+      "arc_inner": "rgba(244,114,182,0.3)",
+      "encoded_tint": "rgba(196,181,253,0.15)"
+    },
+    {
+      "id": "generator_ultra",
+      "name": "Generator ultra",
+      "encode_profile": "ultra",
+      "primary": "#fcd34d",
+      "secondary": "#fbbf24",
+      "accent": "#fb7185",
+      "arc_outer": "rgba(251,191,36,0.34)",
+      "arc_inner": "rgba(251,113,133,0.3)",
+      "encoded_tint": "rgba(252,211,77,0.12)"
+    },
+    {
+      "id": "stream_studio",
+      "name": "Stream studio",
+      "encode_profile": "studio",
+      "primary": "#9dffd4",
+      "secondary": "#5dffb0",
+      "accent": "#c4a7ff",
+      "arc_outer": "rgba(93,255,176,0.3)",
+      "arc_inner": "rgba(196,167,255,0.32)",
+      "encoded_tint": "rgba(157,255,212,0.14)"
+    },
+    {
+      "id": "casino_floor",
+      "name": "Casino floor",
+      "encode_profile": "premium",
+      "primary": "#ff64ff",
+      "secondary": "#e879f9",
+      "accent": "#fbbf24",
+      "arc_outer": "rgba(255,100,255,0.35)",
+      "arc_inner": "rgba(251,191,36,0.28)",
+      "encoded_tint": "rgba(255,100,255,0.11)"
+    },
+    {
+      "id": "agents_mesh",
+      "name": "Agents mesh",
+      "encode_profile": "ultra",
+      "primary": "#67e8f9",
+      "secondary": "#22d3ee",
+      "accent": "#818cf8",
+      "arc_outer": "rgba(34,211,238,0.33)",
+      "arc_inner": "rgba(129,140,248,0.3)",
+      "encoded_tint": "rgba(103,232,249,0.13)"
+    },
+    {
+      "id": "mn2_gold",
+      "name": "MN2 gold",
+      "encode_profile": "broadcast",
+      "primary": "#fde68a",
+      "secondary": "#f59e0b",
+      "accent": "#5dffb0",
+      "arc_outer": "rgba(245,158,11,0.32)",
+      "arc_inner": "rgba(93,255,176,0.28)",
+      "encoded_tint": "rgba(253,230,138,0.12)"
+    },
+    {
+      "id": "opus_void",
+      "name": "Opus void",
+      "encode_profile": "opus_web",
+      "primary": "#e8eefc",
+      "secondary": "#94a3b8",
+      "accent": "#c4a7ff",
+      "arc_outer": "rgba(148,163,184,0.35)",
+      "arc_inner": "rgba(196,167,255,0.32)",
+      "encoded_tint": "rgba(232,238,252,0.08)"
+    }
+  ]
+}

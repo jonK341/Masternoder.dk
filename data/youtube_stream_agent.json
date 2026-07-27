@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-07-26",
+  "primary_agent": "youtube_stream_agent",
+  "agents": [
+    "youtube_stream_agent",
+    "podcast_producer_agent",
+    "reporter_agent",
+    "content_generator_agent"
+  ],
+  "skill_set": [
+    {
+      "agent_id": "youtube_stream_agent",
+      "skills": [
+        "obs_browser_capture",
+        "youtube_live_preflight",
+        "fleet_monitor_scene",
+        "stream_url_playbook",
+        "browser_tab_ingest",
+        "server_rtmp_relay",
+        "audience_safe_overlay"
+      ]
+    },
+    {
+      "agent_id": "podcast_producer_agent",
+      "skills": ["distribute_episode", "encode_audio", "youtube_syndicate"]
+    },
+    {
+      "agent_id": "reporter_agent",
+      "skills": ["broadcast", "news_report_ingredients", "live_ticker_narration"]
+    },
+    {
+      "agent_id": "content_generator_agent",
+      "skills": ["ai_stream_title", "thumbnail_prompt"]
+    }
+  ],
+  "obs_scenes": [
+    {
+      "id": "fleet_5d_main",
+      "label": "5D Fleet monitor (browser)",
+      "source": "Browser",
+      "url_hint": "/fleet-progress-monitor/?mode=stream",
+      "resolution": "1920x1080"
+    },
+    {
+      "id": "streamer_obs_chrome",
+      "label": "Streamer hub (OBS hide)",
+      "source": "Browser",
+      "url_hint": "/streamer/?obs=1",
+      "resolution": "1920x1080"
+    },
+    {
+      "id": "podcast_audio",
+      "label": "Podcast co-host audio",
+      "source": "Audio",
+      "url_hint": "/streamer/ — queue podcast under monitor",
+      "resolution": "n/a"
+    }
+  ],
+  "checklist": [
+    "No OBS: stream layout → No OBS → YouTube (share tab) after YOUTUBE_STREAM_KEY is in server .env.",
+    "Studio streamnøgle: Streamindstillinger → copy key → server .env only (never git).",
+    "When Studio leaves 'Ingen data', click Go live in YouTube Studio.",
+    "Assign youtube_stream_agent for preflight, Discord, GPS/GPRS, and narration.",
+    "Broadcast video ID on site: MBjG7hq_YZA — update fleet_stream_live.json if you create a new broadcast."
+  ]
+}

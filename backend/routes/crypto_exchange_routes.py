@@ -427,9 +427,20 @@ def exchange_daemon_mesh_run():
 def exchange_control_board_overview():
     if not _admin_authorized():
         return jsonify({"success": False, "error": "unauthorized"}), 401
+    from flask import request
     from backend.services.trading_bots_control_service import business_overview
 
-    return jsonify(business_overview())
+    light = request.args.get("light", "1").strip().lower() in ("1", "true", "yes", "on")
+    return jsonify(business_overview(light=light))
+
+
+@crypto_exchange_bp.route("/api/exchange/control-board/preflight", methods=["GET"])
+def exchange_control_board_preflight():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.business_control_preflight_service import run_preflight
+
+    return jsonify(run_preflight())
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/run", methods=["POST"])
@@ -440,6 +451,17 @@ def exchange_control_board_run():
 
     data = request.get_json(silent=True) or {}
     return jsonify(run_all_bots(force=bool(data.get("force"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/control-board/run-fleet", methods=["POST"])
+def exchange_control_board_run_fleet():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.trading_bots_control_service import run_supervisor_fleet
+
+    data = request.get_json(silent=True) or {}
+    kind = (data.get("kind") or "").strip() or None
+    return jsonify(run_supervisor_fleet(kind=kind))
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/bot", methods=["POST"])
@@ -470,6 +492,292 @@ def exchange_control_board_kill_switch():
 
     data = request.get_json(silent=True) or {}
     return jsonify(set_kill_switch(bool(data.get("on"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-progress-monitor/public", methods=["GET"])
+def exchange_fleet_progress_monitor_public():
+    """Audience-safe fleet XP, trades, and activity — no users, emails, or admin fields."""
+    from backend.services.exchange_fleet_progress_monitor_service import (
+        embed_authorized,
+        embed_token_required,
+        monitor_public_enabled,
+        public_fleet_progress_monitor,
+    )
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    embed = request.args.get("embed", "").strip().lower() in ("1", "true", "yes", "on")
+    if embed and embed_token_required():
+        got = (
+            request.args.get("embed_token")
+            or request.headers.get("X-Fleet-Monitor-Token")
+            or ""
+        )
+        if not embed_authorized(got):
+            return jsonify({"success": False, "error": "embed_unauthorized"}), 403
+    light = request.args.get("light", "1").strip().lower() in ("1", "true", "yes", "on")
+    return jsonify(public_fleet_progress_monitor(light=light))
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-progress-monitor/visual", methods=["GET"])
+def exchange_fleet_progress_monitor_visual():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_monitor_visual_service import visual_payload
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    theme_id = (request.args.get("theme") or "").strip() or None
+    return jsonify(visual_payload(theme_id=theme_id))
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/composer", methods=["GET"])
+def exchange_fleet_stream_composer():
+    from backend.services.fleet_stream_composer_service import list_chapters_public
+    from backend.services.exchange_fleet_progress_monitor_service import (
+        monitor_public_enabled,
+        public_fleet_progress_monitor,
+    )
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    stream_mode = request.args.get("stream", "1").strip().lower() in ("1", "true", "yes", "on")
+    idx = request.args.get("index", type=int)
+    snap = None
+    if request.args.get("live", "1").strip().lower() in ("1", "true", "yes", "on"):
+        snap = public_fleet_progress_monitor(light=True)
+    return jsonify(list_chapters_public(snap, stream_mode=stream_mode, index=idx))
+
+
+def _fleet_chat_uid() -> str:
+    try:
+        from backend.services.account_resolution_service import resolve_user_id
+
+        return resolve_user_id(from_body=True, from_query=True)
+    except Exception:
+        data = request.get_json(silent=True) or {}
+        return request.args.get("user_id") or data.get("user_id") or "default_user"
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/bootstrap", methods=["GET"])
+def exchange_fleet_stream_chat_bootstrap():
+    from backend.services.fleet_stream_chat_service import bootstrap
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(bootstrap())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/messages", methods=["GET"])
+def exchange_fleet_stream_chat_messages():
+    from backend.services.fleet_stream_chat_service import list_messages
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    ch = request.args.get("channel") or "live"
+    since = request.args.get("since_id") or request.args.get("since")
+    limit = request.args.get("limit", 80, type=int)
+    msgs = list_messages(channel=ch, since_id=since, limit=limit)
+    return jsonify({"success": True, "channel": ch, "messages": msgs, "count": len(msgs)})
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/messages", methods=["POST"])
+def exchange_fleet_stream_chat_post():
+    from backend.services.fleet_stream_chat_service import post_message
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_json(silent=True) or {}
+    uid = _fleet_chat_uid()
+    guest = (data.get("guest_id") or request.headers.get("X-Fleet-Guest") or "").strip()
+    res = post_message(
+        channel=data.get("channel") or "live",
+        text=data.get("text") or data.get("message") or "",
+        handle=data.get("handle") or data.get("name") or "Guest",
+        user_id=uid if uid and uid != "default_user" else None,
+        guest_id=guest,
+    )
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/chat/claim-event", methods=["POST"])
+def exchange_fleet_stream_chat_claim_event():
+    from backend.services.fleet_stream_chat_service import claim_random_event
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    uid = _fleet_chat_uid()
+    data = request.get_json(silent=True) or {}
+    res = claim_random_event(uid, guest_id=data.get("guest_id"))
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/geo/public", methods=["GET"])
+def exchange_fleet_stream_geo_public():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_geo_service import public_geo_snapshot
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(public_geo_snapshot())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/geo/ping", methods=["POST"])
+def exchange_fleet_stream_geo_ping():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_geo_service import record_geo_ping
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_json(silent=True) or {}
+    guest = (data.get("guest_id") or request.headers.get("X-Fleet-Guest") or "").strip()
+    res = record_geo_ping(
+        latitude=data.get("latitude"),
+        longitude=data.get("longitude"),
+        accuracy_m=data.get("accuracy") or data.get("accuracy_m"),
+        source=str(data.get("source") or "browser_gps"),
+        kind=str(data.get("kind") or "gps"),
+        guest_ref=guest,
+    )
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/go-live", methods=["POST"])
+def exchange_fleet_stream_go_live():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_agent_service import execute_agent_action
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    uid = _fleet_chat_uid()
+    result = execute_agent_action(
+        {"action": "start_youtube_stream", "approved": True, "user_id": uid},
+        base_url=_base_url(),
+    )
+    code = int(result.pop("http_status", 200))
+    return jsonify(result), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/start-youtube", methods=["POST"])
+def exchange_fleet_stream_start_youtube():
+    """Alias of go-live — full YouTube stream agent startup."""
+    return exchange_fleet_stream_go_live()
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/status", methods=["GET"])
+def exchange_fleet_stream_ingest_status():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import ingest_status, no_obs_playbook
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify({**no_obs_playbook(), "ingest": ingest_status()})
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/start", methods=["POST"])
+def exchange_fleet_stream_ingest_start():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import start_ingest
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(start_ingest())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/stop", methods=["POST"])
+def exchange_fleet_stream_ingest_stop():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import stop_ingest
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify(stop_ingest())
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/ingest/webm", methods=["POST"])
+def exchange_fleet_stream_ingest_webm():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.youtube_stream_ingest_service import write_webm_chunk
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    data = request.get_data() or b""
+    res = write_webm_chunk(data)
+    code = 200 if res.get("success") else 400
+    return jsonify(res), code
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/preview", methods=["GET"])
+def exchange_fleet_stream_discord_preview():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_discord_service import build_discord_live_payload
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    return jsonify({"success": True, "payload": build_discord_live_payload()})
+
+
+@crypto_exchange_bp.route("/api/exchange/fleet-stream/discord/fanout", methods=["POST"])
+def exchange_fleet_stream_discord_fanout():
+    from backend.services.exchange_fleet_progress_monitor_service import monitor_public_enabled
+    from backend.services.fleet_stream_discord_service import run_fanout
+
+    if not monitor_public_enabled():
+        return jsonify({"success": False, "error": "monitor_disabled"}), 404
+    secret = os.environ.get("DISCORD_OPS_SECRET", "")
+    got = request.headers.get("X-Ops-Secret") or request.args.get("ops_secret") or ""
+    if secret and got != secret:
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    dry_run = True if "dry_run" not in data else bool(data.get("dry_run"))
+    return jsonify(run_fanout(dry_run=dry_run))
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/controls", methods=["GET"])
+def exchange_youtube_stream_controls():
+    from backend.services.youtube_stream_agent_service import stream_controls
+
+    return jsonify(stream_controls(base_url=_base_url()))
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/agent-tools", methods=["GET"])
+def exchange_youtube_stream_agent_tools():
+    from backend.services.youtube_stream_agent_service import AGENT_TOOLS
+
+    return jsonify({
+        "success": True,
+        "tools": AGENT_TOOLS,
+        "note": "Mutating actions via /api/exchange/youtube-stream/agent-action require approved=true.",
+    })
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/assign-agent", methods=["POST"])
+def exchange_youtube_stream_assign_agent():
+    from backend.services.youtube_stream_agent_service import assign_youtube_stream_agents
+
+    data = request.get_json(silent=True) or {}
+    uid = _uid(from_body=True)
+    result = assign_youtube_stream_agents(uid, data.get("agent_id") or "youtube_stream_agent")
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@crypto_exchange_bp.route("/api/exchange/youtube-stream/agent-action", methods=["POST"])
+def exchange_youtube_stream_agent_action():
+    from backend.services.youtube_stream_agent_service import execute_agent_action
+
+    data = request.get_json(silent=True) or {}
+    if not data.get("user_id"):
+        data["user_id"] = _uid(from_body=True)
+    result = execute_agent_action(data, base_url=_base_url())
+    code = int(result.pop("http_status", 200))
+    return jsonify(result), code
 
 
 @crypto_exchange_bp.route("/api/exchange/bot-skills", methods=["GET"])

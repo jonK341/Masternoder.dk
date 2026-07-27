@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MasterNoder Streamer — 5D fleet progress monitor for YouTube and OBS with Camgirl co-hosts.">
+  <title>Streamer — 5D Fleet Monitor — MasterNoder</title>
+  <link rel="stylesheet" href="/static/css/modern-design-system.css">
+  <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+  <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+  <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260726e">
+  <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20260726j">
+  <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726j">
+  <link rel="stylesheet" href="/static/css/streamer-hub.css?v=20260726h">
+  <link rel="stylesheet" href="/static/css/youtube-stream-controls.css?v=20260726n">
+</head>
+<body class="streamer-body">
+  <div id="navigation-toolbar"></div>
+
+  <header class="streamer-chrome" id="streamer-chrome">
+    <div class="streamer-chrome-inner">
+      <div>
+        <p class="streamer-kicker">Live broadcast · fleet · casino · agents</p>
+        <h1>Streamer hub</h1>
+        <p class="streamer-meta" id="streamer-status">Loading 5D monitor…</p>
+      </div>
+      <div class="streamer-actions">
+        <button type="button" class="streamer-btn primary" id="streamer-copy-obs">Copy OBS browser URL</button>
+        <button type="button" class="streamer-btn" id="streamer-copy-clean">Copy clean stream URL</button>
+        <a class="streamer-btn" href="/fleet-stream/" target="_blank" rel="noopener">Open full stream</a>
+        <a class="streamer-btn" href="/camgirls/" target="_blank" rel="noopener">Camgirl hosts</a>
+        <a class="streamer-btn" href="/podcast#episodes" target="_blank" rel="noopener">Podcast</a>
+        <a class="streamer-btn" href="/business-control/" target="_blank" rel="noopener">Business Control</a>
+        <button type="button" class="streamer-btn" id="streamer-toggle-chrome" aria-pressed="false">OBS hide bar</button>
+      </div>
+    </div>
+    <div class="streamer-hosts" id="streamer-hosts" aria-label="Camgirl co-hosts"></div>
+    <aside class="streamer-podcast" id="streamer-podcast" aria-label="Podcast co-broadcast">
+      <div class="streamer-podcast-head">
+        <span class="streamer-podcast-kicker">🎙️ Podcast co-broadcast</span>
+        <p class="streamer-meta" id="streamer-podcast-meta">Loading verified episode…</p>
+      </div>
+      <div class="streamer-podcast-controls">
+        <audio id="streamer-podcast-audio" controls preload="none" class="streamer-podcast-audio"></audio>
+        <a class="streamer-btn" href="/podcast#news" target="_blank" rel="noopener">News &amp; komment</a>
+        <button type="button" class="streamer-btn" id="streamer-podcast-queue" hidden>Queue for stream</button>
+      </div>
+    </aside>
+    <div class="streamer-youtube-wrap" id="youtube-stream-panel" data-youtube-stream-mount></div>
+    <div class="streamer-voice-wrap" id="streamer-voice-deck" aria-label="Camgirl AI voice controls"></div>
+    <div class="streamer-composer-wrap" id="stream-chapter-composer" data-stream-composer></div>
+  </header>
+
+  <main class="streamer-main">
+    <iframe
+      id="streamer-frame"
+      title="5D Fleet Progress Monitor stream"
+      src="/fleet-progress-monitor/?mode=stream"
+      loading="eager"
+      allow="autoplay"
+      referrerpolicy="same-origin"
+    ></iframe>
+  </main>
+
+  <script src="/static/js/navigation-toolbar.js" defer></script>
+  <script src="/static/js/podcast-portal-lines.js?v=20260726e" data-site="streamer" defer></script>
+  <script src="/static/js/camgirls-stream-voice.js?v=20260726j" defer></script>
+  <script src="/static/js/streamer-hub.js?v=20260726j" defer></script>
+  <script src="/static/js/youtube-stream-controls.js?v=20260726n" defer></script>
+  <script src="/static/js/stream-chapter-composer.js?v=20260726j" defer></script>
+  <script src="/static/js/streamer-voice-bootstrap.js?v=20260726j" defer></script>
+</body>
+</html>

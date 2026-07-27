@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MN2 Masternode Hosting — $4.99/slot | MasterNoder</title>
-    <meta name="description" content="Host a MasterNoder2 masternode from $4.99 per slot. PayPal, coins, MN2 wallet, or on-chain. Automatic provisioning, 10,000 MN2 collateral, 50% block-reward tier.">
+    <meta name="description" content="Host a MasterNoder2 masternode from $4.99 per slot. PayPal, coins, MN2 wallet, or on-chain. Automatic provisioning, 5,000 MN2 collateral, 50% block-reward tier.">
     <meta name="keywords" content="MN2 masternode hosting, MasterNoder2, crypto masternode, PayPal hosting, staking rewards">
     <link rel="canonical" href="https://masternoder.dk/hosting/">
     <meta property="og:type" content="website">
@@ -65,11 +65,12 @@
     <div class="host-page">
         <header class="host-hero">
             <h1>MN2 Masternode Hosting</h1>
-            <p class="lead">Run a MasterNoder2 masternode without managing your own server. We provision your slot on shared infrastructure — <strong>10,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
+            <p class="lead">Run a MasterNoder2 masternode without managing your own server. We provision your slot on shared infrastructure — <strong id="host-collateral">5,000 MN2</strong> collateral per node, <strong>50% of block rewards</strong> to the masternode tier.</p>
             <div class="host-status" id="host-status" aria-live="polite">
                 <div class="host-stat"><strong id="host-slots">—</strong><span>Slots available</span></div>
                 <div class="host-stat"><strong id="host-price">$4.99</strong><span>Per slot (USD)</span></div>
-                <div class="host-stat"><strong id="host-live">—</strong><span>Live on network</span></div>
+                <div class="host-stat"><strong id="host-live">—</strong><span>On network (total)</span></div>
+                <div class="host-stat"><strong id="host-platform">—</strong><span>Platform on-chain</span></div>
             </div>
             <div class="host-cta">
                 <a class="primary" href="/shop?tab=mn2">Reserve a slot in Shop</a>
@@ -120,16 +121,24 @@
     </div>
     <script>
     (function () {
-        fetch('/api/mn2/masternode/service', { credentials: 'same-origin' })
+        fetch('/api/mn2/masternode/service?fresh=1', { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d || !d.success) return;
-                var avail = d.slots_available != null ? d.slots_available : (d.hosting && d.hosting.slots_available);
-                var live = d.enabled_count != null ? d.enabled_count : (d.network && d.network.enabled_masternodes);
+                var avail = d.slots_available;
+                var net = d.network || {};
+                var liveTotal = net.total != null ? net.total : 0;
+                var platformOn = 0;
+                (d.hosts || []).forEach(function (h) { if (h.synced) platformOn += 1; });
                 var pp = d.paypal || {};
                 var price = pp.price_usd_per_slot;
                 if (avail != null) document.getElementById('host-slots').textContent = String(avail);
-                if (live != null) document.getElementById('host-live').textContent = String(live);
+                document.getElementById('host-live').textContent = String(liveTotal);
+                document.getElementById('host-platform').textContent = String(platformOn);
+                if (d.collateral_mn2 != null) {
+                    var el = document.getElementById('host-collateral');
+                    if (el) el.textContent = Number(d.collateral_mn2).toLocaleString() + ' MN2';
+                }
                 if (price != null) document.getElementById('host-price').textContent = '$' + Number(price).toFixed(2);
             })
             .catch(function () {});

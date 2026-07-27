@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="5D Fleet Progress Navigation Monitor — public fleet XP, trades, and livestream view.">
+  <title>5D Fleet Progress Monitor — MasterNoder</title>
+  <link rel="stylesheet" href="/static/css/modern-design-system.css">
+  <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+  <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+  <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20260726j">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260727f">
+  <link rel="stylesheet" href="/static/css/fleet-stream-chat.css?v=20260726n">
+  <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726i">
+  <link rel="stylesheet" href="/static/css/fleet-stream-geo.css?v=20260726p">
+</head>
+<body class="f5-body">
+  <script>
+    if (/[?&]mode=stream(?:&|$)/.test(window.location.search)) {
+      document.body.classList.add("f5-stream");
+      window.scrollTo(0, 0);
+    }
+  </script>
+  <div id="navigation-toolbar" class="f5-nav-toolbar"></div>
+  <div class="f5-live-layout">
+  <div class="f5-live-main">
+  <div class="f5-shell">
+    <header class="f5-header">
+      <div class="f5-header-copy">
+        <p class="f5-kicker">Progress navigation · lane · depth · reward · time · XP</p>
+        <h1>5D Fleet Progress Monitor</h1>
+        <p id="f5-generated" class="f5-meta">Loading…</p>
+        <p id="f5-status" class="f5-meta"></p>
+      </div>
+      <div class="f5-controls">
+        <span class="f5-live-badge">LIVE STREAM READY</span>
+        <button type="button" class="f5-btn" id="f5-sound">Enable sound</button>
+        <label class="f5-sfx-vol" id="f5-sfx-vol-wrap" hidden title="Ambient SFX volume">
+          SFX <input type="range" id="f5-sfx-volume" min="0" max="100" value="14" aria-label="SFX volume" />
+        </label>
+        <button type="button" class="f5-btn primary" id="f5-voice" aria-pressed="false">Camgirl voice</button>
+        <select class="f5-btn f5-select" id="f5-speaker-pick" title="Lead speaker" aria-label="Lead speaker"></select>
+        <button type="button" class="f5-btn" id="f5-refresh">Refresh</button>
+        <select class="f5-btn f5-select" id="f5-theme-pick" title="Monitor theme" aria-label="Monitor theme"></select>
+        <button type="button" class="f5-btn" id="f5-theme-next" title="Next theme">Theme →</button>
+        <a class="f5-btn" href="/streamer/">Streamer hub</a>
+        <a class="f5-btn" href="?mode=stream">YouTube layout</a>
+        <button type="button" class="f5-btn primary f5-stream-cta" id="f5-no-obs-stream" data-no-obs-stream="1" title="Share this tab to YouTube without OBS">No OBS → YouTube</button>
+        <button type="button" class="f5-btn f5-stream-only-btn" id="f5-go-live" data-stream-only="1" hidden title="Assign YouTube stream agents">Go live (agent)</button>
+        <button type="button" class="f5-btn f5-stream-only-btn" id="f5-ingest-stop" data-ingest-stop="1" data-stream-only="1" hidden title="Stop tab stream">Stop ingest</button>
+        <a class="f5-btn f5-home-link" href="/">Home</a>
+      </div>
+      <div id="f5-youtube-stream" class="f5-youtube-dock" data-youtube-stream-mount data-stream-only="1" hidden></div>
+      <div class="f5-voice-deck-wrap" id="f5-voice-deck-wrap"></div>
+    </header>
+
+    <div class="f5-stage-wrap">
+      <section class="f5-stage" aria-label="5D fleet projection">
+        <div id="f5-composer-dock" class="f5-composer-dock" data-stream-composer data-stream-only="1" hidden></div>
+        <canvas id="f5-canvas" width="900" height="380" aria-hidden="true"></canvas>
+        <aside class="f5-roster-orbit" id="f5-roster-orbit" aria-label="Fleet roster live"></aside>
+        <div class="f5-hud">
+          <div class="f5-hud-stats-wrap">
+            <div class="f5-stat-col" id="f5-hud-stats"></div>
+          </div>
+          <div class="f5-speaker-dock" id="f5-speakers" aria-live="polite"></div>
+          <div class="f5-hud-ticker"><span id="f5-ticker-text">Connecting to fleet telemetry…</span></div>
+          <div class="f5-hud-geo" id="f5-geo-hud" aria-live="polite">GPS · GPRS linking…</div>
+          <div class="f5-voice-line" id="f5-voice-line">Voice off — enable Camgirl voice for live commentary (opt-in).</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="f5-grid-panels">
+      <article class="f5-panel">
+        <h2>Casino activity</h2>
+        <div id="f5-casino">Loading…</div>
+      </article>
+      <article class="f5-panel">
+        <h2>Agents activity</h2>
+        <div id="f5-agents">Loading…</div>
+      </article>
+      <article class="f5-panel">
+        <h2>Fleet activity</h2>
+        <div id="f5-activity">Loading…</div>
+      </article>
+      <article class="f5-panel f5-geo-panel">
+        <h2>GPS · GPRS live <span class="f5-geo-hud-inline" id="f5-geo-hud-title">real-time</span></h2>
+        <div id="f5-geo-panel" class="f5-geo-panel-body">Loading geo telemetry…</div>
+      </article>
+      <article class="f5-panel">
+        <h2>Bot levels (public)</h2>
+        <div id="f5-bots">Loading…</div>
+      </article>
+    </div>
+
+    <p class="f5-privacy">
+      <strong>Privacy:</strong> This monitor never shows user accounts, emails, PayPal, wallet addresses, or admin keys.
+      Profit figures are coarse bands only. For operator controls use Business Control (authenticated).
+      External embeds may require <code>FLEET_MONITOR_EMBED_TOKEN</code>. Set <code>FLEET_PROGRESS_MONITOR_PUBLIC=0</code> to disable the public API.
+      Not financial advice.
+    </p>
+  </div>
+  </div>
+  <aside id="f5-stream-chat" class="f5-stream-chat" aria-label="Fleet live chat"></aside>
+  </div>
+  <div id="f5-ingest-bar" class="f5-ingest-bar" role="toolbar" aria-label="YouTube ingest">
+    <span id="f5-ingest-status" class="f5-ingest-status">Hold fanen åben efter klik. Tjek forbindelse på livestreaming-siden (ikke kun stream-listen).</span>
+    <button type="button" class="f5-ingest-bar-btn primary" id="f5-no-obs-fixed" data-no-obs-stream="1">
+      No OBS → YouTube
+    </button>
+    <button type="button" class="f5-ingest-bar-btn" id="f5-ingest-stop-fixed" data-ingest-stop="1">Stop</button>
+  </div>
+  <script src="/static/js/navigation-toolbar.js" defer></script>
+  <script src="/static/js/fleet-stream-chat.js?v=20260726n" defer></script>
+  <script src="/static/js/fleet-monitor-visual.js?v=20260726m" defer></script>
+  <script src="/static/js/camgirls-stream-voice.js?v=20260726j" defer></script>
+  <script src="/static/js/fleet-stream-geo.js?v=20260726p" defer></script>
+  <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726s" defer></script>
+  <script src="/static/js/fleet-youtube-ingest.js?v=20260727f" defer></script>
+  <script src="/static/js/youtube-stream-controls.js?v=20260726s" defer></script>
+  <script src="/static/js/stream-chapter-composer.js?v=20260726j" defer></script>
+</body>
+</html>

@@ -115,6 +115,16 @@ else
 fi"""
 
 
+def _shell_upsert(key: str, value: str) -> str:
+    """Replace or append env key (for operator-provided secrets)."""
+    safe = (value or "").replace("'", "'\"'\"'")
+    return f"""grep -vE '^{key}=' "$ENV" > "$ENV.tmp" 2>/dev/null || cp "$ENV" "$ENV.tmp"
+mv "$ENV.tmp" "$ENV"
+echo '{key}={safe}' >> "$ENV"
+echo "SET  {key}"
+"""
+
+
 def _remote_ensure_script(extra_lines: list[str]) -> str:
     extra = "\n".join(extra_lines)
     auto = " ".join(AUTO_SECRET_KEYS)
@@ -174,6 +184,22 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 CRON
 chmod 644 /etc/cron.d/masternoder-casino-revenue
 echo "OK   /etc/cron.d/masternoder-casino-revenue"
+ENDSCRIPT'''
+
+
+def _remote_install_fleet_stream_cron_script() -> str:
+    return rf'''bash -s <<'ENDSCRIPT'
+set -e
+cd {WEB}
+chmod +x cron/discord_fleet_stream_fanout.sh
+cat > /etc/cron.d/masternoder-discord-fleet-stream <<'CRON'
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+# Hourly fleet live + GPRS tick → #general (set FLEET_STREAM_FANOUT_LIVE=1 in cron env to post live)
+12 * * * * root FLEET_STREAM_FANOUT_LIVE=1 /var/www/html/cron/discord_fleet_stream_fanout.sh >> /var/log/masternoder-discord-fleet-stream.log 2>&1
+CRON
+chmod 644 /etc/cron.d/masternoder-discord-fleet-stream
+echo "OK   /etc/cron.d/masternoder-discord-fleet-stream"
 ENDSCRIPT'''
 
 
@@ -244,8 +270,23 @@ def main() -> int:
         help="Generate DISCORD_OPS_SECRET on server if missing",
     )
     p.add_argument("--discord-casino-webhook", help="Full #casino Discord webhook URL")
+    p.add_argument("--discord-general-webhook", help="Full #general Discord webhook URL (fleet livestream)")
+    p.add_argument("--discord-ops-secret", help="Set DISCORD_OPS_SECRET on server (upsert)")
     p.add_argument("--meta-pixel-id", help="Optional META_PIXEL_ID value")
+    p.add_argument(
+        "--youtube-stream-key",
+        help="Set YOUTUBE_STREAM_KEY on server (Studio streamnøgle — never commit locally)",
+    )
+    p.add_argument(
+        "--youtube-stream-profile",
+        help="Set YOUTUBE_STREAM_KEY_PROFILE (fx Masternoder2) so ops matches Studio dropdown",
+    )
     p.add_argument("--install-cron", action="store_true", help="Install /etc/cron.d/masternoder-discord-casino")
+    p.add_argument(
+        "--install-fleet-stream-cron",
+        action="store_true",
+        help="Install /etc/cron.d/masternoder-discord-fleet-stream",
+    )
     p.add_argument(
         "--install-revenue-cron",
         action="store_true",
@@ -281,7 +322,12 @@ def main() -> int:
             args.reload,
             args.verify,
             args.discord_casino_webhook,
+            args.discord_general_webhook,
+            args.discord_ops_secret,
             args.meta_pixel_id,
+            args.install_fleet_stream_cron,
+            args.youtube_stream_key,
+            args.youtube_stream_profile,
             args.all,
         ]
     ):
@@ -290,10 +336,22 @@ def main() -> int:
     extra_lines: list[str] = []
     if args.discord_casino_webhook:
         extra_lines.append(
-            _shell_export("DISCORD_CHANNEL_ID_CASINO", args.discord_casino_webhook.strip())
+            _shell_upsert("DISCORD_CHANNEL_ID_CASINO", args.discord_casino_webhook.strip())
         )
+    if args.discord_general_webhook:
+        wh = args.discord_general_webhook.strip()
+        extra_lines.append(_shell_upsert("DISCORD_CHANNEL_ID_GENERAL", wh))
+        extra_lines.append(_shell_upsert("DISCORD_WEBHOOK_URL", wh))
+    if args.discord_ops_secret:
+        extra_lines.append(_shell_upsert("DISCORD_OPS_SECRET", args.discord_ops_secret.strip()))
     if args.meta_pixel_id:
         extra_lines.append(_shell_export("META_PIXEL_ID", args.meta_pixel_id.strip()))
+    if args.youtube_stream_key:
+        extra_lines.append(_shell_upsert("YOUTUBE_STREAM_KEY", args.youtube_stream_key.strip()))
+    if args.youtube_stream_profile:
+        extra_lines.append(
+            _shell_upsert("YOUTUBE_STREAM_KEY_PROFILE", args.youtube_stream_profile.strip())
+        )
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
     ssh, auth_method, _ = connect_deploy_ssh(pw)
@@ -316,6 +374,11 @@ def main() -> int:
     if args.install_revenue_cron:
         print("== install revenue cron ==")
         print(sh(ssh, _remote_install_revenue_cron_script(), timeout=60))
+        print()
+
+    if args.install_fleet_stream_cron:
+        print("== install fleet stream discord cron ==")
+        print(sh(ssh, _remote_install_fleet_stream_cron_script(), timeout=60))
         print()
 
     if args.reload:

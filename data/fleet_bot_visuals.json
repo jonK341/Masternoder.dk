@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "default_avatar": "/static/img/fleet/default-bot.svg",
+  "default_progress": "/static/img/fleet/progress-tier-1.svg",
+  "kind_avatars": {
+    "analytics": "/static/img/agents/analytics_agent.svg",
+    "extended_profit": "/static/img/agents/innovation_agent.svg",
+    "treasury": "/static/img/agents/resource_manager_agent.svg",
+    "risk": "/static/img/agents/security_agent.svg",
+    "winnable_pairs": "/static/img/agents/scanner_agent.svg",
+    "fleet": "/static/img/fleet/default-bot.svg"
+  },
+  "badge_avatars": {
+    "lane": "/static/img/agents/analytics_agent.svg",
+    "dual": "/static/img/agents/battle_strategy_agent.svg",
+    "scan": "/static/img/agents/scanner_agent.svg",
+    "peg": "/static/img/agents/compliance_agent.svg",
+    "meme": "/static/img/agents/social_engagement_agent.svg",
+    "pay": "/static/img/agents/data_processor_agent.svg",
+    "tri": "/static/img/agents/workflow_agent.svg",
+    "ledger": "/static/img/agents/resource_manager_agent.svg",
+    "payout": "/static/img/agents/communication_agent.svg",
+    "sync": "/static/img/agents/monitoring_agent.svg",
+    "withdraw": "/static/img/agents/security_agent.svg",
+    "velocity": "/static/img/agents/performance_optimizer_agent.svg",
+    "caps": "/static/img/agents/compliance_agent.svg",
+    "audit": "/static/img/agents/tester_agent.svg",
+    "steady": "/static/img/agents/monitoring_agent.svg",
+    "shard": "/static/img/agents/scanner_agent.svg"
+  },
+  "progress_tiers": [
+    { "min_level": 20, "image": "/static/img/fleet/progress-tier-5.svg", "label": "Ace" },
+    { "min_level": 15, "image": "/static/img/fleet/progress-tier-4.svg", "label": "Veteran" },
+    { "min_level": 10, "image": "/static/img/fleet/progress-tier-3.svg", "label": "Specialist" },
+    { "min_level": 5, "image": "/static/img/fleet/progress-tier-2.svg", "label": "Operator" },
+    { "min_level": 1, "image": "/static/img/fleet/progress-tier-1.svg", "label": "Recruit" }
+  ],
+  "agent_activity_avatar": "/static/img/agents/{agent_id}.svg",
+  "agent_activity_fallback": "/static/img/agents/ai_intelligence_agent.svg"
+}
