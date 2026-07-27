@@ -25,8 +25,16 @@
   }
 
   function setStatus(msg) {
-    var el = $("f5-status") || $("f5-ingest-status") || $("yt-stream-status");
+    var el =
+      $("f5-ingest-status") || $("f5-status") || $("yt-stream-status");
     if (el) el.textContent = msg || "";
+  }
+
+  function setIngestActive(on) {
+    window.__f5IngestActive = !!on;
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle("f5-ingest-active", !!on);
+    }
   }
 
   function isNoObsClick(target) {
@@ -35,6 +43,7 @@
   }
 
   function stopCapture() {
+    setIngestActive(false);
     state.active = false;
     if (state.canvasTimer) {
       clearInterval(state.canvasTimer);
@@ -63,13 +72,26 @@
   function uploadChunk(blob) {
     if (!blob || !blob.size) return Promise.resolve();
     state.uploadChain = state.uploadChain.then(function () {
-    return fetch(API_WEBM, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": blob.type || "application/octet-stream" },
-      body: blob,
-    }).then(function (r) {
-        return r.json().then(function (d) {
+      return fetch(API_WEBM, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": blob.type || "application/octet-stream" },
+        body: blob,
+      })
+        .then(function (r) {
+          return r.text().then(function (text) {
+            var d = {};
+            try {
+              d = JSON.parse(text);
+            } catch (e) {
+              d = { success: false, error: "http_" + r.status };
+            }
+            return { r: r, d: d };
+          });
+        })
+        .then(function (pair) {
+          var r = pair.r;
+          var d = pair.d;
           if (!r.ok || !d.success) {
             uploadFails += 1;
             if (uploadFails <= 5) {
@@ -87,7 +109,6 @@
             setStatus("Sender stadig (" + state.chunksSent + " chunks) — tjek Studio forhåndsvisning.");
           }
         });
-      });
     });
     return state.uploadChain.catch(function (e) {
       if (e && e.message && e.message !== "upload_failed") {
@@ -127,6 +148,7 @@
           return startTabCapture();
         }
         state.active = true;
+        setIngestActive(true);
         state.canvasTimer = setInterval(function () {
           if (!state.active) return;
           try {
@@ -197,38 +219,51 @@
       });
   }
 
-  function assignAndFixNoObs() {
-    return fetch(API_FIX, {
+  function runNoObs() {
+    setStatus("Starter canvas → YouTube…");
+    fetch(API_FIX, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "fix_no_obs",
         approved: true,
-        go_live: true,
+        go_live: false,
         start_ingest: false,
       }),
-    })
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (d) {
-        if (d.assign && d.assign.success) {
-          setStatus("YouTube agent assigned — starting tab capture…");
-        }
-        return startCanvasIngest();
-      })
-      .catch(function (e) {
-        setStatus(e.message || "No-OBS fix failed");
-      });
+    }).catch(function () {});
+    return startCanvasIngest();
+  }
+
+  function assignAndFixNoObs() {
+    return runNoObs();
   }
 
   function onNoObsClick(btn) {
     if (!btn || btn.disabled) return;
-    setStatus("Starting YouTube agent + tab capture…");
     btn.disabled = true;
-    assignAndFixNoObs().finally(function () {
-      btn.disabled = false;
+    document.querySelectorAll("[data-no-obs-stream]").forEach(function (b) {
+      b.disabled = true;
+    });
+    runNoObs()
+      .catch(function (e) {
+        setStatus((e && e.message) || "No-OBS start failed");
+      })
+      .finally(function () {
+        document.querySelectorAll("[data-no-obs-stream]").forEach(function (b) {
+          b.disabled = false;
+        });
+      });
+  }
+
+  function wireButton(id) {
+    var el = $(id);
+    if (!el || el.__f5NoObsBound) return;
+    el.__f5NoObsBound = true;
+    el.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      onNoObsClick(el);
     });
   }
 
@@ -258,6 +293,17 @@
 
   function bind() {
     bindDelegation();
+    wireButton("f5-no-obs-stream");
+    wireButton("f5-no-obs-fixed");
+    var stopFixed = $("f5-ingest-stop-fixed");
+    if (stopFixed && !stopFixed.__f5StopBound) {
+      stopFixed.__f5StopBound = true;
+      stopFixed.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        stopCapture();
+        setStatus("Ingest stoppet.");
+      });
+    }
     fetch(API_STATUS, { credentials: "same-origin" })
       .then(function (r) {
         return r.json();
@@ -280,10 +326,10 @@
   }
 
   window.MNFleetYoutubeIngest = {
-    start: startCanvasIngest,
+    start: runNoObs,
     startTab: startTabCapture,
     stop: stopCapture,
-    assignAndFix: assignAndFixNoObs,
+    assignAndFix: runNoObs,
     bind: bindDelegation,
   };
 

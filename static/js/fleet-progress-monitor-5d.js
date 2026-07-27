@@ -52,6 +52,7 @@
   var streamMode = qs("mode") === "stream" || qs("stream") === "1";
 
   function setStatus(msg) {
+    if (window.__f5IngestActive) return;
     var el = $("f5-status");
     if (el) el.textContent = msg || "";
   }

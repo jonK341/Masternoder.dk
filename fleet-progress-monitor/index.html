@@ -9,12 +9,18 @@
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
   <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20260726j">
-  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260726s">
+  <link rel="stylesheet" href="/static/css/fleet-progress-monitor-5d.css?v=20260727c">
   <link rel="stylesheet" href="/static/css/fleet-stream-chat.css?v=20260726n">
   <link rel="stylesheet" href="/static/css/stream-chapter-composer.css?v=20260726i">
   <link rel="stylesheet" href="/static/css/fleet-stream-geo.css?v=20260726p">
 </head>
 <body class="f5-body">
+  <script>
+    if (/[?&]mode=stream(?:&|$)/.test(window.location.search)) {
+      document.body.classList.add("f5-stream");
+      window.scrollTo(0, 0);
+    }
+  </script>
   <div id="navigation-toolbar" class="f5-nav-toolbar"></div>
   <div class="f5-live-layout">
   <div class="f5-live-main">
@@ -98,13 +104,20 @@
   </div>
   <aside id="f5-stream-chat" class="f5-stream-chat" aria-label="Fleet live chat"></aside>
   </div>
+  <div id="f5-ingest-bar" class="f5-ingest-bar" role="toolbar" aria-label="YouTube ingest">
+    <span id="f5-ingest-status" class="f5-ingest-status">Klik for at sende 5D-monitor til YouTube (Masternoder2).</span>
+    <button type="button" class="f5-ingest-bar-btn primary" id="f5-no-obs-fixed" data-no-obs-stream="1">
+      No OBS → YouTube
+    </button>
+    <button type="button" class="f5-ingest-bar-btn" id="f5-ingest-stop-fixed" data-ingest-stop="1">Stop</button>
+  </div>
   <script src="/static/js/navigation-toolbar.js" defer></script>
   <script src="/static/js/fleet-stream-chat.js?v=20260726n" defer></script>
   <script src="/static/js/fleet-monitor-visual.js?v=20260726m" defer></script>
   <script src="/static/js/camgirls-stream-voice.js?v=20260726j" defer></script>
   <script src="/static/js/fleet-stream-geo.js?v=20260726p" defer></script>
   <script src="/static/js/fleet-progress-monitor-5d.js?v=20260726s" defer></script>
-  <script src="/static/js/fleet-youtube-ingest.js?v=20260727b" defer></script>
+  <script src="/static/js/fleet-youtube-ingest.js?v=20260727c" defer></script>
   <script src="/static/js/youtube-stream-controls.js?v=20260726s" defer></script>
   <script src="/static/js/stream-chapter-composer.js?v=20260726j" defer></script>
 </body>
