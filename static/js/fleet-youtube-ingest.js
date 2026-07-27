@@ -157,12 +157,12 @@
                 if (blob && blob.size) uploadChunk(blob);
               },
               "image/jpeg",
-              0.86
+              0.78
             );
           } catch (e) {
             /* ignore tainted canvas */
           }
-        }, 100);
+        }, 66);
         setStatus(
           "Sender til YouTube — hold denne fane åben 30+ sek. Åbn Studio livestreaming (ikke «Administrer streams»): " +
             "studio.youtube.com/video/-iSYSBSn_8E/livestreaming · nøgle Masternoder2."
