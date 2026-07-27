@@ -17,6 +17,7 @@
     bound: false,
     uploadChain: Promise.resolve(),
     chunksSent: 0,
+    canvasTimer: null,
   };
 
   function $(id) {
@@ -35,6 +36,10 @@
 
   function stopCapture() {
     state.active = false;
+    if (state.canvasTimer) {
+      clearInterval(state.canvasTimer);
+      state.canvasTimer = null;
+    }
     if (state.recorder && state.recorder.state !== "inactive") {
       try {
         state.recorder.stop();
@@ -58,12 +63,12 @@
   function uploadChunk(blob) {
     if (!blob || !blob.size) return Promise.resolve();
     state.uploadChain = state.uploadChain.then(function () {
-      return fetch(API_WEBM, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "video/webm" },
-        body: blob,
-      }).then(function (r) {
+    return fetch(API_WEBM, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": blob.type || "application/octet-stream" },
+      body: blob,
+    }).then(function (r) {
         return r.json().then(function (d) {
           if (!r.ok || !d.success) {
             uploadFails += 1;
@@ -102,6 +107,48 @@
       if (MediaRecorder.isTypeSupported(candidates[i])) return candidates[i];
     }
     return "video/webm";
+  }
+
+  function startCanvasIngest() {
+    state.chunksSent = 0;
+    state.uploadChain = Promise.resolve();
+    return fetch(API_START, { method: "POST", credentials: "same-origin" })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d.success) {
+          setStatus((d.hint || d.error || "Ingest start failed") + "");
+          throw new Error(d.error || "start_failed");
+        }
+        var canvas = $("f5-canvas");
+        if (!canvas || !canvas.toBlob) {
+          setStatus("Canvas mangler — falder tilbage til fane-deling.");
+          return startTabCapture();
+        }
+        state.active = true;
+        state.canvasTimer = setInterval(function () {
+          if (!state.active) return;
+          try {
+            canvas.toBlob(
+              function (blob) {
+                if (blob && blob.size) uploadChunk(blob);
+              },
+              "image/jpeg",
+              0.86
+            );
+          } catch (e) {
+            /* ignore tainted canvas */
+          }
+        }, 100);
+        setStatus(
+          "Sender 5D-monitor (canvas) → YouTube. Studio: Masternoder2 — vent 10–20 sek. på billede."
+        );
+        if (document.body && document.body.classList) {
+          document.body.classList.add("f5-stream");
+        }
+        window.scrollTo(0, 0);
+      });
   }
 
   function startTabCapture() {
@@ -169,7 +216,7 @@
         if (d.assign && d.assign.success) {
           setStatus("YouTube agent assigned — starting tab capture…");
         }
-        return startTabCapture();
+        return startCanvasIngest();
       })
       .catch(function (e) {
         setStatus(e.message || "No-OBS fix failed");
@@ -233,7 +280,8 @@
   }
 
   window.MNFleetYoutubeIngest = {
-    start: startTabCapture,
+    start: startCanvasIngest,
+    startTab: startTabCapture,
     stop: stopCapture,
     assignAndFix: assignAndFixNoObs,
     bind: bindDelegation,

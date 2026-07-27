@@ -20,6 +20,7 @@ LOG_PATH = os.path.join(DATA_DIR, "youtube_ingest_daemon.log")
 STATS_PATH = os.path.join(DATA_DIR, "youtube_ingest_stats.json")
 
 EBML_MAGIC = b"\x1aE\xdf\xa3"
+JPEG_MAGIC = b"\xff\xd8\xff"
 _PROC_LOCK = threading.Lock()
 
 
@@ -47,14 +48,58 @@ def _stream_key() -> str:
     return (os.environ.get("YOUTUBE_STREAM_KEY") or "").strip()
 
 
+def _load_stream_key_from_dotenv() -> str:
+    env_path = os.path.join(_BASE, ".env")
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("YOUTUBE_STREAM_KEY="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return _stream_key()
+
+
 def _rtmp_url() -> str:
-    key = _stream_key()
+    key = _load_stream_key_from_dotenv()
     if not key:
         return ""
     return f"rtmp://a.rtmp.youtube.com/live2/{key}"
 
 
-def _ffmpeg_cmd() -> list[str]:
+def _ffmpeg_cmd_jpeg() -> list[str]:
+    ffm = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
+    return [
+        ffm,
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-f",
+        "image2pipe",
+        "-vcodec",
+        "mjpeg",
+        "-framerate",
+        "12",
+        "-i",
+        "pipe:0",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+        "-r",
+        "12",
+        "-g",
+        "24",
+        "-an",
+        "-f",
+        "flv",
+        _rtmp_url(),
+    ]
+
+
+def _ffmpeg_cmd_webm() -> list[str]:
     ffm = shutil.which("ffmpeg") or "/usr/bin/ffmpeg"
     return [
         ffm,
@@ -98,6 +143,7 @@ def _ffmpeg_cmd() -> list[str]:
 class IngestEngine:
     def __init__(self) -> None:
         self.proc: Optional[subprocess.Popen] = None
+        self.input_mode: Optional[str] = None
         self.need_init = True
         self.bytes_in = 0
         self.chunks_in = 0
@@ -137,28 +183,39 @@ class IngestEngine:
             _log(f"ffmpeg exited code={code}")
         self.proc = None
         self.need_init = True
+        self.input_mode = None
 
-    def _start_ffmpeg(self) -> bool:
+    def _detect_mode(self, data: bytes) -> str:
+        if data[:3] == JPEG_MAGIC:
+            return "jpeg"
+        if EBML_MAGIC in data[:4096]:
+            return "webm"
+        return self.input_mode or "jpeg"
+
+    def _start_ffmpeg(self, mode: str) -> bool:
         with _PROC_LOCK:
-            if self.proc is not None and self.proc.poll() is None:
+            if self.proc is not None and self.proc.poll() is None and self.input_mode == mode:
                 return True
             self._kill_ffmpeg()
+            cmd = _ffmpeg_cmd_jpeg() if mode == "jpeg" else _ffmpeg_cmd_webm()
             try:
                 self.proc = subprocess.Popen(
-                    _ffmpeg_cmd(),
+                    cmd,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
                 )
-                self.need_init = True
+                self.input_mode = mode
+                self.need_init = mode == "webm"
                 self.ffmpeg_started_at = time.time()
                 self._stderr_thread = threading.Thread(target=self._drain_stderr, daemon=True)
                 self._stderr_thread.start()
-                _log(f"ffmpeg started pid={self.proc.pid}")
+                _log(f"ffmpeg started pid={self.proc.pid} mode={mode}")
                 return True
             except Exception as exc:
                 _log(f"ffmpeg start failed: {exc}")
                 self.proc = None
+                self.input_mode = None
                 return False
 
     def _strip_to_init(self, data: bytes) -> bytes:
@@ -177,11 +234,13 @@ class IngestEngine:
                 break
             if not data:
                 continue
-            if not self._start_ffmpeg():
+            mode = self._detect_mode(data)
+            if not self._start_ffmpeg(mode):
                 continue
-            data = self._strip_to_init(data)
-            if not data:
-                continue
+            if mode == "webm":
+                data = self._strip_to_init(data)
+                if not data:
+                    continue
             try:
                 assert self.proc and self.proc.stdin
                 self.proc.stdin.write(data)
@@ -196,6 +255,7 @@ class IngestEngine:
                         "last_chunk_at": self.last_chunk_at,
                         "ffmpeg_pid": self.proc.pid if self.proc else None,
                         "need_init": self.need_init,
+                        "input_mode": self.input_mode,
                     }
                 )
             except (BrokenPipeError, OSError) as exc:
@@ -214,6 +274,7 @@ class IngestEngine:
         self.bytes_in = 0
         self.chunks_in = 0
         self.need_init = True
+        self.input_mode = None
         drained = 0
         while True:
             try:
