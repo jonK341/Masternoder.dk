@@ -165,7 +165,7 @@
         }, 100);
         setStatus(
           "Sender til YouTube — hold denne fane åben 30+ sek. Åbn Studio livestreaming (ikke «Administrer streams»): " +
-            "studio.youtube.com/video/0LS8G-s_CL4/livestreaming · nøgle Masternoder2."
+            "studio.youtube.com/video/-iSYSBSn_8E/livestreaming · nøgle Masternoder2."
         );
         if (document.body && document.body.classList) {
           document.body.classList.add("f5-stream");

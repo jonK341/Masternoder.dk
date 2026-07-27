@@ -4,10 +4,10 @@
   "chat_enabled": true,
   "chat_poll_ms": 3500,
   "reward_events_enabled": true,
-  "youtube_video_id": "0LS8G-s_CL4",
+  "youtube_video_id": "-iSYSBSn_8E",
   "youtube_channel_url": "https://www.youtube.com/@MasterNoder",
-  "youtube_watch_url": "https://www.youtube.com/watch?v=0LS8G-s_CL4",
-  "youtube_studio_url": "https://studio.youtube.com/video/0LS8G-s_CL4/livestreaming",
+  "youtube_watch_url": "https://www.youtube.com/watch?v=-iSYSBSn_8E",
+  "youtube_studio_url": "https://studio.youtube.com/video/-iSYSBSn_8E/livestreaming",
   "youtube_embed_domain": "https://www.youtube.com",
   "stream": {
     "title": "MasterNoder2 Activity Livestream 5D Monitor",
@@ -15,7 +15,7 @@
     "status_badge": "LIVE",
     "default_chat_placeholder": "Comment on the fleet stream…",
     "suggested_display_names": ["FleetFan", "MN2Pilot", "NodeRunner"],
-    "studio_title_note": "Title in YouTube Studio (Rediger) can differ slightly; video ID 0LS8G-s_CL4 must stay the same broadcast."
+    "studio_title_note": "Title in YouTube Studio (Rediger) can differ slightly; video ID -iSYSBSn_8E must stay the same broadcast."
   },
   "youtube_rtmp": {
     "server_url": "rtmp://a.rtmp.youtube.com/live2",
@@ -70,11 +70,11 @@
     "No OBS på sitet: hold monitor-fanen åben 30+ sek. efter klik — RTMP stopper hvis du lukker fanen.",
     "Streamnøgle i Studio = Masternoder2 (samme som YOUTUBE_STREAM_KEY på server).",
     "Når forhåndsvisning viser billede (ikke Ingen data), klik Gå live.",
-    "Aktivt broadcast-ID på sitet: 0LS8G-s_CL4 — opdater fleet_stream_live.json hvis du laver ny udsendelse."
+    "Aktivt broadcast-ID på sitet: -iSYSBSn_8E — opdater fleet_stream_live.json hvis du laver ny udsendelse."
   ],
   "studio_edit_da": [
     "Rediger = kun metadata. Forbindelse kommer fra RTMP (No OBS / OBS), ikke fra Rediger.",
-    "Gå til: studio.youtube.com/video/0LS8G-s_CL4/livestreaming — ikke kun «Administrer streams».",
+    "Gå til: studio.youtube.com/video/-iSYSBSn_8E/livestreaming — ikke kun «Administrer streams».",
     "Vælg streamnøgle Masternoder2 under Streamindstillinger.",
     "Planlagt dato (27. jul.) betyder ikke automatisk forbindelse — encoder skal sende før Gå live."
   ]

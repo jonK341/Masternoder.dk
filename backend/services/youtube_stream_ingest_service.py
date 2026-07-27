@@ -200,7 +200,7 @@ def ingest_status() -> Dict[str, Any]:
             if profile
             else "Vælg streamnøgle i Studio (fx Masternoder2) og kopier samme nøgle til YOUTUBE_STREAM_KEY i server .env."
         ),
-        "studio_livestreaming_url": "https://studio.youtube.com/video/0LS8G-s_CL4/livestreaming",
+        "studio_livestreaming_url": "https://studio.youtube.com/video/-iSYSBSn_8E/livestreaming",
         "studio_note_da": "Forbindelse vises på Livestreaming-siden for denne udsendelse — ikke kun i «Administrer streams».",
         "running": running,
         "pid": pid,
