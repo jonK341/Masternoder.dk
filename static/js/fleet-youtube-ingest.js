@@ -164,7 +164,8 @@
           }
         }, 100);
         setStatus(
-          "Sender 5D-monitor (canvas) → YouTube. Studio: Masternoder2 — vent 10–20 sek. på billede."
+          "Sender til YouTube — hold denne fane åben 30+ sek. Åbn Studio livestreaming (ikke «Administrer streams»): " +
+            "studio.youtube.com/video/0LS8G-s_CL4/livestreaming · nøgle Masternoder2."
         );
         if (document.body && document.body.classList) {
           document.body.classList.add("f5-stream");

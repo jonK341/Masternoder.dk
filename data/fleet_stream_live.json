@@ -65,17 +65,17 @@
     "setup_note": "Set DISCORD_CHANNEL_ID_GENERAL to your main chat room webhook URL (Server Settings → Integrations → Webhooks). Falls back to DISCORD_WEBHOOK_URL. YouTube link unfurls in chat; monitor opens via embed link."
   },
   "youtube_live_setup": [
-    "Studio shows 'Ingen data' until OBS sends RTMP — editing title (Rediger) alone does not go live.",
-    "OBS → Settings → Stream → Service YouTube / Custom → Server rtmp://a.rtmp.youtube.com/live2 → Stream key from Studio (Streamindstillinger).",
-    "OBS → Sources → Browser → URL /fleet-progress-monitor/?mode=stream · 1920×1080 · 30fps.",
-    "Click 'Start streaming' in OBS; Studio should switch from Ingen data to receiving video, then click Go live.",
-    "Broadcast ID for site embed + Discord: MBjG7hq_YZA — if you create a new broadcast, update youtube_video_id and redeploy.",
-    "Never commit the stream key — only set YOUTUBE_STREAM_KEY in server .env for ops scripts if needed."
+    "«Administrer streams» viser Forbindelse som «-» indtil encoder sender — åbn den planlagte udsendelse → Livestreaming (URL med video-ID).",
+    "Én planlagt stream ad gangen: slet dubletter, ellers ved YouTube ikke hvilken der skal have RTMP.",
+    "No OBS på sitet: hold monitor-fanen åben 30+ sek. efter klik — RTMP stopper hvis du lukker fanen.",
+    "Streamnøgle i Studio = Masternoder2 (samme som YOUTUBE_STREAM_KEY på server).",
+    "Når forhåndsvisning viser billede (ikke Ingen data), klik Gå live.",
+    "Aktivt broadcast-ID på sitet: 0LS8G-s_CL4 — opdater fleet_stream_live.json hvis du laver ny udsendelse."
   ],
   "studio_edit_da": [
-    "Rediger = metadata only (titel, kategori, miniature). Det starter ikke streamen.",
-    "Kopiér streamnøgle under Streamindstillinger → indsæt i OBS under Stream.",
-    "Når OBS sender video, forsvinder 'Ingen data' og du kan gå live.",
-    "Brug samme udsendelse (video-ID i URL) som på sitet: MBjG7hq_YZA"
+    "Rediger = kun metadata. Forbindelse kommer fra RTMP (No OBS / OBS), ikke fra Rediger.",
+    "Gå til: studio.youtube.com/video/0LS8G-s_CL4/livestreaming — ikke kun «Administrer streams».",
+    "Vælg streamnøgle Masternoder2 under Streamindstillinger.",
+    "Planlagt dato (27. jul.) betyder ikke automatisk forbindelse — encoder skal sende før Gå live."
   ]
 }
