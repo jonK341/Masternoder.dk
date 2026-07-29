@@ -555,6 +555,13 @@ def business_overview(*, light: bool = True) -> Dict[str, Any]:
     except Exception:
         pass
 
+    try:
+        from backend.services.exchange_profit_orchestrator_service import pipeline_status
+
+        extras["profit_pipeline"] = pipeline_status(light=True)
+    except Exception:
+        pass
+
     if "paper_mode" not in extras:
         try:
             from backend.services.exchange_arbitrage_service import live_enabled

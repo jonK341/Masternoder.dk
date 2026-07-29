@@ -791,7 +791,7 @@ MANIFESTS = {
         "backend/services/exchange_fleet_progression_service.py",
         "backend/services/business_control_preflight_service.py",
         "backend/services/exchange_winnable_pairs_service.py",
-        "backend/services/exchange_stuck_inventory_service.py",
+        "backend/services/exchange_profit_orchestrator_service.py",
         "backend/services/portal_micro_chain_service.py",
         "backend/services/monitor_5d_pulse_service.py",
         "backend/services/profit_daemon_news_service.py",

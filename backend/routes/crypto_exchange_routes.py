@@ -518,6 +518,34 @@ def monitor_5d_pulse():
     return jsonify(recent(limit=int(request.args.get("limit") or 24)))
 
 
+@crypto_exchange_bp.route("/api/exchange/profit-pipeline/status", methods=["GET"])
+def exchange_profit_pipeline_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_orchestrator_service import pipeline_status
+
+    light = request.args.get("full") not in ("1", "true", "yes")
+    return jsonify(pipeline_status(light=light))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-pipeline/run", methods=["POST"])
+def exchange_profit_pipeline_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_orchestrator_service import run_profit_pipeline
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        run_profit_pipeline(
+            apply_grid_from_search=bool(data.get("apply_grid_from_search")),
+            apply_stuck_grid=bool(data.get("apply_stuck_grid")),
+            cross_scan=bool(data.get("cross_scan")),
+            min_cross_bps=float(data.get("min_cross_bps") or 8),
+            min_profit_score=float(data.get("min_profit_score") or 3),
+        )
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/control-board/overview", methods=["GET"])
 def exchange_control_board_overview():
     if not _admin_authorized():
