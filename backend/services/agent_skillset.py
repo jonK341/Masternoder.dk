@@ -15,6 +15,7 @@ DEFAULT_PAYPAL_SKILLS_PER_AGENT = 15
 DEFAULT_TOP25_SKILLS_PER_AGENT = 25
 DEFAULT_SHARED_GROWTH_SKILLS = 100
 DEFAULT_CRITICISM_SKILLS_PER_AGENT = 20
+DEFAULT_TRADER_SKILLS_PER_AGENT = 12
 
 class AgentSkillset:
     """Skillset management for agents"""
@@ -47,7 +48,67 @@ class AgentSkillset:
         self.ensure_criticism_skills_per_agent(count=DEFAULT_CRITICISM_SKILLS_PER_AGENT)
         self.ensure_blueprint_route_fixer_skills_per_agent()
         self.ensure_api_service_skills_per_agent()
+        self.ensure_trader_skills_per_agent(count=DEFAULT_TRADER_SKILLS_PER_AGENT)
         self.save_skillsets()
+
+    def _generate_trader_skill_profiles(self, agent_id: str, count: int = DEFAULT_TRADER_SKILLS_PER_AGENT) -> List[Dict]:
+        """P2P market-maker / trader skills for Phase 4 agent fleet."""
+        normalized = str(agent_id).strip().lower().replace(" ", "_")
+        archetypes = [
+            "market_maker", "momentum", "mean_reversion", "liquidity", "arbitrage", "sniper",
+            "spread_guard", "inventory_balance", "risk_cap", "fill_quality", "wash_avoid", "depth_keep",
+        ]
+        profiles = []
+        for idx in range(1, max(1, count) + 1):
+            archetype = archetypes[(idx - 1) % len(archetypes)]
+            profiles.append({
+                "skill_name": f"{normalized}_trader_{idx:02d}_{archetype}",
+                "strategy": archetype,
+                "min_level": 1 + ((idx - 1) // 3),
+                "capital_mult": round(0.5 + (idx * 0.1), 2),
+                "class": "trader",
+            })
+        return profiles
+
+    def ensure_trader_skills_per_agent(self, count: int = DEFAULT_TRADER_SKILLS_PER_AGENT) -> Dict:
+        """Ensure trader agents (and general fleet) have market-trading skill profiles."""
+        updated = 0
+        agents = self.skillsets.setdefault("agents", {})
+        # Ensure known trader agent ids exist even before treasury funding.
+        for i in range(1, 7):
+            aid = f"trader_agent_{i}"
+            if aid not in agents:
+                agents[aid] = {
+                    "name": f"Trader Agent {i}",
+                    "skills": [],
+                    "level": 1 + ((i - 1) // 2),
+                    "experience": (1 + ((i - 1) // 2) - 1) * 500,
+                }
+        for agent_id, agent_data in agents.items():
+            if not isinstance(agent_data, dict):
+                continue
+            is_trader = str(agent_id).startswith("trader_agent_") or "trader" in str(agent_id).lower()
+            if not is_trader and "trader" not in str(agent_data.get("name") or "").lower():
+                continue
+            profiles = agent_data.get("trader_skill_profiles")
+            if not isinstance(profiles, list) or len(profiles) < count:
+                profiles = self._generate_trader_skill_profiles(agent_id, count=count)
+                agent_data["trader_skill_profiles"] = profiles
+                updated += 1
+            skills = agent_data.setdefault("skills", [])
+            for profile in profiles[:count]:
+                name = profile.get("skill_name")
+                if name and name not in skills:
+                    skills.append(name)
+            agent_data["trader_skill_count"] = len(profiles[:count])
+            agent_data.setdefault("level", 1)
+        self.skillsets["trader_skill_manifest"] = {
+            "per_agent": count,
+            "updated_at": datetime.now().isoformat(),
+            "agents_updated": updated,
+        }
+        self.save_skillsets()
+        return {"success": True, "agents_updated": updated, "trader_skills_per_agent": count}
 
     def _ensure_tester_agent_skillset(self):
         """Ensure tester agent exists in persistent skillsets for production quality audits."""

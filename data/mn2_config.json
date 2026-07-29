@@ -62,5 +62,12 @@
   "order_payment_underpay_credit": true,
   "order_payment_combined_fulfill": true,
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
-  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
+  "agent_funding": {
+    "per_agent_mn2": 100000,
+    "trader_agent_count": 6,
+    "top_up": true,
+    "live_distribute": false,
+    "comment": "Option C: live_distribute stays false until cold-wallet sign-off (docs/MN2_OPS.md §8.6). Required total = per_agent_mn2 * trader_agent_count (default 600000). Use GET /api/agents/treasury/status for dry-run."
+  }
 }

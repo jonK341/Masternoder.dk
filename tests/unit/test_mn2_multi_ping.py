@@ -24,12 +24,23 @@ def test_daemon_supports_multi_ping_false(monkeypatch):
     assert mn.daemon_supports_multi_ping() is False
 
 
-def test_multi_ping_enabled_respects_ops_flag(monkeypatch):
+def test_multi_ping_enabled_requires_daemon_and_flag(monkeypatch):
+    """Ops flag alone must not enable multi-ping on a pre-1.3 daemon (Option E)."""
     monkeypatch.setattr(mn, "_ops_cfg", lambda: {"multi_ping_enabled": True})
     monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: False)
+    assert mn.multi_ping_enabled() is False
+
+    monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: True)
     assert mn.multi_ping_enabled() is True
 
     monkeypatch.setattr(mn, "_ops_cfg", lambda: {"multi_ping_enabled": False})
+    monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: True)
+    assert mn.multi_ping_enabled() is False
+
+
+def test_multi_ping_enabled_env_off_wins(monkeypatch):
+    monkeypatch.setenv("MN2_MULTI_PING_ENABLED", "0")
+    monkeypatch.setattr(mn, "_ops_cfg", lambda: {"multi_ping_enabled": True})
     monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: True)
     assert mn.multi_ping_enabled() is False
 

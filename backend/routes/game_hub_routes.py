@@ -75,3 +75,37 @@ def game_hub_story_read():
         return jsonify(mark_story_read(uid, story_id)), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@game_hub_bp.route("/api/game-hub/earn/top10", methods=["GET"])
+def game_hub_earn_top10():
+    from backend.services.game_mn2_rewards import list_top10_earn
+    return jsonify(list_top10_earn()), 200
+
+
+@game_hub_bp.route("/api/game-hub/earn/claim", methods=["POST"])
+def game_hub_earn_claim():
+    data = request.get_json(silent=True) or {}
+    uid = (data.get("user_id") or "").strip() or "default_user"
+    earn_id = (data.get("earn_id") or data.get("id") or "").strip()
+    from backend.services.game_mn2_rewards import claim_earn
+    result = claim_earn(uid, earn_id, metadata=data.get("metadata") if isinstance(data.get("metadata"), dict) else None)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@game_hub_bp.route("/api/game-hub/earn/check-in", methods=["POST"])
+def game_hub_earn_checkin():
+    data = request.get_json(silent=True) or {}
+    uid = (data.get("user_id") or "").strip() or "default_user"
+    from backend.services.game_mn2_rewards import monitor_check_in
+    result = monitor_check_in(uid)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@game_hub_bp.route("/api/game-hub/earn/activity", methods=["POST"])
+def game_hub_earn_activity():
+    data = request.get_json(silent=True) or {}
+    uid = (data.get("user_id") or "").strip() or "default_user"
+    game = (data.get("game") or "").strip() or "unknown"
+    from backend.services.game_mn2_rewards import record_game_activity
+    return jsonify(record_game_activity(uid, game)), 200

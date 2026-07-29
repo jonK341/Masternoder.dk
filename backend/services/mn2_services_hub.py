@@ -10,6 +10,11 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
+try:
+    import requests
+except ImportError:
+    requests = None  # type: ignore
+
 _LOCK = threading.Lock()
 _CACHE: Dict[str, Any] = {}
 _CACHE_TTL = 30
@@ -115,11 +120,38 @@ def _probe_explorer() -> Dict[str, Any]:
         from backend.services.mn2_explorer_urls import explorer_base_url, explorer_kind
         base = explorer_base_url()
         kind = explorer_kind()
-        return {
-            "status": "healthy" if base else "warn",
+        status = "healthy" if base else "warn"
+        latency_ms = None
+        detail = None
+        if requests and kind == "iquidus":
+            try:
+                from backend.services.mn2_explorer_urls import explorer_local_api_url, load_explorer_config
+                cfg = load_explorer_config()
+                probe_base = (explorer_local_api_url(cfg) or base or "").rstrip("/")
+                if probe_base and not probe_base.endswith("/ext"):
+                    probe_url = probe_base + "/ext/getmoneysupply"
+                else:
+                    probe_url = probe_base + "/getmoneysupply" if probe_base else ""
+                if probe_url:
+                    t0 = time.time()
+                    r = requests.get(probe_url, timeout=4)
+                    latency_ms = int((time.time() - t0) * 1000)
+                    if r.status_code != 200 or (r.text or "").strip().startswith("<"):
+                        status = "degraded"
+                        detail = f"HTTP {r.status_code}"
+            except Exception as exc:
+                status = "degraded"
+                detail = str(exc)[:120]
+        out = {
+            "status": status,
             "explorer_base_url": base,
             "explorer_kind": kind,
         }
+        if latency_ms is not None:
+            out["latency_ms"] = latency_ms
+        if detail:
+            out["detail"] = detail
+        return out
     except Exception as exc:
         return {"status": "unknown", "error": str(exc)}
 

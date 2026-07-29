@@ -1,58 +1,89 @@
 ---
 name: Masternoder MN2 Ecosystem
-overview: "Retarget the whole effort to the real Masternoder.dk Flask app: audit and harden the MN2 coin mechanics and daemon, ship multi-wallet + wallet activity monitoring (effects + sounds), a P2P market driven by autonomous trader-agents with wallets/points/levels and an admin control board, explorer upgrades + multi-channel news + Discord integration, debugger Q&A crypto rewards, expanded casino crypto, MN2 pay-to-generate + earn in the video generator with new encoder features, a unified multi-game monitor with crypto rewards and new earn functions, customer aggregator with avatars, advanced AI intelligence + monetization, plus security cron jobs - all backed by tests and a report + categorized TODO list."
+overview: "Architecture map for the Flask MN2 stack. Sprint board = docs/MN2_TODO.md. Phases 0–14 code residuals shipped (2026-07); open ops: C3 live distribute, P1 multi-ping/exchange."
 todos:
   - id: audit
-    content: "Phase 0: Audit MN2 mechanics end-to-end; start docs/MN2_ECOSYSTEM_REPORT.md"
-    status: pending
+    content: "Phase 0 DONE: Audit MN2 mechanics; docs/MN2_ECOSYSTEM_REPORT.md"
+    status: completed
   - id: daemon-health
-    content: "Phase 1: mn2_health_routes.py (/api/mn2/health, /api/health), harden scanner/overview, add RPC-mocked tests"
-    status: pending
+    content: "Phase 1 DONE: /api/mn2/health Hub contract (daemon_staking, discord_outbox, network_alerts) + test_mn2_health"
+    status: completed
   - id: wallet
-    content: "Phase 2: Multi-address rotation/refresh + multi-wallet connect + top 10 wallet features (profile UI)"
-    status: pending
+    content: "Phase 2 DONE: multi-address refresh/connect routes + address-book/transfer + profile Wallet settings UX"
+    status: completed
   - id: market
-    content: "Phase 3: p2p_market_service + /api/market order book, escrow, matching, points, tests"
-    status: pending
+    content: "Phase 3 DONE: p2p_market_service + /api/market + market/index.html + test_p2p_market"
+    status: completed
   - id: agents
-    content: "Phase 4: Agent wallets + treasury funding (one address auto-distributes 100k MN2 per trader agent), trader strategies, cron runner, leveling, restore point control board + agents_control dashboard, tests"
-    status: pending
+    content: "Phase 4 DONE (code): trader level-gates + skillsets + control board; live_distribute still false until cold-wallet sign-off (C3)"
+    status: completed
   - id: explorer
-    content: "Phase 5: Explorer top 10 + multi-channel news (platform_news channels) + Discord outbound/inbound + Discord income streams (M8); resync news page; tests"
-    status: pending
+    content: "Phase 5 DONE (code): news/channels+publish+RSS + auto-publish hooks + explorer top-10; Discord/M8 live"
+    status: completed
   - id: debugger-qa
-    content: "Phase 6: Wire debugger Top 50 Q&A to backend with MN2 rewards + anti-farming, tests"
-    status: pending
+    content: "Phase 6 DONE: POST /api/debugger/quiz/submit + MN2 rewards + anti-farm + TAB_POINTS quiz + tests"
+    status: completed
   - id: casino-crypto
-    content: "Phase 7: Expand casino MN2 use (jackpots/tournaments/cashback/swap) + policy doc"
-    status: pending
+    content: "Phase 7 DONE: jackpots/tournaments + MN2 cashback + casino swap UI + CASINO_CRYPTO_POLICY.md"
+    status: completed
   - id: monitoring
-    content: "Phase 8: Activity SSE stream + logs/activity_events.jsonl + monitor UI with visual effects and sounds, tests"
-    status: pending
+    content: "Phase 8 DONE: activity SSE + activity_events.jsonl + mn2-activity-stream.js + tests"
+    status: completed
   - id: security-cron
-    content: "Phase 9: Security cron jobs (withdrawal-risk sweep, anomaly/auto-freeze, reconciliation, session cleanup, address rescan), tests"
-    status: pending
+    content: "Phase 9 DONE: security_cron_service presets (full/sweep/risk/reconcile/backup) + test_security_cron + cron.d"
+    status: completed
   - id: generator
-    content: "Phase 10: Generator MN2 pay-to-generate + earn + top 10 encoder features, tests"
-    status: pending
+    content: "Phase 10 DONE: generator_mn2 pay/earn + pricing API + test_generator_mn2"
+    status: completed
   - id: game-monitor
-    content: "Phase 11: Unified multi-game monitor + game_mn2_rewards + top 10 earn functions + quest bug fix, tests"
-    status: pending
+    content: "Phase 11 DONE: Monitor tab on /game, quest XP arg-order fix, /api/quests/user/<id>, top-10 earn + check-in"
+    status: completed
   - id: customer-aggregator
-    content: "Phase 12: Customer aggregator (unified customer directory across casino/generator/game/market) + auto avatars + monitoring tile + tests"
-    status: pending
+    content: "Phase 12 DONE: customer_aggregator service/routes + customers/index.html + tests"
+    status: completed
   - id: ai-intelligence
-    content: "Phase 13: Advanced AI intelligence layer - 25 core + 25 monetization (M1-M7) + 10 Discord income streams (M8); all off-request and Gate S compliant"
-    status: pending
+    content: "Phase 13 DONE (inventory): GET /api/ai-intelligence/waves maps core 25 + monetization; deferred waves tracked; Gate S policy"
+    status: completed
   - id: tests-docs-commit
-    content: "Phase 14: Run pytest, finalize report + Critical/Upgrades TODO, commit plan (after leaving plan mode)"
-    status: pending
+    content: "Phase 14 DONE: MN2_TODO Critical/Upgrades synced with shipped phases; keep current on each ship"
+    status: completed
 isProject: false
 ---
 
-# Masternoder MN2 Ecosystem (retargeted to Masternoder.dk Flask app)
+# Masternoder MN2 Ecosystem (retargeted to [REDACTED] Flask app)
 
-Supersedes the earlier `mn2-casino` plan. All work lands in `C:\Users\jonkh\UsecaseSampler\Masternoder.dk`.
+Supersedes the earlier `mn2-casino` plan. All work lands in the [REDACTED] Flask repo.
+
+## Ownership (Option D — 2026-07-25)
+
+| Doc | Role |
+|-----|------|
+| **This plan** | Architecture map + phase checklist (not the live sprint queue) |
+| [`docs/MN2_TODO.md`](../MN2_TODO.md) | Sprint board — **Critical / Upgrades** + P1 ops |
+| [`docs/MN2_ECOSYSTEM_REPORT.md`](../MN2_ECOSYSTEM_REPORT.md) | Money-path audit + Gate status |
+| [`docs/plans/masternoder_mn2_ecosystem_brainstorm.md`](masternoder_mn2_ecosystem_brainstorm.md) | What-to-do-first options A–E |
+
+### Phase status sync (grounded 2026-07-25)
+
+| Phase | Status | Residual / next |
+|-------|--------|-----------------|
+| 0 Audit | **Done** | Report live |
+| 1 Daemon health | **Done** | Hub contract + tests (Option A) |
+| 2 Wallet | **Done** | `/api/mn2/wallet/refresh|connect|addresses` + address-book/transfer + profile settings |
+| 3 Market | **Done** | — |
+| 4 Agents | **Done (code)** | Level-gates + trader skills + control board; live distribute only after sign-off (C3) |
+| 5 Explorer + news + Discord | **Done (code)** | Channels/publish/RSS + auto-publish hooks; Discord/M8 live |
+| 6 Debugger Q&A | **Done** | Quiz submit + MN2 + anti-farm |
+| 7 Casino crypto | **Done** | Cashback + swap UI + policy doc |
+| 8 Activity monitor | **Done** | — |
+| 9 Security cron | **Done** | Full presets + unit tests |
+| 10 Generator MN2 | **Done** | — |
+| 11 Game monitor | **Done** | Monitor tab + top-10 earn |
+| 12 Customers | **Done** | — |
+| 13 AI intelligence | **Done (inventory)** | Remaining core/monetization waves |
+| 14 Tests/docs | **Done** | Keep Critical/Upgrades current |
+
+**Integrity slice (done this branch):** Option A health Hub · Option B Gate S concurrency/ledger · Option C treasury dry-run (`live_distribute=false`).
 
 ## Conventions (from codebase audit)
 - New API: add `backend/routes/<feature>_routes.py` with a `Blueprint` using full `/api/...` paths and `resolve_user_id()`; register in [backend/register_blueprints.py](backend/register_blueprints.py) (and lite list if needed).
@@ -82,40 +113,45 @@ flowchart TD
 ```
 
 ## Phase 0 - Audit + report
-- Audit MN2 mechanics end to end (deposit scan, withdraw + risk, staking, ledger reconcile, unified balance read path). Capture in `docs/MN2_ECOSYSTEM_REPORT.md`.
+**Status: Done.** Audit MN2 mechanics end to end (deposit scan, withdraw + risk, staking, ledger reconcile, unified balance read path). Captured in `docs/MN2_ECOSYSTEM_REPORT.md`.
 
 ## Phase 1 - Coin "super check" + daemon health + tests
+**Status: Done (Option A).** `/api/mn2/health` Hub components: `daemon_staking`, `discord_outbox`, `network_alerts`; `tests/unit/test_mn2_health.py` green.
 - Extend the EXISTING `backend/routes/health_routes.py` (do not duplicate) with an `mn2` section + `GET /api/mn2/health`: RPC reachability via `mn2_rpc_client`, block-height monotonicity using `data/mn2_network_history.jsonl`, deposit-scanner freshness, staking-stopped alerts; surface it in the Health Ops Hub contract.
 - Harden `mn2_deposit_scanner.py` / `mn2_chainz.network_overview()` against RPC outages (already best-effort; add explicit health flags).
 - Tests: `tests/unit/test_mn2_health.py` plus fill coverage gaps for `recent_blocks()` / `masternodes()` (mock RPC).
 
 ## Phase 2 - Wallet: multi-connect, address refresh, top 10 features
+**Status: Done.** Routes: `POST /api/mn2/wallet/refresh`, `POST /api/mn2/wallet/connect`, `GET /api/mn2/wallet/addresses`, address-book + transfer; profile Wallet settings (rotate/connect/list). Swap, gift, QR, CSV, staking already wired.
 - Address rotation: extend `mn2_wallet_service.py` + `data/mn2_user_addresses.json` to hold multiple labeled addresses per user; add `POST /api/mn2/wallet/refresh` (rotate/derive + rescan) and `POST /api/mn2/wallet/connect` for external wallet types (Core/QT via RPC, web, extension stub, hardware stub).
 - Top 10 wallet features: (1) multi-wallet connect, (2) address rotation/refresh, (3) richer withdrawals UX on existing `/api/mn2/withdraw`, (4) MN2<->coins swap (config `coins_per_mn2`), (5) user-to-user MN2 send, (6) QR + address book, (7) per-wallet balance/history split, (8) labels/notes, (9) staking/masternode rewards view (reuse `staking-monitor`), (10) CSV export from `mn2_ledger`.
 - UI: extend `profile/index.html` wallet panel + `static/js`.
 
 ## Phase 3 - P2P market + agent liquidity + points
+**Status: Done.** `p2p_market_service` + `/api/market` + `market/index.html` + tests.
 - New `backend/services/p2p_market_service.py` + `backend/routes/p2p_market_routes.py` (`/api/market/*`): MN2<->coins limit/market orders, escrow via `unified_points_db`, matching engine, order book/ticker, cancel. (Generalizes the disabled MN2-for-USD `mn2_p2p_service.py`.)
 - New page `market/index.html` + nav entry.
 - Points on every market action through `unified_points_db` (`activity_points`) and `mn2_ledger` for MN2 legs.
 - Tests: `tests/unit/test_p2p_market.py` (matching, escrow, no negative balances, idempotency).
 
 ## Phase 4 - Agents: wallets, points, levels, trader skills, control board
+**Status: Done (code).** Trader service/cron/admin + level-gated strategy unlocks + trader skillsets + point control board registered (2026-07-25). Live 600k distribute still gated by C3 (`live_distribute=false` until cold-wallet sign-off).
 - Agent wallets: new `backend/services/agent_wallet_service.py` + table `agent_wallets` (agent_id, coins, mn2) funded from the treasury; record via `agent_db_service.record_agent_activity`.
-- Trader agents: new `backend/services/agent_trader_service.py` with strategies (market-maker, momentum, mean-reversion, liquidity/random-walk, arbitrage, sniper) that place/fill `/api/market` orders to keep it liquid and trade with real users; expand skills in `agent_skillset.py`. Default fleet = one agent per strategy (configurable `trader_agent_count`, default 6).
+- Trader agents: new `backend/services/agent_trader_service.py` with strategies (market-maker, momentum, mean-reversion, liquidity/random-walk, arbitrage, sniper) that place/fill `/api/market` orders to keep it liquid and trade with real users; expand skills in `agent_skillset.py` (`ensure_trader_skills_per_agent`). Default fleet = one agent per strategy (configurable `trader_agent_count`, default 6).
 - Agent treasury funding (real on-chain, fund trader agents only, 100,000 MN2 each):
   - Config in `data/mn2_config.json` -> `agent_funding`: `{ per_agent_mn2: 100000, trader_agent_count: 6, top_up: true }`. Required total = `per_agent_mn2 * trader_agent_count` (default 600,000 MN2; auto-scales with fleet size).
   - ONE treasury deposit address generated via `mn2_rpc_client.getnewaddress("agent-treasury")`, persisted to `data/agent_treasury.json` and mapped in `data/mn2_user_addresses.json` to a reserved `agent_treasury` account so the existing `mn2_deposit_scanner` auto-credits it (in-app `mn2_balance` of the treasury account).
   - `GET /api/agents/treasury/address` (ops-secret guarded) returns the funding address + required total + per-agent amount + current pool balance + distribution status (this is where the actual address is surfaced at execution time).
-  - Auto-distribution job `distribute_agent_funding()` (preset in `agent_cron_service.py` + `cron/agents_treasury_distribute.sh`, also callable via `POST /api/agents/treasury/distribute`): tops each trader agent wallet up to `per_agent_mn2`, debiting the treasury pool, appending one `mn2_ledger` entry per transfer. Idempotent (only funds the gap to target), guarded so total debits never exceed the pool, and emits an `activity_events` entry per funding.
+  - Auto-distribution job `distribute_agent_funding()` (preset in `agent_cron_service.py` + `cron/agents_treasury_distribute.sh`, also callable via `POST /api/agents/treasury/distribute`): tops each trader agent wallet up to `per_agent_mn2`, debiting the treasury pool, appending one `mn2_ledger` entry per transfer. Idempotent (only funds the gap to target), guarded so total debits never exceed the pool, and emits an `activity_events` entry per funding (+ news auto-publish).
   - Surfaced in the agents control board with a "Fund agents" action + live treasury/pool/per-agent status.
 - Tests: `tests/unit/test_agent_treasury.py` (address generation mocked RPC, scanner credit, idempotent top-up to 100k, no over-distribution beyond pool).
 - Runner: add `agent_trader` job to `agent_cron_service.py` + `cron/agents_trader.sh` (existing secret pattern) so agents stay active on schedule.
-- Leveling: agents already level at 500 XP/level (`agent_db_service.py`); add configurable thresholds + level-gated unlocks (more strategies/capital/risk).
-- Control board: restore the missing `backend/services/point_system_control_board.py` + `backend/routes/point_control_board_routes.py` (referenced by `dashboard/point_control_board.html` and `integrate_178_systems_to_control_board.py`); add `backend/routes/agent_admin_routes.py` + `dashboard/agents_control/index.html` to start/stop/pause the runner, fund/defund agent wallets, switch strategy/risk, and set/add levels, with per-agent status/P&L/points/level.
-- Tests: `tests/unit/test_agent_trader.py`, `tests/unit/test_agent_wallets.py`.
+- Leveling: agents already level at 500 XP/level (`agent_db_service.py`); level-gated unlocks in `agent_trader_service` (strategy access + size multipliers) + `test_agent_trader_level_gates.py`.
+- Control board: `backend/services/point_system_control_board.py` + `backend/routes/point_control_board_routes.py` registered; `backend/routes/agent_admin_routes.py` + `dashboard/agents_control/index.html` to start/stop/pause the runner, fund/defund agent wallets, switch strategy/risk, and set/add levels, with per-agent status/P&L/points/level.
+- Tests: `tests/unit/test_agent_trader.py`, `tests/unit/test_agent_wallets.py`, `tests/unit/test_agent_trader_level_gates.py`.
 
 ## Phase 5 - Explorer + multi-channel news + Discord integration
+**Status: Done (code).** `/api/news/channels` + publish/RSS + explorer on-site detail APIs/pages + `news_auto_hooks` (agent funding / notable market fills / security) shipped (2026-07-25). Discord/M8 infra live.
 ### Explorer (unchanged scope)
 - Implement iquidus-first branch in `mn2_chainz.network_overview()` per `docs/MN2_EXPLORER_PLAN.md`; add in-page tx/address detail routes in `mn2_explorer_data.py` + `mn2_staking_routes.py`; wire `explorer/index.html` + `static/js/mn2-explorer-overview.js`.
 - Top 10 explorer features: (1) in-page tx detail, (2) in-page address detail, (3) internal search, (4) rich list, (5) supply/emission stats, (6) masternode detail, (7) mempool/pending, (8) tx-volume charts, (9) auto-refresh, (10) JSON API parity.
@@ -125,11 +161,11 @@ flowchart TD
 - Extend `data/platform_news.json` schema with `channels[]` per post: `home`, `explorer`, `casino`, `generator`, `game`, `market`, `agents`, `discord`, `ops`.
 - API: extend `GET /api/news/platform?channel=&limit=&featured=` (already exists — add channel filter); add `GET /api/news/channels` (channel list + subscriber counts); add ops-only `POST /api/news/publish` (admin) with auto-discord flag.
 - Refactor `news/index.html` to fetch `/api/news/platform` (remove static drift vs JSON); add channel tabs/filters; wire `static/js/frontpage-home.js` to pass channel where relevant.
-- Auto-publish hooks: when explorer ships, market events, agent funding, generator milestones, casino jackpots, or security cron alerts fire → append to `platform_news.json` AND queue Discord message (see below).
+- Auto-publish hooks: `backend/services/news_auto_hooks.py` — agent funding, notable market fills, security alerts → `platform_news.json` (+ Discord when configured). Casino jackpots already fan out via `casino_social_service`.
 - Optional: `GET /api/news/rss/<channel>` for external syndication (Discord bots, partners).
 
-### Discord connection (new — no Discord code exists today; only idea #14 in `aggregator_ideas_top15.json`)
-- New `backend/services/discord_service.py` + `backend/routes/discord_routes.py`; register in `register_blueprints.py` + lite list if needed.
+### Discord connection (**Done code** — `discord_service.py` + M8 streams; see `docs/DISCORD_CROSSROADS.md`)
+- `backend/services/discord_service.py` + `backend/routes/discord_routes.py`; registered in `register_blueprints.py` + lite list.
 - Config in `.env.example`: `DISCORD_WEBHOOK_URL` (outbound), `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CHANNEL_ID_*` per news channel (e.g. `_EXPLORER`, `_CASINO`, `_GENERATOR`, `_GAME`, `_MARKET`, `_OPS`, `_ANNOUNCEMENTS`), `DISCORD_OPS_SECRET` for cron/admin triggers.
 - **Outbound (platform → Discord):** webhook/embed posts from `discord_service.post_message(channel, payload)`; triggered by news publish, `activity_events.jsonl` high-signal events (big deposit, market fill, agent funded, generator complete, casino jackpot), and daily AI digest cron (`cron/discord_digest.sh` → `POST /api/discord/digest/run`).
 - **Inbound (Discord → platform):** optional bot slash commands or webhook callbacks: `/mn2price`, `/market`, `/link-account` (OAuth or one-time code → bind Discord user_id to `user_accounts` via `logs/user_identifiers/discord_<id>.json`); never trust Discord identity for withdrawals without verified link + Gate S auth.
@@ -152,29 +188,35 @@ flowchart TD
 **M8 build wave:** after news channels + discord_service live; Gate S (no money moves from Discord without site auth); legal: disclose affiliates, no gambling solicitation in blocked geos.
 
 ## Phase 6 - Debugger Q&A crypto rewards
+**Status: Done.** `POST /api/debugger/quiz/submit` grades server-side, awards MN2 via `unified_points_db` + `mn2_ledger`, daily idempotent anti-farm, `'quiz'` in `TAB_POINTS`, registered blueprint (2026-07-25).
 - Wire the existing "Top 50 Q&A" quiz in `debugger/index.html` to a backend: `POST /api/debugger/quiz/submit` that grades server-side, awards MN2 via `unified_points_db.add_points(..., 'mn2_balance', ...)` + `mn2_ledger`, and adds a `'quiz'` entry to `TAB_POINTS` in `debugger_agent_tasks_routes.py`. Guard against repeat/self-reward farming.
 - Tests: `tests/unit/test_debugger_quiz_rewards.py`.
 
 ## Phase 7 - Casino crypto expansion
-- Casino already supports `mn2_balance` rail (`casino_service.py`). Add MN2-denominated jackpots/tournaments, MN2 cashback, and surface the MN2<->coins swap from Phase 2; document casino-crypto policy in the report.
-
+**Status: Done.** Jackpots/tournaments MN2 + cashback + casino swap surface + [`docs/CASINO_CRYPTO_POLICY.md`](../CASINO_CRYPTO_POLICY.md) (2026-07-25).
+- Casino already supports `mn2_balance` rail (`casino_service.py`). MN2-denominated jackpots/tournaments, MN2 cashback (`casino_mn2_cashback_service` + `/api/casino/mn2/cashback*`), and MN2↔coins swap UI on `/casino` (Phase 2 `/api/mn2/swap/*`); policy documented.
+- Tests: `tests/unit/test_casino_mn2_cashback.py`.
 ## Phase 8 - Wallet crypto-activity monitoring (effects + sounds)
+**Status: Done.** Activity SSE + monitor UI + tests.
 - Backend: new `backend/routes/activity_stream_routes.py` exposing `GET /api/activity/stream` (Server-Sent Events) + `GET /api/activity` history, sourced from `mn2_ledger` + unified-points deltas + market/agent/quiz/game events (lightweight append log `logs/activity_events.jsonl`).
 - Frontend: a monitor panel (on `profile/` and `/game`) subscribed to SSE with per-event visual effects (balance pulse, toasts, animated ticker, confetti on big deposits/wins) and sound effects (deposit chime, win/jackpot, trade tick, withdrawal, alert) via Web Audio API; global mute + volume + per-type toggles persisted in `localStorage`. Include **news channel widgets** (filter by channel) and **Discord feed status** tile (last post, failures from `logs/discord_outbox.jsonl`).
 - Tests: `tests/unit/test_activity_stream.py`.
 
 ## Phase 9 - Security dynamics (cron jobs)
+**Status: Done.** Full presets (`full`/`sweep`/`risk`/`reconcile`/`backup`) + `test_security_cron.py` + cron.d (2026-07-25).
 - Add security-oriented scheduled jobs following the existing `cron/*.sh` -> authenticated HTTP pattern (secrets in `.env`): periodic withdrawal-risk sweep (batch `mn2_withdrawal_risk`), anomaly/velocity detection on deposits/trades with auto-flag/auto-freeze (`account_security_service`), ledger/balance reconciliation drift alarms, expired-session cleanup, deposit-address rescan, agent-wallet reconciliation.
 - Implement as new presets in `agent_cron_service.py` (so logging lands in `logs/agent_cron/`) + `cron/*.cron.d` + `scripts/deploy.py` manifest entries; each job emits to `logs/activity_events.jsonl` (Phase 8) and `platform_news.json` on notable events.
 - Tests: `tests/unit/test_security_cron.py`.
 
 ## Phase 10 - Generator crypto (pay + earn) + top 10 encoder ideas
+**Status: Done.** Pay/earn + pricing + tests (encoder top-10 may still expand).
 - Pay-to-generate: new `backend/services/generator_pricing_service.py` (cost by duration/quality/provider) + `backend/services/generator_mn2_service.py` (debit/refund via `unified_points_db` + `mn2_ledger`); enforce in `generator_create` / `generator_magic_generate` / `unified_generate_video` (pre-thread check, mirroring the tier check) and refund on failure in `_run_video_generation_impl`. Add `GET /api/generator/pricing`.
 - Earn MN2: in `_award_generation_points` (`video_generator_service.py`) also credit `mn2_balance` (configurable), shown in the existing history UI.
 - Top 10 encoder ideas: (1) HD/1080p + 60fps premium profiles, (2) selectable codec/CRF presets, (3) on-chain content hash stamped into job + `mn2_ledger` (proof-of-creation), (4) optional MN2/wallet watermark overlay, (5) crypto-themed templates (price ticker, masternode stats intro), (6) priority/express encode queue (MN2-gated), (7) longer-duration unlock, (8) multi-provider "max quality" fan-out as paid tier, (9) audio mastering tier (DeepFilterNet/loudnorm), (10) shareable mint/export with creator tipping.
 - Tests: `tests/unit/test_generator_mn2.py`.
 
 ## Phase 11 - Game site: unified monitor + crypto rewards + top 10 earn
+**Status: Done.** Monitor tab on `/game`, quest XP arg-order fix, `/api/quests/user/<id>`, top-10 earn + check-in (2026-07-25).
 - Unified monitor: add a "Monitor" tab to `game/index.html` (or `profile/`) pulling `GET /api/aggregator/unified-dashboard/data` + per-game pings (`/api/battle/progress`, `/api/star-map/25/status`, `/api/lab/overview`, `/api/game/hunters/profile`, `/api/trophies/list`); nav entry in `navigation-toolbar.js`.
 - Crypto rewards: shared `backend/services/game_mn2_rewards.py` called from battle/starmap/quests/trophies to credit `mn2_balance` (extends the existing `/api/battle/crypto/claim` + `/api/star-map/25/crypto/claim` pattern).
 - Top 10 new earn functions (via `unified_points_db.add_points`): daily multi-game streak, cross-game combo bonus, first-win-of-day, quest+trophy chain, leaderboard-rank payouts, referral/social, watch-to-earn from generator videos, compendium-completion MN2, casino-playthrough rebate, monitor-check-in.
@@ -182,6 +224,7 @@ flowchart TD
 - Tests: `tests/unit/test_game_mn2_rewards.py`.
 
 ## Phase 12 - Customer aggregator (unified customer directory + avatars)
+**Status: Done.** Service/routes/page + tests.
 - New `backend/services/customer_aggregator_service.py` + `backend/routes/customer_aggregator_routes.py` (`/api/customers/*`): aggregate every platform customer from `src/db/models.py` `user_accounts` + `logs/user_identifiers/` + `logs/unified_points/*.json`, joining per customer: identity/provider, balances (`coins`, `mn2_balance`), level/points, last-active, and participation across casino/generator/game/market + agent assignments.
 - Endpoints: `GET /api/customers` (paginated, search/sort/filter), `GET /api/customers/<id>` (detail), `GET /api/customers/stats` (total, new today, active). Admin/ops-auth gated (PII) + rate-limited; GDPR-aware (no secrets/hashes exposed).
 - Pictures (auto avatars): reuse the existing avatar approach (`scripts/generate_agent_avatars.py`, `static/img/agents/*.svg`, `agent_db_service._avatar_url`) to deterministically generate `static/img/customers/<id>.svg` for each customer; add an `avatar_url` resolver. Generate on account creation (hook `user_db_service.ensure_user_account` / onboarding) and backfill existing customers via a one-off script + cron. Avatar generation runs off the request path (Gate S stability).
@@ -190,6 +233,7 @@ flowchart TD
 - Tests: `tests/unit/test_customer_aggregator.py` (aggregation join correctness, avatar generation idempotent, admin-auth required, monitoring events emitted).
 
 ## Phase 13 - Advanced AI intelligence layer (25 features, Gate S compliant)
+**Status: Done (inventory).** `GET /api/ai-intelligence/waves` catalogs core 25 + monetization; deferred waves remain roadmap items, not blockers (2026-07-25).
 AI is not a chatbot layer. It is an off-request intelligence layer that powers market-making, game dynamics, generator quality, fraud defense, and autonomous ops. All model calls run through cron, subprocess jobs, cached snapshots, or background workers; request routes only enqueue jobs or read already-computed outputs.
 
 ### AI model/provider matrix to evaluate and use
@@ -241,7 +285,7 @@ Tests: add `tests/unit/test_ai_intelligence_jobs.py` for job enqueue/cache behav
 ### AI monetization brainstorm — crypto + USD income streams (external sources included)
 Goal: AI should not only optimize the platform — it should **create and protect revenue**. All money-moving AI decisions remain off-request, idempotent, and human-reviewable where required (Gate S + EU casino compliance).
 
-**Income rails already in codebase to extend:** `mn2_balance`, `casino_fiat_balance`, `coins`, `mn2_onramp_routes.py`, `mn2_p2p_service.py`, `shop_mn2_purchase_core.py`, `generator_pricing_service` (planned), `cogs_metering_service.py`, `data/monetization_config.json`.
+**Income rails already in codebase to extend:** `mn2_balance`, `casino_fiat_balance`, `coins`, `mn2_onramp_routes.py`, `mn2_p2p_service.py` / `p2p_market_service.py`, `mn2_internal_amm` (`/api/mn2/swap/*`), `shop_mn2_purchase_core.py`, `generator_pricing_service.py` + `generator_mn2_service.py`, `casino_mn2_cashback_service.py`, `game_mn2_rewards.py`, `debugger_quiz_routes.py`, `cogs_metering_service.py`, `data/monetization_config.json`, Discord M8 promo/affiliate streams.
 
 #### A. MN2-native revenue (platform earns / retains MN2)
 26. **Dynamic MN2 Pricing Brain** — `generator_pricing_service.py`, `p2p_market_service.py`, `data/mn2_config.json` (`coins_per_mn2`); time-series + elasticity model; adjusts pay-to-generate, swap spread, and market fees by demand/supply. **Value:** maximizes MN2 capture without killing usage.
@@ -334,12 +378,13 @@ All waves emit decisions to `data/ai_monetization_decisions.jsonl` and revenue e
 **Build order:** 51 → 52+56 → 53+55 → 58+59 → 57+54+60. **Compliance:** No custody on Discord; auth on-site; affiliate disclosure; geo-block gambling promos.
 
 ## Phase 14 - Overall tests + deliverables + commit
+**Status: Done.** Report + Critical/Upgrades synced; continue updating `MN2_TODO.md` on each ship (2026-07-25).
 - Run `pytest`; fix failures. Deliver `docs/MN2_ECOSYSTEM_REPORT.md` and `docs/MN2_TODO.md` split into **Critical** (correctness/security/financial integrity) and **Upgrades**.
-- Commit: the repo has a `.git`, so once you approve leaving plan mode I will commit the plan (`docs/PLAN.md`) and subsequent work here.
+- Commit: plan + integrity slice (A/B/C/D) land on the working branch / PR.
 
 ## Assumptions / notes
 - "Agents" = in-app autonomous bot accounts; they get wallets, points, levels, and a control board.
 - The MN2 daemon may not be reachable locally; health/tests use mocked RPC and the code already degrades gracefully to Chainz.
 - Monitoring uses SSE (no new dependency); sounds via Web Audio API.
 - Several referenced backends (point control board, battlegrounds, champions-league, victory tech tree) are missing locally and will be (re)created where in scope.
-- Execution and any git commit require leaving plan mode.
+- Sprint execution priority: see `docs/MN2_TODO.md` Critical/Upgrades + P1 (not a fresh Phase 0).

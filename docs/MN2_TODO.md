@@ -1,8 +1,39 @@
 # MN2 TODO
 
-Last updated: **2026-06-28** (exchange rental + shop linked to main catalog, auto-renew)
+Last updated: **2026-07-25** (Phases 4–7 residuals closed; plan synced)
 
-See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+See [MN2_ECOSYSTEM_REPORT.md](MN2_ECOSYSTEM_REPORT.md) · [plans/masternoder_mn2_ecosystem.plan.md](plans/masternoder_mn2_ecosystem.plan.md) · [plans/masternoder_mn2_ecosystem_brainstorm.md](plans/masternoder_mn2_ecosystem_brainstorm.md) · [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+
+**Doc roles:** `MN2_TODO.md` = sprint board · ecosystem plan = architecture map · report = money-path audit.
+
+---
+
+## Critical (correctness / security / financial integrity)
+
+| Pri | Item | Status | Note |
+| --- | ---- | ------ | ---- |
+| **C1** | Gate S concurrency + ledger conservation under load | **Done 2026-07-24** | `test_gate_s_orchestrator.py` (Option B); `mn2_ledger` atomic append + deposit txid unique |
+| **C2** | `/api/mn2/health` Hub contract | **Done 2026-07-24** | `daemon_staking`, `discord_outbox`, `network_alerts` (Option A) |
+| **C3** | Agent treasury live distribute | **Blocked / config-only** | `agent_funding.live_distribute=false` (Option C). Arm only after cold-wallet sign-off (`MN2_OPS` §8.6) + reconcile green |
+| **C4** | Do not auto-move 600k MN2 / agent wallets | **Policy** | Sign-off + `live_distribute=true` required; dry-run via `GET /api/agents/treasury/status` |
+| **C5** | Daemon multi-ping (customer ENABLED + activetime) | **Code gate Done 2026-07-25** · **Ops open** | Option E: `multi_ping_enabled` requires daemon ≥1.3 (flag alone no longer skips local start). Repo flag reset to `false`. Still need build/deploy v1.3 + QA then flip flag |
+| **C6** | Wallet refresh/connect API routes | **Done 2026-07-25** | `POST /api/mn2/wallet/refresh|connect`, `GET .../addresses`, address-book + transfer; profile settings UX |
+| **C7** | Debugger quiz MN2 rewards + anti-farm | **Done 2026-07-25** | `POST /api/debugger/quiz/submit` + daily idempotent MN2 + `TAB_POINTS['quiz']` |
+
+---
+
+## Upgrades (product / polish — not blocking money integrity)
+
+| Pri | Item | Status | Note |
+| --- | ---- | ------ | ---- |
+| **U1** | Agent trader strategies + `agents_trader` cron + admin board | **Done 2026-07-25** (code) · live fund blocked by C3 | `agent_trader_service` (6 strategies + level gates), trader skillsets, `cron/agents_trader.sh`, `/api/agents/control/*`, staking join/status; fund stays dry-run until sign-off |
+| **U2** | `GET /api/news/channels` + explorer top-10 polish | **Done 2026-07-25** | Channels/publish/RSS + auto-publish hooks; tx/address/block/search/rich-list/mempool/supply APIs + pages |
+| **U3** | Casino MN2 cashback + crypto policy doc | **Done 2026-07-25** | Cashback accrue/claim + casino swap UI + `docs/CASINO_CRYPTO_POLICY.md` |
+| **U4** | Security cron full presets + `test_security_cron.py` | **Done 2026-07-25** | presets full/sweep/risk/reconcile/backup + cron.d |
+| **U5** | Game unified Monitor tab + quest arg-order fix + top-10 earn | **Done 2026-07-25** | Monitor tab, quest XP fix, top-10 earn + check-in |
+| **U6** | AI intelligence wave inventory (core 25 + monetization) | **Done 2026-07-25** | `GET /api/ai-intelligence/waves`; deferred waves tracked |
+| **U7** | Customer avatar backfill cron | Upgrade | Aggregator page done |
+| **U8** | Exchange P1 product track | See Next sprint | Gateway / arb / trust — separate from ecosystem phase map |
 
 ---
 
@@ -134,7 +165,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P1** | **Exchange leveling + adaptive learning + super skills** — trader XP/achievements, agent game time/levels, profit-based skill proficiency, Sentient Apex bot | **Code** | exchange marketplace | **Started 2026-06-27** — `exchange_leveling_service`, `exchange_agent_learning_service`, 6 research-backed super skills (Avellaneda-Stoikov MM, z-score stat arb, AI sentiment, latency momentum, ML forecaster, Kelly sizing), live trading monitor, `/api/exchange/leveling/*`, `/api/exchange/monitor/live`. Next: wire leveling into command center strip |
 | **P1** | **Trust system + Live Watch + activations** — user/agent trust tiers, composite IQ, manual activation gates, owner review console | **Code** | exchange leveling | **Started 2026-06-27** — `exchange_trust_service` (0–100 score, Unverified→Platinum, activation gates, trust edge bonus), `exchange_live_watch_service` (user + owner review), `/api/exchange/trust/*`, `/api/exchange/live-watch/*`, trust card + Live Watch on exchange page, Business Control **Live Watch** tab. Docs: `docs/EXCHANGE_TRUST_AND_LIVE_WATCH.md`. Next: email/Discord trust alerts, auto-activate at Gold tier option |
 | **P1** | **Bridge high-value product** — cross-quests, fused leaderboard, Discord market pulse | **Code** | user controller | **Done 2026-06-28** — `exchange_casino_quest_service`, `exchange_casino_leaderboard_service`, 5 weekly quests, Trader+High roller board, `#market` rental/win/combined embeds. Next: cross-quest UI on casino tab, trust gate high-roller MN2 |
-| **P1** | **Daemon v1.3 build/deploy + enable multi-ping** — customer ENABLED + rising ctivetime | **MasterNoder2 C++** + SSH | **Site PR #30 merged** | Build v1.3.0.0 → mn2_daemon_upgrade_remote.py --ask-pass --apply → QA probes → set multi_ping_enabled: true + deploy.py mn2_staking --ask-pass|
+| **P1** | **Daemon v1.3 build/deploy + enable multi-ping** — customer ENABLED + rising activetime | **MasterNoder2 C++** + SSH | **Site PR #30 + Option E safety gate** | Build v1.3.0.0 → `mn2_daemon_upgrade_remote.py --ask-pass --apply` → QA probes → set `multi_ping_enabled: true` + deploy. **Code 2026-07-25:** flag+daemon both required; repo flag `false` until QA. |
 | **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **Done 2026-06-28** | Plan `P-09J38836TK5737835NJAGZYA` via API bootstrap · webhook configured · shop Pro subscribe live |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |

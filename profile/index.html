@@ -1129,9 +1129,37 @@
                             </div>
                         </div>
                         <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
-                            <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
-                            <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7);">MN2 value can be volatile. Not financial advice.</p>
-                            <p style="margin-top: 10px;"><a href="/shop#shop-mn2" style="color: #00ff88;">Shop v4 — MN2 wallet tab</a> · <a href="/explorer/" style="color:#00d4ff;">MN2 Explorer</a></p>
+                            <p style="font-size:0.85rem;opacity:0.85;">Multi-wallet: rotate deposit addresses, connect an external watch address, or open swap.</p>
+                            <div style="margin-top:12px;padding:12px;border-radius:10px;border:1px solid rgba(0,212,255,0.25);background:rgba(0,0,0,0.2);">
+                                <strong style="color:#00d4ff;">Your deposit addresses</strong>
+                                <div id="profile-mn2-address-list" style="margin-top:8px;font-size:0.82rem;opacity:0.92;">Loading…</div>
+                                <button type="button" id="profile-mn2-rotate-addr" style="margin-top:10px;padding:7px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.12);color:#00ff88;cursor:pointer;font-size:0.85rem;"><i class="fas fa-sync-alt"></i> Rotate deposit address</button>
+                            </div>
+                            <div style="margin-top:14px;padding:12px;border-radius:10px;border:1px solid rgba(0,212,255,0.25);background:rgba(0,0,0,0.2);">
+                                <strong style="color:#00d4ff;">Connect external wallet</strong>
+                                <p style="font-size:0.76rem;opacity:0.75;margin:4px 0 8px;">Watch-only: we never custody keys. Types: watch, extension, hardware, web.</p>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                                    <input type="text" id="profile-mn2-connect-address" placeholder="MN2 address" style="min-width:220px;padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                                    <select id="profile-mn2-connect-type" style="padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                                        <option value="watch">watch</option>
+                                        <option value="extension">extension</option>
+                                        <option value="hardware">hardware</option>
+                                        <option value="web">web</option>
+                                    </select>
+                                    <button type="button" id="profile-mn2-connect-btn" style="padding:7px 12px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:600;cursor:pointer;">Connect</button>
+                                </div>
+                                <p id="profile-mn2-connect-msg" style="font-size:0.78rem;margin:8px 0 0;color:#ffaa44;"></p>
+                            </div>
+                            <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                                <a href="/api/mn2/swap/quote?side=sell&amp;mn2_amount=1" id="profile-mn2-swap-link" style="color:#00ff88;font-size:0.85rem;">MN2 ↔ coins swap</a>
+                                <span style="opacity:0.5;">·</span>
+                                <a href="/staking-monitor/" style="color:#00d4ff;font-size:0.85rem;">Staking / masternode rewards</a>
+                                <span style="opacity:0.5;">·</span>
+                                <a href="/shop#shop-mn2" style="color:#00ff88;font-size:0.85rem;">Shop MN2</a>
+                                <span style="opacity:0.5;">·</span>
+                                <a href="/explorer/" style="color:#00d4ff;font-size:0.85rem;">Explorer</a>
+                            </div>
+                            <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7);">MN2 value can be volatile. Not financial advice. Fiat toggle is on the Overview tab.</p>
                         </div>
 
                         <p class="mn2-disclaimer" data-wallet-panel="overview" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
@@ -1662,7 +1690,7 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260725"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>

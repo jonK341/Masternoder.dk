@@ -33,6 +33,7 @@ def _parse_jobs() -> list:
         if preset in (
             'daily', 'weekly', 'monthly', 'knowledge',
             'blueprint_route', 'api_service', 'routes',
+            'trader', 'treasury', 'security',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)
@@ -46,10 +47,10 @@ def _parse_jobs() -> list:
 def agents_cron_run():
     """
     Run agent cron jobs (requires AGENT_CRON_SECRET).
-    Query/body: jobs=daily | weekly | monthly | knowledge | blueprint_route | api_service | routes | comma-separated.
+    Query/body: jobs=daily | weekly | monthly | knowledge | blueprint_route | api_service | routes | trader | treasury | comma-separated.
     Jobs: skillsets_ensure, skillsets_rebalance, user_skills_maintenance, knowledge_ingredients,
           automation_maintenance, agent_health_check, research_rotation, llm_status_snapshot,
-          blueprint_route_fixer, api_service_skill
+          blueprint_route_fixer, api_service_skill, agent_trader, treasury_distribute
     Optional: maintenance_max_batch, inactive_days, append_knowledge_log, record_reporter_activity
     """
     secret = (os.environ.get('AGENT_CRON_SECRET') or '').strip()
@@ -63,7 +64,7 @@ def agents_cron_run():
     if not jobs:
         return jsonify({
             'success': False,
-            'error': 'no jobs: use jobs=daily|weekly|monthly|knowledge|blueprint_route|api_service|routes or a list',
+            'error': 'no jobs: use jobs=daily|weekly|monthly|knowledge|blueprint_route|api_service|routes|trader|treasury|security or a list',
         }), 400
 
     data = request.get_json(silent=True) or {}
@@ -114,5 +115,8 @@ def agents_cron_presets():
             'blueprint_route': expand_preset('blueprint_route'),
             'api_service': expand_preset('api_service'),
             'routes': expand_preset('routes'),
+            'trader': expand_preset('trader'),
+            'treasury': expand_preset('treasury'),
+            'security': expand_preset('security'),
         },
     }), 200

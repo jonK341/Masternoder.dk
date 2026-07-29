@@ -48,7 +48,7 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 - Append-only: `data/mn2_ledger.json`
 - Conservation check: `mn2_conservation_gate.conservation_gate()`
 
-**Status:** Implemented. Reconciliation cron via `security_cron_routes`.
+**Status:** Implemented. Reconciliation cron via `security_cron_routes`. Gate S: `append_entry` is atomic under one lock; deposit/treasury_deposit txids are unique under concurrency.
 
 ## Generator MN2
 
@@ -61,15 +61,19 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 - `casino_service.py` supports `mn2_balance`, `coins`, `casino_fiat_balance`
 - PayPal USD on-ramp via `mn2_onramp_routes` / `paypal_routes`
+- Progressive jackpots / tournaments on MN2 rail
+- Playthrough cashback: `casino_mn2_cashback_service` + `/api/casino/mn2/cashback` (claim once/day)
+- MN2↔coins swap surfaced on `/casino` via `/api/mn2/swap/*`
+- Policy: [`docs/CASINO_CRYPTO_POLICY.md`](CASINO_CRYPTO_POLICY.md)
 
-**Status:** Confirmed — MN2 rail active for casino play.
+**Status:** Confirmed — MN2 rail + cashback + swap + policy (Phase 7 Done).
 
 ## Stage 0 Gate A checklist
 
 | Check | Endpoint / test | Status |
 |-------|-----------------|--------|
 | Basic health | `GET /api/health` | Pass |
-| MN2 health | `GET /api/mn2/health` | Added |
+| MN2 health | `GET /api/mn2/health` | Pass (Hub contract: `daemon_staking`, `discord_outbox`, `network_alerts`; inactive mint → 503 degraded) |
 | Themes user | `GET /api/themes/user` | Pass |
 | Battle URLs | `tests/unit/test_02_battle.py` | Pass |
 | Unified points | Gate S atomic `add_points` | Pass |
@@ -77,5 +81,8 @@ The platform has a working custodial MN2 wallet layer, staking, P2P marketplace 
 
 ## Critical / upgrades (see MN2_TODO.md)
 
-- **Critical:** Gate S concurrency tests under load; treasury cold-wallet policy for 600k agent funding
-- **Upgrades:** Discord M8 streams 51–60 full rollout; customer avatar backfill cron; Health Ops Hub tile for MN2 health
+Canonical board: **`docs/MN2_TODO.md` → Critical / Upgrades** (synced Option D, 2026-07-25).
+
+- **Critical done:** Gate S load tests (B); health Hub contract (A); treasury config-only with `live_distribute=false` (C); wallet refresh/connect (C6); debugger quiz rewards (C7)
+- **Critical open / policy:** do not arm live agent distribute (C3/C4); daemon multi-ping ops (C5)
+- **Upgrades open:** avatar backfill (U7) + exchange P1 track (U8)

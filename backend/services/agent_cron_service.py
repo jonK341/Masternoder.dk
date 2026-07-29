@@ -127,6 +127,16 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'agent_trader':
+                from backend.services.agent_trader_service import run_all_traders
+                out['results'][job] = run_all_traders()
+            elif job == 'treasury_distribute':
+                # Respects live_distribute=false (dry-run) unless armed + signed off.
+                from backend.services.agent_wallet_service import distribute_agent_funding
+                out['results'][job] = distribute_agent_funding()
+            elif job == 'security_sweep':
+                from backend.services.security_cron_service import run_security_sweep
+                out['results'][job] = run_security_sweep(preset='sweep')
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -165,4 +175,10 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
+    if n == 'trader':
+        return ['agent_trader']
+    if n == 'treasury':
+        return ['treasury_distribute']
+    if n == 'security':
+        return ['security_sweep']
     return []

@@ -182,16 +182,18 @@ Config kill switches in `data/mn2_staking_config.json`: `enabled` (whole system)
 
 | Rule | Detail |
 |------|--------|
+| **Config** | `data/mn2_config.json` → `agent_funding`: `{ per_agent_mn2: 100000, trader_agent_count: 6, top_up: true, live_distribute: false }`. **live_distribute defaults false** (Option C — dry-run/status only). |
 | **Hot wallet cap** | Keep only operational float on-server (staking pool + pending withdrawals + ≤7 days of expected agent top-ups). Document the cap in ops runbook. |
 | **Cold storage** | Majority of treasury MN2 on addresses **not** on the web-server wallet (`ismine` check via `validateaddress`). Cold keys offline or on separate host. |
-| **Distribution gate** | `POST /api/agents/treasury/distribute` requires `X-Ops-Secret` **and** recorded sign-off in `data/treasury_signoff.json` before any batch ≥100k MN2. |
+| **Status (safe)** | `GET /api/agents/treasury/status` — dry-run gaps, pool balance, gates; never moves funds. |
+| **Distribution gate** | `POST /api/agents/treasury/distribute` is dry-run while `live_distribute=false`. Live mode requires `live_distribute=true` **and** `X-Ops-Secret` **and** recorded sign-off in `data/treasury_signoff.json` before any batch ≥100k MN2. |
 | **Sign-off API** | `GET/POST /api/agents/treasury/sign-off` (ops-gated). `POST` body: `approver`, `cold_wallet_address`, optional `hot_cap_mn2`, `max_batch_mn2` (default 600000), `notes`, `require_reconcile_ok`. CLI: `python scripts/treasury_signoff.py --approver NAME --cold-wallet ADDR`. |
 | **Reconcile snapshot** | `GET /api/agents/treasury/reconcile` — pre-flight ledger + daemon + staking conservation checks. |
 | **Reconciliation** | Run `python scripts/mn2_reconcile.py` before and after each distribution; compare ledger + `unified_points` vs daemon `getbalance`. |
 | **Rollback** | If distribute tx fails mid-batch, stop automation (`agent.automation_enabled: false`), preserve `logs/admin_audit.jsonl`, do not retry blindly. |
 | **Sign-off checklist** | (1) Reconcile green · (2) Cold wallet address recorded · (3) Hot balance ≤ cap · (4) Backup of stakes/ledger · (5) Named approver + timestamp in audit log |
 
-Until sign-off is recorded, `distribute_agent_funding()` returns `treasury_signoff_required` for batches ≥100k MN2.
+Until sign-off is recorded **and** `agent_funding.live_distribute` is flipped to `true`, `distribute_agent_funding()` stays dry-run / returns `treasury_signoff_required` for batches ≥100k MN2.
 
 ---
 

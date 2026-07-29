@@ -623,18 +623,26 @@ def daemon_supports_multi_ping() -> bool:
 def multi_ping_enabled() -> bool:
     """
     Fleet multi-ping: ping every masternode.conf alias from one daemon (v1.3+).
-    ``ops.multi_ping_enabled`` overrides auto-detect; default False until binary deployed.
+
+    Requires **both** ops/env intent and ``daemon_supports_multi_ping()``.
+    A premature ``ops.multi_ping_enabled: true`` on a v1.2.x binary must not
+    skip the local/missing start path that keeps the primary alias ENABLED.
     """
     ops = _ops_cfg()
     flag = ops.get("multi_ping_enabled")
-    if flag is True:
-        return True
-    if flag is False:
-        return False
     env = (os.environ.get("MN2_MULTI_PING_ENABLED") or "").strip().lower()
-    if env in ("1", "true", "yes"):
-        return True
-    if env in ("0", "false", "no"):
+
+    if flag is False or env in ("0", "false", "no"):
+        return False
+
+    want = False
+    if flag is True or env in ("1", "true", "yes"):
+        want = True
+    elif flag is None and not env:
+        # Auto: follow daemon capability only.
+        return daemon_supports_multi_ping()
+
+    if not want:
         return False
     return daemon_supports_multi_ping()
 

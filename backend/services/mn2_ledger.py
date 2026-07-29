@@ -1,6 +1,8 @@
 """
 MN2 ledger (Phase 3): append-only log of deposits, withdrawals, shop payments.
 Idempotency: deposit entries include txid; scanner checks is_txid_processed before crediting.
+Gate S: load+append+save under one lock; deposit/treasury_deposit txids are unique.
+
 See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md Phase 3.
 """
 import os
@@ -9,8 +11,9 @@ import threading
 from datetime import datetime, timedelta, date
 from typing import Dict, Any, List
 
-_LEDGER_LOCK = threading.Lock()
+_LEDGER_LOCK = threading.RLock()
 _LEDGER_FILENAME = "mn2_ledger.json"
+_CREDIT_TYPES = frozenset(("deposit", "treasury_deposit"))
 
 
 def _data_dir() -> str:
@@ -22,28 +25,48 @@ def _ledger_path() -> str:
     return os.path.join(_data_dir(), _LEDGER_FILENAME)
 
 
-def _load_entries() -> List[Dict[str, Any]]:
+def _read_entries_unlocked() -> List[Dict[str, Any]]:
     path = _ledger_path()
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "entries" in data:
+                    return list(data["entries"])
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    return []
+
+
+def _write_entries_unlocked(entries: List[Dict[str, Any]]) -> None:
+    path = _ledger_path()
+    os.makedirs(_data_dir(), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"entries": entries}, f, indent=2)
+    os.replace(tmp, path)
+
+
+def _load_entries() -> List[Dict[str, Any]]:
     with _LEDGER_LOCK:
-        if os.path.exists(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if isinstance(data, dict) and "entries" in data:
-                        return list(data["entries"])
-                    if isinstance(data, list):
-                        return data
-            except Exception:
-                pass
-        return []
+        return _read_entries_unlocked()
 
 
 def _save_entries(entries: List[Dict[str, Any]]) -> None:
-    path = _ledger_path()
-    os.makedirs(_data_dir(), exist_ok=True)
     with _LEDGER_LOCK:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump({"entries": entries}, f, indent=2)
+        _write_entries_unlocked(entries)
+
+
+def _txid_credited_unlocked(entries: List[Dict[str, Any]], txid: str) -> bool:
+    tid = (txid or "").strip()
+    if not tid:
+        return False
+    return any(
+        (e.get("type") in _CREDIT_TYPES and (e.get("txid") or "").strip() == tid)
+        for e in entries
+    )
 
 
 def append_entry(
@@ -53,19 +76,30 @@ def append_entry(
     txid: str = None,
     address: str = None,
     metadata: Dict[str, Any] = None,
-) -> None:
-    """Append a ledger entry. entry_type: deposit | withdrawal | shop_payment | stake | unstake | staking_reward | onramp_purchase | onramp_clawback."""
-    entries = _load_entries()
-    entries.append({
+) -> Dict[str, Any]:
+    """Append a ledger entry under one lock (no lost updates under concurrency).
+
+    For deposit / treasury_deposit with a txid, skip if that txid was already credited
+    (Gate S deposit idempotency). Returns ``{success, duplicate?}``.
+    """
+    etype = str(entry_type)
+    tid = (txid or "").strip() or None
+    row = {
         "user_id": str(user_id),
-        "type": str(entry_type),
+        "type": etype,
         "amount": float(amount),
-        "txid": txid,
+        "txid": tid,
         "address": address,
         "created_at": datetime.utcnow().isoformat() + "Z",
         "metadata": metadata or {},
-    })
-    _save_entries(entries)
+    }
+    with _LEDGER_LOCK:
+        entries = _read_entries_unlocked()
+        if etype in _CREDIT_TYPES and tid and _txid_credited_unlocked(entries, tid):
+            return {"success": True, "duplicate": True, "txid": tid}
+        entries.append(row)
+        _write_entries_unlocked(entries)
+    return {"success": True, "duplicate": False, "txid": tid}
 
 
 def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
@@ -80,13 +114,8 @@ def is_txid_processed(txid: str) -> bool:
     """True if this txid was already credited via deposit or treasury_deposit."""
     if not (txid or "").strip():
         return False
-    txid = str(txid).strip()
-    entries = _load_entries()
-    credited_types = ("deposit", "treasury_deposit")
-    return any(
-        (e.get("type") in credited_types and (e.get("txid") or "").strip() == txid)
-        for e in entries
-    )
+    with _LEDGER_LOCK:
+        return _txid_credited_unlocked(_read_entries_unlocked(), str(txid).strip())
 
 
 def is_treasury_deposit_recorded(txid: str) -> bool:
@@ -94,10 +123,11 @@ def is_treasury_deposit_recorded(txid: str) -> bool:
     if not (txid or "").strip():
         return False
     txid = str(txid).strip()
-    return any(
-        e.get("type") == "treasury_deposit" and (e.get("txid") or "").strip() == txid
-        for e in _load_entries()
-    )
+    with _LEDGER_LOCK:
+        return any(
+            e.get("type") == "treasury_deposit" and (e.get("txid") or "").strip() == txid
+            for e in _read_entries_unlocked()
+        )
 
 
 def count_withdrawals_since(user_id: str, since_iso: str) -> int:
@@ -170,3 +200,9 @@ def sum_withdrawals_since(user_id: str, since_iso: str) -> float:
         and e.get("type") == "withdrawal"
         and (e.get("created_at") or "") >= since_iso
     )
+
+
+def ledger_entry_count() -> int:
+    """Ops/tests helper: total ledger rows under lock."""
+    with _LEDGER_LOCK:
+        return len(_read_entries_unlocked())

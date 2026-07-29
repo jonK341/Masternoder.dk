@@ -263,7 +263,12 @@ def system_health():
 
 @health_bp.route('/api/mn2/health', methods=['GET'])
 def mn2_health():
-    """Dedicated MN2 health: RPC, block monotonicity, deposit scanner, staking."""
+    """Dedicated MN2 health: RPC, scanner, daemon minting, Discord outbox, alerts.
+
+    Health Ops Hub (`mn2-staking-monitor.js`) expects components:
+    mn2_rpc, block_monotonicity, deposit_scanner, daemon_staking,
+    discord_outbox, network_alerts.
+    """
     from datetime import datetime, timezone
     out = {
         'success': True,
@@ -340,6 +345,7 @@ def mn2_health():
     except Exception as exc:
         out['components']['deposit_scanner'] = {'status': 'unknown', 'error': str(exc)}
 
+    # In-app staking pool config (enabled flag) — keep for ops; Hub uses daemon_staking.
     try:
         from backend.services.mn2_staking_service import get_config
         cfg = get_config()
@@ -349,6 +355,73 @@ def mn2_health():
         }
     except Exception as exc:
         out['components']['staking'] = {'status': 'unknown', 'error': str(exc)}
+
+    # Daemon minting (getstakingstatus / getstakinginfo) — Hub "Daemon minting" tile.
+    try:
+        from backend.services.mn2_rpc_client import staking_health
+        sh = staking_health() or {}
+        mint_status = sh.get('status') or 'unknown'
+        if sh.get('staking_active') is True and mint_status not in ('unreachable', 'unsupported'):
+            mint_status = 'active'
+        elif sh.get('staking_active') is False and mint_status not in ('unreachable', 'unsupported'):
+            mint_status = 'inactive'
+        daemon_staking = {
+            'status': mint_status,
+            'staking_active': sh.get('staking_active'),
+            'mnsync': sh.get('mnsync'),
+            'wallet_unlocked': sh.get('wallet_unlocked'),
+            'staking_weight': sh.get('staking_weight'),
+            'expected_time_to_reward_sec': sh.get('expected_time_to_reward_sec'),
+            'mature_balance': sh.get('mature_balance'),
+            'immature_balance': sh.get('immature_balance'),
+        }
+        if sh.get('errors'):
+            daemon_staking['errors'] = sh['errors']
+        out['components']['daemon_staking'] = daemon_staking
+        if mint_status in ('inactive', 'unreachable'):
+            degraded = True
+    except Exception as exc:
+        out['components']['daemon_staking'] = {'status': 'unreachable', 'error': str(exc)}
+        degraded = True
+
+    # Discord outbox — Hub "Discord outbox" tile.
+    try:
+        from backend.services.discord_service import outbox_stats
+        disc = outbox_stats(limit=30) or {}
+        out['components']['discord_outbox'] = {
+            'status': disc.get('status') or 'unknown',
+            'configured': bool(disc.get('configured')),
+            'total_recent': int(disc.get('total_recent') or 0),
+            'failures_recent': int(disc.get('failures_recent') or 0),
+            'last_post': disc.get('last_post'),
+        }
+        if out['components']['discord_outbox']['status'] == 'degraded':
+            degraded = True
+    except Exception as exc:
+        out['components']['discord_outbox'] = {
+            'status': 'unknown',
+            'configured': False,
+            'total_recent': 0,
+            'failures_recent': 0,
+            'error': str(exc),
+        }
+
+    # Network alerts (staking_stopped / height_stall) — Hub "Network alerts" tile.
+    try:
+        from backend.services.mn2_network_stats import get_alerts
+        alerts = get_alerts(limit=5) or []
+        recent_count = len(alerts)
+        out['components']['network_alerts'] = {
+            'status': 'healthy' if recent_count == 0 else 'attention',
+            'recent_count': recent_count,
+            'latest': alerts[0] if alerts else None,
+        }
+    except Exception as exc:
+        out['components']['network_alerts'] = {
+            'status': 'unknown',
+            'recent_count': 0,
+            'error': str(exc),
+        }
 
     if degraded:
         out['status'] = 'degraded'

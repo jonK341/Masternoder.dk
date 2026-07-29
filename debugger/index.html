@@ -6137,13 +6137,19 @@
         window.quizSubmitMn2Reward = function() {
             var res = window._quizLastResult || window.gradeQuiz();
             var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            var day = new Date().toISOString().slice(0, 10);
             fetch('/api/debugger/quiz/submit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: uid, correct: res.correct, total: res.total, answered: res.answered })
-            }).then(function(r) { return r.json(); }).then(function(d) {
+                body: JSON.stringify({ user_id: uid, correct: res.correct, total: res.total, answered: res.answered, day: day })
+            }).then(function(r) { return r.json().then(function(d) { return { status: r.status, d: d }; }); }).then(function(pack) {
+                var d = pack.d || {};
                 var score = document.getElementById('quiz-score');
-                if (score) score.innerHTML += d.success ? ' · MN2 reward: <strong>' + (d.amount_mn2 || d.reward_mn2 || 'granted') + '</strong>' : ' · ' + (d.error || 'No reward');
+                var amt = d.amount_mn2 || d.reward_mn2 || d.mn2_awarded;
+                if (score) {
+                    if (d.success) score.innerHTML += ' · MN2 reward: <strong>' + amt + '</strong>';
+                    else score.innerHTML += ' · ' + (d.error || 'No reward') + (pack.status === 429 ? ' (already claimed today)' : '');
+                }
             }).catch(function() {});
         };
 
