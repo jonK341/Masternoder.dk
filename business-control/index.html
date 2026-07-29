@@ -44,6 +44,7 @@
         <button type="button" class="bc-qnav" data-goto="monitors">5D · Profit</button>
         <button type="button" class="bc-qnav" data-goto="agents">Agents hub</button>
         <button type="button" class="bc-qnav" data-goto="watch">Users</button>
+        <button type="button" class="bc-qnav" data-goto="unified">Unified</button>
         <button type="button" class="bc-qnav" data-goto="payout">Payout</button>
         <button type="button" class="bc-qnav" data-goto="predictions">Predictions</button>
         <button type="button" class="bc-qnav" data-goto="boost">Boost</button>
@@ -60,6 +61,7 @@
         <div class="tab" data-tab="local">Local laptop</div>
         <div class="tab" data-tab="monitors">5D · Profit TV</div>
         <div class="tab" data-tab="agents">Agents hub</div>
+        <div class="tab" data-tab="unified">Unified daemon</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
@@ -253,6 +255,33 @@
         </div>
       </div>
 
+      <div class="tabpane" id="pane-unified">
+        <div class="section">
+          <h2>Unified trading daemon</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px">
+            One process: <code>scripts\run_unified_trading_daemon.cmd</code> — exchange, grid, stuck inventory, casino agents, portal micro-chain.
+          </p>
+          <div id="unifiedDaemonPanel" class="muted">Loading…</div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap">
+            <button type="button" class="btn small primary" id="unifiedRefresh">Refresh status</button>
+            <button type="button" class="btn small" id="stuckScanApply">Stuck → grid apply</button>
+            <button type="button" class="btn small" id="microChainTick">Micro-chain tick</button>
+            <button type="button" class="btn small" id="microChainSave">Save micro config</button>
+          </div>
+          <div class="grid2" style="margin-top:12px">
+            <label class="field">MN2 per tx<input type="number" id="microMn2" step="0.0001" value="0.001" /></label>
+            <label class="field">Events per tx<input type="number" id="microEvents" value="25" /></label>
+            <label class="field">Destination address<input type="text" id="microAddr" placeholder="MN2 address" /></label>
+            <label class="field">Live on-chain<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="microLive" /> MN2_MICRO_CHAIN_LIVE</label></label>
+          </div>
+          <div id="unifiedOpsResult" class="status" style="margin-top:10px"></div>
+        </div>
+        <div class="section">
+          <h2>5D monitor pulse (latest)</h2>
+          <div id="unified5dPulse" class="muted">Loading…</div>
+        </div>
+      </div>
+
       <div class="tabpane" id="pane-watch">
         <div class="section">
           <h2>Live Watch — trust & activations (all users)</h2>
@@ -267,6 +296,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729c"></script>
+  <script src="/static/js/business-control.js?v=20260729d"></script>
 </body>
 </html>

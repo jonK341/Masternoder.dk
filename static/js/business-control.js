@@ -892,6 +892,83 @@
       localPollTimer = null;
     }
     if (name === "monitors") loadProfitBroadcasts();
+    if (name === "unified") {
+      loadUnifiedDaemon();
+      load5dPulse();
+    }
+  }
+
+  function loadUnifiedDaemon() {
+    var el = $("unifiedDaemonPanel");
+    if (!el) return;
+    api("/api/exchange/unified-daemon/status").then(function (res) {
+      if (!res.ok || !res.data || !res.data.success) {
+        el.textContent = "Could not load unified daemon status.";
+        return;
+      }
+      var d = res.data;
+      var loops = d.heartbeat && d.heartbeat.loops ? d.heartbeat.loops : {};
+      var lines = Object.keys(loops).map(function (k) {
+        var L = loops[k] || {};
+        return k + ": " + (L.summary || L.updated_at || "—");
+      });
+      var micro = d.micro_chain || {};
+      var cfg = micro.config || {};
+      el.innerHTML =
+        "<div><strong>Heartbeat</strong> " + (d.heartbeat.updated_at || "—") + "</div>" +
+        "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
+        "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>";
+      if ($("microMn2") && cfg.mn2_per_tx != null) $("microMn2").value = cfg.mn2_per_tx;
+      if ($("microEvents") && cfg.events_per_tx != null) $("microEvents").value = cfg.events_per_tx;
+      if ($("microAddr") && cfg.destination_address) $("microAddr").value = cfg.destination_address;
+      if ($("microLive")) $("microLive").checked = !!cfg.live;
+    });
+  }
+
+  function load5dPulse() {
+    var el = $("unified5dPulse");
+    if (!el) return;
+    fetch("/api/monitor/5d/pulse?limit=8").then(function (r) { return r.json(); }).then(function (d) {
+      var items = (d && d.items) || [];
+      el.innerHTML = items.map(function (p) {
+        return "<div style='padding:6px 0;border-top:1px solid var(--line)'><span class='muted'>" +
+          (p.ts || "") + "</span> · σ=" + (p.sigma || "?") + " · " + (p.title || "") + "</div>";
+      }).join("") || "No pulses yet — unified daemon publishes on grid/stuck/micro events.";
+    }).catch(function () { el.textContent = "5D pulse unavailable."; });
+  }
+
+  function bindUnifiedPanel() {
+    var ur = $("unifiedRefresh"); if (ur) ur.addEventListener("click", function () { loadUnifiedDaemon(); load5dPulse(); });
+    var sa = $("stuckScanApply"); if (sa) sa.addEventListener("click", function () {
+      api("/api/exchange/stuck-inventory/apply-grid", { method: "POST", body: {} }).then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? JSON.stringify(res.data.grid_apply || res.data) : "Failed";
+        loadUnifiedDaemon();
+      });
+    });
+    var mt = $("microChainTick"); if (mt) mt.addEventListener("click", function () {
+      api("/api/exchange/portal-micro-chain/tick", { method: "POST", body: {} }).then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? JSON.stringify(res.data) : "Tick failed";
+        loadUnifiedDaemon();
+      });
+    });
+    var ms = $("microChainSave"); if (ms) ms.addEventListener("click", function () {
+      api("/api/exchange/portal-micro-chain/config", {
+        method: "POST",
+        body: {
+          mn2_per_tx: parseFloat($("microMn2").value || "0.001"),
+          events_per_tx: parseInt($("microEvents").value || "25", 10),
+          destination_address: ($("microAddr").value || "").trim(),
+          live: !!($("microLive") && $("microLive").checked),
+          enabled: true,
+        },
+      }).then(function () {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = "Micro-chain config saved.";
+        loadUnifiedDaemon();
+      });
+    });
   }
 
   function init() {
@@ -930,6 +1007,10 @@
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
     bindLocalPanel();
+    bindUnifiedPanel();
+    try {
+      api("/api/exchange/portal-micro-chain/status").then(function () {});
+    } catch (e) {}
 
     if (getKey()) { showApp(); load(); } else { showGate(); }
   }

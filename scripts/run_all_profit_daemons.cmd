@@ -45,11 +45,11 @@ if "%EXCHANGE_DAEMON_MODE%"=="live" (
 
 if "%CASINO_AGENT_DRY_RUN%"=="1" (
 
-  python scripts\all_profit_daemons.py --profile %PROFILE% --casino-dry-run %*
+  python scripts\unified_trading_daemon.py --profile %PROFILE% --casino-dry-run %*
 
 ) else (
 
-  python scripts\all_profit_daemons.py --profile %PROFILE% %*
+  python scripts\unified_trading_daemon.py --profile %PROFILE% %*
 
 )
 
