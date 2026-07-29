@@ -434,7 +434,7 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0, "tick_size": 0.0}
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -443,6 +443,8 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["step_size"] = float(filt.get("stepSize") or 0)
             filters["min_qty"] = float(filt.get("minQty") or 0)
             filters["max_qty"] = float(filt.get("maxQty") or 0)
+        elif ftype == "PRICE_FILTER":
+            filters["tick_size"] = float(filt.get("tickSize") or 0)
         elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
             filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
 
@@ -482,6 +484,7 @@ def normalize_order_qty(
         return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
 
     step = float(filt.get("step_size") or 0)
+    tick_size = float(filt.get("tick_size") or 0)
     min_qty = float(filt.get("min_qty") or 0)
     max_qty = float(filt.get("max_qty") or 0)
     min_notional = float(filt.get("min_notional") or 0)
@@ -725,6 +728,7 @@ def place_limit_order(
         return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
     pair = str(market or resolved.get("market") or "")
     side_u = str(side or "buy").upper()
+    side_l = side_u.lower()
     qty = round(max(0.0, float(quantity or 0)), 8)
     px = round(max(0.0, float(price or 0)), 8)
     if qty <= 0 or px <= 0:
@@ -732,6 +736,23 @@ def place_limit_order(
     coid = client_order_id or f"grid-{int(time.time()*1000)}"
 
     if venue_id == "binance":
+        norm = normalize_order_qty(
+            venue_id, symbol.upper(), side_l, qty,
+            price=px, market=pair, quote=resolved.get("quote"),
+        )
+        if not norm.get("ok"):
+            return {
+                "success": False,
+                "error": norm.get("error"),
+                "venue_id": venue_id,
+                "symbol": symbol.upper(),
+                "pair": pair,
+                "normalize": norm,
+            }
+        qty = float(norm["quantity"])
+        tick = float((norm.get("filters") or {}).get("tick_size") or 0)
+        if tick > 0:
+            px = _quantize_down(px, tick)
         params: Dict[str, Any] = {
             "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
             "quantity": qty, "price": px, "newClientOrderId": coid,

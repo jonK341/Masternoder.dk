@@ -5,72 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Business Control · Owner Only</title>
-  <style>
-    :root {
-      --bg: #07080d; --panel: #11131d; --panel2: #161a27; --line: #232838;
-      --txt: #e7ecf6; --muted: #8b93a7; --accent: #4ade80; --accent2: #38bdf8;
-      --danger: #f87171; --warn: #fbbf24;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: radial-gradient(1200px 600px at 80% -10%, #15203a 0, var(--bg) 60%);
-      color: var(--txt); font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      padding: 28px 18px 80px;
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
-    h1 small { color: var(--muted); font-weight: 500; font-size: 12px; display: block; margin-top: 2px; }
-    .btn {
-      background: var(--panel2); color: var(--txt); border: 1px solid var(--line);
-      border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; transition: .15s;
-    }
-    .btn:hover { border-color: var(--accent2); }
-    .btn.primary { background: linear-gradient(135deg, #16a34a, #15803d); border-color: #16a34a; }
-    .btn.danger { background: linear-gradient(135deg, #b91c1c, #7f1d1d); border-color: #b91c1c; }
-    .btn.small { padding: 5px 10px; font-size: 12px; }
-    .gate { max-width: 420px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line);
-      border-radius: 16px; padding: 26px; text-align: center; }
-    .gate input { width: 100%; padding: 11px 12px; margin: 14px 0; background: #0c0e16; border: 1px solid var(--line);
-      border-radius: 10px; color: var(--txt); font-size: 14px; }
-    .hidden { display: none !important; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin: 20px 0; }
-    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-    .card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-    .card .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
-    .pos { color: var(--accent); } .neg { color: var(--danger); }
-    .section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 16px 0; }
-    .section h2 { font-size: 14px; margin: 0 0 12px; color: var(--accent2); }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
-    .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
-    .pill.on { color: var(--accent); border-color: #1f4d33; background: #0f2419; }
-    .pill.off { color: var(--muted); }
-    .toggle { cursor: pointer; }
-    .sup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; }
-    .sup { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-    .sup .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .sup .role { color: var(--muted); font-size: 12px; margin: 8px 0; }
-    .sup .stat { font-size: 13px; }
-    .status { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
-    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    a.nav { color: var(--accent2); text-decoration: none; font-size: 12px; }
-    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 6px; border-bottom: 1px solid var(--line); }
-    .tab { padding: 10px 16px; cursor: pointer; color: var(--muted); border: 1px solid transparent; border-bottom: none;
-      border-radius: 10px 10px 0 0; font-size: 13px; }
-    .tab.active { color: var(--txt); background: var(--panel); border-color: var(--line); }
-    .tabpane { display: none; }
-    .tabpane.active { display: block; }
-    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
-    .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .field input { padding: 9px 10px; background: #0c0e16; border: 1px solid var(--line); border-radius: 9px; color: var(--txt); font-size: 13px; }
-    .big { font-size: 22px; font-weight: 800; color: var(--accent); }
-    .muted { color: var(--muted); font-size: 12px; }
-    .warn { color: var(--warn); }
-  </style>
+  <link rel="stylesheet" href="/static/css/business-control.css?v=20260726h" />
 </head>
-<body>
+<body class="bc-body">
   <div class="wrap">
     <div id="gate" class="gate">
       <h1>Business Control</h1>
@@ -81,15 +18,16 @@
     </div>
 
     <div id="app" class="hidden">
-      <header>
+      <header class="bc-header">
         <h1>Business Control <small>All trading bots · profit & controls</small></h1>
         <div class="bar">
           <a class="nav" href="/exchange">Exchange</a>
           <a class="nav" href="/command-center">Command Center</a>
-          <button class="btn small" id="refresh">Refresh</button>
-          <button class="btn small primary" id="runAll">Run all bots</button>
-          <button class="btn small danger" id="kill">Kill switch</button>
-          <button class="btn small" id="lock">Lock</button>
+          <button type="button" class="btn small" id="refresh">Refresh</button>
+          <button type="button" class="btn small" id="runFleet" title="Supervisor fleet only (no arb/AI/cross)">Run fleet</button>
+          <button type="button" class="btn small primary" id="runAll">Run all bots</button>
+          <button type="button" class="btn small danger" id="kill">Kill switch</button>
+          <button type="button" class="btn small" id="lock">Lock</button>
         </div>
       </header>
 
@@ -100,6 +38,12 @@
         <div class="tab" data-tab="predictions">Predictions</div>
         <div class="tab" data-tab="boost">Profit Boost</div>
         <div class="tab" data-tab="payout">Payout · PayPal</div>
+        <div class="tab" data-tab="livepack">Live pack</div>
+        <div class="tab" data-tab="orchestration">Orchestration</div>
+        <div class="tab" data-tab="fleet">Fleet ops</div>
+        <div class="tab" data-tab="local">Local laptop</div>
+        <div class="tab" data-tab="monitors">5D · Profit TV</div>
+        <div class="tab" data-tab="agents">Agents hub</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
@@ -110,13 +54,22 @@
           <div class="sup-grid" id="supervisors"></div>
         </div>
         <div class="section">
+          <h2>Fleet bots (27 mechanics)</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 8px">5 Profit Analyst · 6 Extended · 3 Treasury · 5 Risk · 4 Winnable executors · XP & reward tiers</p>
+          <div id="fleetSummary" class="muted">—</div>
+          <div id="fleetCommander" class="fleet-commander muted" style="margin-top:8px;display:none"></div>
+          <div id="fleetRoster" style="margin-top:12px"></div>
+        </div>
+        <div class="section">
           <h2>Trading bots — profit calculator</h2>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Bot</th><th>Type</th><th>Supervisor</th><th>Realized $</th><th>Unrealized $</th><th>Total $</th><th>Trades</th><th>State</th></tr>
             </thead>
             <tbody id="bots"></tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -175,6 +128,115 @@
         </div>
       </div>
 
+      <div class="tabpane" id="pane-livepack">
+        <div class="section">
+          <h2>Live profit pack</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Arb live gate, venue credentials, pair search, payout mode. Fix blockers to move from paper to full live.</p>
+          <div id="livePackPanel" class="muted">Loading…</div>
+        </div>
+        <div class="section">
+          <h2>Winnable pairs radar</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Ranked routes from profit pair search — Winnable Pairs Executor trades these when score and spread thresholds pass.</p>
+          <div id="winnablePanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-orchestration">
+        <div class="section">
+          <h2>Orchestrator — last run-all tick</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Each daemon or manual <em>Run all bots</em> executes trading ticks plus risk, analytics, and treasury supervisor passes.</p>
+          <div id="orchPanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-fleet">
+        <div class="section">
+          <h2>Supervisor fleet — operations</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. XP and levels update on each tick; commander rank reflects total fleet XP.</p>
+          <div id="fleetOpsPanel" class="muted">Loading…</div>
+          <div id="fleetPreflightPanel" class="muted" style="margin-top:12px"></div>
+          <div id="fleetRunStatus" class="status" style="min-height:18px;margin-top:8px"></div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap" id="fleetRunBar">
+            <button type="button" class="btn small primary" data-fleet-kind="all">Run all fleet kinds</button>
+            <button type="button" class="btn small" data-fleet-kind="winnable_pairs">Winnable</button>
+            <button type="button" class="btn small" data-fleet-kind="analytics">Profit analyst</button>
+            <button type="button" class="btn small" data-fleet-kind="extended_profit">Extended</button>
+            <button type="button" class="btn small" data-fleet-kind="treasury">Treasury</button>
+            <button type="button" class="btn small" data-fleet-kind="risk">Risk</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Fleet roster</h2>
+          <div id="fleetCommanderTab" class="fleet-commander muted" style="margin-bottom:10px;display:none"></div>
+          <div id="fleetRosterTab"></div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-local">
+        <div class="section">
+          <h2>Local bridge · 127.0.0.1:8800</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px">
+            Start on your PC: <code>scripts\run_local_business_control.cmd</code> — then this tab drives
+            grid bot, profit live, casino agents, and Flask from one place (browser → localhost only).
+          </p>
+          <div id="localBridgeStatus" class="muted">Checking local server…</div>
+          <div class="bar" style="margin-top:10px;flex-wrap:wrap" id="localJobBar"></div>
+          <div class="bc-frame-grid" style="margin-top:14px">
+            <div class="bc-frame">
+              <div class="bc-frame-head">Grid daemon log</div>
+              <pre id="localGridLog" class="bc-log">—</pre>
+            </div>
+            <div class="bc-frame">
+              <div class="bc-frame-head">Profit / cmd log</div>
+              <pre id="localProfitLog" class="bc-log">—</pre>
+            </div>
+          </div>
+          <div class="bar" style="margin-top:10px">
+            <button type="button" class="btn small primary" id="localGridTick">Grid tick once</button>
+            <button type="button" class="btn small" id="localGridReseed">Grid reseed</button>
+          </div>
+          <div id="localGridStatus" class="muted" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-monitors">
+        <div class="bc-frame-grid">
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Profit daemon monitor (site)</div>
+            <iframe id="frameProfitMonitor" title="Profit monitor" src="/profit/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">5D story monitor feed</div>
+            <iframe id="frame5d" title="5D monitor" src="/aggregator/" loading="lazy"></iframe>
+          </div>
+        </div>
+        <div class="section" style="margin-top:14px">
+          <h2>Profit broadcast (YouTube / news)</h2>
+          <div id="profitBroadcastFeed" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-agents">
+        <div class="bc-frame-grid">
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Casino agents</div>
+            <iframe title="Casino" src="/casino/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Trading · exchange</div>
+            <iframe title="Exchange" src="/exchange/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Podcast agents</div>
+            <iframe title="Podcast" src="/podcast/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Site users · profiles</div>
+            <iframe title="Users" src="/user/" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+
       <div class="tabpane" id="pane-watch">
         <div class="section">
           <h2>Live Watch — trust & activations (all users)</h2>
@@ -189,6 +251,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260627a"></script>
+  <script src="/static/js/business-control.js?v=20260729a"></script>
 </body>
 </html>
