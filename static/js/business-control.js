@@ -162,6 +162,119 @@
   function showApp() { $("gate").classList.add("hidden"); $("app").classList.remove("hidden"); }
   function showGate() { $("app").classList.add("hidden"); $("gate").classList.remove("hidden"); }
 
+  function renderProfitSignalStrip(pp) {
+    var el = $("profitSignalStrip");
+    if (!el) return;
+    pp = pp || {};
+    var ps = pp.pair_search || {};
+    var th = pp.arb_threshold || {};
+    var gr = pp.grid || {};
+    var st = pp.stuck || {};
+    var hot = (ps.hot_symbols || []).slice(0, 6).join(", ") || "—";
+    el.innerHTML =
+      '<span class="bc-signal-chip hot">Hot: ' + hot + "</span>" +
+      '<span class="bc-signal-chip">Pair hits: ' + (ps.hit_count != null ? ps.hit_count : "—") + "</span>" +
+      '<span class="bc-signal-chip">Best bps: ' + (th.best_net_bps != null ? th.best_net_bps : "—") +
+      " / thr " + (th.threshold_bps != null ? th.threshold_bps : "—") + "</span>" +
+      '<span class="bc-signal-chip">Grid targets: ' + (gr.targets_total != null ? gr.targets_total : "—") +
+      (gr.live ? " live" : " paper") + "</span>" +
+      '<span class="bc-signal-chip">Stuck: ' + (st.last_stuck_count != null ? st.last_stuck_count : "—") + "</span>" +
+      (pp.preflight_ok === false ? '<span class="bc-signal-chip" style="border-color:#f87171;color:#f87171">Preflight fail</span>' : "");
+  }
+
+  function renderProfitPipelinePanel(pp) {
+    var el = $("profitPipelinePanel");
+    if (!el) return;
+    pp = pp || {};
+    var ps = pp.pair_search || {};
+    var th = pp.arb_threshold || {};
+    var hits = ps.top_hits || [];
+    var hitRows = hits.map(function (h) {
+      return "<tr><td>" + (h.symbol || "") + "</td><td>" + (h.route || "") + "</td><td>" +
+        (h.avg_net_bps || h.net_bps || "—") + "</td><td>" + (h.search_score || "—") + "</td></tr>";
+    }).join("");
+    el.innerHTML =
+      "<p><strong>Pair search</strong> " + (ps.enabled ? "on" : "off") + " · updated " + (ps.updated_at || "—") + "</p>" +
+      "<p class='muted'>Hot: " + ((ps.hot_symbols || []).join(", ") || "none") + "</p>" +
+      "<p class='muted'>Arb threshold: best " + (th.best_net_bps != null ? th.best_net_bps : "?") +
+      " bps · ready=" + (th.ready ? "yes" : "no") + " · top " + (th.top_symbol || "—") + "</p>" +
+      "<table><thead><tr><th>Symbol</th><th>Route</th><th>Net bps</th><th>Score</th></tr></thead><tbody>" +
+      (hitRows || "<tr><td colspan='4'>No hits — run pipeline or Run all bots.</td></tr>") + "</tbody></table>";
+    var gs = $("gridSnapshotPanel");
+    if (gs && pp.grid) {
+      gs.textContent = "Targets " + (pp.grid.targets_total || 0) + " · live=" + pp.grid.live +
+        " · realized $" + Number(pp.grid.realized_pnl_usd || 0).toFixed(2);
+    }
+  }
+
+  function loadStuckPlans() {
+    var el = $("stuckPlansPanel");
+    if (!el) return;
+    api("/api/exchange/stuck-inventory/scan").then(function (res) {
+      if (!res.ok || !res.data) {
+        el.textContent = "Stuck scan failed.";
+        return;
+      }
+      var plans = (res.data.recalculate && res.data.recalculate.plans) || [];
+      if (!plans.length) {
+        el.textContent = "No stuck assets above threshold.";
+        return;
+      }
+      el.innerHTML = "<table><thead><tr><th>Asset</th><th>Venue</th><th>USD</th><th>Strategy</th><th>Score</th></tr></thead><tbody>" +
+        plans.map(function (p) {
+          return "<tr><td>" + p.asset + "</td><td>" + p.venue + "</td><td>" + p.usd_est +
+            "</td><td>" + p.recommended_strategy + "</td><td>" + p.strategy_score + "</td></tr>";
+        }).join("") + "</tbody></table>";
+    });
+  }
+
+  function loadProfitPipelineStatus() {
+    api("/api/exchange/profit-pipeline/status").then(function (res) {
+      if (res.ok && res.data) {
+        renderProfitPipelinePanel(res.data);
+        renderProfitSignalStrip(res.data);
+      }
+    });
+    loadStuckPlans();
+    api("/api/exchange/grid/status").then(function (res) {
+      var gs = $("gridSnapshotPanel");
+      if (!gs || !res.ok || !res.data) return;
+      var d = res.data;
+      gs.textContent = "Targets " + (d.targets_total || 0) + " · live=" + d.live +
+        " · realized $" + Number(d.realized_pnl_usd || 0).toFixed(2);
+    });
+  }
+
+  function runProfitPipelineClick() {
+    var body = {
+      apply_grid_from_search: !!($("pipeApplyGrid") && $("pipeApplyGrid").checked),
+      apply_stuck_grid: !!($("pipeApplyStuck") && $("pipeApplyStuck").checked),
+      cross_scan: !!($("pipeCrossScan") && $("pipeCrossScan").checked),
+    };
+    status("Running profit pipeline…");
+    api("/api/exchange/profit-pipeline/run", { method: "POST", body: body, timeoutMs: 120000 }).then(function (res) {
+      var st = $("profitPipelineSteps");
+      if (!res.ok || !res.data) {
+        status("Pipeline failed", true);
+        if (st) st.textContent = (res.data && res.data.error) || "error";
+        return;
+      }
+      var d = res.data;
+      if (st) {
+        st.textContent = (d.steps || []).map(function (s) {
+          return s.step + "=" + (s.ok ? "ok" : "fail");
+        }).join(" · ");
+      }
+      if (d.status) {
+        renderProfitPipelinePanel(d.status);
+        renderProfitSignalStrip(d.status);
+      }
+      status("Pipeline complete · hot: " + ((d.hot_symbols || []).slice(0, 4).join(", ") || "none"));
+      load({ force: true });
+      loadStuckPlans();
+    });
+  }
+
   function renderKpis(t, killSwitch) {
     var c = $("kpis");
     c.innerHTML = "";
@@ -638,6 +751,7 @@
     renderSupervisors(d.supervisors || []);
     renderOrchestration(d.orchestration);
     renderLivePack(d.live_pack, d.winnable_pairs);
+    if (d.profit_pipeline) renderProfitSignalStrip(d.profit_pipeline);
       renderBots(d.bots || []);
       if (d.supervisor_fleet) {
         renderFleetRoster(d.supervisor_fleet);
@@ -862,6 +976,9 @@
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
       t.classList.toggle("active", t.getAttribute("data-tab") === name);
     });
+    Array.prototype.forEach.call(document.querySelectorAll(".bc-qnav"), function (q) {
+      q.classList.toggle("active", q.getAttribute("data-goto") === name);
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".tabpane"), function (p) {
       p.classList.toggle("active", p.id === "pane-" + name);
     });
@@ -889,6 +1006,84 @@
       localPollTimer = null;
     }
     if (name === "monitors") loadProfitBroadcasts();
+    if (name === "unified") {
+      loadUnifiedDaemon();
+      load5dPulse();
+    }
+    if (name === "signals") loadProfitPipelineStatus();
+  }
+
+  function loadUnifiedDaemon() {
+    var el = $("unifiedDaemonPanel");
+    if (!el) return;
+    api("/api/exchange/unified-daemon/status").then(function (res) {
+      if (!res.ok || !res.data || !res.data.success) {
+        el.textContent = "Could not load unified daemon status.";
+        return;
+      }
+      var d = res.data;
+      var loops = d.heartbeat && d.heartbeat.loops ? d.heartbeat.loops : {};
+      var lines = Object.keys(loops).map(function (k) {
+        var L = loops[k] || {};
+        return k + ": " + (L.summary || L.updated_at || "—");
+      });
+      var micro = d.micro_chain || {};
+      var cfg = micro.config || {};
+      el.innerHTML =
+        "<div><strong>Heartbeat</strong> " + (d.heartbeat.updated_at || "—") + "</div>" +
+        "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
+        "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>";
+      if ($("microMn2") && cfg.mn2_per_tx != null) $("microMn2").value = cfg.mn2_per_tx;
+      if ($("microEvents") && cfg.events_per_tx != null) $("microEvents").value = cfg.events_per_tx;
+      if ($("microAddr") && cfg.destination_address) $("microAddr").value = cfg.destination_address;
+      if ($("microLive")) $("microLive").checked = !!cfg.live;
+    });
+  }
+
+  function load5dPulse() {
+    var el = $("unified5dPulse");
+    if (!el) return;
+    fetch("/api/monitor/5d/pulse?limit=8").then(function (r) { return r.json(); }).then(function (d) {
+      var items = (d && d.items) || [];
+      el.innerHTML = items.map(function (p) {
+        return "<div style='padding:6px 0;border-top:1px solid var(--line)'><span class='muted'>" +
+          (p.ts || "") + "</span> · σ=" + (p.sigma || "?") + " · " + (p.title || "") + "</div>";
+      }).join("") || "No pulses yet — unified daemon publishes on grid/stuck/micro events.";
+    }).catch(function () { el.textContent = "5D pulse unavailable."; });
+  }
+
+  function bindUnifiedPanel() {
+    var ur = $("unifiedRefresh"); if (ur) ur.addEventListener("click", function () { loadUnifiedDaemon(); load5dPulse(); });
+    var sa = $("stuckScanApply"); if (sa) sa.addEventListener("click", function () {
+      api("/api/exchange/stuck-inventory/apply-grid", { method: "POST", body: {} }).then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? JSON.stringify(res.data.grid_apply || res.data) : "Failed";
+        loadUnifiedDaemon();
+      });
+    });
+    var mt = $("microChainTick"); if (mt) mt.addEventListener("click", function () {
+      api("/api/exchange/portal-micro-chain/tick", { method: "POST", body: {} }).then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? JSON.stringify(res.data) : "Tick failed";
+        loadUnifiedDaemon();
+      });
+    });
+    var ms = $("microChainSave"); if (ms) ms.addEventListener("click", function () {
+      api("/api/exchange/portal-micro-chain/config", {
+        method: "POST",
+        body: {
+          mn2_per_tx: parseFloat($("microMn2").value || "0.001"),
+          events_per_tx: parseInt($("microEvents").value || "25", 10),
+          destination_address: ($("microAddr").value || "").trim(),
+          live: !!($("microLive") && $("microLive").checked),
+          enabled: true,
+        },
+      }).then(function () {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = "Micro-chain config saved.";
+        loadUnifiedDaemon();
+      });
+    });
   }
 
   function init() {
@@ -918,12 +1113,23 @@
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
       t.addEventListener("click", function () { switchTab(t.getAttribute("data-tab")); });
     });
+    Array.prototype.forEach.call(document.querySelectorAll(".bc-qnav"), function (q) {
+      q.addEventListener("click", function () { switchTab(q.getAttribute("data-goto")); });
+    });
     var bb = $("boostRun"); if (bb) bb.addEventListener("click", runBoost);
     var ps = $("ppSave"); if (ps) ps.addEventListener("click", savePayPal);
     var pp = $("ppPlan"); if (pp) pp.addEventListener("click", planSweep);
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
     bindLocalPanel();
+    bindUnifiedPanel();
+    var rpp = $("runProfitPipeline");
+    if (rpp) rpp.addEventListener("click", runProfitPipelineClick);
+    var srb = $("stuckRescanBtn");
+    if (srb) srb.addEventListener("click", loadStuckPlans);
+    try {
+      api("/api/exchange/portal-micro-chain/status").then(function () {});
+    } catch (e) {}
 
     if (getKey()) { showApp(); load(); } else { showGate(); }
   }

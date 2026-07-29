@@ -11,6 +11,7 @@ set "PYTHONPATH=%CD%"
 REM Quiet daemon output — no 154-line blueprint spam per tick
 set "DAEMON_QUIET=1"
 set "LITE_APP=1"
+set "DAEMON_SKIP_FLASK_WARM=1"
 set "PYTHONUNBUFFERED=1"
 
 REM Load .env into this shell (simple parser — values without embedded =)

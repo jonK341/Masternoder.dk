@@ -50,6 +50,8 @@ def _cooldown_ok(event_key: str) -> bool:
 
 def maybe_publish_tick_news(loop: str, summary: str, *, res: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """Emit platform news on meaningful profit events (throttled)."""
+    if loop in ("grid", "stuck", "micro_chain", "unified"):
+        return _publish_ops_loop_news(loop, summary, res=res)
     if loop != "exchange":
         return None
 
@@ -113,6 +115,59 @@ def maybe_publish_tick_news(loop: str, summary: str, *, res: Optional[Dict[str, 
             summary=summary_text,
             channel=_CHANNEL,
             href="/profit/",
+            featured=featured,
+        )
+    except Exception:
+        return None
+
+
+def _publish_ops_loop_news(loop: str, summary: str, *, res: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    title = ""
+    featured = False
+    event_key = loop
+    if loop == "grid" and res:
+        if float(res.get("realized_pnl_usd") or 0) != 0:
+            title = f"Grid bot tick · ${float(res.get('realized_pnl_usd') or 0):.2f} realized"
+            featured = True
+            event_key = "grid_pnl"
+        elif int(res.get("tick_count") or len(res.get("ticks") or [])) > 0:
+            title = "Grid bot refreshed resting orders"
+            event_key = "grid_tick"
+    elif loop == "stuck" and res:
+        n = int((res.get("scan") or {}).get("count") or 0)
+        added = (res.get("grid_apply") or {}).get("added") or []
+        if added:
+            title = f"Stuck inventory → grid: {len(added)} pair(s) added"
+            featured = True
+            event_key = "stuck_apply"
+        elif n:
+            title = f"Stuck inventory scan: {n} asset(s) need rotation"
+            event_key = "stuck_scan"
+    elif loop == "micro_chain" and res:
+        if res.get("txid") and not res.get("skipped"):
+            title = f"Portal micro-chain · {res.get('mode')} tx ({res.get('mn2')} MN2)"
+            featured = res.get("mode") == "live"
+            event_key = "micro_tx"
+    elif loop == "unified" and summary:
+        title = summary[:100]
+        event_key = "unified_" + hashlib.sha256(summary.encode()).hexdigest()[:8]
+
+    if not title or not _cooldown_ok(event_key):
+        return None
+    try:
+        from backend.services.monitor_5d_pulse_service import emit_pulse
+        emit_pulse(title, summary=summary[:200], source=f"unified_{loop}", href="/business-control/")
+    except Exception:
+        pass
+    item_id = "profit_" + hashlib.sha256(event_key.encode()).hexdigest()[:12]
+    try:
+        from backend.services.platform_news_publish import publish
+        return publish(
+            item_id=item_id,
+            title=title,
+            summary=summary[:200] or "Unified trading ops",
+            channel=_CHANNEL,
+            href="/business-control/",
             featured=featured,
         )
     except Exception:
