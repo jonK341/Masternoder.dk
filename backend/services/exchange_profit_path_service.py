@@ -61,6 +61,15 @@ def load_config() -> Dict[str, Any]:
     return cfg
 
 
+def save_config_patch(patch: Dict[str, Any]) -> Dict[str, Any]:
+    cfg = load_config()
+    for k, v in patch.items():
+        if v is not None:
+            cfg[k] = v
+    ex._write_json(_CFG_PATH, cfg)
+    return {"success": True, "config": load_config()}
+
+
 def ledger_mode(explicit: Optional[str] = None) -> str:
     """Resolve PPP row mode: live when arb live gate is on (unless forced in config)."""
     if explicit in ("live", "paper"):

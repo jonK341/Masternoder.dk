@@ -140,3 +140,12 @@ def test_control_board_supervisor_not_found(board_client):
         json={"supervisor_id": "sup_missing", "enabled": True},
     )
     assert res.get_json()["success"] is False
+
+
+def test_spot_reuse_status_requires_admin(board_client):
+    client, headers, _ctl = board_client
+    res = client.get("/api/exchange/spot-reuse/status", headers=headers)
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["success"] is True
+    assert "config" in body

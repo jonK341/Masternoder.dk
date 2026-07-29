@@ -105,6 +105,15 @@ def run_once(auto_sweep: bool = False) -> dict:
     except Exception as exc:
         out["arb_rebalance"] = {"success": False, "error": str(exc)}
 
+    try:
+        from backend.services.exchange_spot_reuse_service import maybe_run_on_exchange_tick
+
+        hook = maybe_run_on_exchange_tick()
+        if hook is not None:
+            out["spot_reuse"] = hook
+    except Exception as exc:
+        out["spot_reuse"] = {"success": False, "error": str(exc)[:120]}
+
     return out
 
 

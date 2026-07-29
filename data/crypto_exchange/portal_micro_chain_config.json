@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "live": false,
+  "mn2_per_tx": 0.001,
+  "max_tx_per_day": 48,
+  "events_per_tx": 25,
+  "min_seconds_between_tx": 300,
+  "destination_address": "",
+  "portal_sources": [
+    "exchange",
+    "casino",
+    "profile",
+    "shop",
+    "business_control",
+    "profit",
+    "platform_news"
+  ]
+}
