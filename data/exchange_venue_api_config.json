@@ -117,3 +117,7 @@
         "order_status": {"method": "GET", "path": "/getorder"},
         "withdraw": {"method": "POST", "path": "/createwithdrawal"},
         "withdraw_history": {"method": "GET", "path": "/getwithdrawals"}
+      }
+    }
+  }
+}

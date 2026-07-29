@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import time
 import urllib.parse
 from datetime import datetime, timezone
@@ -32,6 +33,12 @@ def _iso() -> str:
 
 def load_api_config() -> Dict[str, Any]:
     cfg = ex._read_json(_API_CFG_PATH, {})
+    if not cfg and os.path.isfile(_API_CFG_PATH):
+        try:
+            with open(_API_CFG_PATH, "r", encoding="utf-8") as f:
+                json.load(f)
+        except json.JSONDecodeError as exc:
+            print(f"[venue-api] invalid JSON in {_API_CFG_PATH}: {exc}")
     return cfg if isinstance(cfg, dict) else {}
 
 

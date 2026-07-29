@@ -100,6 +100,12 @@ def _diagnose() -> None:
         print("[diag] live_enabled error: " + repr(e))
     try:
         from backend.services.exchange_grid_bot_service import grid_live_enabled, load_config, grid_targets
+        from backend.services.exchange_venue_api_service import load_api_config
+        _vapi_n = len((load_api_config().get("venues") or {}))
+        print("[diag] venue_api_config venues loaded: " + str(_vapi_n))
+        if _vapi_n == 0:
+            print("[diag] WARNING: data/exchange_venue_api_config.json is missing or invalid JSON — "
+                  "reconcile will fail (open_orders_read_failed:unknown_venue) and no live orders post")
         print("[diag] grid_live_enabled (paper if False): " + str(grid_live_enabled()))
         cfg = load_config()
         allow = bool(cfg.get("allow_sell_existing_inventory"))
