@@ -42,7 +42,7 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 75},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 60},
     "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "spot_reuse": 90},
     "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "spot_reuse": 60},
     "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 75},

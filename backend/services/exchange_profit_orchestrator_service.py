@@ -74,6 +74,8 @@ def pipeline_status(*, light: bool = True) -> Dict[str, Any]:
             "profit_pct": (so.get("config") or {}).get("profit_pct"),
             "loss_cancel_pct": (so.get("config") or {}).get("loss_cancel_pct"),
             "entry_buy_enabled": (so.get("config") or {}).get("entry_buy_enabled"),
+            "binance_coverage": so.get("binance_coverage"),
+            "binance_catalog_offset": so.get("binance_catalog_offset"),
         }
     except Exception as exc:
         out["spot_reuse"] = {"error": str(exc)[:120]}
@@ -103,6 +105,14 @@ def run_profit_pipeline(
     steps: List[Dict[str, Any]] = []
 
     pair_search: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services.exchange_binance_spot_catalog_service import refresh_binance_spot_catalog
+
+        refresh_binance_spot_catalog()
+        steps.append({"step": "binance_spot_catalog", "ok": True})
+    except Exception as exc:
+        steps.append({"step": "binance_spot_catalog", "ok": False, "error": str(exc)[:120]})
+
     try:
         from backend.services.exchange_profit_pair_search_service import run_profit_pair_search
 

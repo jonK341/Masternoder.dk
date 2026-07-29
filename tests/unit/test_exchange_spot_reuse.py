@@ -76,6 +76,14 @@ def test_resolved_venues_multi(spot_env):
     assert svc.resolved_venues(cfg) == ["binance", "nonkyc"]
 
 
+def test_resolved_venues_binance_first(spot_env):
+    svc = spot_env
+    cfg = svc.load_config()
+    cfg["venues"] = ["nonkyc", "binance"]
+    cfg["binance_priority"] = True
+    assert svc.resolved_venues(cfg)[0] == "binance"
+
+
 def test_run_tick_disabled_returns_skip(spot_env):
     svc = spot_env
     svc.save_config({"enabled": False})

@@ -2,6 +2,9 @@
   "enabled": true,
   "venue": "binance",
   "venues": ["binance", "nonkyc"],
+  "binance_priority": true,
+  "binance_full_catalog_entries": true,
+  "entry_catalog_batch": 32,
   "profit_pct": 0.1,
   "loss_cancel_pct": 0.15,
   "min_notional_usd": 8.0,
@@ -11,5 +14,5 @@
   "entry_buy_enabled": true,
   "entry_buy_discount_pct": 0.08,
   "entry_quote_usd": 12.0,
-  "entry_max_symbols": 4
+  "entry_max_symbols": 16
 }

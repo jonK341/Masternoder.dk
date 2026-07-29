@@ -294,7 +294,7 @@
             <li><strong>120s</strong> fast rescan · extended strategies</li>
             <li><strong>30s</strong> grid market-maker</li>
             <li><strong>600s</strong> stuck inventory → grid config</li>
-            <li><strong>75s</strong> spot reuse — Binance + NonKYC · +10% sells · −8% entry buys · −15% cancel</li>
+            <li><strong>60s</strong> spot reuse — <strong>Binance first</strong>: all USDC/USDT pairs rotated · +10% sells · entry buys</li>
             <li><strong>120s</strong> portal micro-chain</li>
             <li><strong>300s</strong> casino agents</li>
           </ul>
@@ -305,8 +305,10 @@
             One process: <code>scripts\run_unified_trading_daemon.cmd</code> — exchange, grid, stuck inventory, spot reuse, casino agents, portal micro-chain.
           </p>
           <div id="unifiedDaemonPanel" class="muted">Loading…</div>
+          <div id="binanceCoveragePanel" class="muted" style="margin-top:10px;font-size:12px">—</div>
           <div class="bar" style="margin-top:12px;flex-wrap:wrap">
             <button type="button" class="btn small primary" id="unifiedRefresh">Refresh status</button>
+            <button type="button" class="btn small" id="binanceCatalogRefresh">Refresh Binance catalog</button>
             <button type="button" class="btn small" id="spotReuseTick">Spot reuse tick</button>
             <button type="button" class="btn small" id="stuckScanApply">Stuck → grid apply</button>
             <button type="button" class="btn small" id="microChainTick">Micro-chain tick</button>
@@ -340,6 +342,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729g"></script>
+  <script src="/static/js/business-control.js?v=20260729h"></script>
 </body>
 </html>

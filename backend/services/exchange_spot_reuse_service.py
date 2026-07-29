@@ -1,4 +1,4 @@
-"""Binance / NonKYC spot asset reuse — +profit_pct limit sells, −loss_cancel_pct cancel/reseed.
+"""Binance-first spot reuse — rotate all TRADING USDC/USDT pairs for entry/TP orders.
 
 Optional entry limit buys (quote → base) at a discount below mid to refill inventory for the
 next take-profit sell. Runs in the unified profit daemon (``run_spot_reuse_tick``).
@@ -34,7 +34,10 @@ def _default_config() -> Dict[str, Any]:
     return {
         "enabled": True,
         "venue": "binance",
-        "venues": list(_DEFAULT_VENUES),
+        "venues": ["binance", "nonkyc"],
+        "binance_priority": True,
+        "binance_full_catalog_entries": True,
+        "entry_catalog_batch": 32,
         "profit_pct": 0.10,
         "loss_cancel_pct": 0.15,
         "min_notional_usd": 8.0,
@@ -44,23 +47,25 @@ def _default_config() -> Dict[str, Any]:
         "entry_buy_enabled": True,
         "entry_buy_discount_pct": 0.08,
         "entry_quote_usd": 12.0,
-        "entry_max_symbols": 4,
+        "entry_max_symbols": 16,
     }
 
 
 def resolved_venues(cfg: Dict[str, Any]) -> List[str]:
     raw = cfg.get("venues")
+    out: List[str] = []
+    seen = set()
     if isinstance(raw, list) and raw:
-        out = []
-        seen = set()
         for v in raw:
             vid = str(v or "").lower().strip()
             if vid and vid not in seen:
                 seen.add(vid)
                 out.append(vid)
-        if out:
-            return out
-    return [str(cfg.get("venue") or "binance").lower()]
+    if not out:
+        out = [str(cfg.get("venue") or "binance").lower()]
+    if cfg.get("binance_priority") and "binance" in out:
+        out = ["binance"] + [v for v in out if v != "binance"]
+    return out
 
 
 def load_config() -> Dict[str, Any]:
@@ -72,7 +77,6 @@ def load_config() -> Dict[str, Any]:
     cfg.update({k: v for k, v in raw.items() if v is not None})
     cfg["enabled"] = bool(cfg.get("enabled"))
     cfg["venue"] = str(cfg.get("venue") or "binance").lower()
-    cfg["venues"] = resolved_venues(cfg)
     cfg["profit_pct"] = _clampf(cfg.get("profit_pct"), 0.01, 0.5, 0.10)
     cfg["loss_cancel_pct"] = _clampf(cfg.get("loss_cancel_pct"), 0.01, 0.5, 0.15)
     cfg["min_notional_usd"] = _clampf(cfg.get("min_notional_usd"), 1.0, 1e6, 8.0)
@@ -81,9 +85,13 @@ def load_config() -> Dict[str, Any]:
     cfg["entry_buy_enabled"] = bool(cfg.get("entry_buy_enabled"))
     cfg["entry_buy_discount_pct"] = _clampf(cfg.get("entry_buy_discount_pct"), 0.01, 0.35, 0.08)
     cfg["entry_quote_usd"] = _clampf(cfg.get("entry_quote_usd"), 5.0, 5000.0, 12.0)
-    cfg["entry_max_symbols"] = int(_clampf(cfg.get("entry_max_symbols"), 0, 20, 4))
+    cfg["entry_max_symbols"] = int(_clampf(cfg.get("entry_max_symbols"), 0, 80, 16))
+    cfg["entry_catalog_batch"] = int(_clampf(cfg.get("entry_catalog_batch"), 0, 120, 32))
+    cfg["binance_priority"] = bool(cfg.get("binance_priority", True))
+    cfg["binance_full_catalog_entries"] = bool(cfg.get("binance_full_catalog_entries", True))
     allow = cfg.get("assets_allowlist")
     cfg["assets_allowlist"] = [str(a).upper() for a in allow if a] if isinstance(allow, list) else []
+    cfg["venues"] = resolved_venues(cfg)
     return cfg
 
 
@@ -103,6 +111,9 @@ def save_config(patch: Dict[str, Any]) -> Dict[str, Any]:
         "entry_buy_discount_pct",
         "entry_quote_usd",
         "entry_max_symbols",
+        "entry_catalog_batch",
+        "binance_priority",
+        "binance_full_catalog_entries",
     ):
         if k in patch and patch[k] is not None:
             cfg[k] = patch[k]
@@ -163,14 +174,27 @@ def _grid_target_set() -> Set[Tuple[str, str]]:
         return set()
 
 
-def _entry_symbol_candidates(cfg: Dict[str, Any]) -> List[str]:
+def _entry_symbol_candidates(
+    cfg: Dict[str, Any],
+    venue: str,
+    *,
+    assets_state: Dict[str, Any],
+    catalog_offset: int = 0,
+) -> Tuple[List[str], int]:
+    """Symbols to attempt entry buys this tick (hot first, then full Binance catalog rotation)."""
     allow = list(cfg.get("assets_allowlist") or [])
+    cap = int(cfg.get("entry_max_symbols") or 16)
     if allow:
-        return allow[: int(cfg.get("entry_max_symbols") or 4)]
+        return allow[:cap], catalog_offset
+
     hot: List[str] = []
     try:
-        from backend.services.exchange_profit_pair_search_service import read_index
+        from backend.services.exchange_profit_pair_search_service import read_index, get_hot_symbols
 
+        for s in get_hot_symbols(limit=24) or []:
+            sym = str(s or "").upper()
+            if sym and sym not in _STABLES and sym not in hot:
+                hot.append(sym)
         idx = read_index()
         for s in idx.get("hot_symbols") or []:
             sym = str(s or "").upper()
@@ -178,8 +202,49 @@ def _entry_symbol_candidates(cfg: Dict[str, Any]) -> List[str]:
                 hot.append(sym)
     except Exception:
         pass
-    cap = int(cfg.get("entry_max_symbols") or 4)
-    return hot[:cap]
+
+    pending: List[str] = []
+    prefix = f"{venue.lower()}:"
+    for key, row in (assets_state or {}).items():
+        if not str(key).startswith(prefix) or not isinstance(row, dict):
+            continue
+        if row.get("buy_order_id") and not row.get("sell_order_id"):
+            sym = key.split(":", 1)[-1].upper()
+            if sym not in pending:
+                pending.append(sym)
+
+    catalog_slice: List[str] = []
+    next_off = catalog_offset
+    if (
+        str(venue).lower() == "binance"
+        and cfg.get("binance_full_catalog_entries")
+        and int(cfg.get("entry_catalog_batch") or 0) > 0
+    ):
+        try:
+            from backend.services import exchange_venue_api_service as vapi
+            from backend.services.exchange_binance_spot_catalog_service import catalog_batch
+
+            quote = str(vapi.venue_quote_asset("binance")).upper()
+            batch, next_off, _n = catalog_batch(
+                batch_size=int(cfg["entry_catalog_batch"]),
+                offset=catalog_offset,
+                quote=quote,
+            )
+            catalog_slice = batch
+        except Exception:
+            pass
+
+    merged: List[str] = []
+    seen = set()
+    for group in (hot, pending, catalog_slice):
+        for sym in group:
+            s = str(sym).upper()
+            if s and s not in _STABLES and s not in seen:
+                seen.add(s)
+                merged.append(s)
+            if len(merged) >= cap:
+                return merged[:cap], next_off
+    return merged[:cap], next_off
 
 
 def _eligible_assets(
@@ -436,12 +501,13 @@ def _tick_venue(
     *,
     live: bool,
     paper: bool,
-) -> Tuple[List[Dict[str, Any]], Dict[str, float]]:
+    catalog_offset: int = 0,
+) -> Tuple[List[Dict[str, Any]], Dict[str, float], int]:
     from backend.services import exchange_venue_api_service as vapi
 
     dry_run = paper
     if live and not vapi.venue_has_credentials(venue):
-        return [{"venue": venue, "skipped": True, "reason": "no_credentials"}], {}
+        return [{"venue": venue, "skipped": True, "reason": "no_credentials"}], {}, catalog_offset
 
     balances: Dict[str, float] = {}
     if live:
@@ -462,7 +528,11 @@ def _tick_venue(
     held = {sym for sym, _, _ in _eligible_assets(venue, cfg, balances, mids)}
     quote_left = _quote_free(balances, venue)
 
-    for sym in _entry_symbol_candidates(cfg):
+    entry_syms, next_cat_off = _entry_symbol_candidates(
+        cfg, venue, assets_state=assets_state, catalog_offset=catalog_offset,
+    )
+
+    for sym in entry_syms:
         if sym in held:
             continue
         mid = mids.get(sym) or _mid_price(venue, sym)
@@ -491,15 +561,16 @@ def _tick_venue(
     prefix = f"{venue}:"
     active_keys = {_state_key(venue, sym) for sym, _, _ in eligible}
     for k in list(assets_state.keys()):
-        if k.startswith(prefix) and k not in active_keys:
-            stale = assets_state.pop(k, {})
-            for fld in ("sell_order_id", "buy_order_id"):
-                oid = str((stale or {}).get(fld) or "")
-                if oid and live:
-                    asset = k.split(":", 1)[-1]
-                    _cancel_tracked(venue, asset, oid, dry_run=False)
+        if not k.startswith(prefix):
+            continue
+        if k in active_keys:
+            continue
+        stale = assets_state.get(k) if isinstance(assets_state.get(k), dict) else {}
+        if stale.get("sell_order_id") or stale.get("buy_order_id"):
+            continue
+        assets_state.pop(k, None)
 
-    return rows_out, balances
+    return rows_out, balances, next_cat_off if str(venue).lower() == "binance" else catalog_offset
 
 
 def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
@@ -515,9 +586,21 @@ def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     assets_state = state.get("assets") if isinstance(state.get("assets"), dict) else {}
     all_rows: List[Dict[str, Any]] = []
     venues = resolved_venues(cfg)
+    cat_off = int(state.get("binance_catalog_offset") or 0)
+
+    if "binance" in venues and cfg.get("binance_full_catalog_entries"):
+        try:
+            from backend.services.exchange_binance_spot_catalog_service import refresh_binance_spot_catalog
+
+            refresh_binance_spot_catalog()
+        except Exception:
+            pass
 
     for venue in venues:
-        rows, _bal = _tick_venue(venue, cfg, assets_state, live=live, paper=paper)
+        off = cat_off if venue == "binance" else 0
+        rows, _bal, cat_off = _tick_venue(
+            venue, cfg, assets_state, live=live, paper=paper, catalog_offset=off,
+        )
         all_rows.extend(rows)
 
     state["assets"] = assets_state
@@ -525,7 +608,16 @@ def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     state["last_live"] = live
     state["last_count"] = len(all_rows)
     state["last_venues"] = venues
+    state["binance_catalog_offset"] = cat_off
     _write_state(state)
+
+    coverage: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_binance_spot_catalog_service import coverage_snapshot
+
+        coverage = coverage_snapshot(assets_state)
+    except Exception:
+        pass
 
     placed = sum(1 for r in all_rows if r.get("action") in ("placed_sell", "entry_placed"))
     resting = sum(1 for r in all_rows if r.get("action") in ("resting", "entry_resting"))
@@ -544,6 +636,8 @@ def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
         "resting": resting,
         "fills_this_tick": fills,
         "managed_count": len(all_rows),
+        "binance_coverage": coverage,
+        "binance_catalog_offset": cat_off,
     }
 
 
@@ -579,11 +673,22 @@ def maybe_run_on_exchange_tick() -> Optional[Dict[str, Any]]:
 def ops_state() -> Dict[str, Any]:
     cfg = load_config()
     st = _read_state()
+    assets_state = st.get("assets") if isinstance(st.get("assets"), dict) else {}
+    coverage: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_binance_spot_catalog_service import coverage_snapshot
+
+        coverage = coverage_snapshot(assets_state)
+    except Exception:
+        pass
     return {
         "config": {
             "enabled": cfg.get("enabled"),
             "venue": cfg.get("venue"),
             "venues": cfg.get("venues"),
+            "binance_priority": cfg.get("binance_priority"),
+            "binance_full_catalog_entries": cfg.get("binance_full_catalog_entries"),
+            "entry_catalog_batch": cfg.get("entry_catalog_batch"),
             "profit_pct": cfg.get("profit_pct"),
             "loss_cancel_pct": cfg.get("loss_cancel_pct"),
             "min_notional_usd": cfg.get("min_notional_usd"),
@@ -594,7 +699,9 @@ def ops_state() -> Dict[str, Any]:
         "last_count": st.get("last_count"),
         "last_live": st.get("last_live"),
         "last_venues": st.get("last_venues"),
-        "assets": st.get("assets") if isinstance(st.get("assets"), dict) else {},
+        "binance_catalog_offset": st.get("binance_catalog_offset"),
+        "binance_coverage": coverage,
+        "assets": assets_state,
     }
 
 

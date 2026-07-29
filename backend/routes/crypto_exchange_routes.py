@@ -483,6 +483,32 @@ def exchange_portal_micro_chain_tick():
     return jsonify(process_queue_tick())
 
 
+@crypto_exchange_bp.route("/api/exchange/binance-spot/catalog", methods=["GET"])
+def exchange_binance_spot_catalog():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_spot_catalog_service import refresh_binance_spot_catalog
+
+    force = request.args.get("refresh") in ("1", "true", "yes")
+    return jsonify(refresh_binance_spot_catalog(force=force))
+
+
+@crypto_exchange_bp.route("/api/exchange/binance-spot/coverage", methods=["GET"])
+def exchange_binance_spot_coverage():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import ops_state
+    from backend.services.exchange_binance_spot_catalog_service import coverage_snapshot
+
+    ops = ops_state()
+    assets = ops.get("assets") if isinstance(ops.get("assets"), dict) else {}
+    cov = coverage_snapshot(assets)
+    cov["catalog_offset"] = ops.get("binance_catalog_offset")
+    cov["last_tick_at"] = ops.get("last_tick_at")
+    cov["spot_reuse_config"] = ops.get("config")
+    return jsonify(cov)
+
+
 @crypto_exchange_bp.route("/api/exchange/spot-reuse/status", methods=["GET"])
 def exchange_spot_reuse_status():
     if not _admin_authorized():

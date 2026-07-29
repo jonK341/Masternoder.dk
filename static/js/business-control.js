@@ -180,8 +180,10 @@
       '<span class="bc-signal-chip">Grid targets: ' + (gr.targets_total != null ? gr.targets_total : "—") +
       (gr.live ? " live" : " paper") + "</span>" +
       '<span class="bc-signal-chip">Stuck: ' + (st.last_stuck_count != null ? st.last_stuck_count : "—") + "</span>" +
-      '<span class="bc-signal-chip">Spot reuse: ' + (sr.last_count != null ? sr.last_count : "—") +
+      '<span class="bc-signal-chip">Spot: ' + (sr.last_count != null ? sr.last_count : "—") +
       (sr.live_gate ? " live" : " paper") + "</span>" +
+      '<span class="bc-signal-chip">Binance pairs: ' + ((sr.binance_coverage && sr.binance_coverage.catalog_count) || "—") +
+      " · resting " + ((sr.binance_coverage && (sr.binance_coverage.resting_sells + sr.binance_coverage.resting_buys)) || 0) + "</span>" +
       (pp.preflight_ok === false ? '<span class="bc-signal-chip" style="border-color:#f87171;color:#f87171">Preflight fail</span>' : "");
   }
 
@@ -1035,16 +1037,19 @@
       var cfg = micro.config || {};
       var spot = d.spot_reuse || {};
       var spotCfg = spot.config || {};
+      var cov = spot.binance_coverage || {};
       el.innerHTML =
         "<div><strong>Heartbeat</strong> " + (d.heartbeat.updated_at || "—") + "</div>" +
         "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
         "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>" +
         "<div style='margin-top:8px'>Spot reuse: " + (spot.last_count != null ? spot.last_count : "—") + " rows · venues " +
-        ((spotCfg.venues || []).join(", ") || spotCfg.venue || "binance") + " · " +
-        "TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "% · cancel −" +
-        Math.round((spotCfg.loss_cancel_pct || 0.15) * 100) + "%" +
-        (spotCfg.entry_buy_enabled ? " · entry buys on" : "") + " · live gate=" +
-        (spotCfg.live_gate ? "on" : "paper") + "</div>";
+        ((spotCfg.venues || []).join(", ") || "binance") + " · TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "%</div>";
+      var bcp = $("binanceCoveragePanel");
+      if (bcp) {
+        bcp.textContent = "Binance catalog: " + (cov.catalog_count || "—") + " bases (USDC " + (cov.usdc_pairs || "?") +
+          " / USDT " + (cov.usdt_pairs || "?") + ") · resting sells " + (cov.resting_sells || 0) +
+          " · entry buys " + (cov.resting_buys || 0) + " · queue offset " + (spot.binance_catalog_offset != null ? spot.binance_catalog_offset : "—");
+      }
       if ($("microMn2") && cfg.mn2_per_tx != null) $("microMn2").value = cfg.mn2_per_tx;
       if ($("microEvents") && cfg.events_per_tx != null) $("microEvents").value = cfg.events_per_tx;
       if ($("microAddr") && cfg.destination_address) $("microAddr").value = cfg.destination_address;
@@ -1070,6 +1075,13 @@
       api("/api/exchange/spot-reuse/tick", { method: "POST", body: {} }).then(function (res) {
         var rs = $("unifiedOpsResult");
         if (rs) rs.textContent = res.ok ? JSON.stringify(res.data) : "Spot reuse tick failed";
+        loadUnifiedDaemon();
+      });
+    });
+    var bcr = $("binanceCatalogRefresh"); if (bcr) bcr.addEventListener("click", function () {
+      api("/api/exchange/binance-spot/catalog?refresh=1").then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? ("Catalog: " + (res.data.count || "?") + " pairs") : "Catalog refresh failed";
         loadUnifiedDaemon();
       });
     });
