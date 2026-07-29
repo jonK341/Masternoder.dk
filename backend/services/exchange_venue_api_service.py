@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import time
 import urllib.parse
 from datetime import datetime, timezone
@@ -33,6 +34,12 @@ def _iso() -> str:
 
 def load_api_config() -> Dict[str, Any]:
     cfg = ex._read_json(_API_CFG_PATH, {})
+    if not cfg and os.path.isfile(_API_CFG_PATH):
+        try:
+            with open(_API_CFG_PATH, "r", encoding="utf-8") as f:
+                json.load(f)
+        except json.JSONDecodeError as exc:
+            print(f"[venue-api] invalid JSON in {_API_CFG_PATH}: {exc}")
     return cfg if isinstance(cfg, dict) else {}
 
 
@@ -428,7 +435,7 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0, "tick_size": 0.0}
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -437,6 +444,8 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["step_size"] = float(filt.get("stepSize") or 0)
             filters["min_qty"] = float(filt.get("minQty") or 0)
             filters["max_qty"] = float(filt.get("maxQty") or 0)
+        elif ftype == "PRICE_FILTER":
+            filters["tick_size"] = float(filt.get("tickSize") or 0)
         elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
             filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
 
@@ -476,6 +485,7 @@ def normalize_order_qty(
         return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
 
     step = float(filt.get("step_size") or 0)
+    tick_size = float(filt.get("tick_size") or 0)
     min_qty = float(filt.get("min_qty") or 0)
     max_qty = float(filt.get("max_qty") or 0)
     min_notional = float(filt.get("min_notional") or 0)
@@ -724,6 +734,158 @@ def place_market_order(
         err = extract_order_error(res)
         if err:
             res["error"] = err
+    return res
+
+
+def place_limit_order(
+    venue_id: str,
+    symbol: str,
+    side: str,
+    quantity: float,
+    price: float,
+    *,
+    dry_run: Optional[bool] = None,
+    quote: Optional[str] = None,
+    market: Optional[str] = None,
+    client_order_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Place a spot LIMIT (maker) order on a venue (paper-simulated unless live + credentialed)."""
+    resolved = resolve_market(venue_id, symbol.upper(), quote)
+    if not resolved.get("ok"):
+        return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
+    pair = str(market or resolved.get("market") or "")
+    side_u = str(side or "buy").upper()
+    side_l = side_u.lower()
+    qty = round(max(0.0, float(quantity or 0)), 8)
+    px = round(max(0.0, float(price or 0)), 8)
+    if qty <= 0 or px <= 0:
+        return {"success": False, "error": "invalid_quantity_or_price"}
+    coid = client_order_id or f"grid-{int(time.time()*1000)}"
+
+    if venue_id == "binance":
+        norm = normalize_order_qty(
+            venue_id, symbol.upper(), side_l, qty,
+            price=px, market=pair, quote=resolved.get("quote"),
+        )
+        if not norm.get("ok"):
+            return {
+                "success": False,
+                "error": norm.get("error"),
+                "venue_id": venue_id,
+                "symbol": symbol.upper(),
+                "pair": pair,
+                "normalize": norm,
+            }
+        qty = float(norm["quantity"])
+        tick = float((norm.get("filters") or {}).get("tick_size") or 0)
+        if tick > 0:
+            px = _quantize_down(px, tick)
+        params: Dict[str, Any] = {
+            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
+            "quantity": qty, "price": px, "newClientOrderId": coid,
+        }
+    elif venue_id in ("nonkyc", "xeggex"):
+        params = {
+            "symbol": pair, "side": side_u.lower(), "type": "limit",
+            "quantity": str(qty), "price": str(px), "userProvidedId": coid, "strictValidate": False,
+        }
+    else:
+        params = {"symbol": pair, "side": side_u.lower(), "type": "limit",
+                  "quantity": str(qty), "price": str(px)}
+
+    res = venue_api_request(venue_id, "order_limit", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("symbol", symbol.upper())
+    res.setdefault("side", side_u.lower())
+    res.setdefault("quantity", qty)
+    res.setdefault("price", px)
+    res.setdefault("pair", pair)
+    res.setdefault("client_order_id", coid)
+    if res.get("simulated"):
+        res.setdefault("order_id", f"paper-{venue_id}-{coid}")
+    else:
+        body = res.get("body")
+        if isinstance(body, dict):
+            res["order_id"] = body.get("orderId") or body.get("id") or body.get("_id")
+        if res.get("success"):
+            res.setdefault("mode", "live")
+        elif not res.get("error"):
+            res["error"] = extract_order_error(res) or "limit_order_failed"
+    return res
+
+
+def cancel_order(venue_id: str, symbol: str, order_id: str, *,
+                 dry_run: Optional[bool] = None, market: Optional[str] = None,
+                 quote: Optional[str] = None) -> Dict[str, Any]:
+    """Cancel an open order by id."""
+    pair = str(market or "")
+    if not pair:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"symbol": pair, "id": order_id}
+    res = venue_api_request(venue_id, "cancel_order", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    return res
+
+
+def get_open_orders(venue_id: str, symbol: str = "", *,
+                    dry_run: Optional[bool] = None, market: Optional[str] = None,
+                    quote: Optional[str] = None) -> Dict[str, Any]:
+    """List open orders for a venue/symbol."""
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    params: Dict[str, Any] = {}
+    if pair:
+        params["symbol"] = pair
+    res = venue_api_request(venue_id, "open_orders", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    if res.get("simulated"):
+        res.setdefault("orders", [])
+    return res
+
+
+def get_order_status(venue_id: str, symbol: str, order_id: Any, *,
+                     dry_run: Optional[bool] = None, market: Optional[str] = None,
+                     quote: Optional[str] = None) -> Dict[str, Any]:
+    """Look up a single order and normalize its state."""
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"id": order_id}
+        if pair:
+            params["symbol"] = pair
+    res = venue_api_request(venue_id, "order_status", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    body = res.get("body") if isinstance(res.get("body"), dict) else {}
+    status = str(body.get("status") or body.get("state") or "").upper()
+    try:
+        exec_qty = float(body.get("executedQty") or body.get("executedQuantity")
+                         or body.get("cumQty") or body.get("filledQuantity") or 0)
+    except (TypeError, ValueError):
+        exec_qty = 0.0
+    try:
+        orig_qty = float(body.get("origQty") or body.get("quantity")
+                         or body.get("origQuantity") or 0)
+    except (TypeError, ValueError):
+        orig_qty = 0.0
+    is_filled = status in ("FILLED",) or (orig_qty > 0 and exec_qty >= orig_qty * 0.999)
+    is_resting = status in ("NEW", "OPEN", "ACTIVE", "PARTIALLY_FILLED", "PARTIALLYFILLED", "PENDING")
+    ok = bool(res.get("success"))
+    res["order_status"] = status
+    res["executed_qty"] = exec_qty
+    res["filled"] = ok and is_filled
+    res["resting"] = ok and is_resting
     return res
 
 

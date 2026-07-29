@@ -401,6 +401,30 @@ def run_grid_tick(venue: str, asset: str, *, mid: Optional[float] = None,
                     mid = float(tick.get("last") or 0)
         except Exception:
             mid = 0.0
+<<<<<<< HEAD
+=======
+        if mid <= 0:
+            try:
+                from backend.services import external_exchange_connector_service as conn
+                batch = conn.fetch_prices(symbols=[asset], venues=[venue], use_cache=True)
+                tick = ((batch.get("prices") or {}).get(venue) or {}).get(asset)
+                if tick:
+                    bid = float(tick.get("bid") or 0)
+                    askp = float(tick.get("ask") or 0)
+                    if bid > 0 and askp > 0:
+                        mid = (bid + askp) / 2.0
+                        if spread_bps is None and mid > 0:
+                            spread_bps = (askp - bid) / mid * 10000.0
+                    else:
+                        mid = float(tick.get("last") or 0)
+            except Exception:
+                pass
+        if mid <= 0:
+            try:
+                mid = float(ex._price_usd(asset) or 0)
+            except Exception:
+                mid = 0.0
+>>>>>>> d6704e45c1f2e057c41cc3eb722f3ba1d433abc2
     mid = float(mid or 0)
     if mid <= 0:
         return {"success": False, "error": "no_price", "venue": venue, "asset": asset}
@@ -1292,6 +1316,20 @@ def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
             results.append(run_grid_tick(venue, asset, dry_run=dry_run))
         except Exception as exc:
             results.append({"success": False, "venue": venue, "asset": asset, "error": str(exc)})
+<<<<<<< HEAD
+=======
+    tick_realized = sum(float(t.get("tick_realized_usd") or 0) for t in results if isinstance(t, dict))
+    if tick_realized > 0.001:
+        try:
+            from backend.services.profit_daemon_news_service import maybe_publish_custom_news
+            maybe_publish_custom_news(
+                f"Grid bot gain +${tick_realized:.2f} (live tick)",
+                featured=True,
+                href="/profit/",
+            )
+        except Exception:
+            pass
+>>>>>>> d6704e45c1f2e057c41cc3eb722f3ba1d433abc2
     return {"success": True, "ticks": results,
             "paused_venues": sorted(paused), "circuit_breaker_events": cb.get("events") or [],
             "realized_pnl_usd": grid_profit()["realized_pnl_usd"]}

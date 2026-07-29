@@ -55,6 +55,7 @@ server_backup/
 # Environment files
 .env
 .env.local
+trader_app/config.json
 ny.txt
 
 # MN2 daemon config (contains rpcpassword); use config/masternoder2.conf.example as template
@@ -66,3 +67,4 @@ tools/mn2-daemon/
 # MN2 verified users list (Phase 10); maintain on server or via ops API
 data/mn2_verified_users.json
 
+data/crypto_exchange/grid_bot_state.json
