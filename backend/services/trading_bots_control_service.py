@@ -166,6 +166,12 @@ def _record_orchestration(controls: Dict[str, Any], results: Dict[str, Any]) -> 
         if res.get("bot_count") is not None:
             summary[key]["bot_count"] = res.get("bot_count")
             summary[key]["ok_count"] = res.get("ok_count")
+        if key == "signal_stack":
+            lane = (res.get("lanes") or {}).get("signal_stack_agent") or {}
+            summary[key]["executed_count"] = lane.get("executed_count")
+            summary[key]["ranked_count"] = lane.get("ranked_count")
+        if key == "winnable_pairs":
+            summary[key]["executed_count"] = res.get("executed_count")
     orch["last_run_ok"] = all_ok
     orch["last_results"] = summary
     history = list(orch.get("history") or [])

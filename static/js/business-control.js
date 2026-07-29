@@ -185,6 +185,12 @@
       '<span class="bc-signal-chip">Binance pairs: ' + ((sr.binance_coverage && sr.binance_coverage.catalog_count) || "—") +
       " · resting " + ((sr.binance_coverage && (sr.binance_coverage.resting_sells + sr.binance_coverage.resting_buys)) || 0) + "</span>" +
       (pp.preflight_ok === false ? '<span class="bc-signal-chip" style="border-color:#f87171;color:#f87171">Preflight fail</span>' : "");
+    var ss = pp.signal_stack || {};
+    var acct = ss.agent_account || {};
+    if (ss.enabled !== false) {
+      el.innerHTML += '<span class="bc-signal-chip">Stack mastery: ' + (acct.mastery_pct != null ? acct.mastery_pct + "%" : "—") +
+        " · learn +" + (acct.learning_bonus_bps != null ? acct.learning_bonus_bps : "—") + " bps</span>";
+    }
   }
 
   function renderProfitPipelinePanel(pp) {
@@ -277,8 +283,10 @@
       if (res.ok && res.data) {
         renderProfitPipelinePanel(res.data);
         renderProfitSignalStrip(res.data);
+        if (res.data.signal_stack) renderSignalStackPanel(res.data.signal_stack, null);
       }
     });
+    loadSignalStackRank();
     loadStuckPlans();
     api("/api/exchange/grid/status").then(function (res) {
       var gs = $("gridSnapshotPanel");
@@ -377,6 +385,7 @@
     treasury: "Treasury",
     risk: "Risk Officer",
     winnable_pairs: "Winnable Pairs",
+    signal_stack: "Signal Stack",
   };
 
   function renderFleetPreflight(pf) {
@@ -723,6 +732,59 @@
     return false;
   }
 
+  function renderSignalStackPanel(ss, ranked) {
+    var el = $("signalStackPanel");
+    var elTab = $("signalStackPanelTab");
+    ss = ss || {};
+    ranked = ranked || [];
+    var acct = ss.agent_account || {};
+    var cfg = ss.config || {};
+    var hitRows = ranked.slice(0, 10).map(function (h) {
+      return "<tr><td>" + (h.symbol || "") + "</td><td>" + (h.buy_venue || "") + "→" + (h.sell_venue || "") +
+        "</td><td>" + (h.search_score != null ? h.search_score : "—") + "</td><td>" +
+        (h.composite_score != null ? h.composite_score : h.ai_score || "—") + "</td><td>" +
+        (h.net_bps != null ? h.net_bps : "—") + "</td></tr>";
+    }).join("");
+    var html =
+      "<p><strong>" + (acct.agent_id || cfg.agent_id || "arb_signal_stack") + "</strong> · " +
+      (ss.enabled ? '<span class="pill on">on</span>' : '<span class="pill off">off</span>') +
+      " · mastery " + (acct.mastery_pct != null ? acct.mastery_pct + "%" : "—") +
+      " · trades " + (acct.trade_count != null ? acct.trade_count : 0) +
+      " · $" + Number(acct.realized_profit_usd || 0).toFixed(4) + "</p>" +
+      "<p class='muted'>Composite min " + (cfg.min_composite_score || "—") + " · hot: " +
+      ((ss.hot_symbols || []).slice(0, 8).join(", ") || "—") + "</p>" +
+      "<table><thead><tr><th>Symbol</th><th>Route</th><th>Search</th><th>Composite</th><th>Net bps</th></tr></thead><tbody>" +
+      (hitRows || "<tr><td colspan='5'>No ranked hits — run stack or wait for daemon tick.</td></tr>") + "</tbody></table>";
+    if (el) el.innerHTML = html;
+    if (elTab) elTab.innerHTML = "<strong>Signal stack</strong> · " + (ss.hot_symbols || []).slice(0, 4).join(", ") +
+      " · mastery " + (acct.mastery_pct != null ? acct.mastery_pct + "%" : "—");
+  }
+
+  function loadSignalStackRank() {
+    api("/api/exchange/signal-stack/status").then(function (st) {
+      var ss = (st.ok && st.data) ? st.data : {};
+      api("/api/exchange/signal-stack/rank").then(function (rk) {
+        var ranked = (rk.ok && rk.data && rk.data.ranked) ? rk.data.ranked : [];
+        renderSignalStackPanel(ss, ranked);
+      });
+    });
+  }
+
+  function runSignalStackClick() {
+    status("Running signal stack…");
+    api("/api/exchange/signal-stack/run", { method: "POST", timeoutMs: 120000 }).then(function (res) {
+      if (!res.ok || !res.data) {
+        status("Signal stack failed", true);
+        return;
+      }
+      var d = res.data;
+      var lane = (d.lanes || {}).signal_stack_agent || {};
+      status("Signal stack · exec=" + (lane.executed_count || 0) + " ranked=" + (lane.ranked_count || 0));
+      loadSignalStackRank();
+      load({ force: true });
+    });
+  }
+
   function renderLivePack(lp, win) {
     var el = $("livePackPanel");
     if (!el) return;
@@ -796,6 +858,7 @@
     renderSupervisors(d.supervisors || []);
     renderOrchestration(d.orchestration);
     renderLivePack(d.live_pack, d.winnable_pairs);
+    if (d.signal_stack) renderSignalStackPanel(d.signal_stack, null);
     if (d.profit_pipeline) renderProfitSignalStrip(d.profit_pipeline);
       renderBots(d.bots || []);
       if (d.supervisor_fleet) {
@@ -1200,6 +1263,8 @@
     bindLocalPanel();
     bindUnifiedPanel();
     bindDormantPanel();
+    var ssr = $("signalStackRun"); if (ssr) ssr.addEventListener("click", runSignalStackClick);
+    var srr = $("signalStackRankRefresh"); if (srr) srr.addEventListener("click", loadSignalStackRank);
     var rpp = $("runProfitPipeline");
     if (rpp) rpp.addEventListener("click", runProfitPipelineClick);
     var srb = $("stuckRescanBtn");

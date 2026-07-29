@@ -157,6 +157,15 @@
           <div id="livePackPanel" class="muted">Loading…</div>
         </div>
         <div class="section">
+          <h2>Signal stack trader</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Pair search + skill/bps composite + PPP stack skills (<code>arb_signal_stack</code>). Included in every unified daemon exchange tick.</p>
+          <div class="bar" style="flex-wrap:wrap;margin-bottom:8px">
+            <button type="button" class="btn small primary" id="signalStackRun">Run signal stack now</button>
+            <button type="button" class="btn small" id="signalStackRankRefresh">Refresh ranked hits</button>
+          </div>
+          <div id="signalStackPanel" class="muted">Loading…</div>
+        </div>
+        <div class="section">
           <h2>Winnable pairs radar</h2>
           <p class="muted" style="font-size:12px;margin:0 0 10px;">Ranked routes from profit pair search — Winnable Pairs Executor trades these when score and spread thresholds pass.</p>
           <div id="winnablePanel" class="muted">Loading…</div>
@@ -274,6 +283,7 @@
           </div>
           <div id="profitPipelinePanel" class="muted">Loading…</div>
           <div id="profitPipelineSteps" class="status" style="margin-top:10px"></div>
+          <div id="signalStackPanelTab" class="muted" style="margin-top:14px;font-size:12px">—</div>
         </div>
         <div class="section">
           <h2>Unused / dormant agents</h2>
@@ -300,7 +310,7 @@
         <div class="section">
           <h2>Daemon loops (unified process)</h2>
           <ul class="bc-loop-legend muted" style="font-size:12px;margin:0 0 12px;padding-left:18px">
-            <li><strong>300s</strong> exchange — arb, AI, cross-trade, winnable, fleet</li>
+            <li><strong>300s</strong> exchange — arb, AI, cross-trade, winnable, <strong>signal stack</strong>, fleet</li>
             <li><strong>120s</strong> fast rescan · extended strategies</li>
             <li><strong>30s</strong> grid market-maker</li>
             <li><strong>600s</strong> stuck inventory → grid config</li>
@@ -353,6 +363,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729i"></script>
+  <script src="/static/js/business-control.js?v=20260729j"></script>
 </body>
 </html>

@@ -171,18 +171,43 @@ def _summarize_marketplace(res: Dict[str, Any]) -> str:
 def _agent_ops_from_exchange(res: Dict[str, Any]) -> Dict[str, Any]:
     plat = res.get("platform") if isinstance(res.get("platform"), dict) else {}
     fa = plat.get("fleet_activation") or {}
+    results = plat.get("results") or {}
+    sig = results.get("signal_stack") or {}
+    sig_lane = (sig.get("lanes") or {}).get("signal_stack_agent") or {}
+    mastery = None
+    learn_bps = None
+    try:
+        from backend.services.exchange_signal_stack_service import load_config
+
+        agent_id = str(load_config().get("agent_id") or "arb_signal_stack")
+        from backend.services import exchange_arbitrage_service as arb
+
+        acct_row = arb.read_account(agent_id)
+        if acct_row.get("mastery_pct") is not None:
+            mastery = acct_row.get("mastery_pct")
+        if acct_row.get("learning_bonus_bps") is not None:
+            learn_bps = acct_row.get("learning_bonus_bps")
+    except Exception:
+        pass
     try:
         from backend.services.exchange_swap_rotation_service import rotation_auto_execute_enabled
 
         rot = rotation_auto_execute_enabled()
     except Exception:
         rot = None
-    return {
+    out = {
         "fleet_actions": len(fa.get("actions") or []),
         "user_agent_ticks": int(res.get("user_agent_ticks") or 0),
         "rotation_auto": rot,
         "grid_autoselect": bool((plat.get("grid_signal_autoselect") or {}).get("applied")),
+        "signal_stack_executed": int(sig_lane.get("executed_count") or 0),
+        "signal_stack_ranked": int(sig_lane.get("ranked_count") or 0),
     }
+    if mastery is not None:
+        out["signal_stack_mastery_pct"] = mastery
+    if learn_bps is not None:
+        out["signal_stack_learning_bps"] = learn_bps
+    return out
 
 
 def _iso() -> str:
@@ -394,6 +419,8 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     ai = results.get("ai_trading") or {}
     cross = results.get("cross_trade") or {}
     ext = results.get("extended_profit") or {}
+    win = results.get("winnable_pairs") or {}
+    sig = results.get("signal_stack") or {}
     pair_search = plat.get("profit_pair_search") or {}
     best_bps = _best_arb_bps(arb)
     parts = [
@@ -451,6 +478,12 @@ def _summarize_exchange(res: Dict[str, Any]) -> str:
     parts.extend([
         f"ai_exec={ai.get('executed')}",
     ])
+    sig_lane = (sig.get("lanes") or {}).get("signal_stack_agent") or {}
+    if sig.get("success") is not False:
+        parts.append(f"sig_exec={sig_lane.get('executed_count', 0)}")
+        parts.append(f"sig_ranked={sig_lane.get('ranked_count', 0)}")
+    if win:
+        parts.append(f"win_exec={win.get('executed_count', win.get('ok_count', '?'))}")
     ai_skip = _classify_ai_skip(ai)
     if ai_skip and not ai.get("executed"):
         parts.append(f"ai_skip={ai_skip}")
