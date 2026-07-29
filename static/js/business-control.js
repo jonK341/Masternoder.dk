@@ -1039,10 +1039,12 @@
         "<div><strong>Heartbeat</strong> " + (d.heartbeat.updated_at || "—") + "</div>" +
         "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
         "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>" +
-        "<div style='margin-top:8px'>Spot reuse: " + (spot.last_count != null ? spot.last_count : "—") + " assets · " +
+        "<div style='margin-top:8px'>Spot reuse: " + (spot.last_count != null ? spot.last_count : "—") + " rows · venues " +
+        ((spotCfg.venues || []).join(", ") || spotCfg.venue || "binance") + " · " +
         "TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "% · cancel −" +
-        Math.round((spotCfg.loss_cancel_pct || 0.15) * 100) + "% · live gate=" +
-        (spotCfg.live_gate ? "on (EXCHANGE_SPOT_REUSE_LIVE)" : "paper") + "</div>";
+        Math.round((spotCfg.loss_cancel_pct || 0.15) * 100) + "%" +
+        (spotCfg.entry_buy_enabled ? " · entry buys on" : "") + " · live gate=" +
+        (spotCfg.live_gate ? "on" : "paper") + "</div>";
       if ($("microMn2") && cfg.mn2_per_tx != null) $("microMn2").value = cfg.mn2_per_tx;
       if ($("microEvents") && cfg.events_per_tx != null) $("microEvents").value = cfg.events_per_tx;
       if ($("microAddr") && cfg.destination_address) $("microAddr").value = cfg.destination_address;

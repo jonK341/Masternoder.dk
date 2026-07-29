@@ -1,10 +1,15 @@
 {
   "enabled": true,
   "venue": "binance",
+  "venues": ["binance", "nonkyc"],
   "profit_pct": 0.1,
   "loss_cancel_pct": 0.15,
   "min_notional_usd": 8.0,
   "reserve_pct": 0.02,
   "skip_grid_targets": true,
-  "assets_allowlist": []
+  "assets_allowlist": [],
+  "entry_buy_enabled": true,
+  "entry_buy_discount_pct": 0.08,
+  "entry_quote_usd": 12.0,
+  "entry_max_symbols": 4
 }

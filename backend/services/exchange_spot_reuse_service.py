@@ -1,10 +1,9 @@
-"""Binance spot asset reuse — resting limit sells at +profit_pct, cancel/reseed on −loss_cancel_pct.
+"""Binance / NonKYC spot asset reuse — +profit_pct limit sells, −loss_cancel_pct cancel/reseed.
 
-Places one maker sell per held coin so idle spot inventory targets a fixed profit margin instead of
-sitting unpriced. Wired into the unified profit daemon loop (see ``run_spot_reuse_tick``).
+Optional entry limit buys (quote → base) at a discount below mid to refill inventory for the
+next take-profit sell. Runs in the unified profit daemon (``run_spot_reuse_tick``).
 
-Live gate: ``EXCHANGE_SPOT_REUSE_LIVE=1`` and ``EXCHANGE_ARBITRAGE_LIVE=1`` plus venue credentials.
-Paper by default (state-only simulation).
+Live: ``EXCHANGE_SPOT_REUSE_LIVE=1`` + ``EXCHANGE_ARBITRAGE_LIVE=1`` + venue credentials.
 """
 from __future__ import annotations
 
@@ -17,6 +16,7 @@ from backend.services import crypto_exchange_service as ex
 _CFG_PATH = os.path.join(ex._BASE, "data", "crypto_exchange", "spot_reuse_config.json")
 _STATE_PATH = os.path.join(ex._DATA_DIR, "spot_reuse_state.json")
 _STABLES = frozenset({"USDT", "USDC", "USD", "BUSD", "FDUSD", "EUR", "DAI", "TUSD"})
+_DEFAULT_VENUES = ("binance", "nonkyc")
 
 
 def _iso() -> str:
@@ -34,13 +34,33 @@ def _default_config() -> Dict[str, Any]:
     return {
         "enabled": True,
         "venue": "binance",
+        "venues": list(_DEFAULT_VENUES),
         "profit_pct": 0.10,
         "loss_cancel_pct": 0.15,
         "min_notional_usd": 8.0,
         "reserve_pct": 0.02,
         "skip_grid_targets": True,
         "assets_allowlist": [],
+        "entry_buy_enabled": True,
+        "entry_buy_discount_pct": 0.08,
+        "entry_quote_usd": 12.0,
+        "entry_max_symbols": 4,
     }
+
+
+def resolved_venues(cfg: Dict[str, Any]) -> List[str]:
+    raw = cfg.get("venues")
+    if isinstance(raw, list) and raw:
+        out = []
+        seen = set()
+        for v in raw:
+            vid = str(v or "").lower().strip()
+            if vid and vid not in seen:
+                seen.add(vid)
+                out.append(vid)
+        if out:
+            return out
+    return [str(cfg.get("venue") or "binance").lower()]
 
 
 def load_config() -> Dict[str, Any]:
@@ -52,11 +72,16 @@ def load_config() -> Dict[str, Any]:
     cfg.update({k: v for k, v in raw.items() if v is not None})
     cfg["enabled"] = bool(cfg.get("enabled"))
     cfg["venue"] = str(cfg.get("venue") or "binance").lower()
+    cfg["venues"] = resolved_venues(cfg)
     cfg["profit_pct"] = _clampf(cfg.get("profit_pct"), 0.01, 0.5, 0.10)
     cfg["loss_cancel_pct"] = _clampf(cfg.get("loss_cancel_pct"), 0.01, 0.5, 0.15)
     cfg["min_notional_usd"] = _clampf(cfg.get("min_notional_usd"), 1.0, 1e6, 8.0)
     cfg["reserve_pct"] = _clampf(cfg.get("reserve_pct"), 0.0, 0.25, 0.02)
     cfg["skip_grid_targets"] = bool(cfg.get("skip_grid_targets"))
+    cfg["entry_buy_enabled"] = bool(cfg.get("entry_buy_enabled"))
+    cfg["entry_buy_discount_pct"] = _clampf(cfg.get("entry_buy_discount_pct"), 0.01, 0.35, 0.08)
+    cfg["entry_quote_usd"] = _clampf(cfg.get("entry_quote_usd"), 5.0, 5000.0, 12.0)
+    cfg["entry_max_symbols"] = int(_clampf(cfg.get("entry_max_symbols"), 0, 20, 4))
     allow = cfg.get("assets_allowlist")
     cfg["assets_allowlist"] = [str(a).upper() for a in allow if a] if isinstance(allow, list) else []
     return cfg
@@ -67,12 +92,17 @@ def save_config(patch: Dict[str, Any]) -> Dict[str, Any]:
     for k in (
         "enabled",
         "venue",
+        "venues",
         "profit_pct",
         "loss_cancel_pct",
         "min_notional_usd",
         "reserve_pct",
         "skip_grid_targets",
         "assets_allowlist",
+        "entry_buy_enabled",
+        "entry_buy_discount_pct",
+        "entry_quote_usd",
+        "entry_max_symbols",
     ):
         if k in patch and patch[k] is not None:
             cfg[k] = patch[k]
@@ -133,13 +163,32 @@ def _grid_target_set() -> Set[Tuple[str, str]]:
         return set()
 
 
+def _entry_symbol_candidates(cfg: Dict[str, Any]) -> List[str]:
+    allow = list(cfg.get("assets_allowlist") or [])
+    if allow:
+        return allow[: int(cfg.get("entry_max_symbols") or 4)]
+    hot: List[str] = []
+    try:
+        from backend.services.exchange_profit_pair_search_service import read_index
+
+        idx = read_index()
+        for s in idx.get("hot_symbols") or []:
+            sym = str(s or "").upper()
+            if sym and sym not in _STABLES and sym not in hot:
+                hot.append(sym)
+    except Exception:
+        pass
+    cap = int(cfg.get("entry_max_symbols") or 4)
+    return hot[:cap]
+
+
 def _eligible_assets(
+    venue: str,
     cfg: Dict[str, Any],
     balances: Dict[str, float],
     mids: Dict[str, float],
 ) -> List[Tuple[str, float, float]]:
     """Return (asset, qty, usd) rows above min notional."""
-    venue = cfg["venue"]
     min_usd = float(cfg["min_notional_usd"])
     allow = set(cfg.get("assets_allowlist") or [])
     skip_grid = cfg.get("skip_grid_targets")
@@ -178,6 +227,88 @@ def _cancel_tracked(
     return vapi.cancel_order(venue, asset, order_id, dry_run=dry_run)
 
 
+def _quote_free(balances: Dict[str, float], venue: str) -> float:
+    from backend.services import exchange_venue_api_service as vapi
+
+    quote = str(vapi.venue_quote_asset(venue)).upper()
+    return float(balances.get(quote) or 0)
+
+
+def manage_entry_buy(
+    venue: str,
+    asset: str,
+    mid: float,
+    quote_free: float,
+    cfg: Dict[str, Any],
+    row: Dict[str, Any],
+    *,
+    dry_run: bool,
+) -> Optional[Dict[str, Any]]:
+    """Place/maintain a discount limit buy when we hold quote but little base."""
+    if not cfg.get("entry_buy_enabled"):
+        return None
+    entry_usd = float(cfg["entry_quote_usd"])
+    min_usd = float(cfg["min_notional_usd"])
+    if quote_free < entry_usd or entry_usd < min_usd or mid <= 0:
+        return None
+
+    from backend.services import exchange_venue_api_service as vapi
+
+    discount = float(cfg["entry_buy_discount_pct"])
+    ref = float(row.get("ref_price") or mid)
+    buy_px = round(ref * (1.0 - discount), 8)
+    if buy_px <= 0:
+        return None
+
+    events: List[str] = []
+    buy_id = str(row.get("buy_order_id") or "")
+
+    if mid > 0 and ref > 0 and mid <= ref * (1.0 - float(cfg["loss_cancel_pct"])):
+        if buy_id:
+            _cancel_tracked(venue, asset, buy_id, dry_run=dry_run)
+            buy_id = ""
+            row["buy_order_id"] = ""
+            events.append("entry_loss_cancel")
+
+    if buy_id:
+        st = vapi.get_order_status(venue, asset, buy_id, dry_run=dry_run)
+        if st.get("filled"):
+            row["buy_fills"] = int(row.get("buy_fills") or 0) + 1
+            row["buy_order_id"] = ""
+            fill_px = float(row.get("entry_buy_price") or buy_px)
+            row["ref_price"] = round(fill_px, 8)
+            row["ref_set_at"] = _iso()
+            events.append("entry_filled")
+            return {"asset": asset, "action": "entry_filled", "events": events, "mid": mid}
+
+    qty = round(entry_usd / buy_px, 8)
+    if qty * buy_px < min_usd:
+        return None
+
+    if buy_id and row.get("entry_buy_price"):
+        if abs(float(row["entry_buy_price"]) - buy_px) <= buy_px * 0.002:
+            return {"asset": asset, "action": "entry_resting", "events": events, "buy_price": buy_px}
+
+    if buy_id:
+        _cancel_tracked(venue, asset, buy_id, dry_run=dry_run)
+        buy_id = ""
+
+    coid = f"spotreuse-buy-{asset.lower()}-{int(datetime.now(timezone.utc).timestamp())}"
+    pr = vapi.place_limit_order(venue, asset, "buy", qty, buy_px, dry_run=dry_run, client_order_id=coid)
+    if not pr.get("success"):
+        return {
+            "asset": asset,
+            "action": "entry_place_failed",
+            "error": vapi.extract_order_error(pr) or pr.get("error"),
+            "events": events,
+        }
+    row["buy_order_id"] = str(pr.get("order_id") or "")
+    row["entry_buy_price"] = buy_px
+    row["entry_buy_qty"] = qty
+    events.append("entry_placed")
+    return {"asset": asset, "action": "entry_placed", "buy_price": buy_px, "qty": qty, "events": events}
+
+
 def manage_asset(
     venue: str,
     asset: str,
@@ -212,6 +343,10 @@ def manage_asset(
             row["last_cancel"] = {"at": _iso(), "reason": "loss_margin", "result": cr}
             order_id = ""
             row["sell_order_id"] = ""
+        buy_id = str(row.get("buy_order_id") or "")
+        if buy_id:
+            _cancel_tracked(venue, asset, buy_id, dry_run=dry_run)
+            row["buy_order_id"] = ""
         row["ref_price"] = round(mid, 8)
         row["ref_set_at"] = _iso()
         ref = mid
@@ -294,82 +429,151 @@ def manage_asset(
     }
 
 
+def _tick_venue(
+    venue: str,
+    cfg: Dict[str, Any],
+    assets_state: Dict[str, Any],
+    *,
+    live: bool,
+    paper: bool,
+) -> Tuple[List[Dict[str, Any]], Dict[str, float]]:
+    from backend.services import exchange_venue_api_service as vapi
+
+    dry_run = paper
+    if live and not vapi.venue_has_credentials(venue):
+        return [{"venue": venue, "skipped": True, "reason": "no_credentials"}], {}
+
+    balances: Dict[str, float] = {}
+    if live:
+        balances = vapi.parse_spot_balances(venue, dry_run=False) or {}
+    elif paper:
+        st0 = _read_state()
+        pb = st0.get("paper_balances") if isinstance(st0.get("paper_balances"), dict) else {}
+        if isinstance(pb.get(venue), dict):
+            balances = pb[venue]
+
+    mids: Dict[str, float] = {}
+    rows_out: List[Dict[str, Any]] = []
+
+    pre = _eligible_assets(venue, cfg, balances, mids)
+    for sym, _q, _usd in pre:
+        mids[sym] = _mid_price(venue, sym)
+
+    held = {sym for sym, _, _ in _eligible_assets(venue, cfg, balances, mids)}
+    quote_left = _quote_free(balances, venue)
+
+    for sym in _entry_symbol_candidates(cfg):
+        if sym in held:
+            continue
+        mid = mids.get(sym) or _mid_price(venue, sym)
+        mids[sym] = mid
+        key = _state_key(venue, sym)
+        row = assets_state.get(key) if isinstance(assets_state.get(key), dict) else {}
+        ent = manage_entry_buy(venue, sym, mid, quote_left, cfg, row, dry_run=dry_run)
+        if ent:
+            ent["venue"] = venue
+            rows_out.append(ent)
+            assets_state[key] = row
+            if ent.get("action") == "entry_placed":
+                quote_left = max(0.0, quote_left - float(cfg["entry_quote_usd"]))
+
+    eligible = _eligible_assets(venue, cfg, balances, mids)
+    for sym, qty, usd in eligible:
+        mid = mids.get(sym) or 0.0
+        key = _state_key(venue, sym)
+        row = assets_state.get(key) if isinstance(assets_state.get(key), dict) else {}
+        detail = manage_asset(venue, sym, qty, mid, cfg, row, dry_run=dry_run)
+        detail["usd_est"] = round(usd, 2)
+        detail["venue"] = venue
+        assets_state[key] = row
+        rows_out.append(detail)
+
+    prefix = f"{venue}:"
+    active_keys = {_state_key(venue, sym) for sym, _, _ in eligible}
+    for k in list(assets_state.keys()):
+        if k.startswith(prefix) and k not in active_keys:
+            stale = assets_state.pop(k, {})
+            for fld in ("sell_order_id", "buy_order_id"):
+                oid = str((stale or {}).get(fld) or "")
+                if oid and live:
+                    asset = k.split(":", 1)[-1]
+                    _cancel_tracked(venue, asset, oid, dry_run=False)
+
+    return rows_out, balances
+
+
 def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     """Daemon / API entry — scan balances and maintain +profit_pct limit sells."""
     cfg = load_config()
     if not cfg.get("enabled"):
         return {"success": True, "skipped": True, "reason": "disabled"}
 
-    venue = cfg["venue"]
     live = spot_reuse_live_enabled() if dry_run is None else (not dry_run)
     paper = not live
 
-    from backend.services import exchange_venue_api_service as vapi
-
-    if not vapi.venue_has_credentials(venue) and live:
-        return {"success": True, "skipped": True, "reason": "no_credentials", "venue": venue}
-
-    balances: Dict[str, float] = {}
-    if live:
-        balances = vapi.parse_spot_balances(venue, dry_run=False) or {}
-    elif paper:
-        # Paper: reuse persisted synthetic balances if any, else empty tick
-        st0 = _read_state()
-        balances = st0.get("paper_balances") if isinstance(st0.get("paper_balances"), dict) else {}
-
     state = _read_state()
     assets_state = state.get("assets") if isinstance(state.get("assets"), dict) else {}
-    mids: Dict[str, float] = {}
-    rows_out: List[Dict[str, Any]] = []
+    all_rows: List[Dict[str, Any]] = []
+    venues = resolved_venues(cfg)
 
-    eligible = _eligible_assets(cfg, balances, mids)
-    for sym, _q, _usd in eligible:
-        mids[sym] = _mid_price(venue, sym)
-
-    eligible = _eligible_assets(cfg, balances, mids)
-
-    for sym, qty, usd in eligible:
-        mid = mids.get(sym) or 0.0
-        key = _state_key(venue, sym)
-        row = assets_state.get(key) if isinstance(assets_state.get(key), dict) else {}
-        detail = manage_asset(venue, sym, qty, mid, cfg, row, dry_run=paper)
-        detail["usd_est"] = round(usd, 2)
-        assets_state[key] = row
-        rows_out.append(detail)
-
-    # Drop state for assets no longer held
-    active_keys = {_state_key(venue, sym) for sym, _, _ in eligible}
-    for k in list(assets_state.keys()):
-        if k.startswith(f"{venue}:") and k not in active_keys:
-            stale = assets_state.pop(k, {})
-            oid = str((stale or {}).get("sell_order_id") or "")
-            if oid and live:
-                asset = k.split(":", 1)[-1]
-                _cancel_tracked(venue, asset, oid, dry_run=False)
+    for venue in venues:
+        rows, _bal = _tick_venue(venue, cfg, assets_state, live=live, paper=paper)
+        all_rows.extend(rows)
 
     state["assets"] = assets_state
     state["last_tick_at"] = _iso()
     state["last_live"] = live
-    state["last_count"] = len(rows_out)
+    state["last_count"] = len(all_rows)
+    state["last_venues"] = venues
     _write_state(state)
 
-    placed = sum(1 for r in rows_out if r.get("action") == "placed_sell")
-    resting = sum(1 for r in rows_out if r.get("action") == "resting")
-    fills = sum(1 for r in rows_out if "tp_filled" in (r.get("events") or []))
+    placed = sum(1 for r in all_rows if r.get("action") in ("placed_sell", "entry_placed"))
+    resting = sum(1 for r in all_rows if r.get("action") in ("resting", "entry_resting"))
+    fills = sum(1 for r in all_rows if "tp_filled" in (r.get("events") or []))
 
     return {
         "success": True,
         "skipped": False,
         "live": live,
-        "venue": venue,
+        "venues": venues,
         "profit_pct": cfg["profit_pct"],
         "loss_cancel_pct": cfg["loss_cancel_pct"],
-        "assets": rows_out,
+        "entry_buy_enabled": cfg.get("entry_buy_enabled"),
+        "assets": all_rows,
         "placed": placed,
         "resting": resting,
         "fills_this_tick": fills,
-        "managed_count": len(rows_out),
+        "managed_count": len(all_rows),
     }
+
+
+def maybe_run_on_exchange_tick() -> Optional[Dict[str, Any]]:
+    """Optional hook from exchange master daemon (throttled)."""
+    if str(os.environ.get("EXCHANGE_SPOT_REUSE_ON_EXCHANGE", "")).strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ):
+        return None
+    try:
+        interval = max(60, int(os.environ.get("EXCHANGE_SPOT_REUSE_EXCHANGE_INTERVAL", "180") or "180"))
+    except ValueError:
+        interval = 180
+    st = _read_state()
+    last = str(st.get("last_exchange_hook_at") or "")
+    if last:
+        try:
+            prev = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if (datetime.now(timezone.utc) - prev).total_seconds() < interval:
+                return None
+        except Exception:
+            pass
+    res = run_spot_reuse_tick()
+    st = _read_state()
+    st["last_exchange_hook_at"] = _iso()
+    _write_state(st)
+    return res
 
 
 def ops_state() -> Dict[str, Any]:
@@ -379,14 +583,17 @@ def ops_state() -> Dict[str, Any]:
         "config": {
             "enabled": cfg.get("enabled"),
             "venue": cfg.get("venue"),
+            "venues": cfg.get("venues"),
             "profit_pct": cfg.get("profit_pct"),
             "loss_cancel_pct": cfg.get("loss_cancel_pct"),
             "min_notional_usd": cfg.get("min_notional_usd"),
+            "entry_buy_enabled": cfg.get("entry_buy_enabled"),
             "live_gate": spot_reuse_live_enabled(),
         },
         "last_tick_at": st.get("last_tick_at"),
         "last_count": st.get("last_count"),
         "last_live": st.get("last_live"),
+        "last_venues": st.get("last_venues"),
         "assets": st.get("assets") if isinstance(st.get("assets"), dict) else {},
     }
 

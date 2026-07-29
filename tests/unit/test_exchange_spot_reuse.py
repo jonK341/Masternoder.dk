@@ -67,3 +67,18 @@ def test_loss_margin_cancels_and_reseeds(spot_env, monkeypatch):
     assert "loss_cancel" in res["events"]
     assert cancelled
     assert row["ref_price"] == pytest.approx(0.84, rel=1e-6)
+
+
+def test_resolved_venues_multi(spot_env):
+    svc = spot_env
+    cfg = svc.load_config()
+    cfg["venues"] = ["binance", "nonkyc", "binance"]
+    assert svc.resolved_venues(cfg) == ["binance", "nonkyc"]
+
+
+def test_run_tick_disabled_returns_skip(spot_env):
+    svc = spot_env
+    svc.save_config({"enabled": False})
+    res = svc.run_spot_reuse_tick(dry_run=True)
+    assert res.get("skipped") and res.get("reason") == "disabled"
+    svc.save_config({"enabled": True})

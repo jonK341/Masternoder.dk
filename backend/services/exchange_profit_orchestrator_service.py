@@ -68,10 +68,12 @@ def pipeline_status(*, light: bool = True) -> Dict[str, Any]:
         out["spot_reuse"] = {
             "enabled": (so.get("config") or {}).get("enabled"),
             "live_gate": (so.get("config") or {}).get("live_gate"),
+            "venues": (so.get("config") or {}).get("venues"),
             "last_tick_at": so.get("last_tick_at"),
             "last_count": so.get("last_count"),
             "profit_pct": (so.get("config") or {}).get("profit_pct"),
             "loss_cancel_pct": (so.get("config") or {}).get("loss_cancel_pct"),
+            "entry_buy_enabled": (so.get("config") or {}).get("entry_buy_enabled"),
         }
     except Exception as exc:
         out["spot_reuse"] = {"error": str(exc)[:120]}
@@ -93,7 +95,7 @@ def run_profit_pipeline(
     apply_grid_from_search: bool = False,
     apply_stuck_grid: bool = False,
     cross_scan: bool = False,
-    spot_reuse_tick: bool = False,
+    spot_reuse_tick: bool = True,
     min_cross_bps: float = 8.0,
     min_profit_score: float = 3.0,
 ) -> Dict[str, Any]:
@@ -156,9 +158,12 @@ def run_profit_pipeline(
                 "ok": bool(spot_res.get("success")),
                 "managed": spot_res.get("managed_count"),
                 "placed": spot_res.get("placed"),
+                "venues": spot_res.get("venues"),
             })
         except Exception as exc:
             steps.append({"step": "spot_reuse", "ok": False, "error": str(exc)[:200]})
+    else:
+        steps.append({"step": "spot_reuse", "ok": True, "skipped": True})
 
     hot: List[str] = []
     if pair_search and pair_search.get("success"):

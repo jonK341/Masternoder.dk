@@ -33,3 +33,7 @@ if "%EXCHANGE_PAYOUT_PAYPAL_LIVE%"=="1" set "EXCHANGE_DAEMON_MODE=live"
 REM Live profit mode: casino agents place real bets unless explicitly dry-run
 if "%EXCHANGE_DAEMON_MODE%"=="live" if not defined CASINO_AGENT_DRY_RUN set "CASINO_AGENT_DRY_RUN=0"
 
+REM Spot reuse (+10%% TP / -15%% cancel) — set both for live limit orders on Binance/NonKYC
+REM set EXCHANGE_SPOT_REUSE_LIVE=1
+REM Optional: also tick spot reuse from the main exchange loop (every ~180s)
+REM set EXCHANGE_SPOT_REUSE_ON_EXCHANGE=1
