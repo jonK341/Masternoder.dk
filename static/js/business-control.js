@@ -170,6 +170,7 @@
     var th = pp.arb_threshold || {};
     var gr = pp.grid || {};
     var st = pp.stuck || {};
+    var sr = pp.spot_reuse || {};
     var hot = (ps.hot_symbols || []).slice(0, 6).join(", ") || "—";
     el.innerHTML =
       '<span class="bc-signal-chip hot">Hot: ' + hot + "</span>" +
@@ -179,6 +180,8 @@
       '<span class="bc-signal-chip">Grid targets: ' + (gr.targets_total != null ? gr.targets_total : "—") +
       (gr.live ? " live" : " paper") + "</span>" +
       '<span class="bc-signal-chip">Stuck: ' + (st.last_stuck_count != null ? st.last_stuck_count : "—") + "</span>" +
+      '<span class="bc-signal-chip">Spot reuse: ' + (sr.last_count != null ? sr.last_count : "—") +
+      (sr.live_gate ? " live" : " paper") + "</span>" +
       (pp.preflight_ok === false ? '<span class="bc-signal-chip" style="border-color:#f87171;color:#f87171">Preflight fail</span>' : "");
   }
 
@@ -250,6 +253,7 @@
       apply_grid_from_search: !!($("pipeApplyGrid") && $("pipeApplyGrid").checked),
       apply_stuck_grid: !!($("pipeApplyStuck") && $("pipeApplyStuck").checked),
       cross_scan: !!($("pipeCrossScan") && $("pipeCrossScan").checked),
+      spot_reuse_tick: !!($("pipeSpotReuse") && $("pipeSpotReuse").checked),
     };
     status("Running profit pipeline…");
     api("/api/exchange/profit-pipeline/run", { method: "POST", body: body, timeoutMs: 120000 }).then(function (res) {
@@ -1029,10 +1033,16 @@
       });
       var micro = d.micro_chain || {};
       var cfg = micro.config || {};
+      var spot = d.spot_reuse || {};
+      var spotCfg = spot.config || {};
       el.innerHTML =
         "<div><strong>Heartbeat</strong> " + (d.heartbeat.updated_at || "—") + "</div>" +
         "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
-        "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>";
+        "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>" +
+        "<div style='margin-top:8px'>Spot reuse: " + (spot.last_count != null ? spot.last_count : "—") + " assets · " +
+        "TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "% · cancel −" +
+        Math.round((spotCfg.loss_cancel_pct || 0.15) * 100) + "% · live gate=" +
+        (spotCfg.live_gate ? "on (EXCHANGE_SPOT_REUSE_LIVE)" : "paper") + "</div>";
       if ($("microMn2") && cfg.mn2_per_tx != null) $("microMn2").value = cfg.mn2_per_tx;
       if ($("microEvents") && cfg.events_per_tx != null) $("microEvents").value = cfg.events_per_tx;
       if ($("microAddr") && cfg.destination_address) $("microAddr").value = cfg.destination_address;
@@ -1054,6 +1064,13 @@
 
   function bindUnifiedPanel() {
     var ur = $("unifiedRefresh"); if (ur) ur.addEventListener("click", function () { loadUnifiedDaemon(); load5dPulse(); });
+    var srt = $("spotReuseTick"); if (srt) srt.addEventListener("click", function () {
+      api("/api/exchange/spot-reuse/tick", { method: "POST", body: {} }).then(function (res) {
+        var rs = $("unifiedOpsResult");
+        if (rs) rs.textContent = res.ok ? JSON.stringify(res.data) : "Spot reuse tick failed";
+        loadUnifiedDaemon();
+      });
+    });
     var sa = $("stuckScanApply"); if (sa) sa.addEventListener("click", function () {
       api("/api/exchange/stuck-inventory/apply-grid", { method: "POST", body: {} }).then(function (res) {
         var rs = $("unifiedOpsResult");

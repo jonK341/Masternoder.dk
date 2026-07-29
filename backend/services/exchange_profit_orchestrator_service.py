@@ -62,6 +62,21 @@ def pipeline_status(*, light: bool = True) -> Dict[str, Any]:
         out["stuck"] = {"error": str(exc)[:120]}
 
     try:
+        from backend.services.exchange_spot_reuse_service import ops_state as spot_ops
+
+        so = spot_ops()
+        out["spot_reuse"] = {
+            "enabled": (so.get("config") or {}).get("enabled"),
+            "live_gate": (so.get("config") or {}).get("live_gate"),
+            "last_tick_at": so.get("last_tick_at"),
+            "last_count": so.get("last_count"),
+            "profit_pct": (so.get("config") or {}).get("profit_pct"),
+            "loss_cancel_pct": (so.get("config") or {}).get("loss_cancel_pct"),
+        }
+    except Exception as exc:
+        out["spot_reuse"] = {"error": str(exc)[:120]}
+
+    try:
         from backend.services.business_control_preflight_service import run_preflight
 
         pf = run_preflight(light_overview=True)
@@ -78,6 +93,7 @@ def run_profit_pipeline(
     apply_grid_from_search: bool = False,
     apply_stuck_grid: bool = False,
     cross_scan: bool = False,
+    spot_reuse_tick: bool = False,
     min_cross_bps: float = 8.0,
     min_profit_score: float = 3.0,
 ) -> Dict[str, Any]:
@@ -128,6 +144,22 @@ def run_profit_pipeline(
     except Exception as exc:
         steps.append({"step": "stuck_inventory", "ok": False, "error": str(exc)[:200]})
 
+    spot_res: Optional[Dict[str, Any]] = None
+    if spot_reuse_tick:
+        try:
+            from backend.services.exchange_spot_reuse_service import run_spot_reuse_tick, spot_reuse_live_enabled
+
+            dry = None if spot_reuse_live_enabled() else True
+            spot_res = run_spot_reuse_tick(dry_run=dry)
+            steps.append({
+                "step": "spot_reuse",
+                "ok": bool(spot_res.get("success")),
+                "managed": spot_res.get("managed_count"),
+                "placed": spot_res.get("placed"),
+            })
+        except Exception as exc:
+            steps.append({"step": "spot_reuse", "ok": False, "error": str(exc)[:200]})
+
     hot: List[str] = []
     if pair_search and pair_search.get("success"):
         hot = list(pair_search.get("hot_symbols") or [])
@@ -170,5 +202,6 @@ def run_profit_pipeline(
         "grid_patch": grid_patch,
         "cross_patch": cross_patch,
         "stuck": stuck_res,
+        "spot_reuse": spot_res,
         "status": status,
     }

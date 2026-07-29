@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "venue": "binance",
+  "profit_pct": 0.1,
+  "loss_cancel_pct": 0.15,
+  "min_notional_usd": 8.0,
+  "reserve_pct": 0.02,
+  "skip_grid_targets": true,
+  "assets_allowlist": []
+}

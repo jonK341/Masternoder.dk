@@ -50,7 +50,7 @@ def _cooldown_ok(event_key: str) -> bool:
 
 def maybe_publish_tick_news(loop: str, summary: str, *, res: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """Emit platform news on meaningful profit events (throttled)."""
-    if loop in ("grid", "stuck", "micro_chain", "unified"):
+    if loop in ("grid", "stuck", "micro_chain", "spot_reuse", "unified"):
         return _publish_ops_loop_news(loop, summary, res=res)
     if loop != "exchange":
         return None
@@ -148,6 +148,17 @@ def _publish_ops_loop_news(loop: str, summary: str, *, res: Optional[Dict[str, A
             title = f"Portal micro-chain · {res.get('mode')} tx ({res.get('mn2')} MN2)"
             featured = res.get("mode") == "live"
             event_key = "micro_tx"
+    elif loop == "spot_reuse" and res:
+        if int(res.get("fills_this_tick") or 0) > 0:
+            title = "Spot reuse · take-profit fill(s) on Binance"
+            featured = True
+            event_key = "spot_reuse_fill"
+        elif int(res.get("placed") or 0) > 0:
+            title = f"Spot reuse · {res.get('placed')} new +10% limit sell(s)"
+            event_key = "spot_reuse_place"
+        elif int(res.get("managed_count") or 0) > 0:
+            title = f"Spot reuse · {res.get('managed_count')} asset(s) resting"
+            event_key = "spot_reuse_tick"
     elif loop == "unified" and summary:
         title = summary[:100]
         event_key = "unified_" + hashlib.sha256(summary.encode()).hexdigest()[:8]

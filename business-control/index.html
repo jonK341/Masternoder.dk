@@ -270,6 +270,7 @@
             <label class="bc-check"><input type="checkbox" id="pipeApplyGrid" checked /> Add profit-ranked pairs to grid</label>
             <label class="bc-check"><input type="checkbox" id="pipeApplyStuck" /> Apply stuck → grid</label>
             <label class="bc-check"><input type="checkbox" id="pipeCrossScan" /> Cross-venue scan (≥8 bps)</label>
+            <label class="bc-check"><input type="checkbox" id="pipeSpotReuse" checked /> Spot reuse tick (+10% / −15%)</label>
           </div>
           <div id="profitPipelinePanel" class="muted">Loading…</div>
           <div id="profitPipelineSteps" class="status" style="margin-top:10px"></div>
@@ -293,6 +294,7 @@
             <li><strong>120s</strong> fast rescan · extended strategies</li>
             <li><strong>30s</strong> grid market-maker</li>
             <li><strong>600s</strong> stuck inventory → grid config</li>
+            <li><strong>75s</strong> spot reuse — +10% limit sells, −15% cancel/reseed</li>
             <li><strong>120s</strong> portal micro-chain</li>
             <li><strong>300s</strong> casino agents</li>
           </ul>
@@ -300,11 +302,12 @@
         <div class="section">
           <h2>Unified trading daemon</h2>
           <p class="muted" style="font-size:12px;margin:0 0 10px">
-            One process: <code>scripts\run_unified_trading_daemon.cmd</code> — exchange, grid, stuck inventory, casino agents, portal micro-chain.
+            One process: <code>scripts\run_unified_trading_daemon.cmd</code> — exchange, grid, stuck inventory, spot reuse, casino agents, portal micro-chain.
           </p>
           <div id="unifiedDaemonPanel" class="muted">Loading…</div>
           <div class="bar" style="margin-top:12px;flex-wrap:wrap">
             <button type="button" class="btn small primary" id="unifiedRefresh">Refresh status</button>
+            <button type="button" class="btn small" id="spotReuseTick">Spot reuse tick</button>
             <button type="button" class="btn small" id="stuckScanApply">Stuck → grid apply</button>
             <button type="button" class="btn small" id="microChainTick">Micro-chain tick</button>
             <button type="button" class="btn small" id="microChainSave">Save micro config</button>
@@ -337,6 +340,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729e"></script>
+  <script src="/static/js/business-control.js?v=20260729f"></script>
 </body>
 </html>

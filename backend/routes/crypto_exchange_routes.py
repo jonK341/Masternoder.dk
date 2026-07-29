@@ -483,6 +483,37 @@ def exchange_portal_micro_chain_tick():
     return jsonify(process_queue_tick())
 
 
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/status", methods=["GET"])
+def exchange_spot_reuse_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import status
+
+    return jsonify(status())
+
+
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/config", methods=["POST"])
+def exchange_spot_reuse_config():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import save_config
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_config(data))
+
+
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/tick", methods=["POST"])
+def exchange_spot_reuse_tick():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import run_spot_reuse_tick, spot_reuse_live_enabled
+
+    dry = request.args.get("paper") in ("1", "true", "yes")
+    if not dry:
+        dry = None if spot_reuse_live_enabled() else True
+    return jsonify(run_spot_reuse_tick(dry_run=dry))
+
+
 @crypto_exchange_bp.route("/api/exchange/unified-daemon/status", methods=["GET"])
 def exchange_unified_daemon_status():
     if not _admin_authorized():
@@ -501,12 +532,14 @@ def exchange_unified_daemon_status():
             hb = {}
     from backend.services.portal_micro_chain_service import status as micro_status
     from backend.services.exchange_stuck_inventory_service import ops_state
+    from backend.services.exchange_spot_reuse_service import ops_state as spot_reuse_ops
 
     return jsonify({
         "success": True,
         "heartbeat": hb,
         "micro_chain": micro_status(),
         "stuck_state": ops_state(),
+        "spot_reuse": spot_reuse_ops(),
         "unified_entry": "scripts/unified_trading_daemon.py",
     })
 
@@ -540,6 +573,7 @@ def exchange_profit_pipeline_run():
             apply_grid_from_search=bool(data.get("apply_grid_from_search")),
             apply_stuck_grid=bool(data.get("apply_stuck_grid")),
             cross_scan=bool(data.get("cross_scan")),
+            spot_reuse_tick=bool(data.get("spot_reuse_tick")),
             min_cross_bps=float(data.get("min_cross_bps") or 8),
             min_profit_score=float(data.get("min_profit_score") or 3),
         )
