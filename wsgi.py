@@ -103,6 +103,20 @@ except Exception as e:
     def error():
         return f"Application creation failed: {error_message}", 500
 
+# Warm game-hub overview in each uWSGI worker (shared file cache + in-process cache).
+try:
+    from uwsgidecorators import postfork
+
+    @postfork
+    def _uwsgi_warm_game_hub_cache():
+        try:
+            from backend.services.game_hub_service import warm_overview_cache
+            warm_overview_cache("default_user")
+        except Exception:
+            pass
+except ImportError:
+    pass
+
 # uWSGI looks for 'application' variable
 if __name__ == "__main__":
     application.run()

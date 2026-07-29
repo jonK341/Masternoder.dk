@@ -626,25 +626,24 @@
 
         const status = root.querySelector('#gh-status');
 
-        loadOverview()
+        const startLoad = () => {
+            loadOverview()
+                .then(function () {
+                    if (status) status.textContent = 'Live';
+                })
+                .catch(function (e) {
+                    if (status) status.textContent = 'Offline';
+                    const panel = root.querySelector('#gh-panel');
+                    if (panel) panel.innerHTML = '<p class="gh-empty">Game hub loading failed. Try refresh.</p>';
+                    console.warn('[GameHub]', e);
+                });
+        };
 
-            .then(function () {
-
-                if (status) status.textContent = 'Live';
-
-            })
-
-            .catch(function (e) {
-
-                if (status) status.textContent = 'Offline';
-
-                const panel = root.querySelector('#gh-panel');
-
-                if (panel) panel.innerHTML = '<p class="gh-empty">Game hub loading failed. Try refresh.</p>';
-
-                console.warn('[GameHub]', e);
-
-            });
+        if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(startLoad, { timeout: 3500 });
+        } else {
+            setTimeout(startLoad, 400);
+        }
 
         setInterval(loadOverview, 60000);
 
