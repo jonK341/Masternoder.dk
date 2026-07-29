@@ -862,6 +862,9 @@
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
       t.classList.toggle("active", t.getAttribute("data-tab") === name);
     });
+    Array.prototype.forEach.call(document.querySelectorAll(".bc-qnav"), function (q) {
+      q.classList.toggle("active", q.getAttribute("data-goto") === name);
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".tabpane"), function (p) {
       p.classList.toggle("active", p.id === "pane-" + name);
     });
@@ -917,6 +920,9 @@
 
     Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) {
       t.addEventListener("click", function () { switchTab(t.getAttribute("data-tab")); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".bc-qnav"), function (q) {
+      q.addEventListener("click", function () { switchTab(q.getAttribute("data-goto")); });
     });
     var bb = $("boostRun"); if (bb) bb.addEventListener("click", runBoost);
     var ps = $("ppSave"); if (ps) ps.addEventListener("click", savePayPal);
