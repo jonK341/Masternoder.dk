@@ -337,6 +337,38 @@ def exchange_ai_trading_probe():
     return jsonify(vapi.probe_all_venues())
 
 
+@crypto_exchange_bp.route("/api/exchange/signal-stack/status", methods=["GET"])
+def exchange_signal_stack_status():
+    from backend.services.exchange_signal_stack_service import signal_stack_status
+
+    return jsonify(signal_stack_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/signal-stack/run", methods=["POST"])
+def exchange_signal_stack_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_signal_stack_service import run_unified_signal_stack
+
+    return jsonify(run_unified_signal_stack())
+
+
+@crypto_exchange_bp.route("/api/exchange/signal-stack/rank", methods=["GET"])
+def exchange_signal_stack_rank():
+    from backend.services.exchange_signal_stack_service import load_config, rank_search_hits
+    from backend.services.exchange_bot_skills_service import resolve_skill_set
+    from backend.services.exchange_profit_pair_search_service import read_index
+
+    cfg = load_config()
+    ss = cfg.get("skill_set")
+    skill_ids = list(cfg.get("default_skills") or [])
+    if ss:
+        skill_ids = list(resolve_skill_set(str(ss)).get("skills") or skill_ids)
+    hits = list(read_index().get("hits") or [])
+    ranked = rank_search_hits(hits[:32], skill_ids=skill_ids)
+    return jsonify({"success": True, "ranked": ranked[:16]})
+
+
 @crypto_exchange_bp.route("/api/exchange/treasury/status", methods=["GET"])
 def exchange_treasury_status():
     from backend.services.exchange_treasury_service import treasury_status

@@ -81,6 +81,13 @@ def pipeline_status(*, light: bool = True) -> Dict[str, Any]:
         out["spot_reuse"] = {"error": str(exc)[:120]}
 
     try:
+        from backend.services.exchange_signal_stack_service import signal_stack_status
+
+        out["signal_stack"] = signal_stack_status()
+    except Exception as exc:
+        out["signal_stack"] = {"error": str(exc)[:120]}
+
+    try:
         from backend.services.business_control_preflight_service import run_preflight
 
         pf = run_preflight(light_overview=True)
@@ -120,6 +127,19 @@ def run_profit_pipeline(
         steps.append({"step": "profit_pair_search", "ok": bool(pair_search.get("success")), "detail": pair_search.get("hot_symbols")})
     except Exception as exc:
         steps.append({"step": "profit_pair_search", "ok": False, "error": str(exc)[:200]})
+
+    try:
+        from backend.services.exchange_signal_stack_service import run_unified_signal_stack
+
+        ss = run_unified_signal_stack(pair_search=pair_search)
+        steps.append({
+            "step": "signal_stack",
+            "ok": bool(ss.get("success")),
+            "executed": ((ss.get("lanes") or {}).get("signal_stack_agent") or {}).get("executed_count"),
+            "hot": (ss.get("merged_symbols") or [])[:6],
+        })
+    except Exception as exc:
+        steps.append({"step": "signal_stack", "ok": False, "error": str(exc)[:200]})
 
     grid_patch: Optional[Dict[str, Any]] = None
     if apply_grid_from_search:

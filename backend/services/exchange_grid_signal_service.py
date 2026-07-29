@@ -74,6 +74,13 @@ def maybe_grid_from_daemon_signals(
     symbols: List[str] = []
     if pair_search and pair_search.get("success"):
         symbols.extend(pair_search.get("hot_symbols") or [])
+        try:
+            from backend.services.exchange_signal_stack_service import enrich_pair_search_for_ai
+
+            merged, _ranked = enrich_pair_search_for_ai(pair_search=pair_search)
+            symbols.extend(merged[:8])
+        except Exception:
+            pass
     if spot_reuse_result and not spot_reuse_result.get("skipped"):
         for row in spot_reuse_result.get("assets") or []:
             if isinstance(row, dict) and row.get("asset"):

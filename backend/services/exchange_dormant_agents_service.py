@@ -111,7 +111,7 @@ def activate_profit_stack(*, enable_rotation_auto: bool = True) -> Dict[str, Any
     if controls.get("kill_switch"):
         return {"success": False, "error": "kill_switch_active"}
 
-    profit_sups = ("sup_arbitrage", "sup_winnable", "sup_extended", "sup_profit")
+    profit_sups = ("sup_arbitrage", "sup_winnable", "sup_signal_stack", "sup_extended", "sup_profit")
     enabled_sups: List[str] = []
     for s in controls.get("supervisors") or []:
         if s.get("id") in profit_sups and not s.get("enabled", True):

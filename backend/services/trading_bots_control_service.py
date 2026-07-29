@@ -22,14 +22,26 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _invoke_bot_tick(fn, *, hot_symbols: Optional[List[str]] = None) -> Any:
-    """Call run_paper_tick / run_ai_tick; pass hot_symbols only when supported."""
+def _invoke_bot_tick(
+    fn,
+    *,
+    hot_symbols: Optional[List[str]] = None,
+    pair_search: Optional[Dict[str, Any]] = None,
+) -> Any:
+    """Call run_paper_tick / run_ai_tick; pass hot_symbols / pair_search when supported."""
     import inspect
 
+    kwargs: Dict[str, Any] = {}
     if hot_symbols is not None:
+        kwargs["hot_symbols"] = hot_symbols
+    if pair_search is not None:
+        kwargs["pair_search"] = pair_search
+    if kwargs:
         try:
-            if "hot_symbols" in inspect.signature(fn).parameters:
-                return fn(hot_symbols=hot_symbols)
+            sig = inspect.signature(fn)
+            filtered = {k: v for k, v in kwargs.items() if k in sig.parameters}
+            if filtered:
+                return fn(**filtered)
         except (TypeError, ValueError):
             pass
     return fn()
@@ -53,6 +65,9 @@ def _default_controls() -> Dict[str, Any]:
             {"id": "sup_winnable", "name": "Winnable Pairs Executor",
              "role": "Profit pair search — executes spatial arb only on ranked winnable routes.",
              "controls_kind": "winnable_pairs", "enabled": True},
+            {"id": "sup_signal_stack", "name": "Signal Stack Trader",
+             "role": "Pair search + skill/bps scoring + PPP stack learning across agent lanes.",
+             "controls_kind": "signal_stack", "enabled": True},
             {"id": "sup_extended", "name": "Extended Profit Director",
              "role": "Stablecoin peg, triangular loops, meme/defi/payments specialty farms.",
              "controls_kind": "extended_profit", "enabled": True},
@@ -516,6 +531,13 @@ def business_overview(*, light: bool = True) -> Dict[str, Any]:
         pass
 
     try:
+        from backend.services.exchange_signal_stack_service import signal_stack_status
+
+        extras["signal_stack"] = signal_stack_status()
+    except Exception:
+        pass
+
+    try:
         from backend.services.exchange_supervisor_fleet_service import fleet_overview
 
         sf = fleet_overview(controls)
@@ -673,6 +695,7 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     sup_arb = _supervisor_for_kind(controls, "arbitrage_paper")
     sup_cross = _supervisor_for_kind(controls, "cross_trade")
     sup_winnable = _supervisor_for_kind(controls, "winnable_pairs")
+    sup_signal = _supervisor_for_kind(controls, "signal_stack")
 
     pair_search: Optional[Dict[str, Any]] = None
     hot_symbols: Optional[List[str]] = None
@@ -681,6 +704,7 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     need_search = (
         (sup_winnable and sup_winnable.get("enabled", True))
         or (sup_arb and sup_arb.get("enabled", True))
+        or (sup_signal and sup_signal.get("enabled", True))
     )
     if need_search:
         try:
@@ -715,6 +739,19 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     except Exception as exc:
         fleet_activation = {"success": False, "error": str(exc)[:200]}
 
+    if sup_signal and sup_signal.get("enabled", True):
+        try:
+            from backend.services.exchange_signal_stack_service import run_unified_signal_stack
+
+            results["signal_stack"] = run_unified_signal_stack(
+                pair_search=pair_search,
+                hot_symbols=hot_symbols,
+            )
+        except Exception as exc:
+            results["signal_stack"] = {"success": False, "error": str(exc)[:200]}
+    else:
+        results["signal_stack"] = {"success": False, "error": "supervisor_paused"}
+
     if sup_winnable and sup_winnable.get("enabled", True):
         try:
             from backend.services.exchange_supervisor_fleet_service import run_fleet_for_kind
@@ -730,12 +767,16 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
     if sup_arb and sup_arb.get("enabled", True):
         try:
             from backend.services.exchange_arbitrage_service import run_paper_tick
-            results["arbitrage"] = _invoke_bot_tick(run_paper_tick, hot_symbols=hot_symbols)
+            results["arbitrage"] = _invoke_bot_tick(
+                run_paper_tick, hot_symbols=hot_symbols, pair_search=pair_search,
+            )
         except Exception as exc:
             results["arbitrage"] = {"success": False, "error": str(exc)}
         try:
             from backend.services.exchange_ai_trading_service import run_ai_tick
-            results["ai_trading"] = _invoke_bot_tick(run_ai_tick, hot_symbols=hot_symbols)
+            results["ai_trading"] = _invoke_bot_tick(
+                run_ai_tick, hot_symbols=hot_symbols, pair_search=pair_search,
+            )
         except Exception as exc:
             results["ai_trading"] = {"success": False, "error": str(exc)}
     else:
@@ -795,6 +836,7 @@ def run_all_bots(force: bool = False) -> Dict[str, Any]:
         results["treasury"] = {"success": False, "error": "supervisor_paused"}
 
     _mark_supervisor_run(controls, "sup_winnable", results.get("winnable_pairs") or {})
+    _mark_supervisor_run(controls, "sup_signal_stack", results.get("signal_stack") or {})
     _mark_supervisor_run(controls, "sup_arbitrage", {
         "success": bool((results.get("arbitrage") or {}).get("success"))
         and bool((results.get("ai_trading") or {}).get("success", True)),

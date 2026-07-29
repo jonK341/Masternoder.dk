@@ -39,6 +39,7 @@ FLEET_MECHANICS: List[Dict[str, str]] = [
     {"id": "M25", "name": "Owner Live Watch feed", "desc": "Trust feed includes fleet tick audit actions."},
     {"id": "M26", "name": "Fleet XP & levels", "desc": "Per-bot XP from ticks, executions, and profit sync."},
     {"id": "M27", "name": "Fleet reward unlocks", "desc": "Level-gated reward catalog on roster cards."},
+    {"id": "M28", "name": "Signal stack fleet lane", "desc": "Skill-scored pair-search executors with PPP stack learning."},
 ]
 
 _EXTENDED_SAME_DIRECTION = "buy_cheap_sell_rich"
@@ -49,6 +50,7 @@ _KIND_TO_SUP = {
     "treasury": "sup_treasury",
     "risk": "sup_risk",
     "winnable_pairs": "sup_winnable",
+    "signal_stack": "sup_signal_stack",
 }
 
 _KIND_DISPLAY: Dict[str, Dict[str, str]] = {
@@ -57,6 +59,7 @@ _KIND_DISPLAY: Dict[str, Dict[str, str]] = {
     "treasury": {"type_label": "Treasury", "supervisor_name": "Treasury Manager"},
     "risk": {"type_label": "Risk Officer", "supervisor_name": "Risk Officer"},
     "winnable_pairs": {"type_label": "Winnable Pairs", "supervisor_name": "Winnable Pairs Executor"},
+    "signal_stack": {"type_label": "Signal Stack", "supervisor_name": "Signal Stack Trader"},
 }
 
 _FLEET_BLUEPRINTS: Dict[str, List[Dict[str, Any]]] = {
@@ -93,6 +96,10 @@ _FLEET_BLUEPRINTS: Dict[str, List[Dict[str, Any]]] = {
         {"suffix": "gamma", "name": "Winnable Executor Gamma", "label": "WIN-C", "role_label": "Pair-search shard C", "badge": "shard", "shard": 2},
         {"suffix": "delta", "name": "Winnable Executor Delta", "label": "WIN-D", "role_label": "Pair-search shard D", "badge": "shard", "shard": 3},
     ],
+    "signal_stack": [
+        {"suffix": "core", "name": "Signal Stack Core", "label": "SIG-A", "role_label": "Primary skill-scored executor", "badge": "stack", "shard": 0},
+        {"suffix": "scout", "name": "Signal Stack Scout", "label": "SIG-B", "role_label": "Secondary search shard", "badge": "stack", "shard": 1},
+    ],
 }
 
 
@@ -110,7 +117,7 @@ def default_fleet_bots() -> List[Dict[str, Any]]:
             if not row.get("suffix"):
                 continue
             suffix = row["suffix"]
-            bid = f"fleet_{kind}_{suffix}".replace("winnable_pairs", "winnable")
+            bid = f"fleet_{kind}_{suffix}".replace("winnable_pairs", "winnable").replace("signal_stack", "sigstack")
             name = row.get("name") or f"Fleet {kind} {suffix}"
             label = row.get("label") or suffix.upper()
             bots.append({
@@ -329,6 +336,29 @@ def _tick_winnable_bot(
     return res
 
 
+def _tick_signal_stack_bot(
+    bot: Dict[str, Any],
+    *,
+    pair_search: Optional[Dict[str, Any]],
+    shard: int,
+    shard_count: int,
+) -> Dict[str, Any]:
+    from backend.services.exchange_signal_stack_service import run_signal_stack_agent_tick
+
+    search = dict(pair_search) if pair_search else None
+    if search and search.get("hits"):
+        hits = list(search.get("hits") or [])
+        sliced = [h for i, h in enumerate(hits) if i % max(1, shard_count) == shard]
+        search = {**search, "hits": sliced}
+    res = run_signal_stack_agent_tick(
+        pair_search=search,
+        agent_id=str(bot.get("id")),
+    )
+    res["bot_id"] = bot.get("id")
+    res["shard"] = shard
+    return res
+
+
 def run_fleet_for_kind(
     controls: Dict[str, Any],
     kind: str,
@@ -339,6 +369,7 @@ def run_fleet_for_kind(
     merge_fleet_into_controls(controls)
     bots = [b for b in controls.get("fleet_bots") or [] if b.get("kind") == kind]
     winnable_count = len(bots) if kind == "winnable_pairs" else 1
+    stack_count = len(bots) if kind == "signal_stack" else 1
     results: List[Dict[str, Any]] = []
     for bot in bots:
         if not _fleet_enabled(bot, controls):
@@ -355,6 +386,11 @@ def run_fleet_for_kind(
         elif kind == "winnable_pairs":
             shard = int((bot.get("config") or {}).get("shard") or 0)
             r = _tick_winnable_bot(bot, pair_search=pair_search, shard=shard, shard_count=max(1, winnable_count))
+        elif kind == "signal_stack":
+            shard = int((bot.get("config") or {}).get("shard") or 0)
+            r = _tick_signal_stack_bot(
+                bot, pair_search=pair_search, shard=shard, shard_count=max(1, stack_count),
+            )
         else:
             r = {"success": False, "error": "unknown_kind"}
         _mark_fleet_bot(controls, bot.get("id"), r)

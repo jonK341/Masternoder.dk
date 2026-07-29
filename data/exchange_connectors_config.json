@@ -507,6 +507,26 @@
       "paper_trade_usd": 10.0,
       "strategy": "triangular",
       "wallet_label": "arb_triangular_wallet"
+    },
+    {
+      "id": "arb_signal_stack",
+      "name": "Signal Stack Trader",
+      "skill_set": "ai_daemon",
+      "skills": [
+        "spatial_arbitrage",
+        "sentiment_alpha",
+        "ml_price_forecast",
+        "kelly_sizing"
+      ],
+      "symbols": [],
+      "venues": [
+        "binance",
+        "nonkyc",
+        "xeggex"
+      ],
+      "paper_trade_usd": 75.0,
+      "strategy": "signal_stack",
+      "wallet_label": "signal_stack_wallet"
     }
   ],
   "prefunded_transfer_cost_bps": 6
