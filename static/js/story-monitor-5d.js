@@ -208,6 +208,25 @@
     tickMicro();
     renderReadout();
 
+    function pullProfitPulse() {
+      fetch('/api/monitor/5d/pulse?limit=3')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var items = (d && d.items) || [];
+          if (!items.length || !storyEl) return;
+          var top = items[0];
+          if (top && top.title) {
+            storyEl.textContent = top.title + (top.summary ? ' — ' + top.summary : '');
+            if (sigmaFill && top.sigma != null) {
+              sigmaFill.style.width = Math.round(parseFloat(top.sigma) * 100) + '%';
+            }
+          }
+        })
+        .catch(function () {});
+    }
+    pullProfitPulse();
+    setInterval(pullProfitPulse, 45000);
+
     container._sm5dDispose = function () {
       clearInterval(microTimer);
       clearInterval(storyTimer);
