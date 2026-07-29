@@ -21,6 +21,9 @@ echo    s  Status report — full live profit snapshot
 echo    4  One tick — all profit engines (quick test)
 echo    5  One tick — casino agents only
 echo.
+echo  GRID BOT (market-maker)
+echo    g  Grid bot daemon           scripts\grid_bot_daemon.py
+echo.
 echo  SEPARATE WINDOWS
 echo    7  Open ALL profit window
 echo    8  Open casino-only loop window
@@ -42,6 +45,7 @@ set /p CHOICE="Pick: "
 if /i "%CHOICE%"=="a" goto mall
 if /i "%CHOICE%"=="b" goto mfast
 if /i "%CHOICE%"=="d" goto mlive
+if /i "%CHOICE%"=="g" goto grid
 if /i "%CHOICE%"=="i" goto inv
 if /i "%CHOICE%"=="h" goto health
 if /i "%CHOICE%"=="s" goto status
@@ -69,6 +73,10 @@ goto menu
 
 :mlive
 call "%~dp0run_all_profit_live.cmd"
+goto menu
+
+:grid
+call "%~dp0run_grid_bot_daemon.cmd" --interval 30
 goto menu
 
 :inv
