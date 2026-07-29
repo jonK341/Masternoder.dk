@@ -1,0 +1,9 @@
+{
+  "last_cycle": {
+    "agent_id": "arb_agent_btc_eth",
+    "executed": false,
+    "reason": "below_threshold",
+    "at": "2026-07-24T18:02:20.869320Z"
+  },
+  "updated_at": "2026-07-24T18:02:20.869320Z"
+}

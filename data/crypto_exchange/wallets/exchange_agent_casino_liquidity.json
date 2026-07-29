@@ -1,10 +1,10 @@
 {
   "assets": {
-    "DASH": 0.1,
+    "DASH": 0.01,
     "MN2": 0.0,
-    "USDC": 62.9300114895
+    "USDC": 50.0
   },
   "staking": {},
   "bonus": {},
-  "volume_usd_30d": 13048.1827
+  "volume_usd_30d": 13205.6227
 }

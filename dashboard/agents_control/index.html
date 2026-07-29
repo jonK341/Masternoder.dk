@@ -17,11 +17,15 @@
         .venue-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; font-size: 13px; }
         .ok { color: #6f6; }
         .bad { color: #f88; }
+        .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
+        .tile { padding: 10px; border-radius: 8px; border: 1px solid rgba(170,0,255,0.25); background: rgba(0,0,0,0.35); font-size: 13px; }
+        .tile .v { font-size: 1.2rem; color: #6f6; font-weight: 700; }
     </style>
 </head>
 <body>
     <h1>Agents Control Board</h1>
     <p>Treasury pool, trader wallets, kill switch, and live venue credential onboarding.</p>
+    <div id="control-tiles" class="tiles"></div>
     <div>
         <button type="button" id="btn-fund">Fund agents</button>
         <button type="button" id="btn-trader">Run traders</button>
@@ -58,7 +62,19 @@
     const hdr = {'Content-Type': 'application/json', ...(secret ? {'X-Ops-Secret': secret} : {})};
     async function load() {
         const r = await fetch('/api/agents/control/status', {headers: hdr});
-        document.getElementById('out').textContent = JSON.stringify(await r.json(), null, 2);
+        const data = await r.json();
+        document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+        const tiles = document.getElementById('control-tiles');
+        if (!tiles || !data.success) return;
+        const rec = data.reconcile || {};
+        const ks = data.kill_switch || {};
+        const traders = data.trader_wallets || [];
+        tiles.innerHTML = [
+            '<div class="tile"><div>Pool MN2</div><div class="v">' + (data.pool_balance_mn2 ?? '—') + '</div></div>',
+            '<div class="tile"><div>Funding gap</div><div class="v">' + (rec.funding_gap_mn2 ?? '—') + '</div></div>',
+            '<div class="tile"><div>Kill switch</div><div class="v">' + (ks.global_halt ? 'HALTED' : 'OK') + '</div></div>',
+            '<div class="tile"><div>Traders</div><div class="v">' + traders.length + '</div></div>',
+        ].join('');
     }
     async function loadVenues() {
         const r = await fetch('/api/exchange/ai-trading/venues');

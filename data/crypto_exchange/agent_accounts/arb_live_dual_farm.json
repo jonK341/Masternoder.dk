@@ -5,39 +5,27 @@
   "notional_traded_usd": 330.0,
   "by_venue": {},
   "wallet_label": "arb_live_dual_wallet",
-  "game_time_sec": 5454000,
-  "ticks": 1515,
-  "agent_level": 31,
+  "game_time_sec": 6343200,
+  "ticks": 1762,
+  "agent_level": 36,
   "last_action": {
     "agent_id": "arb_live_dual_farm",
     "executed": false,
-    "mode": "live",
+    "reason": "below_threshold",
     "best": {
-      "symbol": "LINK",
+      "symbol": "DOGE",
       "buy_venue": "binance",
-      "buy_ask": 8.041,
+      "buy_ask": 0.07194,
       "sell_venue": "nonkyc",
-      "sell_bid": 8.11,
-      "gross_bps": 85.81,
+      "sell_bid": 0.07202,
+      "gross_bps": 11.12,
       "fee_bps": 36.0,
-      "net_bps": 49.81,
+      "net_bps": -24.88,
       "notional_usd": 10.0,
-      "est_profit_usd": 0.0498,
-      "profitable": true
+      "est_profit_usd": -0.0249
     },
-    "execution": {
-      "success": false,
-      "error": "insufficient_venue_balance",
-      "mode": "live",
-      "symbol": "LINK",
-      "quantity": 1.24,
-      "notional_usd": 10.0,
-      "buy_venue": "binance",
-      "sell_venue": "nonkyc",
-      "funding": null,
-      "max_funded_usd": 9.59,
-      "executed_at": "2026-07-04T20:19:28.656658Z"
-    }
+    "mode": "live",
+    "profit_path_id": "5588d912"
   },
   "created_at": "2026-06-30T22:16:32.766257Z"
 }

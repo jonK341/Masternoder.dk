@@ -12,20 +12,20 @@
     "best": {
       "symbol": "XRP",
       "buy_venue": "binance",
-      "buy_ask": 1.1752,
+      "buy_ask": 1.0986,
       "sell_venue": "bitfinex",
-      "sell_bid": 1.177,
-      "gross_bps": 15.32,
+      "sell_bid": 1.1,
+      "gross_bps": 12.74,
       "fee_bps": 36.0,
-      "net_bps": -20.68,
+      "net_bps": -23.26,
       "notional_usd": 10.0,
-      "est_profit_usd": -0.0207
+      "est_profit_usd": -0.0233
     },
     "mode": "live",
-    "profit_path_id": "1629b07f"
+    "profit_path_id": "7a4d01a2"
   },
   "created_at": "2026-06-27T20:44:47.205491Z",
-  "ticks": 2267,
-  "game_time_sec": 8161200,
-  "agent_level": 46
+  "ticks": 2514,
+  "game_time_sec": 9050400,
+  "agent_level": 51
 }

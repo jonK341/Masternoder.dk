@@ -1,8 +1,8 @@
 {
-  "last_transfer_at": "2026-07-04T20:40:41.003972Z",
-  "transfer_count": 2644,
+  "last_transfer_at": "2026-07-26T02:07:48.240485Z",
+  "transfer_count": 2893,
   "auto_tune_gap_streak": {
-    "BTC": 2183
+    "BTC": 2575
   },
   "auto_tune_effective_mins": {
     "USDC": 1.0,

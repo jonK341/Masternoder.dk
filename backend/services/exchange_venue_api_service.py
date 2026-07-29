@@ -24,6 +24,7 @@ from backend.services import external_exchange_connector_service as conn
 from backend.services.exchange_http_util import force_ipv4_outbound_if_configured
 
 _API_CFG_PATH = ex._BASE + "/data/exchange_venue_api_config.json"
+_BALANCE_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def _iso() -> str:
@@ -633,6 +634,32 @@ def place_market_order(
     if qty <= 0:
         return {"success": False, "error": "invalid_quantity"}
 
+    vcfg = _venue_api_cfg(venue_id) or {}
+    creds = venue_credentials(venue_id)
+    has_creds = bool(creds.get("api_key") and creds.get("api_secret"))
+    gate_ok = live_gate_ok(rotation=rotation)
+    live_supported = bool(vcfg.get("live_supported", True))
+    use_paper = (
+        dry_run is True
+        or not gate_ok
+        or not has_creds
+        or not live_supported
+    )
+    if use_paper or not vcfg.get("live_supported", True):
+        return {
+            "success": True,
+            "mode": "paper",
+            "simulated": True,
+            "venue_id": venue_id,
+            "symbol": symbol.upper(),
+            "side": side_l,
+            "quantity": qty,
+            "pair": pair,
+            "market": pair,
+            "quote": resolved.get("quote"),
+            "order_id": f"paper-{venue_id}-{int(time.time())}",
+        }
+
     norm = normalize_order_qty(
         venue_id, symbol.upper(), side_l, qty,
         market=pair, quote=resolved.get("quote"),
@@ -715,8 +742,45 @@ def venue_quote_asset(venue_id: str) -> str:
     return conn.venue_quote(venue_id)
 
 
+def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
+    """Clear cached venue balances (all venues when venue_id omitted)."""
+    if venue_id:
+        _BALANCE_CACHE.pop(str(venue_id), None)
+    else:
+        _BALANCE_CACHE.clear()
+
+
+def refresh_venue_balances(venues: List[str], *, force: bool = False) -> Dict[str, Any]:
+    """Refresh balance cache for one or more venues."""
+    refreshed: List[str] = []
+    for vid in venues or []:
+        vid = str(vid or "").strip()
+        if not vid:
+            continue
+        if force:
+            invalidate_venue_balance_cache(vid)
+        parse_spot_balances(vid, dry_run=False)
+        refreshed.append(vid)
+    return {"success": True, "refreshed": refreshed, "count": len(refreshed)}
+
+
+def balance_cache_age_sec(venue_id: str) -> Optional[float]:
+    """Seconds since last balance cache refresh for a venue."""
+    row = _BALANCE_CACHE.get(str(venue_id or ""))
+    if not row:
+        return None
+    ts = float(row.get("ts") or 0)
+    if ts <= 0:
+        return None
+    return max(0.0, time.time() - ts)
+
+
 def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
     """Return asset -> free spot balance for a credentialed venue."""
+    vid = str(venue_id or "")
+    cached = _BALANCE_CACHE.get(vid)
+    if cached and isinstance(cached.get("balances"), dict):
+        return dict(cached["balances"])
     if not venue_has_credentials(venue_id):
         return {}
     res = get_account_balance(venue_id, dry_run=dry_run)
@@ -735,6 +799,7 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
                 free = 0.0
             if sym and free > 0:
                 out[sym] = free
+        _BALANCE_CACHE[vid] = {"ts": time.time(), "balances": dict(out)}
         return out
     items: List[Any] = []
     if isinstance(body, list):
@@ -754,6 +819,7 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
             free = 0.0
         if sym and free > 0:
             out[sym] = free
+    _BALANCE_CACHE[vid] = {"ts": time.time(), "balances": dict(out)}
     return out
 
 

@@ -16,20 +16,20 @@
     "best": {
       "symbol": "ETH",
       "buy_venue": "binance",
-      "buy_ask": 1793.6,
-      "sell_venue": "nonkyc",
-      "sell_bid": 1798.03,
-      "gross_bps": 24.7,
-      "fee_bps": 36.0,
-      "net_bps": -11.3,
+      "buy_ask": 1876.16,
+      "sell_venue": "internal",
+      "sell_bid": 1877.7409875,
+      "gross_bps": 8.43,
+      "fee_bps": 41.0,
+      "net_bps": -32.57,
       "notional_usd": 10.0,
-      "est_profit_usd": -0.0113
+      "est_profit_usd": -0.0326
     },
     "mode": "live",
-    "profit_path_id": "6b5fc11e"
+    "profit_path_id": "ca07515a"
   },
   "created_at": "2026-06-27T20:44:47.180255Z",
-  "ticks": 2268,
-  "game_time_sec": 8164800,
-  "agent_level": 46
+  "ticks": 2515,
+  "game_time_sec": 9054000,
+  "agent_level": 51
 }

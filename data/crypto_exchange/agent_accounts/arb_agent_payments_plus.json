@@ -15,14 +15,14 @@
     "best": {
       "symbol": "DASH",
       "buy_venue": "nonkyc",
-      "buy_ask": 35.99,
+      "buy_ask": 32.46,
       "sell_venue": "binance",
-      "sell_bid": 36.24,
-      "gross_bps": 69.46,
+      "sell_bid": 32.64,
+      "gross_bps": 55.45,
       "fee_bps": 36.0,
-      "net_bps": 33.46,
+      "net_bps": 19.45,
       "notional_usd": 10.0,
-      "est_profit_usd": 0.0335,
+      "est_profit_usd": 0.0195,
       "profitable": true
     },
     "execution": {
@@ -30,13 +30,13 @@
       "error": "insufficient_venue_balance",
       "mode": "live",
       "symbol": "DASH",
-      "quantity": 0.27785496,
+      "quantity": 0.30807147,
       "notional_usd": 10.0,
       "buy_venue": "nonkyc",
       "sell_venue": "binance",
       "funding": null,
       "max_funded_usd": 0.0,
-      "executed_at": "2026-07-04T20:18:43.472798Z"
+      "executed_at": "2026-07-26T01:34:23.736842Z"
     }
   },
   "created_at": "2026-06-30T22:33:07.958806Z"

@@ -1,8 +1,8 @@
 {
   "period": "7d",
-  "fills": 827,
-  "hit_rate_pct": 99.9,
-  "avg_net_bps": 189138.58,
-  "scans": 1322,
-  "generated_at": "2026-07-05T17:17:42.347824Z"
+  "fills": 7,
+  "hit_rate_pct": 100.0,
+  "avg_net_bps": -12.86,
+  "scans": 12,
+  "generated_at": "2026-07-24T21:15:36.043244Z"
 }

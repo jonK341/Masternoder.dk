@@ -37,4 +37,15 @@ if [[ "${EXCHANGE_AUTO_PAYPAL_SWEEP:-0}" =~ ^(1|true|yes|on)$ ]]; then
   AUTO_SWEEP_ARGS+=(--auto-sweep)
 fi
 
-exec python3 "$ROOT/scripts/all_profit_daemons.py" --profile "${EXCHANGE_PROFIT_PROFILE}" "${AUTO_SWEEP_ARGS[@]}"
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [[ -z "$PYTHON_BIN" ]]; then
+  if [[ -x "$ROOT/.venv/bin/python" ]]; then
+    PYTHON_BIN="$ROOT/.venv/bin/python"
+  elif [[ -x "$ROOT/venv/bin/python" ]]; then
+    PYTHON_BIN="$ROOT/venv/bin/python"
+  else
+    PYTHON_BIN="python3"
+  fi
+fi
+
+exec "$PYTHON_BIN" "$ROOT/scripts/all_profit_daemons.py" --profile "${EXCHANGE_PROFIT_PROFILE}" "${AUTO_SWEEP_ARGS[@]}"

@@ -5,27 +5,39 @@
   "notional_traded_usd": 10.0,
   "by_venue": {},
   "wallet_label": "arb_meme_wallet",
-  "game_time_sec": 5515200,
-  "ticks": 1532,
-  "agent_level": 31,
+  "game_time_sec": 6404400,
+  "ticks": 1779,
+  "agent_level": 36,
   "last_action": {
     "agent_id": "arb_agent_meme",
     "executed": false,
-    "reason": "below_threshold",
-    "best": {
-      "symbol": "DOGE",
-      "buy_venue": "nonkyc",
-      "buy_ask": 0.07879,
-      "sell_venue": "binance",
-      "sell_bid": 0.07906,
-      "gross_bps": 34.27,
-      "fee_bps": 36.0,
-      "net_bps": -1.73,
-      "notional_usd": 10.0,
-      "est_profit_usd": -0.0017
-    },
     "mode": "live",
-    "profit_path_id": "ad5462ec"
+    "best": {
+      "symbol": "SHIB",
+      "buy_venue": "binance",
+      "buy_ask": 5.22e-06,
+      "sell_venue": "nonkyc",
+      "sell_bid": 5.25e-06,
+      "gross_bps": 57.47,
+      "fee_bps": 36.0,
+      "net_bps": 21.47,
+      "notional_usd": 10.0,
+      "est_profit_usd": 0.0215,
+      "profitable": true
+    },
+    "execution": {
+      "success": false,
+      "error": "insufficient_venue_balance",
+      "mode": "live",
+      "symbol": "SHIB",
+      "quantity": 1915708.0,
+      "notional_usd": 10.0,
+      "buy_venue": "binance",
+      "sell_venue": "nonkyc",
+      "funding": null,
+      "max_funded_usd": 0.0,
+      "executed_at": "2026-07-26T02:08:24.069841Z"
+    }
   },
   "created_at": "2026-06-30T22:16:32.760435Z"
 }

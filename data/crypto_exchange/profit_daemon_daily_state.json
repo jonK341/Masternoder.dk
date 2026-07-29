@@ -1,0 +1,27 @@
+{
+  "last_ppp_summary_at": "2026-07-25T23:31:32.997947Z",
+  "last_ppp_summary": {
+    "success": true,
+    "window_hours": 24,
+    "scan_count": 1485,
+    "attempt_count": 952,
+    "fill_count": 941,
+    "hit_rate_pct": 98.8,
+    "avg_net_bps": -11.45,
+    "top_skip_reasons": [
+      {
+        "reason": "below_threshold",
+        "count": 1032
+      },
+      {
+        "reason": "no_profitable_spread",
+        "count": 322
+      },
+      {
+        "reason": "insufficient_venue_balance",
+        "count": 131
+      }
+    ]
+  },
+  "last_ppp_narrative": "Last 24h was a strong session: 941 fills from 1485 scans at 98.8% hit rate and -11.4 bps average net. Primary skip driver: below_threshold (1032\u00d7). Momentum looks healthy \u2014 consider scaling notional."
+}

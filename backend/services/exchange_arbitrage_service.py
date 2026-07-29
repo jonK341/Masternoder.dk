@@ -577,6 +577,7 @@ def run_paper_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     hot_symbols: Optional[List[str]] = None,
+    active_agent_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Scan per-agent and credit paper profit for the best profitable opportunity."""
     cfg = conn.load_connectors_config()
@@ -614,6 +615,8 @@ def run_paper_tick(
             continue
         agent_id = str(agent.get("id") or "").strip()
         if not agent_id:
+            continue
+        if active_agent_id and agent_id != str(active_agent_id).strip():
             continue
         a_symbols = [str(s).upper() for s in (agent.get("symbols") or cfg.get("supported_symbols") or [])]
         try:

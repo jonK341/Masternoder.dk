@@ -36,6 +36,8 @@ def market_env(tmp_path, monkeypatch):
         yield
 
     monkeypatch.setattr(upd, "_unified_points_db_context", _noop_ctx)
+    monkeypatch.setattr(upd, "_IDEMPOTENCY_CACHE", {})
+    monkeypatch.setattr(upd, "_USER_LOCKS", {})
     db = upd.UnifiedPointsDatabase(base_dir=str(tmp_path / "points"))
     monkeypatch.setattr(upd, "unified_points_db", db)
 

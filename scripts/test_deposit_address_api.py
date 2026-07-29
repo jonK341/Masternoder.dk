@@ -6,7 +6,7 @@ import urllib.request
 import json
 
 BASE = os.environ.get("BASE_URL", "https://masternoder.dk").rstrip("/")
-USER_ID = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("USER_ID", "user_jon_ulrik")
+USER_ID = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("USER_ID", "user_b157a4c52652")
 
 
 def test_profile_url():

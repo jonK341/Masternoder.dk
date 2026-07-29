@@ -20,21 +20,29 @@ UPLOAD = [
     "scripts/_daemon_env.cmd",
     "systemd/masternoder-profit-daemon.service",
     "backend/services/profit_daemon_monitor_service.py",
+<<<<<<< HEAD
     "backend/services/profit_daemon_ops_service.py",
     "backend/services/profit_daemon_paths.py",
+=======
+>>>>>>> 205780a67edaee35f72683ff1ef6a9271d0ddb0c
     "backend/services/profit_daemon_news_service.py",
     "backend/routes/profit_daemon_routes.py",
     "backend/register_blueprints.py",
     "backend/routes/all_page_routes.py",
     "profit/index.html",
     "static/js/profit-daemon-monitor.js",
+<<<<<<< HEAD
     "static/css/profit-monitor-cinematic.css",
+=======
+    "static/css/profit-daemon-monitor.css",
+>>>>>>> 205780a67edaee35f72683ff1ef6a9271d0ddb0c
     "static/js/frontpage-home.js",
     "static/js/navigation-toolbar.js",
     "data/exchange_shop_catalog.json",
     "data/crypto_exchange/payout_config.json",
     "cron/exchange_master_tick.sh",
 ]
+<<<<<<< HEAD
 
 
 def _configure_stdio_utf8() -> None:
@@ -59,6 +67,8 @@ def _print_remote(text: str, *, tail: int | None = None) -> None:
     enc = getattr(sys.stdout, "encoding", None) or "utf-8"
     safe = chunk.encode(enc, errors="replace").decode(enc, errors="replace")
     print(safe)
+=======
+>>>>>>> 205780a67edaee35f72683ff1ef6a9271d0ddb0c
 
 
 def main() -> int:
@@ -108,7 +118,7 @@ def main() -> int:
 
         verify = (
             f"cd {REMOTE_ROOT} && set -a && . ./.env && set +a && "
-            "LITE_APP=1 DAEMON_QUIET=1 python3 -c "
+            "LITE_APP=1 DAEMON_QUIET=1 .venv/bin/python -c "
             "\"from backend.services.profit_daemon_monitor_service import monitor_status; "
             "import json; print(json.dumps(monitor_status(), indent=2)[:2000])\""
         )

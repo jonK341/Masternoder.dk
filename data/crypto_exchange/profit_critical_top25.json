@@ -228,7 +228,7 @@
       "status": "done"
     }
   ],
-  "updated_at": "2026-07-05T17:18:41.793049Z",
+  "updated_at": "2026-07-26T02:09:01.741303Z",
   "open_count": 4,
   "done_count": 21,
   "notes": {
@@ -258,5 +258,5 @@
     "documentation_sync": "audit sync md+json evidence 2026-07-03T12:06:47.472921Z",
     "live_stash_zero": "live stash USD=6.0196 (2026-07-04)"
   },
-  "last_hit_rate_review_at": "2026-07-05T17:18:41.793049Z"
+  "last_hit_rate_review_at": "2026-07-26T02:09:01.741303Z"
 }

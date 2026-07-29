@@ -1,0 +1,160 @@
+{
+  "success": true,
+  "updated_at": "2026-07-26T02:02:56.829783Z",
+  "reference_venues": [
+    "binance",
+    "nonkyc"
+  ],
+  "symbols": {
+    "MN2": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.05,
+      "capped_usd": 0.05,
+      "venues": {}
+    },
+    "BTC": {
+      "reference_usd": 0.0,
+      "internal_usd": 64458.381285,
+      "capped_usd": 64458.381285,
+      "venues": {}
+    },
+    "ETH": {
+      "reference_usd": 0.0,
+      "internal_usd": 1878.675489,
+      "capped_usd": 1878.675489,
+      "venues": {}
+    },
+    "USDT": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.0,
+      "capped_usd": 1.0,
+      "venues": {}
+    },
+    "USDC": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.0,
+      "capped_usd": 1.0,
+      "venues": {}
+    },
+    "BNB": {
+      "reference_usd": 0.0,
+      "internal_usd": 569.93662495,
+      "capped_usd": 569.93662495,
+      "venues": {}
+    },
+    "SOL": {
+      "reference_usd": 0.0,
+      "internal_usd": 74.84146995,
+      "capped_usd": 74.84146995,
+      "venues": {}
+    },
+    "XRP": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.1002605,
+      "capped_usd": 1.1002605,
+      "venues": {}
+    },
+    "ADA": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.16512325,
+      "capped_usd": 0.16512325,
+      "venues": {}
+    },
+    "DOGE": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.07216879,
+      "capped_usd": 0.07216879,
+      "venues": {}
+    },
+    "DOT": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.81597028,
+      "capped_usd": 0.81597028,
+      "venues": {}
+    },
+    "POL": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.42,
+      "capped_usd": 0.42,
+      "venues": {}
+    },
+    "LTC": {
+      "reference_usd": 0.0,
+      "internal_usd": 46.65011974,
+      "capped_usd": 46.65011974,
+      "venues": {}
+    },
+    "AVAX": {
+      "reference_usd": 0.0,
+      "internal_usd": 6.78205836,
+      "capped_usd": 6.78205836,
+      "venues": {}
+    },
+    "LINK": {
+      "reference_usd": 0.0,
+      "internal_usd": 8.39441755,
+      "capped_usd": 8.39441755,
+      "venues": {}
+    },
+    "UNI": {
+      "reference_usd": 0.0,
+      "internal_usd": 3.66407664,
+      "capped_usd": 3.66407664,
+      "venues": {}
+    },
+    "ATOM": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.47929374,
+      "capped_usd": 1.47929374,
+      "venues": {}
+    },
+    "XLM": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.38,
+      "capped_usd": 0.38,
+      "venues": {}
+    },
+    "ALGO": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.28,
+      "capped_usd": 0.28,
+      "venues": {}
+    },
+    "TRX": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.33139206,
+      "capped_usd": 0.33139206,
+      "venues": {}
+    },
+    "NEAR": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.80538868,
+      "capped_usd": 1.80538868,
+      "venues": {}
+    },
+    "ARB": {
+      "reference_usd": 0.0,
+      "internal_usd": 0.85,
+      "capped_usd": 0.85,
+      "venues": {}
+    },
+    "OP": {
+      "reference_usd": 0.0,
+      "internal_usd": 1.65,
+      "capped_usd": 1.65,
+      "venues": {}
+    },
+    "SHIB": {
+      "reference_usd": 0.0,
+      "internal_usd": 5.27e-06,
+      "capped_usd": 5.27e-06,
+      "venues": {}
+    },
+    "DASH": {
+      "reference_usd": 0.0,
+      "internal_usd": 28.0,
+      "capped_usd": 28.0,
+      "venues": {}
+    }
+  }
+}

@@ -63,6 +63,7 @@ def ai_env(tmp_path, monkeypatch):
     monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
     # Avoid MN2 RPC (127.0.0.1:9332) when a test temporarily enables live gates.
     monkeypatch.setenv("MN2_SPORK_GATES", "0")
+    monkeypatch.setattr(arb, "live_enabled", lambda: False)
     return {"ex": ex, "arb": arb, "ai": ai, "vapi": vapi, "vault": vault}
 
 
@@ -205,8 +206,10 @@ def test_venue_api_live_gated_without_env(ai_env, monkeypatch):
     pytest.importorskip("cryptography")
     vapi = ai_env["vapi"]
     vault = ai_env["vault"]
+    arb = ai_env["arb"]
     monkeypatch.setenv("EXCHANGE_VAULT_KEY", "test-key-123")
     monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
     vault.set_secret("binance_api_key", "key")
     vault.set_secret("binance_api_secret", "secret")
 

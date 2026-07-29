@@ -3028,6 +3028,22 @@ def purchase_mn2_buyin_pack(user_id: str, pack_id: str) -> Dict[str, Any]:
         )
     except Exception as e:
         return {"success": False, "error": str(e)}
+    try:
+        from backend.services.activity_events_service import emit
+
+        emit(
+            "casino_mn2_buyin",
+            channel="casino",
+            user_id=uid,
+            text=f"MN2 buy-in pack {pack_id}: {price:.4f} MN2 → ${credit:.2f} casino credit",
+            payload={
+                "pack_id": pack_id,
+                "price_mn2": price,
+                "casino_usd_credited": credit,
+            },
+        )
+    except Exception:
+        pass
     return {
         "success": True,
         "pack_id": pack_id,

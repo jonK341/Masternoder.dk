@@ -5,27 +5,27 @@
   "notional_traded_usd": 0.0,
   "by_venue": {},
   "wallet_label": "arb_defi_wallet",
-  "game_time_sec": 5468400,
-  "ticks": 1519,
-  "agent_level": 31,
+  "game_time_sec": 6357600,
+  "ticks": 1766,
+  "agent_level": 36,
   "last_action": {
     "agent_id": "arb_agent_defi",
     "executed": false,
     "reason": "below_threshold",
     "best": {
-      "symbol": "LINK",
+      "symbol": "UNI",
       "buy_venue": "binance",
-      "buy_ask": 8.085,
+      "buy_ask": 3.659,
       "sell_venue": "nonkyc",
-      "sell_bid": 8.11,
-      "gross_bps": 30.92,
+      "sell_bid": 3.664,
+      "gross_bps": 13.66,
       "fee_bps": 36.0,
-      "net_bps": -5.08,
+      "net_bps": -22.34,
       "notional_usd": 10.0,
-      "est_profit_usd": -0.0051
+      "est_profit_usd": -0.0223
     },
     "mode": "live",
-    "profit_path_id": "48e44ba8"
+    "profit_path_id": "a54a5516"
   },
   "created_at": "2026-06-30T22:16:32.761447Z"
 }

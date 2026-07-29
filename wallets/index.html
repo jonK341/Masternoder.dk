@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window.APP_BASE = '';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder wallet portal for MN2 balance, deposits, withdrawals, trusted addresses, and wallet downloads.">
+    <title>Wallets - MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, rgba(0,212,255,0.18), transparent 34%), #080b12; color: #fff; }
+        .wallet-page { max-width: 1100px; margin: 0 auto; padding: 42px 18px 64px; }
+        .wallet-hero, .wallet-card { border: 1px solid rgba(0,212,255,0.28); background: rgba(255,255,255,0.055); border-radius: 20px; }
+        .wallet-hero { padding: 34px; margin-bottom: 18px; }
+        .wallet-hero h1 { margin: 0 0 10px; color: #00d4ff; font-size: clamp(2rem, 5vw, 3.4rem); }
+        .wallet-muted { color: rgba(255,255,255,0.76); line-height: 1.55; }
+        .wallet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+        .wallet-card { padding: 22px; }
+        .wallet-card h2 { margin: 0 0 10px; color: #00ff88; font-size: 1.2rem; }
+        .wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .wallet-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
+        .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
+        code { color: #9be7ff; }
+    </style>
+</head>
+<body class="layout-standard">
+    <main class="wallet-page">
+        <section class="wallet-hero">
+            <p class="wallet-muted">MN2 wallet portal</p>
+            <h1>Wallets</h1>
+            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
+            <div class="wallet-actions">
+                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
+                <a class="wallet-btn secondary" href="/exchange">Open exchange wallet</a>
+                <a class="wallet-btn secondary" href="/explorer">Explorer</a>
+            </div>
+        </section>
+        <section class="wallet-grid" aria-label="Wallet sections">
+            <article class="wallet-card">
+                <h2>Deposit & withdraw</h2>
+                <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>
+                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Manage MN2 wallet</a>
+            </article>
+            <article class="wallet-card">
+                <h2>Spend MN2</h2>
+                <p class="wallet-muted">Use the same balance for shop checkout, casino, exchange swaps, hosting, and creator tools.</p>
+                <a class="wallet-btn secondary" href="/shop#shop-mn2">Shop with MN2</a>
+            </article>
+            <article class="wallet-card">
+                <h2>Daemon & Qt wallet</h2>
+                <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Use the explorer and profile wallet for live app operations.</p>
+                <a class="wallet-btn secondary" href="/news">Read wallet updates</a>
+            </article>
+        </section>
+    </main>
+    <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+</body>
+</html>

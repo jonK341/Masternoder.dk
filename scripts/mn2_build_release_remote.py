@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build MasterNoder2 on the production Linux server and pull tarball locally.
 
-Applies docs/patches/mn2-daemon-v1.3.0-multi-ping.patch when v1.3.0.0 tag is absent upstream.
+Applies the local v1.3 release patches when the target tag is absent upstream.
 
 Usage:
   python scripts/mn2_build_release_remote.py --ask-pass
@@ -29,7 +29,7 @@ except Exception:
 
 import paramiko
 from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
-from mn2_release_config import BASE_TAG, EXTRA_PATCH_REL, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
+from mn2_release_config import BASE_TAG, EXTRA_PATCH_REL, MANIFEST_NAME, PATCH_REL, RELEASE_BRANCH, TARGET_VERSION
 
 BUILD_ROOT = "/var/mn2-build"
 LOCAL_DIST = os.path.join(ROOT, "dist")
@@ -161,7 +161,7 @@ def main() -> int:
     parser.add_argument(
         "--branch",
         default="",
-        help="Checkout origin branch instead of patch (e.g. release/v1.3.0.0-multi-ping)",
+        help=f"Checkout origin branch instead of patch (e.g. {RELEASE_BRANCH})",
     )
     parser.add_argument("--no-patch", action="store_true", help="Do not upload patch (tag/branch must exist)")
     args = parser.parse_args()

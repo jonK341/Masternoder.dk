@@ -191,6 +191,8 @@ class TestMN2Withdraw(unittest.TestCase):
         self.app = get_app()
         self.client = self.app.test_client()
 
+    @patch("backend.routes.mn2_routes.resolve_user_id", return_value="test_user")
+    @patch("backend.services.account_security_service.check_real_money_action", return_value=None)
     @patch("backend.routes.mn2_routes.append_entry")
     @patch("backend.services.unified_points_database.unified_points_db")
     @patch("backend.services.mn2_rpc_client.sendtoaddress")
@@ -209,6 +211,8 @@ class TestMN2Withdraw(unittest.TestCase):
         mock_send,
         mock_db,
         mock_append,
+        _mock_check_real_money,
+        _mock_resolve_user,
     ):
         mock_config.return_value = {
             "withdrawal_requires_verification": False,

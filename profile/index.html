@@ -137,6 +137,61 @@
             font-size: 0.9em;
         }
 
+        .mn2-activity-monitor {
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            background: rgba(0, 20, 15, 0.55);
+        }
+        .mn2-activity-monitor .am-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .mn2-activity-monitor .am-head h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #00ff88;
+        }
+        .mn2-activity-monitor .am-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .mn2-activity-monitor .am-tile {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .mn2-activity-monitor .am-tile.ok { border-color: rgba(0, 255, 136, 0.35); }
+        .mn2-activity-monitor .am-tile.warn { border-color: rgba(255, 200, 0, 0.35); }
+        .mn2-activity-monitor .am-tile.bad { border-color: rgba(255, 80, 80, 0.4); }
+        .mn2-activity-monitor .am-tile-label { font-size: 0.72rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.04em; }
+        .mn2-activity-monitor .am-tile-value { font-size: 1.25rem; font-weight: 700; color: #00ff88; margin-top: 4px; }
+        .mn2-activity-monitor .am-tile-sub { font-size: 0.75rem; opacity: 0.8; margin-top: 4px; }
+        .mn2-activity-monitor .am-section h4 { margin: 0 0 8px; font-size: 0.85rem; color: #00d4ff; }
+        .mn2-activity-monitor .am-news-item { font-size: 0.82rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .mn2-activity-monitor .am-news-ch { color: #00ff88; font-size: 0.72rem; text-transform: uppercase; margin-right: 6px; }
+        .mn2-activity-monitor .am-feed { max-height: 220px; overflow-y: auto; }
+        .mn2-activity-monitor .am-feed-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.82rem;
+        }
+        .mn2-activity-monitor .am-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+        .mn2-activity-monitor .am-kind { color: #00d4ff; font-weight: 600; text-transform: capitalize; }
+        .mn2-activity-monitor .am-ts { display: block; font-size: 0.72rem; opacity: 0.65; margin-top: 2px; }
+        .mn2-activity-monitor .am-updated { font-size: 0.72rem; opacity: 0.6; margin-top: 8px; }
+        .mn2-activity-monitor .am-sound-toggle { font-size: 0.8rem; opacity: 0.85; }
+
         .profile-content {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -948,6 +1003,7 @@
                     <!-- Activity Section -->
                     <div class="section-card" id="profile-section-activity" data-profile-route="activity">
                         <h2 class="section-title">Recent Activity</h2>
+                        <div id="mn2-activity-monitor" class="mn2-activity-monitor" aria-live="polite"></div>
                         <div id="activity-feed"></div>
                     </div>
 
@@ -1722,8 +1778,12 @@
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
+<<<<<<< HEAD
     <script src="/static/js/platform-upgrades.js?v=20260705" defer></script>
     <script src="/static/js/platform-upgrades-batch2.js?v=20260705" defer></script>
+=======
+    <script src="/static/js/mn2-activity-monitor.js?v=20260720"></script>
+>>>>>>> 205780a67edaee35f72683ff1ef6a9271d0ddb0c
     <script src="/static/js/user-identification.js?v=20260122020000"></script>
     <script src="/static/js/backend-connector.js?v=20260122020000"></script>
     <!-- Core Template System Scripts -->

@@ -42,3 +42,17 @@ def platform_news():
         return jsonify({"success": True, "news": items, "count": len(items), "channel": channel or None}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc), "news": []}), 500
+
+
+@platform_news_bp.route("/api/news/channels", methods=["GET"])
+def platform_news_channels():
+    """Distinct news channels available in platform_news.json."""
+    try:
+        channels = sorted({
+            str(i.get("channel") or i.get("category") or "").strip().lower()
+            for i in _load_news()
+            if (i.get("channel") or i.get("category"))
+        })
+        return jsonify({"success": True, "channels": channels, "count": len(channels)}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "channels": []}), 500
