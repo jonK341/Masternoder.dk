@@ -22,6 +22,7 @@ if ROOT not in sys.path:
 os.environ.setdefault("UNIFIED_TRADING_DAEMON", "1")
 os.environ.setdefault("DAEMON_QUIET", "1")
 os.environ.setdefault("LITE_APP", "1")
+os.environ.setdefault("DAEMON_SKIP_FLASK_WARM", "1")
 
 
 def _load_trader_config_env() -> None:

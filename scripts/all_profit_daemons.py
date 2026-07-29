@@ -659,12 +659,29 @@ def _micro_chain_loop(interval: int, stop: threading.Event) -> None:
 
 
 def _warm_flask_for_daemons() -> None:
-    """Load Flask once before worker threads — avoids parallel blueprint registration."""
+    """Load Flask once before worker threads — avoids parallel blueprint registration.
+
+    Trading daemons run with LITE_APP=1 and do not require SQLAlchemy/Flask. Skip warm by
+    default (DAEMON_SKIP_FLASK_WARM=1) so a broken local Flask/SQLAlchemy install cannot
+    block exchange/grid/casino loops. Opt in with DAEMON_WARM_FLASK=1 if you need full app.
+    """
+    skip = os.environ.get("DAEMON_SKIP_FLASK_WARM", "").strip().lower()
+    if skip in ("1", "true", "yes", "on"):
+        return
+    if os.environ.get("LITE_APP", "").strip().lower() in ("1", "true", "yes", "on"):
+        if os.environ.get("DAEMON_WARM_FLASK", "").strip().lower() not in ("1", "true", "yes", "on"):
+            return
     if os.environ.get("DAEMON_QUIET", "").strip().lower() not in ("1", "true", "yes", "on"):
         return
-    from src.app import create_app
+    try:
+        from src.app import create_app
 
-    create_app()
+        create_app()
+    except Exception as exc:
+        print(
+            f"[all-profit] WARN Flask warm skipped ({exc!s}) — daemon continues in LITE_APP mode.",
+            flush=True,
+        )
 
 
 def main() -> int:
