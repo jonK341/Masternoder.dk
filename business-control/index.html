@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Business Control · Owner Only</title>
-  <link rel="stylesheet" href="/static/css/business-control.css?v=20260726h" />
+  <link rel="stylesheet" href="/static/css/business-control.css?v=20260729e" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 </head>
 <body class="bc-body">
   <div class="wrap">
@@ -20,9 +21,11 @@
     <div id="app" class="hidden">
       <header class="bc-header">
         <h1>Business Control <small>All trading bots · profit & controls</small></h1>
+        <span class="bc-build-pill" id="bcBuildPill" title="UI build — hard-refresh if tabs look old">Build 2026-07-29e</span>
         <div class="bar">
           <a class="nav" href="/exchange">Exchange</a>
           <a class="nav" href="/command-center">Command Center</a>
+          <button type="button" class="btn small primary" id="runProfitPipeline" title="Refresh pair search + optional grid/stuck alignment">Run profit pipeline</button>
           <button type="button" class="btn small" id="refresh">Refresh</button>
           <button type="button" class="btn small" id="runFleet" title="Supervisor fleet only (no arb/AI/cross)">Run fleet</button>
           <button type="button" class="btn small primary" id="runAll">Run all bots</button>
@@ -32,6 +35,22 @@
       </header>
 
       <div class="status" id="topStatus"></div>
+
+      <nav class="bc-quicknav" id="bcQuicknav" aria-label="Control sections">
+        <button type="button" class="bc-qnav active" data-goto="overview">Overview</button>
+        <button type="button" class="bc-qnav" data-goto="fleet">Fleet</button>
+        <button type="button" class="bc-qnav" data-goto="orchestration">Orchestration</button>
+        <button type="button" class="bc-qnav" data-goto="livepack">Live pack</button>
+        <button type="button" class="bc-qnav" data-goto="local">Local laptop</button>
+        <button type="button" class="bc-qnav" data-goto="monitors">5D · Profit</button>
+        <button type="button" class="bc-qnav" data-goto="agents">Agents hub</button>
+        <button type="button" class="bc-qnav" data-goto="watch">Users</button>
+        <button type="button" class="bc-qnav" data-goto="signals">Signals</button>
+        <button type="button" class="bc-qnav" data-goto="unified">Unified</button>
+        <button type="button" class="bc-qnav" data-goto="payout">Payout</button>
+        <button type="button" class="bc-qnav" data-goto="predictions">Predictions</button>
+        <button type="button" class="bc-qnav" data-goto="boost">Boost</button>
+      </nav>
 
       <div class="tabs" id="tabs">
         <div class="tab active" data-tab="overview">Overview</div>
@@ -44,11 +63,14 @@
         <div class="tab" data-tab="local">Local laptop</div>
         <div class="tab" data-tab="monitors">5D · Profit TV</div>
         <div class="tab" data-tab="agents">Agents hub</div>
+        <div class="tab" data-tab="signals">Profit pipeline</div>
+        <div class="tab" data-tab="unified">Unified daemon</div>
         <div class="tab" data-tab="watch">Live Watch</div>
       </div>
 
       <div class="tabpane active" id="pane-overview">
         <div class="cards" id="kpis"></div>
+        <div id="profitSignalStrip" class="bc-signal-strip muted">Loading profit signals…</div>
         <div class="section">
           <h2>Supervisor agents</h2>
           <div class="sup-grid" id="supervisors"></div>
@@ -237,6 +259,75 @@
         </div>
       </div>
 
+      <div class="tabpane" id="pane-signals">
+        <div class="section">
+          <h2>Profit pipeline · signals → execution</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px">
+            Same flow the unified daemon uses: pair search, arb threshold, stuck inventory, grid targets.
+            Use <strong>Run profit pipeline</strong> in the header to refresh and optionally patch the grid.
+          </p>
+          <div class="bar" style="flex-wrap:wrap;margin-bottom:12px">
+            <label class="bc-check"><input type="checkbox" id="pipeApplyGrid" checked /> Add profit-ranked pairs to grid</label>
+            <label class="bc-check"><input type="checkbox" id="pipeApplyStuck" /> Apply stuck → grid</label>
+            <label class="bc-check"><input type="checkbox" id="pipeCrossScan" /> Cross-venue scan (≥8 bps)</label>
+            <label class="bc-check"><input type="checkbox" id="pipeSpotReuse" checked /> Spot reuse tick (+10% / −15%)</label>
+          </div>
+          <div id="profitPipelinePanel" class="muted">Loading…</div>
+          <div id="profitPipelineSteps" class="status" style="margin-top:10px"></div>
+        </div>
+        <div class="section">
+          <h2>Stuck assets (Binance / NonKYC)</h2>
+          <div id="stuckPlansPanel" class="muted">—</div>
+          <button type="button" class="btn small" id="stuckRescanBtn" style="margin-top:8px">Rescan stuck</button>
+        </div>
+        <div class="section">
+          <h2>Grid bot snapshot</h2>
+          <div id="gridSnapshotPanel" class="muted">—</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-unified">
+        <div class="section">
+          <h2>Daemon loops (unified process)</h2>
+          <ul class="bc-loop-legend muted" style="font-size:12px;margin:0 0 12px;padding-left:18px">
+            <li><strong>300s</strong> exchange — arb, AI, cross-trade, winnable, fleet</li>
+            <li><strong>120s</strong> fast rescan · extended strategies</li>
+            <li><strong>30s</strong> grid market-maker</li>
+            <li><strong>600s</strong> stuck inventory → grid config</li>
+            <li><strong>60s</strong> spot reuse — <strong>Binance first</strong>: all USDC/USDT pairs rotated · +10% sells · entry buys</li>
+            <li><strong>120s</strong> portal micro-chain</li>
+            <li><strong>300s</strong> casino agents</li>
+          </ul>
+        </div>
+        <div class="section">
+          <h2>Unified trading daemon</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px">
+            One process: <code>scripts\run_unified_trading_daemon.cmd</code> — exchange, grid, stuck inventory, spot reuse, casino agents, portal micro-chain.
+          </p>
+          <div id="unifiedDaemonPanel" class="muted">Loading…</div>
+          <div id="binanceCoveragePanel" class="muted" style="margin-top:10px;font-size:12px">—</div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap">
+            <button type="button" class="btn small primary" id="unifiedRefresh">Refresh status</button>
+            <button type="button" class="btn small" id="binanceCatalogRefresh">Refresh Binance catalog</button>
+            <button type="button" class="btn small" id="spotReuseTick">Spot reuse tick</button>
+            <button type="button" class="btn small" id="stuckScanApply">Stuck → grid apply</button>
+            <button type="button" class="btn small" id="microChainTick">Micro-chain tick</button>
+            <button type="button" class="btn small" id="microChainSave">Save micro config</button>
+          </div>
+          <div class="grid2" style="margin-top:12px">
+            <label class="field">MN2 per tx<input type="number" id="microMn2" step="0.0001" value="0.001" /></label>
+            <label class="field">Events per tx<input type="number" id="microEvents" value="25" /></label>
+            <label class="field">Destination address<input type="text" id="microAddr" placeholder="MN2 address" /></label>
+            <label class="field">Live on-chain<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="microLive" /> MN2_MICRO_CHAIN_LIVE</label></label>
+          </div>
+          <div id="unifiedOpsResult" class="status" style="margin-top:10px"></div>
+        </div>
+        <div class="section">
+          <h2>5D monitor pulse (latest)</h2>
+          <div id="unified5dPulse" class="muted">Loading…</div>
+        </div>
+      </div>
+
       <div class="tabpane" id="pane-watch">
         <div class="section">
           <h2>Live Watch — trust & activations (all users)</h2>
@@ -251,6 +342,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729a"></script>
+  <script src="/static/js/business-control.js?v=20260729h"></script>
 </body>
 </html>
