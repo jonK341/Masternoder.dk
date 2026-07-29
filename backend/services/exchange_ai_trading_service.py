@@ -153,6 +153,8 @@ def analyze_market(
     skill_ids: Optional[List[str]] = None,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     probe_venues: Optional[bool] = None,
+    hot_symbols: Optional[List[str]] = None,
+    pair_search: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Scan all major venues, score opportunities with AI super-skills."""
     cfg = load_ai_config()
@@ -160,17 +162,37 @@ def analyze_market(
         return {"success": False, "error": "ai_trading_disabled"}
 
     skill_ids = list(skill_ids or cfg.get("default_skills") or [])
-    symbols = symbols or cfg.get("symbols")
+    base_symbols = list(symbols or cfg.get("symbols") or [])
+    if cfg.get("use_pair_search_symbols", True):
+        try:
+            from backend.services.exchange_signal_stack_service import enrich_pair_search_for_ai
+
+            merged, ranked_hits = enrich_pair_search_for_ai(
+                hot_symbols=hot_symbols,
+                pair_search=pair_search,
+                base_symbols=base_symbols,
+            )
+            if merged:
+                symbols = merged
+        except Exception:
+            symbols = base_symbols
+    else:
+        symbols = base_symbols
     venues = venues or cfg.get("venues")
 
     scan = arb.scan_opportunities(symbols, venues, injected=injected)
     opportunities = scan.get("opportunities") or []
     volatility = _volatility_from_opportunities(opportunities)
 
+    agent_id_cfg = str(cfg.get("agent_id") or "ai_market_trader")
+    acct = arb.read_account(agent_id_cfg)
+    prof = dict(acct.get("skill_proficiency") or {})
+    for sid in skill_ids:
+        prof.setdefault(sid, 0.35)
     agent = {
-        "capital_usd": float(cfg.get("capital_usd") or 1000),
+        "capital_usd": float(acct.get("capital_usd") or cfg.get("capital_usd") or 1000),
         "skills": skill_ids,
-        "skill_proficiency": {s: 0.35 for s in skill_ids},
+        "skill_proficiency": prof,
     }
 
     min_score = float(cfg.get("min_ai_score") or 42)
@@ -203,6 +225,7 @@ def analyze_market(
         "analyzed_at": _iso(),
         "mode": "live" if arb.live_enabled() else "paper",
         "skill_ids": skill_ids,
+        "symbol_pool_count": len(symbols or []),
         "volatility": volatility,
         "scan": {
             "source": scan.get("source"),
@@ -232,6 +255,8 @@ def run_ai_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     force_execute: bool = False,
+    hot_symbols: Optional[List[str]] = None,
+    pair_search: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Full AI trading cycle: analyze → pick best → execute → book P&L."""
     cfg = load_ai_config()
@@ -239,7 +264,12 @@ def run_ai_tick(
         return {"success": False, "error": "ai_trading_disabled"}
 
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
-    analysis = analyze_market(injected=injected, probe_venues=False)
+    analysis = analyze_market(
+        injected=injected,
+        probe_venues=False,
+        hot_symbols=hot_symbols,
+        pair_search=pair_search,
+    )
     ranked = analysis.get("ranked_opportunities") or []
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
@@ -268,7 +298,9 @@ def run_ai_tick(
     acct["ticks"] = int(acct.get("ticks") or 0) + 1
     acct["game_time_sec"] = int(acct.get("game_time_sec") or 0) + 3600
     acct["agent_level"] = 1 + int(acct.get("ticks") or 0) // 40
-    acct["skills"] = list(cfg.get("default_skills") or [])
+    from backend.services.exchange_agent_profit_learning_service import merge_skills_into_account
+
+    merge_skills_into_account(acct, list(cfg.get("default_skills") or []))
 
     hot_spread = bool(best and float(best.get("net_bps") or 0) >= hot_bps)
     near_margin = bool(
@@ -315,8 +347,9 @@ def run_ai_tick(
             by_venue[str(vid)] = round(float(by_venue.get(vid) or 0) + float(best.get("sized_notional_usd") or 0), 2)
 
         try:
-            from backend.services.exchange_agent_learning_service import learn_from_profit
-            learn_from_profit(acct, profit)
+            from backend.services.exchange_agent_profit_learning_service import apply_profit_learning
+
+            apply_profit_learning(acct, profit, agent_id=agent_id)
         except Exception:
             pass
 
