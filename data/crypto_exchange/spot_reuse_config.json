@@ -14,5 +14,7 @@
   "entry_buy_enabled": true,
   "entry_buy_discount_pct": 0.08,
   "entry_quote_usd": 12.0,
-  "entry_max_symbols": 16
+  "entry_max_symbols": 16,
+  "grid_autoselect_from_signals": true,
+  "grid_autoselect_top_n": 3
 }

@@ -48,6 +48,8 @@ def _default_config() -> Dict[str, Any]:
         "entry_buy_discount_pct": 0.08,
         "entry_quote_usd": 12.0,
         "entry_max_symbols": 16,
+        "grid_autoselect_from_signals": True,
+        "grid_autoselect_top_n": 3,
     }
 
 
@@ -89,6 +91,8 @@ def load_config() -> Dict[str, Any]:
     cfg["entry_catalog_batch"] = int(_clampf(cfg.get("entry_catalog_batch"), 0, 120, 32))
     cfg["binance_priority"] = bool(cfg.get("binance_priority", True))
     cfg["binance_full_catalog_entries"] = bool(cfg.get("binance_full_catalog_entries", True))
+    cfg["grid_autoselect_from_signals"] = bool(cfg.get("grid_autoselect_from_signals", True))
+    cfg["grid_autoselect_top_n"] = int(_clampf(cfg.get("grid_autoselect_top_n"), 1, 12, 3))
     allow = cfg.get("assets_allowlist")
     cfg["assets_allowlist"] = [str(a).upper() for a in allow if a] if isinstance(allow, list) else []
     cfg["venues"] = resolved_venues(cfg)
@@ -623,7 +627,7 @@ def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     resting = sum(1 for r in all_rows if r.get("action") in ("resting", "entry_resting"))
     fills = sum(1 for r in all_rows if "tp_filled" in (r.get("events") or []))
 
-    return {
+    out: Dict[str, Any] = {
         "success": True,
         "skipped": False,
         "live": live,
@@ -639,6 +643,19 @@ def run_spot_reuse_tick(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
         "binance_coverage": coverage,
         "binance_catalog_offset": cat_off,
     }
+    try:
+        from backend.services.exchange_grid_signal_service import maybe_grid_from_daemon_signals
+
+        sym_rows = [str(r.get("asset") or "") for r in all_rows if isinstance(r, dict)]
+        ga = maybe_grid_from_daemon_signals(
+            spot_reuse_result={**out, "assets": [{"asset": s} for s in sym_rows if s]},
+            enabled=cfg.get("grid_autoselect_from_signals"),
+        )
+        if ga:
+            out["grid_autoselect"] = ga
+    except Exception:
+        pass
+    return out
 
 
 def maybe_run_on_exchange_tick() -> Optional[Dict[str, Any]]:

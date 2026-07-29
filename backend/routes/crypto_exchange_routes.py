@@ -483,6 +483,36 @@ def exchange_portal_micro_chain_tick():
     return jsonify(process_queue_tick())
 
 
+@crypto_exchange_bp.route("/api/exchange/agents/dormant", methods=["GET"])
+def exchange_agents_dormant():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_dormant_agents_service import scan_dormant_agents
+
+    return jsonify(scan_dormant_agents())
+
+
+@crypto_exchange_bp.route("/api/exchange/agents/activate-profit-stack", methods=["POST"])
+def exchange_agents_activate_profit_stack():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_dormant_agents_service import activate_profit_stack
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        activate_profit_stack(enable_rotation_auto=bool(data.get("enable_rotation_auto", True)))
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/rotation/preset-fund-hot", methods=["POST"])
+def exchange_rotation_preset_fund_hot():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_swap_rotation_service import apply_fund_hot_rotation_preset
+
+    return jsonify(apply_fund_hot_rotation_preset(enable_auto=True))
+
+
 @crypto_exchange_bp.route("/api/exchange/binance-spot/catalog", methods=["GET"])
 def exchange_binance_spot_catalog():
     if not _admin_authorized():

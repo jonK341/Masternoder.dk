@@ -1,0 +1,43 @@
+{
+  "fetched_at": "2026-07-29T08:57:36.333814Z",
+  "bases_by_quote": {
+    "USDC": [
+      "ADA",
+      "ATOM",
+      "AVAX",
+      "BNB",
+      "BTC",
+      "DOGE",
+      "DOT",
+      "ETH",
+      "LINK",
+      "LTC",
+      "NEAR",
+      "SHIB",
+      "SOL",
+      "TRX",
+      "UNI",
+      "XRP"
+    ],
+    "USDT": []
+  },
+  "all_bases": [
+    "ADA",
+    "ATOM",
+    "AVAX",
+    "BNB",
+    "BTC",
+    "DOGE",
+    "DOT",
+    "ETH",
+    "LINK",
+    "LTC",
+    "NEAR",
+    "SHIB",
+    "SOL",
+    "TRX",
+    "UNI",
+    "XRP"
+  ],
+  "count": 16
+}

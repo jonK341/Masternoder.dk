@@ -212,7 +212,46 @@
     }
   }
 
-  function loadStuckPlans() {
+  function loadDormantAgents() {
+    var el = $("dormantAgentsPanel");
+    if (!el) return;
+    api("/api/exchange/agents/dormant").then(function (res) {
+      if (!res.ok || !res.data || !res.data.success) {
+        el.textContent = "Could not load dormant agents.";
+        return;
+      }
+      var d = res.data;
+      var rows = (d.dormant_agents || []).slice(0, 24).map(function (a) {
+        return "<tr><td>" + (a.name || a.id) + "</td><td>" + (a.kind || "") + "</td><td>" +
+          (a.reasons || []).join(", ") + "</td><td>" + (a.trade_count != null ? a.trade_count : "—") + "</td></tr>";
+      }).join("");
+      el.innerHTML =
+        "<p>Dormant: <strong>" + (d.dormant_count || 0) + "</strong> · marketplace users: " +
+        (d.marketplace_users_with_agents || 0) + " · rotation auto: " +
+        ((d.rotation && d.rotation.auto_execute) ? "on" : "off") + "</p>" +
+        "<table><thead><tr><th>Agent</th><th>Kind</th><th>Reasons</th><th>Trades</th></tr></thead><tbody>" +
+        (rows || "<tr><td colspan='4'>No dormant rows — good.</td></tr>") + "</tbody></table>";
+    });
+  }
+
+  function bindDormantPanel() {
+    var dr = $("dormantRefresh"); if (dr) dr.addEventListener("click", loadDormantAgents);
+    var ap = $("activateProfitStack"); if (ap) ap.addEventListener("click", function () {
+      status("Activating profit stack…");
+      api("/api/exchange/agents/activate-profit-stack", { method: "POST", body: {} }).then(function (res) {
+        status(res.ok ? "Profit stack activated (supervisors + fleet + rotation auto)." : "Activation failed", !res.ok);
+        loadDormantAgents();
+        loadProfitPipelineStatus();
+      });
+    });
+    var rh = $("rotationFundHotPreset"); if (rh) rh.addEventListener("click", function () {
+      api("/api/exchange/rotation/preset-fund-hot", { method: "POST", body: {} }).then(function (res) {
+        status(res.ok ? "Rotation prefund preset saved." : "Preset failed", !res.ok);
+        loadDormantAgents();
+      });
+    });
+  }
+
     var el = $("stuckPlansPanel");
     if (!el) return;
     api("/api/exchange/stuck-inventory/scan").then(function (res) {
@@ -1017,6 +1056,7 @@
       load5dPulse();
     }
     if (name === "signals") loadProfitPipelineStatus();
+    if (name === "signals") loadDormantAgents();
   }
 
   function loadUnifiedDaemon() {
@@ -1029,6 +1069,7 @@
       }
       var d = res.data;
       var loops = d.heartbeat && d.heartbeat.loops ? d.heartbeat.loops : {};
+      var aops = (d.heartbeat && d.heartbeat.agent_ops) || {};
       var lines = Object.keys(loops).map(function (k) {
         var L = loops[k] || {};
         return k + ": " + (L.summary || L.updated_at || "—");
@@ -1043,7 +1084,11 @@
         "<pre class='bc-log' style='max-height:160px;margin-top:8px'>" + (lines.join("\n") || "No loops yet — start run_unified_trading_daemon.cmd") + "</pre>" +
         "<div style='margin-top:8px'>Micro-chain queue: " + (micro.queue_pending || 0) + " · live=" + (cfg.live ? "yes" : "no") + "</div>" +
         "<div style='margin-top:8px'>Spot reuse: " + (spot.last_count != null ? spot.last_count : "—") + " rows · venues " +
-        ((spotCfg.venues || []).join(", ") || "binance") + " · TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "%</div>";
+        ((spotCfg.venues || []).join(", ") || "binance") + " · TP +" + Math.round((spotCfg.profit_pct || 0.1) * 100) + "%</div>" +
+        "<div style='margin-top:6px;font-size:11px' class='muted'>Agent ops: fleet_actions=" + (aops.fleet_actions != null ? aops.fleet_actions : "—") +
+        " · user_ticks=" + (aops.user_agent_ticks != null ? aops.user_agent_ticks : "—") +
+        " · rotation_auto=" + (aops.rotation_auto != null ? aops.rotation_auto : "—") +
+        " · grid_autoselect=" + (aops.grid_autoselect != null ? aops.grid_autoselect : "—") + "</div>";
       var bcp = $("binanceCoveragePanel");
       if (bcp) {
         bcp.textContent = "Binance catalog: " + (cov.catalog_count || "—") + " bases (USDC " + (cov.usdc_pairs || "?") +
@@ -1154,6 +1199,7 @@
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
     bindLocalPanel();
     bindUnifiedPanel();
+    bindDormantPanel();
     var rpp = $("runProfitPipeline");
     if (rpp) rpp.addEventListener("click", runProfitPipelineClick);
     var srb = $("stuckRescanBtn");

@@ -42,10 +42,10 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 60},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "spot_reuse": 90},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "spot_reuse": 60},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 75},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 60, "marketplace": 600},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "spot_reuse": 90, "marketplace": 900},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "spot_reuse": 60, "marketplace": 480},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "spot_reuse": 75, "marketplace": 600},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
@@ -118,6 +118,12 @@ def _spot_reuse_once() -> Dict[str, Any]:
     return run_spot_reuse_tick(dry_run=dry)
 
 
+def _marketplace_once() -> Dict[str, Any]:
+    from backend.services.exchange_marketplace_daemon_service import run_all_marketplace_agents_tick
+
+    return run_all_marketplace_agents_tick()
+
+
 def _summarize_grid(res: Dict[str, Any]) -> str:
     ticks = res.get("ticks") or []
     oo = sum(int(t.get("open_orders") or 0) for t in ticks)
@@ -145,11 +151,38 @@ def _summarize_micro(res: Dict[str, Any]) -> str:
 def _summarize_spot_reuse(res: Dict[str, Any]) -> str:
     if res.get("skipped"):
         return f"skipped reason={res.get('reason', '?')}"
-    return (
+    base = (
         f"live={res.get('live')} managed={res.get('managed_count', 0)} "
         f"placed={res.get('placed', 0)} resting={res.get('resting', 0)} "
         f"fills={res.get('fills_this_tick', 0)}"
     )
+    ga = res.get("grid_autoselect") or {}
+    if ga.get("applied"):
+        base += f" grid+={','.join(ga.get('new_pairs') or [])}"
+    return base
+
+
+def _summarize_marketplace(res: Dict[str, Any]) -> str:
+    if res.get("skipped"):
+        return f"skipped={res.get('reason', '?')}"
+    return f"users={res.get('users', 0)} ran={res.get('ran', 0)} err={res.get('errors', 0)}"
+
+
+def _agent_ops_from_exchange(res: Dict[str, Any]) -> Dict[str, Any]:
+    plat = res.get("platform") if isinstance(res.get("platform"), dict) else {}
+    fa = plat.get("fleet_activation") or {}
+    try:
+        from backend.services.exchange_swap_rotation_service import rotation_auto_execute_enabled
+
+        rot = rotation_auto_execute_enabled()
+    except Exception:
+        rot = None
+    return {
+        "fleet_actions": len(fa.get("actions") or []),
+        "user_agent_ticks": int(res.get("user_agent_ticks") or 0),
+        "rotation_auto": rot,
+        "grid_autoselect": bool((plat.get("grid_signal_autoselect") or {}).get("applied")),
+    }
 
 
 def _iso() -> str:
@@ -182,6 +215,10 @@ def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = 
     }
     if extra:
         payload.update(extra)
+    if extra and extra.get("agent_ops"):
+        prev = existing.get("agent_ops") if isinstance(existing.get("agent_ops"), dict) else {}
+        prev.update(extra["agent_ops"])
+        payload["agent_ops"] = prev
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
@@ -575,7 +612,8 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             streak = _track_zero_fill_streak(res)
             _maybe_hot_pair_prefund(res)
             _maybe_auto_rotation(res)
-            _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
+            ops = _agent_ops_from_exchange(res)
+            _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak, "agent_ops": ops})
             try:
                 from backend.services.profit_daemon_news_service import maybe_publish_tick_news
                 maybe_publish_tick_news("exchange", summary, res=res)
@@ -695,6 +733,19 @@ def _spot_reuse_loop(interval: int, stop: threading.Event) -> None:
         stop.wait(max(45, interval))
 
 
+def _marketplace_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] marketplace agents loop interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            res = _marketplace_once()
+            summary = _summarize_marketplace(res)
+            print(f"[all-profit] marketplace {summary}", flush=True)
+            _write_heartbeat("marketplace", summary, extra={"agent_ops": {"marketplace_ran": res.get("ran", 0)}})
+        except Exception as exc:
+            print(f"[all-profit] marketplace error: {exc}", flush=True)
+        stop.wait(max(120, interval))
+
+
 def _warm_flask_for_daemons() -> None:
     """Load Flask once before worker threads — avoids parallel blueprint registration.
 
@@ -735,6 +786,7 @@ def main() -> int:
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
     parser.add_argument("--skip-spot-reuse", action="store_true", help="Do not run Binance spot reuse (+10%/-15%) loop")
+    parser.add_argument("--skip-marketplace", action="store_true", help="Do not run buyer marketplace agent loop")
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -754,6 +806,7 @@ def main() -> int:
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
     spot_reuse_iv = int(os.environ.get("EXCHANGE_SPOT_REUSE_INTERVAL") or 0) or iv.get("spot_reuse") or 75
+    marketplace_iv = int(os.environ.get("EXCHANGE_MARKETPLACE_INTERVAL") or 0) or iv.get("marketplace") or 600
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -774,6 +827,8 @@ def main() -> int:
                 out["micro_chain"] = _micro_chain_once()
             if not args.skip_spot_reuse:
                 out["spot_reuse"] = _spot_reuse_once()
+            if not args.skip_marketplace:
+                out["marketplace"] = _marketplace_once()
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -795,6 +850,8 @@ def main() -> int:
                 print(f"[all-profit] micro_chain {_summarize_micro(out['micro_chain'])}", flush=True)
             if "spot_reuse" in out:
                 print(f"[all-profit] spot_reuse {_summarize_spot_reuse(out['spot_reuse'])}", flush=True)
+            if "marketplace" in out:
+                print(f"[all-profit] marketplace {_summarize_marketplace(out['marketplace'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -818,6 +875,8 @@ def main() -> int:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
         if not args.skip_spot_reuse:
             print(f"  spot reuse (+10% TP / −15% cancel) interval={spot_reuse_iv}s")
+        if not args.skip_marketplace:
+            print(f"  marketplace buyer agents interval={marketplace_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -846,6 +905,10 @@ def main() -> int:
         if not args.skip_spot_reuse:
             threads.append(threading.Thread(
                 target=_spot_reuse_loop, args=(spot_reuse_iv, stop), name="spot_reuse", daemon=True,
+            ))
+        if not args.skip_marketplace:
+            threads.append(threading.Thread(
+                target=_marketplace_loop, args=(marketplace_iv, stop), name="marketplace", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

@@ -276,6 +276,16 @@
           <div id="profitPipelineSteps" class="status" style="margin-top:10px"></div>
         </div>
         <div class="section">
+          <h2>Unused / dormant agents</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 8px">Fleet bots with zero trades, paused supervisors, rotation auto off.</p>
+          <div class="bar" style="flex-wrap:wrap;margin-bottom:8px">
+            <button type="button" class="btn small primary" id="dormantRefresh">Refresh list</button>
+            <button type="button" class="btn small" id="activateProfitStack">Activate profit stack</button>
+            <button type="button" class="btn small" id="rotationFundHotPreset">Enable rotation prefund</button>
+          </div>
+          <div id="dormantAgentsPanel" class="muted">Loading…</div>
+        </div>
+        <div class="section">
           <h2>Stuck assets (Binance / NonKYC)</h2>
           <div id="stuckPlansPanel" class="muted">—</div>
           <button type="button" class="btn small" id="stuckRescanBtn" style="margin-top:8px">Rescan stuck</button>
@@ -295,6 +305,7 @@
             <li><strong>30s</strong> grid market-maker</li>
             <li><strong>600s</strong> stuck inventory → grid config</li>
             <li><strong>60s</strong> spot reuse — <strong>Binance first</strong>: all USDC/USDT pairs rotated · +10% sells · entry buys</li>
+            <li><strong>600s</strong> marketplace buyer agents</li>
             <li><strong>120s</strong> portal micro-chain</li>
             <li><strong>300s</strong> casino agents</li>
           </ul>
@@ -342,6 +353,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729h"></script>
+  <script src="/static/js/business-control.js?v=20260729i"></script>
 </body>
 </html>
