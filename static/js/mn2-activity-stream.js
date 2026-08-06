@@ -33,6 +33,8 @@
         lastEventKey = key;
         if (top.kind === 'casino_win') playTone(880, 150);
         else if (top.kind === 'mn2_ledger') playTone(520, 100);
+        else if (top.kind === 'customer_new') playTone(660, 180);
+        else if (top.kind === 'customer_active') playTone(440, 90);
         var panel = global.document.getElementById('mn2-activity-toast');
         if (panel && top.text) {
             panel.textContent = top.text;

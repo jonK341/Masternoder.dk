@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _POINTS_DIR = os.path.join(_BASE, "logs", "unified_points")
 _IDENT_DIR = os.path.join(_BASE, "logs", "user_identifiers")
+_ACTIVE_DEBOUNCE_PATH = os.path.join(_BASE, "logs", "customer_active_emit.json")
+_ACTIVE_LOCK = threading.Lock()
 
 
 def _avatar_url(user_id: str) -> str:
@@ -102,3 +105,72 @@ def stats() -> Dict[str, Any]:
         "active_today": active_today,
         "with_mn2": sum(1 for c in customers if float(c.get("mn2_balance") or 0) > 0),
     }
+
+
+def _mask_user_id(user_id: str) -> str:
+    uid = (user_id or "").strip()
+    if len(uid) <= 4:
+        return uid
+    return f"{uid[:2]}…{uid[-2:]}"
+
+
+def emit_customer_new(user_id: str) -> None:
+    uid = (user_id or "").strip()
+    if not uid:
+        return
+    try:
+        from backend.services.customer_avatar_service import ensure_avatar
+        ensure_avatar(uid)
+    except Exception:
+        pass
+    try:
+        from backend.services.activity_events_service import emit
+
+        emit(
+            "customer_new",
+            user_id=uid,
+            channel="customers",
+            text=f"New customer {_mask_user_id(uid)}",
+            payload={"avatar_url": _avatar_url(uid), "user_id": uid},
+        )
+    except Exception:
+        pass
+
+
+def emit_customer_active(user_id: str, *, source: str = "activity") -> None:
+    uid = (user_id or "").strip()
+    if not uid:
+        return
+    today = datetime.now(timezone.utc).date().isoformat()
+    with _ACTIVE_LOCK:
+        state: Dict[str, str] = {}
+        if os.path.isfile(_ACTIVE_DEBOUNCE_PATH):
+            try:
+                with open(_ACTIVE_DEBOUNCE_PATH, "r", encoding="utf-8") as f:
+                    state = json.load(f) or {}
+            except Exception:
+                state = {}
+        if state.get(uid) == today:
+            return
+        state[uid] = today
+        if len(state) > 5000:
+            keys = sorted(state.keys(), key=lambda k: state[k])[-2500:]
+            state = {k: state[k] for k in keys}
+        try:
+            os.makedirs(os.path.dirname(_ACTIVE_DEBOUNCE_PATH), exist_ok=True)
+            with open(_ACTIVE_DEBOUNCE_PATH, "w", encoding="utf-8") as f:
+                json.dump(state, f)
+        except Exception:
+            return
+    try:
+        from backend.services.activity_events_service import emit
+
+        emit(
+            "customer_active",
+            user_id=uid,
+            channel="customers",
+            text=f"Customer {_mask_user_id(uid)} active",
+            payload={"avatar_url": _avatar_url(uid), "user_id": uid, "source": source},
+        )
+    except Exception:
+        pass

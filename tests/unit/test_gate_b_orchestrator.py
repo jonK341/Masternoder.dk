@@ -69,3 +69,37 @@ def test_backup_service(tmp_path, monkeypatch):
     r = bs.run_backup()
     assert r.get("success") is True
     assert os.path.isdir(r["backup_dir"])
+
+
+def test_mn2_ledger_append(tmp_path, monkeypatch):
+    from backend.services import mn2_ledger as ledger
+
+    ledger_path = tmp_path / "mn2_ledger.json"
+    monkeypatch.setattr(ledger, "_ledger_path", lambda: str(ledger_path))
+    ledger.append_entry("user_b", "deposit", 1.5, txid="tx-gate-b-1")
+    entries = ledger.get_entries_by_user("user_b")
+    assert len(entries) == 1
+    assert entries[0]["type"] == "deposit"
+    assert ledger.is_txid_processed("tx-gate-b-1") is True
+
+
+def test_wallet_multi_address_list(tmp_path, monkeypatch):
+    from backend.services import mn2_wallet_service as mws
+
+    addr_file = tmp_path / "mn2_user_addresses.json"
+    monkeypatch.setattr(mws, "_addresses_path", lambda: str(addr_file))
+    monkeypatch.setattr(mws, "_generate_valid_address", lambda **_: {
+        "success": True, "deposit_address": "MN2TestAddressGateB123",
+    })
+    r = mws.list_user_addresses("user_multi_b")
+    assert r.get("success") is True
+    assert len(r.get("addresses") or []) >= 1
+
+
+def test_gate_b_status_service():
+    from backend.services.gate_b_status_service import check_gate_b
+    r = check_gate_b()
+    assert r.get("success") is True
+    assert r.get("gate") == "B"
+    assert isinstance(r.get("checks"), list)
+    assert len(r["checks"]) >= 5

@@ -320,13 +320,23 @@ def _claim_starmap25_crypto(user_id: str, option_id: str):
     now = _utc_now()
     amount = _crypto_reward_amount(option, progress)
     next_claim_at = (now + timedelta(seconds=int(option.get("cooldown_sec", 0) or 0))).isoformat()
+    claims_next = int(option_state.get("claims_count", 0) or 0) + 1
+    reference = f"starmap25_crypto:{user_id}:{option_id}:{claims_next}"
     try:
-        from backend.services.unified_points_database import unified_points_db
-        unified_points_db.add_points(
-            user_id, "mn2_balance", amount,
+        from backend.services.game_mn2_rewards import credit_mn2
+        award = credit_mn2(
+            user_id,
+            amount,
             source="star_map_25_crypto_claim",
-            metadata={"option_id": option_id, "option_name": option.get("name"), "progress": progress},
+            reference=reference,
+            metadata={
+                "option_id": option_id,
+                "option_name": option.get("name"),
+                "progress": progress,
+            },
         )
+        if not award.get("success") and not award.get("duplicate"):
+            return {"success": False, "error": award.get("error", "MN2 award failed")}, 500
     except Exception as e:
         return {"success": False, "error": "MN2 award failed: " + str(e)}, 500
     claim = {

@@ -33,6 +33,7 @@ def _parse_jobs() -> list:
         if preset in (
             'daily', 'weekly', 'monthly', 'knowledge',
             'blueprint_route', 'api_service', 'routes',
+            'trader', 'treasury', 'security',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)
@@ -114,5 +115,8 @@ def agents_cron_presets():
             'blueprint_route': expand_preset('blueprint_route'),
             'api_service': expand_preset('api_service'),
             'routes': expand_preset('routes'),
+            'trader': expand_preset('trader'),
+            'treasury': expand_preset('treasury'),
+            'security': expand_preset('security'),
         },
     }), 200
