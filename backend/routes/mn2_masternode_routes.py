@@ -278,6 +278,22 @@ def masternode_maintain_ping():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/relay-missing", methods=["POST"])
+def masternode_relay_missing():
+    """Ops: create + relay broadcasts for masternode.conf entries not on the network list."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        raw_limit = request.args.get("limit", 50)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 50
+        return jsonify(mn_service.relay_missing_masternode_broadcasts(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/provision-pending", methods=["POST"])
 def masternode_provision_pending():
     if not _ops_authorized():
@@ -288,7 +304,25 @@ def masternode_provision_pending():
             limit = int(raw_limit)
         except (TypeError, ValueError):
             limit = 20
-        return jsonify(mn_service.process_pending_hosts(limit=limit)), 200
+        skip_ping = request.args.get("skip_ping") in ("1", "true", "yes")
+        return jsonify(mn_service.process_pending_hosts(limit=limit, skip_ping=skip_ping)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/recover", methods=["POST"])
+def masternode_recover_fleet():
+    """Ops: restart stuck daemon RPC, rebind collateral, provision pending hosts."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        raw_limit = request.args.get("limit", 50)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 50
+        restart_daemon = request.args.get("restart_daemon", "1") not in ("0", "false", "no")
+        return jsonify(mn_service.recover_fleet(limit=limit, restart_daemon=restart_daemon)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
