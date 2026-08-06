@@ -136,6 +136,7 @@ class UnifiedPointsDatabase:
         if not pt:
             return {"success": False, "error": "point_type is required"}
 
+        is_new_file = not os.path.exists(self._points_file(user_id))
         store = self._load_file_store(user_id)
         systems = store.get("systems") if isinstance(store.get("systems"), dict) else {}
 
@@ -155,6 +156,15 @@ class UnifiedPointsDatabase:
         store["last_source"] = source
         store["last_metadata"] = metadata or {}
         self._save_file_store(user_id, store)
+
+        try:
+            from backend.services.customer_aggregator_service import emit_customer_active, emit_customer_new
+            if is_new_file:
+                emit_customer_new(user_id)
+            else:
+                emit_customer_active(user_id, source=source or "points")
+        except Exception:
+            pass
 
         return {"success": True, "user_id": user_id, "point_type": pt, "amount": amt, "message": "Points updated (file)"}
 

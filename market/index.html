@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260720">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .market-page { min-height: 100vh; padding: 100px 20px 60px; max-width: 960px; margin: 0 auto; }
@@ -14,16 +15,17 @@
         .market-card h2 { color: #c08cff; margin: 0 0 8px; }
         #mn2-p2p-panel { display: block !important; }
         .market-disabled { padding: 24px; text-align: center; color: rgba(255,255,255,0.65); }
+        .market-section-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; margin: 28px 0 8px; }
     </style>
 </head>
 <body>
     <div class="market-page">
         <h1>📈 MN2 Market</h1>
-        <p class="subtitle">Peer-to-peer MN2 trades — list, buy, and sell with PayPal settlement (Model B)</p>
+        <p class="subtitle">Internal order book (coins ↔ MN2) plus optional PayPal P2P listings</p>
 
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="market-mn2-balance" data-rate-id="market-mn2-rate" aria-labelledby="market-mn2-title">
             <h2 id="market-mn2-title">🪙 Your MN2 wallet</h2>
-            <p>Live balance and USD reference price. Purchased MN2 may be held until clearance; seller payouts release after the buyer chargeback window.</p>
+            <p>Live balance and USD reference price. Internal market trades use game <strong>coins</strong>; PayPal P2P uses USD settlement.</p>
             <div class="mn2-page-metrics">
                 <div class="mn2-page-metric"><span>Balance</span><strong id="market-mn2-balance">—</strong></div>
                 <div class="mn2-page-metric"><span>USD / MN2</span><strong id="market-mn2-rate">—</strong></div>
@@ -36,9 +38,33 @@
             </div>
         </section>
 
-        <div class="market-card">
+        <p class="market-section-label">Internal market</p>
+        <div class="mn2-market-card" id="mn2-internal-market">
+            <h2>📈 Internal order book — MN2 ↔ coins</h2>
+            <p style="font-size:0.88rem;opacity:0.85;margin:0 0 12px;">Trader agents post liquidity and cross-trade on a schedule. Buy with unified <strong>coins</strong> (game currency).</p>
+            <div id="im-trader-strip" class="im-trader-strip"></div>
+            <div id="im-ticker" class="im-ticker"></div>
+            <div class="im-balances">
+                <span>Your coins: <strong id="im-user-coins">—</strong></span>
+                <span>Your MN2: <strong id="im-user-mn2">—</strong></span>
+                <button type="button" class="im-btn im-btn--ghost" id="im-refresh-btn">Refresh</button>
+            </div>
+            <div class="im-form-row">
+                <label>Sell MN2 <input type="number" id="im-sell-amount" min="0" step="0.0001" placeholder="amount"></label>
+                <label>Coins / MN2 <input type="number" id="im-sell-price" min="0" step="0.01" placeholder="100"></label>
+                <button type="button" class="im-btn" id="im-sell-btn">List sell</button>
+            </div>
+            <p id="im-market-msg" class="im-msg" aria-live="polite"></p>
+            <h3 class="im-subhead">Open sells</h3>
+            <div id="im-sell-orders"></div>
+            <h3 class="im-subhead">Recent trades</h3>
+            <div id="im-recent-trades"></div>
+        </div>
+
+        <p class="market-section-label">PayPal P2P (Model B)</p>
+        <div class="market-card" id="mn2-paypal-market-section">
             <div id="market-disabled" class="market-disabled" style="display:none;">
-                <p>P2P market is disabled on this server. Enable it in staking/P2P config when ready.</p>
+                <p>PayPal P2P market is disabled on this server.</p>
                 <a href="/profile#mn2-wallet">Open wallet</a>
             </div>
             <div id="mn2-p2p-panel">
@@ -59,6 +85,7 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614d"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260614d"></script>
+    <script src="/static/js/mn2-internal-market.js?v=20260720"></script>
     <script src="/static/js/mn2-p2p.js?v=20260614d"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
