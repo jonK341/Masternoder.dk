@@ -622,11 +622,16 @@ MANIFESTS = {
         "backend/routes/mn2_masternode_routes.py",
         "backend/routes/agent_staking_routes.py",
         "backend/routes/agent_treasury_routes.py",
+        "backend/routes/agent_admin_routes.py",
         "backend/routes/agent_trader_staking_routes.py",
         "backend/routes/p2p_market_routes.py",
         "backend/routes/agent_cron_routes.py",
         "backend/services/agent_cron_service.py",
         "backend/services/agent_wallet_service.py",
+        "backend/services/gate_b_status_service.py",
+        "backend/services/gate_c_status_service.py",
+        "backend/services/agent_admin_service.py",
+        "backend/services/security_cron_service.py",
         "backend/services/treasury_signoff_service.py",
         "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",
@@ -748,12 +753,14 @@ MANIFESTS = {
         "cron/agents_blueprint_route_fixer.sh",
         "cron/agents_api_service_skill.sh",
         "cron/agents_trader.sh",
+        "cron/agents_treasury_distribute.sh",
         "cron/masternoder-agents-daily.cron.d",
         "cron/masternoder-agents-weekly.cron.d",
         "cron/masternoder-agents-monthly.cron.d",
         "cron/masternoder-agents-blueprint-route.cron.d",
         "cron/masternoder-agents-api-service.cron.d",
         "cron/masternoder-agents-trader.cron.d",
+        "cron/masternoder-agents-treasury.cron.d",
     ],
     # MN2 daemon config (masternoder2.conf); deploy config folder to server
     "config": [
@@ -1142,6 +1149,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 "agents_blueprint_route_fixer.sh",
                 "agents_api_service_skill.sh",
                 "agents_trader.sh",
+                "agents_treasury_distribute.sh",
             ):
                 ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/{sh} 2>/dev/null || true", timeout=5)
             for cd, remote_name in (
@@ -1151,13 +1159,14 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 ("masternoder-agents-blueprint-route.cron.d", "masternoder-agents-blueprint-route"),
                 ("masternoder-agents-api-service.cron.d", "masternoder-agents-api-service"),
                 ("masternoder-agents-trader.cron.d", "masternoder-agents-trader"),
+                ("masternoder-agents-treasury.cron.d", "masternoder-agents-treasury"),
             ):
                 ssh.exec_command(
                     f"cp {REMOTE_BASE}/cron/{cd} /etc/cron.d/{remote_name} && chmod 644 /etc/cron.d/{remote_name}",
                     timeout=10,
                 )
                 time.sleep(0.15)
-            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader)")
+            print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader, treasury)")
             print()
 
         if "camgirls" in _manifests and not upload_only:

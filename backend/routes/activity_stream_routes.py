@@ -54,3 +54,15 @@ def activity_recent():
         return jsonify({"success": True, "events": recent_activity(limit=limit)}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@activity_stream_bp.route("/api/activity/monitor", methods=["GET"])
+def activity_monitor():
+    try:
+        from backend.services.activity_monitor_service import get_monitor_status
+
+        news_limit = int(request.args.get("news_limit", 8))
+        event_limit = int(request.args.get("event_limit", 20))
+        return jsonify(get_monitor_status(news_limit=news_limit, event_limit=event_limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500

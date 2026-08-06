@@ -293,6 +293,18 @@ def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
         addresses[uid]["addresses"] = [r for r in addresses[uid]["addresses"] if r]
     addresses[uid] = addresses[uid] if isinstance(addresses[uid], dict) else {"primary": new_addr, "addresses": [{"label": "primary", "address": new_addr, "type": "core", "active": True}]}
     _save_addresses(addresses)
+    try:
+        from backend.services.activity_events_service import emit
+
+        emit(
+            "wallet_deposit_address_rotated",
+            channel="wallet",
+            user_id=uid,
+            text=f"Deposit address rotated for {uid}",
+            payload={"deposit_address": new_addr, "user_id": uid},
+        )
+    except Exception:
+        pass
     return {"success": True, "user_id": uid, "deposit_address": new_addr}
 
 

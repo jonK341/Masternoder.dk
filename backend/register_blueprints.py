@@ -337,6 +337,22 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP agent_treasury: {e}")
     try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            n += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_admin: {e}")
+    try:
+        from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp
+        if "agent_trader_staking" not in app.blueprints:
+            app.register_blueprint(agent_trader_staking_bp)
+            n += 1
+            print("  [OK] Registered agent_trader_staking blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_trader_staking: {e}")
+    try:
         from backend.routes.security_cron_routes import security_cron_bp
         if "security_cron" not in app.blueprints:
             app.register_blueprint(security_cron_bp)
@@ -1602,6 +1618,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [ERROR] Error registering customer_aggregator: {e}")
 
     try:
+        from backend.routes.activity_stream_routes import activity_stream_bp
+        if "activity_stream" not in app.blueprints:
+            app.register_blueprint(activity_stream_bp)
+            registered_count += 1
+            print("  [OK] Registered activity_stream blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import activity_stream: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering activity_stream: {e}")
+
+    try:
         from backend.routes.agent_treasury_routes import agent_treasury_bp
         if "agent_treasury" not in app.blueprints:
             app.register_blueprint(agent_treasury_bp)
@@ -1611,6 +1638,28 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import agent_treasury: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering agent_treasury: {e}")
+
+    try:
+        from backend.routes.agent_admin_routes import agent_admin_bp
+        if "agent_admin" not in app.blueprints:
+            app.register_blueprint(agent_admin_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_admin blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_admin: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_admin: {e}")
+
+    try:
+        from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp
+        if "agent_trader_staking" not in app.blueprints:
+            app.register_blueprint(agent_trader_staking_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_trader_staking blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_trader_staking: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_trader_staking: {e}")
 
     try:
         from backend.routes.security_cron_routes import security_cron_bp
