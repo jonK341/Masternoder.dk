@@ -87,6 +87,12 @@ def ensure_user_account(
         )
         db.session.commit()
 
+        try:
+            from backend.services.customer_aggregator_service import emit_customer_new
+            emit_customer_new(user_id)
+        except Exception:
+            pass
+
         return {
             "created": True,
             "user_id": user_id,

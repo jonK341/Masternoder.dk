@@ -11,6 +11,7 @@ _LOCK = threading.RLock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _WALLETS_FILE = os.path.join(_BASE, "data", "agent_wallets.json")
 _TREASURY_FILE = os.path.join(_BASE, "data", "agent_treasury.json")
+TREASURY_POOL_USER = "agent_treasury"
 
 
 def _iso() -> str:
@@ -98,3 +99,86 @@ def set_treasury_address(address: str, *, per_agent_mn2: float = 100000, trader_
         }
         _write(_TREASURY_FILE, data)
     return {"success": True, **data}
+
+
+def get_treasury_pool_balance() -> float:
+    """MN2 balance in unified_points for the treasury pool account."""
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        bal = unified_points_db.get_all_points(TREASURY_POOL_USER).get("points") or {}
+        return float(bal.get("mn2_balance") or 0)
+    except Exception:
+        return 0.0
+
+
+def distribute_agent_funding() -> Dict[str, Any]:
+    """
+    Idempotently top up trader_agent_N wallets from the treasury pool.
+    Debits agent_treasury unified_points; credits agent wallet + unified_points per agent.
+    """
+    from backend.services.treasury_signoff_service import assert_distribution_allowed
+    from backend.services.unified_points_database import unified_points_db
+    from backend.services.mn2_ledger import append_entry
+
+    treasury = get_treasury()
+    per_agent = float(treasury.get("per_agent_mn2") or 100000)
+    count = int(treasury.get("trader_agent_count") or 6)
+    estimated_total = per_agent * count
+
+    block = assert_distribution_allowed(estimated_total_mn2=estimated_total)
+    if block:
+        return {"success": False, "error": block}
+
+    results: List[Dict[str, Any]] = []
+    for i in range(count):
+        aid = f"trader_agent_{i + 1}"
+        current = get_balance(aid)
+        gap = round(per_agent - current, 8)
+        if gap <= 0:
+            results.append({
+                "agent_id": aid,
+                "skipped": True,
+                "reason": "already_funded",
+                "balance": current,
+            })
+            continue
+        pool_bal = get_treasury_pool_balance()
+        if pool_bal < gap:
+            results.append({
+                "agent_id": aid,
+                "skipped": True,
+                "reason": "insufficient_pool",
+                "pool_balance": pool_bal,
+                "needed": gap,
+            })
+            continue
+
+        ref = f"treasury-fund:{aid}"
+        meta = {"reference": ref, "agent_id": aid, "source": "agent_treasury"}
+        debit = unified_points_db.add_points(
+            TREASURY_POOL_USER, "mn2_balance", -gap,
+            source="agent_treasury_distribute", metadata=meta,
+        )
+        if not debit.get("success"):
+            results.append({"agent_id": aid, "success": False, "error": debit.get("error", "pool_debit_failed")})
+            continue
+
+        unified_points_db.add_points(
+            aid, "mn2_balance", gap,
+            source="agent_treasury_funding", metadata=meta,
+        )
+        credit(aid, gap, reference=ref, source="agent_treasury")
+
+        try:
+            append_entry(TREASURY_POOL_USER, "treasury_distribution", gap, metadata=meta)
+            append_entry(aid, "treasury_funding", gap, metadata=meta)
+        except Exception:
+            pass
+        try:
+            from backend.services.activity_events_service import emit
+            emit("agent_funded", channel="agents", user_id=aid, payload={"amount": gap, "reference": ref})
+        except Exception:
+            pass
+        results.append({"agent_id": aid, "success": True, "credited": gap, "balance": get_balance(aid)})
+
+    return {"success": True, "results": results, "per_agent_mn2": per_agent, "pool_balance": get_treasury_pool_balance()}
