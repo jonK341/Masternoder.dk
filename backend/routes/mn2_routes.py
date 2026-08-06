@@ -11,7 +11,13 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    get_or_create_deposit_address,
+    list_user_addresses,
+    refresh_deposit_address,
+    connect_external_wallet,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -152,6 +158,50 @@ def mn2_deposit_address():
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    """Gate B: list all labeled deposit addresses for the current user."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = list_user_addresses(user_id)
+    if not result.get("success"):
+        return jsonify(result), 400
+    base = _explorer_base_url().rstrip("/")
+    for row in result.get("addresses") or []:
+        if isinstance(row, dict) and row.get("address"):
+            row["explorer_address_url"] = f"{base}/address.dws?addr={row['address']}"
+    return jsonify(result), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Gate B: rotate primary deposit address (multi-address wallet)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        err = result.get("error", "refresh_failed")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(str(err))}), 400
+    addr = result.get("deposit_address") or ""
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/connect", methods=["POST"])
+def mn2_wallet_connect():
+    """Gate B: register external/watch wallet address (no custody)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or request.args.get("address") or "").strip()
+    wallet_type = (data.get("wallet_type") or data.get("type") or "watch").strip()
+    result = connect_external_wallet(user_id, address, wallet_type=wallet_type)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
 
 
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
