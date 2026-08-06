@@ -40,6 +40,23 @@ def _user_lock(user_id: str) -> threading.RLock:
         return lock
 
 
+# Reuse a single background app for out-of-request DB access. Building it via create_app()
+# registers ~154 blueprints, so doing it per read/write (e.g. background snapshot saves) pegs a
+# CPU core. Create it once, lazily, and reuse.
+_BG_APP = None
+_BG_APP_LOCK = threading.RLock()
+
+
+def _get_background_app():
+    global _BG_APP
+    if _BG_APP is None:
+        with _BG_APP_LOCK:
+            if _BG_APP is None:
+                from src.app import create_app
+                _BG_APP = create_app()
+    return _BG_APP
+
+
 @contextmanager
 def _unified_points_db_context():
     """
@@ -47,17 +64,15 @@ def _unified_points_db_context():
     Avoid calling create_app() on every read/write — that spins up the full app stack and can stall workers.
     """
     try:
-        from flask import has_request_context
+        from flask import has_request_context, current_app
 
-        if has_request_context():
+        if has_request_context() or current_app:
             yield
             return
     except Exception:
         pass
-    from src.app import create_app
 
-    app = create_app()
-    with app.app_context():
+    with _get_background_app().app_context():
         yield
 
 

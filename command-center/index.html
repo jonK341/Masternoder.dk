@@ -24,6 +24,21 @@
         .cc-monitor-bar { height:8px; background:rgba(255,255,255,0.1); border-radius:8px; overflow:hidden; margin-top:8px; }
         .cc-monitor-fill { height:100%; width:0; background:linear-gradient(90deg,#00ff88,#00d4ff); transition:width 0.4s; }
         #cc-agent-status { font-size:0.85rem; opacity:0.85; min-height:1.2em; }
+        .cc-level-strip { border:1px solid rgba(0,212,255,0.3); border-radius:12px; padding:14px; margin-bottom:12px; background:rgba(0,212,255,0.06); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+        .cc-level-badge { display:flex; flex-direction:column; align-items:center; min-width:56px; }
+        .cc-level-badge .lvl-num { font-size:1.5rem; font-weight:700; background:linear-gradient(135deg,#00d4ff,#00ff88); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1; }
+        .cc-level-badge .lvl-rank { font-size:0.72rem; opacity:0.75; margin-top:2px; text-align:center; }
+        .cc-level-xp { flex:1; min-width:140px; }
+        .cc-level-xp .xp-label { font-size:0.78rem; opacity:0.75; margin-bottom:5px; }
+        .cc-xp-bar { height:6px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; }
+        .cc-xp-fill { height:100%; width:0; background:linear-gradient(90deg,#00d4ff,#00ff88); transition:width 0.5s; border-radius:6px; }
+        .cc-level-meta { font-size:0.78rem; display:flex; flex-direction:column; gap:3px; opacity:0.85; }
+        .cc-trust-badge { padding:4px 10px; border-radius:20px; font-size:0.78rem; border:1px solid rgba(255,255,255,0.2); white-space:nowrap; }
+        .cc-trust-badge.tier-Platinum { border-color:#e5c97d; color:#e5c97d; }
+        .cc-trust-badge.tier-Gold { border-color:#ffd700; color:#ffd700; }
+        .cc-trust-badge.tier-Silver { border-color:#b0c4de; color:#b0c4de; }
+        .cc-trust-badge.tier-Bronze { border-color:#cd7f32; color:#cd7f32; }
+        .cc-trust-badge.tier-Unverified { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.5); }
     </style>
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 </head>
@@ -64,6 +79,21 @@
         <div id="cc-panel-podcast" class="cc-panel"><div class="cc-grid" id="cc-podcast-grid"></div></div>
         <div id="cc-panel-generator" class="cc-panel"><div class="cc-grid" id="cc-gen-grid"></div></div>
         <div id="cc-panel-exchange" class="cc-panel">
+            <div class="cc-level-strip" id="cc-level-strip">
+                <div class="cc-level-badge">
+                    <span class="lvl-num" id="cc-lvl-num">—</span>
+                    <span class="lvl-rank" id="cc-lvl-rank">Trader</span>
+                </div>
+                <div class="cc-level-xp">
+                    <div class="xp-label" id="cc-xp-label">XP loading…</div>
+                    <div class="cc-xp-bar"><div class="cc-xp-fill" id="cc-xp-fill"></div></div>
+                </div>
+                <div class="cc-level-meta" id="cc-level-meta">
+                    <span id="cc-fee-disc">Fee discount: —</span>
+                    <span id="cc-claim-hint" style="display:none;color:#00ff88;">✓ Level reward available → <a href="/exchange/#cex-leveling" style="color:#00ff88;">claim</a></span>
+                </div>
+                <span class="cc-trust-badge tier-Unverified" id="cc-trust-badge">Trust: —</span>
+            </div>
             <div class="cc-monitor" id="cc-exchange-monitor">Exchange monitor loading…</div>
             <div class="cc-grid" id="cc-exchange-grid"></div>
         </div>

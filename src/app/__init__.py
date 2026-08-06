@@ -107,6 +107,74 @@ def create_app(config_name=None):
             pass
 
 
+# Columns the runtime raw SQL requires per table. Older databases were created from a model
+# whose columns did not match the SQL (e.g. system_point_snapshots had point_type/total instead
+# of system_name/point_value), which made every points write/read raise "no such column".
+# "signature" is a column that only exists in the correct schema; if it is missing the table is
+# a legacy/incompatible one (which may also carry NOT NULL columns that block the new inserts).
+_REQUIRED_COLUMNS = {
+    "system_point_snapshots": {
+        "signature": "system_name",
+        "columns": {
+            "system_name": "VARCHAR(100)",
+            "point_value": "DECIMAL(15,2) DEFAULT 0",
+            "previous_value": "DECIMAL(15,2) DEFAULT 0",
+            "delta": "DECIMAL(15,2) DEFAULT 0",
+            "snapshot_data": "TEXT",
+            "source": "VARCHAR(100)",
+            "metadata": "TEXT",
+            "updated_at": "TIMESTAMP",
+        },
+    },
+}
+
+
+def _ensure_runtime_schema(db):
+    """Reconcile existing tables with the schema the runtime SQL requires (idempotent, SQLite-safe).
+
+    New databases already get the correct schema from db.create_all(); this only repairs
+    databases created before the models were aligned with the runtime SQL. A legacy table that
+    is missing its signature column is dropped and recreated when empty (it likely also has
+    NOT NULL columns that would block the new INSERTs); otherwise missing columns are added.
+    """
+    from sqlalchemy import inspect as _sa_inspect, text as _sa_text
+
+    inspector = _sa_inspect(db.engine)
+    existing_tables = set(inspector.get_table_names())
+    for table, spec in _REQUIRED_COLUMNS.items():
+        if table not in existing_tables:
+            continue  # create_all handles brand-new tables with the correct schema
+        columns = spec["columns"]
+        signature = spec["signature"]
+        present = {c["name"] for c in inspector.get_columns(table)}
+
+        if signature not in present:
+            # Legacy/incompatible table. Safe to rebuild only when it holds no data.
+            try:
+                count = db.session.execute(_sa_text(f"SELECT COUNT(*) FROM {table}")).scalar()
+            except Exception:
+                count = None
+            if count == 0:
+                db.session.execute(_sa_text(f"DROP TABLE {table}"))
+                db.session.commit()
+                db.create_all()
+                print(f"  [OK] Rebuilt legacy {table} table with correct schema")
+                continue
+
+        added = []
+        for col_name, col_def in columns.items():
+            if col_name in present:
+                continue
+            try:
+                db.session.execute(_sa_text(f'ALTER TABLE {table} ADD COLUMN {col_name} {col_def}'))
+                added.append(col_name)
+            except Exception:
+                db.session.rollback()
+        if added:
+            db.session.commit()
+            print(f"  [OK] Reconciled {table} schema (added: {', '.join(added)})")
+
+
 def _create_app_impl(config_name=None):
     """Inner implementation of create_app (no re-entry guard)."""
     _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -187,6 +255,12 @@ def _create_app_impl(config_name=None):
             db.create_all()
         except Exception as e:
             print(f"Warning: Could not create database tables: {e}")
+        # Reconcile schema on databases created before the model was fixed: ensure the
+        # columns the runtime SQL relies on actually exist (idempotent, never fatal).
+        try:
+            _ensure_runtime_schema(db)
+        except Exception as e:
+            print(f"Warning: Schema reconciliation skipped: {e}")
 
     # CRITICAL: Register unified/monetization/progression routes FIRST via explicit loader
     try:

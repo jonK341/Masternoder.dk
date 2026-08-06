@@ -6,11 +6,17 @@ learning, prediction, pattern recognition, and adaptive behavior
 import os
 import json
 import random
+import threading
+import time
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from collections import defaultdict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Every AI op (decision/prediction/understanding/learning) used to re-serialize and rewrite the
+# whole (growing) intelligence.json to disk. Coalesce those writes to at most once per interval.
+_SAVE_MIN_INTERVAL_SECONDS = 5.0
 
 class AgentAIIntelligence:
     """AI Intelligence system for agents"""
@@ -18,6 +24,9 @@ class AgentAIIntelligence:
     def __init__(self, base_dir: Optional[str] = None):
         self.base_dir = base_dir or BASE_DIR
         self.intelligence_file = os.path.join(self.base_dir, 'logs', 'agent_ai_intelligence', 'intelligence.json')
+        self._save_lock = threading.RLock()
+        self._last_save_ts = 0.0
+        self._save_pending = False
         self.load_intelligence()
     
     def load_intelligence(self):
@@ -72,8 +81,20 @@ class AgentAIIntelligence:
             'last_updated': datetime.now().isoformat()
         }
     
-    def save_intelligence(self):
-        """Save intelligence data. Uses serializable copy to avoid recursion in json.dump; never logs recursion."""
+    def save_intelligence(self, force: bool = False):
+        """Save intelligence data (throttled).
+
+        Writes at most once per `_SAVE_MIN_INTERVAL_SECONDS`; intermediate calls just mark the
+        state dirty so a later call flushes it. Pass ``force=True`` to write immediately.
+        Uses a serializable copy to avoid recursion in json.dump; never logs recursion.
+        """
+        now = time.time()
+        with self._save_lock:
+            if not force and (now - self._last_save_ts) < _SAVE_MIN_INTERVAL_SECONDS:
+                self._save_pending = True
+                return
+            self._last_save_ts = now
+            self._save_pending = False
         try:
             self.intelligence['last_updated'] = datetime.now().isoformat()
             # Dump a serializable copy so json.dump never hits circular refs / recursion

@@ -1015,6 +1015,18 @@ def _register_all_blueprints_impl(app):
     except Exception as e:
         print(f"  [ERROR] Error registering casino: {e}")
 
+    # Crypto exchange: trading, arbitrage, leveling, trust, PayPal gateway, rental
+    try:
+        from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+        if 'crypto_exchange' not in app.blueprints:
+            app.register_blueprint(crypto_exchange_bp)
+            registered_count += 1
+            print("  [OK] Registered crypto_exchange blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import crypto_exchange: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering crypto_exchange: {e}")
+
     # Casino betting agents (Kelly / dry-run orchestration)
     try:
         from backend.routes.agent_casino_routes import agent_casino_bp
