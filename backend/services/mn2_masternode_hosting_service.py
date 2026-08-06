@@ -74,6 +74,59 @@ def _audit(order_id: str, event: str, meta: Optional[dict] = None) -> None:
         pass
 
 
+def _staff_user_ids() -> set:
+    """Platform operators who may use internal rails (MN2 balance, coins) for testing."""
+    ids: set = set()
+    try:
+        from backend.services.mn2_masternode_service import get_config
+        shop = (get_config().get("shop_payments") or {})
+        if isinstance(shop, dict):
+            for uid in shop.get("staff_user_ids") or []:
+                if str(uid).strip():
+                    ids.add(str(uid).strip())
+    except Exception:
+        pass
+    env = (os.environ.get("MN2_HOSTING_STAFF_USER_IDS") or "").strip()
+    for part in env.split(","):
+        if part.strip():
+            ids.add(part.strip())
+    return ids
+
+
+def payment_rails_for_user(user_id: str) -> List[str]:
+    """
+    Customers check out with PayPal (their own buyer account).
+    Staff user ids retain access to all configured rails (MN2, coins, etc.).
+    """
+    pp = get_paypal_config()
+    shop = pp.get("shop_payments") if isinstance(pp.get("shop_payments"), dict) else {}
+    all_rails = shop.get("payment_rails")
+    if not isinstance(all_rails, list):
+        all_rails = ["paypal", "mn2", "credits", "mn2_onchain"]
+    customer_rails = shop.get("customer_payment_rails")
+    if not isinstance(customer_rails, list) or not customer_rails:
+        customer_rails = ["paypal"]
+    uid = str(user_id or "").strip()
+    if uid and uid in _staff_user_ids():
+        return list(all_rails)
+    allowed = [r for r in customer_rails if r in all_rails]
+    return allowed or ["paypal"]
+
+
+def _rail_allowed(user_id: str, rail: str) -> bool:
+    key = str(rail or "").strip().lower()
+    aliases = {
+        "coins": "credits",
+        "credits": "credits",
+        "mn2": "mn2",
+        "onchain": "mn2_onchain",
+        "mn2_onchain": "mn2_onchain",
+        "paypal": "paypal",
+    }
+    normalized = aliases.get(key, key)
+    return normalized in payment_rails_for_user(user_id)
+
+
 def get_paypal_config() -> Dict[str, Any]:
     from backend.services.mn2_masternode_service import get_config
     cfg = get_config()
@@ -96,6 +149,7 @@ def get_paypal_config() -> Dict[str, Any]:
         "shop_payments": {
             "enabled": bool(shop.get("enabled", True)),
             "payment_rails": rails,
+            "customer_payment_rails": shop.get("customer_payment_rails") or ["paypal"],
             "price_coins_per_slot": shop.get("price_coins_per_slot"),
         },
     }
@@ -127,7 +181,7 @@ def _mn2_usd_price() -> Optional[float]:
     return None
 
 
-def pricing_for_slots(slots: int) -> Dict[str, Any]:
+def pricing_for_slots(slots: int, user_id: str = "") -> Dict[str, Any]:
     """USD, coins, and MN2 totals for hosting checkout."""
     pp = get_paypal_config()
     try:
@@ -160,7 +214,7 @@ def pricing_for_slots(slots: int) -> Dict[str, Any]:
         "mn2_total": mn2_total,
         "coins_per_mn2": cpm,
         "mn2_usd_price": _mn2_usd_price(),
-        "payment_rails": shop.get("payment_rails") or ["paypal", "mn2", "credits", "mn2_onchain"],
+        "payment_rails": payment_rails_for_user(user_id),
     }
 
 
@@ -204,7 +258,7 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
 
     price = float(pp["price_usd_per_slot"])
     usd_total = round(price * slots, 2)
-    shop_prices = pricing_for_slots(slots)
+    shop_prices = pricing_for_slots(slots, uid)
     quote_id = "mnq_" + uuid.uuid4().hex[:16]
     expires_at = _iso(_now() + timedelta(seconds=int(pp["quote_ttl_seconds"])))
 
@@ -490,6 +544,12 @@ def _quote_open(order: Optional[Dict[str, Any]], uid: str, *, allow_statuses: Op
 
 def purchase_with_coins(quote_id: str, user_id: str) -> Dict[str, Any]:
     uid = str(user_id or "").strip()
+    if not _rail_allowed(uid, "credits"):
+        return {
+            "success": False,
+            "error": "Please pay with PayPal — sign in with your personal PayPal account at checkout.",
+            "code": "paypal_required",
+        }
     qid = str(quote_id or "").strip()
     with _LOCK:
         orders = _load_orders()
@@ -559,6 +619,12 @@ def purchase_with_coins(quote_id: str, user_id: str) -> Dict[str, Any]:
 
 def purchase_with_mn2_balance(quote_id: str, user_id: str) -> Dict[str, Any]:
     uid = str(user_id or "").strip()
+    if not _rail_allowed(uid, "mn2"):
+        return {
+            "success": False,
+            "error": "Please pay with PayPal — sign in with your personal PayPal account at checkout.",
+            "code": "paypal_required",
+        }
     qid = str(quote_id or "").strip()
     with _LOCK:
         orders = _load_orders()
@@ -642,6 +708,12 @@ def purchase_with_mn2_balance(quote_id: str, user_id: str) -> Dict[str, Any]:
 
 def create_onchain_payment(quote_id: str, user_id: str) -> Dict[str, Any]:
     uid = str(user_id or "").strip()
+    if not _rail_allowed(uid, "mn2_onchain"):
+        return {
+            "success": False,
+            "error": "Please pay with PayPal — sign in with your personal PayPal account at checkout.",
+            "code": "paypal_required",
+        }
     qid = str(quote_id or "").strip()
     with _LOCK:
         orders = _load_orders()

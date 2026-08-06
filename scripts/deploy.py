@@ -532,6 +532,7 @@ MANIFESTS = {
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
         "cron/mn2_masternode_provision.sh",
+        "cron/mn2_masternode_daemon_recover.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
         "scripts/mn2_patch_rpc_retries.sh",
     ],
@@ -659,6 +660,7 @@ MANIFESTS = {
         "scripts/mn2_repair_masternode_conf.sh",
         "scripts/mn2_fleet_autostart.sh",
         "scripts/mn2_masternode_fleet_ops_remote.py",
+        "scripts/mn2_recover_pending_masternodes_remote.py",
         "scripts/mn2_check_activetime_public.py",
         "scripts/mn2_test_ping_live.py",
         "scripts/mn2_hotfix_alias_provision_server.sh",
@@ -1024,6 +1026,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
         if "mn2_staking" in _manifests and not upload_only:
             print("[2f] MN2 masternode hosting post-deploy...")
             ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_masternode_provision.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/mn2_masternode_daemon_recover.sh 2>/dev/null || true", timeout=5)
             ssh.exec_command(
                 f"cp {REMOTE_BASE}/cron/masternoder-mn2-masternode-provision.cron.d "
                 f"/etc/cron.d/masternoder-mn2-masternode-provision 2>/dev/null && "
