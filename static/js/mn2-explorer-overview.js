@@ -248,6 +248,30 @@
       .catch(function () {});
   }
 
+  function sortMasternodeList(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var sa = String((a && a.status) || '').toUpperCase();
+      var sb = String((b && b.status) || '').toUpperCase();
+      if (sa !== sb) {
+        if (sa === 'ENABLED') return -1;
+        if (sb === 'ENABLED') return 1;
+        if (sa === 'ACTIVE') return -1;
+        if (sb === 'ACTIVE') return 1;
+      }
+      var ta = Number((a && a.activetime) || 0);
+      var tb = Number((b && b.activetime) || 0);
+      if (tb !== ta) return tb - ta;
+      return (Number(a.rank) || 0) - (Number(b.rank) || 0);
+    });
+  }
+
+  function mnPillClass(status) {
+    var st = String(status || '').toUpperCase();
+    if (st === 'ENABLED') return 'on';
+    if (st === 'ACTIVE') return 'active';
+    return 'off';
+  }
+
   function loadMasternodes() {
     fetch('/api/mn2/masternodes?limit=50&fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
@@ -255,9 +279,16 @@
         var body = q('ex-mn');
         if (!body) return;
         if (!d || !d.success) { return; }
+        var enabled = d.enabled != null ? Number(d.enabled) : 0;
+        var active = d.active != null ? Number(d.active) : 0;
+        var total = d.total != null ? Number(d.total) : (d.list || []).length;
         var sum = q('mn-summary');
-        if (sum) sum.textContent = '— ' + (d.enabled || 0) + ' enabled / ' + (d.total || 0) + ' total';
-        var list = d.list || [];
+        if (sum) {
+          sum.innerHTML = ' — <a href="/explorer?tab=masternodes">full list</a> · ' +
+            fmtNum(enabled, 0) + ' ENABLED · ' + fmtNum(active, 0) + ' ACTIVE / ' +
+            fmtNum(total, 0) + ' on chain';
+        }
+        var list = sortMasternodeList(d.list || []);
         if (!list.length) {
           var err = d.rpc_error ? String(d.rpc_error) : '';
           body.innerHTML = '<tr><td colspan="4">' +
@@ -265,10 +296,11 @@
           return;
         }
         body.innerHTML = list.map(function (m) {
-          var on = String(m.status || '').toUpperCase() === 'ENABLED';
-          var pill = '<span class="pill ' + (on ? 'on' : 'off') + '">' + (m.status || '—') + '</span>';
+          var stU = String(m.status || '').toUpperCase();
+          var rowCls = stU === 'ENABLED' ? 'ex-mn-row-enabled' : (stU === 'ACTIVE' ? 'ex-mn-row-active' : '');
+          var pill = '<span class="pill ' + mnPillClass(m.status) + '">' + (m.status || '—') + '</span>';
           var addr = m.addr ? '<a class="ex-open" href="' + explorerLink(m.addr) + '" target="_blank" rel="noopener">' + m.addr + '</a>' : '—';
-          return '<tr>' +
+          return '<tr class="' + rowCls + '">' +
             '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
             '<td>' + addr + '</td>' +
             '<td>' + pill + '</td>' +
