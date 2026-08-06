@@ -30,3 +30,16 @@ def security_sweep():
     except Exception:
         pass
     return jsonify({"success": True, "results": results}), 200
+
+
+@security_cron_bp.route("/api/security/cron/backup", methods=["POST"])
+def security_backup():
+    """Gate S: scheduled MN2/economy backup (ops/cron only)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    try:
+        from backend.services.backup_service import run_backup
+        result = run_backup()
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500

@@ -627,6 +627,8 @@ MANIFESTS = {
         "backend/routes/agent_cron_routes.py",
         "backend/services/agent_cron_service.py",
         "backend/services/agent_wallet_service.py",
+        "backend/services/gate_b_status_service.py",
+        "backend/services/gate_c_status_service.py",
         "backend/services/treasury_signoff_service.py",
         "backend/routes/all_page_routes.py",
         "backend/register_blueprints.py",

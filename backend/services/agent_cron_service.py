@@ -127,6 +127,12 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'agent_trader':
+                from backend.services.agent_trader_service import run_all_traders
+                out['results'][job] = run_all_traders()
+            elif job == 'treasury_distribute':
+                from backend.services.agent_wallet_service import distribute_agent_funding
+                out['results'][job] = distribute_agent_funding()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -163,6 +169,10 @@ def expand_preset(name: str) -> List[str]:
         return ['blueprint_route_fixer']
     if n == 'api_service':
         return ['api_service_skill']
+    if n == 'trader':
+        return ['agent_trader']
+    if n == 'treasury':
+        return ['treasury_distribute']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
     return []
