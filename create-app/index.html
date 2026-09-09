@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create App — Play Store + Podcast · Super Encoder nr. 1</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        body { background: #0a0e1a; color: #e8eefc; font-family: system-ui, sans-serif; margin: 0; }
+        .ca-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+        .ca-hero { text-align: center; margin-bottom: 28px; }
+        .ca-hero h1 { font-size: 2rem; background: linear-gradient(135deg, #7fdbff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .ca-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(127,219,255,0.5); color: #7fdbff; font-size: 0.8rem; margin-bottom: 8px; }
+        .ca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 800px) { .ca-grid { grid-template-columns: 1fr; } }
+        .ca-card { background: rgba(20,24,40,0.9); border: 1px solid rgba(127,219,255,0.25); border-radius: 12px; padding: 18px; }
+        .ca-card h2 { margin: 0 0 12px; font-size: 1.1rem; color: #7fdbff; }
+        label { display: block; font-size: 0.85rem; color: #9ab; margin: 10px 0 4px; }
+        input, select, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(127,219,255,0.3); background: rgba(0,0,0,0.35); color: #fff; box-sizing: border-box; }
+        .ca-btn { margin-top: 12px; padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.5); background: rgba(0,255,136,0.15); color: #00ff88; cursor: pointer; font-weight: 600; }
+        .ca-btn.secondary { border-color: rgba(127,219,255,0.5); background: rgba(127,219,255,0.12); color: #7fdbff; margin-left: 8px; }
+        .ca-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ca-out { margin-top: 12px; font-size: 0.85rem; color: #bcd; white-space: pre-wrap; max-height: 280px; overflow: auto; }
+        .ca-progress { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin: 8px 0; overflow: hidden; }
+        .ca-progress > span { display: block; height: 100%; background: linear-gradient(90deg, #00ff88, #7fdbff); width: 0%; transition: width 0.3s; }
+        .ca-checks { font-size: 0.78rem; max-height: 200px; overflow: auto; }
+        .ca-check { padding: 2px 0; }
+        .ca-check.pass { color: #00ff88; }
+        .ca-check.fail { color: #ff6b6b; }
+        .ca-lb-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; }
+        .ca-links { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .ca-links a { color: #7fdbff; text-decoration: none; }
+        .ca-encoder-hub { grid-column: 1 / -1; }
+        .ca-enc-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .ca-enc-tab { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(127,219,255,0.35); background: transparent; color: #9ab; cursor: pointer; }
+        .ca-enc-tab.active { background: rgba(127,219,255,0.2); color: #7fdbff; border-color: #7fdbff; }
+        .ca-enc-panel { display: none; }
+        .ca-enc-panel.active { display: block; }
+        .ca-enc-profile { padding: 8px; margin: 4px 0; border-radius: 6px; background: rgba(0,0,0,0.25); font-size: 0.85rem; }
+        .ca-enc-profile.selected { border: 1px solid #00ff88; }
+        .ca-mn2-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(255,215,0,0.15); color: #ffd700; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="ca-wrap">
+        <header class="ca-hero">
+            <span class="ca-badge">New encoder nr. 1 · E1 hardware · AI API</span>
+            <h1>Create App — Play Store + Podcast</h1>
+            <p>Ship TWA shells, podcast distribution, Super Encoder profiles, agent leaderboard MN2 rewards, and 100 product finish checks.</p>
+        </header>
+
+        <div class="ca-grid">
+            <section class="ca-card ca-encoder-hub">
+                <h2>🎛️ Encoder Hub — gathered in app</h2>
+                <p style="color:#9ab;font-size:0.9rem;margin:0 0 12px;">Video E1 · Podcast audio · AI API — one place for New encoder nr. 1</p>
+                <div class="ca-enc-tabs">
+                    <button type="button" class="ca-enc-tab active" data-enc-tab="video">Video (E1)</button>
+                    <button type="button" class="ca-enc-tab" data-enc-tab="audio">Podcast audio</button>
+                    <button type="button" class="ca-enc-tab" data-enc-tab="ai">AI plan</button>
+                    <button type="button" class="ca-enc-tab" data-enc-tab="package">Package</button>
+                </div>
+                <div id="ca-enc-panel-video" class="ca-enc-panel active"></div>
+                <div id="ca-enc-panel-audio" class="ca-enc-panel"></div>
+                <div id="ca-enc-panel-ai" class="ca-enc-panel"></div>
+                <div id="ca-enc-panel-package" class="ca-enc-panel"></div>
+                <button type="button" class="ca-btn secondary" id="ca-hub-refresh">Refresh encoder hub</button>
+            </section>
+
+            <section class="ca-card">
+                <h2>🚀 Create App</h2>
+                <label for="ca-title">App title</label>
+                <input id="ca-title" type="text" maxlength="120" placeholder="MasterNoder Podcast + Play" value="MasterNoder Podcast + Play">
+                <label for="ca-template">Template</label>
+                <select id="ca-template">
+                    <option value="playstore_podcast">Play Store + Podcast</option>
+                    <option value="podcast_only">Podcast only</option>
+                    <option value="playstore_only">Play Store TWA only</option>
+                </select>
+                <label for="ca-quality">Quality goal</label>
+                <select id="ca-quality">
+                    <option value="balanced">Balanced</option>
+                    <option value="premium">Premium</option>
+                    <option value="ultra">Ultra</option>
+                    <option value="fast">Fast draft</option>
+                </select>
+                <label for="ca-hint">Content hint (AI encoder)</label>
+                <textarea id="ca-hint" rows="3" placeholder="Podcast episodes + Play Store listing with hardware H.264…"></textarea>
+                <label><input type="checkbox" id="ca-playstore" checked> Include Play Store TWA</label>
+                <label><input type="checkbox" id="ca-podcast" checked> Include Podcast app</label>
+                <button type="button" class="ca-btn" id="ca-create-btn">Create app + Super Encode</button>
+                <button type="button" class="ca-btn secondary" id="ca-finish-btn" disabled>Finish product (100 checks)</button>
+                <div class="ca-out" id="ca-create-out">Ready.</div>
+            </section>
+
+            <section class="ca-card">
+                <h2>⚡ Click rewards · instant MN2</h2>
+                <p style="color:#9ab;font-size:0.85rem;">Every click win credits MasterNoder2 Bitcoins instantly.</p>
+                <div id="ca-click-quote">Loading quote…</div>
+                <a href="/game/" class="ca-btn secondary" style="display:inline-block;text-decoration:none;margin-top:8px;">Open click game →</a>
+            </section>
+
+            <section class="ca-card">
+                <h2>✅ Product finish — 100 checks</h2>
+                <div class="ca-progress"><span id="ca-finish-bar"></span></div>
+                <div id="ca-finish-summary">Run finish checks…</div>
+                <button type="button" class="ca-btn secondary" id="ca-checks-btn">Run 100 finish checks</button>
+                <div class="ca-checks" id="ca-checks-list"></div>
+            </section>
+
+            <section class="ca-card">
+                <h2>🤖 Agent leaderboard · MN2 Bitcoins</h2>
+                <div id="ca-leaderboard">Loading agents…</div>
+                <div class="ca-out" id="ca-claim-out"></div>
+            </section>
+        </div>
+
+        <div class="ca-links">
+            <a href="/lab/?tab=projects">Lab projects</a>
+            <a href="/podcast/">Podcast hub</a>
+            <a href="/agents/">Agents</a>
+            <a href="/trophies/">Achievements</a>
+            <a href="/mobile/podcast-twa/README.md">Podcast TWA docs</a>
+        </div>
+    </div>
+
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script>
+    (function () {
+        const uid = localStorage.getItem('user_id') || localStorage.getItem('mn_user_id') || 'default_user';
+        let currentAppId = null;
+
+        async function api(path, opts) {
+            const r = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
+            return r.json();
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+        function renderEncoderHub(hub) {
+            if (!hub || !hub.success) return;
+            const v = hub.sections && hub.sections.video;
+            const a = hub.sections && hub.sections.audio;
+            const ai = hub.sections && hub.sections.ai;
+            const pkg = hub.package || {};
+            document.getElementById('ca-enc-panel-video').innerHTML =
+                '<strong>Selected:</strong> ' + esc(pkg.video_profile || v.selected) + '<br>' +
+                'HW: ' + esc((v.hardware && v.hardware.codec) || 'software') + '<br>' +
+                (v.profiles || []).map(function (p) {
+                    const sel = p.profile === pkg.video_profile ? ' selected' : '';
+                    return '<div class="ca-enc-profile' + sel + '">' + esc(p.profile) + ' · CRF ' + p.crf + ' · ' + p.fps + 'fps</div>';
+                }).join('');
+            document.getElementById('ca-enc-panel-audio').innerHTML =
+                '<strong>Selected:</strong> ' + esc(pkg.audio_profile || a.selected) + '<br>' +
+                (a.profiles || []).map(function (p) {
+                    const sel = p.id === pkg.audio_profile ? ' selected' : '';
+                    return '<div class="ca-enc-profile' + sel + '">' + esc(p.id) + ' — ' + esc(p.description || '') + '</div>';
+                }).join('');
+            document.getElementById('ca-enc-panel-ai').innerHTML =
+                'AI: ' + (ai.configured ? 'configured' : 'heuristic') + '<br>' +
+                '<pre style="font-size:0.78rem;overflow:auto">' + esc(JSON.stringify(ai.plan || {}, null, 2)) + '</pre>';
+            document.getElementById('ca-enc-panel-package').innerHTML =
+                '<pre style="font-size:0.78rem;overflow:auto">' + esc(JSON.stringify(pkg, null, 2)) + '</pre>';
+        }
+
+        async function loadEncoderHub() {
+            const q = document.getElementById('ca-quality').value;
+            const hint = document.getElementById('ca-hint').value;
+            const d = await api('/api/create-app/encoder-hub?user_id=' + encodeURIComponent(uid) +
+                '&quality_goal=' + encodeURIComponent(q) + '&content_hint=' + encodeURIComponent(hint));
+            renderEncoderHub(d);
+        }
+
+        async function loadClickQuote() {
+            const d = await api('/api/game/click-game/reward-quote?action=click');
+            const el = document.getElementById('ca-click-quote');
+            if (!d.success) { el.textContent = 'Click MN2 unavailable'; return; }
+            el.innerHTML = '<span class="ca-mn2-badge">⚡ Instant</span> ' +
+                d.amount_mn2 + ' MN2 per click · critical ×3 · missions/quests pay more';
+        }
+
+        async function runFinishChecks() {
+            const d = await api('/api/create-app/finish-checks?user_id=' + encodeURIComponent(uid));
+            const pct = d.finish_percent || 0;
+            document.getElementById('ca-finish-bar').style.width = pct + '%';
+            document.getElementById('ca-finish-summary').textContent =
+                d.passed + ' / ' + d.total_checks + ' passed (' + pct + '%)' +
+                (d.product_finished ? ' — PRODUCT FINISHED ✓' : '');
+            const list = document.getElementById('ca-checks-list');
+            list.innerHTML = (d.checks || []).map(function (c) {
+                return '<div class="ca-check ' + (c.passed ? 'pass' : 'fail') + '">' +
+                    (c.passed ? '✓' : '✗') + ' ' + esc(c.label) + '</div>';
+            }).join('');
+            return d;
+        }
+
+        async function loadLeaderboard() {
+            const d = await api('/api/create-app/agents/leaderboard?user_id=' + encodeURIComponent(uid) + '&limit=8');
+            const el = document.getElementById('ca-leaderboard');
+            if (!d.success) { el.textContent = 'Leaderboard unavailable'; return; }
+            el.innerHTML = (d.leaderboard || []).map(function (row) {
+                return '<div class="ca-lb-row"><span>' + esc(row.badge) + ' #' + row.rank + ' ' + esc(row.agent_id) +
+                    '</span><span>' + row.mn2_reward_tier + ' MN2 <button type="button" class="ca-btn secondary" style="margin:0;padding:4px 8px;font-size:0.75rem" data-agent="' + esc(row.agent_id) + '">Claim</button></span></div>';
+            }).join('');
+            el.querySelectorAll('button[data-agent]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    const aid = btn.getAttribute('data-agent');
+                    const res = await api('/api/create-app/agents/leaderboard/claim?user_id=' + encodeURIComponent(uid), {
+                        method: 'POST',
+                        body: JSON.stringify({ user_id: uid, agent_id: aid })
+                    });
+                    document.getElementById('ca-claim-out').textContent = JSON.stringify(res, null, 2);
+                });
+            });
+        }
+
+        document.getElementById('ca-create-btn').addEventListener('click', async function () {
+            const body = {
+                user_id: uid,
+                title: document.getElementById('ca-title').value,
+                template_id: document.getElementById('ca-template').value,
+                quality_goal: document.getElementById('ca-quality').value,
+                content_hint: document.getElementById('ca-hint').value,
+                include_playstore: document.getElementById('ca-playstore').checked,
+                include_podcast: document.getElementById('ca-podcast').checked
+            };
+            const d = await api('/api/create-app/apps?user_id=' + encodeURIComponent(uid), { method: 'POST', body: JSON.stringify(body) });
+            currentAppId = d.app && d.app.id;
+            document.getElementById('ca-finish-btn').disabled = !currentAppId;
+            document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            if (d.finish_checks) runFinishChecks();
+        });
+
+        document.getElementById('ca-finish-btn').addEventListener('click', async function () {
+            if (!currentAppId) return;
+            const d = await api('/api/create-app/apps/' + currentAppId + '/finish?user_id=' + encodeURIComponent(uid), {
+                method: 'POST',
+                body: JSON.stringify({ user_id: uid })
+            });
+            document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            runFinishChecks();
+        });
+
+        document.querySelectorAll('.ca-enc-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.ca-enc-tab').forEach(function (t) { t.classList.remove('active'); });
+                document.querySelectorAll('.ca-enc-panel').forEach(function (p) { p.classList.remove('active'); });
+                tab.classList.add('active');
+                document.getElementById('ca-enc-panel-' + tab.getAttribute('data-enc-tab')).classList.add('active');
+            });
+        });
+        document.getElementById('ca-hub-refresh').addEventListener('click', loadEncoderHub);
+        document.getElementById('ca-quality').addEventListener('change', loadEncoderHub);
+
+        document.getElementById('ca-checks-btn').addEventListener('click', runFinishChecks);
+
+        loadEncoderHub();
+        loadClickQuote();
+        runFinishChecks();
+        loadLeaderboard();
+    })();
+    </script>
+</body>
+</html>

@@ -124,6 +124,20 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP lab: {e}")
     try:
+        from backend.routes.create_app_routes import create_app_bp
+        app.register_blueprint(create_app_bp)
+        n += 1
+        print("  [OK] Registered create_app blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP create_app: {e}")
+    try:
+        from backend.routes.click_game_routes import click_game_bp
+        app.register_blueprint(click_game_bp)
+        n += 1
+        print("  [OK] Registered click_game blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP click_game: {e}")
+    try:
         from backend.routes.trophies_routes import trophies_bp
         app.register_blueprint(trophies_bp)
         n += 1
@@ -687,6 +701,26 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import lab: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering lab: {e}")
+
+    try:
+        from backend.routes.create_app_routes import create_app_bp
+        app.register_blueprint(create_app_bp)
+        registered_count += 1
+        print("  [OK] Registered create_app blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import create_app: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering create_app: {e}")
+
+    try:
+        from backend.routes.click_game_routes import click_game_bp
+        app.register_blueprint(click_game_bp)
+        registered_count += 1
+        print("  [OK] Registered click_game blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import click_game: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering click_game: {e}")
 
     # Social structure (friends, crews, activity feed, challenges)
     try:
