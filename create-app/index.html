@@ -70,6 +70,7 @@
 
             <section class="ca-card">
                 <h2>🚀 Create App</h2>
+                <div id="ca-my-apps" style="margin-bottom:12px;font-size:0.85rem;color:#9ab;">Loading your apps…</div>
                 <label for="ca-title">App title</label>
                 <input id="ca-title" type="text" maxlength="120" placeholder="MasterNoder Podcast + Play" value="MasterNoder Podcast + Play">
                 <label for="ca-template">Template</label>
@@ -172,6 +173,27 @@
             renderEncoderHub(d);
         }
 
+        async function loadMyApps() {
+            const d = await api('/api/create-app/apps?user_id=' + encodeURIComponent(uid));
+            const el = document.getElementById('ca-my-apps');
+            if (!d.success || !(d.apps && d.apps.length)) {
+                el.textContent = 'No apps yet — create your first Play Store + Podcast app below.';
+                return;
+            }
+            el.innerHTML = '<strong>Your apps:</strong><br>' + d.apps.slice(-5).reverse().map(function (a) {
+                return esc(a.title) + ' · ' + (a.progress || 0) + '%' +
+                    (a.product_finished ? ' ✓ finished' : '') +
+                    ' <button type="button" class="ca-btn secondary" style="margin:2px;padding:4px 8px;font-size:0.72rem" data-app-id="' + esc(a.id) + '">Use</button>';
+            }).join('<br>');
+            el.querySelectorAll('button[data-app-id]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    currentAppId = btn.getAttribute('data-app-id');
+                    document.getElementById('ca-finish-btn').disabled = !currentAppId;
+                    document.getElementById('ca-create-out').textContent = 'Selected app: ' + currentAppId;
+                });
+            });
+        }
+
         async function loadClickQuote() {
             const d = await api('/api/game/click-game/reward-quote?action=click');
             const el = document.getElementById('ca-click-quote');
@@ -230,6 +252,7 @@
             document.getElementById('ca-finish-btn').disabled = !currentAppId;
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
             if (d.finish_checks) runFinishChecks();
+            loadMyApps();
         });
 
         document.getElementById('ca-finish-btn').addEventListener('click', async function () {
@@ -255,8 +278,16 @@
 
         document.getElementById('ca-checks-btn').addEventListener('click', runFinishChecks);
 
+        try {
+            const pre = JSON.parse(sessionStorage.getItem('create_app_prefill') || 'null');
+            if (pre && pre.title) document.getElementById('ca-title').value = pre.title;
+            if (pre && pre.question) document.getElementById('ca-hint').value = pre.question;
+            if (pre) sessionStorage.removeItem('create_app_prefill');
+        } catch (e) { /* ignore */ }
+
         loadEncoderHub();
         loadClickQuote();
+        loadMyApps();
         runFinishChecks();
         loadLeaderboard();
     })();
