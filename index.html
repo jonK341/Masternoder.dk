@@ -39,6 +39,7 @@
                     <a class="fp-primary-action" href="/generator">Start generator</a>
                     <a class="fp-secondary-action" href="/create-app/">Create App</a>
                     <a class="fp-secondary-action" href="/game">Åbn game hub</a>
+                    <a class="fp-download-hero" href="#fp-download" title="Download apps — Play Store, Podcast, PWA">⬇ Download</a>
                     <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
                 </div>
             </div>
@@ -121,11 +122,57 @@
             </div>
         </section>
 
+        <section class="fp-download-band" id="fp-download" aria-labelledby="fp-download-title">
+            <div class="fp-download-head">
+                <p class="fp-kicker"><span>Download</span><span>Play Store · Podcast · PWA</span></p>
+                <h2 id="fp-download-title">Download MasterNoder apps</h2>
+                <p class="fp-download-lede">Play Store TWA, Podcast app, og PWA-installation — med Super Encoder nr. 1 og fuld sound system integration.</p>
+            </div>
+            <div class="fp-download-grid">
+                <a class="fp-download-card" href="/create-app/">
+                    <span class="fp-download-icon">📱</span>
+                    <strong>Create App</strong>
+                    <span>Play Store + Podcast · encoder · 100 finish checks</span>
+                </a>
+                <a class="fp-download-card" href="/mobile/podcast-twa/README.md">
+                    <span class="fp-download-icon">🎙️</span>
+                    <strong>Podcast app</strong>
+                    <span>TWA · dk.masternoder.podcast · BBCG audio</span>
+                </a>
+                <a class="fp-download-card" href="/mobile/casino-twa/README.md">
+                    <span class="fp-download-icon">🎰</span>
+                    <strong>Casino app</strong>
+                    <span>TWA · dk.masternoder.casino · social lounge</span>
+                </a>
+                <a class="fp-download-card" href="/manifest.webmanifest" id="fp-download-pwa">
+                    <span class="fp-download-icon">⬇</span>
+                    <strong>Install PWA</strong>
+                    <span>manifest.webmanifest · add to home screen</span>
+                </a>
+            </div>
+            <p class="fp-download-note">Brug <a href="/create-app/">Create App</a> for Play Console upload, eller installer PWA direkte på mobil.</p>
+        </section>
+
         <section class="fp-sound-console" aria-labelledby="fp-sound-title">
             <div class="fp-sound-copy">
                 <p class="fp-kicker"><span>Audio deck</span><span>opt-in</span></p>
                 <h2 id="fp-sound-title">MasterNoder Sound System</h2>
                 <p>Aktivér et lavt cyber-ambient lydlag. Vælg rolig fokus, stjernekort-puls eller battle drive.</p>
+                <div class="fp-soundbar-spec" id="fp-soundbar-spec">
+                    <h3>Soundbar — systemisk analog volumen</h3>
+                    <p>Fuld analog-stil gain staging: logaritmisk kurve (dB-lignende), 24-segment VU-meter, og master gain via Web Audio API. Volumen gemmes lokalt og synkroniseres med soundbar-visualiseringen.</p>
+                    <ul class="fp-soundbar-features">
+                        <li><strong>Analog kurve:</strong> gain ∝ volume<sup>1.35</sup> — blødere ved lave niveauer</li>
+                        <li><strong>VU-meter:</strong> 24 segmenter med grøn/gul/rød zone</li>
+                        <li><strong>Modes:</strong> Focus hum · Star pulse · Battle drive</li>
+                        <li><strong>Download:</strong> Apps inkluderer sound system i TWA/PWA shells</li>
+                    </ul>
+                </div>
+                <div class="fp-sound-downloads" aria-label="Download med sound system">
+                    <a class="fp-sound-dl" href="/create-app/">⬇ App med sound</a>
+                    <a class="fp-sound-dl" href="/manifest.webmanifest">⬇ PWA manifest</a>
+                    <a class="fp-sound-dl" href="/podcast/">🎙️ Podcast + encoder</a>
+                </div>
             </div>
             <div class="fp-sound-board" aria-label="Lydkontrol">
                 <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
@@ -135,14 +182,25 @@
                 <div class="fp-sound-wave" aria-hidden="true">
                     <span></span><span></span><span></span><span></span><span></span>
                 </div>
+                <div class="fp-soundbar" aria-label="Soundbar analog volumen">
+                    <div class="fp-soundbar-label">
+                        <span>Soundbar</span>
+                        <span id="themeSoundDb" class="fp-soundbar-db">-12.1 dB</span>
+                        <span id="themeSoundPct" class="fp-soundbar-pct">35%</span>
+                    </div>
+                    <div class="fp-soundbar-track" id="themeSoundbarTrack">
+                        <div class="fp-soundbar-fill" id="themeSoundbarFill"></div>
+                        <div class="fp-soundbar-segments" id="themeSoundbarSegments" aria-hidden="true"></div>
+                    </div>
+                </div>
                 <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
                     <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus hum</button>
                     <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Star pulse</button>
                     <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle drive</button>
                 </div>
                 <label class="fp-sound-volume" for="themeSoundVolume">
-                    Volume
-                    <input id="themeSoundVolume" type="range" min="0" max="100" value="35">
+                    Analog volume
+                    <input id="themeSoundVolume" type="range" min="0" max="100" value="35" aria-valuetext="35 procent">
                 </label>
                 <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
             </div>
