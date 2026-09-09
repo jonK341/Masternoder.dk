@@ -220,7 +220,6 @@
     }
 
     const SOUND_VOL_KEY = 'mn_sound_analog_volume_v1';
-    const SEGMENT_COUNT = 24;
 
     function volumeToDb(linear) {
         const v = Math.max(0.0001, Math.min(1, linear));
@@ -231,39 +230,13 @@
         return Math.pow(Math.max(0, Math.min(1, linear)), 1.35);
     }
 
-    function buildSoundbarSegments(container) {
-        if (!container || container.childElementCount) return;
-        for (let i = 0; i < SEGMENT_COUNT; i += 1) {
-            const seg = document.createElement('div');
-            seg.className = 'fp-soundbar-seg';
-            if (i >= 20) seg.classList.add('zone-red');
-            else if (i >= 16) seg.classList.add('zone-yellow');
-            else seg.classList.add('zone-green');
-            container.appendChild(seg);
-        }
-    }
-
-    function updateSoundbarUI(linear, isActive) {
-        const fill = document.getElementById('themeSoundbarFill');
-        const segs = document.getElementById('themeSoundbarSegments');
+    function updateSoundbarUI(linear) {
         const dbEl = document.getElementById('themeSoundDb');
         const pctEl = document.getElementById('themeSoundPct');
         const pct = Math.round(linear * 100);
         const analog = analogGain(linear);
-        const litCount = Math.round(analog * SEGMENT_COUNT);
-
-        if (fill) fill.style.width = pct + '%';
         if (dbEl) dbEl.textContent = volumeToDb(analog * 0.85).toFixed(1) + ' dB';
         if (pctEl) pctEl.textContent = pct + '%';
-        if (segs) {
-            buildSoundbarSegments(segs);
-            Array.from(segs.children).forEach((seg, i) => {
-                const on = i < litCount && (isActive || linear > 0.02);
-                seg.classList.toggle('lit', on);
-                const h = on ? 40 + (i / SEGMENT_COUNT) * 60 : 18;
-                seg.style.height = on ? Math.min(100, h) + '%' : '18%';
-            });
-        }
     }
 
     function wireSoundSystem() {
@@ -298,7 +271,7 @@
                     ? mode.status + ' · Soundbar analog: ' + Math.round(sound.volume * 100) + '%'
                     : 'Sound offline. Klik start for at aktivere.';
             }
-            updateSoundbarUI(sound.volume, sound.isActive);
+            updateSoundbarUI(sound.volume);
             modeButtons.forEach((button) => {
                 const active = button.dataset.soundMode === sound.mode;
                 button.classList.toggle('is-active', active);
@@ -329,21 +302,11 @@
                 sound.setVolume(lin);
                 try { localStorage.setItem(SOUND_VOL_KEY, String(volume.value)); } catch (_) {}
                 volume.setAttribute('aria-valuetext', volume.value + ' procent');
-                updateSoundbarUI(lin, sound.isActive);
+                updateSoundbarUI(lin);
                 if (sound.isActive) sound.playPing(620 + lin * 420, 0.015);
             };
             applyVol();
             volume.addEventListener('input', applyVol);
-        }
-
-        const barTrack = document.getElementById('themeSoundbarTrack');
-        if (barTrack && volume) {
-            barTrack.addEventListener('click', (ev) => {
-                const rect = barTrack.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(100, Math.round(((ev.clientX - rect.left) / rect.width) * 100)));
-                volume.value = String(pct);
-                volume.dispatchEvent(new Event('input'));
-            });
         }
 
         const pwaDl = document.getElementById('fp-download-pwa');
