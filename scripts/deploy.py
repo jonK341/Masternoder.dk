@@ -13,7 +13,9 @@ Usage:
   python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
-  python scripts/deploy.py create_app_release static_pages --ask-pass  # Create App + click MN2 + frontpage (PR #81)
+  python scripts/deploy.py create_app_release static_pages --ask-pass
+    # Create App super encoder, instant MN2 click rewards, compact frontpage (PR #81).
+    # Laptop deploy: merge PR #81, pull branch, run command above, then test_url_timing per DEPLOY_PREP.md.
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
