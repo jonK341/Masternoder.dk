@@ -13,6 +13,7 @@ Usage:
   python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
+  python scripts/deploy.py create_app_release static_pages --ask-pass  # Create App + click MN2 + frontpage (PR #81)
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
@@ -355,6 +356,38 @@ MANIFESTS = {
         "static/img/rulebook-v16-sync.png",
         "scripts/generate_rulebook_images.py",
         "docs/RULEBOOK_READERS.md",
+    ],
+    # Create App super encoder, instant MN2 click rewards, frontpage compact layout (PR #81)
+    "create_app_release": [
+        "index.html",
+        "create-app/index.html",
+        "lab/index.html",
+        "podcast/index.html",
+        "game/index.html",
+        "static/css/frontpage-home.css",
+        "static/js/frontpage-home.js",
+        "static/js/game-hub-panel.js",
+        "static/js/navigation-toolbar.js",
+        "static/js/click-through-game.js",
+        "static/js/mobile-install.js",
+        "backend/register_blueprints.py",
+        "backend/routes/all_page_routes.py",
+        "backend/routes/click_game_routes.py",
+        "backend/routes/create_app_routes.py",
+        "backend/routes/lab_routes.py",
+        "backend/services/agent_leaderboard_rewards_service.py",
+        "backend/services/click_mn2_rewards_service.py",
+        "backend/services/create_app_finish_checks.py",
+        "backend/services/create_app_service.py",
+        "backend/services/super_encoder_service.py",
+        "data/agent_leaderboard_rewards.json",
+        "data/create_apps.json",
+        "data/lab_projects_seed.json",
+        "data/mn2_config.json",
+        "data/podcast_episodes.json",
+        "mobile/podcast-twa/PLAY_STORE_LISTING.md",
+        "mobile/podcast-twa/README.md",
+        "mobile/podcast-twa/twa-manifest.json",
     ],
     # Unified Game Hub: frontpage tabs + quest unification (Option C)
     "game_hub": [
@@ -794,6 +827,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "camgirls",
     "trophies",
     "compendium",
+    "create_app_release",
     "game_hub",
     "casino",
     "config",
