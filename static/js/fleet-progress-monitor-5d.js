@@ -27,6 +27,7 @@
     hotBotIndex: 0,
     encodedScroll: 0,
     geoMarkers: [],
+    gfxLevel: streamMode ? "broadcast" : "full",
   };
 
   var DEFAULT_BOT_AVATAR = "/static/img/fleet/default-bot.svg";
@@ -50,6 +51,56 @@
   }
 
   var streamMode = qs("mode") === "stream" || qs("stream") === "1";
+
+  var GFX_LEVELS = {
+    minimal: {
+      encoded: false,
+      rings: 1,
+      ringSpeed: 0.0025,
+      botLines: false,
+      maxBots: 5,
+      geo: false,
+      extraNodes: false,
+      ringDash: false,
+    },
+    broadcast: {
+      encoded: false,
+      rings: 2,
+      ringSpeed: 0.004,
+      botLines: false,
+      maxBots: 8,
+      geo: true,
+      extraNodes: false,
+      ringDash: true,
+    },
+    full: {
+      encoded: true,
+      rings: 3,
+      ringSpeed: 0.008,
+      botLines: true,
+      maxBots: 99,
+      geo: true,
+      extraNodes: true,
+      ringDash: true,
+    },
+  };
+
+  function gfxConfig() {
+    return GFX_LEVELS[state.gfxLevel] || GFX_LEVELS.broadcast;
+  }
+
+  function applyGfxLevel(level) {
+    if (!GFX_LEVELS[level]) level = streamMode ? "broadcast" : "full";
+    state.gfxLevel = level;
+    document.body.setAttribute("data-f5-gfx", level);
+    try {
+      localStorage.setItem("mn-f5-gfx", level);
+    } catch (e) {
+      /* ignore */
+    }
+    var pick = $("f5-gfx-pick");
+    if (pick) pick.value = level;
+  }
 
   function setStatus(msg) {
     if (window.__f5IngestActive) return;
@@ -547,6 +598,7 @@
   }
 
   function drawEncodedBackground(ctx, w, h, padR) {
+    if (!gfxConfig().encoded) return;
     var pool = window.F5MonitorVisual && window.F5MonitorVisual.getEncodedPool ? window.F5MonitorVisual.getEncodedPool() : [];
     if (!pool.length) return;
     var th = themeColors();
@@ -572,6 +624,7 @@
   }
 
   function drawGeoMarkers(ctx, w, h, usableW) {
+    if (!gfxConfig().geo) return;
     var markers = state.geoMarkers.length ? state.geoMarkers : (window.F5StreamGeo && window.F5StreamGeo.getMarkers ? window.F5StreamGeo.getMarkers() : []);
     if (!markers.length) return;
     var lats = markers.map(function (m) {
@@ -610,33 +663,40 @@
   }
 
   function drawCenterRings(ctx, w, h, usableW) {
+    var cfg = gfxConfig();
     var th = themeColors();
     var cx = w * 0.42;
     var cy = h * 0.45;
     var rad = Math.min(usableW, h) * 0.28;
     var inner = rad * 0.62;
 
-    ctx.strokeStyle = th.arc_outer || "rgba(0,212,255,0.28)";
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, rad, state.w, state.w + Math.PI * 1.15);
-    ctx.stroke();
+    if (cfg.rings >= 1) {
+      ctx.strokeStyle = th.arc_outer || "rgba(0,212,255,0.28)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, state.w, state.w + Math.PI * 1.15);
+      ctx.stroke();
+    }
 
-    ctx.strokeStyle = th.arc_inner || "rgba(255,100,255,0.35)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 10]);
-    ctx.beginPath();
-    ctx.arc(cx, cy, inner, -state.w * 1.25, -state.w * 1.25 - Math.PI * 1.08, true);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    if (cfg.rings >= 2) {
+      ctx.strokeStyle = th.arc_inner || "rgba(255,100,255,0.35)";
+      ctx.lineWidth = 2;
+      if (cfg.ringDash) ctx.setLineDash([6, 10]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, inner, -state.w * 1.25, -state.w * 1.25 - Math.PI * 1.08, true);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
-    ctx.strokeStyle = th.accent || "#ff64ff";
-    ctx.globalAlpha = 0.18;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(cx, cy, (rad + inner) * 0.5, -state.w * 0.85, -state.w * 0.85 + Math.PI * 2, true);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    if (cfg.rings >= 3) {
+      ctx.strokeStyle = th.accent || "#ff64ff";
+      ctx.globalAlpha = 0.18;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, (rad + inner) * 0.5, -state.w * 0.85, -state.w * 0.85 + Math.PI * 2, true);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
   }
 
   function resizeCanvas() {
@@ -659,7 +719,7 @@
     var h = c.height;
     var padR = state.rosterPad || 200;
     state.tick += 1;
-    state.w = (state.w + 0.008) % (Math.PI * 2);
+    state.w = (state.w + gfxConfig().ringSpeed) % (Math.PI * 2);
 
     ctx.fillStyle = "rgba(3, 6, 15, 0.4)";
     ctx.fillRect(0, 0, w, h);
@@ -678,8 +738,10 @@
     var padR = state.rosterPad || 200;
     var usableW = w - padR - 24;
     state.botPositions = [];
+    var cfg = gfxConfig();
+    var botLimit = streamMode ? cfg.maxBots : bots.length;
 
-    bots.forEach(function (b, i) {
+    bots.slice(0, botLimit).forEach(function (b, i) {
       var lane = kinds[b.kind] || 0;
       var laneCount = Math.max(1, Object.keys(kinds).length);
       var x = (lane + 0.5) / laneCount;
@@ -708,12 +770,14 @@
         drawBotPortrait(ctx, b, px, py, r, i);
       }
 
-      ctx.strokeStyle = "rgba(" + pRgb.r + "," + pRgb.g + "," + pRgb.b + ",0.28)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.lineTo(px, h - 100);
-      ctx.stroke();
+      if (cfg.botLines) {
+        ctx.strokeStyle = "rgba(" + pRgb.r + "," + pRgb.g + "," + pRgb.b + ",0.28)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, h - 100);
+        ctx.stroke();
+      }
 
       if (i === state.hotBotIndex) {
         ctx.strokeStyle = "rgba(" + aRgb.r + "," + aRgb.g + "," + aRgb.b + ",0.5)";
@@ -731,7 +795,8 @@
       }
     });
 
-    (state.extraNodes || []).forEach(function (n, idx) {
+    if (cfg.extraNodes) {
+      (state.extraNodes || []).forEach(function (n, idx) {
       var px = 20 + ((idx % 5) + 0.5) / 5 * (usableW * 0.35);
       var py = h * 0.12 + Math.sin(state.w * 1.7 + idx) * 12;
       var pulse = 0.5 + Math.sin(state.w + idx) * 0.2;
@@ -761,6 +826,7 @@
         ctx.globalAlpha = 1;
       }
     });
+    }
 
     drawGeoMarkers(ctx, w, h, usableW);
     drawCenterRings(ctx, w, h, usableW);
@@ -828,6 +894,20 @@
       sel.addEventListener("change", function () {
         state.leadSpeakerId = sel.value;
         if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.setLeadSpeaker(sel.value);
+      });
+    }
+    var gfxPick = $("f5-gfx-pick");
+    if (gfxPick) {
+      var savedGfx = "";
+      try {
+        savedGfx = localStorage.getItem("mn-f5-gfx") || "";
+      } catch (e) {
+        savedGfx = "";
+      }
+      var initialGfx = qs("gfx") || savedGfx || (streamMode ? "broadcast" : "full");
+      applyGfxLevel(initialGfx);
+      gfxPick.addEventListener("change", function () {
+        applyGfxLevel(gfxPick.value);
       });
     }
     var themeNext = $("f5-theme-next");

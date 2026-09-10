@@ -262,6 +262,21 @@
   display: inline-flex;
 }
 
+.f5-body[data-f5-gfx="broadcast"] .f5-stage-wrap::after,
+.f5-body[data-f5-gfx="minimal"] .f5-stage-wrap::after {
+  opacity: 0.28;
+  filter: none;
+}
+
+.f5-body[data-f5-gfx="minimal"] .f5-stream .f5-stage::before {
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.35);
+  opacity: 0.35;
+}
+
+.f5-body[data-f5-gfx="minimal"] .f5-stream .f5-stage::after {
+  opacity: 0.25;
+}
+
 .f5-header .f5-youtube-dock {
   position: relative;
   z-index: 5;
