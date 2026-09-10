@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Casino — MasterNoder</title>
+    <meta http-equiv="refresh" content="0;url=/casino/?tab=social">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css">
+    <style>
+        body.discord-play-body { padding: 100px 20px; text-align: center; color: #e8e8f0; }
+        .dp-main { max-width: 520px; margin: 0 auto; }
+        a { color: #00d4ff; }
+        .dp-btn { display: inline-block; margin: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 10px;
+            background: linear-gradient(135deg, #5865F2, #00d4ff); color: #fff; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body class="discord-play-body">
+    <main class="dp-main">
+        <h1>Discord Casino</h1>
+        <p>Play the full MasterNoder casino in Discord or open the social lounge in your browser.</p>
+        <p>
+            <a class="dp-btn" href="/casino/?tab=social">Open casino social tab</a>
+            <a class="dp-btn" href="https://discord.gg/masternoder" target="_blank" rel="noopener noreferrer">Join Discord</a>
+        </p>
+        <p><a href="/casino/">← Casino home</a></p>
+    </main>
+    <script>
+        if (!window.location.search.includes('stay=1')) {
+            window.location.replace('/casino/?tab=social');
+        }
+    </script>
+</body>
+</html>

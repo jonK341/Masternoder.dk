@@ -49,7 +49,7 @@
     function loadScripts(cb) {
         if (global.Mn2SiteBridge) { cb(); return; }
         var s = global.document.createElement('script');
-        s.src = '/static/js/mn2-site-bridge.js?v=20260614d';
+        s.src = '/static/js/mn2-site-bridge.js?v=20260910b';
         s.onload = cb;
         global.document.head.appendChild(s);
     }

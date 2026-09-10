@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <script>window.APP_BASE = '';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="MasterNoder Super Encoder — create music, songs &amp; videos. Rate with MN2 crypto.">
+    <meta name="theme-color" content="#1A1035">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Super Encoder">
+    <link rel="manifest" href="/creator/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/static/img/app/icon-192.svg">
+    <title>Super Encoder — MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260909a">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/creator-app.css?v=20260910c">
+    <link rel="stylesheet" href="/static/css/mobile-install.css?v=20260704a">
+</head>
+<body class="cr-app">
+    <header class="cr-header">
+        <a class="cr-logo" href="/">Master<span>Noder</span></a>
+        <a class="cr-landing-link" href="/">masternoder.dk ↗</a>
+    </header>
+
+    <main class="cr-main">
+        <section class="cr-hero">
+            <h1>Super Encoder</h1>
+            <p>Create music, songs &amp; videos — rate with MN2 crypto</p>
+            <div class="cr-storage-pill" id="cr-storage-pill">Storage: loading…</div>
+        </section>
+
+        <div id="cr-tab-encode">
+            <section class="cr-encode-panel" aria-labelledby="cr-encode-title">
+                <h2 id="cr-encode-title" class="cr-section-title">🎛️ One-Click Encode</h2>
+                <label for="cr-title">Song title</label>
+                <input type="text" id="cr-title" placeholder="My Neon Dream" maxlength="120" autocomplete="off">
+
+                <label class="cr-mode-label">Encoder mode <span id="cr-mode-count" class="cr-mode-count"></span></label>
+                <div class="cr-mode-grid" id="cr-mode-grid" role="listbox" aria-label="Encoder modes">
+                    <p class="cr-mode-loading">Loading modes…</p>
+                </div>
+                <p class="cr-mode-desc" id="cr-mode-desc">Pick a mode — each runs a different creation pipeline.</p>
+
+                <div class="cr-encode-row">
+                    <div>
+                        <label for="cr-genre">Genre</label>
+                        <select id="cr-genre">
+                            <option value="electronic">Electronic</option>
+                            <option value="pop">Pop</option>
+                            <option value="hip-hop">Hip-Hop</option>
+                            <option value="rock">Rock</option>
+                            <option value="ambient">Ambient</option>
+                            <option value="cinematic">Cinematic</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="cr-mood">Mood</label>
+                        <select id="cr-mood">
+                            <option value="energetic">Energetic</option>
+                            <option value="chill">Chill</option>
+                            <option value="dark">Dark</option>
+                            <option value="uplifting">Uplifting</option>
+                            <option value="romantic">Romantic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="button" id="cr-super-encode-btn" class="cr-super-encode-btn">
+                    ⚡ Super Encode
+                    <small><span id="cr-encode-pipeline">Lyrics → Audio → Video → Sync</span> · <span id="cr-encode-price">0.15 MN2</span></small>
+                </button>
+
+                <div class="cr-ai-status" id="cr-ai-status">AI routing: loading…</div>
+            </section>
+        </div>
+
+        <div id="cr-tab-tracks" hidden>
+            <h2 class="cr-section-title">🎵 Spotify Encoder — Your Tracks</h2>
+            <p style="color:var(--cr-muted);font-size:0.85rem;margin:0 0 12px;">
+                Bot tracks songs, sounds &amp; video layers with synchronized encoding.
+            </p>
+            <div class="cr-tracks" id="cr-tracks-list"></div>
+        </div>
+
+        <div id="cr-tab-feed" hidden>
+            <h2 class="cr-section-title">⭐ Top Rated — MN2 Feed</h2>
+            <p style="color:var(--cr-muted);font-size:0.85rem;margin:0 0 12px;">
+                Pay MN2 to rate — creators earn crypto. Main app purpose.
+            </p>
+            <div class="cr-tracks" id="cr-feed-list"></div>
+        </div>
+
+        <section class="cr-download-section" aria-labelledby="cr-dl-title">
+            <h2 id="cr-dl-title">📲 Download the App</h2>
+            <p style="color:var(--cr-muted);font-size:0.85rem;margin:8px 0 0;">
+                Direct from masternoder.dk — no app store. Android APK v1.0.
+            </p>
+            <div class="cr-download-btns">
+                <a id="cr-dl-apk" class="cr-dl-btn play cr-dl-primary" href="/static/downloads/masternoder-creator.apk" download="masternoder-creator.apk">⬇ Download Android App</a>
+                <button type="button" id="cr-dl-pwa" class="cr-dl-btn pwa">+ Install PWA</button>
+            </div>
+            <p class="cr-dl-hint">After download: open the APK on your phone and allow install from browser if prompted.</p>
+        </section>
+    </main>
+
+    <nav class="cr-bottom-nav" aria-label="Creator navigation">
+        <button type="button" class="cr-nav-btn active" data-tab="encode"><span>⚡</span>Encode</button>
+        <button type="button" class="cr-nav-btn" data-tab="tracks"><span>🎵</span>Tracks</button>
+        <button type="button" class="cr-nav-btn" data-tab="feed"><span>⭐</span>Rate</button>
+        <a class="cr-nav-btn" href="/" style="text-decoration:none;"><span>🏠</span>Home</a>
+    </nav>
+
+    <div id="cr-toast" class="cr-toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
+    <script src="/static/js/creator-app.js?v=20260910c" defer></script>
+    <script src="/static/js/mn2-micro-tx.js?v=20260910g" defer></script>
+    <script src="/static/js/creator-mobile.js?v=20260910a" defer></script>
+    <script src="/static/js/mobile-install.js?v=20260704a" defer></script>
+</body>
+</html>

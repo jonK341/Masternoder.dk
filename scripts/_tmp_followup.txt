@@ -1,0 +1,67 @@
+﻿Connected key:C:\Users\jonkh\.ssh\id_ed25519_deploy
+== masternoder2d now ==
+deactivating
+ÔùÅ masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+     Loaded: loaded (/etc/systemd/system/masternoder2d.service; enabled; preset: enabled)
+     Active: deactivating (stop-sigterm) since Thu 2026-09-10 00:03:33 UTC; 1min 1s ago
+        Job: 32018242
+ Invocation: 402db39b414042e7a4e2c8680b1699fe
+   Main PID: 3011492 (masternoder2-sh)
+      Tasks: 15 (limit: 1795)
+     Memory: 49.5M (peak: 1G, swap: 1022.8M, swap peak: 1022.8M)
+        CPU: 2min 1.555s
+     CGroup: /system.slice/masternoder2d.service
+             ÔööÔöÇ3011492 /opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+
+9332 not listening
+error: couldn't connect to server
+
+== profit daemon service ==
+Ôùï masternoder-profit-daemon.service - MasterNoder profit daemons (exchange + casino + extended)
+     Loaded: loaded (/etc/systemd/system/masternoder-profit-daemon.service; disabled; preset: enabled)
+     Active: inactive (dead)
+-rw-r--r-- 1 root root 812 Jul 24 21:41 /var/www/html/logs/daemon_all_profit_heartbeat.json
+updated 2026-07-24T19:55:09.381385Z
+age_days 20706.0
+
+== exchange master cron last runs ==
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'error': 'Not Found', 'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'status': 404, 'message': 'No message available', 'timestamp': 1788998669336}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'status': 404, 'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'error': 'Not Found', 'timestamp': 1788998670052, 'message': 'No message available'}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'status': 404, 'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'error': 'Not Found', 'timestamp': 1788998673419, 'message': 'No message available'}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'error': 'Not Found', 'timestamp': 1788998674139, 'message': 'No message available', 'status': 404}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'status': 404, 'message': 'No message available', 'timestamp': 1788998674913, 'error': 'Not Found'}
+
+== explorer probe log ==
+Unhealthy but Discord webhook not configured
+Unhealthy but Discord webhook not configured
+Unhealthy but Discord webhook not configured
+Unhealthy but Discord webhook not configured
+Unhealthy but Discord webhook not configured
+
+== explorer API endpoints ==
+/api/mn2/explorer/status HTTP 200
+{"api_latency":{"count":500,"paths":{"/api/mn2/explorer/status":15,"/api/mn2/explorer/stream":4,"/api/mn2/masternodes":21,"/api/mn2/network-alerts":12,"/api/mn2/network-history":18,"/api/mn2/network-overview":96,"/api/mn2/recent-blocks":34},"percentiles_ms":{"p50":9015.99,"p95":17015.16,"p99":21382.
+/api/mn2/rich-list?limit=1 HTTP 200
+{"count":0,"rich_list":[],"success":true}
+
+/api/mn2/explorer/chain-sync HTTP 200
+{"blocks":null,"headers":null,"headers_behind":0,"source":"rpc","success":true,"synced":null,"verification_progress":null}
+
+
+== pm2 explorer ==
+Ôöé status            Ôöé online                             Ôöé
+Ôöé restarts          Ôöé 0                                  Ôöé
+Ôöé uptime            Ôöé 29D                                Ôöé
+Ôöé script path       Ôöé /var/www/explorer/bin/cluster      Ôöé
+Ôöé unstable restarts Ôöé 0                                  Ôöé
+
+PUBLIC /api/mn2/explorer/status HTTP 200
+  overall None success True
+  check chain_sync: {'blocks': None, 'headers': None, 'headers_behind': 0, 'source': 'rpc', 'synced': None, 'verification_progress': None}
+  check fork: {'blocks': None, 'fork_risk': False, 'headers': None, 'headers_behind': 0, 'message': None}
+  check mempool: {'bytes': None, 'sample_txids': [], 'size': None, 'source': 'rpc', 'usage': None}
+  check rich_list: {'index_synced': True, 'note': None, 'ok': True, 'sample_count': 1}
+  check rpc: {'error': 'Failed to establish a new connection: [Errno 111] Connection refused', 'ok': False}
+PUBLIC /api/mn2/rich-list?limit=1 HTTP 200
+  success True count 0
+PUBLIC /api/profit-daemon/status FAIL The read operation timed out

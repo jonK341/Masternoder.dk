@@ -219,6 +219,21 @@ def paypal_capture():
     }
     if item_granted:
         payload["item_granted"] = item_granted
+    if payload.get("success") and user_id and not fulfillment_error:
+        try:
+            from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+            micro = try_micro_tx_reward(
+                user_id,
+                "shop_purchase",
+                idempotency_key=f"paypal:{order_id}",
+                reason="PayPal purchase cashback",
+                metadata={"order_id": order_id, "item_id": item_id},
+            )
+            if micro:
+                payload["micro_tx_reward"] = micro
+        except Exception:
+            pass
     if fulfillment_error:
         payload.update({
             "success": False,

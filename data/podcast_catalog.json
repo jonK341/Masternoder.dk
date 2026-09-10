@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "podcasts": [
+    {
+      "id": "daily-mn2-market-pulse-seed-001",
+      "category": "daily-mn2-market-pulse",
+      "title": "Daily MN2 Market Pulse #001 — Morning Briefing",
+      "summary": "Daglig MN2 markedsanalyse: pris, volumen, staking APR, master node rewards og handelssignal.",
+      "audio_script": "Hej og velkommen til Daily MN2 Market Pulse. I dagens episode kigger vi på MN2 prisudvikling de sidste 24 timer, aktive masternodes, staking APR, samt de seneste transaktioner på netværket. Vi ser også på handelssignaler og short-term momentum for MasterNoder2 økosystemet.",
+      "created_at": "2026-08-25T06:00:00Z",
+      "published_at": "2026-08-25T06:00:00Z",
+      "seed": true
+    },
+    {
+      "id": "ai-generator-showcase-seed-001",
+      "category": "ai-generator-showcase",
+      "title": "AI Generator Showcase — New Runway Pika Clips",
+      "summary": "Denne uges AI-genererede videoer, Runway Gen-4 vs Pika 2.2 benchmarks, og community top-ti. ",
+      "audio_script": "Velkommen til AI Generator Showcase. I afsnit i dag ser vi de bedste AI videoer genereret i platformen denne uge — Runway Gen-4 vs Pika 2.2 quality comparison, vores BBCG audio encode pipeline, samt community Top-10 lydspor og billeder. Vi forklarer også COGS per reference-job og Creator-tier caps.",
+      "created_at": "2026-08-24T09:30:00Z",
+      "published_at": "2026-08-24T09:30:00Z",
+      "seed": true
+    },
+    {
+      "id": "casino-recap-winners-seed-001",
+      "category": "casino-recap-winners",
+      "title": "Casino Recap & Winners — 24 Aug Big Win Roundup",
+      "summary": "Big wins, high-rollers, jackpot-historier, agent betting dry-run, Discord fanout og VIP rewards.",
+      "audio_script": "Velkommen til Casino Recap & Winners. I dag runder vi op på de største wins fra det seneste døgn — top-vindere, jackpot-historier, high-roller activity, samt vores casino betting agents dry-run status. Vi nævner også VIP threshold for 100+ MN2 og Discord fanout for wins over 50 USD.",
+      "created_at": "2026-08-24T20:15:00Z",
+      "published_at": "2026-08-24T20:15:00Z",
+      "seed": true
+    },
+    {
+      "id": "agent-intelligence-briefing-seed-001",
+      "category": "agent-intelligence-briefing",
+      "title": "Agent Intelligence Briefing — Daily Research Roundup",
+      "summary": "Autonomous agents: status, skills maintenance, LLM providers, research pipeline og roadmap.",
+      "audio_script": "Hej, det er Agent Intelligence Briefing. I dag gennemgår vi: agent cron run daily resultater, user-skills maintenance for inaktive brugere, LLM provider status (Groq, Gemini, DeepSeek), vores research pipeline nye kilder, og roadmap for kommende agent capabilities.",
+      "created_at": "2026-08-25T07:45:00Z",
+      "published_at": "2026-08-25T07:45:00Z",
+      "seed": true
+    },
+    {
+      "id": "platform-news-updates-seed-001",
+      "category": "platform-news-updates",
+      "title": "Platform News & Updates — v25 Feature Rollout",
+      "summary": "Seneste platform releases, podcast hub features, shop upgrades, security patches og changelog.",
+      "audio_script": "Velkommen til Platform News & Updates. I dette afsnit dækker vi: den seneste v25 feature rollout inkl. podcast hub upgrades, featured Suno embed, shop v3 forbedringer, sikkerheds patches, samt vores fuld changelog og hvad der er på næste uge roadmap.",
+      "created_at": "2026-08-23T11:00:00Z",
+      "published_at": "2026-08-23T11:00:00Z",
+      "seed": true
+    }
+  ],
+  "categories": [
+    "daily-mn2-market-pulse",
+    "ai-generator-showcase",
+    "casino-recap-winners",
+    "agent-intelligence-briefing",
+    "platform-news-updates"
+  ]
+}

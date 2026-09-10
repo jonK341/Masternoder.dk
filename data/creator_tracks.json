@@ -1,0 +1,65 @@
+{
+  "tracks": [
+    {
+      "id": "trk_073ba6c23f17",
+      "user_id": "default_user",
+      "title": "Neon Pulse (restored)",
+      "genre": "electronic",
+      "mood": "energetic",
+      "encoder_mode": "instrumental",
+      "encoder_mode_label": "Instrumental",
+      "encoder_mode_icon": "🎹",
+      "lyrics_preview": "",
+      "doc_id": "",
+      "audio_url": "/api/creator/tracks/trk_073ba6c23f17/audio",
+      "video_url": null,
+      "sync_url": null,
+      "status": "completed",
+      "duration_sec": 60,
+      "avg_rating": 0.0,
+      "rating_count": 0,
+      "created_at": "2025-09-09T21:54:00+00:00",
+      "updated_at": "2025-09-09T21:54:00+00:00",
+      "encoder_bot": "super_encoder_instrumental",
+      "layers": {
+        "song": false,
+        "audio": true,
+        "video": false,
+        "sync": false
+      },
+      "restored": true,
+      "restore_note": "Rebuilt from orphan audio file on disk (tone-fallback encode)"
+    },
+    {
+      "id": "trk_91279bee6279",
+      "user_id": "default_user",
+      "title": "Midnight Circuit (restored)",
+      "genre": "electronic",
+      "mood": "dark",
+      "encoder_mode": "instrumental",
+      "encoder_mode_label": "Instrumental",
+      "encoder_mode_icon": "🎹",
+      "lyrics_preview": "",
+      "doc_id": "",
+      "audio_url": "/api/creator/tracks/trk_91279bee6279/audio",
+      "video_url": null,
+      "sync_url": null,
+      "status": "completed",
+      "duration_sec": 60,
+      "avg_rating": 0.0,
+      "rating_count": 0,
+      "created_at": "2025-09-09T21:54:00+00:00",
+      "updated_at": "2025-09-09T21:54:00+00:00",
+      "encoder_bot": "super_encoder_instrumental",
+      "layers": {
+        "song": false,
+        "audio": true,
+        "video": false,
+        "sync": false
+      },
+      "restored": true,
+      "restore_note": "Rebuilt from orphan audio file on disk (tone-fallback encode)"
+    }
+  ],
+  "updated_at": "2025-09-10T04:27:00+00:00"
+}

@@ -1,7 +1,17 @@
 (function () {
     'use strict';
 
-    const userId = localStorage.getItem('game_user_id') || 'default_user';
+    function resolveCasinoUserId() {
+        var game = localStorage.getItem('game_user_id');
+        var user = localStorage.getItem('user_id');
+        if (game && game !== 'default_user') return game;
+        if (user && user !== 'default_user') {
+            localStorage.setItem('game_user_id', user);
+            return user;
+        }
+        return 'default_user';
+    }
+    const userId = resolveCasinoUserId();
     const baseUrl = window.location.origin;
     let leaderboardPeriod = 'today';
     let leaderboardScope = 'local';
@@ -450,9 +460,16 @@
             safeRefresh('socialTab', initSocialTab);
         } else if (activeMainTab === 'compete') {
             safeRefresh('competeTab', refreshCompeteTab);
+        } else if (activeMainTab === 'levelup') {
+            if (window.__casinoUpgrades && window.__casinoUpgrades.refresh) {
+                window.__casinoUpgrades.refresh();
+            }
         } else if (activeMainTab === 'home') {
             safeRefresh('agentSpectator', refreshAgentSpectator);
         }
+        try {
+            window.dispatchEvent(new CustomEvent('casino:tab-change', { detail: { tab: activeMainTab } }));
+        } catch (e) { /* optional */ }
         try {
             if (history.replaceState) {
                 var qs = new URLSearchParams(window.location.search);
@@ -539,6 +556,7 @@
             grid.remove();
         }
 
+        addTabBtn('levelup', '⬆️ Level Up', activeMainTab === 'levelup');
         addTabBtn('leaderboard', '🏆 Leaderboard', activeMainTab === 'leaderboard');
         addTabBtn('activity', '📊 Activity', activeMainTab === 'activity');
         addTabBtn('compete', '⚔️ Compete', activeMainTab === 'compete');
@@ -4337,7 +4355,12 @@
         el.innerHTML = '<div class="casino-prog-row">' + (vip.badge || '') + ' ' + (vip.label || 'Bronze') +
             ' · Level ' + (xp.level || 1) + ' ' + (xp.title || '') + '</div>' +
             '<div class="casino-prog-row">XP ' + Math.round(xp.xp || 0) +
-            (xp.next_level_xp ? ' / ' + xp.next_level_xp : '') + '</div>';
+            (xp.next_level_xp ? ' / ' + xp.next_level_xp : '') + '</div>' +
+            '<button type="button" class="casino-levelup-home-link" id="casino-levelup-home-btn">⬆️ Level Up upgrades</button>';
+        var lvlBtn = $('casino-levelup-home-btn');
+        if (lvlBtn) {
+            lvlBtn.addEventListener('click', function () { switchMainTab('levelup'); });
+        }
     }
 
     async function spinDailyWheel() {

@@ -1,0 +1,56 @@
+== stuck processes ==
+root     3023345  0.0  0.1   7680  2504 ?        Ss   00:15   0:00 /bin/bash -c /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+root     3023365  0.0  0.1   5912  1892 ?        S    00:15   0:00 flock -n /var/run/masternoder-exchange-master.lock python3 scripts/exchange_master_daemon.py --once
+root     3023380 28.1 26.1 1491632 439020 ?      R    00:15   0:32 python3 scripts/exchange_master_daemon.py --once
+== systemd unit ==
+# Example systemd unit for MasterNoder2 daemon using the deployed project config dir.
+# Copy to /etc/systemd/system/masternoder2d.service, adjust ExecStart path to your binary,
+# then: sudo systemctl daemon-reload && sudo systemctl enable --now masternoder2d
+#
+# This matches docs/MN2_CONFIG_AND_PASSWORD_STEPS.md: daemon reads
+# /var/www/html/config/masternoder2.conf (same rpcuser/rpcpassword as app .env).
+
+[Unit]
+Description=MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+After=network.target
+
+[Service]
+Type=simple
+# Run as user that owns the wallet/datadir if you prefer (chown /var/www/html/config first).
+User=root
+ExecStart=/opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+== debug OpenBlockFile context ==
+15660:2026-09-10 00:10:08 init message: Loading block index...
+15697:2026-09-10 00:10:40 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+15701:2026-09-10 00:10:41 init message: Loading block index...
+15740:2026-09-10 00:10:41 init message: Loading block index...
+15777:2026-09-10 00:10:56 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+15781:2026-09-10 00:10:56 init message: Loading block index...
+15820:2026-09-10 00:10:56 init message: Loading block index...
+15858:2026-09-10 00:11:17 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+15862:2026-09-10 00:11:17 init message: Loading block index...
+15901:2026-09-10 00:11:17 init message: Loading block index...
+15938:2026-09-10 00:11:45 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+15942:2026-09-10 00:11:46 init message: Loading block index...
+15981:2026-09-10 00:11:46 init message: Loading block index...
+16019:2026-09-10 00:12:21 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+16023:2026-09-10 00:12:22 init message: Loading block index...
+16062:2026-09-10 00:12:22 init message: Loading block index...
+16100:2026-09-10 00:14:44 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+16104:2026-09-10 00:14:44 init message: Loading block index...
+16143:2026-09-10 00:14:44 init message: Loading block index...
+16181:2026-09-10 00:16:50 CDBEnv::Open: LogDir=/var/www/html/config/database ErrorFile=/var/www/html/config/db.log
+== blk file sizes ==
+-rw------- 1 root root 134122421 Apr 28 21:05 /var/www/html/config/blocks/blk00000.dat
+-rw------- 1 root root 134057062 Apr 28 21:15 /var/www/html/config/blocks/blk00001.dat
+-rw------- 1 root root 134216571 Apr 28 21:24 /var/www/html/config/blocks/blk00002.dat
+-rw------- 1 root root 134217433 Jun 13 10:28 /var/www/html/config/blocks/blk00003.dat
+-rw------- 1 root root  50331648 Sep  9 23:24 /var/www/html/config/blocks/blk00004.dat
+== lock files ==
+-rw------- 1 root root 0 Jul 26 01:34 /var/www/html/config/.lock
+== single instance check ==

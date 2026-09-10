@@ -1,0 +1,30 @@
+﻿== kill stuck sync ==
+3028064 bash -c bash -s <<'ENDSCRIPT' set +e cd /var/www/explorer echo '== kill stuck sync ==' pgrep -af 'sync.js' || true pkill -f 'sync.js index check' 2>/dev/null || true sleep 2 rm -f tmp/index.pid tmp/sync_index.lock 2>/dev/null pgrep -af 'sync.js' || echo none  echo '== index update (foreground 180s max) ==' timeout 180 node scripts/sync.js index update 2>&1 | tail -25  echo '== cron log tail ==' tail -5 tmp/cron_index.log 2>/dev/null  echo '== richlist probe ==' curl -sS -m 12 http://127.0.0.1:3000/ext/getrichlist?page=0 2>/dev/null | head -c 250; echo curl -sS -m 12 http://127.0.0.1:3000/ext/getaddresslist?page=0 2>/dev/null | head -c 250; echo ENDSCRIPT
+none
+== index update (foreground 180s max) ==
+Script launched with pid: 3028075
+Syncing blocks.. Please wait..
+Stopping sync process.. Please wait..
+Stopping sync process.. Please wait..
+Block sync was stopped prematurely
+== cron log tail ==
+    at Socket.emit (node:events:536:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+Node.js v20.20.2
+== richlist probe ==
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Language" content="en"><meta name="version" content="1.103.0-dd52c92"><title>MasterNoder2 Block E
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Language" content="en"><meta name="version" content="1.103.0-dd52c92"><title>MasterNoder2 Block E
+Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+
+--- health (immediate) ---
+status: degraded | success: True
+rich_list: {'index_synced': True, 'note': None, 'ok': True, 'sample_count': 1}
+supply_ok: True
+
+--- health (after 20s) ---
+status: healthy | success: True
+rich_list: {'index_synced': True, 'note': None, 'ok': True, 'sample_count': 1}
+supply_ok: True

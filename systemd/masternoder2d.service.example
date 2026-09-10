@@ -16,6 +16,9 @@ User=root
 ExecStart=/opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
 Restart=on-failure
 RestartSec=10
+# Block index load / reindex can exceed default stop timeout on 1.6 GB RAM hosts.
+TimeoutStopSec=300
+TimeoutStartSec=600
 
 [Install]
 WantedBy=multi-user.target

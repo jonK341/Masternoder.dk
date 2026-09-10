@@ -534,6 +534,18 @@ def masternodes():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_staking_bp.route("/api/mn2/explorer/status", methods=["GET"])
+def explorer_status():
+    try:
+        from backend.services import mn2_explorer_data
+        stats = mn2_explorer_data.explorer_status()
+        resp = jsonify({"success": True, **stats})
+        resp.headers["Cache-Control"] = "public, max-age=15, stale-while-revalidate=30"
+        return resp, 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_staking_bp.route("/api/mn2/staking/ops/accrue", methods=["POST", "GET"])
 def staking_ops_accrue():
     if not _ops_authorized():

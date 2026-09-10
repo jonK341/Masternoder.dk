@@ -1,0 +1,123 @@
+﻿Connected root@masternoder.dk (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+========== RPC / DAEMON INVESTIGATION ==========
+== process ==
+root     3083540  5.5  0.5 2343956 9576 ?        SLsl 04:02  54:17 /opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+root     3322482  0.0  0.2   7680  3848 ?        Ss   20:12   0:00 bash -c bash -s <<'ENDSCRIPT' set +e D=-datadir=/var/www/html/config CLI="/opt/masternoder2d/masternoder2-cli $D" WEB=/var/www/html CONF=$WEB/config/masternoder2.conf  echo "========== RPC / DAEMON INVESTIGATION ==========" echo "== process ==" ps aux | grep -E '[m]asternoder2d' | head -5 echo "== systemd ==" systemctl status masternoder2d --no-pager | head -20 echo "== journal tail ==" journalctl -u masternoder2d --no-pager -n 25 2>/dev/null echo "== debug.log tail ==" tail -40 $WEB/config/debug.log 2>/dev/null echo "== rpc config (no secrets) ==" grep -E '^(server|rpcport|rpcbind|rpcallowip|rpcuser|testnet|regtest)=' $CONF 2>/dev/null echo "== .cookie ==" ls -la $WEB/config/.cookie 2>/dev/null echo "== CLI direct ==" $CLI getblockcount 2>&1 echo "== curl RPC from .env creds ==" RPC_USER=$(grep '^MN2_RPC_USER=' $WEB/.env | cut -d= -f2- | tr -d '\r"') RPC_PASS=$(grep '^MN2_RPC_PASSWORD=' $WEB/.env | cut -d= -f2- | tr -d '\r"') RPC_PORT=$(grep '^rpcport=' $CONF | head -1 | cut -d= -f2-) RPC_PORT=${RPC_PORT:-9332} echo "rpcport=$RPC_PORT user=${RPC_USER:0:4}..." OUT=$(curl -sS -m 10 -u "$RPC_USER:$RPC_PASS" \   -H 'content-type: application/json' \   -d '{"jsonrpc":"1.0","id":"t","method":"getblockcount","params":[]}' \   "http://127.0.0.1:${RPC_PORT}/" 2>&1) echo "$OUT" | head -c 600 echo "" echo "== wallet rescan state ==" grep -iE 'rescan|import|Loading wallet|Reindexing|Activating best chain' $WEB/config/debug.log 2>/dev/null | tail -10 echo "== masternode.conf first 3 lines ==" head -3 $WEB/config/masternode.conf 2>/dev/null echo "== compare masternode.conf tx to wallet ==" # sample first collateral from masternode.conf SAMPLE=$(awk 'NF==5 && index($2,":")>0 {print $2; exit}' $WEB/config/masternode.conf) echo "sample collateral ref: $SAMPLE" if [ -n "$SAMPLE" ]; then   TXID=$(echo "$SAMPLE" | cut -d: -f1)   VOUT=$(echo "$SAMPLE" | cut -d: -f2)   $CLI gettxout "$TXID" "$VOUT" 2>&1 | head -c 400   echo "" fi ENDSCRIPT 
+== systemd ==
+ÔùÅ masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+     Loaded: loaded (/etc/systemd/system/masternoder2d.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-09-10 04:02:41 UTC; 16h ago
+ Invocation: b0dc47b4fcad4df2bfdddc790319bf8a
+   Main PID: 3083540 (masternoder2d)
+      Tasks: 14 (limit: 1795)
+     Memory: 87.1M (peak: 780.6M, swap: 1.1G, swap peak: 1.1G)
+        CPU: 54min 17.044s
+     CGroup: /system.slice/masternoder2d.service
+             ÔööÔöÇ3083540 /opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+
+Sep 10 04:02:31 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'core-dump'.
+Sep 10 04:02:31 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 3.375s CPU time, 299.9M memory peak, 28.6M memory swap peak.
+Sep 10 04:02:41 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 04:02:41 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+== journal tail ==
+Sep 10 03:42:51 Masternoder-Website masternoder2d[3074520]: Error: Cannot obtain a lock on data directory /var/www/html/config. MasterNoder2 Core is probably already running.
+Sep 10 03:42:52 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=exited, status=1/FAILURE
+Sep 10 03:42:52 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'exit-code'.
+Sep 10 03:43:02 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 8.
+Sep 10 03:43:02 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 03:43:12 Masternoder-Website masternoder2d[3074875]: Error: Cannot obtain a lock on data directory /var/www/html/config. MasterNoder2 Core is probably already running.
+Sep 10 03:43:13 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=exited, status=1/FAILURE
+Sep 10 03:43:13 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'exit-code'.
+Sep 10 03:43:17 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 03:44:39 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 03:44:44 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=killed, status=9/KILL
+Sep 10 03:44:44 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'signal'.
+Sep 10 03:44:44 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 2.192s CPU time, 219.4M memory peak, 8.1M memory swap peak.
+Sep 10 03:44:47 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job immediately on client request, restart counter is at 1.
+Sep 10 03:44:47 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 04:02:05 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+Sep 10 04:02:16 Masternoder-Website systemd[1]: masternoder2d.service: Deactivated successfully.
+Sep 10 04:02:16 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 04:02:16 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 2min 52.010s CPU time, 273.2M memory peak, 243.8M memory swap peak.
+Sep 10 04:02:23 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 04:02:31 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=dumped, status=11/SEGV
+Sep 10 04:02:31 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'core-dump'.
+Sep 10 04:02:31 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 3.375s CPU time, 299.9M memory peak, 28.6M memory swap peak.
+Sep 10 04:02:41 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 04:02:41 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+== debug.log tail ==
+2026-09-10 13:25:43 connect() to [2001:56a:fa1b:ed00:cc72:ba8c:6b74:50e5]:17646 failed after select(): No route to host (113)
+2026-09-10 13:25:44 connect() to 250.26.33.248:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:25:53 CMasternodeSync::GetNextAsset - Sync has finished
+2026-09-10 13:25:53 CActiveMasternode::SendMasternodePing() - Relay Masternode Ping vin = CTxIn(COutPoint(042ee6ed8d8f7708b6776455ba705a8add2ef74cf2bdf2bed0b8e8a716825617, 0), scriptSig=)
+2026-09-10 13:25:53 CActiveMasternode::ManageStatus() - Error on Ping: Obfuscation Masternode List doesn't include our Masternode, shutting down Masternode pinging service! CTxIn(COutPoint(042ee6ed8d8f7708b6776455ba705a8add2ef74cf2bdf2bed0b8e8a716825617, 0), scriptSig=)
+2026-09-10 13:25:55 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789045106 nStakeMinAge=3600 nTimeTx=1789046755
+2026-09-10 13:25:55 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789044431 nStakeMinAge=3600 nTimeTx=1789046755
+2026-09-10 13:25:55 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789045353 nStakeMinAge=3600 nTimeTx=1789046755
+2026-09-10 13:25:55 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789045314 nStakeMinAge=3600 nTimeTx=1789046755
+2026-09-10 13:25:56 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789044939 nStakeMinAge=3600 nTimeTx=1789046756
+2026-09-10 13:25:56 ERROR: CheckStakeKernelHash() : min age violation - nTimeBlockFrom=1789045918 nStakeMinAge=3600 nTimeTx=1789046756
+2026-09-10 13:26:01 connect() to 250.80.235.193:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:02 connect() to 250.25.181.16:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:05 connect() to [2001:678:db4:e51::a]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:06 connect() to 250.178.2.95:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:08 connect() to [2001:470:c846:70::c57]:17646 failed after select(): Connection refused (111)
+2026-09-10 13:26:10 connect() to 49.13.13.184:17646 failed after select(): Connection refused (111)
+2026-09-10 13:26:22 connect() to 250.167.35.124:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:23 connect() to 250.168.22.117:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:23 connect() to 250.189.117.185:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:27 connect() to [2a13:9500:42:463:be4d:d6be:eaba:a23b]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:31 connect() to [2a13:9500:42:81d2:fdd2:c833:ac47:590b]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:32 connect() to [2a02:c207:2282:8602::2]:17646 failed after select(): Connection refused (111)
+2026-09-10 13:26:33 connect() to 250.109.58.73:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:37 connect() to [2a13:9500:42:8dd2:2016:711:57f2:1a68]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:43 connect() to [2605:a140:2184:6619:5ab5::1]:17646 failed after select(): Connection refused (111)
+2026-09-10 13:26:47 connect() to [2a13:9500:42:ebe8:61b8:9f10:d253:28ca]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:54 connect() to 250.38.132.238:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:26:57 connect() to [2a02:c207:2026:5532:a2ef::1]:17646 failed after select(): No route to host (113)
+2026-09-10 13:26:58 connect() to 250.136.134.87:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:27:07 connect() to [2a13:9500:42:d355:15ca:2afb:8669:2916]:17646 failed after select(): No route to host (113)
+2026-09-10 13:27:11 connect() to 85.10.148.5:17646 failed after select(): Connection refused (111)
+2026-09-10 13:27:14 connect() to 250.100.123.206:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:27:17 connect() to [2a13:9500:42:6289:6987:1bde:22e4:af]:17646 failed after select(): No route to host (113)
+2026-09-10 13:27:18 connect() to 250.48.198.62:17646 failed after select(): Network is unreachable (101)
+2026-09-10 13:27:18 connect() to 37.27.46.65:17646 failed after select(): Connection refused (111)
+2026-09-10 13:27:25 connect() to [2001:56a:fa1b:ed00:1878:3e8e:b92:c3fc]:17646 failed after select(): No route to host (113)
+2026-09-10 13:27:26 connect() to 128.140.52.141:17646 failed after select(): Connection refused (111)
+2026-09-10 13:27:28 CMasternodeSync::GetNextAsset - Sync has finished
+2026-09-10 13:27:28 CActiveMasternode::ManageStatus() - Checking inbound connection to '127.0.0.1:17646'
+== rpc config (no secrets) ==
+rpcbind=127.0.0.1
+rpcallowip=127.0.0.1
+rpcport=9332
+rpcuser=mn2rpc
+server=1
+== .cookie ==
+-rw------- 1 root root 55 Jun 21 16:06 /var/www/html/config/.cookie
+== CLI direct ==
+error: couldn't parse reply from server
+== curl RPC from .env creds ==
+rpcport=9332 user=mn2r...
+Work queue depth exceeded
+
+== wallet rescan state ==
+2026-09-10 13:18:28 init message: Loading wallet... (2876.02 %)
+2026-09-10 13:20:11 init message: Loading wallet... (2876.12 %)
+2026-09-10 13:20:18 init message: Loading wallet... (2876.22 %)
+2026-09-10 13:20:20 init message: Loading wallet... (2876.32 %)
+2026-09-10 13:20:23 init message: Loading wallet... (2876.42 %)
+2026-09-10 13:22:08 init message: Loading wallet... (2876.52 %)
+2026-09-10 13:23:16 init message: Loading wallet... (2876.62 %)
+2026-09-10 13:23:31 init message: Loading wallet... (2876.72 %)
+2026-09-10 13:24:37 init message: Loading wallet... (2876.82 %)
+2026-09-10 13:25:27 init message: Loading wallet... (2876.92 %)
+== masternode.conf first 3 lines ==
+platformmn2 140.82.39.124:17646 6mD73mXp9wJQ8gftzD912WEQVkhtxPGamdUhkuazv2VVbKGLboF 0e6661dd28312e580a9ef280afad8f82bd42300161c8bdd1d4956e24ff183836 0
+platformmn3 140.82.39.124:17646 6jqVWtjqsUC4f6HoHfze4JzzGdVivVXc2vji1bx9fEuRNARAYsJ 0fdf6b12a1e4605e08fdacec040b632bd0bd428194bd30f3d2760d7ea5bac033 0
+platformmn4 140.82.39.124:17646 6m4kFDUrZUGQ997pfG9yQ8o6XTNXp75yoa1R1nxpjrVodtV1aLJ 17acf94692bc5ba3c0965d386a20e3da8876320ffb72ea0fcb13b0a426a347cd 1
+== compare masternode.conf tx to wallet ==
+sample collateral ref: 140.82.39.124:17646
+error: couldn't parse reply from server
+
+

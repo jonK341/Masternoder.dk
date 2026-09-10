@@ -307,8 +307,10 @@ def listunspent(minconf: int = 1, maxconf: int = 9999999) -> Dict[str, Any]:
     return _call("listunspent", [int(minconf), int(maxconf)])
 
 
-def getnewaddress() -> Dict[str, Any]:
+def getnewaddress(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Generate a new receive address in the daemon wallet."""
+    if timeout_sec is not None:
+        return _call("getnewaddress", timeout_sec=timeout_sec)
     return _call("getnewaddress")
 
 
@@ -342,8 +344,10 @@ def gettransaction(txid: str) -> Dict[str, Any]:
     return _call("gettransaction", [txid])
 
 
-def validateaddress(address: str) -> Dict[str, Any]:
+def validateaddress(address: str, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Validate an MN2 address. Not all chains implement this; may return unimplemented."""
+    if timeout_sec is not None:
+        return _call("validateaddress", [address], timeout_sec=timeout_sec)
     return _call("validateaddress", [address])
 
 

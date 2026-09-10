@@ -44,6 +44,26 @@ def _apply_booster_sku(unified_points_db, user_id: str, sku_id: str, sku: dict, 
             unified_points_db.add_booster(user_id, sku_id, minutes, name=name)
 
 
+def _attach_shop_micro_tx(payload: dict, user_id: str, purchase_id, item_id: str) -> dict:
+    """Add instant MN2 micro-reward to successful shop purchase responses."""
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        ref = str(purchase_id or item_id or "")
+        micro = try_micro_tx_reward(
+            user_id,
+            "shop_purchase",
+            idempotency_key=f"shop_purchase:{user_id}:{ref}",
+            reason="Shop purchase cashback",
+            metadata={"item_id": item_id, "purchase_id": purchase_id},
+        )
+        if micro:
+            payload["micro_tx_reward"] = micro
+    except Exception:
+        pass
+    return payload
+
+
 def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int, *, purchase_ref: str = None) -> None:
     """Apply boosters and game time to user when they purchase relevant shop items."""
     import re
@@ -1880,7 +1900,7 @@ def shop_purchase():
                 except Exception:
                     pass
                 # Purchase successful
-                return jsonify({
+                resp = {
                     'success': True,
                     'message': f'Purchased {quantity}x {item.get("name")}',
                     'item': item,
@@ -1889,7 +1909,8 @@ def shop_purchase():
                     'quantity': quantity,
                     'price_paid': item_price,
                     'purchase_id': purchase_id
-                }), 200
+                }
+                return jsonify(_attach_shop_micro_tx(resp, user_id, purchase_id, item_id)), 200
                 
             except ImportError:
                 return jsonify({
@@ -1989,7 +2010,7 @@ def shop_purchase():
                 except Exception:
                     pass
                 # Purchase successful
-                return jsonify({
+                resp = {
                     'success': True,
                     'message': f'Purchased {quantity}x {item.get("name")}',
                     'item': item,
@@ -2000,7 +2021,8 @@ def shop_purchase():
                     'remaining_currency': user_currency - total_cost,
                     'loyalty_earned': loyalty_earned,
                     'purchase_id': purchase_id
-                }), 200
+                }
+                return jsonify(_attach_shop_micro_tx(resp, user_id, purchase_id, item_id)), 200
                 
             except ImportError:
                 # Unified points system not available - allow purchase without deduction

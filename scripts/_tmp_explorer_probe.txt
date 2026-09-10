@@ -1,0 +1,30 @@
+﻿=== masternoder2d ===
+deactivating
+ÔùÅ masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+     Loaded: loaded (/etc/systemd/system/masternoder2d.service; enabled; preset: enabled)
+     Active: deactivating (stop-sigterm) since Thu 2026-09-10 00:03:33 UTC; 24s ago
+        Job: 32018242
+ Invocation: 402db39b414042e7a4e2c8680b1699fe
+   Main PID: 3011492 (masternoder2-sh)
+      Tasks: 15 (limit: 1795)
+     Memory: 36.2M (peak: 1G, swap: 1022.6M, swap peak: 1022.7M)
+        CPU: 2min 1.515s
+     CGroup: /system.slice/masternoder2d.service
+             ÔööÔöÇ3011492 /opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+
+Sep 09 22:50:22 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'core-dump'.
+Sep 09 22:50:22 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 14.116s CPU time, 708.9M memory peak, 776.3M memory swap peak.
+Sep 09 22:50:32 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+=== port 9332 ===
+not listening
+=== RPC probe (cli) ===
+error: couldn't connect to server
+=== app network_overview ===
+{"daemon": {"connections": null, "version": null, "subversion": null, "protocol_version": null, "mempool_tx": null, "mempool_bytes": null, "chain": null, "verification_progress": null, "median_time": null, "size_on_disk": null, "headers": null, "money_supply": null, "reachable": false}, "block_height": 989389, "source": {"block_height": "chainz", "mn2_usd_price": "chainz", "difficulty": "chainz"}, "staking_health": {"status": "unreachable", "staking_active": null, "staking_weight": null, "net_stake_weight": null, "expected_time_to_reward_sec": null, "mature_balance": null, "immature_balance": null, "unconfirmed_balance": null, "errors": "Failed to establish a new connection: [Errno 111] Connection refused"}}
+=== local API ===
+http=200 time=0.583708
+api success: True
+api daemon: {"chain": null, "connections": null, "headers": null, "median_time": null, "mempool_bytes": null, "mempool_tx": null, "money_supply": null, "protocol_version": null, "reachable": false, "size_on_disk": null, "subversion": null, "verification_progress": null, "version": null}
+api staking: {"errors": "Failed to establish a new connection: [Errno 111] Connection refused", "expected_time_to_reward_sec": null, "immature_balance": null, "mature_balance": null, "net_stake_weight": null, "staking_active": null, "staking_weight": null, "status": "unreachable", "unconfirmed_balance": null}
+Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+

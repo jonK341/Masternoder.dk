@@ -131,8 +131,18 @@
 .nav-toolbar-user {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .nav-toolbar-user {
+        gap: 4px;
+    }
+
+    .nav-toolbar-mn2-wallet {
+        padding: 4px 8px;
+    }
 }
 
 .nav-toolbar-currency {
@@ -385,6 +395,7 @@ body {
 #comprehensive-points-section,
 #comprehensive-points-table,
 #comprehensive-points-grid,
+#comprehensive-points-energy-display,
 .point-counters-grid,
 .point-counter-card,
 #tab-points,
@@ -395,13 +406,90 @@ body {
 #points-by-category-section,
 .arena-tab[data-tab="points"],
 #top50-monetization-frame-container,
-#top50-monetization-frame {
+#top50-monetization-frame,
+#hypnotic-points-widget,
+.hypnotic-points-widget,
+#progression-main-widget,
+.progression-widget,
+#progression-categories,
+.progression-categories-container,
+#accuracy-grade-badge {
     display: none !important;
 }
 
+/* Neutral scrollbars — avoid wide gradient thumb that reads as a right-edge progress bar */
+html {
+    scrollbar-gutter: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    border: none;
+    box-shadow: none;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: none;
+}
+
 /* ===== Single "Portaler" void (home / MN_NAV_PORTAL_VOID) ===== */
-.nav-toolbar--portal-void .nav-toolbar-portal-wrap {
+.nav-toolbar--portal-void .nav-toolbar-content {
+    gap: 8px;
+}
+
+.nav-toolbar-quicklinks {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 2px 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.nav-toolbar-quicklink {
+    flex-shrink: 0;
+    padding: 5px 9px !important;
+    font-size: 0.78rem !important;
+}
+
+.nav-toolbar-quicklink .nav-toolbar-link-icon {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .nav-toolbar-quicklinks {
+        display: none;
+    }
+
+    .nav-toolbar--portal-void .nav-toolbar-portal-wrap {
+        flex: 1;
+        justify-content: flex-start;
+    }
+
+    .nav-toolbar-portal-trigger {
+        padding: 7px 14px;
+        font-size: 0.88rem;
+    }
+}
+
+.nav-toolbar--portal-void .nav-toolbar-portal-wrap {
+    flex: 0 0 auto;
     display: flex;
     justify-content: center;
     min-width: 0;
@@ -470,6 +558,110 @@ body {
     letter-spacing: 0.04em;
 }
 
+.nav-toolbar-portal-sections {
+    display: grid;
+    gap: 8px;
+}
+
+/* Collapsible cluster accordion */
+.nav-toolbar-portal-accordion {
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+}
+
+.nav-toolbar-portal-accordion-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    background: transparent;
+    color: #e8fff4;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.nav-toolbar-portal-accordion-trigger:hover,
+.nav-toolbar-portal-accordion.is-open .nav-toolbar-portal-accordion-trigger {
+    background: rgba(0, 255, 136, 0.08);
+    color: #39ff14;
+}
+
+.nav-toolbar-portal-accordion-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-toolbar-portal-accordion-icon {
+    font-size: 1.05rem;
+}
+
+.nav-toolbar-portal-accordion-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nav-toolbar-portal-accordion-count {
+    min-width: 22px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(0, 212, 255, 0.14);
+    border: 1px solid rgba(0, 212, 255, 0.28);
+    color: #9de8ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.nav-toolbar-portal-accordion-chevron {
+    display: inline-block;
+    color: rgba(255, 255, 255, 0.55);
+    transition: transform 0.2s ease;
+}
+
+.nav-toolbar-portal-accordion.is-open .nav-toolbar-portal-accordion-chevron {
+    transform: rotate(180deg);
+    color: #00ff88;
+}
+
+.nav-toolbar-portal-accordion-panel {
+    padding: 0 12px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-toolbar-portal-accordion-panel[hidden] {
+    display: none !important;
+}
+
+.nav-toolbar-portal-merge {
+    margin: 0 0 10px;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.52);
+}
+
+.nav-toolbar-portal-merge-link {
+    color: #00d4ff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.nav-toolbar-portal-merge-link:hover {
+    color: #00ff88;
+    text-decoration: underline;
+}
+
 .nav-toolbar-portal-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
@@ -491,8 +683,39 @@ body {
 
 @media (max-width: 640px) {
     .nav-toolbar-portal-panel {
-        top: 44px;
-        max-height: min(82vh, 720px);
+        top: auto;
+        bottom: 0;
+        max-height: min(86vh, 780px);
+        border-radius: 18px 18px 0 0;
+        border-bottom: none;
+        box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    .nav-toolbar-portal-inner {
+        padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .nav-toolbar-portal-hint {
+        font-size: 0.78rem;
+        margin-bottom: 10px;
+    }
+
+    .nav-toolbar-portal-grid {
+        grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+        gap: 8px;
+    }
+
+    .nav-toolbar-portal-grid .nav-toolbar-portal-grid-link {
+        padding: 10px 8px;
+        font-size: 0.78rem;
+    }
+
+    .nav-toolbar--portal-void .nav-toolbar-user-controls {
+        display: none;
+    }
+
+    .nav-toolbar--portal-void .nav-toolbar-toggle {
+        display: block;
     }
 }
 

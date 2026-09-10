@@ -104,6 +104,15 @@ def _count_slots_used(hosts: List[Dict[str, Any]]) -> int:
     return sum(1 for h in hosts if isinstance(h, dict) and _host_reserves_slot(h))
 
 
+def _count_waiting_slots(hosts: List[Dict[str, Any]]) -> int:
+    """Hosts paid/queued but not yet ENABLED on-chain (provisioning backlog)."""
+    pending = {"queued", "provisioning", "planned"}
+    return sum(
+        1 for h in hosts
+        if isinstance(h, dict) and (h.get("status") or "").lower() in pending
+    )
+
+
 def purge_stale_provisioning_hosts(
     max_age_hours: float = 6,
     *,
@@ -1600,6 +1609,7 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         pass
 
     slots_used = _count_slots_used(registry_hosts)
+    waiting_slots = _count_waiting_slots(registry_hosts)
     stale_provisioning = sum(
         1 for h in registry_hosts
         if isinstance(h, dict)
@@ -1614,6 +1624,7 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         "collateral_mn2": collateral,
         "max_hosted_nodes": max_nodes,
         "hosted_count": slots_used,
+        "waiting_slots": waiting_slots,
         "registry_count": len(registry_hosts),
         "stale_provisioning_count": stale_provisioning,
         "slots_available": max(0, max_nodes - slots_used),

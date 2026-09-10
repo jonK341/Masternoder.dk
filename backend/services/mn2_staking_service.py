@@ -923,6 +923,18 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
                     mirror_leader_reward(uid, reward, interval_id=interval_id)
             except Exception:
                 pass
+            try:
+                from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+                try_micro_tx_reward(
+                    uid,
+                    "staking_accrual",
+                    idempotency_key=f"staking-micro:{interval_id}:{uid}",
+                    reason="Staking accrual participation",
+                    metadata={"interval_id": interval_id, "reward_mn2": reward},
+                )
+            except Exception:
+                pass
 
         reserve["lifetime_paid"] = reserve.get("lifetime_paid", 0.0) + total_reward
         _save_reserve(reserve)

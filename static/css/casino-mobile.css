@@ -76,6 +76,18 @@ html.casino-mobile-ready {
 }
 
 @media (max-width: 640px) {
+    .casino-levelup-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+    .casino-levelup-filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+    .casino-levelup-filter {
+        flex-shrink: 0;
+    }
     .casino-page button,
     .casino-page .casino-currency-btn,
     .casino-page .casino-main-tab {
@@ -99,6 +111,21 @@ html.casino-mobile-ready {
 
     .casino-main-tab {
         scroll-snap-align: start;
+        flex-shrink: 0;
+    }
+
+    .casino-levelup-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+
+    .casino-levelup-filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .casino-levelup-filter {
         flex-shrink: 0;
     }
 }

@@ -8,7 +8,7 @@ import os
 all_page_bp = Blueprint('all_pages', __name__)
 
 # Version for cache busting - bump on deploy
-CONTENT_VERSION = "20260428a"
+CONTENT_VERSION = "20260910a"
 
 
 def _base_path():
@@ -50,7 +50,8 @@ PAGES = [
     'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'wallets', 'podcast', 'business-control',
+    'wallets', 'podcast', 'business-control', 'creator',
+    'terms', 'discord-play',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.
@@ -62,6 +63,7 @@ _PAGE_REDIRECTS = {
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
 _CONSOLIDATED_PROFILE_TABS = {
     'leaderboards': 'leaderboard',
+    'leaderboard': 'leaderboard',
     'unified_dashboard': 'points',
 }
 
@@ -84,6 +86,27 @@ def _register_profile_redirects():
 
 
 _register_profile_redirects()
+
+
+def _register_dashboard_profile_redirects():
+    """Register /dashboard/<slug> -> /profile?tab=... for consolidated dashboard pages."""
+
+    def _make_handler(tab: str, name: str):
+        def _redirect():
+            return redirect(f'/profile?tab={tab}', code=301)
+
+        _redirect.__name__ = name
+        return _redirect
+
+    for slug, tab in (('points', 'points'),):
+        safe = slug.replace('-', '_')
+        h = _make_handler(tab, f'redirect_dashboard_{safe}_to_profile')
+        all_page_bp.add_url_rule(f'/dashboard/{slug}', view_func=h, strict_slashes=False)
+        all_page_bp.add_url_rule(f'/dashboard/{slug}/', view_func=h)
+        all_page_bp.add_url_rule(f'/dashboard/{slug}/index.html', view_func=h)
+
+
+_register_dashboard_profile_redirects()
 
 
 def _register_page_redirects():
@@ -278,6 +301,25 @@ def exchange_ui_css():
         pass
     return 'Not found', 404
 
+
+
+@all_page_bp.route('/creator/manifest.webmanifest', methods=['GET'])
+def creator_manifest():
+    """PWA manifest for Super Encoder mobile app."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'creator')
+        if os.path.isfile(os.path.join(page_dir, 'manifest.webmanifest')):
+            resp = send_from_directory(
+                page_dir,
+                'manifest.webmanifest',
+                mimetype='application/manifest+json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            return resp
+    except Exception:
+        pass
+    return 'Manifest not found', 404
 
 
 @all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])

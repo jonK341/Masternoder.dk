@@ -367,3 +367,26 @@ def podcast_news_add_comment(news_id: str):
     result = add_news_comment(news_id, uid, data.get("content", ""))
     code = 200 if result.get("success") else 400
     return jsonify(result), code
+
+
+_FEATURED_SUNO_EMBED = (
+    '<iframe src="https://suno.com/embed/4d239d3c-3833-4c8a-a05f-2d86ee10fea4" '
+    'width="760" height="240" frameborder="0" '
+    'allow="autoplay; encrypted-media; fullscreen" allowfullscreen '
+    'loading="lazy" referrerpolicy="no-referrer-when-downgrade">'
+    '<a href="https://suno.com/song/4d239d3c-3833-4c8a-a05f-2d86ee10fea4">Listen on Suno</a>'
+    "</iframe>"
+)
+
+
+@podcast_bp.route("/api/podcast/featured", methods=["GET"])
+def podcast_featured():
+    return jsonify({
+        "success": True,
+        "title": "Featured Suno Track",
+        "suno_id": "4d239d3c-3833-4c8a-a05f-2d86ee10fea4",
+        "suno_url": "https://suno.com/song/4d239d3c-3833-4c8a-a05f-2d86ee10fea4",
+        "embed_html": _FEATURED_SUNO_EMBED,
+        "embed_width": 760,
+        "embed_height": 240,
+    }), 200

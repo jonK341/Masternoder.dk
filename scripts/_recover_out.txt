@@ -1,0 +1,37 @@
+﻿Connected root@masternoder.dk (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+python : Traceback (most recent call last):
+At C:\Users\jonkh\AppData\Local\Temp\ps-script-735af517-74a8-4385-9a9a-c8d108e47260.ps1:98 char:100
++ ... CODING = "utf-8"; python scripts/_mn2_mn_recover_prod.py 2>&1 | Out-F ...
++                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 697, in recv
+    out = self.in_buffer.read(nbytes, self.timeout)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\buffered_pipe.py", line 154, in read
+    raise PipeTimeout()
+paramiko.buffered_pipe.PipeTimeout
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_mn2_mn_recover_prod.py", line 146, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_mn2_mn_recover_prod.py", line 138, in main
+    out = sh(ssh, REMOTE, timeout=300)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_mn2_mn_recover_prod.py", line 129, in sh
+    out = stdout.read().decode(errors="replace")
+          ^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\file.py", line 184, in read
+    new_data = self._read(self._DEFAULT_BUFSIZE)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 1359, in _read
+    return self.channel.recv(size)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 699, in recv
+    raise socket.timeout()
+TimeoutError

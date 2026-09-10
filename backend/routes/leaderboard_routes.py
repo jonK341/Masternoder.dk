@@ -126,6 +126,18 @@ def leaderboard_all():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@leaderboard_bp.route("/api/178-systems/leaderboard/all", methods=["GET"])
+def legacy_178_leaderboard_all():
+    """Legacy alias — 178-systems UI links here; delegates to unified leaderboard."""
+    return leaderboard_all()
+
+
+@leaderboard_bp.route("/api/178-systems/leaderboard/<string:system_id>", methods=["GET"])
+def legacy_178_leaderboard_system(system_id):
+    """Legacy per-system alias for retired 178-systems routes."""
+    return leaderboard_by_system(system_id)
+
+
 @leaderboard_bp.route("/api/leaderboard/categories", methods=["GET"])
 def leaderboard_categories():
     """System selector cards for /leaderboards page."""

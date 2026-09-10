@@ -969,6 +969,52 @@ def casino_shop_purchase():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/upgrades/catalog", methods=["GET"])
+def casino_upgrades_catalog():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        category = request.args.get("category")
+        return jsonify(casino_service.get_upgrades_catalog(user_id, category=category)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/upgrades/progress", methods=["GET"])
+def casino_upgrades_progress():
+    try:
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_upgrades_progress(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/upgrades/purchase", methods=["POST"])
+def casino_upgrades_purchase():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        currency = (data.get("currency") or "coins").strip().lower()
+        if currency == "fiat":
+            currency = "usd"
+        result = casino_service.purchase_upgrade(
+            user_id=user_id,
+            upgrade_id=(data.get("upgrade_id") or data.get("id") or "").strip(),
+            currency=currency,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/upgrades/rtp-audit", methods=["GET"])
+def casino_upgrades_rtp_audit():
+    try:
+        from backend.services import casino_upgrades_service
+        return jsonify(casino_upgrades_service.audit_rtp_compliance()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/trophies", methods=["GET"])
 def casino_trophies():
     try:

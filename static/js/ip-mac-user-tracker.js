@@ -147,6 +147,7 @@
                     // Store user ID in localStorage
                     if (data.user_id) {
                         localStorage.setItem('user_id', data.user_id);
+                        localStorage.setItem('game_user_id', data.user_id);
                     }
                 }
                 
@@ -167,6 +168,7 @@
                 
                 if (data.success && data.user_id) {
                     localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('game_user_id', data.user_id);
                     return data;
                 }
                 

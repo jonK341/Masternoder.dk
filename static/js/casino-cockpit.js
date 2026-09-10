@@ -64,8 +64,15 @@
 
   function initTocShortcuts() {
     document.querySelectorAll('.casino-toc a[href^="#"]').forEach(function (link) {
-      link.addEventListener('click', function () {
-        var target = q((link.getAttribute('href') || '').slice(1));
+      link.addEventListener('click', function (e) {
+        var href = link.getAttribute('href') || '';
+        var tabId = href.replace('#casino-tab-', '');
+        if (tabId && window.__casinoSwitchTab && document.getElementById('casino-tab-' + tabId)) {
+          e.preventDefault();
+          window.__casinoSwitchTab(tabId);
+          return;
+        }
+        var target = q(href.slice(1));
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }

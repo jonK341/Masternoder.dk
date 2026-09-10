@@ -6,11 +6,26 @@
 
     var BASE = global.location ? global.location.origin : '';
 
+    function syncGameUserId() {
+        try {
+            var game = global.localStorage.getItem('game_user_id');
+            var user = global.localStorage.getItem('user_id');
+            if (game && game !== 'default_user' && (!user || user === 'default_user')) {
+                global.localStorage.setItem('user_id', game);
+            } else if (user && user !== 'default_user' && (!game || game === 'default_user')) {
+                global.localStorage.setItem('game_user_id', user);
+            }
+        } catch (e) { /* ignore */ }
+    }
+
     function uid() {
+        syncGameUserId();
         return global.localStorage.getItem('game_user_id')
             || global.localStorage.getItem('user_id')
             || 'default_user';
     }
+
+    syncGameUserId();
 
     function fetchJson(url) {
         return fetch(url).then(function (r) {
@@ -29,6 +44,7 @@
     global.Mn2SiteBridge = {
         BASE: BASE,
         uid: uid,
+        syncGameUserId: syncGameUserId,
         fmtMn2: fmtMn2,
         loadBalance: function () {
             return fetchJson(BASE + '/api/mn2/balance?user_id=' + encodeURIComponent(uid()));

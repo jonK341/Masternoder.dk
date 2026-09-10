@@ -163,23 +163,21 @@ def _credit_mn2(user_id: str, amount: float, source: str, metadata: Optional[Dic
     if amount <= 0:
         return True
     try:
-        from backend.services.unified_points_database import unified_points_db
-        if unified_points_db:
-            res = unified_points_db.add_points(
-                user_id, 'mn2_balance', amount,
-                source=source,
-                metadata=metadata or {},
-            )
-            if res.get('success'):
-                try:
-                    from backend.services.mn2_ledger import append_entry
-                    append_entry(user_id, 'trophy_reward', amount, metadata={
-                        'source': source,
-                        **(metadata or {}),
-                    })
-                except Exception:
-                    pass
-                return True
+        from backend.services.micro_tx_hooks import credit_mn2_reward
+
+        meta = dict(metadata or {})
+        ref = meta.get('reference') or meta.get('quest_id') or meta.get('trophy_id')
+        result = credit_mn2_reward(
+            user_id,
+            float(amount),
+            source=source,
+            reason=source,
+            reference=str(ref) if ref else None,
+            idempotency_key=f"trophy:{source}:{user_id}:{ref}" if ref else None,
+            metadata=meta,
+            emit_event=False,
+        )
+        return bool(result.get('success'))
     except Exception:
         pass
     return False

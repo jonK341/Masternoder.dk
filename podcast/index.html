@@ -27,6 +27,7 @@
     </header>
 
     <nav class="podcast-tabs" id="tabs">
+        <button class="podcast-tab" data-tab="featured">Featured</button>
         <button class="podcast-tab" data-tab="sound-lab">Sound Lab</button>
         <button class="podcast-tab" data-tab="leaderboard">Leaderboard</button>
         <button class="podcast-tab active" data-tab="channels">Channels</button>
@@ -41,6 +42,15 @@
     </nav>
 
     <main class="podcast-main">
+        <section class="podcast-panel" id="panel-featured">
+            <h2>🌟 Featured — Suno Track</h2>
+            <p>Udvalgt genereret musik — direkte fra Suno.</p>
+            <div class="podcast-featured-suno" style="margin: 1rem 0;">
+                <iframe src="https://suno.com/embed/4d239d3c-3833-4c8a-a05f-2d86ee10fea4" width="760" height="240" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"><a href="https://suno.com/song/4d239d3c-3833-4c8a-a05f-2d86ee10fea4">Listen on Suno</a></iframe>
+            </div>
+            <a class="podcast-btn" href="https://suno.com/song/4d239d3c-3833-4c8a-a05f-2d86ee10fea4" target="_blank" rel="noopener">Åben på Suno ↗</a>
+        </section>
+
         <section class="podcast-panel" id="panel-sound-lab">
             <h2>🔊 Sound Lab — BBCG Audio Diagnostics</h2>
             <p>Verified sound pipeline: TTS encode → BBCG flavor synth → stream repair.</p>

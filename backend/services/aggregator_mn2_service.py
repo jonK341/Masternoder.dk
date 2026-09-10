@@ -105,19 +105,24 @@ def _user_day_total(data: dict, user_id: str, day: str) -> float:
 def _credit(user_id: str, amount: float, meta: dict) -> bool:
     if amount <= 0:
         return False
-    from backend.services.unified_points_database import unified_points_db
-    from backend.services.mn2_ledger import append_entry
-
-    result = unified_points_db.add_points(
-        user_id, "mn2_balance", amount, source="aggregator_mn2_earn", metadata=meta,
-    )
-    if not result.get("success", True):
-        return False
     try:
-        append_entry(user_id=user_id, entry_type="aggregator_mn2_earn", amount=amount, metadata=meta)
+        from backend.services.micro_tx_hooks import credit_mn2_reward
+
+        action = meta.get("action") or "interaction"
+        day = meta.get("day") or _today()
+        result = credit_mn2_reward(
+            user_id,
+            float(amount),
+            source="aggregator_mn2_earn",
+            reason=f"Aggregator {action}",
+            idempotency_key=f"aggregator:{user_id}:{day}:{action}:{meta.get('event', '')}",
+            reference=f"aggregator:{user_id}:{day}:{action}",
+            metadata=meta,
+            emit_event=False,
+        )
+        return bool(result.get("success"))
     except Exception:
-        pass
-    return True
+        return False
 
 
 def award_for_action(user_id: str, action: str, meta: Optional[dict] = None) -> Dict[str, Any]:
@@ -151,14 +156,16 @@ def award_for_action(user_id: str, action: str, meta: Optional[dict] = None) -> 
     if amount <= 0:
         return {"success": True, "skipped": "cap_exhausted", "mn2_awarded": 0.0}
 
-    full_meta = {"action": _normalize_action(action), "day": day}
+    users = data.setdefault("users", {})
+    rec = users.setdefault(user_id, {"days": {}, "total_mn2": 0.0, "events": 0})
+    event_num = int(rec.get("events") or 0) + 1
+    full_meta = {"action": _normalize_action(action), "day": day, "event": event_num}
     if meta:
         full_meta.update(meta)
 
     if not _credit(user_id, amount, full_meta):
         return {"success": False, "error": "MN2 credit failed", "mn2_awarded": 0.0}
 
-    users = data.setdefault("users", {})
     rec = users.setdefault(user_id, {"days": {}, "total_mn2": 0.0, "events": 0})
     days = rec.setdefault("days", {})
     days[day] = round(float(days.get(day) or 0) + amount, 8)

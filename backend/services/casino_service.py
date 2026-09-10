@@ -616,6 +616,48 @@ def _finalize_bet(
             )
         except Exception:
             pass
+        try:
+            from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+            micro_rewards = []
+            spin = try_micro_tx_reward(
+                user_id,
+                "casino_spin",
+                idempotency_key=f"casino:spin:{row['bet_id']}",
+                reason=f"{game} spin",
+                metadata={"game": game, "bet_id": row["bet_id"], "currency": currency},
+            )
+            if spin:
+                micro_rewards.append(spin)
+            if net >= 0.01:
+                win = try_micro_tx_reward(
+                    user_id,
+                    "game_win",
+                    idempotency_key=f"casino:win:{row['bet_id']}",
+                    reason=f"{game} {outcome}",
+                    metadata={"game": game, "net": net, "currency": currency},
+                )
+                if win:
+                    micro_rewards.append(win)
+            if micro_rewards:
+                row["micro_tx_reward"] = micro_rewards[0] if len(micro_rewards) == 1 else micro_rewards
+        except Exception:
+            pass
+    elif bet > 0 and not skip_stake:
+        try:
+            from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+            spin = try_micro_tx_reward(
+                user_id,
+                "casino_spin",
+                idempotency_key=f"casino:spin:{row['bet_id']}",
+                reason=f"{game} spin",
+                metadata={"game": game, "bet_id": row["bet_id"], "currency": currency},
+            )
+            if spin:
+                row["micro_tx_reward"] = spin
+        except Exception:
+            pass
     try:
         from backend.services.casino_responsible_gaming import record_after_bet
         record_after_bet(user_id, net, currency)
@@ -5170,6 +5212,21 @@ def get_shop_owned(user_id: str) -> Dict[str, Any]:
 def purchase_shop_item(user_id: str, item_id: str, currency: str = "coins") -> Dict[str, Any]:
     from backend.services import casino_shop_service
     return casino_shop_service.purchase(user_id, item_id, currency)
+
+
+def get_upgrades_catalog(user_id: Optional[str] = None, category: Optional[str] = None) -> Dict[str, Any]:
+    from backend.services import casino_upgrades_service
+    return casino_upgrades_service.get_catalog(user_id, category=category)
+
+
+def get_upgrades_progress(user_id: str) -> Dict[str, Any]:
+    from backend.services import casino_upgrades_service
+    return casino_upgrades_service.get_progress(user_id)
+
+
+def purchase_upgrade(user_id: str, upgrade_id: str, currency: str = "coins") -> Dict[str, Any]:
+    from backend.services import casino_upgrades_service
+    return casino_upgrades_service.purchase(user_id, upgrade_id, currency)
 
 
 def get_casino_trophies(user_id: str) -> Dict[str, Any]:

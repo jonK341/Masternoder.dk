@@ -1,0 +1,29 @@
+﻿== DAEMON STATUS ==
+masternoder2d: active
+profit-daemon: active
+{"result":136418,"error":null,"id":"t"}
+
+== EXPLORER LOCAL ==
+{"api_latency":{"count":500,"paths":{"/api/mn2/explorer/chain-sync":1,"/api/mn2/explorer/status":17,"/api/mn2/explorer/stream":3,"/api/mn2/masternodes":21,"/api/mn2/network-alerts":11,"/api/mn2/network-history":16,"/api/mn2/network-overview":96,"/api/mn2/recent-blocks":32,"/api/mn2/rich-list":3},"percentiles_ms":{"p50":6780.37,"p95":16733.55,"p99":21128.78}},"checks":{"chain_sync":{"blocks":null,"headers":null,"headers_behind":0,"source":"rpc","synced":null,"verification_progress":null},"fork":{"blocks":null,"fork_risk":false,"headers":null,"headers_behind":0,"message":null},"mempool":{"bytes":0,"sample_txids":[],"size":0,"source":"rpc","usage":null},"rich_list":{"index_synced":true,"note":null,"ok":true,"sample_count":1},"rpc":{"block_height":136450,"ok":true}},"explorer_base_url":"https:
+== RICHLIST ==
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Language" content="en"><meta name="version" content="1.103.0-dd52c92"><title>MasterNoder2 Block Explorer Error - MasterNoder2 Explorer</title><link
+== CRON exchange files ==
+/etc/cron.d/masternoder-exchange-master
+/etc/cron.d/masternoder-exchange-master.bak.202608111739.disabled.20260910.disabled.20260910
+/etc/cron.d/masternoder-exchange-master.disabled.disabled.20260910.disabled.20260910
+== MEM ==
+               total        used        free      shared  buff/cache   available
+Mem:           1.6Gi       1.3Gi       196Mi       4.9Mi       260Mi       299Mi
+== journal mn2 last 5 ==
+Sep 10 00:26:18 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+Sep 10 00:26:29 Masternoder-Website systemd[1]: masternoder2d.service: Deactivated successfully.
+Sep 10 00:26:29 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:26:29 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 1min 13.478s CPU time, 300.6M memory peak, 211.3M memory swap peak.
+Sep 10 00:26:41 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+
+=== PUBLIC ===
+status=healthy
+rpc={'block_height': 141010, 'ok': True}
+rich_list={'index_synced': True, 'note': None, 'ok': True, 'sample_count': 1}

@@ -1,0 +1,33 @@
+# Self-hosted Suno-compatible REST proxy for MasterNoder Creator.
+# Upstream: https://github.com/gcui-art/suno-api
+#
+# Usage (on production server):
+#   1. Copy docker/suno-api/.env.example → docker/suno-api/.env
+#   2. Set SUNO_COOKIE to your Suno session cookie (from browser devtools)
+#   3. docker compose -f docker/suno-api/docker-compose.yml up -d
+#   4. Add to /var/www/html/.env:
+#        SUNO_API_BASE=http://127.0.0.1:3000
+#        SUNO_API_KEY=<same token as BROWSER_AUTH_TOKEN or leave empty if proxy has no auth>
+#   5. systemctl restart uwsgi-vidgenerator
+#   6. curl https://masternoder.dk/api/creator/music/status → preferred=suno
+
+services:
+  suno-api:
+    image: ghcr.io/gcui-art/suno-api:latest
+    container_name: masternoder-suno-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env
+    environment:
+      - SUNO_COOKIE=${SUNO_COOKIE}
+      - BROWSER=${BROWSER:-chromium}
+      - BROWSER_HEADLESS=${BROWSER_HEADLESS:-1}
+    shm_size: "1gb"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/api/get?ids=health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

@@ -1,0 +1,121 @@
+﻿========== MN2 REINDEX Thu Sep 10 00:17:23 UTC 2026 ==========
+== kill memory hogs ==
+killed exchange
+               total        used        free      shared  buff/cache   available
+Mem:           1.6Gi       1.0Gi       352Mi       6.2Mi       420Mi       615Mi
+== pause explorer RPC (pm2) ==
+[PM2] Applying action stopProcessId on app [explorer](ids: [ 0 ])
+[PM2] [explorer](0) Ô£ô
+ÔöîÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé id Ôöé name        Ôöé namespace   Ôöé version Ôöé mode    Ôöé pid      Ôöé uptime Ôöé Ôå║    Ôöé status    Ôöé cpu      Ôöé mem      Ôöé user     Ôöé watching Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé 0  Ôöé explorer    Ôöé default     Ôöé 1.103.0 Ôöé fork    Ôöé 0        Ôöé 0      Ôöé 0    Ôöé stopped   Ôöé 0%       Ôöé 0b       Ôöé root     Ôöé disabled Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+== patch systemd timeouts ==
+== conf low-memory ==
+== start -reindex (single instance, foreground log) ==
+reindex pid=3024779
+UpdateTip: new best=71ff70e477aa0c81e187abf47896d488972541e1343f0c3e1ef2c8a4390ad65c  height=5881 version=5  log2_work=6
+poll 1: block=5879 mem=892Mi active=1
+ProcessNewBlock : ACCEPTED Block 6296 in 40 milliseconds with size=461
+UpdateTip: new best=17c8eaaf771105a9b6b402e7a2adc
+poll 2: block=6291 mem=513Mi active=1
+ProcessNewBlock : ACCEPTED Block 10715 in 6 milliseconds with size=504
+UpdateTip: new best=a3cc5632997bcf3183693e31f911c
+poll 3: block=10705 mem=977Mi active=1
+ProcessNewBlock : ACCEPTED Block 16844 in 6 milliseconds with size=461
+
+poll 4: block=16841 mem=1319Mi active=1
+ProcessNewBlock : ACCEPTED Block 22127 in 1 milliseconds with size=504
+
+poll 5: block=22103 mem=1324Mi active=1
+ProcessNewBlock : ACCEPTED Block 26956 in 8 milliseconds with size=506
+
+poll 6: block=26950 mem=1359Mi active=1
+ProcessNewBlock : ACCEPTED Block 33232 in 3 milliseconds with size=461
+
+poll 7: block=33220 mem=1379Mi active=1
+ProcessNewBlock : ACCEPTED Block 39555 in 53 milliseconds with size=462
+
+poll 8: block=39548 mem=1338Mi active=1
+ProcessNewBlock : ACCEPTED Block 45636 in 18 milliseconds with size=462
+
+poll 9: block=45628 mem=1287Mi active=1
+ProcessNewBlock : ACCEPTED Block 49717 in 6 milliseconds with size=507
+
+poll 10: block=49711 mem=1366Mi active=1
+ProcessNewBlock : ACCEPTED Block 54020 in 34 milliseconds with size=506
+
+poll 11: block=54011 mem=1352Mi active=1
+ProcessNewBlock : ACCEPTED Block 59290 in 22 milliseconds with size=462
+
+poll 12: block=59281 mem=1380Mi active=1
+ProcessNewBlock : ACCEPTED Block 65392 in 202 milliseconds with size=100069
+
+poll 13: block=65392 mem=1022Mi active=1
+reindex exited at poll 14
+UpdateTip: new best=42f198709358f1d3896c57ed3117a79344770f0d865a449fd72cb86340178081  height=70390 version=5  log2_work=66.831303  tx=140257  date=2024-08-24 22:51:35 progress=1.000000  cache=12700
+ProcessNewBlock : ACCEPTED Block 70390 in 3 milliseconds with size=463
+UpdateTip: new best=4b8e46e0436416bec82aeb10ccc2e824d2f560b835ac05452ad1d2e1c2b23fba  height=70391 version=5  log2_work=66.83133  tx=140259  date=2024-08-24 22:51:44 progress=1.000000  cache=12703
+ProcessNewBlock : ACCEPTED Block 70391 in 3 milliseconds with size=462
+UpdateTip: new best=dda3fa57fe1da7524c9a95e96490fc579c9a7ee1f84f8dd8567ca8b99c1a5af8  height=70392 version=5  log2_work=66.831358  tx=140261  date=2024-08-24 22:52:22 progress=1.000000  cache=12706
+ProcessNewBlock : ACCEPTED Block 70392 in 5 milliseconds with size=462
+UpdateTip: new best=b5f142cd1c66a1adef6f1236553a189fb6f57caf3a590a3b7ef4e00333223214  height=70393 version=5  log2_work=66.831387  tx=140263  date=2024-08-24 22:52:41 progress=1.000000  cache=12709
+ProcessNewBlock : ACCEPTED Block 70393 in 6 milliseconds with size=461
+reindex not complete ÔÇö check log
+UpdateTip: new best=50b3edf274d70ca6dcc36141d9600cf9158ce34dbcb66399c10c9b89994dd763  height=70379 version=5  log2_work=66.830991  tx=140235  date=2024-08-24 22:40:19 progress=1.000000  cache=12673
+ProcessNewBlock : ACCEPTED Block 70379 in 2 milliseconds with size=463
+UpdateTip: new best=c8895109b254e039833c5f3a97ea8a2ef3bd6d2d1e708164e78f824374d75338  height=70380 version=5  log2_work=66.831018  tx=140237  date=2024-08-24 22:41:23 progress=1.000000  cache=12676
+ProcessNewBlock : ACCEPTED Block 70380 in 1 milliseconds with size=462
+UpdateTip: new best=4066980d79512572f1786c0bcbc5f1a44505c477c0758f5eb2061cb644f12128  height=70381 version=5  log2_work=66.831045  tx=140239  date=2024-08-24 22:42:10 progress=1.000000  cache=12678
+ProcessNewBlock : ACCEPTED Block 70381 in 3 milliseconds with size=505
+UpdateTip: new best=d923be8c7a88ebd2d6f412cee6e230163cacfcec18ac251eb54abde00250020c  height=70382 version=5  log2_work=66.831072  tx=140241  date=2024-08-24 22:42:11 progress=1.000000  cache=12680
+ProcessNewBlock : ACCEPTED Block 70382 in 2 milliseconds with size=461
+UpdateTip: new best=4c5f4c388b2766d2af48b278d036902aef43693b615b784e74ff091624fa0f9b  height=70383 version=5  log2_work=66.831101  tx=140243  date=2024-08-24 22:43:39 progress=1.000000  cache=12683
+ProcessNewBlock : ACCEPTED Block 70383 in 2 milliseconds with size=463
+UpdateTip: new best=894c83d73996e34a676ae723bb8a81d1033d59a00bd64491db073b0ad48474f6  height=70384 version=5  log2_work=66.831129  tx=140245  date=2024-08-24 22:44:55 progress=1.000000  cache=12686
+ProcessNewBlock : ACCEPTED Block 70384 in 2 milliseconds with size=462
+UpdateTip: new best=e9148c9d5519382b9e277d42c93af82767800e1074931587400438ca6bca1e99  height=70385 version=5  log2_work=66.831156  tx=140247  date=2024-08-24 22:45:31 progress=1.000000  cache=12688
+ProcessNewBlock : ACCEPTED Block 70385 in 2 milliseconds with size=506
+UpdateTip: new best=23e7e133952fd264680a443249e55570e73f096830f7581fc5807d829e73aba2  height=70386 version=5  log2_work=66.831185  tx=140249  date=2024-08-24 22:46:37 progress=1.000000  cache=12691
+ProcessNewBlock : ACCEPTED Block 70386 in 2 milliseconds with size=461
+UpdateTip: new best=831b18deefe042eb84758d0e2047d28355f8c364e6dbce7b1b6ba15fc5247680  height=70387 version=5  log2_work=66.831213  tx=140251  date=2024-08-24 22:46:39 progress=1.000000  cache=12694
+ProcessNewBlock : ACCEPTED Block 70387 in 3 milliseconds with size=506
+UpdateTip: new best=0933ce6c6e0b8b4d01f50b04eeda32389ac4b9633a560946bb02453b62d8d059  height=70388 version=5  log2_work=66.831242  tx=140253  date=2024-08-24 22:47:33 progress=1.000000  cache=12696
+ProcessNewBlock : ACCEPTED Block 70388 in 3 milliseconds with size=507
+UpdateTip: new best=4203e476153c5062cb0a26ac41e5c97223bdb1d4a7d8c9e569b628d16e2fd709  height=70389 version=5  log2_work=66.831272  tx=140255  date=2024-08-24 22:47:39 progress=1.000000  cache=12698
+ProcessNewBlock : ACCEPTED Block 70389 in 2 milliseconds with size=462
+UpdateTip: new best=42f198709358f1d3896c57ed3117a79344770f0d865a449fd72cb86340178081  height=70390 version=5  log2_work=66.831303  tx=140257  date=2024-08-24 22:51:35 progress=1.000000  cache=12700
+ProcessNewBlock : ACCEPTED Block 70390 in 3 milliseconds with size=463
+UpdateTip: new best=4b8e46e0436416bec82aeb10ccc2e824d2f560b835ac05452ad1d2e1c2b23fba  height=70391 version=5  log2_work=66.83133  tx=140259  date=2024-08-24 22:51:44 progress=1.000000  cache=12703
+ProcessNewBlock : ACCEPTED Block 70391 in 3 milliseconds with size=462
+UpdateTip: new best=dda3fa57fe1da7524c9a95e96490fc579c9a7ee1f84f8dd8567ca8b99c1a5af8  height=70392 version=5  log2_work=66.831358  tx=140261  date=2024-08-24 22:52:22 progress=1.000000  cache=12706
+ProcessNewBlock : ACCEPTED Block 70392 in 5 milliseconds with size=462
+UpdateTip: new best=b5f142cd1c66a1adef6f1236553a189fb6f57caf3a590a3b7ef4e00333223214  height=70393 version=5  log2_work=66.831387  tx=140263  date=2024-08-24 22:52:41 progress=1.000000  cache=12709
+ProcessNewBlock : ACCEPTED Block 70393 in 6 milliseconds with size=461
+== hand off to systemd ==
+systemd poll 1: active=active block=66144
+systemd poll 2: active=active block=66430
+systemd poll 3: active=active block=69186
+systemd poll 4: active=active block=74069
+systemd poll 5: active=active block=79018
+== restore explorer + profit ==
+[PM2] Applying action restartProcessId on app [explorer](ids: [ 0 ])
+[PM2] [explorer](0) Ô£ô
+[PM2] Process successfully started
+ÔöîÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé id Ôöé name        Ôöé namespace   Ôöé version Ôöé mode    Ôöé pid      Ôöé uptime Ôöé Ôå║    Ôöé status    Ôöé cpu      Ôöé mem      Ôöé user     Ôöé watching Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé 0  Ôöé explorer    Ôöé default     Ôöé 1.103.0 Ôöé fork    Ôöé 3027806  Ôöé 0s     Ôöé 2    Ôöé online    Ôöé 0%       Ôöé 37.6mb   Ôöé root     Ôöé disabled Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+== eiquidus unlock + sync ==
+== final probes ==
+rpc.ok True block 86795
+rich {'index_synced': False, 'note': 'Rich list empty ÔÇö eiquidus index may still be syncing', 'ok': False, 'sample_count': 0}
+RPC_OK=0
+Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+
+PUBLIC https://masternoder.dk/api/mn2/explorer/status
+  status=healthy rpc.ok=True block=99591
+PUBLIC check: 'NoneType' object is not subscriptable

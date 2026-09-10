@@ -1,7 +1,162 @@
 /**
- * Profile hub — tab bar + avatar picker (extends page-shell.css tab patterns)
+ * Profile hub — sticky tab bar + avatar picker (extends page-shell.css tab patterns)
  */
 @layer page-shell {
+
+body.hub-ux-page:not(.profile-route-ready) [data-profile-page] {
+    display: none !important;
+}
+
+.profile-hub-bar-wrap {
+    position: sticky;
+    top: calc(var(--nav-toolbar-offset, 56px) + 4px);
+    z-index: 120;
+    margin: 0 0 16px;
+    padding: 10px 12px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 255, 136, 0.32);
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.97), rgba(8, 12, 18, 0.92));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.profile-hub-primary.page-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: 8px;
+    margin: 0 0 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.profile-hub-primary .tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    text-align: center;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.profile-wallet-summary {
+    margin: 0 0 20px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 2px solid rgba(0, 212, 255, 0.4);
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.08));
+}
+
+.profile-wallet-summary-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.profile-wallet-summary-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.profile-wallet-summary-balance {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #00ff88;
+    margin-top: 2px;
+}
+
+.profile-wallet-summary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.profile-wallet-summary-btn {
+    padding: 8px 14px !important;
+    font-size: 0.85rem !important;
+    text-decoration: none;
+}
+
+.profile-hub-accordion {
+    margin: 0 0 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+}
+
+.profile-hub-accordion-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border: none;
+    background: rgba(0, 255, 136, 0.08);
+    color: #00ff88;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+}
+
+.profile-hub-accordion-toggle::after {
+    content: '▾';
+    opacity: 0.8;
+    transition: transform 0.15s ease;
+}
+
+.profile-hub-accordion.is-collapsed .profile-hub-accordion-toggle::after {
+    transform: rotate(-90deg);
+}
+
+.profile-hub-accordion-body {
+    padding: 4px 12px 12px;
+}
+
+.profile-hub-accordion.is-collapsed .profile-hub-accordion-body {
+    display: none;
+}
+
+.profile-hub-subnav.page-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: 6px;
+    margin: 0;
+    padding: 6px 2px 2px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-hub-subnav .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    border-radius: 999px;
+}
+
+.profile-hub-primary.page-tabs::-webkit-scrollbar,
+.profile-hub-subnav.page-tabs::-webkit-scrollbar { height: 5px; }
+
+.profile-hub-primary.page-tabs::-webkit-scrollbar-thumb,
+.profile-hub-subnav.page-tabs::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 136, 0.35);
+    border-radius: 999px;
+}
 
 .profile-hub-nav.page-tabs {
     flex-wrap: nowrap;
@@ -24,6 +179,49 @@
 .profile-hub-nav .tab-btn {
     flex-shrink: 0;
     white-space: nowrap;
+}
+
+.profile-hub-wallet-pinned {
+    border: 1px solid rgba(0, 212, 255, 0.45) !important;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.14), rgba(0, 255, 136, 0.1)) !important;
+    color: #00d4ff !important;
+    font-weight: 800;
+}
+
+.profile-hub-wallet-pinned.active {
+    border-color: rgba(0, 255, 136, 0.65) !important;
+    color: #39ff14 !important;
+    box-shadow: 0 0 14px rgba(0, 212, 255, 0.25);
+}
+
+.profile-route-note {
+    display: block;
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 212, 255, 0.22);
+    background: rgba(0, 212, 255, 0.06);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.82rem;
+}
+
+/* One panel at a time — flatten grid so sections stack full width */
+.profile-route-focused .profile-content {
+    display: block;
+}
+
+.profile-route-focused .profile-content .main-section,
+.profile-route-focused .profile-content .sidebar {
+    display: block;
+    width: 100%;
+}
+
+.profile-route-focused [data-profile-route][hidden] {
+    display: none !important;
+}
+
+.profile-route-focused #intelligence-section {
+    display: none;
 }
 
 .profile-wallet-subnav.page-tabs {
@@ -239,6 +437,46 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     background: rgba(0, 0, 0, 0.32);
     color: #fff;
+}
+
+@media (max-width: 768px) {
+    .profile-hub-bar-wrap {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        margin: 0;
+        border-radius: 16px 16px 0 0;
+        border-bottom: none;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+        z-index: 900;
+    }
+
+    .profile-hub-primary .tab-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: none;
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+
+    .profile-route-note {
+        display: none;
+    }
+
+    .profile-page {
+        padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .profile-wallet-summary-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-wallet-summary-balance {
+        font-size: 1.35rem;
+    }
 }
 
 @media (max-width: 600px) {

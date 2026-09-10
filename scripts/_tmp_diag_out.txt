@@ -1,0 +1,30 @@
+﻿SSH via key:C:\Users\jonkh\.ssh\id_ed25519_deploy
+python : Traceback (most recent call last):
+At C:\Users\jonkh\AppData\Local\Temp\ps-script-ea8566ba-9342-4114-9c44-e5626fbb448d.ps1:93 char:1
++ python scripts/_tmp_mn2_prod_diag.py 2>&1 | Out-File -Encoding utf8 s ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 697, in recv
+    out = self.in_buffer.read(nbytes, self.timeout)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\buffered_pipe.py", line 154, in read
+    raise PipeTimeout()
+paramiko.buffered_pipe.PipeTimeout
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_tmp_mn2_prod_diag.py", line 35, in <module>
+    print(stdout.read().decode(errors="replace").encode("ascii","backslashreplace").decode())
+          ^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\file.py", line 184, in read
+    new_data = self._read(self._DEFAULT_BUFSIZE)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 1359, in _read
+    return self.channel.recv(size)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jonkh\AppData\Roaming\Python\Python312\site-packages\paramiko\channel.py", line 699, in recv
+    raise socket.timeout()
+TimeoutError

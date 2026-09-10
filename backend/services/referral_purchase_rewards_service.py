@@ -157,10 +157,31 @@ def maybe_reward_referrer(
     except Exception:
         pass
 
-    return {
+    micro = None
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        micro = try_micro_tx_reward(
+            referrer_id,
+            "referral",
+            idempotency_key=ref_key,
+            reason="Referral first purchase",
+            metadata={
+                "buyer_user_id": buyer_user_id,
+                "purchase_kind": purchase_kind,
+                "item_id": item_id,
+            },
+        )
+    except Exception:
+        pass
+
+    result = {
         "success": True,
         "rewarded": True,
         "referrer_user_id": referrer_id,
         "referrer_coins": coins,
         "purchase_kind": purchase_kind,
     }
+    if micro:
+        result["micro_tx_reward"] = micro
+    return result

@@ -246,9 +246,9 @@
     },
     {
       "id": "google_play",
-      "label": "Google Play",
-      "icon": "▶️",
-      "url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino",
+      "label": "Install app",
+      "icon": "📲",
+      "url": "/casino/?app=casino-twa&tab=lobby",
       "type": "mobile"
     },
     {
@@ -261,7 +261,8 @@
   ],
   "mobile": {
     "package_id": "dk.masternoder.casino",
-    "play_store_url": "https://play.google.com/store/apps/details?id=dk.masternoder.casino",
+    "play_store_url": "/casino/?app=casino-twa&tab=lobby",
+    "sideload_apk_url": "/static/downloads/masternoder-casino.apk",
     "start_url": "/casino/?app=casino-twa&tab=lobby",
     "deep_link_base": "https://masternoder.dk/casino/",
     "theme_color": "#1A1035",
@@ -3097,10 +3098,5 @@
       }
     ]
   },
-  "hub_node_secret": "",
-  "Jon vinder igen!": {
-    "Løn er enabled": true,
-    "Start_coins": 10000,
-    "Slut_coins": 12500
-  }
+  "hub_node_secret": ""
 }

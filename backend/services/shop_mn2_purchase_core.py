@@ -171,7 +171,7 @@ def purchase_with_mn2_balance(
         except Exception:
             pass
 
-    return {
+    body = {
         "success": True,
         "message": f"Purchased {qty}x {item.get('name')} with MN2",
         "item": item,
@@ -184,4 +184,18 @@ def purchase_with_mn2_balance(
         "loyalty_earned": loyalty_earned,
         "purchase_id": purchase_id,
         "agent_id": agent_id,
-    }, 200
+    }
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        micro = try_micro_tx_reward(
+            uid,
+            "shop_purchase",
+            idempotency_key=f"shop_purchase:{uid}:{purchase_id or iid}",
+            metadata={"item_id": iid, "purchase_id": purchase_id},
+        )
+        if micro:
+            body["micro_tx_reward"] = micro
+    except Exception:
+        pass
+    return body, 200

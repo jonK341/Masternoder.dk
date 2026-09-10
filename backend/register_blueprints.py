@@ -169,6 +169,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_staking: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if 'mn2_masternode' not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            n += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_masternode: {e}")
+    try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:
             app.register_blueprint(agent_staking_bp)
@@ -192,6 +200,14 @@ def register_lite_blueprints(app):
             print("  [OK] Registered mn2_p2p blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_p2p: {e}")
+    try:
+        from backend.routes.mn2_micro_tx_routes import mn2_micro_tx_bp
+        if 'mn2_micro_tx' not in app.blueprints:
+            app.register_blueprint(mn2_micro_tx_bp)
+            n += 1
+            print("  [OK] Registered mn2_micro_tx blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_micro_tx: {e}")
     try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
@@ -320,6 +336,14 @@ def register_lite_blueprints(app):
             print("  [OK] Registered podcast blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP podcast: {e}")
+    try:
+        from backend.routes.creator_routes import creator_bp
+        if "creator" not in app.blueprints:
+            app.register_blueprint(creator_bp)
+            n += 1
+            print("  [OK] Registered creator blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP creator: {e}")
     try:
         from backend.routes.platform_upgrades_routes import platform_upgrades_bp
         app.register_blueprint(platform_upgrades_bp)
@@ -995,6 +1019,16 @@ def _register_all_blueprints_impl(app):
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_staking: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if 'mn2_masternode' not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
+    try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:
             app.register_blueprint(agent_staking_bp)
@@ -1024,6 +1058,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import mn2_p2p: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_p2p: {e}")
+    try:
+        from backend.routes.mn2_micro_tx_routes import mn2_micro_tx_bp
+        if 'mn2_micro_tx' not in app.blueprints:
+            app.register_blueprint(mn2_micro_tx_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_micro_tx blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_micro_tx: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_micro_tx: {e}")
 
     # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
     try:
@@ -2347,6 +2391,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import podcast: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering podcast: {e}")
+
+    try:
+        from backend.routes.creator_routes import creator_bp
+        if "creator" not in app.blueprints:
+            app.register_blueprint(creator_bp)
+            registered_count += 1
+            print("  [OK] Registered creator blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import creator: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering creator: {e}")
 
     print("  [OK 4/4] Agent technologies, chat, quest, leaderboard")
 

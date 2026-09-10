@@ -470,9 +470,8 @@ def get_mobile_config() -> Dict[str, Any]:
         "app_version": mobile.get("app_version") or "1.0.0",
         "package_id": mobile.get("package_id") or "dk.masternoder.casino",
         "bundle_id": mobile.get("bundle_id") or "dk.masternoder.casino",
-        "play_store_url": mobile.get("play_store_url") or (
-            "https://play.google.com/store/apps/details?id=dk.masternoder.casino"
-        ),
+        "play_store_url": mobile.get("play_store_url") or "/casino/?app=casino-twa&tab=lobby",
+        "sideload_apk_url": mobile.get("sideload_apk_url") or "/static/downloads/masternoder-casino.apk",
         "app_store_url": mobile.get("app_store_url") or (
             "https://apps.apple.com/app/id0000000000"
         ),
@@ -821,7 +820,22 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
         user_id=referred_user_id,
         payload={"referrer": anonymize_user(referrer_id), "code": code},
     )
-    return {"success": True, "referral": row}
+    out = {"success": True, "referral": row}
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        micro = try_micro_tx_reward(
+            referrer_id,
+            "referral",
+            idempotency_key=f"casino_referral:{row['id']}",
+            reason="Casino referral signup",
+            metadata={"referred_user_id": referred_user_id, "code": code},
+        )
+        if micro:
+            out["referrer_micro_tx_reward"] = micro
+    except Exception:
+        pass
+    return out
 
 
 def track_referral_casino_play(user_id: str) -> None:

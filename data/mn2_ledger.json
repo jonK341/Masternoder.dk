@@ -1109,6 +1109,156 @@
         "reference": "podcast-news-comment:route_news_user:pnc-051a9a59f6",
         "source": "podcast_news_comment"
       }
+    },
+    {
+      "user_id": "micro_tx_user_1",
+      "type": "micro_tx_reward",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T03:24:48.816850Z",
+      "metadata": {
+        "payout_id": "mtx-634bb93702e74f5e",
+        "source": "quest_complete",
+        "reason": "test quest",
+        "reference": "test-payout-001",
+        "idempotency_key": "test-payout-001"
+      }
+    },
+    {
+      "user_id": "micro_tx_user_2",
+      "type": "micro_tx_reward",
+      "amount": 0.002,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T03:24:48.857308Z",
+      "metadata": {
+        "payout_id": "mtx-9c2805acca4945ff",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "idem-micro-tx-002",
+        "idempotency_key": "idem-micro-tx-002"
+      }
+    },
+    {
+      "user_id": "cap_user",
+      "type": "micro_tx_reward",
+      "amount": 0.008,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T03:24:48.917871Z",
+      "metadata": {
+        "payout_id": "mtx-0fcce3a11ab04428",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "cap-1",
+        "idempotency_key": "cap-1"
+      }
+    },
+    {
+      "user_id": "micro_tx_user_1",
+      "type": "micro_tx_reward",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:35:49.023733Z",
+      "metadata": {
+        "payout_id": "mtx-c4f628286fb34c24",
+        "source": "quest_complete",
+        "reason": "test quest",
+        "reference": "test-payout-001",
+        "idempotency_key": "test-payout-001"
+      }
+    },
+    {
+      "user_id": "micro_tx_user_2",
+      "type": "micro_tx_reward",
+      "amount": 0.002,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:35:49.041894Z",
+      "metadata": {
+        "payout_id": "mtx-e1b525ea2b2445ca",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "idem-micro-tx-002",
+        "idempotency_key": "idem-micro-tx-002"
+      }
+    },
+    {
+      "user_id": "cap_user",
+      "type": "micro_tx_reward",
+      "amount": 0.008,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:35:49.091850Z",
+      "metadata": {
+        "payout_id": "mtx-fb9e32401e9f45ba",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "cap-1",
+        "idempotency_key": "cap-1"
+      }
+    },
+    {
+      "user_id": "micro_tx_user_1",
+      "type": "micro_tx_reward",
+      "amount": 0.005,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:39:20.014870Z",
+      "metadata": {
+        "payout_id": "mtx-cb59267c6b984f4a",
+        "source": "quest_complete",
+        "reason": "test quest",
+        "reference": "test-payout-001",
+        "idempotency_key": "test-payout-001"
+      }
+    },
+    {
+      "user_id": "micro_tx_user_2",
+      "type": "micro_tx_reward",
+      "amount": 0.002,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:39:20.043918Z",
+      "metadata": {
+        "payout_id": "mtx-cbd3644a067a4a14",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "idem-micro-tx-002",
+        "idempotency_key": "idem-micro-tx-002"
+      }
+    },
+    {
+      "user_id": "cap_user",
+      "type": "micro_tx_reward",
+      "amount": 0.008,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:39:20.100904Z",
+      "metadata": {
+        "payout_id": "mtx-b314b0c1e8ac4b23",
+        "source": "manual_ops",
+        "reason": "",
+        "reference": "cap-1",
+        "idempotency_key": "cap-1"
+      }
+    },
+    {
+      "user_id": "test_user_monetize",
+      "type": "micro_tx_reward",
+      "amount": 0.001,
+      "txid": null,
+      "address": null,
+      "created_at": "2026-09-10T14:41:48.395768Z",
+      "metadata": {
+        "payout_id": "mtx-2c996612ecdb4fcd",
+        "source": "daily_login",
+        "reason": "Daily login reward",
+        "reference": "daily_login:test_user_monetize:2026-09-10",
+        "idempotency_key": "daily_login:test_user_monetize:2026-09-10"
+      }
     }
   ]
 }

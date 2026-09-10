@@ -8,6 +8,13 @@ rpcpassword=Kp9mN2xL7vQw4jRc8sFb3hYt6nWz1aDg5
 rpcport=9332
 rpcallowip=127.0.0.1
 rpcbind=127.0.0.1
+# Low-memory VPS tuning (1.6 GiB RAM — prevents OOM/SEGV during block load)
+dbcache=32
+par=1
+maxconnections=8
+maxmempool=5
+rpcworkqueue=32
+rpcthreads=2
 
 # --- P2P network (wallet / daemon must reach peers on port 17646) ---
 listen=1

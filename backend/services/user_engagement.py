@@ -280,7 +280,22 @@ def claim_quest_reward(user_id: str, quest_id: str) -> Dict[str, Any]:
         unified_points_sync_device.record_domain_sync('quests')
     except Exception:
         pass
-    return {"success": True, "quest_id": quest_id, "xp_awarded": xp, "coins_awarded": coins}
+    out = {"success": True, "quest_id": quest_id, "xp_awarded": xp, "coins_awarded": coins}
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        micro = try_micro_tx_reward(
+            user_id,
+            "quest_complete",
+            idempotency_key=f"engagement_quest:{user_id}:{quest_id}",
+            reason=f"Quest complete: {quest_id}",
+            metadata={"quest_id": quest_id},
+        )
+        if micro:
+            out["micro_tx_reward"] = micro
+    except Exception:
+        pass
+    return out
 
 
 # ============================== NOTIFICATIONS ==============================

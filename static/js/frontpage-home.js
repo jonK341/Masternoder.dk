@@ -279,7 +279,7 @@
                 render();
             });
         });
-        document.querySelectorAll('.fp-smart-card, .fp-agent-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
+        document.querySelectorAll('.fp-smart-card, .fp-portal-card, .fp-agent-card, .fp-primary-action, .fp-secondary-action, .fp-mn2-double-tile, .fp-mn2-badge, .fp-mn2-link').forEach((el) => {
             el.addEventListener('mouseenter', () => sound.playPing(880, 0.012));
             el.addEventListener('focus', () => sound.playPing(880, 0.012));
         });
@@ -314,84 +314,203 @@
         });
     }
 
-    const POOL = [
-        { href: '/generator', label: 'Generator', icon: '🎬', tags: ['create', 'morning'] },
-        { href: '/game', label: 'Game', icon: '🎮', tags: ['play', 'evening'] },
-        { href: '/battle', label: 'Battle', icon: '⚔️', tags: ['compete'] },
-        { href: '/wallets', label: 'Wallets', icon: '💾', tags: ['economy', 'account'] },
-        { href: '/staking-leaderboard', label: 'Staking Rank', icon: '🌱', tags: ['economy', 'progress'] },
-        { href: '/staking-teams', label: 'Staking Teams', icon: '🤝', tags: ['economy', 'progress'] },
-        { href: '/shop', label: 'Shop', icon: '🛒', tags: ['economy'] },
-        { href: '/explorer', label: 'Explorer', icon: '🔎', tags: ['economy', 'explore'] },
-        { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
-        { href: '/quests', label: 'Quests', icon: '📜', tags: ['progress'] },
-        { href: '/trophies', label: 'Trophies', icon: '🏆', tags: ['collect'] },
-        { href: '/agents', label: 'AI Agents', icon: '🤖', tags: ['agents'] },
-        { href: '/podcast', label: 'Podcast', icon: '🎙️', tags: ['read'] },
-        { href: '/news', label: 'News', icon: '📰', tags: ['read'] },
-        { href: '/compendium/?calm=1', label: 'Library', icon: '📖', tags: ['read'] },
-        { href: '/lab', label: 'Lab', icon: '🔬', tags: ['agents'] },
-        { href: '/debugger', label: 'Debugger', icon: '🔧', tags: ['dev'] },
-        { href: '/gallery', label: 'Gallery', icon: '🖼️', tags: ['create'] },
-        { href: '/starmap25/', label: 'Star Map 25', icon: '🗺️', tags: ['explore'] },
-        { href: '/profit/', label: 'Profit Daemon', icon: '⚡', tags: ['economy', 'evening'] },
-    ];
-
-    function hourTag() {
-        const h = new Date().getHours();
-        if (h >= 5 && h < 12) return 'morning';
-        if (h >= 12 && h < 17) return 'day';
-        if (h >= 17 && h < 23) return 'evening';
-        return 'night';
+    function topPicksIds() {
+        if (typeof window !== 'undefined' && window.MN_NAV_TOP_PICKS_IDS && window.MN_NAV_TOP_PICKS_IDS.length) {
+            return window.MN_NAV_TOP_PICKS_IDS.slice();
+        }
+        if (typeof window !== 'undefined' && window.MN_NAV_TOP_20_IDS && window.MN_NAV_TOP_20_IDS.length) {
+            return window.MN_NAV_TOP_20_IDS.slice();
+        }
+        return [
+            'generator', 'game', 'battle', 'trophies', 'explorer', 'shop',
+            'creator', 'casino', 'wallets', 'agents', 'news', 'library',
+        ];
     }
 
-    function buildSmartLinks() {
-        const el = document.getElementById('fp-smart-links');
-        if (!el) return;
+    function normalizePath(href) {
+        try {
+            const u = new URL(href, window.location.origin);
+            let p = u.pathname.replace(/\/+$/, '') || '/';
+            if (u.search) p += u.search;
+            return p;
+        } catch (_) {
+            return href;
+        }
+    }
 
-        const visits = readVisits();
-        const ht = hourTag();
+    function getPortalCatalog() {
+        const raw = (typeof window !== 'undefined' && window.MN_NAV_LINKS) || [];
+        return raw
+            .filter((link) => link.id && link.id !== 'home')
+            .map((link) => ({
+                id: link.id,
+                href: link.url.replace(window.location.origin, '') || link.url,
+                label: link.name,
+                icon: link.icon || '🔗',
+                title: link.title || '',
+            }));
+    }
 
-        const scored = POOL.map((p) => {
-            let score = 0;
-            const u = new URL(p.href, window.location.origin);
-            score += (visits[u.pathname] || 0) * 3;
-            if (p.tags && p.tags.includes(ht)) score += 2;
-            if (ht === 'morning' && p.tags && p.tags.includes('create')) score += 1;
-            if (ht === 'evening' && p.tags && p.tags.includes('play')) score += 1;
-            return { ...p, score };
+    function visitScore(href, visits) {
+        const path = normalizePath(href);
+        const alt = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : `${path}/`;
+        return Math.max(visits[path] || 0, visits[alt] || 0);
+    }
+
+    function renderPortalGrid(links, visits, variant) {
+        const sorted = [...links].sort((a, b) => {
+            const diff = visitScore(b.href, visits) - visitScore(a.href, visits);
+            if (diff !== 0) return diff;
+            return a.label.localeCompare(b.label);
         });
 
-        scored.sort((a, b) => b.score - a.score);
-
-        const pick = [];
-        const seen = new Set();
-        for (const p of scored) {
-            if (pick.length >= 6) break;
-            if (seen.has(p.href)) continue;
-            seen.add(p.href);
-            pick.push(p);
-        }
-
-        const whyFor = (p) => {
-            const u = new URL(p.href, window.location.origin);
-            const n = visits[u.pathname] || 0;
-            if (n >= 3) return 'Ofte brugt — hurtig genvej';
-            if (p.tags && p.tags.includes(ht)) return 'Valgt til dit tidspunkt på dagen';
-            if (p.href.indexOf('starmap') !== -1) return 'Kort over systemer';
-            return 'Anbefalet på tværs af platformen';
-        };
-
-        el.innerHTML = `<div class="fp-smart-grid">${pick
-            .map(
-                (p) => `<a class="fp-smart-card" href="${p.href}">
+        return `<div class="fp-portal-grid">${sorted
+            .map((p) => {
+                const n = visitScore(p.href, visits);
+                const why = n >= 3 ? `${n} besøg` : (p.title || 'Portal');
+                const titleAttr = p.title ? ` title="${p.title.replace(/"/g, '&quot;')}"` : '';
+                return `<a class="fp-portal-card fp-portal-card--${variant}" href="${p.href}"${titleAttr}>
             <span class="icon">${p.icon}</span>
             <span class="label">${p.label}</span>
-            <span class="why">${whyFor(p)}</span>
-        </a>`
-            )
+            <span class="why">${why}</span>
+        </a>`;
+            })
             .join('')}</div>`;
     }
+
+    function renderClusterAccordions(catalog, visits) {
+        const groups = (typeof window !== 'undefined' && window.MN_NAV_GROUPS) || [];
+        const used = new Set();
+
+        const sections = groups.map((grp) => {
+            const grpLinks = catalog.filter((l) => l.group === grp.id);
+            grpLinks.forEach((l) => used.add(l.id));
+            if (!grpLinks.length) return '';
+            const hub = grp.hubId ? catalog.find((l) => l.id === grp.hubId) : null;
+            const hubLine = hub
+                ? `<p class="fp-portal-merge">Hub: <a href="${hub.href}">${hub.label}</a>${grp.summary ? ` · ${grp.summary}` : ''}</p>`
+                : (grp.summary ? `<p class="fp-portal-merge">${grp.summary}</p>` : '');
+            return `<section class="fp-portal-accordion" data-cluster="${grp.id}">
+                <button type="button" class="fp-portal-accordion-trigger" aria-expanded="false" aria-controls="fp-cluster-${grp.id}" id="fp-cluster-btn-${grp.id}">
+                    <span class="fp-portal-accordion-label"><span aria-hidden="true">${grp.icon}</span> ${grp.label}</span>
+                    <span class="fp-portal-accordion-meta">
+                        <span class="fp-portal-accordion-count">${grpLinks.length}</span>
+                        <span class="fp-portal-accordion-chevron" aria-hidden="true">▾</span>
+                    </span>
+                </button>
+                <div class="fp-portal-accordion-panel" id="fp-cluster-${grp.id}" role="region" aria-labelledby="fp-cluster-btn-${grp.id}" hidden>
+                    ${hubLine}
+                    ${renderPortalGrid(grpLinks, visits, 'more')}
+                </div>
+            </section>`;
+        }).join('');
+
+        const orphan = catalog.filter((l) => !used.has(l.id));
+        const orphanBlock = orphan.length
+            ? `<section class="fp-portal-accordion" data-cluster="other">
+                <button type="button" class="fp-portal-accordion-trigger" aria-expanded="false" aria-controls="fp-cluster-other" id="fp-cluster-btn-other">
+                    <span class="fp-portal-accordion-label"><span aria-hidden="true">🔗</span> Other</span>
+                    <span class="fp-portal-accordion-meta"><span class="fp-portal-accordion-count">${orphan.length}</span><span class="fp-portal-accordion-chevron" aria-hidden="true">▾</span></span>
+                </button>
+                <div class="fp-portal-accordion-panel" id="fp-cluster-other" role="region" aria-labelledby="fp-cluster-btn-other" hidden>
+                    ${renderPortalGrid(orphan, visits, 'more')}
+                </div>
+            </section>`
+            : '';
+
+        return sections + orphanBlock;
+    }
+
+    function setFpAccordionOpen(accordion, open) {
+        if (!accordion) return;
+        const trigger = accordion.querySelector('.fp-portal-accordion-trigger');
+        const panel = accordion.querySelector('.fp-portal-accordion-panel');
+        if (!trigger || !panel) return;
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        accordion.classList.toggle('is-open', open);
+        panel.hidden = !open;
+    }
+
+    function wirePortalAccordions() {
+        const root = document.getElementById('fp-portals-clusters');
+        if (!root) return;
+
+        root.querySelectorAll('.fp-portal-accordion-trigger').forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                const accordion = trigger.closest('.fp-portal-accordion');
+                const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+                root.querySelectorAll('.fp-portal-accordion').forEach((acc) => {
+                    if (acc !== accordion) setFpAccordionOpen(acc, false);
+                });
+                setFpAccordionOpen(accordion, !isOpen);
+            });
+        });
+
+        const first = root.querySelector('.fp-portal-accordion');
+        if (first) setFpAccordionOpen(first, true);
+    }
+
+    function buildPortalGrids() {
+        const quickEl = document.getElementById('fp-portals-quick');
+        const clustersEl = document.getElementById('fp-portals-clusters');
+        if (!quickEl || !clustersEl) return;
+
+        const catalog = getPortalCatalog().map((l) => {
+            const raw = (window.MN_NAV_LINKS || []).find((n) => n.id === l.id);
+            return raw ? { ...l, group: raw.group || null } : l;
+        });
+        const visits = readVisits();
+        const pickIds = topPicksIds();
+        const pickLinks = pickIds.map((id) => catalog.find((l) => l.id === id)).filter(Boolean);
+
+        quickEl.innerHTML = renderPortalGrid(pickLinks, visits, 'top');
+        clustersEl.innerHTML = renderClusterAccordions(catalog, visits);
+
+        const hint = document.getElementById('fp-portal-hint');
+        if (hint) {
+            hint.textContent = `${pickLinks.length} hurtige genveje · ${catalog.length} portaler i 6 klynger nedenfor.`;
+        }
+
+        wirePortalAccordions();
+    }
+
+    function wireMissionTabs(starmap) {
+        const tabs = Array.from(document.querySelectorAll('[data-fp-tab]'));
+        const panels = Array.from(document.querySelectorAll('[data-fp-panel]'));
+        if (!tabs.length || !panels.length) return;
+
+        const activate = (id) => {
+            tabs.forEach((tab) => {
+                const active = tab.dataset.fpTab === id;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', String(active));
+            });
+            panels.forEach((panel) => {
+                const active = panel.dataset.fpPanel === id;
+                panel.classList.toggle('is-active', active);
+                panel.hidden = !active;
+            });
+            if (id === 'live' && starmap) {
+                window.requestAnimationFrame(() => starmap.resize());
+            }
+            try {
+                localStorage.setItem('fp_mission_tab_v1', id);
+            } catch (_) {}
+        };
+
+        tabs.forEach((tab) => {
+            tab.addEventListener('click', () => activate(tab.dataset.fpTab));
+        });
+
+        let saved = '';
+        try {
+            saved = localStorage.getItem('fp_mission_tab_v1') || '';
+        } catch (_) {}
+        if (saved && tabs.some((t) => t.dataset.fpTab === saved)) {
+            activate(saved);
+        }
+    }
+
 
     async function loadNews() {
         const ul = document.getElementById('fp-news-list');
@@ -612,12 +731,21 @@
         }
     }
 
+    function wireDailyMicroTxClaim() {
+        const g = typeof window !== 'undefined' ? window : globalThis;
+        if (g.MN2MicroTx && typeof g.MN2MicroTx.wireDailyClaimButton === 'function') {
+            g.MN2MicroTx.wireDailyClaimButton('fp-claim-daily-btn');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        buildSmartLinks();
+        buildPortalGrids();
         loadNews();
         wireVisitTracking();
         wireSoundSystem();
         const sm = new StarMap4D('fp-starmap4d');
         sm.load();
+        wireMissionTabs(sm);
+        wireDailyMicroTxClaim();
     });
 })();

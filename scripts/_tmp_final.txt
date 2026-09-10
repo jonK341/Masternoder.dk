@@ -1,0 +1,33 @@
+﻿== masternoder2d final ==
+active
+active
+Sep 10 00:05:03 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:05:03 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 2min 1.722s CPU time, 1G memory peak, 1022.8M memory swap peak.
+Sep 10 00:05:03 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:05:35 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=dumped, status=11/SEGV
+Sep 10 00:05:35 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'core-dump'.
+Sep 10 00:05:35 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 7.040s CPU time, 616.3M memory peak, 690.2M memory swap peak.
+Sep 10 00:05:45 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:05:45 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+LISTEN 0      128        127.0.0.1:9332       0.0.0.0:*    users:(("masternoder2d",pid=3020154,fd=9))                                              
+
+== exchange tick success lines ==
+/var/www/html/cron/exchange_master_tick.sh: line 12: 11199 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9710 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9101 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12: 12257 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9139 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9007 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9711 Killed                  python3 scripts/exchange_master_daemon.py --once
+/var/www/html/cron/exchange_master_tick.sh: line 12:  9805 Killed                  python3 scripts/exchange_master_daemon.py --once
+
+== explorer port / nginx ==
+/etc/nginx/sites-enabled/camgirls.masternoder.dk:    include /etc/nginx/snippets/masternoder-explorer-compat.conf;
+/etc/nginx/sites-enabled/camgirls.masternoder.dk:    include /etc/nginx/snippets/masternoder-explorer-compat.conf;
+NODE_APP_INSTANCE: 0
+local_explorer_nginx=301
+public_explorer=000
+public explorer check skipped
+
+== mongodb richlist counts ==
+

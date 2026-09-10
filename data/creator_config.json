@@ -1,0 +1,510 @@
+{
+  "max_videos": 125,
+  "storage_dir": "data/creator_videos",
+  "tracks_catalog": "data/creator_tracks.json",
+  "ratings_file": "data/creator_ratings.json",
+  "landing_url": "https://masternoder.dk/",
+  "app_name": "MasterNoder Super Encoder",
+  "app_tagline": "Create music, songs & videos — rate with MN2 crypto",
+  "mobile": {
+    "app_version": "1.0.0",
+    "package_id": "dk.masternoder.creator",
+    "bundle_id": "dk.masternoder.creator",
+    "download_apk_url": "/static/downloads/masternoder-creator.apk",
+    "download_apk_filename": "masternoder-creator.apk",
+    "play_store_url": "",
+    "app_store_url": "",
+    "start_url": "/creator/?app=creator-capacitor",
+    "ios_start_url": "/creator/?app=creator-capacitor",
+    "deep_link_base": "/creator/",
+    "url_scheme": "masternoder",
+    "theme_color": "#1A1035",
+    "background_color": "#0A0E14",
+    "orientation": "portrait-primary",
+    "install_prompt_enabled": true,
+    "haptics": true,
+    "bottom_nav_shell": true
+  },
+  "ai_tasks": {
+    "lyrics": {
+      "task_type": "default",
+      "provider_preference": ["openai", "groq", "gemini", "openrouter", "deepseek"],
+      "prompt_template": "Write original song lyrics for a {genre} track titled \"{title}\". Mood: {mood}. Include verse, chorus, bridge. Keep under 400 words."
+    },
+    "music_structure": {
+      "task_type": "default",
+      "provider_preference": ["openai", "groq", "gemini"],
+      "prompt_template": "Describe BPM, key, instrumentation and section timings for a {genre} song: \"{title}\". Return JSON with bpm, key, sections array."
+    },
+    "video_prompt": {
+      "task_type": "context",
+      "provider_preference": ["gemini", "openai", "groq"],
+      "prompt_template": "Create a visual storyboard for a music video matching song \"{title}\" ({genre}). Lyrics excerpt: {lyrics_excerpt}. Return 3-5 scene descriptions."
+    },
+    "music_generation": {
+      "provider": "music_hook",
+      "preference": ["suno", "replicate_musicgen", "tts"],
+      "env": {
+        "suno": "SUNO_API_KEY + SUNO_API_BASE",
+        "replicate": "REPLICATE_API_TOKEN"
+      }
+    },
+    "audio_voice": {
+      "provider": "tts",
+      "preference": ["elevenlabs", "piper", "gtts"]
+    },
+    "video_clips": {
+      "provider": "video",
+      "preference": ["modelslab", "runway", "pika", "replicate", "pollinations"]
+    },
+    "sync_encode": {
+      "provider": "ffmpeg",
+      "audio_offset_ms": 0,
+      "video_codec": "libx264",
+      "audio_codec": "aac"
+    }
+  },
+  "default_encoder_mode": "full_mv",
+  "encoder_modes": [
+    {
+      "id": "full_mv",
+      "label": "Full Song + MV",
+      "icon": "🎬",
+      "category": "all-in-one",
+      "description": "Complete pipeline: lyrics, instrumental+vocal audio, music video, and sync mux.",
+      "default_duration": 60,
+      "default_genre": "electronic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "full song with vocals and production",
+      "audio_style": "energetic",
+      "prompts": {
+        "lyrics": "Write original song lyrics for a {genre} track titled \"{title}\". Mood: {mood}. Include verse, chorus, bridge. Keep under 400 words.",
+        "music_structure": "Describe BPM, key, instrumentation and section timings for a {genre} song: \"{title}\". Return JSON with bpm, key, sections array.",
+        "video_prompt": "Create a visual storyboard for a music video matching \"{title}\" ({genre}). Lyrics excerpt: {lyrics_excerpt}. Return 3-5 scene descriptions."
+      }
+    },
+    {
+      "id": "instrumental",
+      "label": "Instrumental",
+      "icon": "🎹",
+      "category": "audio",
+      "description": "Beat and melody only — no vocals. MusicGen/Suno instrumental path.",
+      "default_duration": 60,
+      "default_genre": "electronic",
+      "default_mood": "chill",
+      "layers": {"lyrics": false, "audio": true, "video": false, "sync": false},
+      "music_prompt": "instrumental only, no vocals, {genre} production",
+      "skip_tts": true,
+      "tone_freq": 220.0,
+      "prompts": {
+        "music_structure": "Describe BPM, key, and instrumentation for an instrumental {genre} track \"{title}\". Mood: {mood}. No vocals."
+      }
+    },
+    {
+      "id": "lyrics_only",
+      "label": "Lyrics Writer",
+      "icon": "✍️",
+      "category": "song",
+      "description": "Generate song lyrics and structure only — no audio or video rendering.",
+      "default_duration": 0,
+      "default_genre": "pop",
+      "default_mood": "uplifting",
+      "layers": {"lyrics": true, "audio": false, "video": false, "sync": false},
+      "price_mn2": 0.05,
+      "prompts": {
+        "lyrics": "Write polished song lyrics for \"{title}\" in {genre} style. Mood: {mood}. Include verse, pre-chorus, chorus, bridge. Under 500 words.",
+        "music_structure": "Return detailed song structure JSON for \"{title}\": bpm, key, chord progression, section bars."
+      }
+    },
+    {
+      "id": "acapella",
+      "label": "A Cappella",
+      "icon": "🎤",
+      "category": "audio",
+      "description": "Vocal-only track via TTS — no backing music generation.",
+      "default_duration": 45,
+      "default_genre": "pop",
+      "default_mood": "romantic",
+      "layers": {"lyrics": true, "audio": true, "video": false, "sync": false},
+      "skip_music_gen": true,
+      "prompts": {
+        "lyrics": "Write vocal-focused lyrics for a cappella \"{title}\" ({genre}). Mood: {mood}. Emphasize harmonies and vocal lines."
+      }
+    },
+    {
+      "id": "music_video",
+      "label": "Music Video",
+      "icon": "📹",
+      "category": "video",
+      "description": "Cinematic music video focus with synced audio — visual storyboard priority.",
+      "default_duration": 90,
+      "default_genre": "cinematic",
+      "default_mood": "dark",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "cinematic underscore matching video scenes",
+      "audio_style": "cinematic",
+      "prompts": {
+        "video_prompt": "Design a high-production music video for \"{title}\" ({genre}). Lyrics: {lyrics_excerpt}. Describe camera moves, lighting, and 5 distinct scenes."
+      }
+    },
+    {
+      "id": "short_reel",
+      "label": "Short Reel",
+      "icon": "📱",
+      "category": "video",
+      "description": "30-second vertical social clip — hook-first lyrics and fast-cut visuals.",
+      "default_duration": 30,
+      "default_genre": "pop",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "short catchy hook, social media reel, 30 seconds",
+      "audio_style": "energetic",
+      "short_clip": true,
+      "prompts": {
+        "lyrics": "Write a 30-second hook and one verse for \"{title}\" ({genre}). Mood: {mood}. TikTok/Reels style, punchy.",
+        "video_prompt": "Vertical 9:16 reel visuals for \"{title}\". Fast cuts, bold colors. Lyrics: {lyrics_excerpt}."
+      }
+    },
+    {
+      "id": "podcast_jingle",
+      "label": "Podcast Jingle",
+      "icon": "🎙️",
+      "category": "audio",
+      "description": "15-second intro/outro sting for podcasts and shows.",
+      "default_duration": 15,
+      "default_genre": "electronic",
+      "default_mood": "uplifting",
+      "layers": {"lyrics": false, "audio": true, "video": false, "sync": false},
+      "music_prompt": "podcast intro jingle, 15 seconds, memorable sting",
+      "skip_tts": true,
+      "tone_freq": 523.25,
+      "prompts": {
+        "music_structure": "Design a 15-second podcast jingle for \"{title}\". BPM, key, and hit points."
+      }
+    },
+    {
+      "id": "ambient_loop",
+      "label": "Ambient Loop",
+      "icon": "🌊",
+      "category": "audio",
+      "description": "Long ambient soundscape loop — soft tone fallback, optional static visual.",
+      "default_duration": 90,
+      "default_genre": "ambient",
+      "default_mood": "chill",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": false},
+      "music_prompt": "ambient soundscape, evolving textures, no drums",
+      "skip_tts": true,
+      "tone_freq": 110.0,
+      "audio_style": "ambient",
+      "prompts": {
+        "video_prompt": "Slow abstract ambient visuals for \"{title}\" — particles, gradients, minimal motion."
+      }
+    },
+    {
+      "id": "remix_edit",
+      "label": "Remix Edit",
+      "icon": "🔀",
+      "category": "mix",
+      "description": "Remix-style arrangement with drop sections and stem-oriented structure.",
+      "default_duration": 75,
+      "default_genre": "electronic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "remix edit with build-up, drop, and breakdown sections",
+      "stems": ["drums", "bass", "synth", "vocal"],
+      "prompts": {
+        "lyrics": "Write minimal vocal hooks for a remix of \"{title}\" ({genre}). Mood: {mood}. Focus on repeatable chants.",
+        "music_structure": "Remix arrangement JSON: intro, build, drop, breakdown, outro with bar counts."
+      }
+    },
+    {
+      "id": "beat_maker",
+      "label": "Beat Maker",
+      "icon": "🥁",
+      "category": "audio",
+      "description": "Drum-focused beat pack — kicks, snares, hi-hats pattern emphasis.",
+      "default_duration": 60,
+      "default_genre": "hip-hop",
+      "default_mood": "dark",
+      "layers": {"lyrics": false, "audio": true, "video": false, "sync": false},
+      "music_prompt": "drum beat, 808s, hi-hats, no melody vocals",
+      "skip_tts": true,
+      "tone_freq": 80.0,
+      "prompts": {
+        "music_structure": "Describe drum pattern, BPM, and swing for a {genre} beat \"{title}\"."
+      }
+    },
+    {
+      "id": "lofi_chill",
+      "label": "Lo-Fi Chill",
+      "icon": "☕",
+      "category": "audio",
+      "description": "Study beats with vinyl crackle vibe — mellow tempo defaults.",
+      "default_duration": 120,
+      "default_genre": "ambient",
+      "default_mood": "chill",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": false},
+      "music_prompt": "lo-fi hip hop, dusty drums, jazzy chords, study beats",
+      "skip_tts": true,
+      "tone_freq": 174.0,
+      "audio_style": "chill",
+      "prompts": {
+        "video_prompt": "Cozy lo-fi anime-style room loop for \"{title}\" — rain window, desk, warm lamp."
+      }
+    },
+    {
+      "id": "cinematic_score",
+      "label": "Cinematic Score",
+      "icon": "🎻",
+      "category": "video",
+      "description": "Orchestral film score with epic visual prompts.",
+      "default_duration": 90,
+      "default_genre": "cinematic",
+      "default_mood": "dark",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": true},
+      "music_prompt": "orchestral cinematic score, strings and brass, no vocals",
+      "skip_tts": true,
+      "audio_style": "cinematic",
+      "prompts": {
+        "video_prompt": "Epic cinematic scenes for score \"{title}\" — wide shots, dramatic lighting, 4 scenes."
+      }
+    },
+    {
+      "id": "edm_banger",
+      "label": "EDM Banger",
+      "icon": "⚡",
+      "category": "mix",
+      "description": "Festival drop track — high BPM, build-drop structure.",
+      "default_duration": 60,
+      "default_genre": "electronic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "EDM festival banger, massive drop, sidechain bass",
+      "audio_style": "energetic",
+      "prompts": {
+        "lyrics": "Write short EDM vocal hooks and chants for \"{title}\". Mood: {mood}. Festival energy.",
+        "music_structure": "EDM arrangement: build length, drop BPM, key, and FX cues."
+      }
+    },
+    {
+      "id": "hiphop_rap",
+      "label": "Hip-Hop Rap",
+      "icon": "🎧",
+      "category": "song",
+      "description": "16-bar verses with hook — rap-focused lyric template.",
+      "default_duration": 60,
+      "default_genre": "hip-hop",
+      "default_mood": "dark",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "hip-hop beat with boom bap or trap drums",
+      "prompts": {
+        "lyrics": "Write rap lyrics for \"{title}\" — two 16-bar verses, catchy hook, {genre} flow. Mood: {mood}."
+      }
+    },
+    {
+      "id": "rock_power",
+      "label": "Rock Anthem",
+      "icon": "🎸",
+      "category": "song",
+      "description": "Guitar-driven rock anthem with big chorus.",
+      "default_duration": 75,
+      "default_genre": "rock",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "rock anthem, distorted guitars, live drums, powerful chorus",
+      "audio_style": "energetic",
+      "prompts": {
+        "lyrics": "Write arena rock lyrics for \"{title}\" with powerful chorus. Mood: {mood}."
+      }
+    },
+    {
+      "id": "jazz_lounge",
+      "label": "Jazz Lounge",
+      "icon": "🎷",
+      "category": "audio",
+      "description": "Smooth jazz arrangement — brushed drums, upright bass mood.",
+      "default_duration": 90,
+      "default_genre": "ambient",
+      "default_mood": "romantic",
+      "layers": {"lyrics": true, "audio": true, "video": false, "sync": false},
+      "music_prompt": "smooth jazz lounge, saxophone, brushed drums",
+      "prompts": {
+        "lyrics": "Write sultry jazz vocal lyrics for \"{title}\". Mood: {mood}. Scat-friendly phrasing."
+      }
+    },
+    {
+      "id": "classical",
+      "label": "Classical Suite",
+      "icon": "🎼",
+      "category": "audio",
+      "description": "Classical composition structure — strings, piano, orchestral layout.",
+      "default_duration": 120,
+      "default_genre": "cinematic",
+      "default_mood": "uplifting",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": false},
+      "music_prompt": "classical suite, piano and strings, no vocals",
+      "skip_tts": true,
+      "tone_freq": 261.63,
+      "prompts": {
+        "music_structure": "Classical suite form for \"{title}\": movements, keys, tempo markings."
+      }
+    },
+    {
+      "id": "kids_tune",
+      "label": "Kids Song",
+      "icon": "🧸",
+      "category": "song",
+      "description": "Simple, friendly lyrics for children — bright mood defaults.",
+      "default_duration": 45,
+      "default_genre": "pop",
+      "default_mood": "uplifting",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "kids song, playful melody, simple arrangement",
+      "audio_style": "uplifting",
+      "prompts": {
+        "lyrics": "Write simple, fun kids song lyrics for \"{title}\". Mood: {mood}. Easy words, sing-along chorus."
+      }
+    },
+    {
+      "id": "karaoke",
+      "label": "Karaoke Track",
+      "icon": "🎶",
+      "category": "song",
+      "description": "Backing track + sing-along lyrics — vocal guide in metadata.",
+      "default_duration": 60,
+      "default_genre": "pop",
+      "default_mood": "uplifting",
+      "layers": {"lyrics": true, "audio": true, "video": false, "sync": false},
+      "music_prompt": "karaoke backing track, no lead vocal",
+      "skip_tts": true,
+      "karaoke": true,
+      "prompts": {
+        "lyrics": "Write sing-along karaoke lyrics for \"{title}\" ({genre}). Mark [Verse] [Chorus] sections clearly."
+      }
+    },
+    {
+      "id": "stem_export",
+      "label": "Stem Export",
+      "icon": "🎚️",
+      "category": "mix",
+      "description": "Multi-stem layout — drums, bass, synth, vocal layers in track metadata.",
+      "default_duration": 60,
+      "default_genre": "electronic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": false, "sync": false},
+      "music_prompt": "multi-stem electronic production",
+      "stems": ["drums", "bass", "synth", "vocal", "fx"],
+      "prompts": {
+        "music_structure": "Stem layout JSON for \"{title}\": each stem role, levels, and pan."
+      }
+    },
+    {
+      "id": "live_jam",
+      "label": "Live Jam",
+      "icon": "🎪",
+      "category": "mix",
+      "description": "Improvised live-session feel — loose structure, extended duration.",
+      "default_duration": 120,
+      "default_genre": "rock",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "live jam session, improvised feel, room ambience",
+      "audio_style": "energetic",
+      "prompts": {
+        "lyrics": "Write loose jam-session lyrics and cues for \"{title}\" ({genre}). Mood: {mood}.",
+        "video_prompt": "Live stage jam visuals for \"{title}\" — band, crowd, warm lights."
+      }
+    },
+    {
+      "id": "mashup",
+      "label": "Mashup Mix",
+      "icon": "🧬",
+      "category": "mix",
+      "description": "Two-genre mashup concept — blended structure in prompts.",
+      "default_duration": 60,
+      "default_genre": "electronic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "genre mashup, blended transitions, DJ mix style",
+      "mashup_genres": ["electronic", "hip-hop"],
+      "prompts": {
+        "lyrics": "Write mashup-friendly vocal snippets for \"{title}\" blending {genre} and pop. Mood: {mood}.",
+        "music_structure": "Mashup timeline: genre A section, transition, genre B section with BPM changes."
+      }
+    },
+    {
+      "id": "trailer_hype",
+      "label": "Trailer Hype",
+      "icon": "🚀",
+      "category": "video",
+      "description": "Epic trailer music + rapid-cut hype visuals.",
+      "default_duration": 45,
+      "default_genre": "cinematic",
+      "default_mood": "energetic",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": true},
+      "music_prompt": "epic trailer music, risers, impacts, no vocals",
+      "skip_tts": true,
+      "audio_style": "cinematic",
+      "short_clip": true,
+      "prompts": {
+        "video_prompt": "High-energy trailer montage for \"{title}\" — quick cuts, lens flares, title cards."
+      }
+    },
+    {
+      "id": "sleep_calm",
+      "label": "Sleep & Calm",
+      "icon": "🌙",
+      "category": "audio",
+      "description": "Meditation/sleep audio — low freq tone fallback, gentle visuals.",
+      "default_duration": 180,
+      "default_genre": "ambient",
+      "default_mood": "chill",
+      "layers": {"lyrics": false, "audio": true, "video": true, "sync": false},
+      "music_prompt": "sleep meditation drone, soft pads, no percussion",
+      "skip_tts": true,
+      "tone_freq": 65.0,
+      "audio_style": "ambient",
+      "prompts": {
+        "video_prompt": "Calming sleep visuals — stars, slow clouds, deep blue gradients for \"{title}\"."
+      }
+    },
+    {
+      "id": "crypto_anthem",
+      "label": "MN2 Crypto Anthem",
+      "icon": "💎",
+      "category": "specialty",
+      "description": "MasterNoder-branded crypto anthem — MN2 and node themes in lyrics.",
+      "default_duration": 60,
+      "default_genre": "hip-hop",
+      "default_mood": "energetic",
+      "layers": {"lyrics": true, "audio": true, "video": true, "sync": true},
+      "music_prompt": "crypto anthem, hype trap beat, anthemic hook",
+      "audio_style": "energetic",
+      "price_mn2": 0.12,
+      "prompts": {
+        "lyrics": "Write a crypto anthem for \"{title}\" celebrating MN2 tokens, masternodes, and MasterNoder.dk. Mood: {mood}. Hype rap verses + anthem chorus.",
+        "video_prompt": "Futuristic crypto visuals for \"{title}\" — blockchain nodes, neon charts, MN2 branding."
+      }
+    }
+  ],
+  "encode": {
+    "default_duration_sec": 60,
+    "default_genre": "electronic",
+    "default_encoder_mode": "full_mv",
+    "one_click_mn2": 0.15,
+    "premium_sync_mn2": 0.05,
+    "earn_on_finish_mn2": 0.008
+  },
+  "rating": {
+    "enabled": true,
+    "cost_mn2": 0.01,
+    "creator_share": 0.7,
+    "platform_share": 0.3,
+    "min_score": 1,
+    "max_score": 5,
+    "require_payment": true,
+    "featured_min_avg": 4.0,
+    "featured_min_ratings": 3
+  }
+}

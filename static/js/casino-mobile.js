@@ -12,7 +12,7 @@
     };
 
     var STORE = {
-        android: 'https://play.google.com/store/apps/details?id=dk.masternoder.casino',
+        android: '/casino/?app=casino-twa&tab=lobby',
         ios: 'https://apps.apple.com/app/id0000000000'
     };
 

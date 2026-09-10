@@ -35,6 +35,14 @@
     "duration_surcharge_per_min_mn2": 0.002,
     "max_earn_per_video_mn2": 0.05
   },
+  "creator": {
+    "enabled": true,
+    "max_videos": 125,
+    "one_click_encode_mn2": 0.15,
+    "rating_cost_mn2": 0.01,
+    "rating_creator_share": 0.7,
+    "earn_on_finish_mn2": 0.008
+  },
   "aggregator": {
     "enabled": true,
     "daily_cap_mn2": 0.25,

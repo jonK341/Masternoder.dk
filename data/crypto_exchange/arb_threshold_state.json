@@ -1,11 +1,11 @@
 {
-  "best_net_bps": 21.47,
+  "best_net_bps": 39.39,
   "threshold_bps": 12.0,
   "ready": true,
-  "top_symbol": "SHIB",
-  "buy_venue": "binance",
-  "sell_venue": "nonkyc",
-  "est_profit_usd": 0.0215,
-  "updated_at": "2026-07-26T02:08:20.955065Z",
+  "top_symbol": "ADA",
+  "buy_venue": "nonkyc",
+  "sell_venue": "xeggex",
+  "est_profit_usd": 0.0394,
+  "updated_at": "2026-08-02T21:17:07.173088Z",
   "source": "fast_arb_rescan"
 }

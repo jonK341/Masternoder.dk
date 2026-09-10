@@ -1,0 +1,369 @@
+﻿Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+============================================================
+===== DAEMON STATUS REPORT =====
+== Host ==
+Masternoder-Website
+2026-09-10 00:02:41 UTC
+ 00:02:41 up 29 days,  6:32,  4 users,  load average: 1.96, 1.41, 1.09
+
+== systemd: core + masternoder-* ==
+  nginx                          active=active       enabled=enabled
+  uwsgi-vidgenerator             active=active       enabled=enabled
+  uwsgi                          active=failed       enabled=enabled
+  python-proxy                   active=active       enabled=enabled
+  masternoder2d                  active=active       enabled=enabled
+  masternoder-profit-daemon      active=inactive     enabled=disabled
+  masternoder-exchange-master    active=inactive     enabled=not-found
+  masternoder-agent-daemon       active=inactive     enabled=not-found
+  mn2-fleet-autostart            active=inactive     enabled=enabled
+  pm2-root                       active=active       enabled=enabled
+  docker                         active=active       enabled=enabled
+  mongod                         active=active       enabled=enabled
+  --- all masternoder units ---
+  UNIT                  LOAD   ACTIVE SUB     DESCRIPTION
+  masternoder2d.service loaded active running MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)
+
+Legend: LOAD   ÔåÆ Reflects whether the unit definition was properly loaded.
+        ACTIVE ÔåÆ The high-level unit activation state, i.e. generalization of SUB.
+        SUB    ÔåÆ The low-level unit activation state, values depend on unit type.
+
+1 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+== failed systemd units ==
+  UNIT                                    LOAD   ACTIVE SUB    DESCRIPTION
+ÔùÅ snap-coin-269.mount                     loaded failed failed Mount unit for coin, revision 269
+ÔùÅ snap-core18-2959.mount                  loaded failed failed Mount unit for core18, revision 2959
+ÔùÅ snap-core20-2682.mount                  loaded failed failed Mount unit for core20, revision 2682
+ÔùÅ snap-core22-2163.mount                  loaded failed failed Mount unit for core22, revision 2163
+ÔùÅ snap-core24-1225.mount                  loaded failed failed Mount unit for core24, revision 1225
+ÔùÅ snap-firefox-7355.mount                 loaded failed failed Mount unit for firefox, revision 7355
+ÔùÅ snap-gnome\x2d3\x2d28\x2d1804-198.mount loaded failed failed Mount unit for gnome-3-28-1804, revision 198
+ÔùÅ snap-gnome\x2d42\x2d2204-226.mount      loaded failed failed Mount unit for gnome-42-2204, revision 226
+ÔùÅ snap-gtk\x2dcommon\x2dthemes-1535.mount loaded failed failed Mount unit for gtk-common-themes, revision 1535
+ÔùÅ snap-lxd-36558.mount                    loaded failed failed Mount unit for lxd, revision 36558
+ÔùÅ snap-snapd-25577.mount                  loaded failed failed Mount unit for snapd, revision 25577
+ÔùÅ apache2.service                         loaded failed failed The Apache HTTP Server
+ÔùÅ cloud-init-hotplugd.service             loaded failed failed Cloud-init: Hotplug Hook
+ÔùÅ logrotate.service                       loaded failed failed Rotate log files
+ÔùÅ systemd-networkd-wait-online.service    loaded failed failed Wait for Network to be Configured
+ÔùÅ uwsgi.service                           loaded failed failed LSB: Start/stop uWSGI server instance(s)
+
+Legend: LOAD   ÔåÆ Reflects whether the unit definition was properly loaded.
+        ACTIVE ÔåÆ The high-level unit activation state, i.e. generalization of SUB.
+
+== listeners ==
+LISTEN 0      4096       127.0.0.1:27017      0.0.0.0:*    users:(("mongod",pid=1657,fd=9))                                                        
+LISTEN 0      128        127.0.0.1:9332       0.0.0.0:*    users:(("masternoder2d",pid=3011492,fd=9))                                              
+LISTEN 0      511          0.0.0.0:80         0.0.0.0:*    users:(("nginx",pid=3014874,fd=5),("nginx",pid=3014873,fd=5),("nginx",pid=15385,fd=5))  
+LISTEN 0      400        127.0.0.1:5000       0.0.0.0:*    users:(("uwsgi",pid=3014855,fd=6),("uwsgi",pid=3014854,fd=6),("uwsgi",pid=3014845,fd=6))
+LISTEN 0      511          0.0.0.0:443        0.0.0.0:*    users:(("nginx",pid=3014874,fd=7),("nginx",pid=3014873,fd=7),("nginx",pid=15385,fd=7))  
+LISTEN 0      511             [::]:80            [::]:*    users:(("nginx",pid=3014874,fd=6),("nginx",pid=3014873,fd=6),("nginx",pid=15385,fd=6))  
+LISTEN 0      511             [::]:443           [::]:*    users:(("nginx",pid=3014874,fd=8),("nginx",pid=3014873,fd=8),("nginx",pid=15385,fd=8))  
+
+== cron: masternoder / exchange / mn2 ==
+-rw-r--r-- 1 root root 242 Jul 21 00:36 /etc/cron.d/masternoder-agents-api-service
+-rw-r--r-- 1 root root 272 Jul 21 00:36 /etc/cron.d/masternoder-agents-blueprint-route
+-rw-r--r-- 1 root root 267 Jul 21 00:36 /etc/cron.d/masternoder-agents-daily
+-rw-r--r-- 1 root root 241 Jul 21 00:36 /etc/cron.d/masternoder-agents-monthly
+-rw-r--r-- 1 root root 267 Jul 21 00:36 /etc/cron.d/masternoder-agents-trader
+-rw-r--r-- 1 root root 278 Jul 21 00:36 /etc/cron.d/masternoder-agents-treasury
+-rw-r--r-- 1 root root 263 Jul 21 00:36 /etc/cron.d/masternoder-agents-weekly
+-rw-r--r-- 1 root root 301 Jun 28 00:20 /etc/cron.d/masternoder-casino-revenue
+-rw-r--r-- 1 root root 332 Jul 26 21:01 /etc/cron.d/masternoder-discord-fleet-stream
+-rw-r--r-- 1 root root 206 Jul 21 01:02 /etc/cron.d/masternoder-discord-game
+-rw-r--r-- 1 root root 203 Jul 21 01:02 /etc/cron.d/masternoder-discord-market
+-rw-r--r-- 1 root root 210 Jun 30 21:22 /etc/cron.d/masternoder-discord-promo
+-rwxr-xr-x 1 root root 423 Aug 11 17:40 /etc/cron.d/masternoder-exchange-master
+-rw-r--r-- 1 root root 338 Jul 26 18:44 /etc/cron.d/masternoder-exchange-master.bak.202608111739
+-rw-r--r-- 1 root root 338 Jul 24 22:26 /etc/cron.d/masternoder-exchange-master.disabled
+-rw-r--r-- 1 root root 245 Jul 21 01:02 /etc/cron.d/masternoder-margin-report
+-rw-r--r-- 1 root root 347 Jul 21 01:02 /etc/cron.d/masternoder-mn2-accrue
+-rw-r--r-- 1 root root 185 Jul 21 01:02 /etc/cron.d/masternoder-mn2-explorer-probe
+-rw-r--r-- 1 root root 291 Jul 21 01:02 /etc/cron.d/masternoder-mn2-masternode-provision
+-rw-r--r-- 1 root root 271 Jul 21 01:02 /etc/cron.d/masternoder-mn2-network-snapshot
+-rw-r--r-- 1 root root 287 Jul 21 01:02 /etc/cron.d/masternoder-mn2-scan
+-rw-r--r-- 1 root root 253 Jun 24 00:12 /etc/cron.d/masternoder-mn2-watchdogs
+-rw-r--r-- 1 root root 239 Jul 21 01:02 /etc/cron.d/masternoder-monetization
+-rw-r--r-- 1 root root 237 Jul 21 01:02 /etc/cron.d/masternoder-revenue-pulse
+-rw-r--r-- 1 root root 293 Jul 21 00:36 /etc/cron.d/masternoder-security-sweep
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+45 4 * * 4 root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_api_service_skill.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+30 4 * * 1 root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_blueprint_route_fixer.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+35 3 * * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_cron_daily.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+15 4 1 * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_cron_monthly.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_trader.sh >> /var/log/agents-trader.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+5 */6 * * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_treasury_distribute.sh >> /var/log/agents-treasury.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 5 * * 0 root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/agents_cron_weekly.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+5 9 * * * root CASINO_REVENUE_DRY_RUN=1 /var/www/html/cron/casino_daily_revenue_report.sh >> /var/log/masternoder-casino-revenue.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+12 * * * * root FLEET_STREAM_FANOUT_LIVE=1 /var/www/html/cron/discord_fleet_stream_fanout.sh >> /var/log/masternoder-discord-fleet-stream.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root /var/www/html/cron/discord_game_fanout.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root /var/www/html/cron/discord_market_fanout.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 10 * * 1,3,5 root /var/www/html/cron/discord_promo_rotator.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/2 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/2 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 10 * * 2 root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/margin_report_cron.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 * * * * root /var/www/html/cron/mn2_accrue_rewards.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root /var/www/html/cron/mn2_explorer_probe.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/2 * * * * root /var/www/html/cron/mn2_masternode_provision.sh >> /var/www/html/logs/mn2_masternode_provision.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/10 * * * * root /var/www/html/cron/mn2_network_snapshot.sh >> /var/log/mn2-network-snapshot.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/5 * * * * root /var/www/html/cron/mn2_scan_deposits.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/15 * * * * root /var/www/html/cron/mn2_ops_watchdog.sh >> /var/www/html/logs/mn2_watchdog.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 9 * * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/monetization_cron.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 10 * * 1 root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/revenue_pulse_cron.sh
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+15 */4 * * * root AGENTS_CRON_ENV_FILE=/var/www/html/.env /var/www/html/cron/security_sweep.sh >> /var/log/agents-security-sweep.log 2>&1
+--- recent exchange master log ---
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'status': 404, 'message': 'No message available', 'timestamp': 1788998558891, 'error': 'Not Found'}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'timestamp': 1788998559721, 'message': 'No message available', 'status': 404, 'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee', 'error': 'Not Found'}
+Binance API error path=/sapi/v1/fiat/get-fiat-deposit-withdraw-fee http_status=404 code=None msg=No message available body={'status': 404, 'message': 'No message available', 'timestamp': 1788998560602, 'error': 'Not Found', 'path': '/sapi/v1/fiat/get-fiat-deposit-withdraw-fee'}
+--- recent mn2 scan log ---
+(no log)
+
+== profit daemon heartbeat ==
+heartbeat_age_sec 1788998562.0
+loop_count None
+last_error None
+status None
+--- profit daemon log tail ---
+(no log)
+
+== MN2 daemon RPC ==
+error: couldn't parse reply from server
+
+== local API probes (127.0.0.1:5000) ==
+  /api/health -> HTTP 200 | {"status":"healthy","success":true,"timestamp":"2026-09-10T00:02:42.089876"} 
+  /api/profit-daemon/status -> HTTP 200 | {"ai_skip_groups":{"hours":24,"success":true,"tiles":[{"count":587,"group":"funding","label":"Funding"},{"count":469,"group":"other","label":"Other"}],"total":1056},"blockers":[{"category":"api","id":
+  /api/mn2/network-overview -> HTTP 200 | {"block_height":989388,"circulating_supply":null,"connections":null,"daemon":{"chain":null,"connections":null,"headers":null,"median_time":null,"mempool_bytes":null,"mempool_tx":null,"money_supply":nu
+  /api/mn2/explorer/rich-list?limit=1 -> HTTP 404 | {"error":"Not Found","message":"Endpoint not found. Logged for Register Intelligence.","method":"GET","path":"/api/mn2/explorer/rich-list","success":false} 
+
+== explorer (eiquidus) ==
+mongod: active
+-rw-r--r-- 1 root root 0 Aug 11 21:10 /var/www/explorer/tmp/sync_index.lock
+explorer_local_http=000
+explorer port 3001 unreachable
+20926 node /var/www/explorer/bin/cluster
+3018062 node /var/www/explorer/bin/cluster
+3019225 bash -c bash -s <<'ENDSCRIPT' set +e echo '===== DAEMON STATUS REPORT =====' echo '== Host ==' hostname; date -u '+%Y-%m-%d %H:%M:%S UTC'; uptime echo echo '== systemd: core + masternoder-* ==' SERVICES='nginx uwsgi-vidgenerator uwsgi python-proxy masternoder2d masternoder-profit-daemon masternoder-exchange-master masternoder-agent-daemon mn2-fleet-autostart pm2-root docker mongod' for s in $SERVICES; do   st=$(systemctl is-active "$s" 2>/dev/null)   en=$(systemctl is-enabled "$s" 2>/dev/null)   printf '  %-30s active=%-12s enabled=%s\n' "$s" "${st:-unknown}" "${en:-unknown}" done echo '  --- all masternoder units ---' systemctl list-units --all --no-pager 'masternoder*' 2>/dev/null | head -20 echo echo '== failed systemd units ==' systemctl --failed --no-pager 2>/dev/null | head -20 echo echo '== listeners ==' ss -tlnp 2>/dev/null | grep -E ':80 |:443 |:5000|:9332|:27017|:3001' || echo '(none matched)' echo echo '== cron: masternoder / exchange / mn2 ==' ls -la /etc/cron.d/masternoder* 2>/dev/null || echo '(no /etc/cron.d/masternoder*)' grep -h . /etc/cron.d/masternoder* 2>/dev/null | grep -v '^#' | grep -v '^$' || true echo '--- recent exchange master log ---' tail -3 /var/log/masternoder-exchange-master.log 2>/dev/null || echo '(no log)' echo '--- recent mn2 scan log ---' tail -2 /var/log/masternoder-mn2-scan.log 2>/dev/null || echo '(no log)' echo echo '== profit daemon heartbeat ==' if [ -f /var/www/html/logs/daemon_all_profit_heartbeat.json ]; then   python3 <<'PY' import json, time d = json.load(open("/var/www/html/logs/daemon_all_profit_heartbeat.json")) age = time.time() - float(d.get("ts", 0) or 0) print("heartbeat_age_sec", round(age, 1)) print("loop_count", d.get("loop_count")) print("last_error", d.get("last_error")) print("status", d.get("status")) PY else echo 'MISSING heartbeat file'; fi echo '--- profit daemon log tail ---' tail -2 /var/www/html/logs/profit_daemon_stdout.log 2>/dev/null || echo '(no log)' echo echo '== MN2 daemon RPC ==' /opt/masternoder2d/masternoder2-cli -datadir=/root/.masternoder2 getblockcount 2>&1 | head -2 echo echo '== local API probes (127.0.0.1:5000) ==' for p in /api/health /api/profit-daemon/status /api/mn2/network-overview '/api/mn2/explorer/rich-list?limit=1'; do   code=$(curl -sS -m 15 -o /tmp/dchk.json -w '%{http_code}' "http://127.0.0.1:5000$p" 2>/dev/null || echo 000)   snippet=$(head -c 200 /tmp/dchk.json 2>/dev/null | tr '\n' ' ')   echo "  $p -> HTTP $code | $snippet" done echo echo '== explorer (eiquidus) ==' echo "mongod: $(systemctl is-active mongod 2>/dev/null)" if [ -d /var/www/explorer ]; then   ls -la /var/www/explorer/tmp/sync_index.lock 2>/dev/null || echo 'no sync lock'   mongosh --quiet explorerdb --eval 'printjson({blocks:db.blocks.estimatedDocumentCount(),addresses:db.addresses.estimatedDocumentCount(),richlist:db.richlist.estimatedDocumentCount()})' 2>/dev/null | head -5 || echo 'mongosh failed'   curl -sS -m 10 -o /dev/null -w 'explorer_local_http=%{http_code}\n' http://127.0.0.1:3001/ 2>/dev/null || echo 'explorer port 3001 unreachable'   pgrep -af 'node.*explorer|sync.js' 2>/dev/null | head -5 || echo 'no explorer node process' fi echo echo '== pm2 ==' pm2 status 2>/dev/null | head -10 || echo 'pm2 n/a' echo echo '== uwsgi log tail ==' tail -2 /var/www/html/uwsgi.log 2>/dev/null ENDSCRIPT
+
+== pm2 ==
+ÔöîÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé id Ôöé name        Ôöé namespace   Ôöé version Ôöé mode    Ôöé pid      Ôöé uptime Ôöé Ôå║    Ôöé status    Ôöé cpu      Ôöé mem      Ôöé user     Ôöé watching Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé 0  Ôöé explorer    Ôöé default     Ôöé 1.103.0 Ôöé fork    Ôöé 20926    Ôöé 29D    Ôöé 0    Ôöé online    Ôöé 0%       Ôöé 11.7mb   Ôöé root     Ôöé disabled Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+== uwsgi log tail ==
+[pid: 3014854|app: 0|req: 952/1778] 127.0.0.1 () {54 vars in 1100 bytes} [Thu Sep 10 00:02:53 2026] GET /api/mn2/services => generated 146 bytes in 6 msecs (HTTP/1.1 404) 4 headers in 287 bytes (1 switches on core 1)
+[pid: 3014855|app: 0|req: 829/1779] 127.0.0.1 () {56 vars in 1174 bytes} [Thu Sep 10 00:02:47 2026] GET /api/mn2/network-overview => generated 1579 bytes in 6219 msecs (HTTP/1.1 200) 6 headers in 387 bytes (1 switches on core 1)
+
+
+===== PUBLIC HTTPS API CHECKS =====
+  /api/health -> HTTP 200
+  /api/profit-daemon/status -> HTTP 200
+    healthy=None systemd_active=None heartbeat_age=None
+  /api/mn2/network-overview -> HTTP 200
+    daemon_status=None block_height=989389 source={'block_height': 'chainz', 'difficulty': 'chainz', 'mn2_usd_price': 'chainz'}
+  /api/mn2/explorer/rich-list?limit=1 -> HTTP None
+    detail=HTTP Error 404: NOT FOUND
+
+===== API JSON SUMMARY =====
+{
+  "/api/health": {
+    "status": "healthy",
+    "success": true,
+    "timestamp": "2026-09-10T00:03:20.002768"
+  },
+  "/api/profit-daemon/status": {
+    "ai_skip_groups": {
+      "hours": 24,
+      "success": true,
+      "tiles": [
+        {
+          "count": 587,
+          "group": "funding",
+          "label": "Funding"
+        },
+        {
+          "count": 469,
+          "group": "other",
+          "label": "Other"
+        }
+      ],
+      "total": 1056
+    },
+    "blockers": [
+      {
+        "category": "api",
+        "id": "xeggex_401",
+        "priority": 2,
+        "title": "XeggeX API returns 401 \u2014 refresh keys or IP whitelist"
+      },
+      {
+        "category": "market",
+        "id": "spread_below_threshold",
+        "priority": 3,
+        "title": "Arb spreads mostly below 18 bps min_margin \u2014 waiting on market"
+      },
+      {
+        "category": "payout",
+        "id": "paypal_sweep_paper",
+        "priority": 10,
+        "title": "PayPal payout mode still paper \u2014 $572+ unswept ledger"
+      },
+      {
+        "category": "config",
+        "id": "dual_farm_two_venue",
+        "priority": 20,
+        "title": "arb_live_dual_farm limited to binance+nonkyc until XeggeX OK"
+      }
+    ],
+    "checked_at": "2026-09-10T00:03:36.851537Z",
+    "config": {
+      "min_margin_bps": 14.0,
+      "paper_trade_usd": 75.0,
+      "prefunded_transfer_bps": 6.0,
+      "xeggex_live_trading": false
+    },
+    "critical": {
+      "done": 21,
+      "open": 4
+    },
+    "exchange_alive": false,
+    "health": "offline",
+    "heartbeat": {
+      "exists": true,
+      "path": "/var/www/html/logs/daemon_all_profit_heartbeat.json",
+      "readable": true,
+      "top_level_age_sec": 4075707.5
+    },
+    "heartbeat_updated_at": "2026-07-24T19:55:09.381385Z",
+    "highlights": {
+      "ai_exec": "False",
+      "arb_agents": 11,
+      "arb_exec": "0/11",
+      "arb_fills": 0,
+      "best_bps": -3.5,
+      "cross_actions": 7,
+      "ext_exec": null,
+      "funded": null,
+      "sweep": "no"
+    },
+    "host": "masternoder.dk",
+    "hot_symbols": [],
+    "loops": [
+      {
+        "age_sec": 4075935.2,
+        "loop": "exchange",
+        "metrics": {
+          "ai_exec": "False",
+          "ai_skip": "no_signal",
+          "arb_block": "threshold",
+          "arb_exec": "0/11",
+          "arb_skip": "below_thresholdx10",
+          "best_bps": "-3.5",
+          "cross_actions": "7",
+          "ext_exec": "?",
+          "platform_ok": "True",
+          "sweep": "no",
+          "user_agents": "0"
+        },
+        "stale": true,
+        "summary": "platform_ok=True arb_exec=0/11 best_bps=-3.5 arb_block=threshold arb_skip=below_thresholdx10 ai_exec=False ai_skip=no_signal cross_actions=7 ext_exec=? user_agents=0 sweep=no",
+        "updated_at": "2026-07-24T19:51:12.691414Z"
+      },
+      {
+        "age_sec": 4075698.5,
+        "loop": "fast",
+        "metrics": {
+          "ext_exec": "0",
+          "strategies": "7"
+        },
+        "stale": true,
+        "summary": "ext_exec=0 strategies=7",
+        "updated_at": "2026-07-24T19:55:09.381321Z"
+      },
+      {
+        "age_sec": 4075909.9,
+        "loop": "casino",
+        "metrics": {
+          "ran": "0/3",
+          "reached": "3",
+          "skipped": "Daily",
+          "success": "True"
+        },
+        "stale": true,
+        "summary": "success=True ran=0/3 skipped=Daily bet limit reached=3",
+        "updated_at": "2026-07-24T19:51:37.971321Z"
+      }
+    ],
+    "mn2_mirror": {
+      "mirror_label": "0.20 MN2",
+      "mn2_amount": 0.204047,
+      "mn2_usd": 6.4043987644,
+      "stash_usd": 1.3068,
+      "success": true
+    },
+    "mobile_layout": {
+      "columns_desktop": 4,
+      "columns_mobile": 2,
+      "columns_tablet": 3,
+      "css_class": "pdm-grid pdm-grid--mobile",
+      "min_card_width_px": 140,
+      "mobile_optimized": true,
+      "success": true,
+      "touch_target_min_px": 44
+    },
+    "mode": "live",
+    "payout": {
+      "auto_sweep": false,
+    

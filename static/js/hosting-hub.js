@@ -197,6 +197,7 @@
     if (q('host-meter-fill')) q('host-meter-fill').style.width = pct + '%';
     if (q('host-net-enabled')) q('host-net-enabled').textContent = fmtNum((d.network || {}).enabled, 0);
     if (q('host-platform-live')) q('host-platform-live').textContent = fmtNum(d.platform_enabled_on_chain, 0);
+    if (q('host-waiting-slots')) q('host-waiting-slots').textContent = fmtNum(d.waiting_slots, 0);
     if (q('host-stale-count')) q('host-stale-count').textContent = fmtNum(d.stale_provisioning_count, 0);
 
     var daemon = d.daemon || {};
@@ -382,9 +383,19 @@
     return fetchJson('/api/mn2/masternode/service' + suffix).then(function (d) {
       if (d && d.success) {
         renderLiveMonitor(d);
-        pushActivity('Service snapshot · ' + (d.slots_available || 0) + ' slots open');
+        pushActivity(
+          'Service snapshot · ' + (d.slots_available || 0) + ' open · ' +
+          (d.waiting_slots || 0) + ' waiting'
+        );
+      } else {
+        var err = (d && d.error) || 'Hosting service unavailable';
+        setFooter('<span style="color:#ffaa66">API error: ' + err + ' · press <kbd>R</kbd> to retry</span>');
+        toast(err, 'warn');
       }
       return d;
+    }).catch(function () {
+      setFooter('<span style="color:#ffaa66">Could not reach hosting API · press <kbd>R</kbd> to retry</span>');
+      toast('Hosting service unreachable', 'err');
     });
   }
 

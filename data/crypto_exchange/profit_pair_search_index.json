@@ -1,7 +1,7 @@
 {
-  "updated_at": "2026-07-04T18:16:12.921415Z",
+  "updated_at": "2026-08-02T21:17:07.173088Z",
   "enabled": true,
-  "top_n": 12,
+  "top_n": 16,
   "catalog_venues": [
     "binance",
     "nonkyc",
@@ -10,61 +10,8 @@
     "bybit"
   ],
   "catalog_symbol_count": 14,
-  "ledger_route_count": 24,
-  "live_hit_count": 0,
-  "hot_symbols": [
-    "BTC",
-    "DOGE",
-    "LINK"
-  ],
-  "hits": [
-    {
-      "symbol": "BTC",
-      "buy_venue": "binance",
-      "sell_venue": "nonkyc",
-      "avg_net_bps": 56.0,
-      "hit_rate_pct": 100.0,
-      "fill_count": 26,
-      "last_profit_usd": 0.42,
-      "live_score": 0.0,
-      "est_profit_usd": 0.0,
-      "sources": [
-        "ledger"
-      ],
-      "route": "BTC:binance\u2192nonkyc",
-      "search_score": 45.8
-    },
-    {
-      "symbol": "DOGE",
-      "buy_venue": "binance",
-      "sell_venue": "nonkyc",
-      "avg_net_bps": 34.25,
-      "hit_rate_pct": 100.0,
-      "fill_count": 1,
-      "last_profit_usd": 0.0342,
-      "live_score": 0.0,
-      "est_profit_usd": 0.0,
-      "sources": [
-        "ledger"
-      ],
-      "route": "DOGE:binance\u2192nonkyc",
-      "search_score": 21.84
-    },
-    {
-      "symbol": "LINK",
-      "buy_venue": "nonkyc",
-      "sell_venue": "binance",
-      "avg_net_bps": 11.81,
-      "hit_rate_pct": 50.0,
-      "fill_count": 0,
-      "last_profit_usd": 0.0,
-      "live_score": 0.0,
-      "est_profit_usd": 0.0,
-      "sources": [
-        "ledger"
-      ],
-      "route": "LINK:nonkyc\u2192binance",
-      "search_score": 4.87
-    }
-  ]
+  "ledger_route_count": 0,
+  "live_hit_count": 1,
+  "hot_symbols": [],
+  "hits": []
 }

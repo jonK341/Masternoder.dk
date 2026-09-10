@@ -847,10 +847,10 @@ def exchange_profit_path_skills_sync():
 def exchange_profit_path_critical_top25():
     from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
 
-    refresh_raw = (request.args.get("refresh") or "true").strip().lower()
-    refresh = refresh_raw not in ("0", "false", "no", "off")
-    dynamic_raw = (request.args.get("dynamic") or "true").strip().lower()
-    dynamic = dynamic_raw not in ("0", "false", "no", "off")
+    refresh_raw = (request.args.get("refresh") or "false").strip().lower()
+    refresh = refresh_raw in ("1", "true", "yes", "on")
+    dynamic_raw = (request.args.get("dynamic") or "false").strip().lower()
+    dynamic = dynamic_raw in ("1", "true", "yes", "on")
     return jsonify(critical_problems_top25(refresh=refresh, dynamic=dynamic))
 
 

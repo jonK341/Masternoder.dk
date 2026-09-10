@@ -346,8 +346,13 @@
         if (q('mn-net-total')) q('mn-net-total').textContent = fmtNum((d.network || {}).total, 0) + ' on chain';
         if (q('mn-slots')) q('mn-slots').textContent = used;
         if (q('mn-collateral')) q('mn-collateral').textContent = fmtNum(d.collateral_mn2, 0) + ' MN2 each';
+        var waiting = d.waiting_slots != null ? d.waiting_slots : 0;
         if (q('mn-open-slots')) q('mn-open-slots').textContent = open;
-        if (q('mn-slots-cap')) q('mn-slots-cap').textContent = 'up to ' + max + ' total';
+        if (q('mn-slots-cap')) {
+          q('mn-slots-cap').textContent = waiting > 0
+            ? (waiting + ' waiting · up to ' + max + ' total')
+            : ('up to ' + max + ' total');
+        }
         applyMasternodeCheckoutSoldOut(open);
         var daemon = d.daemon || {};
         if (q('mn-daemon')) {
@@ -395,7 +400,13 @@
             });
           }
         }
-      }).catch(function () {});
+      }).catch(function () {
+        renderMnRpcBanner('hosting service API unavailable');
+        var grid = q('mn-node-grid');
+        if (grid) {
+          grid.innerHTML = renderNodeCard('Hosting API offline', null, mnBadge('unavailable'), 'mn-node-card--empty');
+        }
+      });
 
     fetch('/api/mn2/masternodes?limit=50&fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
@@ -500,11 +511,14 @@
     var pp = (mnCheckoutConfig && mnCheckoutConfig.price_usd_per_slot != null)
       ? mnCheckoutConfig
       : {};
+    var slots = parseInt((q('mn-checkout-slots') || {}).value, 10) || 1;
     var usd = Number(pp.price_usd_per_slot || sample.usd_per_slot || 4.99);
     var coins = Number(sample.coins_per_slot || Math.max(1, Math.round(usd * 100)));
     var mn2v = Number(sample.mn2_per_slot || (sample.mn2_total && sample.slots ? sample.mn2_total / sample.slots : coins / 100));
-    if (q('mn-price-label')) q('mn-price-label').textContent = '$' + fmtNum(usd, 2);
-    if (q('mn-price-alt')) q('mn-price-alt').textContent = coins + ' coins · ' + fmtNum(mn2v, 4) + ' MN2';
+    if (q('mn-price-label')) q('mn-price-label').textContent = '$' + fmtNum(usd * slots, 2);
+    if (q('mn-price-alt')) {
+      q('mn-price-alt').textContent = fmtNum(coins * slots, 0) + ' coins · ' + fmtNum(mn2v * slots, 4) + ' MN2';
+    }
   }
 
   function applyMasternodeCheckoutSoldOut(openSlots) {
@@ -731,6 +745,10 @@
         modal.setAttribute('aria-hidden', 'true');
         if (mnOnChainPollTimer) { clearInterval(mnOnChainPollTimer); mnOnChainPollTimer = null; }
       });
+    }
+    var slotsInput = q('mn-checkout-slots');
+    if (slotsInput) {
+      slotsInput.addEventListener('input', applyMasternodeCheckoutPricing);
     }
   }
 

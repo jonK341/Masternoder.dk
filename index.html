@@ -4,10 +4,10 @@
     <script>window.APP_BASE = '';</script>
     <script>window.MN_NAV_PORTAL_VOID = true;</script>
     <meta charset="UTF-8">
-    <meta name="cache-version" content="20260614b">
+    <meta name="cache-version" content="20260910f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MasterNoder.dk — AI videogenerering, spil, battle og agenter.">
-    <meta name="content-version" content="20260614b">
+    <meta name="content-version" content="20260910f">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,10 +18,11 @@
     <title>MasterNoder.dk</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260910f">
+    <link rel="stylesheet" href="/static/css/mn2-wallet-quick-access.css?v=20260910a">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260614b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260910f">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -29,194 +30,349 @@
     <div class="frontpage-bg" aria-hidden="true"></div>
 
     <main id="mainContent" class="fp-main">
-        <section class="fp-hero fp-hero-v20" aria-labelledby="fp-hero-title">
+        <section class="fp-hero fp-hero-sales" aria-labelledby="fp-hero-title">
             <div class="fp-hero-copy">
-                <p class="fp-kicker"><span>System v2.0</span><span>Neural sound online</span></p>
-                <h1 id="fp-hero-title">MasterNoder.dk</h1>
-                <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
-                <p class="fp-hero-text">Et hurtigere kontrolrum til at skabe video, spille, battle, styre agenter og mærke systemet reagere med opt-in lyd.</p>
-                <div class="fp-hero-actions" aria-label="Primære handlinger">
-                    <a class="fp-primary-action" href="/generator">Start generator</a>
-                    <a class="fp-secondary-action" href="/game">Åbn game hub</a>
-                    <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
+                <p class="fp-kicker"><span>MN2 live</span><span>Ecosystem token</span></p>
+                <h1 id="fp-hero-title">Own MN2.<br>Spend everywhere.</h1>
+                <p class="fp-tagline">Buy · stake · shop · casino · exchange</p>
+                <p class="fp-hero-text">MasterNoder2 powers the whole platform — buy once, spend across shop, casino, games, and creator rewards. Stake to earn. Trade on-exchange.</p>
+                <div class="fp-hero-live-ticker" aria-live="polite">
+                    <div class="fp-ticker-item fp-ticker-price">
+                        <span class="fp-ticker-label">MN2 price</span>
+                        <strong id="hero-mn2-price">—</strong>
+                    </div>
+                    <a class="fp-ticker-item fp-ticker-balance" href="/wallets" id="hero-wallet-ticker" title="Open MN2 wallet (W)">
+                        <span class="fp-ticker-label">Your wallet</span>
+                        <strong id="hero-mn2-balance">—</strong>
+                        <span class="fp-ticker-usd" id="hero-mn2-usd"></span>
+                    </a>
+                </div>
+                <div class="fp-hero-actions fp-hero-cta-grid" aria-label="MN2 handlinger">
+                    <a class="fp-primary-action fp-cta-wallet" href="/wallets">Open wallet</a>
+                    <a class="fp-primary-action fp-cta-buy" href="/exchange?tab=onramp">Buy MN2</a>
+                    <a class="fp-secondary-action" href="/shop?tab=coins">Shop (PayPal)</a>
+                    <a class="fp-secondary-action" href="/hosting">Host node · $4.99</a>
+                    <a class="fp-secondary-action" href="/profile#wallet">Stake</a>
+                    <a class="fp-secondary-action" href="/casino/">Casino</a>
+                    <a class="fp-secondary-action" href="/creator/">Creator</a>
+                    <a class="fp-secondary-action" href="/exchange">Exchange</a>
                 </div>
             </div>
-            <div class="fp-hero-core" aria-hidden="true">
-                <div class="fp-core-ring fp-core-ring-a"></div>
-                <div class="fp-core-ring fp-core-ring-b"></div>
-                <div class="fp-core-pulse">2.0</div>
-                <div class="fp-core-node fp-core-node-a">AI</div>
-                <div class="fp-core-node fp-core-node-b">SND</div>
-                <div class="fp-core-node fp-core-node-c">XP</div>
+            <div class="fp-hero-ticker-panel" aria-label="Network stats">
+                <div class="fp-hero-coin" aria-hidden="true">
+                    <div class="fp-coin-ring fp-coin-ring-a"></div>
+                    <div class="fp-coin-ring fp-coin-ring-b"></div>
+                    <div class="fp-coin-glow">MN2</div>
+                    <p class="fp-coin-tag">MasterNoder2</p>
+                </div>
+                <div class="fp-hero-proof">
+                    <div class="fp-proof-stat"><div class="v" id="hero-stat-users">—</div><div class="l">Users</div></div>
+                    <div class="fp-proof-stat"><div class="v" id="hero-stat-apr">—</div><div class="l">Staking APR</div></div>
+                    <div class="fp-proof-stat"><div class="v" id="hero-stat-nodes">—</div><div class="l">Masternodes</div></div>
+                    <div class="fp-proof-stat"><div class="v" id="hero-stat-height">—</div><div class="l">Block height</div></div>
+                </div>
             </div>
         </section>
 
-        <section class="fp-mn2-band" aria-labelledby="fp-mn2-title">
-            <div class="fp-mn2-band-copy">
-                <h2 id="fp-mn2-title">MN2 crypto ecosystem</h2>
-                <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Wallet lives on your profile.</p>
-                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span></p>
+        <section class="fp-promo-strip" aria-label="Featured offers">
+            <a href="/hosting" class="fp-promo-item fp-promo-hosting">🏛️ Masternode hosting · <strong>$4.99/slot</strong> · PayPal or MN2</a>
+            <a href="/shop?tab=coins" class="fp-promo-item fp-promo-shop">💰 Buy coins with PayPal — instant play</a>
+            <a href="/creator/" class="fp-promo-item fp-promo-creator">🎵 Super Encoder · encode from 0.15 MN2</a>
+            <button type="button" class="fp-promo-item fp-promo-daily" id="fp-claim-daily-btn" hidden>🎁 Claim daily MN2</button>
+        </section>
+
+        <section class="fp-mn2-double-band" aria-labelledby="fp-mn2-double-title">
+            <div class="fp-mn2-double-head">
+                <p class="fp-kicker"><span>Double down</span><span>MN2 everywhere</span></p>
+                <h2 id="fp-mn2-double-title">One coin. Six ways to win.</h2>
+                <p class="fp-mn2-double-lead">Deposit MN2 once — unlock shop perks, casino play, staking yield, exchange trades, creator tips, and game rewards.</p>
             </div>
-            <div class="fp-mn2-band-actions">
-                <a class="fp-mn2-badge" href="/wallets">Wallets</a>
-                <a class="fp-mn2-badge" href="/shop">Shop &amp; pay MN2</a>
+            <div class="fp-mn2-double-grid">
+                <a class="fp-mn2-double-tile" href="/exchange?tab=onramp">
+                    <span class="fp-mn2-double-icon">💰</span>
+                    <strong>Buy MN2</strong>
+                    <span>PayPal on-ramp · instant credit</span>
+                </a>
+                <a class="fp-mn2-double-tile" href="/shop">
+                    <span class="fp-mn2-double-icon">🛒</span>
+                    <strong>Shop &amp; pay</strong>
+                    <span>Boosts, packs, node slots</span>
+                </a>
+                <a class="fp-mn2-double-tile" href="/profile#wallet">
+                    <span class="fp-mn2-double-icon">🌱</span>
+                    <strong>Stake &amp; earn</strong>
+                    <span>Dynamic APR · auto-compound</span>
+                </a>
+                <a class="fp-mn2-double-tile" href="/casino/">
+                    <span class="fp-mn2-double-icon">🎰</span>
+                    <strong>Casino</strong>
+                    <span>Slots, coin flip, battle bets</span>
+                </a>
+                <a class="fp-mn2-double-tile" href="/hosting">
+                    <span class="fp-mn2-double-icon">🏛️</span>
+                    <strong>Host masternode</strong>
+                    <span>$4.99/slot · PayPal checkout</span>
+                </a>
+                <a class="fp-mn2-double-tile" href="/creator/">
+                    <span class="fp-mn2-double-icon">🎵</span>
+                    <strong>Super Encoder</strong>
+                    <span>AI music · tips in MN2</span>
+                </a>
+            </div>
+            <div class="fp-mn2-double-foot">
+                <a class="fp-mn2-badge" href="/exchange?tab=onramp">Buy MN2 now</a>
                 <a class="fp-mn2-link" href="/staking-leaderboard">Staking leaderboard</a>
-                <a class="fp-mn2-link" href="/staking-teams">Staking teams</a>
+                <a class="fp-mn2-link" href="/hosting">Masternode hosting</a>
                 <a class="fp-mn2-link" href="/explorer">Explorer</a>
-                <a class="fp-mn2-link" href="/casino/">Casino</a>
+                <a class="fp-mn2-link" href="/creator/">Super Encoder</a>
             </div>
         </section>
 
-        <section class="fp-stats" id="fp-stats" aria-label="Platform oversigt">
-            <div class="fp-stat fp-stat-mn2"><div class="v" id="stat-mn2-price">—</div><div class="l">MN2 (USD)</div></div>
-            <div class="fp-stat"><div class="v" id="stat-videos">0</div><div class="l">Videoer</div></div>
-            <div class="fp-stat"><div class="v" id="stat-users">0</div><div class="l">Brugere</div></div>
-            <div class="fp-stat"><div class="v" id="stat-achievements">0</div><div class="l">Achievements</div></div>
-            <div class="fp-stat"><div class="v" id="stat-battles">0</div><div class="l">Battles</div></div>
-            <div class="fp-stat"><div class="v" id="stat-total-xp">0</div><div class="l">Total XP</div></div>
-            <div class="fp-stat"><div class="v" id="stat-level">1</div><div class="l">Level</div></div>
-            <div class="fp-stat"><div class="v" id="stat-points">0</div><div class="l">Stat points</div></div>
-            <div class="fp-stat"><div class="v" id="stat-trophies">0</div><div class="l">Trophies</div></div>
-        </section>
+        <section class="fp-mission" id="fp-mission" aria-labelledby="fp-mission-title">
+            <div class="fp-mission-head">
+                <p class="fp-kicker"><span>Mission control</span><span>Tab layout</span></p>
+                <h2 id="fp-mission-title">Platform dashboard</h2>
+                <p class="fp-mission-lead">Stats, portaler, spil, live feeds og lyd — organiseret i faner i stedet for lange sektioner.</p>
+            </div>
 
-        <section class="fp-game-hub" id="fp-game-hub" aria-labelledby="fp-gh-title">
-            <div class="fp-game-hub-head">
-                <div>
-                    <p class="fp-kicker"><span>Game hub</span><span id="gh-status">Loading…</span></p>
-                    <h2 id="fp-gh-title">Trophies · Quests · Game · Battle · Story</h2>
-                    <p class="fp-gh-lead">One panel for collector progress, daily quests, game stats, battle rank, and hunter stories.</p>
+            <div class="fp-mission-tabs" role="tablist" aria-label="Forside sektioner">
+                <button type="button" class="fp-mission-tab is-active" data-fp-tab="dashboard" role="tab" aria-selected="true" aria-controls="fp-tab-dashboard">📊 Dashboard</button>
+                <button type="button" class="fp-mission-tab" data-fp-tab="portals" role="tab" aria-selected="false" aria-controls="fp-tab-portals">🌀 Portaler</button>
+                <button type="button" class="fp-mission-tab" data-fp-tab="play" role="tab" aria-selected="false" aria-controls="fp-tab-play">🎮 Play</button>
+                <button type="button" class="fp-mission-tab" data-fp-tab="live" role="tab" aria-selected="false" aria-controls="fp-tab-live">📡 Live</button>
+                <button type="button" class="fp-mission-tab" data-fp-tab="system" role="tab" aria-selected="false" aria-controls="fp-tab-system">🔊 System</button>
+            </div>
+
+            <div class="fp-mission-panels">
+                <div id="fp-tab-dashboard" class="fp-mission-panel is-active" role="tabpanel" data-fp-panel="dashboard">
+                    <section class="fp-stats" id="fp-stats" aria-label="Platform oversigt">
+                        <div class="fp-stat fp-stat-mn2"><div class="v" id="stat-mn2-price">—</div><div class="l">MN2 (USD)</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-videos">0</div><div class="l">Videoer</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-users">0</div><div class="l">Brugere</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-achievements">0</div><div class="l">Achievements</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-battles">0</div><div class="l">Battles</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-total-xp">0</div><div class="l">Total XP</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-level">1</div><div class="l">Level</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-points">0</div><div class="l">Stat points</div></div>
+                        <div class="fp-stat"><div class="v" id="stat-trophies">0</div><div class="l">Trophies</div></div>
+                    </section>
+
+                    <section class="fp-mn2-band fp-creator-band" aria-labelledby="fp-creator-title">
+                        <div class="fp-mn2-band-copy">
+                            <h3 id="fp-creator-title">Super Encoder — Download App</h3>
+                            <p>Create music, songs &amp; videos with one-click AI encoding. Rate creators with MN2 crypto. Max 125 videos stored.</p>
+                        </div>
+                        <div class="fp-mn2-band-actions">
+                            <a class="fp-mn2-badge" href="/creator/">Open Super Encoder</a>
+                            <a class="fp-mn2-badge" href="/static/downloads/masternoder-creator.apk" download="masternoder-creator.apk">Download Android App</a>
+                        </div>
+                    </section>
+
+                    <section class="fp-mn2-band" aria-labelledby="fp-mn2-title">
+                        <div class="fp-mn2-band-copy">
+                            <h3 id="fp-mn2-title">MN2 crypto ecosystem</h3>
+                            <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Wallet lives on your profile.</p>
+                            <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span></p>
+                        </div>
+                        <div class="fp-mn2-band-actions">
+                            <a class="fp-mn2-badge" href="/wallets">Wallets</a>
+                            <a class="fp-mn2-badge" href="/shop">Shop &amp; pay MN2</a>
+                            <a class="fp-mn2-link" href="/staking-leaderboard">Staking leaderboard</a>
+                            <a class="fp-mn2-link" href="/staking-teams">Staking teams</a>
+                            <a class="fp-mn2-link" href="/explorer">Explorer</a>
+                            <a class="fp-mn2-link" href="/casino/">Casino</a>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="fp-tab-portals" class="fp-mission-panel" role="tabpanel" data-fp-panel="portals" hidden>
+                    <p class="fp-portal-hint" id="fp-portal-hint">Hurtige genveje og 6 praktiske klynger — samme struktur som Portaler-menuen.</p>
+                    <div id="fp-portals-quick" class="fp-portal-quick-row" aria-label="Hurtige portaler"></div>
+                    <div id="fp-portals-clusters" class="fp-portal-clusters" aria-label="Portal klynger"></div>
+                    <div data-ptc-placement="home_smartlinks" data-ptc-limit="2"></div>
+                </div>
+
+                <div id="fp-tab-play" class="fp-mission-panel" role="tabpanel" data-fp-panel="play" hidden>
+                    <section class="fp-game-hub" id="fp-game-hub" aria-labelledby="fp-gh-title">
+                        <div class="fp-game-hub-head">
+                            <div>
+                                <p class="fp-kicker"><span>Game hub</span><span id="gh-status">Loading…</span></p>
+                                <h3 id="fp-gh-title">Trophies · Quests · Game · Battle · Story</h3>
+                                <p class="fp-gh-lead">One panel for collector progress, daily quests, game stats, battle rank, and hunter stories.</p>
+                            </div>
+                        </div>
+                        <div class="gh-tabs" role="tablist" aria-label="Game hub sections">
+                            <button type="button" class="gh-tab is-active" data-gh-tab="trophies" role="tab" aria-selected="true">🏆 Trophies</button>
+                            <button type="button" class="gh-tab" data-gh-tab="quests" role="tab" aria-selected="false">📋 Quests</button>
+                            <button type="button" class="gh-tab" data-gh-tab="game" role="tab" aria-selected="false">🎮 Game</button>
+                            <button type="button" class="gh-tab" data-gh-tab="battle" role="tab" aria-selected="false">⚔️ Battle</button>
+                            <button type="button" class="gh-tab" data-gh-tab="story" role="tab" aria-selected="false">📖 Story</button>
+                        </div>
+                        <div class="gh-panel" id="gh-panel" role="tabpanel">
+                            <p class="gh-empty">Loading game hub…</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="fp-tab-live" class="fp-mission-panel" role="tabpanel" data-fp-panel="live" hidden>
+                    <div class="fp-live-grid">
+                        <section class="fp-panel fp-news" aria-labelledby="fp-news-title">
+                            <h3 id="fp-news-title">News updates</h3>
+                            <ul id="fp-news-list" class="fp-news-list"></ul>
+                        </section>
+                        <section class="fp-starmap fp-starmap--compact" aria-labelledby="fp-starmap-title">
+                            <div class="fp-starmap-head">
+                                <h3 id="fp-starmap-title">Star Map 4D</h3>
+                                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴.</p>
+                            </div>
+                            <div class="fp-starmap-controls">
+                                <label for="fp-starmap-w">Tidsled <em>w</em>
+                                    <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
+                                </label>
+                                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
+                            </div>
+                            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
+                        </section>
+                    </div>
+                </div>
+
+                <div id="fp-tab-system" class="fp-mission-panel" role="tabpanel" data-fp-panel="system" hidden>
+                    <section class="fp-v20-upgrade" aria-labelledby="fp-upgrade-title">
+                        <div>
+                            <p class="fp-kicker"><span>Big upgrade</span><span>v2.0 patch</span></p>
+                            <h3 id="fp-upgrade-title">Systemet føles mere levende</h3>
+                        </div>
+                        <div class="fp-upgrade-grid">
+                            <article>
+                                <strong>Sonic engine</strong>
+                                <span>Ambient hum, pulse clicks og battle drive styres direkte fra forsiden.</span>
+                            </article>
+                            <article>
+                                <strong>Mission control</strong>
+                                <span>De vigtigste veje ind i generator, game hub, agenter og Star Map er samlet.</span>
+                            </article>
+                            <article>
+                                <strong>Live surface</strong>
+                                <span>Stats, portaler og nyheder loader som et samlet platform-dashboard.</span>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="fp-sound-console" aria-labelledby="fp-sound-title">
+                        <div class="fp-sound-copy">
+                            <p class="fp-kicker"><span>Audio deck</span><span>opt-in</span></p>
+                            <h3 id="fp-sound-title">MasterNoder Sound System</h3>
+                            <p>Aktivér et lavt cyber-ambient lydlag. Vælg rolig fokus, stjernekort-puls eller battle drive.</p>
+                        </div>
+                        <div class="fp-sound-board" aria-label="Lydkontrol">
+                            <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
+                                <span class="fp-sound-led" aria-hidden="true"></span>
+                                Start sound
+                            </button>
+                            <div class="fp-sound-wave" aria-hidden="true">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
+                                <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus hum</button>
+                                <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Star pulse</button>
+                                <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle drive</button>
+                            </div>
+                            <label class="fp-sound-volume" for="themeSoundVolume">
+                                Volume
+                                <input id="themeSoundVolume" type="range" min="0" max="100" value="35">
+                            </label>
+                            <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
+                        </div>
+                    </section>
                 </div>
             </div>
-            <div class="gh-tabs" role="tablist" aria-label="Game hub sections">
-                <button type="button" class="gh-tab is-active" data-gh-tab="trophies" role="tab" aria-selected="true">🏆 Trophies</button>
-                <button type="button" class="gh-tab" data-gh-tab="quests" role="tab" aria-selected="false">📋 Quests</button>
-                <button type="button" class="gh-tab" data-gh-tab="game" role="tab" aria-selected="false">🎮 Game</button>
-                <button type="button" class="gh-tab" data-gh-tab="battle" role="tab" aria-selected="false">⚔️ Battle</button>
-                <button type="button" class="gh-tab" data-gh-tab="story" role="tab" aria-selected="false">📖 Story</button>
-            </div>
-            <div class="gh-panel" id="gh-panel" role="tabpanel">
-                <p class="gh-empty">Loading game hub…</p>
-            </div>
         </section>
-
-        <section class="fp-v20-upgrade" aria-labelledby="fp-upgrade-title">
-            <div>
-                <p class="fp-kicker"><span>Big upgrade</span><span>v2.0 patch</span></p>
-                <h2 id="fp-upgrade-title">Systemet føles mere levende</h2>
-            </div>
-            <div class="fp-upgrade-grid">
-                <article>
-                    <strong>Sonic engine</strong>
-                    <span>Ambient hum, pulse clicks og battle drive styres direkte fra forsiden.</span>
-                </article>
-                <article>
-                    <strong>Mission control</strong>
-                    <span>De vigtigste veje ind i generator, game hub, agenter og Star Map er samlet.</span>
-                </article>
-                <article>
-                    <strong>Live surface</strong>
-                    <span>Stats, smart links og nyheder loader som et samlet platform-dashboard.</span>
-                </article>
-            </div>
-        </section>
-
-        <section class="fp-sound-console" aria-labelledby="fp-sound-title">
-            <div class="fp-sound-copy">
-                <p class="fp-kicker"><span>Audio deck</span><span>opt-in</span></p>
-                <h2 id="fp-sound-title">MasterNoder Sound System</h2>
-                <p>Aktivér et lavt cyber-ambient lydlag. Vælg rolig fokus, stjernekort-puls eller battle drive.</p>
-            </div>
-            <div class="fp-sound-board" aria-label="Lydkontrol">
-                <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
-                    <span class="fp-sound-led" aria-hidden="true"></span>
-                    Start sound
-                </button>
-                <div class="fp-sound-wave" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-                <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
-                    <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus hum</button>
-                    <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Star pulse</button>
-                    <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle drive</button>
-                </div>
-                <label class="fp-sound-volume" for="themeSoundVolume">
-                    Volume
-                    <input id="themeSoundVolume" type="range" min="0" max="100" value="35">
-                </label>
-                <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
-            </div>
-        </section>
-
-        <section class="fp-smartlinks" aria-labelledby="fp-smart-title">
-            <h2 id="fp-smart-title" class="fp-section-title">Smart links</h2>
-            <div id="fp-smart-links"></div>
-            <div data-ptc-placement="home_smartlinks" data-ptc-limit="2"></div>
-        </section>
-
-        <section class="fp-starmap" aria-labelledby="fp-starmap-title">
-            <div class="fp-starmap-head">
-                <h2 id="fp-starmap-title">Star Map 4D</h2>
-                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴ — samme data som Star Map 25.</p>
-            </div>
-            <div class="fp-starmap-controls">
-                <label for="fp-starmap-w">Tidsled <em>w</em>
-                    <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
-                </label>
-                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
-            </div>
-            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
-        </section>
-
-        <div class="fp-split">
-            <section class="fp-panel fp-news" aria-labelledby="fp-news-title">
-                <h2 id="fp-news-title">News updates</h2>
-                <ul id="fp-news-list" class="fp-news-list"></ul>
-            </section>
-            <section class="fp-panel fp-agents" aria-labelledby="fp-agent-title">
-                <h2 id="fp-agent-title">Agent void</h2>
-                <p class="fp-muted">Orkestrér AIs, tickets og værktøj ét sted.</p>
-                <div class="fp-agent-grid">
-                    <a class="fp-agent-card" href="/agents"><span>🤖</span>AI Agents</a>
-                    <a class="fp-agent-card" href="/agent_support"><span>🛠️</span>Agent support</a>
-                    <a class="fp-agent-card" href="/lab"><span>🔬</span>Lab</a>
-                    <a class="fp-agent-card" href="/debugger"><span>🔧</span>Debugger</a>
-                    <a class="fp-agent-card" href="/news"><span>📰</span>News</a>
-                    <a class="fp-agent-card" href="/wallets"><span>💾</span>Wallets</a>
-                    <a class="fp-agent-card" href="/podcast"><span>🎙️</span>Podcast</a>
-                    <a class="fp-agent-card" href="/staking-leaderboard"><span>🌱</span>Staking</a>
-                </div>
-            </section>
-        </div>
     </main>
 
     <button id="themeSoundFloatToggle" class="theme-sound-toggle" type="button" aria-label="Skift temalyd">Sound offline</button>
 
     <script>
         const BASE_URL = window.location.origin;
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+
+        function resolveHomeUserId() {
+            const game = localStorage.getItem('game_user_id');
+            const user = localStorage.getItem('user_id');
+            if (game && game !== 'default_user') return game;
+            if (user && user !== 'default_user') {
+                localStorage.setItem('game_user_id', user);
+                return user;
+            }
+            return 'default_user';
+        }
+
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
 
         async function loadMn2Surface() {
+            const userId = resolveHomeUserId();
             try {
-                const [balRes, priceRes] = await Promise.all([
-                    fetch(`${BASE_URL || ''}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
-                    fetch(`${BASE_URL || ''}/api/mn2/price`)
+                const base = BASE_URL || '';
+                const [balRes, priceRes, stakeCfgRes, netRes, statsRes] = await Promise.all([
+                    fetch(`${base}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${base}/api/mn2/price`),
+                    fetch(`${base}/api/mn2/staking/config`),
+                    fetch(`${base}/api/mn2/network-overview`),
+                    fetch(`${base}/api/stats/summary`)
                 ]);
+
+                let usdPrice = null;
+
                 if (balRes.ok) {
                     const bal = await balRes.json();
-                    const el = document.getElementById('fp-mn2-balance');
+                    const balanceStr = bal.success
+                        ? (bal.mn2_balance || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })
+                        : '—';
+                    setText('fp-mn2-balance', balanceStr);
+                    setText('hero-mn2-balance', userId === 'default_user' ? 'Sign in →' : balanceStr + ' MN2');
+                    const heroBalWrap = document.querySelector('.fp-ticker-balance');
+                    if (heroBalWrap && userId !== 'default_user') heroBalWrap.classList.add('is-identified');
+                    if (bal.mn2_usd_price != null) usdPrice = Number(bal.mn2_usd_price);
+                    const usdTxt = usdPrice != null ? '(≈ $' + usdPrice.toFixed(6) + ')' : '';
                     const usdEl = document.getElementById('fp-mn2-usd');
-                    if (el && bal.success) {
-                        el.textContent = (bal.mn2_balance || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
-                    }
-                    if (usdEl && bal.mn2_usd_price != null) {
-                        usdEl.textContent = '(≈ $' + Number(bal.mn2_usd_price).toFixed(6) + ')';
-                    }
+                    const heroUsdEl = document.getElementById('hero-mn2-usd');
+                    if (usdEl) usdEl.textContent = usdTxt;
+                    if (heroUsdEl) heroUsdEl.textContent = usdTxt;
                 }
+
                 if (priceRes.ok) {
                     const price = await priceRes.json();
-                    const pEl = document.getElementById('stat-mn2-price');
-                    if (pEl && price.mn2_usd_price != null) {
-                        pEl.textContent = '$' + Number(price.mn2_usd_price).toFixed(4);
+                    if (price.mn2_usd_price != null) {
+                        usdPrice = Number(price.mn2_usd_price);
+                        const priceStr = '$' + usdPrice.toFixed(4);
+                        setText('stat-mn2-price', priceStr);
+                        setText('hero-mn2-price', priceStr);
+                    }
+                }
+
+                if (stakeCfgRes.ok) {
+                    const cfg = await stakeCfgRes.json();
+                    if (cfg.apr_percent != null) {
+                        setText('hero-stat-apr', Number(cfg.apr_percent).toFixed(1) + '%');
+                    }
+                }
+
+                if (netRes.ok) {
+                    const net = await netRes.json();
+                    const overview = net.overview || net;
+                    if (overview.masternode_count != null) {
+                        setText('hero-stat-nodes', Number(overview.masternode_count).toLocaleString());
+                    }
+                    if (overview.block_height != null) {
+                        setText('hero-stat-height', Number(overview.block_height).toLocaleString());
+                    }
+                }
+
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    if (stats.success && stats.stats && stats.stats.total_users != null) {
+                        setText('hero-stat-users', Number(stats.stats.total_users).toLocaleString());
                     }
                 }
             } catch (e) {
@@ -225,6 +381,7 @@
         }
 
         async function loadAllStats() {
+            const userId = resolveHomeUserId();
             try {
                 const [statsRes, pointsRes, battleRes] = await Promise.all([
                     fetch(`${BASE_URL || ''}/api/stats/summary`),
@@ -282,10 +439,12 @@
         });
     </script>
     <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
-    <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260428a" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260910f" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20260910f" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20260617a" defer></script>
-    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260910b" defer></script>
+    <script src="/static/js/mn2-wallet-quick-access.js?v=20260910a" defer></script>
+    <script src="/static/js/mn2-micro-tx.js?v=20260910g" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="home" defer></script>
     <link rel="stylesheet" href="/static/css/mobile-install.css?v=20260704a">

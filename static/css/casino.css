@@ -1737,12 +1737,102 @@
     font-size: 0.9rem;
 }
 
+/* ---- Level Up upgrades (250 catalog) ---- */
+.casino-levelup-header { margin-bottom: 16px; }
+.casino-levelup-sub { opacity: 0.85; font-size: 0.92rem; }
+.casino-levelup-summary {
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(124, 58, 237, 0.12);
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    margin-bottom: 16px;
+}
+.casino-levelup-level { font-weight: 600; margin-bottom: 6px; }
+.casino-levelup-bar-wrap {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    margin: 6px 0;
+}
+.casino-levelup-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #2563eb);
+    transition: width 0.3s ease;
+}
+.casino-levelup-stats, .casino-levelup-bonuses { font-size: 0.88rem; opacity: 0.9; }
+.casino-levelup-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.casino-levelup-filter {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    color: inherit;
+    font-size: 0.85rem;
+}
+.casino-levelup-filter.active {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border-color: transparent;
+}
+.casino-levelup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    max-height: 720px;
+    overflow-y: auto;
+}
+.casino-levelup-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.casino-levelup-card.owned { opacity: 0.7; border-color: rgba(34, 197, 94, 0.35); }
+.casino-levelup-card.locked { opacity: 0.55; }
+.casino-levelup-icon { font-size: 1.6rem; line-height: 1; }
+.casino-levelup-name { font-weight: 600; font-size: 0.95rem; }
+.casino-levelup-desc { font-size: 0.82rem; opacity: 0.85; margin: 4px 0; }
+.casino-levelup-meta { font-size: 0.78rem; opacity: 0.75; }
+.casino-levelup-buy {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.12);
+    cursor: pointer;
+    color: inherit;
+    white-space: nowrap;
+}
+.casino-levelup-owned-badge { color: #22c55e; font-size: 0.85rem; }
+.casino-levelup-locked-badge { font-size: 0.82rem; opacity: 0.7; }
+
 .casino-progression {
     font-size: 0.92rem;
     margin-bottom: 8px;
 }
 
 .casino-prog-row { margin: 4px 0; }
+
+.casino-levelup-home-link {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    background: rgba(124, 58, 237, 0.1);
+    cursor: pointer;
+    color: inherit;
+    font-size: 0.88rem;
+}
 
 .casino-daily-wheel-btn {
     width: 100%;

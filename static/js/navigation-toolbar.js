@@ -38,10 +38,37 @@
         library: APP_BASE + '/static/img/nav/stories.svg',
         wallets: APP_BASE + '/static/img/nav/profile.svg',
         staking_leaderboard: APP_BASE + '/static/img/nav/trophy.svg',
-        staking_teams: APP_BASE + '/static/img/agents/social_engagement_agent.svg'
+        staking_teams: APP_BASE + '/static/img/agents/social_engagement_agent.svg',
+        creator: APP_BASE + '/static/img/agents/content_generator_agent.svg',
+        command_center: APP_BASE + '/static/img/agents/master_dashboard_agent.svg',
+        exchange: APP_BASE + '/static/img/agents/analytics_agent.svg',
+        profit: APP_BASE + '/static/img/nav/explorer.svg'
     };
 
-        // Navigation configuration — primary product loop first, deep portals later.
+    /** Practical portal clusters — same structure on toolbar, dropdown, and frontpage. */
+    const NAV_GROUPS = [
+        { id: 'create', label: 'Create', icon: '🎬', hubId: 'generator', summary: 'Generator, encoder, gallery' },
+        { id: 'play', label: 'Play', icon: '🎮', hubId: 'game', summary: 'Game, battle, casino, trophies' },
+        { id: 'mn2', label: 'MN2 Money', icon: '🪙', hubId: 'explorer', summary: 'Wallet, shop, exchange, staking' },
+        { id: 'tools', label: 'Tools', icon: '🔧', hubId: 'command_center', summary: 'Agents, lab, debugger, aggregator' },
+        { id: 'community', label: 'Community', icon: '📰', summary: 'News, podcast, social, library' },
+        { id: 'archive', label: 'More & archive', icon: '🗂️', summary: 'Legacy pages & extras' },
+    ];
+
+    /** Desktop top bar — 6 most-used only; rest live in Portaler accordion. */
+    const TOP_BAR_IDS = new Set([
+        'generator', 'game', 'battle', 'trophies', 'explorer', 'shop',
+    ]);
+
+    /** Homepage quick picks — mirrors top bar + one anchor per cluster. */
+    const TOP_PICKS_IDS = [
+        'generator', 'game', 'battle', 'trophies', 'explorer', 'shop',
+        'creator', 'casino', 'wallets', 'agents', 'news', 'library',
+    ];
+
+    /** @deprecated alias — use TOP_PICKS_IDS */
+    const TOP_20_IDS = TOP_PICKS_IDS.slice();
+
     const NAV_CONFIG = {
         brand: {
             name: 'MasterNoder',
@@ -51,41 +78,111 @@
         },
         favorites: ['generator', 'game', 'battle', 'trophies'],
         links: [
-            { name: 'Home', icon: '🏠', url: APP_BASE + '/', id: 'home' },
-            { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
-            { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
-            { name: 'Battle', icon: '⚔️', url: APP_BASE + '/battle', id: 'battle', favorite: true },
-            { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
-            { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
-            { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
-            { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
-            { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
-            { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
-            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
-            { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' },
-            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
-            { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab', title: 'Discussion, experiments, and system lab' },
-            { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
-            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
-            { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
-            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
-            { name: 'Battlegrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
-            { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
-            { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
-            { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
-            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
-            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
-            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
-            { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
-            { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
-            { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },
-            { name: 'Agents Control', icon: '🤖', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', title: 'Agents control board' },
-            { name: 'Customers', icon: '👥', url: APP_BASE + '/customers', id: 'customers', title: 'Customer directory' },
-            { name: 'Hosting', icon: '🖥️', url: APP_BASE + '/hosting', id: 'hosting', title: 'Masternode hosting' },
-            { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls' }
+            { name: 'Home', icon: '🏠', url: APP_BASE + '/', id: 'home', tier: 'bar', group: null },
+            { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', tier: 'bar', group: 'create', favorite: true },
+            { name: 'Super Encoder', icon: '🎵', url: APP_BASE + '/creator/', id: 'creator', tier: 'portal', group: 'create', title: 'Music, songs & video — one-click AI encoder' },
+            { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', tier: 'bar', group: 'play', favorite: true, title: 'Game hub — campaign, stats, social tabs' },
+            { name: 'Battle', icon: '⚔️', url: APP_BASE + '/battle', id: 'battle', tier: 'bar', group: 'play', favorite: true },
+            { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', tier: 'bar', group: 'play', favorite: true },
+            { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop', tier: 'bar', group: 'mn2' },
+            { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', tier: 'bar', group: 'mn2', title: 'MN2 Crypto Hub — staking, market, reserves, hosting' },
+            { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', tier: 'portal', group: 'mn2', title: 'Unified hub — points, wallet, shop, leaderboard, activity' },
+
+            { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery', tier: 'portal', group: 'create' },
+            { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', tier: 'portal', group: 'community', title: 'YouTube, Facebook, Discord, GitHub feeds' },
+            { name: 'Camgirls', icon: '💃', url: APP_BASE + '/camgirls', id: 'camgirls', tier: 'portal', group: 'create', title: 'Studio integration portal' },
+
+            { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests', tier: 'portal', group: 'play' },
+            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino', tier: 'portal', group: 'play', title: 'Casino cockpit — games, contests, income' },
+            { name: 'Battlegrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds', tier: 'portal', group: 'play' },
+            { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25', tier: 'portal', group: 'play' },
+            { name: 'Champions League', icon: '🏅', url: APP_BASE + '/champions-league', id: 'champions_league', tier: 'portal', group: 'play', title: 'Season ladder — linked from Command Center' },
+
+            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', tier: 'portal', group: 'mn2', title: 'MN2 deposit, withdraw, trusted addresses' },
+            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', tier: 'portal', group: 'mn2', title: '25-crypto exchange — swap, on-ramp, tax records' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', tier: 'portal', group: 'mn2', title: 'P2P MN2 marketplace — also in Explorer' },
+            { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', tier: 'portal', group: 'mn2', title: 'Staking leaderboard — Explorer tab' },
+            { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', tier: 'portal', group: 'mn2', title: 'Team staking — Explorer tab' },
+            { name: 'Staking Monitor', icon: '📊', url: APP_BASE + '/staking-monitor', id: 'staking_monitor', tier: 'portal', group: 'mn2', title: 'Live staking monitor — Explorer satellite' },
+            { name: 'Proof of Reserves', icon: '🏦', url: APP_BASE + '/proof-of-reserves', id: 'proof_of_reserves', tier: 'portal', group: 'mn2', title: 'MN2 reserves audit — Explorer tab' },
+            { name: 'Hosting', icon: '🖥️', url: APP_BASE + '/hosting', id: 'hosting', tier: 'portal', group: 'mn2', title: 'Masternode hosting — Explorer tab' },
+            { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', tier: 'portal', group: 'mn2', title: '24/7 profit monitor, news, rentals' },
+
+            { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents', tier: 'portal', group: 'tools' },
+            { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab', tier: 'portal', group: 'tools', title: 'Discussion & experiments — replaces /chat' },
+            { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', tier: 'portal', group: 'tools', title: 'Tickets, AI API keys, tools' },
+            { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger', tier: 'portal', group: 'tools' },
+            { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', tier: 'portal', group: 'tools', title: '75 AI aggregators — catalog & control' },
+            { name: 'Agents Control', icon: '🎛️', url: APP_BASE + '/dashboard/agents_control', id: 'agents_control', tier: 'portal', group: 'tools', title: 'Agents control board' },
+            { name: 'Command Center', icon: '🛰️', url: APP_BASE + '/command-center', id: 'command_center', tier: 'portal', group: 'tools', title: 'Cross-feature ops map — battle, game, exchange, casino' },
+            { name: 'Business Control', icon: '🏢', url: APP_BASE + '/business-control', id: 'business_control', tier: 'portal', group: 'tools', title: 'Exchange payout & business ops board' },
+
+            { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news', tier: 'portal', group: 'community' },
+            { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', tier: 'portal', group: 'community', title: 'Rulebooks V1–V16, calm reader' },
+            { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social', tier: 'portal', group: 'community' },
+            { name: 'Customers', icon: '📇', url: APP_BASE + '/customers', id: 'customers', tier: 'portal', group: 'community', title: 'Customer directory' },
+
+            { name: 'Metal Systems', icon: '🤘', url: APP_BASE + '/metal', id: 'metal', tier: 'portal', group: 'archive', title: 'Hardcore AI metal progression' },
+            { name: 'Milkyway', icon: '🌌', url: APP_BASE + '/milkyway', id: 'milkyway', tier: 'portal', group: 'archive' },
+            { name: 'Editor', icon: '✂️', url: APP_BASE + '/editor', id: 'editor', tier: 'portal', group: 'archive' },
+            { name: 'Monetization', icon: '💰', url: APP_BASE + '/monetization', id: 'monetization', tier: 'portal', group: 'archive' },
+            { name: 'Theme Points', icon: '🎨', url: APP_BASE + '/theme-points', id: 'theme_points', tier: 'portal', group: 'archive' },
+            { name: 'Theme Premium', icon: '✨', url: APP_BASE + '/theme_premium', id: 'theme_premium', tier: 'portal', group: 'archive' },
+            { name: 'Beta Testing', icon: '🧪', url: APP_BASE + '/beta_testing', id: 'beta_testing', tier: 'portal', group: 'archive' },
+            { name: 'Calculator', icon: '🧮', url: APP_BASE + '/advanced_calculator', id: 'advanced_calculator', tier: 'portal', group: 'archive' },
+            { name: 'Rights Law', icon: '⚖️', url: APP_BASE + '/rights-law', id: 'rights_law', tier: 'portal', group: 'archive' },
+            { name: 'Victory Tech Tree', icon: '🌳', url: APP_BASE + '/victory-tech-tree', id: 'victory_tech_tree', tier: 'portal', group: 'archive' },
+            { name: 'Divine Tech Tree', icon: '🌲', url: APP_BASE + '/danish-divine-tech-tree', id: 'danish_divine_tech_tree', tier: 'portal', group: 'archive' },
+            { name: 'Academic View', icon: '🎓', url: APP_BASE + '/academic-perspective', id: 'academic_perspective', tier: 'portal', group: 'archive' },
+            { name: 'Time Guides', icon: '⏱️', url: APP_BASE + '/time-achievement-guides', id: 'time_achievement_guides', tier: 'portal', group: 'archive' },
+            { name: 'Social Monitor', icon: '📡', url: APP_BASE + '/social-monitor', id: 'social_monitor', tier: 'portal', group: 'archive' },
         ],
         apiBase: window.location.origin + APP_BASE
     };
+
+    function isBarLink(link) {
+        return link && link.id !== 'home' && (link.tier === 'bar' || TOP_BAR_IDS.has(link.id));
+    }
+
+    function portalLinksOnly() {
+        return NAV_CONFIG.links.filter((link) => link.id !== 'home' && !isBarLink(link));
+    }
+
+    function _renderPortalPanelHTML() {
+        const pool = portalLinksOnly();
+        const barPool = NAV_CONFIG.links.filter((l) => l.id !== 'home' && isBarLink(l));
+        return NAV_GROUPS.map((grp) => {
+            const portalLinks = pool.filter((l) => l.group === grp.id);
+            const barLinks = barPool.filter((l) => l.group === grp.id);
+            const links = [...barLinks, ...portalLinks];
+            if (!links.length) return '';
+            const hub = grp.hubId ? NAV_CONFIG.links.find((l) => l.id === grp.hubId) : null;
+            const hubLine = hub
+                ? `<p class="nav-toolbar-portal-merge">Hub: <a href="${hub.url}" class="nav-toolbar-portal-merge-link" data-page-id="${hub.id}">${hub.name}</a>${grp.summary ? ` · ${grp.summary}` : ''}</p>`
+                : (grp.summary ? `<p class="nav-toolbar-portal-merge">${grp.summary}</p>` : '');
+            return `<section class="nav-toolbar-portal-accordion" data-cluster="${grp.id}">
+                <button type="button" class="nav-toolbar-portal-accordion-trigger" aria-expanded="false" aria-controls="nav-cluster-${grp.id}" id="nav-cluster-btn-${grp.id}">
+                    <span class="nav-toolbar-portal-accordion-label"><span class="nav-toolbar-portal-accordion-icon" aria-hidden="true">${grp.icon}</span> ${grp.label}</span>
+                    <span class="nav-toolbar-portal-accordion-meta">
+                        <span class="nav-toolbar-portal-accordion-count">${links.length}</span>
+                        <span class="nav-toolbar-portal-accordion-chevron" aria-hidden="true">▾</span>
+                    </span>
+                </button>
+                <div class="nav-toolbar-portal-accordion-panel" id="nav-cluster-${grp.id}" role="region" aria-labelledby="nav-cluster-btn-${grp.id}" hidden>
+                    ${hubLine}
+                    <div class="nav-toolbar-portal-grid">${links.map((link) => _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link')).join('')}</div>
+                </div>
+            </section>`;
+        }).join('');
+    }
+
+    if (typeof window !== 'undefined') {
+        window.MN_NAV_LINKS = NAV_CONFIG.links;
+        window.MN_NAV_GROUPS = NAV_GROUPS;
+        window.MN_NAV_TOP_BAR_IDS = Array.from(TOP_BAR_IDS);
+        window.MN_NAV_TOP_PICKS_IDS = TOP_PICKS_IDS.slice();
+        window.MN_NAV_TOP_20_IDS = TOP_20_IDS.slice();
+    }
 
     function _resolveIconImg(link) {
         return link.iconImg || NAV_ICON_IMAGES[link.id] || null;
@@ -124,9 +221,10 @@
     function createToolbarHTML() {
         const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
 
-        const linksHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, '')).join('');
-
-        const portalGridHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link')).join('');
+        const barLinksHTML = NAV_CONFIG.links.filter((link) => isBarLink(link)).map((link) => _renderLinkAnchor(link, '')).join('');
+        const linksHTML = portalVoid ? barLinksHTML : NAV_CONFIG.links.map((link) => _renderLinkAnchor(link, '')).join('');
+        const quickLinksHTML = NAV_CONFIG.links.filter((link) => isBarLink(link)).map((link) => _renderLinkAnchor(link, 'nav-toolbar-quick-link')).join('');
+        const portalPanelHTML = _renderPortalPanelHTML();
 
         if (portalVoid) {
             return `
@@ -136,6 +234,10 @@
                         ${_renderIcon(NAV_CONFIG.brand, { extraClass: ' nav-toolbar-brand-icon-wrap', pulse: true, large: true })}
                         <span>${NAV_CONFIG.brand.name}</span>
                     </a>
+
+                    <div class="nav-toolbar-quicklinks" id="navToolbarQuickLinks" aria-label="Hurtig navigation">
+                        ${quickLinksHTML}
+                    </div>
 
                     <div class="nav-toolbar-portal-wrap">
                         <button type="button" class="nav-toolbar-portal-trigger" id="navPortalTrigger" aria-expanded="false" aria-haspopup="true" aria-controls="navPortalPanel">
@@ -157,7 +259,13 @@
                                 <span class="nav-toolbar-badge" id="navToolbarNotificationsBadge" style="display: none;">0</span>
                             </button>
                         </div>
-                        <div class="nav-toolbar-currency" id="navToolbarCurrency">
+                        <div class="nav-toolbar-mn2-wallet" id="navToolbarMn2Wallet" role="button" tabindex="0" title="MN2 Wallet — click for actions, double-click to open (W)" aria-haspopup="true" aria-label="MN2 wallet balance and quick actions">
+                            <span class="nav-toolbar-mn2-icon">⚡</span>
+                            <span class="nav-toolbar-mn2-label">MN2</span>
+                            <strong id="navToolbarMn2Balance">—</strong>
+                            <span class="nav-toolbar-mn2-chevron" aria-hidden="true">▾</span>
+                        </div>
+                        <div class="nav-toolbar-currency" id="navToolbarCurrency" title="Shop coins">
                             <span class="nav-toolbar-currency-icon">🪙</span>
                             <span id="navToolbarCurrencyAmount">0</span>
                         </div>
@@ -169,9 +277,9 @@
 
                 <div id="navPortalPanel" class="nav-toolbar-portal-panel" role="menu" aria-hidden="true" hidden>
                     <div class="nav-toolbar-portal-inner">
-                        <p class="nav-toolbar-portal-hint">Alle sider — ét sted</p>
-                        <div class="nav-toolbar-portal-grid" id="navPortalGrid">
-                            ${portalGridHTML}
+                        <p class="nav-toolbar-portal-hint">6 praktiske klynger — fold ud for alle portaler</p>
+                        <div class="nav-toolbar-portal-sections" id="navPortalGrid">
+                            ${portalPanelHTML}
                         </div>
                     </div>
                 </div>
@@ -203,7 +311,13 @@
                                 <span class="nav-toolbar-badge" id="navToolbarNotificationsBadge" style="display: none;">0</span>
                             </button>
                         </div>
-                        <div class="nav-toolbar-currency" id="navToolbarCurrency">
+                        <div class="nav-toolbar-mn2-wallet" id="navToolbarMn2Wallet" role="button" tabindex="0" title="MN2 Wallet — click for actions, double-click to open (W)" aria-haspopup="true" aria-label="MN2 wallet balance and quick actions">
+                            <span class="nav-toolbar-mn2-icon">⚡</span>
+                            <span class="nav-toolbar-mn2-label">MN2</span>
+                            <strong id="navToolbarMn2Balance">—</strong>
+                            <span class="nav-toolbar-mn2-chevron" aria-hidden="true">▾</span>
+                        </div>
+                        <div class="nav-toolbar-currency" id="navToolbarCurrency" title="Shop coins">
                             <span class="nav-toolbar-currency-icon">🪙</span>
                             <span id="navToolbarCurrencyAmount">0</span>
                         </div>
@@ -241,8 +355,9 @@
         // Highlight active link
         highlightActiveLink();
 
-        // Setup mobile menu toggle
+        // Setup mobile menu toggle + portal accordions
         setupMobileMenu();
+        setupPortalAccordions();
 
         // Load currency
         loadCurrency();
@@ -291,12 +406,12 @@
         const currentUrl = window.location.href;
 
         // Remove all active classes
-        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link').forEach(link => {
+        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link, .nav-toolbar-quick-link, .nav-toolbar-portal-merge-link').forEach(link => {
             link.classList.remove('active');
         });
 
         // Find and highlight active link
-        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link').forEach(link => {
+        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link, .nav-toolbar-quick-link, .nav-toolbar-portal-merge-link').forEach(link => {
             const linkUrl = new URL(link.href, window.location.origin);
             const linkPath = linkUrl.pathname;
 
@@ -305,6 +420,48 @@
                 (currentPath.startsWith(linkPath) && linkPath !== '/')) {
                 link.classList.add('active');
             }
+        });
+    }
+
+    function setPortalAccordionOpen(accordion, open) {
+        if (!accordion) return;
+        const trigger = accordion.querySelector('.nav-toolbar-portal-accordion-trigger');
+        const panel = accordion.querySelector('.nav-toolbar-portal-accordion-panel');
+        if (!trigger || !panel) return;
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        accordion.classList.toggle('is-open', open);
+        panel.hidden = !open;
+    }
+
+    function expandActivePortalCluster() {
+        const panel = document.getElementById('navPortalPanel');
+        if (!panel) return;
+        const activeLink = panel.querySelector('.nav-toolbar-portal-grid-link.active, .nav-toolbar-portal-merge-link.active');
+        const targetAccordion = activeLink
+            ? activeLink.closest('.nav-toolbar-portal-accordion')
+            : panel.querySelector('.nav-toolbar-portal-accordion');
+        panel.querySelectorAll('.nav-toolbar-portal-accordion').forEach((acc) => setPortalAccordionOpen(acc, false));
+        if (targetAccordion) setPortalAccordionOpen(targetAccordion, true);
+    }
+
+    /**
+     * Collapsible cluster sections inside the Portaler panel.
+     */
+    function setupPortalAccordions() {
+        const panel = document.getElementById('navPortalPanel');
+        if (!panel) return;
+
+        panel.querySelectorAll('.nav-toolbar-portal-accordion-trigger').forEach((trigger) => {
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const accordion = trigger.closest('.nav-toolbar-portal-accordion');
+                const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+                panel.querySelectorAll('.nav-toolbar-portal-accordion').forEach((acc) => {
+                    if (acc !== accordion) setPortalAccordionOpen(acc, false);
+                });
+                setPortalAccordionOpen(accordion, !isOpen);
+            });
         });
     }
 
@@ -335,6 +492,7 @@
                 portalPanel.classList.add('open');
                 portalPanel.setAttribute('aria-hidden', 'false');
                 portalTrigger.setAttribute('aria-expanded', 'true');
+                expandActivePortalCluster();
                 syncToggleIcon();
             };
             const togglePortal = () => {
@@ -403,9 +561,20 @@
     /**
      * Load user currency
      */
+    function resolveNavUserId() {
+        const game = localStorage.getItem('game_user_id');
+        const user = localStorage.getItem('user_id');
+        if (game && game !== 'default_user') return game;
+        if (user && user !== 'default_user') {
+            localStorage.setItem('game_user_id', user);
+            return user;
+        }
+        return 'default_user';
+    }
+
     async function loadCurrency() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = resolveNavUserId();
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/shop/currency?user_id=${userId}`);
             
             if (response.ok) {
@@ -426,7 +595,7 @@
      * Setup click tracking for navigation
      */
     function setupClickTracking() {
-        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link').forEach(link => {
+        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link, .nav-toolbar-quick-link, .nav-toolbar-portal-merge-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 const pageId = this.getAttribute('data-page-id');
                 
@@ -548,11 +717,17 @@
      * Show user menu
      */
     function showUserMenu() {
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const userId = resolveNavUserId();
         const menu = `
             <div class="nav-toolbar-dropdown" id="userMenuDropdown">
                 <div class="nav-toolbar-dropdown-header">
                     <strong id="userMenuHeaderText">👤 ${userId}</strong>
+                </div>
+                <div class="nav-toolbar-dropdown-item" onclick="window.location.href='/wallets'">
+                    <span>⚡</span> MN2 Wallet
+                </div>
+                <div class="nav-toolbar-dropdown-item" onclick="window.location.href='/profile?tab=wallet'">
+                    <span>🌱</span> Staking &amp; deposits
                 </div>
                 <div class="nav-toolbar-dropdown-item" onclick="window.location.href='/profile'">
                     <span>📊</span> View Profile
@@ -680,7 +855,7 @@
      */
     async function loadNotificationsCount() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = resolveNavUserId();
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/notifications/count?user_id=${userId}`);
             const count = response.ok ? ((await response.json()).count || 0) : 0;
             const badge = document.getElementById('navToolbarNotificationsBadge');
@@ -702,7 +877,7 @@
      */
     async function loadNotifications() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = resolveNavUserId();
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/notifications?user_id=${userId}`);
             
             if (response.ok) {
@@ -760,15 +935,27 @@
     // Refresh notifications count periodically
     setInterval(loadNotificationsCount, 60000); // Every minute
 
-    // Global MN2 bar + live activity stream on all toolbar pages
+    // Global MN2 bar + wallet quick access + live activity stream on all toolbar pages
     (function loadMn2Global() {
-        ['mn2-site-bridge.js?v=20260614d', 'mn2-global-bar.js?v=20260614d', 'mn2-activity-stream.js?v=20260614d'].forEach(function (src) {
+        var mn2Scripts = [
+            'mn2-site-bridge.js?v=20260910b',
+            'mn2-wallet-quick-access.js?v=20260910a',
+            'mn2-global-bar.js?v=20260910a',
+            'mn2-activity-stream.js?v=20260614d',
+        ];
+        mn2Scripts.forEach(function (src) {
             if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
             var s = document.createElement('script');
             s.src = '/static/js/' + src;
             s.defer = true;
             document.body.appendChild(s);
         });
+        if (!document.querySelector('link[href*="mn2-wallet-quick-access.css"]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/static/css/mn2-wallet-quick-access.css?v=20260910a';
+            document.head.appendChild(link);
+        }
     })();
 
     // Calm library launcher on non-compendium pages; full reader shell on /compendium/*

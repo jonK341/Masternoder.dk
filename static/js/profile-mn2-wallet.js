@@ -5,8 +5,14 @@
   'use strict';
 
   var TIMEOUT_MS = 12000;
+  var DEPOSIT_TIMEOUT_MS = 65000;
+  var DEPOSIT_SLOW_HINT_MS = 15000;
+  var DEPOSIT_MAX_RETRIES = 2;
 
   function uid() {
+    if (global.Mn2SiteBridge && global.Mn2SiteBridge.syncGameUserId) {
+      global.Mn2SiteBridge.syncGameUserId();
+    }
     return (
       (global.profileManager && global.profileManager.userId) ||
       localStorage.getItem('game_user_id') ||
@@ -50,6 +56,59 @@
     return t && t !== '--' && t !== '—' && t !== '…' && t !== 'Loading…';
   }
 
+  function isDepositTimeout(data) {
+    return !!(data && data.error === 'Request timed out');
+  }
+
+  function setDepositLoading(message) {
+    var addrEl = document.getElementById('profile-mn2-deposit-address');
+    var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
+    var depositErrEl = document.getElementById('profile-mn2-deposit-error');
+    if (addrEl) addrEl.textContent = '…';
+    if (depositHintEl) {
+      depositHintEl.textContent = message;
+      depositHintEl.style.display = 'block';
+    }
+    if (depositErrEl) {
+      depositErrEl.style.display = 'none';
+      depositErrEl.textContent = '';
+    }
+  }
+
+  function fetchDepositAddress(user, attempt) {
+    attempt = attempt || 0;
+    var slowHintTimer;
+    var retryLabel = attempt > 0 ? ' (retry ' + attempt + '/' + DEPOSIT_MAX_RETRIES + ')' : '';
+    setDepositLoading('Loading deposit address…' + retryLabel);
+    slowHintTimer = setTimeout(function () {
+      setDepositLoading('Generating your address… this can take up to a minute' + retryLabel);
+    }, DEPOSIT_SLOW_HINT_MS);
+    return fetchJson(base() + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(user), {
+      timeout: DEPOSIT_TIMEOUT_MS,
+    })
+      .then(function (res) {
+        clearTimeout(slowHintTimer);
+        var data = res.data || {};
+        if (data.success && data.deposit_address) {
+          renderDeposit(data);
+          return data;
+        }
+        if (isDepositTimeout(data) && attempt < DEPOSIT_MAX_RETRIES) {
+          return fetchDepositAddress(user, attempt + 1);
+        }
+        renderDeposit(data);
+        return data;
+      })
+      .catch(function () {
+        clearTimeout(slowHintTimer);
+        if (attempt < DEPOSIT_MAX_RETRIES) {
+          return fetchDepositAddress(user, attempt + 1);
+        }
+        renderDeposit({ success: false, error: 'Request timed out' });
+        return { success: false };
+      });
+  }
+
   function wireFiatToggle() {
     var tg = document.getElementById('mn2-fiat-toggle');
     if (!tg || tg._mn2Wired) return;
@@ -70,12 +129,16 @@
       if (balanceEl) balanceEl.textContent = '—';
       var showcaseErr = document.getElementById('profile-mn2-showcase-balance');
       if (showcaseErr) showcaseErr.textContent = (balData && balData.error) ? balData.error : '—';
+      var summaryErr = document.getElementById('profile-wallet-summary-balance');
+      if (summaryErr) summaryErr.textContent = (balData && balData.error) ? balData.error : '—';
       return;
     }
     var balNum = Number(balData.mn2_balance) || 0;
     if (balanceEl) balanceEl.textContent = balNum.toFixed(8);
     var showcase = document.getElementById('profile-mn2-showcase-balance');
     if (showcase) showcase.textContent = balNum.toFixed(4) + ' MN2';
+    var summaryBal = document.getElementById('profile-wallet-summary-balance');
+    if (summaryBal) summaryBal.textContent = balNum.toFixed(4) + ' MN2';
     if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
       var usd = balData.mn2_usd_price;
       if (usd != null) {
@@ -131,8 +194,13 @@
     if (addrData && addrData.success && addrData.deposit_address) {
       if (addrEl) addrEl.textContent = addrData.deposit_address;
       if (depositErrEl) {
-        depositErrEl.style.display = 'none';
-        depositErrEl.textContent = '';
+        if (addrData.address_warning) {
+          depositErrEl.textContent = addrData.address_warning;
+          depositErrEl.style.display = 'block';
+        } else {
+          depositErrEl.style.display = 'none';
+          depositErrEl.textContent = '';
+        }
       }
       if (depositHintEl) depositHintEl.style.display = 'none';
       if (depositRetryBtn) depositRetryBtn.style.display = 'none';
@@ -153,7 +221,7 @@
       if (addrEl) addrEl.textContent = '—';
       var errMsg =
         (addrData && addrData.error) ||
-        'Deposit address unavailable. Wallet RPC may be offline — use Request address when ready.';
+        'Deposit address unavailable. The MN2 wallet node may be offline or still loading — click Request address to retry.';
       if (depositErrEl) {
         depositErrEl.textContent = errMsg;
         depositErrEl.style.display = 'block';
@@ -230,34 +298,32 @@
     var addrEl = document.getElementById('profile-mn2-deposit-address');
     var requestBtn = document.getElementById('profile-mn2-request-addr');
     var depositErrEl = document.getElementById('profile-mn2-deposit-error');
-    if (addrEl) addrEl.textContent = '…';
     if (requestBtn) {
       requestBtn.disabled = true;
       requestBtn.textContent = 'Requesting…';
     }
-    if (depositErrEl) {
-      depositErrEl.style.display = 'none';
-      depositErrEl.textContent = '';
-    }
     var hasAddr = forceNew || hasDepositAddress(addrEl);
     var promise;
     if (hasAddr && forceNew !== false) {
+      setDepositLoading('Refreshing deposit address…');
       promise = fetchJson(base() + '/api/mn2/wallet/refresh', {
         method: 'POST',
         body: { user_id: user },
-        timeout: 20000,
+        timeout: DEPOSIT_TIMEOUT_MS,
       }).then(function (res) {
-        if (res.data && res.data.success) return { data: res.data };
-        return fetchJson(base() + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(user), { timeout: 20000 });
+        if (res.data && res.data.success) {
+          renderDeposit(res.data);
+          return res.data;
+        }
+        return fetchDepositAddress(user, 0);
       });
     } else {
-      promise = fetchJson(base() + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(user), { timeout: 20000 });
+      promise = fetchDepositAddress(user, 0);
     }
     return promise
-      .then(function (res) {
-        renderDeposit(res.data || {});
-        if (!(res.data && res.data.success) && depositErrEl) {
-          depositErrEl.textContent = (res.data && res.data.error) || 'Could not get deposit address.';
+      .then(function (data) {
+        if (!(data && data.success) && depositErrEl) {
+          depositErrEl.textContent = (data && data.error) || 'Could not get deposit address.';
           depositErrEl.style.display = 'block';
         }
       })
@@ -373,13 +439,18 @@
     wireControls();
     wireFiatToggle();
     initWalletSubTabs();
+    try {
+      var walletTab = new URLSearchParams(global.location.search).get('wallet');
+      if (walletTab) {
+        var subBtn = document.querySelector('#profile-wallet-subnav [data-wallet-tab="' + walletTab + '"]');
+        if (subBtn) subBtn.click();
+      }
+    } catch (e) { /* ignore */ }
 
     fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
       renderBalance(res.data);
     });
-    fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (res) {
-      renderDeposit(res.data);
-    });
+    fetchDepositAddress(user, 0);
     fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
       renderTransactions(res.data);
     });
@@ -388,5 +459,13 @@
     });
   }
 
-  global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };
+  function prefetchDepositAddress() {
+    fetchDepositAddress(uid(), 0);
+  }
+
+  global.ProfileMn2Wallet = {
+    load: load,
+    requestDepositAddress: requestDepositAddress,
+    prefetchDepositAddress: prefetchDepositAddress,
+  };
 })(window);

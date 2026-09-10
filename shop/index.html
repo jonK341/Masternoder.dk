@@ -601,7 +601,7 @@
         </div>
 
         <div class="shop-revenue-strip card" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:var(--spacing-md);padding:14px 16px;border:1px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.06),rgba(0,212,255,0.06));">
-            <a href="/shop?tab=mn2" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🏛️ Host MN2 node · $4.99/slot</a>
+            <a href="/hosting" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🏛️ Host MN2 node · $4.99/slot</a>
             <a href="/shop?tab=coins" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#0070ba,#1546a0);">💰 Buy coins (PayPal)</a>
             <a href="/shop?category=boosts" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">⚡ Staking boosters</a>
             <a href="/camgirls/" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🎭 Live performers</a>
@@ -1066,7 +1066,14 @@
     <script src="/static/js/toast-notifications.js" defer></script>
     <script>
         const BASE_URL = window.location.origin;
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        (function syncShopUserId() {
+            var game = localStorage.getItem('game_user_id');
+            var user = localStorage.getItem('user_id');
+            if (user && user !== 'default_user' && (!game || game === 'default_user')) {
+                localStorage.setItem('game_user_id', user);
+            }
+        })();
+        const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
         let currentCategory = '';
         let userInventory = [];
         let userPurchases = [];
@@ -2856,6 +2863,12 @@
         });
 
         async function purchaseItem(itemId) {
+            if (!userId || userId === 'default_user') {
+                if (typeof toast !== 'undefined') toast.error('Create your profile first to make purchases.');
+                else alert('Create your profile first to make purchases.');
+                window.location.href = '/profile';
+                return;
+            }
             const btn = document.querySelector(`.btn-purchase[data-item-id="${itemId}"]`);
             const originalText = btn ? btn.textContent : '';
             if (btn) {
@@ -2880,7 +2893,11 @@
                 }
                 if (data.success) {
                     const earned = data.loyalty_earned || 0;
-                    if (typeof toast !== 'undefined') toast.success(`Purchased ${data.item?.name || 'item'}!` + (earned ? ` (+${earned} loyalty)` : ''));
+                    const microAmt = data.micro_tx_reward && data.micro_tx_reward.amount_mn2;
+                    let msg = `Purchased ${data.item?.name || 'item'}!` + (earned ? ` (+${earned} loyalty)` : '');
+                    if (microAmt) msg += ` (+${microAmt} MN2 reward)`;
+                    if (typeof toast !== 'undefined') toast.success(msg);
+                    if (microAmt && window.MN2MicroTx) MN2MicroTx.refreshBalance();
                     if (window.ShopV9) ShopV9.recordPurchase(Object.assign({ success: true, item_id: itemId }, data));
                     loadCurrency();
                     loadUnifiedPoints();
@@ -3652,12 +3669,13 @@
             </div>
         </div>
     </div>
-    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260910c" defer></script>
     <script src="/static/js/platform-upgrades.js?v=20260705" defer></script>
     <script src="/static/js/platform-upgrades-batch2.js?v=20260705" defer></script>
     <script src="/static/js/hub-pages-ux.js?v=20260705" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
+    <script src="/static/js/mn2-micro-tx.js?v=20260910g" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>
     <script src="/static/js/stats-achievements-tracker.js" defer></script>

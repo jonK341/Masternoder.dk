@@ -108,3 +108,36 @@ def test_my_orders_requires_auth(mn_host_client, monkeypatch):
     rv = mn_host_client.get("/api/mn2/masternode/my-orders")
     assert rv.status_code == 401
     assert rv.get_json()["error"] == "auth_required"
+
+
+def test_service_endpoint_returns_waiting_slots(monkeypatch, mn_host_client):
+    from backend.services import mn2_masternode_service as mn
+
+    monkeypatch.setattr(
+        mn,
+        "get_service_status",
+        lambda fresh=False: {
+            "success": True,
+            "slots_available": 220,
+            "hosted_count": 30,
+            "waiting_slots": 2,
+            "max_hosted_nodes": 250,
+            "hosts": [],
+            "network": {"enabled": 5, "total": 6},
+        },
+    )
+    rv = mn_host_client.get("/api/mn2/masternode/service")
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert data["success"] is True
+    assert data["waiting_slots"] == 2
+    assert data["slots_available"] == 220
+
+
+def test_register_blueprints_includes_mn2_masternode():
+    """Regression: hosting checkout APIs must be explicitly registered."""
+    from pathlib import Path
+
+    text = Path("backend/register_blueprints.py").read_text(encoding="utf-8")
+    assert "mn2_masternode_routes import mn2_masternode_bp" in text
+    assert "register_blueprint(mn2_masternode_bp)" in text

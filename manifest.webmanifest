@@ -26,6 +26,12 @@
   ],
   "shortcuts": [
     {
+      "name": "Super Encoder",
+      "short_name": "Encoder",
+      "url": "/creator/?app=pwa",
+      "icons": [{"src": "/static/img/app/icon-192.svg", "sizes": "192x192"}]
+    },
+    {
       "name": "Generator",
       "short_name": "Generator",
       "url": "/generator?app=pwa",

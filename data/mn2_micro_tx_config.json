@@ -1,0 +1,36 @@
+{
+  "enabled": true,
+  "min_amount_mn2": 1e-8,
+  "max_amount_mn2": 1.0,
+  "daily_cap_per_user_mn2": 10.0,
+  "rate_limit_per_minute": 120,
+  "allowed_sources": [
+    "shop_purchase",
+    "game_win",
+    "quest_complete",
+    "casino_spin",
+    "staking_accrual",
+    "referral",
+    "daily_login",
+    "aggregator_action",
+    "creator_rating",
+    "manual_ops"
+  ],
+  "source_default_amounts_mn2": {
+    "daily_login": 0.001,
+    "quest_complete": 0.005,
+    "casino_spin": 0.0001,
+    "game_win": 0.002,
+    "shop_purchase": 0.01,
+    "referral": 0.05,
+    "staking_accrual": 0.00001,
+    "aggregator_action": 0.00005,
+    "creator_rating": 0.002
+  },
+  "batch_sweep": {
+    "enabled": false,
+    "threshold_mn2": 1.0,
+    "note": "Optional nightly mark for accumulated micro-rewards above threshold (on-chain sweep is ops-driven)"
+  },
+  "idempotency_ttl_days": 30
+}

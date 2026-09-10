@@ -1,0 +1,164 @@
+﻿========== MN2 PRODUCTION RECOVERY Thu Sep 10 00:10:59 UTC 2026 ==========
+== memory / load ==
+ 00:10:59 up 29 days,  6:41,  4 users,  load average: 4.86, 4.49, 2.79
+               total        used        free      shared  buff/cache   available
+Mem:           1.6Gi       1.2Gi        89Mi       5.5Mi       476Mi       406Mi
+Swap:          4.3Gi       1.3Gi       3.1Gi
+top memory:
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root     3022194 38.6 25.6 832756 431304 ?       Dsl  00:10   0:01 /opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
+www-data 3022085 55.5 12.3 472000 207292 ?       Sl   00:10   0:13 /usr/bin/uwsgi --ini /var/www/html/uwsgi.ini
+www-data 3022086 46.7  8.5 400336 143880 ?       Sl   00:10   0:11 /usr/bin/uwsgi --ini /var/www/html/uwsgi.ini
+root     3022195 27.8  5.0 1357316 85144 ?       Dl   00:10   0:01 node /var/www/explorer/bin/cluster
+www-data 3022110 26.4  4.4 134900 74768 ?        Ss   00:10   0:05 /usr/bin/uwsgi --ini /var/www/html/uwsgi_5001.ini
+www-data 3022138  0.0  4.2 208648 71792 ?        Sl   00:10   0:00 /usr/bin/uwsgi --ini /var/www/html/uwsgi_5001.ini
+www-data 3022139  0.0  4.1 208648 68940 ?        Sl   00:10   0:00 /usr/bin/uwsgi --ini /var/www/html/uwsgi_5001.ini
+root     3018190 41.2  3.4 1468932 58732 ?       S    00:00   4:31 python3 scripts/exchange_master_daemon.py --once
+mongodb     1657  0.7  2.7 3772440 45492 ?       Ssl  Aug11 307:57 /usr/bin/mongod --config /etc/mongod.conf
+www-data 3022058 17.6  2.0 135036 34848 ?        Ss   00:10   0:05 /usr/bin/uwsgi --ini /var/www/html/uwsgi.ini
+root         415  0.0  1.0 156644 17608 ?        SLsl Aug11   3:38 /usr/sbin/multipathd -d -s
+== OOM / segfault dmesg ==
+[Wed Sep  9 22:49:27 2026] bitcoin-httpwor[3011111]: segfault at 0 ip 00006079d121b6db sp 0000773d10bfa540 error 4 in masternoder2d[5b6db,6079d11eb000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:04:59 2026] bitcoin-httpwor[3019994]: segfault at 0 ip 000064d9450726db sp 000077bf86ffc540 error 4 in masternoder2d[5b6db,64d945042000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:05:26 2026] bitcoin-httpwor[3020222]: segfault at 0 ip 00005bc2a42fe6db sp 00007323c4ff8540 error 4 in masternoder2d[5b6db,5bc2a42ce000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:06:26 2026] bitcoin-httpwor[3020365]: segfault at 0 ip 00005863a80aa6db sp 00007d944effc540 error 4 in masternoder2d[5b6db,5863a807a000+53c000] likely on CPU 1 (core 0, socket 0)
+[Thu Sep 10 00:07:39 2026] bitcoin-httpwor[3020758]: segfault at 0 ip 0000627c80db46db sp 0000708bf67fb540 error 4 in masternoder2d[5b6db,627c80d84000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:08:13 2026] bitcoin-httpwor[3021198]: segfault at 0 ip 0000596115da76db sp 000071102e7fb540 error 4 in masternoder2d[5b6db,596115d77000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:08:47 2026] bitcoin-httpwor[3021368]: segfault at 0 ip 000064ca401e46db sp 00007739db7fd540 error 4 in masternoder2d[5b6db,64ca401b4000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:09:20 2026] bitcoin-httpwor[3021621]: segfault at 0 ip 0000585e7f6f36db sp 00007e978a7fb540 error 4 in masternoder2d[5b6db,585e7f6c3000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:09:54 2026] bitcoin-httpwor[3021897]: segfault at 0 ip 000063a0819a16db sp 0000770db5ffa540 error 4 in masternoder2d[5b6db,63a081971000+53c000] likely on CPU 0 (core 0, socket 0)
+[Thu Sep 10 00:10:10 2026] bitcoin-httpwor[3022106]: segfault at 0 ip 00005d1ed99176db sp 000077792dffa540 error 4 in masternoder2d[5b6db,5d1ed98e7000+53c000] likely on CPU 1 (core 0, socket 0)
+== blocks / chainstate ==
+1.1G	/var/www/html/config/blocks
+101M	/var/www/html/config/chainstate
+-rw------- 1 root root     134217433 Jun 13 10:28 blk00003.dat
+-rw------- 1 root root      50331648 Sep  9 23:24 blk00004.dat
+drwx------ 2 root root         12288 Sep 10 00:10 index
+-rw------- 1 root root      23068672 Jul 26 01:50 rev00000.dat
+-rw------- 1 root root      23068672 Jul 26 02:02 rev00001.dat
+-rw------- 1 root root      23068672 Jul 26 02:28 rev00002.dat
+-rw------- 1 root root      23068672 Jul 26 03:07 rev00003.dat
+-rw------- 1 root root       7340032 Sep  9 23:24 rev00004.dat
+blk count: 5
+== config tuning (no secrets) ==
+rpcport=9332
+server=1
+rpcworkqueue=64
+rpcthreads=4
+dbcache=64
+par=1
+maxconnections=16
+== stop memory competitors (safe) ==
+               total        used        free      shared  buff/cache   available
+Mem:           1.6Gi       1.3Gi        61Mi       5.5Mi       381Mi       283Mi
+== exchange cron dedupe check ==
+--- /etc/cron.d ---
+/etc/cron.d/masternoder-exchange-master:
+# Exchange master daemon ÔÇö copy to /etc/cron.d/masternoder-exchange-master
+# Every 15 min with flock (tick script skips if previous still running).
+# Do NOT run masternoder-exchange-master.service systemd unit at the same time.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/15 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+/etc/cron.d/masternoder-exchange-master.bak.202608111739:
+# Exchange master daemon ÔÇö copy to /etc/cron.d/masternoder-exchange-master
+# Every 2 min: live profit scan + auto PayPal sweep when pool >= min
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/2 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+/etc/cron.d/masternoder-exchange-master.disabled:
+# Exchange master daemon ÔÇö copy to /etc/cron.d/masternoder-exchange-master
+# Every 2 min: live profit scan + auto PayPal sweep when pool >= min
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/2 * * * * root /var/www/html/cron/exchange_master_tick.sh >> /var/log/masternoder-exchange-master.log 2>&1
+WARN: multiple exchange cron files ÔÇö keeping masternoder-exchange-master only
+disabled /etc/cron.d/masternoder-exchange-master.bak.202608111739
+disabled /etc/cron.d/masternoder-exchange-master.disabled
+--- root crontab exchange lines ---
+(none in root crontab)
+== profit daemon ==
+disabled
+inactive
+== restart masternoder2d (clean) ==
+prior SEGV/OpenBlockFile ÔÇö starting with -reindex-chainstate (one-shot)
+reindex-chainstate pid=3022451
+wait 1: blockcount=-1 mem=1416Mi
+MasterNoder2 server starting
+wait 2: blockcount= mem=878Mi
+reindex process exited early
+waiting for RPC...
+poll 1 active=active block=
+poll 2 active=active block=
+poll 3 active=activating block=
+Sep 10 00:12:11 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=dumped, status=11/SEGV
+Sep 10 00:12:11 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'core-dump'.
+Sep 10 00:12:11 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 6.381s CPU time, 750M memory peak, 517.5M memory swap peak.
+poll 4 active=active block=
+poll 5 active=active block=
+poll 6 active=active block=
+poll 7 active=active block=
+poll 8 active=deactivating block=
+Sep 10 00:12:21 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:12:21 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:13:06 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+poll 9 active=deactivating block=
+Sep 10 00:12:21 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:12:21 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:13:06 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+poll 10 active=deactivating block=
+Sep 10 00:12:21 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:12:21 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:13:06 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+poll 11 active=deactivating block=
+Sep 10 00:12:21 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:12:21 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:13:06 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+poll 12 active=deactivating block=
+Sep 10 00:12:21 Masternoder-Website systemd[1]: masternoder2d.service: Scheduled restart job, restart counter is at 1.
+Sep 10 00:12:21 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:13:06 Masternoder-Website systemd[1]: Stopping masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk)...
+poll 13 active=failed block=
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'timeout'.
+Sep 10 00:14:36 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 21.190s CPU time, 998.3M memory peak, 949.4M memory swap peak.
+poll 14 active=active block=
+poll 15 active=active block=
+poll 16 active=active block=
+poll 17 active=active block=
+poll 18 active=active block=
+== post-restart status ==
+active
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Killing process 3022808 (bitcoin-httpwor) with signal SIGKILL.
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Killing process 3022809 (bitcoin-httpwor) with signal SIGKILL.
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Killing process 3022810 (bitcoin-httpwor) with signal SIGKILL.
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Main process exited, code=killed, status=9/KILL
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Failed with result 'timeout'.
+Sep 10 00:14:36 Masternoder-Website systemd[1]: Stopped masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+Sep 10 00:14:36 Masternoder-Website systemd[1]: masternoder2d.service: Consumed 21.190s CPU time, 998.3M memory peak, 949.4M memory swap peak.
+Sep 10 00:14:43 Masternoder-Website systemd[1]: Started masternoder2d.service - MasterNoder2 daemon (MN2 wallet RPC for masternoder.dk).
+2026-09-10 00:14:44 LoadSporksFromDB : no previous value for SPORK_106_STAKING_SKIP_MN_SYNC found in database
+2026-09-10 00:14:44 LoadSporksFromDB : no previous value for SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE found in database
+2026-09-10 00:14:44 LoadSporksFromDB : no previous value for SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT found in database
+2026-09-10 00:14:44 LoadSporksFromDB : no previous value for SPORK_111_ALLOW_DUPLICATE_MN_IPS found in database
+2026-09-10 00:14:44 init message: Loading block index...
+== enable/start profit daemon ==
+active
+== eiquidus sync unlock ==
+== explorer probes ==
+{"api_latency":{"count":500,"paths":{"/api/mn2/explorer/chain-sync":1,"/api/mn2/explorer/status":13,"/api/mn2/explorer/stream":4,"/api/mn2/masternodes":22,"/api/mn2/network-alerts":12,"/api/mn2/network-history":18,"/api/mn2/network-overview":94,"/api/mn2/recent-blocks":34,"/api/mn2/rich-list":2},"percentiles_ms":{"p50":8604.37,"p95":16940.06,"p99":21382.27}},"checks":{"chain_sync":{"blocks":null,"headers":null,"headers_behind":0,"source":"rpc","synced":null,"verification_progress":null},"fork":{"blocks":null,"fork_risk":false,"headers":null,"headers_behind":0,"message":null},"mempool":{"bytes":0,"sample_txids":[],"size":0,"source":"rpc","usage":null},"rich_list":{"index_synced":false,"note":"Rich list empty \u2014 eiquidus index may still be syncing","ok":false,"sample_count":0},"rpc":{"block_height":-1,"ok":true}},"explorer_base_url":"https://camgirls.masternoder.dk/","explorer_kind":"iquidus","iquidus":{"base_url":"https://camgirls.masternoder.dk/","kind":"iquidus","local_api_url":"http://127.0.0.1:3000","supply_ok":false},"status":"degraded","success":true}
+
+
+== recovery log: {"result":-1,"error":null,"id":"t"} ==
+RPC_OK=0
+Connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+
+Waiting 30s for eiquidus sync...
+
+=== Public verification ===
+https://masternoder.dk/api/mn2/explorer/status: FAIL HTTP Error 502: Bad Gateway
+https://masternoder.dk/api/mn2/health: FAIL HTTP Error 502: Bad Gateway

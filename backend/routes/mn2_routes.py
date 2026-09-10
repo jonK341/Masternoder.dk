@@ -129,7 +129,12 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
         return "Wallet RPC authentication failed. Server must set MN2_RPC_USER and MN2_RPC_PASSWORD to match the wallet node."
     if "403" in err:
         return "Wallet RPC access forbidden. Check RPC user/password."
-    if "connection" in err.lower() or "refused" in err.lower() or "timeout" in err.lower():
+    low = err.lower()
+    if "method not found" in low and "disabled" in low:
+        return "Wallet is still loading on the network node. Try again in a few minutes, or use Request address."
+    if "still loading" in low:
+        return err
+    if "connection" in low or "refused" in low or "timeout" in low or "unreachable" in low:
         return "Wallet RPC unreachable. Ensure the MN2 wallet node is running and MN2_RPC_URL is correct."
     if len(err) > 120:
         return err[:117] + "..."
@@ -152,12 +157,15 @@ def mn2_deposit_address():
     addr = result.get("deposit_address") or ""
     base = _explorer_base_url().rstrip("/")
     explorer_address_url = f"{base}/address.dws?addr={addr}" if addr else ""
-    return jsonify({
+    payload = {
         "success": True,
         "user_id": result.get("user_id"),
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
-    }), 200
+    }
+    if result.get("address_warning"):
+        payload["address_warning"] = result["address_warning"]
+    return jsonify(payload), 200
 
 
 @mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])

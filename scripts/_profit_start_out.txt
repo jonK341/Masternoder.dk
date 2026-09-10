@@ -1,0 +1,23 @@
+﻿connected (key:C:\Users\jonkh\.ssh\id_ed25519_deploy)
+
+$ sed -i 's/\r$//' /var/www/html/scripts/run_profit_daemon_server.sh /var/www/html/scripts/install_profit_daemon_server.sh
+
+$ chmod +x /var/www/html/scripts/run_profit_daemon_server.sh /var/www/html/scripts/install_profit_daemon_server.sh
+
+$ bash /var/www/html/scripts/install_profit_daemon_server.sh
+python : Traceback (most recent call last):
+At C:\Users\jonkh\AppData\Local\Temp\ps-script-34162621-012a-44a5-8545-948e5f33c171.ps1:93 char:1
++ python scripts/_start_profit_daemon_server.py 2>&1 | Out-File -Encodi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_start_profit_daemon_server.py", line 47, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\jonkh\UsecaseSampler\Masternoder.dk\scripts\_start_profit_daemon_server.py", line 38, in main
+    print(out.strip())
+  File "C:\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u25cf' in position 0: character maps to <undefined>

@@ -91,6 +91,7 @@
             </div>
             <nav class="casino-toc" aria-label="Casino table of contents">
                 <a href="#casino-tab-home">Games</a>
+                <a href="#casino-tab-levelup">Level Up</a>
                 <a href="#casino-tab-leaderboard">Contests</a>
                 <a href="#casino-tab-social">Socials</a>
                 <a href="/exchange#cex-control-center">Agent control</a>
@@ -639,6 +640,16 @@
             </article>
             </div>
 
+            <section id="casino-tab-levelup" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-levelup" hidden>
+                <div class="casino-levelup-header">
+                    <h2>⬆️ Casino Level Up</h2>
+                    <p class="casino-levelup-sub">250 cosmetic upgrades across slots, tables, VIP, MN2 economy, jackpots, streaks, and more — no RTP changes.</p>
+                </div>
+                <div id="casino-levelup-summary" class="casino-levelup-summary" aria-live="polite">Loading progress…</div>
+                <div class="casino-levelup-filters" id="casino-levelup-filters" role="tablist" aria-label="Upgrade categories"></div>
+                <div id="casino-levelup-grid" class="casino-levelup-grid" aria-live="polite">Loading upgrades…</div>
+            </section>
+
             <section id="casino-tab-leaderboard" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-leaderboard" hidden>
                 <div class="casino-lb-header">
                     <h2>Top 25 leaderboard</h2>
@@ -753,9 +764,10 @@
                 <div id="casino-play-install" class="casino-play-install hidden" aria-live="polite">
                     <div>
                         <strong>Get the Android app</strong>
-                        <p style="margin:0.25rem 0 0;font-size:0.88rem;opacity:0.85;">Install MasterNoder Casino from Google Play or add to your home screen.</p>
+                        <p style="margin:0.25rem 0 0;font-size:0.88rem;opacity:0.85;">Install the PWA or sideload the Android APK from our downloads folder.</p>
                     </div>
-                    <a id="casino-play-store-badge" class="casino-play-badge" href="https://play.google.com/store/apps/details?id=dk.masternoder.casino" target="_blank" rel="noopener noreferrer">▶ Google Play</a>
+                    <a id="casino-play-store-badge" class="casino-play-badge" href="/casino/?app=casino-twa&tab=lobby">📲 Install app</a>
+                    <a id="casino-apk-badge" class="casino-play-badge" href="/static/downloads/masternoder-casino.apk" download="masternoder-casino.apk">⬇ APK</a>
                     <button type="button" id="casino-pwa-install-btn" class="casino-share-site-btn hidden">📲 Install app</button>
                 </div>
                 <div id="casino-social-follow-grid" class="casino-social-follow-grid">Loading social links…</div>
@@ -826,10 +838,12 @@
         </div>
     </div>
 
-    <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260910c" defer></script>
     <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
     <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
-    <script src="/static/js/casino.js?v=20260630e" defer></script>
+    <script src="/static/js/casino-upgrades.js?v=20260910" defer></script>
+    <script src="/static/js/casino.js?v=20260910" defer></script>
+    <script src="/static/js/mn2-micro-tx.js?v=20260910g" defer></script>
     <script src="/static/js/platform-upgrades.js?v=20260705" defer></script>
     <script src="/static/js/platform-upgrades-batch2.js?v=20260705" defer></script>
     <script src="/static/js/hub-pages-ux.js?v=20260705" defer></script>
