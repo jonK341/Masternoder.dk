@@ -228,17 +228,35 @@
     /**
      * Initialize navigation toolbar
      */
+    function markSiteNavPresent() {
+        if (document.body) {
+            document.body.classList.add('has-site-nav');
+        }
+    }
+
     function initToolbar() {
-        // Check if toolbar already exists
-        if (document.getElementById('navToolbar')) {
+        const existing = document.getElementById('navToolbar');
+        if (existing) {
+            markSiteNavPresent();
+            highlightActiveLink();
+            setupMobileMenu();
+            loadCurrency();
+            setupClickTracking();
+            setupUserControls();
+            ensureGlobalSystems();
             return;
         }
 
-        // Create and insert toolbar
         const toolbarHTML = createToolbarHTML();
-        document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        const anchor = document.getElementById('navigation-toolbar');
+        if (anchor) {
+            anchor.outerHTML = toolbarHTML;
+        } else {
+            document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        }
 
-        // Highlight active link
+        markSiteNavPresent();
+
         highlightActiveLink();
 
         // Setup mobile menu toggle
