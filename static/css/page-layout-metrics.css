@@ -10,7 +10,7 @@
 @layer layout-metrics {
 
 :root {
-    --header-height: 64px;
+    --header-height: var(--nav-toolbar-height, 52px);
     --main-offset-top: 24px;
     --page-top-padding: calc(var(--header-height) + var(--main-offset-top));
     --page-bottom-padding: clamp(32px, 5vw, 48px);
