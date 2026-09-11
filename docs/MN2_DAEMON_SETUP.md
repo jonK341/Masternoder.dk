@@ -252,22 +252,38 @@ If the process exits immediately (`[n]+ Done`), check `cat ~/mn2-daemon/nohup.ou
 
 ## 5b. Troubleshooting: “Cannot obtain a lock” / daemon not responding
 
-**Symptom:** `nohup` reports `[n]- Exit 1` and `nohup.out` says:
+**Symptom:** `systemctl status masternoder2d` shows a restart loop and journal lines like:
 ```text
-Error: Cannot obtain a lock on data directory /root/.masternoder2. MasterNoder2 Core is probably already running.
+Error: Cannot obtain a lock on data directory /var/www/html/config. MasterNoder2 Core is probably already running.
 ```
-Nothing listens on port 9332 and `curl` to 127.0.0.1:9332 gets “Connection refused”.
+(or the same message for `~/.masternoder2`). Nothing listens on port 9332 and `curl` to 127.0.0.1:9332 gets “Connection refused”.
 
-**Cause:** A lock file in `~/.masternoder2` (or another MasterNoder2 process) is holding the data directory. New daemon processes then exit immediately and never bind RPC. You may also see **“Unable to bind to 0.0.0.0:17646”** — that is the P2P port; another MasterNoder2 process (e.g. the Qt wallet) is already using it. Stop **all** MasterNoder2 processes (daemon and Qt), then remove the lock and start a single daemon.
+**Cause:** A lock file in the datadir (deployed server: `/var/www/html/config/.lock`; default: `~/.masternoder2/.lock`) or another MasterNoder2 process is holding the data directory. With systemd auto-restart enabled, a new instance can start before the previous one releases the lock, which makes the loop worse. You may also see **“Unable to bind to 0.0.0.0:17646”** — that is the P2P port; another MasterNoder2 process (e.g. the Qt wallet) is already using it. Stop **all** MasterNoder2 processes (daemon and Qt), then remove the lock and start a single daemon.
 
-**Fix on the server:**
+**Quick fix (deployed datadir `/var/www/html/config`):**
+
+```bash
+systemctl stop masternoder2d
+sleep 5
+pgrep -af masternoder2d || true          # must be empty (no live daemon)
+/var/www/html/scripts/mn2_clear_daemon_lock.sh
+systemctl start masternoder2d
+sleep 5
+journalctl -u masternoder2d -n 20 --no-pager
+/opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config getblockcount
+```
+
+If `pgrep` shows a stray process, stop it by PID (`kill <pid>`), wait a few seconds, then run `mn2_clear_daemon_lock.sh` again.
+
+**Fix on the server (generic / default datadir):**
 
 1. **Find and stop every MasterNoder2 process** (daemon and Qt wallet both use the same data dir and ports; the Qt wallet or an old process can hold the lock and port 17646):
    ```bash
+   systemctl stop masternoder2d 2>/dev/null || true
    ps aux | grep -i masternoder    # see what is running
    ss -tlnp | grep -E '9332|17646' # RPC 9332, P2P 17646
    pkill -9 -f masternoder2        # kill daemon and Qt wallet
-   rm -f ~/.masternoder2/.lock
+   rm -f /var/www/html/config/.lock ~/.masternoder2/.lock
    sleep 3
    ps aux | grep -i masternoder    # must show nothing (only grep itself)
    ```
