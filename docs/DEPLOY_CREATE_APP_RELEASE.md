@@ -12,7 +12,13 @@ git pull origin cursor/super-encoder-create-app-2eea
 .venv\Scripts\python.exe -m pytest tests/unit/test_create_app_super_encoder.py tests/unit/test_click_mn2_rewards.py tests/unit/test_frontpage_portal_links.py -q
 ```
 
-Expected: 17 passed.
+Expected: 17+ passed (Create App suite now includes finish/join/super-encode tests).
+
+Audit deploy file coverage:
+
+```bash
+python scripts/audit_deploy_manifest.py create_app_release static_pages --fail-on-missing
+```
 
 ## Deploy
 

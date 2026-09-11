@@ -158,6 +158,29 @@ def credit_achievement_mn2(
     )
 
 
+def _daily_claimed_mn2(user_id: str) -> float:
+    store = _load_store()
+    total = 0.0
+    prefix = f"{user_id}:"
+    for key, row in (store.get("claims") or {}).items():
+        if not str(key).startswith(prefix):
+            continue
+        try:
+            total += float(row.get("amount_mn2") or 0)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _leaderboard_daily_cap() -> float:
+    try:
+        with open(os.path.join(_BASE, "data", "mn2_config.json"), "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        return float((cfg.get("create_app") or {}).get("agent_leaderboard_daily_cap_mn2") or 0.1)
+    except Exception:
+        return 0.1
+
+
 def claim_leaderboard_reward(user_id: str, agent_id: str) -> Dict[str, Any]:
     """Claim MN2 for an agent's current leaderboard rank (once per cycle per user)."""
     board = build_agent_leaderboard(limit=50)
@@ -169,6 +192,16 @@ def claim_leaderboard_reward(user_id: str, agent_id: str) -> Dict[str, Any]:
     amount = _rank_reward_mn2(rank)
     if amount <= 0:
         return {"success": False, "error": "no_reward_for_rank", "rank": rank}
+
+    cap = _leaderboard_daily_cap()
+    claimed_today = _daily_claimed_mn2(user_id)
+    if cap > 0 and claimed_today + amount > cap:
+        return {
+            "success": False,
+            "error": "daily_cap_reached",
+            "daily_cap_mn2": cap,
+            "claimed_mn2": claimed_today,
+        }
 
     store = _load_store()
     key = f"{user_id}:{agent_id}"

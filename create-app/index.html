@@ -91,6 +91,7 @@
                 <label><input type="checkbox" id="ca-playstore" checked> Include Play Store TWA</label>
                 <label><input type="checkbox" id="ca-podcast" checked> Include Podcast app</label>
                 <button type="button" class="ca-btn" id="ca-create-btn">Create app + Super Encode</button>
+                <button type="button" class="ca-btn secondary" id="ca-reencode-btn" disabled>Re-run Super Encode</button>
                 <button type="button" class="ca-btn secondary" id="ca-finish-btn" disabled>Finish product (100 checks)</button>
                 <div class="ca-out" id="ca-create-out">Ready.</div>
             </section>
@@ -131,6 +132,28 @@
     (function () {
         const uid = localStorage.getItem('user_id') || localStorage.getItem('mn_user_id') || 'default_user';
         let currentAppId = null;
+        let lastFinishChecks = null;
+
+        function updateFinishButtonState() {
+            const btn = document.getElementById('ca-finish-btn');
+            const reBtn = document.getElementById('ca-reencode-btn');
+            const ready = !!(lastFinishChecks && lastFinishChecks.product_finished);
+            if (reBtn) reBtn.disabled = !currentAppId;
+            if (!btn) return;
+            btn.disabled = !currentAppId || !ready;
+            btn.title = ready
+                ? 'All 100 checks passed — claim finish MN2'
+                : 'Run finish checks until 100/100 pass';
+        }
+
+        async function loadCatalog() {
+            const d = await api('/api/create-app/catalog');
+            const sel = document.getElementById('ca-template');
+            if (!d.success || !(d.templates && d.templates.length) || !sel) return;
+            sel.innerHTML = d.templates.map(function (t) {
+                return '<option value="' + esc(t.id) + '">' + esc(t.title) + '</option>';
+            }).join('');
+        }
 
         async function api(path, opts) {
             const r = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
@@ -188,7 +211,7 @@
             el.querySelectorAll('button[data-app-id]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     currentAppId = btn.getAttribute('data-app-id');
-                    document.getElementById('ca-finish-btn').disabled = !currentAppId;
+                    updateFinishButtonState();
                     document.getElementById('ca-create-out').textContent = 'Selected app: ' + currentAppId;
                 });
             });
@@ -214,6 +237,8 @@
                 return '<div class="ca-check ' + (c.passed ? 'pass' : 'fail') + '">' +
                     (c.passed ? '✓' : '✗') + ' ' + esc(c.label) + '</div>';
             }).join('');
+            lastFinishChecks = d;
+            updateFinishButtonState();
             return d;
         }
 
@@ -249,20 +274,40 @@
             };
             const d = await api('/api/create-app/apps?user_id=' + encodeURIComponent(uid), { method: 'POST', body: JSON.stringify(body) });
             currentAppId = d.app && d.app.id;
-            document.getElementById('ca-finish-btn').disabled = !currentAppId;
+            updateFinishButtonState();
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
-            if (d.finish_checks) runFinishChecks();
+            if (d.finish_checks) {
+                lastFinishChecks = d.finish_checks;
+                runFinishChecks();
+            }
             loadMyApps();
         });
 
-        document.getElementById('ca-finish-btn').addEventListener('click', async function () {
+        document.getElementById('ca-reencode-btn').addEventListener('click', async function () {
             if (!currentAppId) return;
+            const d = await api('/api/create-app/apps/' + currentAppId + '/super-encode?user_id=' + encodeURIComponent(uid), {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: uid,
+                    quality_goal: document.getElementById('ca-quality').value,
+                    content_hint: document.getElementById('ca-hint').value,
+                    include_playstore: document.getElementById('ca-playstore').checked,
+                    include_podcast: document.getElementById('ca-podcast').checked
+                })
+            });
+            document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            loadEncoderHub();
+        });
+
+        document.getElementById('ca-finish-btn').addEventListener('click', async function () {
+            if (!currentAppId || !(lastFinishChecks && lastFinishChecks.product_finished)) return;
             const d = await api('/api/create-app/apps/' + currentAppId + '/finish?user_id=' + encodeURIComponent(uid), {
                 method: 'POST',
                 body: JSON.stringify({ user_id: uid })
             });
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
             runFinishChecks();
+            loadMyApps();
         });
 
         document.querySelectorAll('.ca-enc-tab').forEach(function (tab) {
@@ -285,7 +330,7 @@
             if (pre) sessionStorage.removeItem('create_app_prefill');
         } catch (e) { /* ignore */ }
 
-        loadEncoderHub();
+        loadCatalog().then(loadEncoderHub);
         loadClickQuote();
         loadMyApps();
         runFinishChecks();

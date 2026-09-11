@@ -390,6 +390,7 @@ MANIFESTS = {
         "mobile/podcast-twa/PLAY_STORE_LISTING.md",
         "mobile/podcast-twa/README.md",
         "mobile/podcast-twa/twa-manifest.json",
+        "scripts/audit_deploy_manifest.py",
     ],
     # Unified Game Hub: frontpage tabs + quest unification (Option C)
     "game_hub": [

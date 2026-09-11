@@ -122,3 +122,81 @@ def test_lab_projects_catalog():
         assert data["super_encoder_id"] == "new_encoder_nr_1"
         ids = [p["id"] for p in data.get("seed_projects") or []]
         assert "lseed_create_app_super_encoder" in ids
+
+
+def test_finish_checks_all_pass():
+    from backend.services.create_app_finish_checks import run_finish_checks
+
+    result = run_finish_checks("audit_user")
+    assert result["total_checks"] == 100
+    assert result["passed"] == 100
+    assert result["product_finished"] is True
+
+
+def test_join_reward_once_per_user(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+    body = {
+        "user_id": "_test_join_once_user",
+        "title": "First App",
+        "template_id": "podcast_only",
+    }
+    r1 = create_app_client.post("/api/create-app/apps", json=body)
+    r2 = create_app_client.post("/api/create-app/apps", json={**body, "title": "Second App"})
+    j1 = r1.get_json()["join_reward"]
+    j2 = r2.get_json()["join_reward"]
+    assert j1.get("success") is True
+    assert j2.get("duplicate") or j2.get("skipped") or j2.get("success") is False
+
+
+def test_finish_blocked_until_checks_pass(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+    from backend.services.create_app_finish_checks import run_finish_checks
+
+    create_app_client.post(
+        "/api/create-app/apps",
+        json={"user_id": "_test_finish_gate", "title": "Gate Test App"},
+    )
+    apps = create_app_client.get("/api/create-app/apps?user_id=_test_finish_gate").get_json()["apps"]
+    app_id = apps[0]["id"]
+
+    monkeypatch.setattr(
+        "backend.services.create_app_finish_checks.run_finish_checks",
+        lambda user_id: {**run_finish_checks(user_id), "product_finished": False, "passed": 50},
+    )
+    bad = create_app_client.post(
+        f"/api/create-app/apps/{app_id}/finish?user_id=_test_finish_gate",
+        json={"user_id": "_test_finish_gate"},
+    ).get_json()
+    assert bad["success"] is False
+    assert bad["error"] == "finish_checks_incomplete"
+
+
+def test_template_agents_assigned(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+    r = create_app_client.post(
+        "/api/create-app/apps",
+        json={
+            "user_id": "_test_template_agents",
+            "title": "Podcast Only App",
+            "template_id": "podcast_only",
+        },
+    )
+    agents = r.get_json()["app"]["assigned_agents"]
+    assert "podcast_producer_agent" in agents
+    assert "content_generator_agent" in agents
+
+
+def test_super_encode_rerun(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+    create_app_client.post(
+        "/api/create-app/apps",
+        json={"user_id": "_test_reencode", "title": "Reencode App"},
+    )
+    app_id = create_app_client.get("/api/create-app/apps?user_id=_test_reencode").get_json()["apps"][0]["id"]
+    r = create_app_client.post(
+        f"/api/create-app/apps/{app_id}/super-encode?user_id=_test_reencode",
+        json={"user_id": "_test_reencode", "quality_goal": "ultra"},
+    )
+    data = r.get_json()
+    assert data["success"] is True
+    assert data["super_encoder"]["encoder_id"] == "new_encoder_nr_1"

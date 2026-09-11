@@ -37,6 +37,13 @@ def _mn2_config() -> Dict[str, Any]:
         return {}
 
 
+def _agents_for_template(template_id: str) -> List[str]:
+    for tpl in catalog().get("templates") or []:
+        if tpl.get("id") == template_id:
+            return list(tpl.get("agents") or ["lab_create_agent"])
+    return ["lab_create_agent"]
+
+
 def catalog() -> Dict[str, Any]:
     """Templates for Create App wizard."""
     return {
@@ -132,7 +139,7 @@ def create_app(
             "failed": finish.get("failed"),
             "finish_percent": finish.get("finish_percent"),
         },
-        "assigned_agents": catalog()["templates"][0]["agents"] if template_id == "playstore_podcast" else ["lab_create_agent"],
+        "assigned_agents": _agents_for_template(template_id),
         "created_at": _now_iso(),
         "updated_at": _now_iso(),
     }
@@ -174,8 +181,8 @@ def _award_create_join(user_id: str, app_id: str) -> Dict[str, Any]:
         user_id,
         amount,
         source="create_app_join",
-        reference=f"create-app-join:{app_id}",
-        metadata={"app_id": app_id},
+        reference=f"create-app-join:{user_id}",
+        metadata={"app_id": app_id, "first_app_id": app_id},
     )
 
 
@@ -200,28 +207,40 @@ def finish_product(user_id: str, app_id: str) -> Dict[str, Any]:
     app["progress"] = int(finish.get("finish_percent") or 0)
     app["updated_at"] = _now_iso()
 
-    reward_result: Dict[str, Any] = {"success": False, "skipped": True}
-    if finish.get("product_finished"):
-        app["status"] = "finished"
-        app["product_finished"] = True
-        app["finished_at"] = _now_iso()
-        cfg = (_mn2_config().get("create_app") or {})
-        amount = float(cfg.get("finish_reward_mn2") or 0.025)
-        reward_result = credit_mn2(
-            user_id,
-            amount,
-            source="create_app_finish",
-            reference=f"create-app-finish:{app_id}",
-            metadata={"app_id": app_id, "checks_passed": finish.get("passed")},
-        )
-        try:
-            from backend.services.agent_achievements import agent_achievements
-            for aid in app.get("assigned_agents") or ["lab_create_agent"]:
-                agent_achievements.check_achievements(aid, "task_completed", {"xp": 50, "activity_points": 25})
-        except Exception:
-            pass
-    else:
+    if not finish.get("product_finished"):
         app["product_finished"] = False
+        for i, a in enumerate(apps):
+            if a.get("id") == app_id:
+                apps[i] = app
+                break
+        data["apps"] = apps
+        _save_apps(data)
+        return {
+            "success": False,
+            "error": "finish_checks_incomplete",
+            "app": app,
+            "finish_checks": finish,
+            "finish_reward": {"success": False, "skipped": True},
+        }
+
+    app["status"] = "finished"
+    app["product_finished"] = True
+    app["finished_at"] = _now_iso()
+    cfg = (_mn2_config().get("create_app") or {})
+    amount = float(cfg.get("finish_reward_mn2") or 0.025)
+    reward_result = credit_mn2(
+        user_id,
+        amount,
+        source="create_app_finish",
+        reference=f"create-app-finish:{app_id}",
+        metadata={"app_id": app_id, "checks_passed": finish.get("passed")},
+    )
+    try:
+        from backend.services.agent_achievements import agent_achievements
+        for aid in app.get("assigned_agents") or ["lab_create_agent"]:
+            agent_achievements.check_achievements(aid, "task_completed", {"xp": 50, "activity_points": 25})
+    except Exception:
+        pass
 
     for i, a in enumerate(apps):
         if a.get("id") == app_id:

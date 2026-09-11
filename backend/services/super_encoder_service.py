@@ -104,6 +104,16 @@ def _parse_ai_json(text: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _create_app_cfg() -> Dict[str, Any]:
+    try:
+        import os
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        with open(os.path.join(base, "data", "mn2_config.json"), "r", encoding="utf-8") as f:
+            return (json.load(f).get("create_app") or {})
+    except Exception:
+        return {}
+
+
 def ai_optimize_encode_plan(
     *,
     target: str = "hybrid",
@@ -120,6 +130,12 @@ def ai_optimize_encode_plan(
     base = _heuristic_encode_plan(
         target=target, quality_goal=quality_goal, duration_sec=duration_sec,
     )
+
+    if not _create_app_cfg().get("super_encoder_ai_enabled", True):
+        out = dict(base)
+        out["rationale"] = "AI disabled in create_app config; using heuristic plan."
+        out["ai_disabled"] = True
+        return out
 
     system = (
         "You are the MasterNoder Super Encoder (New encoder nr. 1, E1 hardware H.264). "
