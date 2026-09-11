@@ -258,7 +258,7 @@ Error: Cannot obtain a lock on data directory /var/www/html/config. MasterNoder2
 ```
 (or the same message for `~/.masternoder2`). Nothing listens on port 9332 and `curl` to 127.0.0.1:9332 gets “Connection refused”.
 
-**Cause:** A lock file in the datadir (deployed server: `/var/www/html/config/.lock`; default: `~/.masternoder2/.lock`) or another MasterNoder2 process is holding the data directory. With systemd auto-restart enabled, a new instance can start before the previous one releases the lock, which makes the loop worse. You may also see **“Unable to bind to 0.0.0.0:17646”** — that is the P2P port; another MasterNoder2 process (e.g. the Qt wallet) is already using it. Stop **all** MasterNoder2 processes (daemon and Qt), then remove the lock and start a single daemon.
+**Cause:** A lock file in the datadir (deployed server: `/var/www/html/config/.lock`; default: `~/.masternoder2/.lock`) or another MasterNoder2 process is holding the data directory. With systemd auto-restart enabled, a new instance can start before the previous one releases the lock, which makes the loop worse. <!-- pragma: allowlist secret --> You may also see **“Unable to bind to 0.0.0.0:17646”** — that is the P2P port; another MasterNoder2 process (e.g. the Qt wallet) is already using it. Stop **all** MasterNoder2 processes (daemon and Qt), then remove the lock and start a single daemon.
 
 **Quick fix (deployed datadir `/var/www/html/config`):**
 

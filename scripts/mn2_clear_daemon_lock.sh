@@ -22,12 +22,16 @@ fi
 
 if pgrep -x masternoder2d >/dev/null 2>&1; then
   log "masternoder2d is running — not removing $LOCK"
+  pgrep -af "[m]asternoder2d" >&2 || true
+  log "If this is a manual -reindex -daemon=1 orphan, run: ./scripts/mn2_repair_daemon.sh --stop-orphan"
+  log "Or keep it and disable systemd: ./scripts/mn2_repair_daemon.sh --keep-orphan"
   exit 1
 fi
 
 # Secondary check: any process with -datadir= pointing at this path
 if pgrep -af "[m]asternoder2d.*-datadir=${DATADIR}" >/dev/null 2>&1; then
   log "masternoder2d with -datadir=$DATADIR is running — not removing $LOCK"
+  pgrep -af "[m]asternoder2d" >&2 || true
   exit 1
 fi
 
