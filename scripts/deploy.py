@@ -527,6 +527,7 @@ MANIFESTS = {
         "systemd/masternoder2d.service.example",
         "scripts/run_masternoder2d.sh",
         "scripts/run_masternoder2d.ps1",
+        "scripts/mn2_clear_daemon_lock.sh",
         "cron/mn2_scan_deposits.sh",
         "cron/masternoder-mn2-scan.cron.d",
         "cron/mn2_accrue_rewards.sh",
