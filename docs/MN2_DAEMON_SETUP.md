@@ -263,17 +263,38 @@ Error: Cannot obtain a lock on data directory /var/www/html/config. MasterNoder2
 **Quick fix (deployed datadir `/var/www/html/config`):**
 
 ```bash
-systemctl stop masternoder2d
-sleep 5
-pgrep -af masternoder2d || true          # must be empty (no live daemon)
-/var/www/html/scripts/mn2_clear_daemon_lock.sh
-systemctl start masternoder2d
-sleep 5
-journalctl -u masternoder2d -n 20 --no-pager
-/opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config getblockcount
+/var/www/html/scripts/mn2_repair_daemon.sh          # diagnose
+/var/www/html/scripts/mn2_repair_daemon.sh --stop-orphan   # one daemon under systemd
 ```
 
-If `pgrep` shows a stray process, stop it by PID (`kill <pid>`), wait a few seconds, then run `mn2_clear_daemon_lock.sh` again.
+Manual steps if the script is not deployed yet:
+
+```bash
+systemctl stop masternoder2d
+sleep 5
+pgrep -af masternoder2d || true
+```
+
+If `pgrep` shows a **manual orphan** (often `-reindex -daemon=1` started outside systemd):
+
+- **Reindex still running** — keep the orphan, disable systemd until it finishes:
+  ```bash
+  systemctl disable masternoder2d
+  /opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config getblockchaininfo
+  ```
+  When `"initialblockdownload": false`, kill the orphan and `systemctl enable --now masternoder2d`.
+
+- **Reindex done / want systemd only** — stop the orphan, then start the unit:
+  ```bash
+  kill -TERM <orphan-pid>    # e.g. 3348894 from pgrep
+  sleep 10
+  kill -9 <orphan-pid> 2>/dev/null || true
+  rm -f /var/www/html/config/.lock
+  systemctl start masternoder2d
+  /opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config getblockcount
+  ```
+
+Removing `.lock` alone does **not** help while a live `masternoder2d` still holds ports **9332** / **17646**.
 
 **Fix on the server (generic / default datadir):**
 
