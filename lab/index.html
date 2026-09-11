@@ -372,6 +372,9 @@
         <header class="lab-header">
             <h1>🔬 Lab</h1>
             <p class="subtitle">V2.1 Hub · News · AI · Chapter V · Crypto Rewards</p>
+            <p style="margin:12px 0 0;">
+                <a href="/create-app/" class="lab-btn lab-btn-success" style="text-decoration:none;display:inline-block;">📱 Open Create App — Play Store + Podcast + Encoder nr. 1</a>
+            </p>
         </header>
         <div class="lab-placeholder">
             <nav class="lab-hub-nav" id="lab-hub-nav" aria-label="Lab sections" role="tablist"></nav>
@@ -517,8 +520,10 @@
                                 <option value="unified_points">Unified points</option>
                                 <option value="monitor_4d">4D monitor</option>
                                 <option value="research">Research</option>
+                                <option value="mobile">Mobile / Play Store (→ Create App)</option>
                             </select>
                             <button type="button" id="btn-lab-create-project" class="lab-btn lab-btn-success">Start research project</button>
+                            <a href="/create-app/" id="btn-lab-open-create-app" class="lab-btn lab-btn-primary" style="text-decoration:none;display:inline-block;">📱 Use Create App</a>
                             <span id="lab-project-cooldown" class="lab-cd" aria-live="polite"></span>
                         </div>
                     </div>
@@ -766,6 +771,10 @@
             });
 
             var requested = new URLSearchParams(window.location.search).get('tab');
+            if (requested === 'create-app' || requested === 'create_app') {
+                window.location.replace('/create-app/');
+                return;
+            }
             var valid = TAB_DEFS.some(function (row) { return row[0] === requested; });
             applyLabTab(valid ? requested : TAB_DEFS[0][0]);
             if (window.location.hash === '#discussion') applyLabTab('roundtable');
@@ -1074,6 +1083,14 @@
             const trackEl = document.getElementById('lab-project-track');
             const title = (titleEl && titleEl.value || '').trim();
             const question = (qEl && qEl.value || '').trim();
+            const track = (trackEl && trackEl.value) || 'tech_progression';
+            if (track === 'mobile') {
+                try {
+                    sessionStorage.setItem('create_app_prefill', JSON.stringify({ title: title, question: question }));
+                } catch (e) { /* ignore */ }
+                window.location.href = '/create-app/?from=lab';
+                return;
+            }
             if (title.length < 2 || question.length < 8) {
                 const out = document.getElementById('lab-share-output');
                 if (out) out.textContent = 'Research project needs a title and an 8+ character question.';

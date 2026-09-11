@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "capp_35d93324f3a1",
+      "user_id": "default_user",
+      "title": "MasterNoder Podcast + Play",
+      "template_id": "playstore_podcast",
+      "status": "active",
+      "progress": 100,
+      "product_finished": true,
+      "targets": {
+        "playstore": true,
+        "podcast": true
+      },
+      "super_encoder": {
+        "success": true,
+        "encoder_id": "new_encoder_nr_1",
+        "video_profile": "standard",
+        "audio_profile": "premium",
+        "e1_hardware": {
+          "enabled": true,
+          "mode": "auto",
+          "codec": null,
+          "quality_param": null
+        },
+        "ai_plan": {
+          "video_profile": "standard",
+          "audio_profile": "premium",
+          "rationale": "Heuristic: standard video (E1 HW when available) for balanced.",
+          "ai_used": false,
+          "ai_error": "All providers failed. Tried: groq, cerebras, together, openai, gemini. Errors: groq: Error code: 404 - {'error': {'message': 'The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.', 'type': 'invalid_request_error', 'code': 'model_not_found'}} | cerebras: Error code: 404 - {'message': 'Model does not exist or you do not have access to it.', 'type': 'not_found_error', 'param': 'model', 'code': 'model_not_found'} | together: circuit breaker open, retry in 163s"
+        },
+        "targets": {
+          "playstore": true,
+          "podcast": true
+        }
+      },
+      "finish_summary": {
+        "total_checks": 100,
+        "passed": 100,
+        "failed": 0,
+        "finish_percent": 100.0
+      },
+      "assigned_agents": [
+        "google_play_agent",
+        "podcast_producer_agent",
+        "lab_create_agent"
+      ],
+      "created_at": "2026-09-09T19:59:54.483790+00:00",
+      "updated_at": "2026-09-09T19:59:54.483802+00:00"
+    },
+    {
+      "id": "capp_02edc9078e02",
+      "user_id": "masternoder_demo_user",
+      "title": "MasterNoder Podcast + Play",
+      "template_id": "playstore_podcast",
+      "status": "finished",
+      "progress": 100,
+      "product_finished": true,
+      "targets": {
+        "playstore": true,
+        "podcast": true
+      },
+      "super_encoder": {
+        "success": true,
+        "encoder_id": "new_encoder_nr_1",
+        "video_profile": "premium",
+        "audio_profile": "premium",
+        "e1_hardware": {
+          "enabled": true,
+          "mode": "auto",
+          "codec": null,
+          "quality_param": null
+        },
+        "ai_plan": {
+          "video_profile": "premium",
+          "audio_profile": "premium",
+          "rationale": "Heuristic: premium video (E1 HW when available) for premium.",
+          "ai_used": false,
+          "ai_error": "All providers failed. Tried: groq, cerebras, together, openai, gemini. Errors: groq: Error code: 404 - {'error': {'message': 'The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.', 'type': 'invalid_request_error', 'code': 'model_not_found'}} | cerebras: Error code: 404 - {'message': 'Model does not exist or you do not have access to it.', 'type': 'not_found_error', 'param': 'model', 'code': 'model_not_found'} | together: circuit breaker open, retry in 298s"
+        },
+        "targets": {
+          "playstore": true,
+          "podcast": true
+        }
+      },
+      "finish_summary": {
+        "total_checks": 100,
+        "passed": 100,
+        "failed": 0,
+        "finish_percent": 100.0
+      },
+      "assigned_agents": [
+        "google_play_agent",
+        "podcast_producer_agent",
+        "lab_create_agent"
+      ],
+      "created_at": "2026-09-09T20:32:30.593129+00:00",
+      "updated_at": "2026-09-09T20:32:54.928129+00:00",
+      "finished_at": "2026-09-09T20:32:54.928138+00:00"
+    }
+  ]
+}

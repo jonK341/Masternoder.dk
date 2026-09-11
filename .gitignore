@@ -68,3 +68,8 @@ tools/mn2-daemon/
 data/mn2_verified_users.json
 
 data/crypto_exchange/grid_bot_state.json
+
+# Per-user runtime state (created on server; do not commit from dev)
+data/click_game/
+data/trophy_income/
+data/trophy_quests/

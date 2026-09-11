@@ -440,14 +440,18 @@ class ClickThroughGame {
         this.totalEarned += pointsEarned;
         this.counters.pointsEarned += pointsEarned;
         
-        // Award unified points
-        await this.awardUnifiedPoints('click', pointsEarned, {
+        // Award unified points + instant MN2
+        const clickMeta = {
             trigger: triggerId,
             combo: this.gameState.comboCounter,
             streak: this.gameState.clickStreak,
             critical: criticalHit,
-            energyUsed: trigger.energyCost
-        });
+            energyUsed: trigger.energyCost,
+            level: this.currentLevel,
+            points: pointsEarned,
+        };
+        await this.awardUnifiedPoints('click', pointsEarned, clickMeta);
+        const mn2Win = await this.awardInstantMn2('click', clickMeta);
 
         // Visual effects
         this.createClickEffect(position || { x: window.innerWidth / 2, y: window.innerHeight / 2 }, {
@@ -488,7 +492,45 @@ class ClickThroughGame {
         // Save progress
         await this.saveProgress();
 
-        return { points: pointsEarned, critical: criticalHit, combo: this.gameState.comboCounter };
+        return {
+            points: pointsEarned,
+            critical: criticalHit,
+            combo: this.gameState.comboCounter,
+            mn2: mn2Win,
+        };
+    }
+
+    async awardInstantMn2(action, metadata = {}) {
+        try {
+            const clickId = `click:${this.userId}:${action}:${this.clicks}:${Date.now()}`;
+            const res = await fetch(`${this.baseUrl}/api/game/click-game/instant-reward`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: this.userId,
+                    action,
+                    click_id: clickId,
+                    metadata: {
+                        source: 'click_through_game',
+                        level: this.currentLevel,
+                        clicks: this.clicks,
+                        ...metadata,
+                    },
+                }),
+            });
+            const data = await res.json();
+            if (data.success && data.instant && !data.duplicate) {
+                const amt = data.amount_mn2;
+                this.showNotification(`⚡ +${amt} MN2 instant!`, 'mn2');
+                if (typeof window !== 'undefined' && window.dispatchEvent) {
+                    window.dispatchEvent(new CustomEvent('mn2:instant-reward', { detail: data }));
+                }
+            }
+            return data;
+        } catch (error) {
+            console.error('Instant MN2 reward error:', error);
+            return { success: false };
+        }
     }
     
     createClickEffect(position, data) {
@@ -710,6 +752,7 @@ class ClickThroughGame {
             this.totalEarned += reward;
 
             await this.awardUnifiedPoints('mission_complete', reward);
+            await this.awardInstantMn2('mission_complete', { mission: currentMission.name, reward });
 
             // Show notification
             this.showNotification(`Mission Complete: ${currentMission.name}! +${reward} points`, 'success');
@@ -738,6 +781,7 @@ class ClickThroughGame {
             this.totalEarned += reward;
 
             await this.awardUnifiedPoints('quest_complete', reward);
+            await this.awardInstantMn2('quest_complete', { quest: currentQuest.name, reward });
 
             this.showNotification(`Quest Complete: ${currentQuest.name}! +${reward} points`, 'success');
 
@@ -803,6 +847,7 @@ class ClickThroughGame {
                 this.totalEarned += reward;
 
                 await this.awardUnifiedPoints('achievement_unlock', reward);
+                await this.awardInstantMn2('achievement_unlock', { achievement: achievement.name, reward });
 
                 // Extra bonus for legendary+ achievements
                 if (['legendary', 'mythic', 'divine'].includes(achievement.rarity)) {

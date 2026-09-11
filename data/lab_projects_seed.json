@@ -40,6 +40,41 @@
       "crypto_reward_note": "Join once per profile — MN2 credited via unified points ledger."
     },
     {
+      "id": "lseed_create_app_super_encoder",
+      "title": "Create App — Play Store + Podcast + Super Encoder nr. 1",
+      "question": "Ship Play Store TWA + Podcast TWA with New encoder nr. 1 (E1 hardware H.264 + AI API tuning), agent leaderboard MN2 rewards, achievements, and 100 product finish checks.",
+      "track": "mobile",
+      "status": "active",
+      "progress": 45,
+      "assigned_agents": [
+        "google_play_agent",
+        "podcast_producer_agent",
+        "lab_create_agent",
+        "content_generator_agent",
+        "lab_project_agent"
+      ],
+      "notes": [
+        "Super Encoder combines generator E1 + podcast audio profiles + llm_service AI optimize.",
+        "Create App wizard at /create-app/ runs 100 finish checks before product finish MN2 bonus.",
+        "Agent leaderboard pays MN2 Bitcoins; achievements and activity feed wired via agent_achievements.",
+        "Podcast TWA package dk.masternoder.podcast; casino TWA dk.masternoder.casino."
+      ],
+      "references": [
+        {"label": "Create App", "href": "/create-app/"},
+        {"label": "Super Encoder API", "href": "/api/create-app/super-encoder/status"},
+        {"label": "Finish checks", "href": "/api/create-app/finish-checks"},
+        {"label": "Agent leaderboard", "href": "/api/create-app/agents/leaderboard"},
+        {"label": "Podcast TWA", "href": "/mobile/podcast-twa/README.md"}
+      ],
+      "media": [
+        {"type": "image", "src": "/static/img/agents/podcast_producer_agent.svg", "alt": "Podcast producer agent"},
+        {"type": "image", "src": "/static/img/agents/google_play_agent.svg", "alt": "Google Play agent"},
+        {"type": "clip", "src": "/static/img/casino/previews/game-loop.svg", "alt": "Encode pipeline"}
+      ],
+      "join_reward_mn2": 0.03,
+      "crypto_reward_note": "Join once — MN2 via unified ledger; finish product awards additional MN2 when 100/100 checks pass."
+    },
+    {
       "id": "lseed_social_gathering",
       "title": "masternoder.dk community gathering hub",
       "question": "Design social surfaces that connect Discord, roundtable, idea board, shop boosters, and Star Map events into one discoverable community index for researchers.",
