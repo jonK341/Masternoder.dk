@@ -259,6 +259,45 @@ def list_user_addresses(user_id: str) -> Dict[str, Any]:
     return {"success": True, "user_id": uid, "addresses": rows, "wallet_type": (entry or {}).get("wallet_type") if isinstance(entry, dict) else "core"}
 
 
+def create_additional_wallet(user_id: str, label: str = "wallet") -> Dict[str, Any]:
+    """Create a new labeled deposit address for the user without rotating the primary."""
+    if not (user_id or "").strip():
+        return {"success": False, "error": "user_id required"}
+    uid = str(user_id).strip()
+    lbl = (label or "wallet").strip()[:48] or "wallet"
+    gen = _generate_valid_address()
+    if not gen.get("success"):
+        return gen
+    new_addr = gen["deposit_address"]
+    addresses = _load_addresses()
+    entry = addresses.get(uid)
+    if not isinstance(entry, dict):
+        primary = _entry_primary(entry)
+        entry = {
+            "primary": primary or new_addr,
+            "wallet_type": "core",
+            "addresses": [],
+        }
+        if primary:
+            entry["addresses"].append({"label": "primary", "address": primary, "type": "core", "active": True})
+    rows = entry.setdefault("addresses", [])
+    if not isinstance(rows, list):
+        rows = []
+        entry["addresses"] = rows
+    rows.append({
+        "label": lbl,
+        "address": new_addr,
+        "type": "core",
+        "active": True,
+        "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    })
+    if not (entry.get("primary") or "").strip():
+        entry["primary"] = new_addr
+    addresses[uid] = entry
+    _save_addresses(addresses)
+    return {"success": True, "user_id": uid, "deposit_address": new_addr, "label": lbl, "addresses": rows}
+
+
 def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
     """Rotate primary deposit address (Phase 2 multi-address)."""
     if not (user_id or "").strip():

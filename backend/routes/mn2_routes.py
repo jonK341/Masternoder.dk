@@ -11,7 +11,13 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    get_or_create_deposit_address,
+    list_user_addresses,
+    create_additional_wallet,
+    refresh_deposit_address,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -268,6 +274,130 @@ def mn2_statement():
         "disclaimer": ("Informational record derived from your in-app MN2 ledger. Not tax advice — "
                        "consult a professional. Balance is a derived view and may differ from on-chain."),
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    """List all labeled deposit addresses for the current user."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = list_user_addresses(user_id)
+    if not result.get("success"):
+        return jsonify(result), 200
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("addresses") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "addresses": rows,
+        "wallet_type": result.get("wallet_type"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/create", methods=["POST"])
+def mn2_wallet_create():
+    """Create a new labeled deposit address for the current user."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    label = (data.get("label") or request.args.get("label") or "wallet").strip()
+    result = create_additional_wallet(user_id, label=label)
+    if not result.get("success"):
+        return jsonify(result), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "label": result.get("label"),
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "addresses": result.get("addresses"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Rotate primary deposit address (keeps legacy addresses in history)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(err)}), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/profile-monitor", methods=["GET"])
+def mn2_profile_monitor():
+    """Unified MN2 monitor: ledger activity, system breakdown, wallet list."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    try:
+        days = int(request.args.get("days", 5))
+    except (TypeError, ValueError):
+        days = 5
+    days = max(1, min(days, 31))
+    config = _load_mn2_config()
+    from backend.services.mn2_ledger import get_wallet_activity_days, get_entries_by_user
+
+    buckets = get_wallet_activity_days(user_id, days=days)
+    entries = get_entries_by_user(user_id, limit=200)
+    by_system: dict = {}
+    chain_txs = 0
+    for e in entries:
+        t = (e.get("type") or "other").strip()
+        meta = e.get("metadata") or {}
+        src = (meta.get("source") or t).strip()
+        bucket = by_system.setdefault(src, {"count": 0, "total_mn2": 0.0})
+        bucket["count"] += 1
+        try:
+            bucket["total_mn2"] = round(bucket["total_mn2"] + float(e.get("amount") or 0), 8)
+        except (TypeError, ValueError):
+            pass
+        if (e.get("txid") or "").strip() and t in ("deposit", "withdrawal", "chain_reward"):
+            chain_txs += 1
+
+    wallets = list_user_addresses(user_id)
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "days": days,
+        "buckets": buckets,
+        "by_system": by_system,
+        "chain_tx_count": chain_txs,
+        "instant_rewards": bool(config.get("instant_rewards", True)),
+        "instant_deposits": bool(config.get("instant_deposits", True)),
+        "confirmations_required": int(config.get("confirmations") or 0),
+        "wallets": wallets.get("addresses") or [],
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/ops/settle-ecosystem", methods=["POST"])
+def mn2_ops_settle_ecosystem():
+    """Run agent MN2 settlement (battle auto-claim, chain payouts, deposit scan). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    systems_raw = data.get("systems") or request.args.get("systems") or "all"
+    if isinstance(systems_raw, str):
+        systems = [s.strip() for s in systems_raw.split(",") if s.strip()]
+    else:
+        systems = list(systems_raw) if systems_raw else ["all"]
+    dry_run = (request.args.get("dry_run") == "1") or data.get("dry_run") is True
+    from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+    result = run_mn2_ecosystem_settlement(systems=systems, dry_run=dry_run)
+    status = 200 if result.get("success") else 500
+    return jsonify(result), status
 
 
 @mn2_bp.route("/api/mn2/wallet-activity", methods=["GET"])

@@ -175,6 +175,8 @@ def run_scanner() -> Dict[str, Any]:
     try:
         config = _load_config()
         required_confirmations = int(config.get("confirmations") or 6)
+        if config.get("instant_deposits"):
+            required_confirmations = max(0, int(config.get("instant_deposit_confirmations") or 0))
         match_tol = float(config.get("order_payment_match_tolerance") or 0.00000001)
         overpay_credit = bool(config.get("order_payment_overpay_credit", True))
         underpay_credit = bool(config.get("order_payment_underpay_credit", True))

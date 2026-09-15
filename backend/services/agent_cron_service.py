@@ -127,6 +127,9 @@ def run_agent_cron_jobs(
             elif job == 'api_service_skill':
                 from backend.services.agent_skillset_ops_service import run_api_service_skill_job
                 out['results'][job] = run_api_service_skill_job()
+            elif job == 'mn2_ecosystem_settlement':
+                from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+                out['results'][job] = run_mn2_ecosystem_settlement()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -165,4 +168,6 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
+    if n in ('mn2', 'mn2_settlement', 'game_battle_mn2'):
+        return ['mn2_ecosystem_settlement']
     return []

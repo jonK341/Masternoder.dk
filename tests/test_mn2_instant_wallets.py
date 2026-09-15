@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Tests for instant MN2 rewards, multi-wallet, profile monitor, and settlement."""
+import os
+import sys
+import json
+import unittest
+from unittest.mock import patch, MagicMock
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE not in sys.path:
+    sys.path.insert(0, BASE)
+os.chdir(BASE)
+
+
+class TestMN2WalletService(unittest.TestCase):
+    def test_create_additional_wallet(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    with patch.object(ws, "_generate_valid_address", return_value={"success": True, "deposit_address": "MxTest123"}):
+                        res = ws.create_additional_wallet("user_a", label="savings")
+            self.assertTrue(res.get("success"))
+            self.assertEqual(res.get("deposit_address"), "MxTest123")
+            self.assertEqual(res.get("label"), "savings")
+
+
+class TestMN2LedgerRewards(unittest.TestCase):
+    def test_reward_types_count_as_inflow(self):
+        from backend.services.mn2_ledger import get_wallet_activity_days
+        import tempfile
+        from backend.services import mn2_ledger as led
+
+        entries = [
+            {
+                "user_id": "u1",
+                "type": "battle_crypto_claim",
+                "amount": 0.25,
+                "created_at": "2026-09-15T12:00:00Z",
+                "metadata": {},
+            }
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_ledger.json")
+            with open(path, "w") as f:
+                json.dump({"entries": entries}, f)
+            with patch.object(led, "_ledger_path", return_value=path):
+                buckets = get_wallet_activity_days("u1", days=5)
+        self.assertTrue(any(b.get("deposits_mn2", 0) > 0 for b in buckets))
+
+
+class TestCreditMn2Instant(unittest.TestCase):
+    @patch("backend.services.activity_events_service.emit")
+    @patch("backend.services.mn2_ledger.append_entry")
+    @patch("backend.services.mn2_earn_auth.require_earn_user", return_value=(True, "u1"))
+    @patch("backend.services.mn2_chain_rewards_service.chain_payouts_enabled", return_value=False)
+    def test_credit_mn2_instant(self, _chain, _earn, mock_append, _emit):
+        from backend.services.game_mn2_rewards import credit_mn2
+
+        mock_db = MagicMock()
+        mock_db.add_points.return_value = {"success": True}
+        with patch.dict("sys.modules", {"backend.services.unified_points_database": MagicMock(unified_points_db=mock_db)}):
+            with patch("backend.services.unified_points_database.unified_points_db", mock_db, create=True):
+                res = credit_mn2("u1", 0.01, source="test_reward", reference="ref-1")
+        self.assertTrue(res.get("success"))
+        self.assertTrue(res.get("instant"))
+        mock_append.assert_called_once()
+
+
+class TestSettlementService(unittest.TestCase):
+    def test_settlement_dry_run_structure(self):
+        from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+
+        with patch("backend.services.agent_mn2_settlement_service._settle_battle_crypto", return_value={"claims": 0, "users": 0, "errors": []}):
+            with patch("backend.services.agent_mn2_settlement_service._scan_chain_payout_queue", return_value={"payouts": 0, "skipped": 0, "errors": []}):
+                with patch("backend.services.mn2_deposit_scanner.run_scanner", return_value={"success": True, "credits_applied": 0}):
+                    res = run_mn2_ecosystem_settlement(systems=["all"], dry_run=True)
+        self.assertTrue(res.get("success"))
+        self.assertIn("battle", res.get("results", {}))
+
+
+if __name__ == "__main__":
+    unittest.main()

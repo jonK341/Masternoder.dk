@@ -736,6 +736,35 @@
         }
         .mn2-5d-label { font-size: 0.65rem; color: rgba(255, 255, 255, 0.65); text-align: center; }
         .mn2-5d-net { font-size: 0.62rem; color: #00d4ff; font-family: ui-monospace, monospace; }
+        .mn2-system-monitor {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .mn2-monitor-chip {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 0.75rem;
+        }
+        .mn2-monitor-chip strong { display: block; color: #00ff88; font-size: 0.95rem; }
+        #profile-mn2-qr canvas, #profile-mn2-qr img {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .mn2-wallet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mn2-wallet-row.active { border-color: rgba(0,255,136,0.45); }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -1032,6 +1061,11 @@
                                 <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
                                 <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
                             </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">System monitor</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Rewards &amp; bonuses from game, battle, quests, generator, and on-chain payouts.</p>
+                                <div id="profile-mn2-system-monitor" class="mn2-system-monitor">Loading…</div>
+                            </div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1050,7 +1084,12 @@
                                     </div>
                                 </div>
                             </div>
-                            <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
+                            <div id="profile-mn2-wallets-list" style="margin-top:12px;font-size:0.82rem;"></div>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                                <input type="text" id="profile-mn2-new-wallet-label" placeholder="New wallet label" style="min-width:140px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:0.82rem;">
+                                <button type="button" id="profile-mn2-create-wallet" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.82rem;"><i class="fas fa-wallet"></i> Create new wallet</button>
+                            </div>
+                            <p id="profile-mn2-deposit-instant-msg" style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear instantly (0 confirmations).</p>
                         </div>
                         </div>
                         <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
