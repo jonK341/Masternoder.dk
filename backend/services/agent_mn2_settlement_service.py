@@ -175,7 +175,7 @@ def run_mn2_ecosystem_settlement(
     """
     active = [s.strip().lower() for s in (systems or ["all"])]
     if "all" in active:
-        active = ["battle", "chain", "scan"]
+        active = ["battle", "chain", "scan", "masternodes"]
 
     result: Dict[str, Any] = {
         "success": True,
@@ -207,6 +207,19 @@ def run_mn2_ecosystem_settlement(
         except Exception as e:
             result["errors"]["scan"] = str(e)[:300]
             result["success"] = False
+
+    if "masternodes" in active:
+        try:
+            from backend.services.mn2_masternode_service import (
+                bring_rented_masternodes_online,
+                rented_masternodes_snapshot,
+            )
+            if dry_run:
+                result["results"]["masternodes"] = rented_masternodes_snapshot()
+            else:
+                result["results"]["masternodes"] = bring_rented_masternodes_online()
+        except Exception as e:
+            result["errors"]["masternodes"] = str(e)[:300]
 
     if result["errors"]:
         result["success"] = False

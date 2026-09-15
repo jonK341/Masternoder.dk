@@ -886,6 +886,111 @@ def list_user_orders(user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
     return rows[: max(1, int(limit or 20))]
 
 
+def paid_rental_stats(*, existing_host_ids: Optional[set] = None) -> Dict[str, Any]:
+    """Counts paid hosting orders and how many host rows are missing from the fleet registry."""
+    existing = {str(x) for x in (existing_host_ids or set()) if x}
+    orders = _load_orders()
+    paid_orders = 0
+    paid_slots = 0
+    missing_host_rows = 0
+    for order in orders.values():
+        if not isinstance(order, dict):
+            continue
+        if str(order.get("status") or "").lower() != "paid":
+            continue
+        paid_orders += 1
+        host_ids = [str(h) for h in (order.get("host_ids") or []) if h]
+        try:
+            slots = max(1, int(order.get("slots") or len(host_ids) or 1))
+        except (TypeError, ValueError):
+            slots = max(1, len(host_ids) or 1)
+        paid_slots += slots
+        if not host_ids:
+            missing_host_rows += slots
+        else:
+            missing_host_rows += sum(1 for hid in host_ids if hid not in existing)
+    return {
+        "paid_orders": paid_orders,
+        "paid_slots": paid_slots,
+        "missing_host_rows": missing_host_rows,
+    }
+
+
+def ensure_paid_hosts_in_registry() -> Dict[str, Any]:
+    """
+    Restore fleet registry rows for paid hosting orders that lost host_ids or whose
+    ids are missing from mn2_masternode_hosts.json. Does not spend collateral.
+    """
+    from backend.services import mn2_masternode_service as mn
+
+    created: List[str] = []
+    restored: List[str] = []
+    with _LOCK:
+        orders = _read_json(_data_path(_ORDERS_FILE))
+        if not isinstance(orders, dict):
+            orders = {}
+        existing = {
+            str(h.get("id"))
+            for h in mn.list_hosts(include_internal=True)
+            if isinstance(h, dict) and h.get("id")
+        }
+        changed = False
+        for oid, order in list(orders.items()):
+            if not isinstance(order, dict):
+                continue
+            if str(order.get("status") or "").lower() != "paid":
+                continue
+            uid = str(order.get("user_id") or "")
+            host_ids = [str(h) for h in (order.get("host_ids") or []) if h]
+            try:
+                slots = max(1, int(order.get("slots") or len(host_ids) or 1))
+            except (TypeError, ValueError):
+                slots = max(1, len(host_ids) or 1)
+            if not host_ids:
+                new_ids: List[str] = []
+                for _i in range(slots):
+                    uid_slug = re.sub(r"[^a-zA-Z0-9]", "", uid)[:8] or uuid.uuid4().hex[:8]
+                    hid = f"user-{uid_slug}-{uuid.uuid4().hex[:6]}"
+                    res = mn.register_host({
+                        "id": hid,
+                        "label": f"Hosted MN · {str(oid)[:12]}",
+                        "status": "provisioning",
+                        "owner_user_id": uid or None,
+                        "notes": f"Paid order {oid} restored into fleet registry",
+                    })
+                    if res.get("success"):
+                        new_ids.append(hid)
+                        created.append(hid)
+                        existing.add(hid)
+                if new_ids:
+                    order["host_ids"] = new_ids
+                    order["updated_at"] = _iso()
+                    changed = True
+                continue
+            for hid in host_ids:
+                if hid in existing:
+                    continue
+                res = mn.register_host({
+                    "id": hid,
+                    "label": f"Hosted MN · {str(oid)[:12]}",
+                    "status": "provisioning",
+                    "owner_user_id": uid or None,
+                    "notes": f"Paid order {oid} host restored",
+                })
+                if res.get("success"):
+                    restored.append(hid)
+                    existing.add(hid)
+        if changed:
+            _write_json(_data_path(_ORDERS_FILE), orders)
+    return {
+        "success": True,
+        "created": created,
+        "restored": restored,
+        "created_count": len(created),
+        "restored_count": len(restored),
+    }
+
+
 def hosting_stats() -> Dict[str, Any]:
     orders = _load_orders()
     paid = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "paid")
