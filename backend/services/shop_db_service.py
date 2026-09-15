@@ -417,15 +417,32 @@ def get_purchases(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
         return _get_purchases_file(user_id, limit)
     try:
         db = _get_db()
-        rows = db.session.execute(
-            text("""
-                SELECT id, item_id, item_name, quantity, price_type, price_paid_coins, price_paid_points, purchase_status, created_at
-                FROM shop_purchases WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit
-            """),
-            {'user_id': user_id, 'limit': limit}
-        ).fetchall()
+        try:
+            rows = db.session.execute(
+                text("""
+                    SELECT id, item_id, item_name, quantity, price_type, price_paid_coins, price_paid_points,
+                           purchase_status, created_at, payment_method
+                    FROM shop_purchases WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit
+                """),
+                {'user_id': user_id, 'limit': limit}
+            ).fetchall()
+            has_method = True
+        except Exception:
+            db.session.rollback()
+            rows = db.session.execute(
+                text("""
+                    SELECT id, item_id, item_name, quantity, price_type, price_paid_coins, price_paid_points,
+                           purchase_status, created_at
+                    FROM shop_purchases WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit
+                """),
+                {'user_id': user_id, 'limit': limit}
+            ).fetchall()
+            has_method = False
         out = []
         for r in rows:
+            method = None
+            if has_method:
+                method = getattr(r, 'payment_method', None)
             out.append({
                 'id': r.id,
                 'item_id': r.item_id,
@@ -435,6 +452,7 @@ def get_purchases(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
                 'price_paid_coins': r.price_paid_coins,
                 'price_paid_points': json.loads(r.price_paid_points) if r.price_paid_points else None,
                 'purchase_status': r.purchase_status,
+                'payment_method': method or r.price_type,
                 'created_at': r.created_at.isoformat() if hasattr(r.created_at, 'isoformat') else str(r.created_at),
             })
         return out
@@ -449,7 +467,7 @@ def _get_purchases_file(user_id: str, limit: int) -> List[Dict[str, Any]]:
     if not isinstance(purchases, list):
         return []
     out: List[Dict[str, Any]] = []
-    for p in purchases[: max(1, min(limit, 100))]:
+    for p in purchases[: max(1, min(limit, 300))]:
         if not isinstance(p, dict):
             continue
         pp = p.get("price_paid_points")
@@ -466,6 +484,7 @@ def _get_purchases_file(user_id: str, limit: int) -> List[Dict[str, Any]]:
             "price_paid_coins": p.get("price_paid_coins"),
             "price_paid_points": pp_out,
             "purchase_status": p.get("purchase_status") or "completed",
+            "payment_method": p.get("payment_method") or p.get("price_type"),
             "created_at": p.get("created_at", ""),
         })
     return out

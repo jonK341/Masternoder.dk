@@ -856,7 +856,28 @@ def get_order(order_id: str, user_id: str) -> Dict[str, Any]:
     }}
 
 
-def list_user_orders(user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+_PUBLIC_HOSTING_STATUSES = ("quoted", "pending_payment", "paid", "expired", "refunded")
+
+
+def _public_hosting_row(order: Dict[str, Any]) -> Dict[str, Any]:
+    """Safe hosting order fields for lists. Never includes keys or PayPal secrets."""
+    return {
+        "order_id": order.get("order_id"),
+        "status": str(order.get("status") or ""),
+        "slots": int(order.get("slots") or 1),
+        "usd_total": float(order.get("usd_total") or 0),
+        "usd_per_slot": float(order.get("usd_per_slot") or 0),
+        "coins_total": int(order.get("coins_total") or 0),
+        "mn2_total": float(order.get("mn2_total") or 0),
+        "payment_method": order.get("payment_method"),
+        "host_ids": order.get("host_ids") or [],
+        "created_at": order.get("created_at"),
+        "paid_at": order.get("paid_at"),
+        "expires_at": order.get("expires_at"),
+    }
+
+
+def list_user_orders(user_id: str, limit: int = 200) -> List[Dict[str, Any]]:
     """Paid/pending masternode hosting orders for shop purchase history."""
     uid = str(user_id or "").strip()
     if not uid:
@@ -866,28 +887,74 @@ def list_user_orders(user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
         if not isinstance(order, dict) or order.get("user_id") != uid:
             continue
         status = str(order.get("status") or "")
-        if status not in ("quoted", "pending_payment", "paid", "expired"):
+        if status not in _PUBLIC_HOSTING_STATUSES:
             continue
-        rows.append({
-            "order_id": order.get("order_id"),
-            "status": status,
-            "slots": int(order.get("slots") or 1),
-            "usd_total": float(order.get("usd_total") or 0),
-            "usd_per_slot": float(order.get("usd_per_slot") or 0),
-            "coins_total": int(order.get("coins_total") or 0),
-            "mn2_total": float(order.get("mn2_total") or 0),
-            "payment_method": order.get("payment_method"),
-            "host_ids": order.get("host_ids") or [],
-            "created_at": order.get("created_at"),
-            "paid_at": order.get("paid_at"),
-            "expires_at": order.get("expires_at"),
-        })
+        rows.append(_public_hosting_row(order))
     rows.sort(key=lambda r: str(r.get("paid_at") or r.get("created_at") or ""), reverse=True)
-    return rows[: max(1, int(limit or 20))]
+    try:
+        cap = max(1, min(int(limit or 200), 500))
+    except (TypeError, ValueError):
+        cap = 200
+    return rows[:cap]
+
+
+def list_ops_orders(status: Optional[str] = None, limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+    """Sanitized hosting order list for ops. No private keys."""
+    wanted = str(status or "").strip().lower()
+    rows: List[Dict[str, Any]] = []
+    by_status: Dict[str, int] = {}
+    by_method: Dict[str, int] = {}
+    for order in _load_orders().values():
+        if not isinstance(order, dict):
+            continue
+        st = str(order.get("status") or "")
+        by_status[st] = by_status.get(st, 0) + 1
+        method = str(order.get("payment_method") or "")
+        if st == "paid":
+            by_method[method or "unknown"] = by_method.get(method or "unknown", 0) + 1
+        if wanted and st != wanted:
+            continue
+        row = _public_hosting_row(order)
+        row["user_id"] = str(order.get("user_id") or "")
+        rows.append(row)
+    rows.sort(key=lambda r: str(r.get("paid_at") or r.get("created_at") or ""), reverse=True)
+    try:
+        cap = max(1, min(int(limit or 100), 500))
+    except (TypeError, ValueError):
+        cap = 100
+    try:
+        skip = max(0, int(offset or 0))
+    except (TypeError, ValueError):
+        skip = 0
+    return {
+        "success": True,
+        "total": len(rows),
+        "limit": cap,
+        "offset": skip,
+        "by_status": by_status,
+        "paid_by_payment_method": by_method,
+        "orders": rows[skip : skip + cap],
+    }
 
 
 def hosting_stats() -> Dict[str, Any]:
     orders = _load_orders()
-    paid = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "paid")
-    pending = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "pending_payment")
-    return {"paid_orders": paid, "pending_orders": pending, "paypal": get_paypal_config()}
+    paid = 0
+    pending = 0
+    by_method: Dict[str, int] = {}
+    for o in orders.values():
+        if not isinstance(o, dict):
+            continue
+        st = str(o.get("status") or "")
+        if st == "paid":
+            paid += 1
+            method = str(o.get("payment_method") or "unknown")
+            by_method[method] = by_method.get(method, 0) + 1
+        elif st == "pending_payment":
+            pending += 1
+    return {
+        "paid_orders": paid,
+        "pending_orders": pending,
+        "by_payment_method": by_method,
+        "paypal": get_paypal_config(),
+    }
