@@ -765,6 +765,92 @@
             border: 1px solid rgba(255,255,255,0.08);
         }
         .mn2-wallet-row.active { border-color: rgba(0,255,136,0.45); }
+        .shop-subnav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 12px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.22);
+        }
+        .shop-subnav-btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.75);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .shop-subnav-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            border-color: transparent;
+        }
+        .shop-order-table-wrap { overflow-x: auto; }
+        .shop-order-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .shop-order-table th,
+        .shop-order-table td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            vertical-align: top;
+        }
+        .shop-order-table thead th {
+            color: rgba(255,255,255,0.65);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .shop-order-meta { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+        .shop-order-group-title { margin: 16px 0 6px; color: #7ee8ff; font-size: 0.92rem; }
+        .shop-order-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.08);
+        }
+        .shop-order-status.is-completed { background: rgba(0,255,136,0.16); color: #00ff88; }
+        .shop-order-status.is-pending { background: rgba(255,170,0,0.18); color: #ffaa00; }
+        .shop-order-status.is-refunded { background: rgba(255,136,0,0.18); color: #ff9944; }
+        .shop-order-status.is-cancelled { background: rgba(255,68,68,0.16); color: #ff7777; }
+        .shop-orders-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .shop-orders-easy {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 960px) {
+            .shop-orders-easy { grid-template-columns: 1fr; }
+        }
+        .shop-orders-panel {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.18);
+            min-width: 0;
+        }
+        .shop-order-table th:first-child,
+        .shop-order-table td:first-child { width: 2.2rem; }
+        .shop-order-pdf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .shop-order-pdf-hint { font-size: 0.8rem; opacity: 0.75; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -1030,6 +1116,31 @@
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
+                        <div class="shop-orders-toolbar" style="margin-top:22px;">
+                            <div>
+                                <h3 class="section-title" style="margin:0;font-size:1.05rem;">🧾 My orders</h3>
+                                <p style="font-size: 0.9rem; opacity: 0.85; margin: 6px 0 0;">Purchases and stall listings — check rows, then download a PDF.</p>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span id="profile-shop-order-pdf-hint" class="shop-order-pdf-hint">Select orders first</span>
+                                <button type="button" id="profile-shop-order-pdf-btn" class="shop-order-pdf-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:700;cursor:pointer;" disabled>Download PDF</button>
+                            </div>
+                        </div>
+                        <div id="profile-shop-orders-easy-view" class="shop-orders-easy">
+                            <section class="shop-orders-panel">
+                                <h4 style="margin:0 0 8px;color:#7ee8ff;">Purchases</h4>
+                                <nav class="shop-subnav" id="profile-shop-order-status-subnav" aria-label="Order status filters"></nav>
+                                <nav class="shop-subnav" id="profile-shop-order-subnav" aria-label="Order subcategory filters"></nav>
+                                <div id="profile-shop-order-list" class="shop-order-list">Loading…</div>
+                            </section>
+                            <section class="shop-orders-panel">
+                                <h4 style="margin:0 0 8px;color:#7ee8ff;">Stall listings</h4>
+                                <nav class="shop-subnav" id="profile-shop-stall-status-subnav" aria-label="Stall status filters"></nav>
+                                <nav class="shop-subnav" id="profile-shop-stall-subnav" aria-label="Stall subcategory filters"></nav>
+                                <div id="profile-shop-stall-list" class="shop-order-list">Loading…</div>
+                            </section>
+                        </div>
+                        <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open orders in Shop</a></p>
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
@@ -1701,6 +1812,8 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260915-orders"></script>
+        <script src="/static/js/shop-order-list.js?v=20260915-orders"></script>
         <script src="/static/js/profile-mn2-wallet.js?v=20260915"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
@@ -1797,6 +1910,7 @@
                         this.loadProfileMn2Wallet();
                         this.loadCryptoWalletAgentsCatalog();
                         this.loadShopInventoryV9();
+                        this.loadShopOrders();
                         this.loadAccountPrivacyControls();
                         var params = new URLSearchParams(window.location.search);
                         if (params.get('refresh') === '1' && typeof this.refreshProfilePoints === 'function') {
@@ -3332,6 +3446,9 @@
                 if (typeof this.loadShopInventoryV9 === 'function') {
                     this.loadShopInventoryV9();
                 }
+                if (typeof this.loadShopOrders === 'function') {
+                    this.loadShopOrders();
+                }
             }
 
             _mergeShopShadowInventory(apiRows, uid) {
@@ -3423,6 +3540,100 @@
 
             async loadShopInventoryV4() {
                 return this.loadShopInventoryV9();
+            }
+
+            _renderProfileShopOrders() {
+                const el = document.getElementById('profile-shop-order-list');
+                if (!window.ShopOrderList || !el) return;
+                ShopOrderList.render({
+                    rows: this._profileShopOrders || [],
+                    listEl: el,
+                    statusNavEl: document.getElementById('profile-shop-order-status-subnav'),
+                    subnavEl: document.getElementById('profile-shop-order-subnav'),
+                    subcategory: this._profileOrderSubcat || 'all',
+                    status: this._profileOrderStatus || 'all',
+                    emptyMessage: 'No shop orders yet. Catalog purchases appear here.',
+                    onSubcategory: (id) => {
+                        this._profileOrderSubcat = id;
+                        this._renderProfileShopOrders();
+                    },
+                    onStatus: (id) => {
+                        this._profileOrderStatus = id;
+                        this._renderProfileShopOrders();
+                    },
+                });
+            }
+
+            _renderProfileStallOrders() {
+                const el = document.getElementById('profile-shop-stall-list');
+                if (!window.ShopOrderList || !el) return;
+                ShopOrderList.render({
+                    rows: this._profileStallOrders || [],
+                    listEl: el,
+                    statusNavEl: document.getElementById('profile-shop-stall-status-subnav'),
+                    subnavEl: document.getElementById('profile-shop-stall-subnav'),
+                    subcategory: this._profileStallSubcat || 'all',
+                    status: this._profileStallStatus || 'all',
+                    emptyMessage: 'No stall listings yet. Use Sell in My Inventory.',
+                    filterEmptyMessage: 'No listings match this filter.',
+                    onSubcategory: (id) => {
+                        this._profileStallSubcat = id;
+                        this._renderProfileStallOrders();
+                    },
+                    onStatus: (id) => {
+                        this._profileStallStatus = id;
+                        this._renderProfileStallOrders();
+                    },
+                });
+            }
+
+            async loadShopOrders() {
+                const el = document.getElementById('profile-shop-order-list');
+                const stallEl = document.getElementById('profile-shop-stall-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                this._profileOrderSubcat = this._profileOrderSubcat || 'all';
+                this._profileOrderStatus = this._profileOrderStatus || 'all';
+                this._profileStallSubcat = this._profileStallSubcat || 'all';
+                this._profileStallStatus = this._profileStallStatus || 'all';
+                if (window.ShopOrderList) {
+                    ShopOrderList.bindPdfControls({
+                        button: document.getElementById('profile-shop-order-pdf-btn'),
+                        hintEl: document.getElementById('profile-shop-order-pdf-hint'),
+                        userId: uid,
+                    });
+                }
+                el.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
+                if (stallEl) stallEl.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/purchases?user_id=${encodeURIComponent(uid)}&limit=50`);
+                    const d = r.ok ? await r.json() : {};
+                    if (!d.success && !(d.purchases || []).length) {
+                        throw new Error(d.error || 'Could not load shop orders.');
+                    }
+                    this._profileShopOrders = (d.success && d.purchases) ? d.purchases : [];
+                    this._renderProfileShopOrders();
+                } catch (e) {
+                    this._profileShopOrders = [];
+                    if (window.ShopOrderList) {
+                        ShopOrderList.renderError(el, 'Could not load shop orders.');
+                    } else {
+                        el.innerHTML = '<p style="color:#ffaa00;">Could not load shop orders.</p>';
+                    }
+                }
+                try {
+                    const sr = await fetch(`${window.location.origin}/api/shop/stall-orders?user_id=${encodeURIComponent(uid)}&limit=50`);
+                    const sd = sr.ok ? await sr.json() : {};
+                    this._profileStallOrders = Array.isArray(sd.listings) ? sd.listings : [];
+                    this._renderProfileStallOrders();
+                } catch (e) {
+                    this._profileStallOrders = [];
+                    if (window.ShopOrderList) {
+                        ShopOrderList.renderError(stallEl, 'Could not load stall listings.');
+                    } else if (stallEl) {
+                        stallEl.innerHTML = '<p style="color:#ffaa00;">Could not load stall listings.</p>';
+                    }
+                }
             }
 
             renderCommunicationPsychology(cp) {
@@ -4108,10 +4319,16 @@
                         if (window.profileManager && typeof window.profileManager.loadShopInventoryV9 === 'function') {
                             window.profileManager.loadShopInventoryV9();
                         }
+                        if (window.profileManager && typeof window.profileManager.loadShopOrders === 'function') {
+                            window.profileManager.loadShopOrders();
+                        }
                     });
                     function onShopPurchaseRefresh() {
                         if (window.profileManager && typeof window.profileManager.loadShopInventoryV9 === 'function') {
                             window.profileManager.loadShopInventoryV9();
+                        }
+                        if (window.profileManager && typeof window.profileManager.loadShopOrders === 'function') {
+                            window.profileManager.loadShopOrders();
                         }
                     }
                     window.addEventListener('shop-v9-purchase', onShopPurchaseRefresh);

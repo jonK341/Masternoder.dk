@@ -1947,9 +1947,19 @@ def shop_purchase():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def _enrich_shop_owned_rows(rows):
+    """Attach catalog taxonomy + order status buckets. Never loads masternode hosting orders."""
+    try:
+        from backend.services.shop_taxonomy_service import enrich_rows
+        catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+        return enrich_rows(rows or [], catalog_by_id)
+    except Exception:
+        return list(rows or [])
+
+
 @shop_bp.route('/api/shop/purchases', methods=['GET'])
 def shop_purchases():
-    """Get purchase history for user (requires migration)."""
+    """Get shop purchase / order history for user (requires migration)."""
     try:
         user_id = request.args.get('user_id') or _resolve_user_id()
         limit = min(int(request.args.get('limit', 50)), 100)
@@ -1958,6 +1968,7 @@ def shop_purchases():
             purchases = get_purchases(user_id, limit=limit)
         except Exception:
             purchases = []
+        purchases = _enrich_shop_owned_rows(purchases)
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1973,9 +1984,65 @@ def shop_inventory():
             inventory = get_inventory(user_id)
         except Exception:
             inventory = []
+        inventory = _enrich_shop_owned_rows(inventory)
         return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
+
+
+@shop_bp.route('/api/shop/stall-orders', methods=['GET'])
+def shop_stall_orders():
+    """Stall/auction listings as order rows for the account order list."""
+    try:
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        limit = min(int(request.args.get('limit', 50)), 100)
+        from backend.services.shop_order_list_service import build_user_order_lists
+
+        payload = build_user_order_lists(user_id, limit=limit)
+        return jsonify({
+            'success': True,
+            'user_id': payload.get('user_id'),
+            'listings': payload.get('listings') or [],
+            'count': (payload.get('counts') or {}).get('stall', 0),
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': True,
+            'user_id': request.args.get('user_id') or 'default_user',
+            'listings': [],
+            'count': 0,
+            'warning': 'Stall listings are temporarily unavailable',
+            'error': str(e),
+        }), 200
+
+
+@shop_bp.route('/api/shop/order-pdf', methods=['POST'])
+def shop_order_pdf():
+    """Download a PDF of checked purchases and/or stall listings."""
+    from io import BytesIO
+
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id') or request.args.get('user_id') or _resolve_user_id()
+    items = data.get('items') or data.get('orders') or []
+    if not isinstance(items, list) or not items:
+        return jsonify({'success': False, 'error': 'select orders first'}), 400
+    try:
+        from backend.services.shop_order_list_service import pdf_for_checked_orders, resolve_checked_orders
+
+        rows = resolve_checked_orders(user_id, items)
+        if not rows:
+            return jsonify({'success': False, 'error': 'select orders first'}), 400
+        pdf_bytes = pdf_for_checked_orders(user_id, items)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    buffer = BytesIO(pdf_bytes)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='shop-orders.pdf',
+    )
 
 
 @shop_bp.route('/api/shop/auction/listings', methods=['GET'])
