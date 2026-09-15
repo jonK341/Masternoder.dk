@@ -1028,6 +1028,7 @@
                     <div class="section-card" id="profile-section-shop" data-profile-route="shop">
                         <h2 class="section-title">🛒 Shop inventory (v4)</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
+                        <nav class="shop-subnav profile-shop-inv-subnav" id="profile-shop-inventory-subnav" aria-label="Inventory subcategories"></nav>
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
                     </div>
@@ -1702,6 +1703,7 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/profile-hub-subtabs.js?v=20260915"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260915"></script>
         <script src="/static/js/profile-mn2-wallet.js?v=20260915"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
@@ -3383,16 +3385,46 @@
                         el.innerHTML = '<p style="opacity:0.85;">No shop items yet. Buy in <a href="/shop">Shop</a> (V.9 — coins, unified points, or MN2).</p>';
                         return;
                     }
-                    el.innerHTML = '<div style="display:grid;gap:10px;">' + rows.map(function(i) {
+                    var tax = window.ShopTaxonomy;
+                    var classified = rows.map(function (r) { return tax ? tax.enrich(r) : r; });
+                    var self = this;
+                    self._profileInvSubcat = self._profileInvSubcat || 'all';
+                    if (tax) {
+                        var counts = {};
+                        classified.forEach(function (r) {
+                            counts[r.subcategory || 'other'] = (counts[r.subcategory || 'other'] || 0) + 1;
+                        });
+                        var tabs = [{ id: 'all', label: 'All', count: classified.length }].concat(
+                            tax.INVENTORY_SUBCATS.filter(function (s) { return s.id !== 'all' && counts[s.id]; })
+                                .map(function (s) { return { id: s.id, label: s.label, count: counts[s.id] }; })
+                        );
+                        tax.renderChips(document.getElementById('profile-shop-inventory-subnav'), tabs, self._profileInvSubcat, function (id) {
+                            self._profileInvSubcat = id;
+                            self.loadShopInventoryV9();
+                        });
+                    }
+                    var visible = self._profileInvSubcat === 'all'
+                        ? classified
+                        : classified.filter(function (r) { return r.subcategory === self._profileInvSubcat; });
+                    var groups = {};
+                    visible.forEach(function (i) {
+                        var key = i.subcategory || 'other';
+                        (groups[key] = groups[key] || []).push(i);
+                    });
+                    el.innerHTML = Object.keys(groups).map(function (key) {
+                        var label = tax ? tax.subcatLabel(key) : key;
+                        var cards = groups[key].map(function (i) {
                         var itemId = String(i.item_id || '').replace(/"/g, '&quot;').replace(/</g, '');
                         var itemName = String(i.item_name || i.item_id || '').replace(/</g, '&lt;');
                         return '<div style="display:grid;grid-template-columns:1fr auto minmax(120px,180px) auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;background:rgba(255,255,255,0.04);">' +
-                            '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + '</div></div>' +
+                            '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + ' · ' + label + '</div></div>' +
                             '<div>× ' + (i.quantity || 1) + '</div>' +
                             '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.25);color:#fff;" aria-label="Listing price in coins">' +
                             '<button type="button" data-profile-auction-sell="' + itemId + '" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,215,0,0.45);background:rgba(255,215,0,0.16);color:#FFD700;cursor:pointer;">Sell 1</button>' +
                         '</div>';
-                    }).join('') + '</div><p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
+                        }).join('');
+                        return '<h4 style="margin:14px 0 8px;color:#7ee8ff;font-size:0.92rem;">' + label + '</h4>' + cards;
+                    }).join('') + '<p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
                     el.querySelectorAll('[data-profile-auction-sell]').forEach((btn) => {
                         btn.addEventListener('click', async () => {
                             const itemId = btn.getAttribute('data-profile-auction-sell') || '';

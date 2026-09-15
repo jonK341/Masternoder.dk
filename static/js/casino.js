@@ -1841,6 +1841,85 @@
         }
     }
 
+    var casinoShopFilter = 'all';
+    var casinoShopItems = [];
+
+    async function refreshCasinoShop() {
+        var el = $('casino-shop');
+        var nav = $('casino-shop-subnav');
+        if (!el) return;
+        var data = await api('/api/casino/shop/catalog?user_id=' + encodeURIComponent(userId));
+        casinoShopItems = (data && data.items) || data.catalog || [];
+        if (!data || data.success === false) {
+            el.textContent = (data && data.error) || 'Casino shop catalog unavailable.';
+            return;
+        }
+        var cats = { all: casinoShopItems.length };
+        casinoShopItems.forEach(function (it) {
+            var k = it.category || 'other';
+            cats[k] = (cats[k] || 0) + 1;
+        });
+        var labels = {
+            all: 'All', avatar: 'Avatar', table_skin: 'Tables', card_back: 'Cards',
+            slot_theme: 'Slots', booster: 'Boosters', vip_flair: 'VIP', emote: 'Emotes',
+            celebration: 'Celebrations', token: 'Tokens', display: 'Display', banner: 'Banners'
+        };
+        if (nav) {
+            nav.innerHTML = Object.keys(cats).map(function (id) {
+                return '<a href="#casino-shop" data-cs-cat="' + id + '"' +
+                    (id === casinoShopFilter ? ' class="active"' : '') + '>' +
+                    (labels[id] || id) + ' (' + cats[id] + ')</a>';
+            }).join('');
+            nav.querySelectorAll('[data-cs-cat]').forEach(function (a) {
+                a.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    casinoShopFilter = a.getAttribute('data-cs-cat');
+                    renderCasinoShopGrid();
+                    nav.querySelectorAll('[data-cs-cat]').forEach(function (x) {
+                        x.classList.toggle('active', x === a);
+                    });
+                });
+            });
+        }
+        renderCasinoShopGrid();
+    }
+
+    function renderCasinoShopGrid() {
+        var el = $('casino-shop');
+        if (!el) return;
+        var rows = casinoShopFilter === 'all'
+            ? casinoShopItems
+            : casinoShopItems.filter(function (it) { return (it.category || 'other') === casinoShopFilter; });
+        if (!rows.length) {
+            el.innerHTML = '<p>No items in this subcategory.</p>';
+            return;
+        }
+        el.innerHTML = rows.map(function (it) {
+            var price = it.price_coins != null ? (it.price_coins + ' coins') : '';
+            if (it.price_mn2) price += (price ? ' · ' : '') + it.price_mn2 + ' MN2';
+            return '<div class="casino-shop-item' + (it.owned ? ' owned' : '') + '">' +
+                '<div class="casino-shop-icon">' + (it.icon || '🎁') + '</div>' +
+                '<strong>' + (it.name || it.id) + '</strong>' +
+                '<p>' + (it.description || '') + '</p>' +
+                '<div class="casino-shop-cat">' + (it.category || '') + '</div>' +
+                '<div class="casino-shop-price">' + price + '</div>' +
+                '<button type="button" class="casino-shop-buy" data-cs-buy="' + (it.id || '') + '"' +
+                (it.owned ? ' disabled' : '') + '>' + (it.owned ? 'Owned' : 'Buy') + '</button></div>';
+        }).join('');
+        el.querySelectorAll('[data-cs-buy]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var purchased = await api('/api/casino/shop/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, item_id: btn.getAttribute('data-cs-buy'), currency: activeCurrency }),
+                });
+                showToast(purchased.success ? 'Purchased' : (purchased.error || 'Purchase failed'));
+                refreshCasinoShop();
+                refreshBalance();
+            });
+        });
+    }
+
     async function refreshCompeteTab() {
         var crewEl = $('casino-crew-board');
         if (crewEl) {
@@ -1936,6 +2015,7 @@
             }
         }
         await refreshAgentSpectator('casino-compete-spectator');
+        await refreshCasinoShop();
         await refreshMinesDuels();
         await refreshKenoSyndicates();
         await refreshBjTournament();
@@ -4672,6 +4752,7 @@
         safeRefresh('progression', refreshProgression);
         safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
+        safeRefresh('casinoShop', refreshCasinoShop);
         safeRefresh('crashCrewLobbies', refreshCrashCrewLobbies);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }

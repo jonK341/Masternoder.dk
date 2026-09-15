@@ -1958,6 +1958,12 @@ def shop_purchases():
             purchases = get_purchases(user_id, limit=limit)
         except Exception:
             purchases = []
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            purchases = enrich_rows(purchases or [], catalog_by_id)
+        except Exception:
+            pass
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1973,6 +1979,12 @@ def shop_inventory():
             inventory = get_inventory(user_id)
         except Exception:
             inventory = []
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            inventory = enrich_rows(inventory or [], catalog_by_id)
+        except Exception:
+            pass
         return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
@@ -2001,6 +2013,12 @@ def shop_auction_listings():
                 feat.sort(key=lambda r: r.get('created_at') or '', reverse=True)
                 rest.sort(key=lambda r: r.get('created_at') or '', reverse=True)
                 listings = feat + rest
+        except Exception:
+            pass
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            listings = enrich_rows(listings or [], catalog_by_id)
         except Exception:
             pass
         return jsonify({'success': True, 'listings': listings, 'count': len(listings)}), 200

@@ -662,6 +662,8 @@
                 </label>
                 <div class="shop-quick-chips" id="shop-quick-chips" aria-label="Quick filters"></div>
             </div>
+            <nav class="shop-subnav" id="shop-catalog-parents" aria-label="Catalog groups"></nav>
+            <nav class="shop-subnav" id="shop-catalog-subcats" aria-label="Catalog subcategories"></nav>
             <p style="margin:10px 0 0;font-size:0.8rem;color:var(--text-secondary);">Tip: <strong>Inventory &amp; orders</strong> for history · <strong>PayPal &amp; coins</strong> for packs and Pro · <strong>MN2 wallet</strong> for crypto deposit, withdraw, and how balance maps to catalog prices.</p>
         </div>
         
@@ -757,6 +759,7 @@
                 </label>
                 <button type="button" id="auction-refresh-btn" class="btn-purchase" style="width:auto;">Refresh market</button>
             </div>
+            <nav class="shop-subnav" id="shop-auction-subnav" aria-label="Auction subcategories"></nav>
             <div id="auction-listings" class="auction-board">
                 <div class="auction-card">Loading auction listings…</div>
             </div>
@@ -1033,6 +1036,7 @@
                 <span id="inventory-count" style="color: var(--text-secondary);">0 items</span>
             </div>
             <div id="my-inventory-body" style="display: none; padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                <nav class="shop-subnav" id="shop-inventory-subnav" aria-label="Inventory subcategories"></nav>
                 <div id="my-inventory-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
             </div>
         </div>
@@ -1054,6 +1058,7 @@
                 <span id="purchases-count" style="color: var(--text-secondary);">0 purchases</span>
             </div>
             <div id="purchase-history-body" style="display: none; padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                <nav class="shop-subnav" id="shop-history-subnav" aria-label="Purchase history subcategories"></nav>
                 <div id="purchase-history-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
             </div>
         </div>
@@ -1086,6 +1091,7 @@
     </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260915"></script>
         <script src="/static/js/shop-subnav.js?v=20260915"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
@@ -1094,6 +1100,10 @@
         const BASE_URL = window.location.origin;
         const userId = localStorage.getItem('game_user_id') || 'default_user';
         let currentCategory = '';
+        let currentCatalogParent = 'all';
+        let currentInventorySubcat = 'all';
+        let currentAuctionSubcat = 'all';
+        let currentHistorySubcat = 'all';
         let userInventory = [];
         let userPurchases = [];
         let auctionListings = [];
@@ -1435,6 +1445,7 @@
                         return;
                     }
                     showShopTab('catalog');
+                    renderCatalogTaxonomy();
                     if (allShopItems.length) renderShopGrid(filterAndSortItems());
                     else loadShopItems();
                 });
@@ -1459,12 +1470,69 @@
                             return;
                         }
                         showShopTab('catalog');
+                        renderCatalogTaxonomy();
                         if (allShopItems.length) renderShopGrid(filterAndSortItems());
                         else loadShopItems();
                     });
                     chipWrap.appendChild(b);
                 });
             }
+            renderCatalogTaxonomy();
+        }
+
+        function renderCatalogTaxonomy() {
+            const tax = window.ShopTaxonomy;
+            if (!tax) return;
+            const parentNav = document.getElementById('shop-catalog-parents');
+            const subNav = document.getElementById('shop-catalog-subcats');
+            tax.renderChips(parentNav, tax.CATALOG_PARENTS, currentCatalogParent, (id) => {
+                currentCatalogParent = id;
+                if (id !== 'all') {
+                    const parent = tax.CATALOG_PARENTS.find(p => p.id === id);
+                    const cats = (parent && parent.categories) || [];
+                    if (currentCategory && cats.length && cats.indexOf(currentCategory) === -1) {
+                        currentCategory = '';
+                        const sel = document.getElementById('shop-category-select');
+                        if (sel) sel.value = '';
+                    }
+                }
+                renderCatalogTaxonomy();
+                updateCategoryButtonLabels();
+                if (allShopItems.length) renderShopGrid(filterAndSortItems());
+            });
+            let subTabs = [{ id: 'all', label: 'All subcats' }];
+            if (currentCatalogParent === 'ops' || currentCategory === 'inventory') {
+                subTabs = tax.INVENTORY_SUBCATS;
+            } else if (currentCatalogParent !== 'all') {
+                const parent = tax.CATALOG_PARENTS.find(p => p.id === currentCatalogParent);
+                subTabs = [{ id: 'all', label: 'All in group' }].concat(
+                    ((parent && parent.categories) || []).map(cat => ({
+                        id: cat,
+                        label: CATEGORY_LABELS[cat] || cat,
+                    }))
+                );
+            }
+            tax.renderChips(subNav, subTabs, currentCatalogParent === 'ops' || currentCategory === 'inventory' ? currentInventorySubcat : (currentCategory || 'all'), (id) => {
+                if (currentCatalogParent === 'ops' || currentCategory === 'inventory') {
+                    currentInventorySubcat = id;
+                } else if (id === 'all') {
+                    currentCategory = '';
+                    const sel = document.getElementById('shop-category-select');
+                    if (sel) sel.value = '';
+                } else {
+                    currentCategory = id;
+                    const sel = document.getElementById('shop-category-select');
+                    if (sel) sel.value = id;
+                }
+                updateCategoryButtonLabels();
+                if (id === 'buy_coins') {
+                    showShopTab('coins');
+                    return;
+                }
+                showShopTab('catalog');
+                if (allShopItems.length) renderShopGrid(filterAndSortItems());
+                else loadShopItems();
+            });
         }
 
         function syncProfileBar() {
@@ -1517,9 +1585,25 @@
             const search = (document.getElementById('shop-search-input') || {}).value || '';
             const sortVal = (document.getElementById('shop-sort-select') || {}).value || 'name_asc';
             const searchLower = search.trim().toLowerCase();
-            let list = currentCategory
-                ? allShopItems.filter(item => (item.category || '').toLowerCase() === currentCategory.toLowerCase())
-                : [...allShopItems];
+            let list = [...allShopItems];
+            const tax = window.ShopTaxonomy;
+            if (currentCatalogParent && currentCatalogParent !== 'all' && tax) {
+                const parent = (tax.CATALOG_PARENTS || []).find(p => p.id === currentCatalogParent);
+                const allowed = new Set(parent && parent.categories ? parent.categories : []);
+                if (allowed.size) {
+                    list = list.filter(item => allowed.has(String(item.category || '').toLowerCase()));
+                }
+            }
+            if (currentCategory) {
+                list = list.filter(item => (item.category || '').toLowerCase() === currentCategory.toLowerCase());
+            }
+            const useInvSub = currentCatalogParent === 'ops' || currentCategory === 'inventory';
+            if (useInvSub && currentInventorySubcat && currentInventorySubcat !== 'all' && tax) {
+                list = list.filter(item => {
+                    const row = tax.enrich(item);
+                    return row.subcategory === currentInventorySubcat;
+                });
+            }
             if (searchLower) {
                 list = list.filter(item => {
                     const name = (item.name || '').toLowerCase();
@@ -2151,33 +2235,93 @@
             attachMasternodeHostingPayHandlers(grid, '.mn2-svc-slots');
         }
         
+        function classifyOwnedRow(row) {
+            const tax = window.ShopTaxonomy;
+            if (!tax) return Object.assign({ subcategory: 'other' }, row);
+            const catalog = (allShopItems || []).find(it => it.id === row.item_id);
+            return tax.enrich(Object.assign({}, catalog || {}, row, {
+                item_id: row.item_id,
+                item_name: row.item_name || (catalog && catalog.name),
+                category: row.category || (catalog && catalog.category),
+            }));
+        }
+
+        function inventorySubcatTabs(rows) {
+            const tax = window.ShopTaxonomy;
+            const counts = {};
+            (rows || []).forEach(r => {
+                const id = r.subcategory || 'other';
+                counts[id] = (counts[id] || 0) + 1;
+            });
+            const tabs = [{ id: 'all', label: 'All', count: rows.length }];
+            const source = (tax && tax.INVENTORY_SUBCATS) || [];
+            source.forEach(s => {
+                if (s.id === 'all') return;
+                if (counts[s.id]) tabs.push({ id: s.id, label: s.label, count: counts[s.id] });
+            });
+            Object.keys(counts).forEach(id => {
+                if (!tabs.some(t => t.id === id)) tabs.push({ id, label: (tax && tax.subcatLabel(id)) || id, count: counts[id] });
+            });
+            return tabs;
+        }
+
+        function renderInventoryList() {
+            const el = document.getElementById('my-inventory-list');
+            const nav = document.getElementById('shop-inventory-subnav');
+            const countEl = document.getElementById('inventory-count');
+            const classified = (userInventory || []).map(classifyOwnedRow);
+            if (countEl) countEl.textContent = classified.length + ' item' + (classified.length !== 1 ? 's' : '');
+            if (window.ShopTaxonomy) {
+                window.ShopTaxonomy.renderChips(nav, inventorySubcatTabs(classified), currentInventorySubcat, (id) => {
+                    currentInventorySubcat = id;
+                    renderInventoryList();
+                });
+            }
+            if (!el) return;
+            const rows = currentInventorySubcat === 'all'
+                ? classified
+                : classified.filter(r => r.subcategory === currentInventorySubcat);
+            if (!classified.length) {
+                el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
+                return;
+            }
+            if (!rows.length) {
+                el.innerHTML = '<p style="margin:0;">No items in this subcategory.</p>';
+                return;
+            }
+            const groups = {};
+            rows.forEach(i => {
+                const key = i.subcategory || 'other';
+                (groups[key] = groups[key] || []).push(i);
+            });
+            el.innerHTML = Object.keys(groups).map(key => {
+                const label = (window.ShopTaxonomy && window.ShopTaxonomy.subcatLabel(key)) || key;
+                const cards = groups[key].map(i => {
+                    const dl = i.download_url
+                        ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
+                        : '';
+                    return `
+                        <div class="stall-row">
+                            <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)} · ${shopEscape(label)}</div>${dl}</div>
+                            <div>× ${Number(i.quantity || 1)}</div>
+                            <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
+                            <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
+                        </div>`;
+                }).join('');
+                return `<h4 style="margin:16px 0 8px;color:var(--secondary);font-size:0.92rem;">${shopEscape(label)}</h4>${cards}`;
+            }).join('');
+            el.querySelectorAll('.btn-list-auction').forEach(btn => {
+                btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
+            });
+        }
+
         async function loadInventory() {
             try {
                 const response = await fetch(`${BASE_URL}/api/shop/inventory?user_id=${userId}`);
                 const data = await response.json();
                 const apiInv = (data.success && data.inventory) ? data.inventory : [];
                 userInventory = (window.ShopV9 && typeof ShopV9.mergeInventory === 'function') ? ShopV9.mergeInventory(apiInv) : apiInv;
-                const el = document.getElementById('my-inventory-list');
-                const countEl = document.getElementById('inventory-count');
-                if (countEl) countEl.textContent = userInventory.length + ' item' + (userInventory.length !== 1 ? 's' : '');
-                if (el) {
-                    if (userInventory.length === 0) el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
-                    else el.innerHTML = userInventory.map(i => {
-                        const dl = i.download_url
-                            ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
-                            : '';
-                        return `
-                        <div class="stall-row">
-                            <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)}</div>${dl}</div>
-                            <div>× ${Number(i.quantity || 1)}</div>
-                            <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
-                            <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
-                        </div>`;
-                    }).join('');
-                    el.querySelectorAll('.btn-list-auction').forEach(btn => {
-                        btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
-                    });
-                }
+                renderInventoryList();
             } catch (e) {
                 userInventory = [];
                 const el = document.getElementById('my-inventory-list');
@@ -2220,26 +2364,48 @@
                         if (!seen.has(k)) { apiPur = apiPur.concat([p]); seen.add(k); }
                     });
                 }
-                userPurchases = apiPur.slice(0, 30);
+                userPurchases = apiPur.slice(0, 30).map(classifyOwnedRow);
                 const el = document.getElementById('purchase-history-list');
                 const countEl = document.getElementById('purchases-count');
+                const nav = document.getElementById('shop-history-subnav');
                 if (countEl) countEl.textContent = userPurchases.length + ' purchase' + (userPurchases.length !== 1 ? 's' : '');
+                if (window.ShopTaxonomy) {
+                    window.ShopTaxonomy.renderChips(nav, inventorySubcatTabs(userPurchases), currentHistorySubcat, (id) => {
+                        currentHistorySubcat = id;
+                        loadPurchases();
+                    });
+                }
                 if (el) {
+                    const rows = currentHistorySubcat === 'all'
+                        ? userPurchases
+                        : userPurchases.filter(p => p.subcategory === currentHistorySubcat);
                     if (userPurchases.length === 0) el.innerHTML = '<p style="margin:0;">No purchases yet.</p>';
-                    else el.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + userPurchases.map(p => {
-                        const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
-                        let price = '';
-                        if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
-                        else if (p.price_type === 'paypal_mn2_hosting') {
-                            const usd = (p.price_paid_points && p.price_paid_points.usd != null) ? Number(p.price_paid_points.usd).toFixed(2) : '';
-                            price = usd ? ('$' + usd + ' PayPal') : 'PayPal hosting';
-                            if (p.purchase_status) price += ' · ' + p.purchase_status;
-                        } else if (p.price_type === 'mn2' || p.price_type === 'mn2_onchain') {
-                            const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
-                            price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
-                        } else if (p.price_paid_points) price = 'points';
-                        return `<li><strong>${p.item_name || p.item_id}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
-                    }).join('') + '</ul>';
+                    else if (!rows.length) el.innerHTML = '<p style="margin:0;">No purchases in this subcategory.</p>';
+                    else {
+                        const groups = {};
+                        rows.forEach(p => {
+                            const key = p.subcategory || 'other';
+                            (groups[key] = groups[key] || []).push(p);
+                        });
+                        el.innerHTML = Object.keys(groups).map(key => {
+                            const label = (window.ShopTaxonomy && window.ShopTaxonomy.subcatLabel(key)) || key;
+                            const items = groups[key].map(p => {
+                                const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+                                let price = '';
+                                if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
+                                else if (p.price_type === 'paypal_mn2_hosting') {
+                                    const usd = (p.price_paid_points && p.price_paid_points.usd != null) ? Number(p.price_paid_points.usd).toFixed(2) : '';
+                                    price = usd ? ('$' + usd + ' PayPal') : 'PayPal hosting';
+                                    if (p.purchase_status) price += ' · ' + p.purchase_status;
+                                } else if (p.price_type === 'mn2' || p.price_type === 'mn2_onchain') {
+                                    const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
+                                    price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
+                                } else if (p.price_paid_points) price = 'points';
+                                return `<li><strong>${shopEscape(p.item_name || p.item_id)}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
+                            }).join('');
+                            return `<h4 style="margin:14px 0 6px;color:var(--secondary);font-size:0.92rem;">${shopEscape(label)}</h4><ul style="margin:0; padding-left: 1.2rem;">${items}</ul>`;
+                        }).join('');
+                    }
                 }
             } catch (e) {
                 userPurchases = [];
@@ -2252,9 +2418,21 @@
             const root = document.getElementById('auction-listings');
             if (!root) return;
             const search = ((document.getElementById('auction-search-input') || {}).value || '').trim().toLowerCase();
-            let rows = auctionListings || [];
+            const classified = (auctionListings || []).map(classifyOwnedRow);
+            if (window.ShopTaxonomy) {
+                window.ShopTaxonomy.renderChips(
+                    document.getElementById('shop-auction-subnav'),
+                    inventorySubcatTabs(classified),
+                    currentAuctionSubcat,
+                    (id) => { currentAuctionSubcat = id; renderAuctionListings(); }
+                );
+            }
+            let rows = classified;
             if (search) {
                 rows = rows.filter(l => String(l.item_name || l.item_id || '').toLowerCase().includes(search));
+            }
+            if (currentAuctionSubcat && currentAuctionSubcat !== 'all') {
+                rows = rows.filter(l => l.subcategory === currentAuctionSubcat);
             }
             if (!rows.length) {
                 root.innerHTML = '<div class="auction-card" style="grid-column:1/-1;color:var(--text-secondary);">No active listings yet. Open My Stall to list an owned item.</div>';
