@@ -30,9 +30,9 @@ def test_shop_purchases_source_is_shop_db_only():
     from backend.routes import shop_routes
 
     src = inspect.getsource(shop_routes.shop_purchases)
-    assert "get_purchases" in src
+    assert "collect_shop_purchases" in src
     assert "list_user_orders" not in src
-    assert "mn2_masternode_hosting" not in src
+    assert "collect_hosting_orders" not in src
     assert not hasattr(shop_routes, "shop_orders")
 
 
@@ -96,7 +96,7 @@ def test_shop_purchases_empty_and_error_payload():
         assert payload.get("purchases") == []
 
 
-def test_shop_and_profile_markup_has_two_order_lists():
+def test_shop_and_profile_markup_has_three_order_lists():
     shop = (ROOT / "shop/index.html").read_text(encoding="utf-8")
     profile = (ROOT / "profile/index.html").read_text(encoding="utf-8")
     assert 'id="purchase-history-card"' in shop
@@ -104,25 +104,27 @@ def test_shop_and_profile_markup_has_two_order_lists():
     assert 'id="shop-order-status-subnav"' in shop
     assert 'id="shop-history-subnav"' in shop
     assert 'id="stall-order-list"' in shop
-    assert "Purchases" in shop
+    assert 'id="mn2-hosting-order-list"' in shop
+    assert "Shop orders" in shop
+    assert "Masternode hosting" in shop
     assert "Stall listings" in shop
     assert 'id="shop-order-pdf-btn"' in shop
     assert "shop-order-list.js" in shop
     assert "shop-taxonomy.js" in shop
     assert 'id="profile-shop-order-list"' in profile
+    assert 'id="profile-mn2-hosting-order-list"' in profile
     assert 'id="profile-shop-stall-list"' in profile
     assert 'id="profile-shop-order-pdf-btn"' in profile
     assert "shop-order-list.js" in profile
     js = (ROOT / "static/js/shop-order-list.js").read_text(encoding="utf-8")
     assert "/api/shop/purchases" in shop
     assert "/api/shop/stall-orders" in shop
+    assert "/api/shop/hosting-orders" in shop
+    assert "loadHostingOrders" in shop
     assert "/api/shop/order-pdf" in js
     assert "/api/shop/orders" not in shop
     assert "/api/shop/orders" not in profile
-    assert "mn2-hosting-order-list" not in shop
-    assert "mn2-hosting-order-list" not in profile
-    assert "list_user_orders" not in js
-    assert "/api/shop/orders" not in js
+    assert "formatPayment" in js
     assert "shop-order-check" in js
 
 

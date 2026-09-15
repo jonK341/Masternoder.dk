@@ -1,4 +1,4 @@
-"""Shop purchases + stall listing APIs used by the two-list account view."""
+"""Shop purchases, hosting, and stall listing APIs for the account order view."""
 from __future__ import annotations
 
 import json
@@ -156,3 +156,78 @@ def test_build_user_order_lists_keeps_sources_separate(monkeypatch):
     blob = json.dumps(out)
     assert "private_key" not in blob
     assert "wif" not in blob
+
+
+def test_hosting_orders_api_returns_user_rows_and_site_stats(monkeypatch):
+    app = _shop_app()
+    monkeypatch.setattr(
+        "backend.services.mn2_masternode_hosting_service.list_user_orders",
+        lambda user_id, limit=200: [
+            {
+                "order_id": "host-1",
+                "user_id": "alice",
+                "status": "paid",
+                "slots": 2,
+                "payment_method": "paypal",
+                "usd_total": 9.98,
+                "paid_at": "2026-09-10T12:00:00Z",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_masternode_hosting_service.hosting_stats",
+        lambda: {
+            "paid_orders": 367,
+            "pending_orders": 3,
+            "by_payment_method": {"paypal": 350, "mn2": 12, "credits": 5},
+        },
+    )
+    with app.test_client() as client:
+        r = client.get("/api/shop/hosting-orders?user_id=alice&limit=20")
+    assert r.status_code == 200
+    body = r.get_json() or {}
+    assert body.get("success") is True
+    rows = body.get("hosting") or []
+    assert len(rows) == 1
+    assert rows[0].get("source") == "masternode_hosting"
+    assert rows[0].get("payment_method") == "paypal"
+    assert rows[0].get("payment_method_label") == "PayPal"
+    assert body.get("site_paid_orders") == 367
+    assert body.get("site_paid_by_payment_method", {}).get("paypal") == 350
+    assert "private_key" not in json.dumps(rows)
+
+
+def test_collect_shop_purchases_excludes_hosting(monkeypatch):
+    from backend.services.shop_order_list_service import collect_shop_purchases
+
+    monkeypatch.setattr(
+        "backend.services.shop_db_service.get_purchases",
+        lambda user_id, limit=50: [
+            {
+                "id": 1,
+                "item_id": "booster-1",
+                "item_name": "Booster",
+                "quantity": 1,
+                "price_type": "coins",
+                "price_paid_coins": 10,
+                "purchase_status": "completed",
+                "created_at": "2026-09-01T00:00:00Z",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_masternode_hosting_service.list_user_orders",
+        lambda user_id, limit=200: [
+            {
+                "order_id": "host-9",
+                "user_id": user_id,
+                "status": "paid",
+                "slots": 1,
+                "payment_method": "paypal",
+            }
+        ],
+    )
+    rows = collect_shop_purchases("alice", limit=20)
+    assert len(rows) == 1
+    assert rows[0]["item_id"] == "booster-1"
+    assert all(r.get("source") != "masternode_hosting" for r in rows)
