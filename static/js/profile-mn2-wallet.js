@@ -322,9 +322,9 @@
       depositErrEl.style.display = 'none';
       depositErrEl.textContent = '';
     }
-    var hasAddr = forceNew || hasDepositAddress(addrEl);
+    var hasAddr = hasDepositAddress(addrEl);
     var promise;
-    if (hasAddr && forceNew !== false) {
+    if (forceNew === true || (hasAddr && forceNew !== false && forceNew !== undefined)) {
       promise = fetchJson(base() + '/api/mn2/wallet/refresh', {
         method: 'POST',
         body: { user_id: user },
@@ -445,22 +445,32 @@
     }
   }
 
+  function showWalletTab(tab) {
+    var nav = document.getElementById('profile-wallet-subnav');
+    var panels = document.querySelectorAll('[data-wallet-panel]');
+    var active = tab || 'overview';
+    if (nav) {
+      nav.querySelectorAll('[data-wallet-tab]').forEach(function (b) {
+        var on = b.getAttribute('data-wallet-tab') === active;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+    panels.forEach(function (p) {
+      var on = p.getAttribute('data-wallet-panel') === active;
+      p.style.display = on ? 'block' : 'none';
+    });
+  }
+
   function initWalletSubTabs() {
     var nav = document.getElementById('profile-wallet-subnav');
     if (!nav || nav._wired) return;
     nav._wired = true;
-    var panels = document.querySelectorAll('[data-wallet-panel]');
+    showWalletTab('overview');
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-wallet-tab]');
       if (!btn) return;
-      var tab = btn.getAttribute('data-wallet-tab');
-      nav.querySelectorAll('[data-wallet-tab]').forEach(function (b) {
-        b.classList.toggle('active', b === btn);
-        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
-      });
-      panels.forEach(function (p) {
-        p.style.display = p.getAttribute('data-wallet-panel') === tab ? 'block' : 'none';
-      });
+      showWalletTab(btn.getAttribute('data-wallet-tab'));
     });
   }
 
@@ -516,4 +526,17 @@
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var card = document.getElementById('profile-mn2-wallet-card');
+    if (!card || card.hidden) return;
+    var route = (new URLSearchParams(window.location.search).get('tab') || '').toLowerCase();
+    if (route === 'wallet' || !route) {
+      try {
+        load();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  });
 })(window);

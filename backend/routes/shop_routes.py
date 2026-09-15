@@ -1120,6 +1120,35 @@ def _seed_shop_items():
         item_id="mn2-5d-withdrawal-beacon",
     )
 
+    # Shop wave v8 — orders UI, micro-tx, agent peer mesh, cron settlement (Sep 2026)
+    _v8 = ["shop_wave_v8", "sep2026", "agent_mesh", "micro_tx"]
+    shop_wave_v8 = [
+        ("Order Ledger PDF Export", "Unlock styled PDF export for checked shop + hosting orders on Profile and Shop account.", "mn2_services", 88, "📄", "rare"),
+        ("My Orders Easy View", "Three-panel orders layout: shop purchases, masternode hosting, stall listings with payment column.", "mn2_services", 72, "🧾", "rare"),
+        ("Micro-TX Burst Pass 24h", "Enables dust on-chain MN2 reward bursts from agent cron for 24h (0.00001 MN2 slots).", "boosts", 95, "⚡", "epic"),
+        ("Agent Peer Mesh Relay", "Agents send dust MN2 to each other on-chain — mesh activity for monitoring agents.", "tech", 110, "🔗", "epic"),
+        ("Agent Cron Settlement+", "Priority agent settlement tick: battle, shop, micro-tx, peer mesh, chain payouts.", "boosts", 65, "🤖", "rare"),
+        ("Profile Wallet Multi-Address", "Create extra labeled MN2 deposit addresses from Profile wallet tab.", "mn2_crypto", 55, "👛", "rare"),
+        ("Chain Activity Monitor Skin", "High-contrast skin for Profile system monitor (game, battle, peer mesh txs).", "cosmetic", 48, "📡", "common"),
+        ("Hosting Order Tracker", "Track your masternode hosting orders beside shop purchases (PayPal, MN2, on-chain).", "mn2_services", 42, "🏛️", "common"),
+        ("Pending Orders Radar", "Highlights unfinished PayPal quotes and on-chain pending payments in orders view.", "tech", 38, "📶", "common"),
+        ("Stall Listing Pro", "Extra stall listing slots and faster refresh on My Stall panel.", "inventory", 75, "🏪", "rare"),
+    ]
+    v8_ids = [
+        "shop-v8-order-pdf-export",
+        "shop-v8-orders-easy-view",
+        "shop-v8-micro-tx-burst",
+        "shop-v8-agent-peer-mesh",
+        "shop-v8-agent-cron-plus",
+        "shop-v8-profile-multi-wallet",
+        "shop-v8-chain-monitor-skin",
+        "shop-v8-hosting-order-tracker",
+        "shop-v8-pending-orders-radar",
+        "shop-v8-stall-listing-pro",
+    ]
+    for i, (n, d, cat, price, icon, rarity) in enumerate(shop_wave_v8):
+        add(n, d, cat, price, icon, rarity, tags=_v8, item_id=v8_ids[i])
+
     # ---- Top 25 Legends: flagship numbered collectible series (June 2026 wave) ----
     # 25 ranked, escalating items spanning every MasterNoder surface. Coin-priced so
     # they work with coins / in-wallet MN2 / on-chain MN2 / PayPal and earn loyalty.
