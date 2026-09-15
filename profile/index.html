@@ -1701,6 +1701,7 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/profile-hub-subtabs.js?v=20260915"></script>
         <script src="/static/js/profile-mn2-wallet.js?v=20260915"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
@@ -3984,7 +3985,9 @@
                 x.classList.toggle('active', on);
                 x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-            if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
+            if (window.ProfileHubSubtabs && typeof window.ProfileHubSubtabs.onMainRoute === 'function') {
+                window.ProfileHubSubtabs.onMainRoute(activeRoute);
+            } else if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
                 window.ProfileMn2Wallet.load();
             }
             if (activeRoute === 'security') {

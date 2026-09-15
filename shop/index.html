@@ -329,6 +329,32 @@
             color: #000;
             border-color: var(--primary);
         }
+        .shop-subnav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 16px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-primary);
+            background: rgba(0,0,0,0.22);
+        }
+        .shop-subnav-btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-primary);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .shop-subnav-btn.active {
+            background: linear-gradient(135deg, var(--secondary, #00d4ff), #0099cc);
+            color: #000;
+            border-color: transparent;
+        }
+        .shop-panel > .card[hidden] { display: none !important; }
         .shop-panel { display: none; animation: shopFade 0.2s ease; }
         .shop-panel.active { display: block; }
         @keyframes shopFade { from { opacity: 0.6; } to { opacity: 1; } }
@@ -738,6 +764,7 @@
 
         <!-- Buy Coins with PayPal -->
         <div id="shop-panel-coins" class="shop-panel" role="tabpanel" data-panel="coins">
+        <nav class="shop-subnav" data-shop-subnav="coins" aria-label="PayPal sections"></nav>
         <div id="monetization-allowance-banner" class="card" style="display:none; margin-bottom: var(--spacing-md); border: 1px solid rgba(255,170,0,0.35); background: rgba(255,170,0,0.07); padding: var(--spacing-md);">
             <p id="monetization-allowance-text" style="margin:0 0 10px; color: var(--text-primary); font-size: 0.92rem;"></p>
             <div id="monetization-overage-actions" style="display:none; flex-wrap: wrap; gap: 8px;"></div>
@@ -789,7 +816,8 @@
 
         <!-- MN2 Wallet (Phase 6) -->
         <div id="shop-panel-mn2" class="shop-panel" role="tabpanel" data-panel="mn2">
-        <div class="card" style="margin-bottom: var(--spacing-lg); border: 1px solid rgba(0, 212, 255, 0.4); background: rgba(0, 212, 255, 0.06); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+        <nav class="shop-subnav" data-shop-subnav="mn2" aria-label="MN2 sections"></nav>
+        <div class="card" id="mn2-overview-card" style="margin-bottom: var(--spacing-lg); border: 1px solid rgba(0, 212, 255, 0.4); background: rgba(0, 212, 255, 0.06); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
             <h2 style="margin: 0 0 8px; font-size: 1.05rem; color: var(--secondary);">MN2 in one picture</h2>
             <p style="margin: 0; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55; max-width: 48rem;">
                 <strong style="color: var(--text-primary);">Deposit</strong> → we credit your in-app MN2 balance after confirmations.
@@ -798,7 +826,7 @@
             </p>
             <div data-ptc-placement="shop_mn2" data-ptc-limit="1"></div>
         </div>
-        <div class="card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+        <div class="card" id="mn2-hosting-services-card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
             <h2 style="margin: 0 0 10px; font-size: 1.05rem; color: var(--primary);">MN2 platform services</h2>
             <p style="margin: 0 0 8px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Hosted masternode slots, PayPal on-ramp, staking pool, and P2P/trader market. Masternode hosting checks out here with PayPal — no need to leave the shop.</p>
             <p id="mn2-hosting-slot-meter" style="margin: 0 0 14px; font-size: 0.85rem; color: var(--secondary);">Loading slot availability…</p>
@@ -901,6 +929,7 @@
 
         <!-- Deals & VIP (Shop V9.2 monetization) -->
         <div id="shop-panel-deals" class="shop-panel" role="tabpanel" data-panel="deals">
+            <nav class="shop-subnav" data-shop-subnav="deals" aria-label="Deals sections"></nav>
             <div class="card" style="margin-bottom: var(--spacing-lg); border: 2px solid rgba(255,215,0,0.45); background: linear-gradient(135deg, rgba(255,215,0,0.10), rgba(170,0,255,0.06)); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
                 <h2 style="margin:0 0 6px; color: var(--primary);">⭐ Deals &amp; VIP</h2>
                 <p style="margin:0; color: var(--text-secondary); font-size:0.92rem; max-width:52rem;">Membership perks, mystery boxes, a daily wheel, flash sales, gifting, and loyalty cashback. All pay with your existing coins / MN2 balance.</p>
@@ -931,7 +960,7 @@
             </div>
 
             <!-- Spin the wheel -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="spin-wheel-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">🎡 Spin the Wheel</h3>
                 <div id="spin-status" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:10px;">Loading…</div>
                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -942,7 +971,7 @@
             </div>
 
             <!-- Mystery boxes -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="mystery-boxes-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">📦 Mystery Boxes</h3>
                 <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Each box has published odds. VIP members get a discount.</p>
                 <div id="mystery-boxes-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
@@ -950,14 +979,14 @@
             </div>
 
             <!-- Flash sales -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="flash-sales-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">⚡ Flash Sales</h3>
                 <div id="flash-sales-meta" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:10px;"></div>
                 <div id="flash-sales-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
             </div>
 
             <!-- Gifting -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="gift-coins-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">🎁 Gift coins</h3>
                 <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Send coins to another profile by their <code>game_user_id</code>.</p>
                 <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
@@ -985,7 +1014,8 @@
 
         <!-- My Inventory (Phase 4 migration) -->
         <div id="shop-panel-account" class="shop-panel" role="tabpanel" data-panel="account">
-        <div class="card" style="margin-top: var(--spacing-xl); border: 2px solid rgba(0,212,255,0.45);">
+        <nav class="shop-subnav" data-shop-subnav="account" aria-label="Account sections"></nav>
+        <div class="card" id="my-stall-card" style="margin-top: var(--spacing-xl); border: 2px solid rgba(0,212,255,0.45);">
             <div style="padding: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <div>
                     <h3 style="color: var(--secondary); margin: 0;">🏷️ My Stall</h3>
@@ -997,7 +1027,7 @@
                 <div id="my-stall-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
             </div>
         </div>
-        <div class="card" style="margin-top: var(--spacing-xl); border: 2px solid var(--primary);">
+        <div class="card" id="my-inventory-card" style="margin-top: var(--spacing-xl); border: 2px solid var(--primary);">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('my-inventory-body').style.display = document.getElementById('my-inventory-body').style.display === 'none' ? 'block' : 'none';">
                 <h3 style="color: var(--primary); margin: 0;">📦 My Inventory</h3>
                 <span id="inventory-count" style="color: var(--text-secondary);">0 items</span>
@@ -1007,7 +1037,7 @@
             </div>
         </div>
         
-        <div class="card" style="margin-top: var(--spacing-md); border: 2px solid rgba(170,0,255,0.45);">
+        <div class="card" id="digital-downloads-card" style="margin-top: var(--spacing-md); border: 2px solid rgba(170,0,255,0.45);">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('digital-downloads-body').style.display = document.getElementById('digital-downloads-body').style.display === 'none' ? 'block' : 'none';">
                 <h3 style="color: #cc88ff; margin: 0;">⬇ Digital downloads</h3>
                 <span id="digital-downloads-count" style="color: var(--text-secondary);">—</span>
@@ -1018,7 +1048,7 @@
         </div>
         
         <!-- Purchase History (Phase 4 migration) -->
-        <div class="card" style="margin-top: var(--spacing-md); border: 2px solid var(--secondary);">
+        <div class="card" id="purchase-history-card" style="margin-top: var(--spacing-md); border: 2px solid var(--secondary);">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('purchase-history-body').style.display = document.getElementById('purchase-history-body').style.display === 'none' ? 'block' : 'none';">
                 <h3 style="color: var(--secondary); margin: 0;">🕐 Purchase History</h3>
                 <span id="purchases-count" style="color: var(--text-secondary);">0 purchases</span>
@@ -1056,6 +1086,7 @@
     </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/shop-subnav.js?v=20260915"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -1293,6 +1324,9 @@
             try {
                 if (history.replaceState) history.replaceState(null, '', '#shop-' + name);
             } catch (e) {}
+            if (window.ShopSubnav && typeof window.ShopSubnav.onPanel === 'function') {
+                window.ShopSubnav.onPanel(name);
+            }
         }
 
         function initShopTabs() {
