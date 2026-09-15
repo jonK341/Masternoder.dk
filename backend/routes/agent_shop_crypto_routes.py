@@ -81,3 +81,18 @@ def execute_mn2_purchase():
 
     body, status = purchase_with_mn2_balance(user_id, item_id, quantity, agent_id=agent_id)
     return jsonify(body), status
+
+
+@agent_shop_crypto_bp.route("/api/agent/shop/tick", methods=["POST"])
+def agent_shop_tick():
+    """Cron/agent finish-move: buy cheapest catalog items with MN2 for bound users."""
+    if not _authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    dry_run = bool(data.get("dry_run") or request.args.get("dry_run"))
+    try:
+        max_purchases = int(data.get("max_purchases") or request.args.get("max_purchases") or 6)
+    except (TypeError, ValueError):
+        max_purchases = 6
+    from backend.services.agent_shop_tick_service import run_agent_shop_tick
+    return jsonify(run_agent_shop_tick(max_purchases=max_purchases, dry_run=dry_run)), 200

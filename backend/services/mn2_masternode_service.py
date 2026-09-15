@@ -1261,10 +1261,11 @@ def _start_masternode(
     return last_err if last_err != "masternode start failed" else None
 
 
-def maintain_ping_loop() -> Dict[str, Any]:
+def maintain_ping_loop(*, skip_explorer: bool = False) -> Dict[str, Any]:
     """
     Watchdog: re-issue startmasternode when ENABLED activetime stops increasing.
     Does not replace the daemon's internal ping thread — only restarts it after stalls.
+    skip_explorer: always re-issue start (do not wait on listmasternodes health).
     """
     ops = _ops_cfg()
     if ops.get("maintain_ping_loop") is False:
@@ -1274,7 +1275,7 @@ def maintain_ping_loop() -> Dict[str, Any]:
     if not alias:
         return {"success": False, "error": "no primary_ping_alias or masternode.conf entry"}
 
-    if _ping_loop_healthy():
+    if not skip_explorer and _ping_loop_healthy():
         return {
             "success": True,
             "skipped": True,
@@ -1321,10 +1322,17 @@ def _start_masternode_alias(alias: str) -> Optional[str]:
     return _start_masternode(alias)
 
 
-def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, Any]:
+def provision_host(
+    host_id: str,
+    order_id: Optional[str] = None,
+    *,
+    skip_explorer: bool = False,
+) -> Dict[str, Any]:
     """
     Fully automated post-payment provisioning: reserve collateral, write masternode.conf,
     start the node, and update the registry. Retries safely when collateral is confirming.
+
+    skip_explorer: skip listmasternodes matching (avoids hang when RPC list is slow).
     """
     host_id = (host_id or "").strip()
     if not host_id:
@@ -1340,8 +1348,11 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
         if not host:
             return {"success": False, "error": "host not found"}
 
-    chain = network_masternodes(limit=100).get("list") or []
-    on_chain = _match_on_chain(host, chain if isinstance(chain, list) else [])
+    if skip_explorer:
+        on_chain = None
+    else:
+        chain = network_masternodes(limit=100).get("list") or []
+        on_chain = _match_on_chain(host, chain if isinstance(chain, list) else [])
     if on_chain:
         register_host({
             "id": host_id,
@@ -1461,8 +1472,10 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
         "notes": None if not start_err else f"Conf written; start pending: {start_err}",
     })
 
-    chain2 = network_masternodes(limit=100).get("list") or []
-    matched = _match_on_chain({"broadcast_address": broadcast_address}, chain2 if isinstance(chain2, list) else [])
+    matched = None
+    if not skip_explorer:
+        chain2 = network_masternodes(limit=100).get("list") or []
+        matched = _match_on_chain({"broadcast_address": broadcast_address}, chain2 if isinstance(chain2, list) else [])
     if matched:
         register_host({
             "id": host_id,
@@ -1490,9 +1503,9 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
     }
 
 
-def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
+def process_pending_hosts(limit: int = 20, *, skip_explorer: bool = False) -> Dict[str, Any]:
     """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
-    ping = maintain_ping_loop()
+    ping = maintain_ping_loop(skip_explorer=skip_explorer)
     pending_status = {"queued", "provisioning", "planned"}
     hosts = list_hosts(include_internal=True)
     todo = [h for h in hosts if (h.get("status") or "").lower() in pending_status][: max(1, int(limit))]
@@ -1501,8 +1514,177 @@ def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
         hid = h.get("id")
         if not hid:
             continue
-        results.append({"host_id": hid, **provision_host(str(hid))})
+        results.append({"host_id": hid, **provision_host(str(hid), skip_explorer=skip_explorer)})
     return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
+
+
+def start_rented_hosts_via_rpc(limit: int = 50) -> Dict[str, Any]:
+    """
+    Re-issue startmasternode for rented hosts that already have collateral / conf aliases.
+    Does not call listmasternodes (explorer-safe).
+    """
+    from backend.services import mn2_rpc_client as rpc
+
+    _unlock_wallet()
+    unlocked = _unlock_collateral_utxos()
+    results: List[Dict[str, Any]] = []
+    fleet = None
+    if multi_ping_enabled():
+        fleet_err = _register_fleet_ping_targets()
+        fleet = {"set": "all", "error": fleet_err, "ok": fleet_err is None}
+
+    hosts = list_hosts(include_internal=True)
+    n = 0
+    skipped: List[Dict[str, Any]] = []
+    for h in hosts:
+        if not isinstance(h, dict):
+            continue
+        st = (h.get("status") or "").lower()
+        if st not in ("active", "provisioning", "queued", "planned"):
+            continue
+        hid = str(h.get("id") or "")
+        if not hid:
+            continue
+        if not h.get("collateral_txid"):
+            skipped.append({"id": hid, "reason": "no_collateral"})
+            continue
+        alias = _alias_from_host_id(hid)
+        err = _start_masternode(alias, skip_privkey_sync=True)
+        results.append({"id": hid, "alias": alias, "error": err, "ok": err is None})
+        n += 1
+        if n >= max(1, int(limit)):
+            break
+    return {
+        "success": True,
+        "unlocked_utxos": unlocked,
+        "fleet": fleet,
+        "started": results,
+        "skipped": skipped,
+        "started_ok": sum(1 for r in results if r.get("ok")),
+    }
+
+
+def rented_masternodes_snapshot() -> Dict[str, Any]:
+    """Local registry + daemon health without hanging on explorer RPC."""
+    hosts = list_hosts(include_internal=True)
+    by_status: Dict[str, int] = {}
+    pending = []
+    active = []
+    for h in hosts:
+        st = (h.get("status") or "unknown").lower()
+        by_status[st] = by_status.get(st, 0) + 1
+        row = {
+            "id": h.get("id"),
+            "label": h.get("label"),
+            "status": st,
+            "has_collateral": bool(h.get("collateral_txid")),
+            "owner_user_id": h.get("owner_user_id"),
+        }
+        if st in ("queued", "provisioning", "planned"):
+            pending.append(row)
+        elif st == "active":
+            active.append(row)
+    daemon = {"status": "unknown"}
+    try:
+        from backend.services.mn2_daemon_health_service import probe_daemon
+        daemon = probe_daemon(extended=False)
+    except Exception as exc:
+        daemon = {"status": "error", "error": str(exc)[:200]}
+    healthy = bool(daemon.get("healthy") or (daemon.get("health") or {}).get("status") == "healthy")
+    cfg = get_config()
+    paid_orders = 0
+    paid_slots = 0
+    missing_host_rows = 0
+    try:
+        from backend.services import mn2_masternode_hosting_service as hosting
+        stats = hosting.paid_rental_stats(existing_host_ids={str(h.get("id")) for h in hosts if h.get("id")})
+        paid_orders = int(stats.get("paid_orders") or 0)
+        paid_slots = int(stats.get("paid_slots") or 0)
+        missing_host_rows = int(stats.get("missing_host_rows") or 0)
+    except Exception:
+        pass
+    blockers = []
+    auto_provision = bool(cfg.get("auto_provision", True))
+    if not healthy:
+        blockers.append("masternoder2d_rpc_unreachable")
+    if not auto_provision:
+        blockers.append("auto_provision_disabled")
+    if not pending and not active and paid_orders == 0:
+        blockers.append("no_rented_hosts_in_registry")
+    if missing_host_rows:
+        blockers.append("paid_orders_missing_registry_hosts")
+    if pending and healthy:
+        for p in pending:
+            if not p.get("has_collateral"):
+                blockers.append("collateral_pool_or_confirmations")
+                break
+    need_work = bool(pending) or bool(active) or missing_host_rows > 0 or paid_orders > 0
+    return {
+        "success": True,
+        "daemon_healthy": healthy,
+        "daemon": daemon,
+        "host_count": len(hosts),
+        "by_status": by_status,
+        "pending": pending,
+        "active_count": len(active),
+        "paid_orders": paid_orders,
+        "paid_slots": paid_slots,
+        "missing_host_rows": missing_host_rows,
+        "auto_provision": auto_provision,
+        "can_bring_online": healthy and auto_provision and need_work,
+        "blockers": list(dict.fromkeys(blockers)),
+    }
+
+
+def bring_rented_masternodes_online(limit: int = 20) -> Dict[str, Any]:
+    """
+    Attempt to provision + ping rented/paid hosts so they go ENABLED on-chain.
+    Safe when RPC is down — returns blockers instead of hanging forever.
+    Restores paid orders that lost fleet registry rows, then startmasternode.
+    """
+    restored: Dict[str, Any]
+    try:
+        from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
+        restored = ensure_paid_hosts_in_registry()
+    except Exception as exc:
+        restored = {"success": False, "error": str(exc)[:300]}
+    snap = rented_masternodes_snapshot()
+    out: Dict[str, Any] = {
+        "success": True,
+        "order_sync": restored,
+        "snapshot": snap,
+        "provision": None,
+        "starts": None,
+        "ping": None,
+    }
+    if not snap.get("daemon_healthy"):
+        out["success"] = False
+        out["error"] = "Cannot start rented masternodes: wallet daemon RPC is down."
+        return out
+    if not snap.get("auto_provision"):
+        out["success"] = False
+        out["error"] = "auto_provision disabled in mn2_masternode_config.json"
+        return out
+    if int(snap.get("host_count") or 0) == 0 and int(snap.get("paid_orders") or 0) == 0:
+        out["success"] = False
+        out["error"] = "No rented masternodes in the hosting registry or paid-order list."
+        return out
+    try:
+        out["provision"] = process_pending_hosts(limit=limit, skip_explorer=True)
+    except Exception as exc:
+        out["success"] = False
+        out["error"] = str(exc)[:300]
+        return out
+    try:
+        out["starts"] = start_rented_hosts_via_rpc(limit=limit)
+    except Exception as exc:
+        out["starts"] = {"success": False, "error": str(exc)[:300]}
+    try:
+        out["ping"] = maintain_ping_loop(skip_explorer=True)
+    except Exception as exc:
+        out["ping"] = {"success": False, "error": str(exc)[:300]}
+    out["snapshot_after"] = rented_masternodes_snapshot()
+    return out
 
 
 def _maybe_capacity_discord_alert(slots_available: int, max_nodes: int, hosted: int) -> None:

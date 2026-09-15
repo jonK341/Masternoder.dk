@@ -31,6 +31,46 @@
     margin-bottom: 16px;
 }
 
+.profile-hub-subnav.page-tabs {
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.22);
+}
+
+.profile-hub-subnav .tab-btn {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+}
+
+.profile-shop-inv-subnav,
+.shop-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.shop-subnav-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: #cfe;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.shop-subnav-btn.active {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: #000;
+    border-color: transparent;
+}
+
 .profile-layer-security-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

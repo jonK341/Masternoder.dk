@@ -429,7 +429,11 @@
     });
 
     function switchMainTab(tabId) {
-        activeMainTab = tabId || 'home';
+        var raw = tabId || 'home';
+        if (raw !== 'home' && gameToCategory[raw] && raw.indexOf('cat-') !== 0) {
+            raw = 'cat-' + gameToCategory[raw];
+        }
+        activeMainTab = raw;
         localStorage.setItem('casino_main_tab', activeMainTab);
         document.querySelectorAll('.casino-main-tab').forEach(function (btn) {
             var on = btn.getAttribute('data-tab') === activeMainTab;
@@ -492,11 +496,50 @@
                 '<button type="button" class="casino-featured-play">Quick play</button>';
             card.querySelector('.casino-featured-play').addEventListener('click', function (e) {
                 e.stopPropagation();
-                switchMainTab(fg.id);
+                if (window.__casinoSwitchGame) window.__casinoSwitchGame(fg.id);
+                else switchMainTab(fg.id);
             });
-            card.addEventListener('click', function () { switchMainTab(fg.id); });
+            card.addEventListener('click', function () {
+                if (window.__casinoSwitchGame) window.__casinoSwitchGame(fg.id);
+                else switchMainTab(fg.id);
+            });
             grid.appendChild(card);
         });
+    }
+
+    var CASINO_CATEGORIES = [
+        { id: 'instant', label: '⚡ Instant', icon: '⚡' },
+        { id: 'tables', label: '🃏 Tables', icon: '🃏' },
+        { id: 'arcade', label: '🎮 Arcade', icon: '🎮' },
+        { id: 'slots', label: '🎰 Slots', icon: '🎰' },
+        { id: 'battle', label: '⚔️ Battle', icon: '⚔️' },
+        { id: 'live', label: '🏆 Live', icon: '🏆' },
+    ];
+
+    var gameToCategory = {};
+    var categoryPanels = {};
+
+    function resolveGameCategory(card, gameId) {
+        var lobby = (card.getAttribute('data-casino-lobby') || card.getAttribute('data-casino-category') || '').trim().toLowerCase();
+        if (lobby) return lobby;
+        if (gameId === 'slots' || gameId.indexOf('slot') === 0) return 'slots';
+        if (['battle-outcome', 'rps-meta', 'counter-pick'].indexOf(gameId) >= 0) return 'battle';
+        if (['blackjack', 'baccarat', 'video-poker', 'roulette', 'hilo', 'keno'].indexOf(gameId) >= 0) return 'tables';
+        if (['pvp-duel', 'rps', 'tournaments'].indexOf(gameId) >= 0) return gameId === 'tournaments' ? 'live' : 'arcade';
+        return 'instant';
+    }
+
+    function switchCasinoGame(gameId) {
+        var cat = gameToCategory[gameId] || 'instant';
+        switchMainTab('cat-' + cat);
+        var chip = document.querySelector('.casino-game-chip[data-game="' + gameId + '"]');
+        if (chip) {
+            document.querySelectorAll('.casino-game-chip').forEach(function (c) {
+                c.classList.toggle('active', c === chip);
+            });
+            var card = document.getElementById('casino-game-' + gameId);
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     function initMainTabNav() {
@@ -524,17 +567,55 @@
 
         if (grid) {
             var cards = grid.querySelectorAll('.casino-card[data-casino-game]');
+            var buckets = {};
+            CASINO_CATEGORIES.forEach(function (c) { buckets[c.id] = []; });
+
             cards.forEach(function (card) {
                 var gameId = card.getAttribute('data-casino-game');
-                var label = card.getAttribute('data-casino-label') || gameId;
+                var cat = resolveGameCategory(card, gameId);
+                if (!buckets[cat]) buckets[cat] = [];
+                buckets[cat].push({ card: card, gameId: gameId, label: card.getAttribute('data-casino-label') || gameId });
+                gameToCategory[gameId] = cat;
+                card.id = 'casino-game-' + gameId;
+            });
+
+            CASINO_CATEGORIES.forEach(function (cat) {
+                var items = buckets[cat.id] || [];
+                if (!items.length) return;
+
                 var panel = document.createElement('section');
-                panel.className = 'casino-tab-panel';
-                panel.id = 'casino-tab-' + gameId;
+                panel.className = 'casino-tab-panel casino-category-panel';
+                panel.id = 'casino-tab-cat-' + cat.id;
                 panel.setAttribute('role', 'tabpanel');
+                panel.setAttribute('data-category', cat.id);
                 panel.hidden = true;
-                panel.appendChild(card);
+
+                var subNav = document.createElement('div');
+                subNav.className = 'casino-games-nav';
+                subNav.setAttribute('aria-label', cat.label + ' games');
+                items.forEach(function (item) {
+                    var chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'casino-lobby-btn casino-game-chip';
+                    chip.setAttribute('data-game', item.gameId);
+                    chip.textContent = item.label;
+                    chip.addEventListener('click', function () {
+                        switchCasinoGame(item.gameId);
+                    });
+                    subNav.appendChild(chip);
+                });
+                panel.appendChild(subNav);
+
+                var inner = document.createElement('div');
+                inner.className = 'casino-category-games';
+                items.forEach(function (item) {
+                    inner.appendChild(item.card);
+                });
+                panel.appendChild(inner);
+
                 panelsRoot.insertBefore(panel, $('casino-tab-leaderboard'));
-                addTabBtn(gameId, label, activeMainTab === gameId);
+                categoryPanels[cat.id] = panel;
+                addTabBtn('cat-' + cat.id, cat.label, activeMainTab === 'cat-' + cat.id);
             });
             grid.remove();
         }
@@ -544,16 +625,28 @@
         addTabBtn('compete', '⚔️ Compete', activeMainTab === 'compete');
         addTabBtn('social', '🌐 Social', activeMainTab === 'social');
 
+        window.__casinoSwitchGame = switchCasinoGame;
+
+        var stored = localStorage.getItem('casino_main_tab') || '';
+        if (stored && stored.indexOf('cat-') !== 0 && gameToCategory[stored]) {
+            activeMainTab = 'cat-' + gameToCategory[stored];
+        }
+
         var deepTab = resolveDeepLinkTabFromUrl();
         if (deepTab) {
-            activeMainTab = deepTab;
+            activeMainTab = gameToCategory[deepTab] ? 'cat-' + gameToCategory[deepTab] : deepTab;
         } else {
             var hash = (window.location.hash || '').replace(/^#tab-/, '');
-            if (hash && document.getElementById('casino-tab-' + hash)) {
-                activeMainTab = hash;
+            if (hash) {
+                if (gameToCategory[hash]) activeMainTab = 'cat-' + gameToCategory[hash];
+                else if (document.getElementById('casino-tab-cat-' + hash)) activeMainTab = 'cat-' + hash;
+                else if (['home', 'leaderboard', 'activity', 'compete', 'social'].indexOf(hash) >= 0) activeMainTab = hash;
             }
         }
         switchMainTab(activeMainTab);
+        if (deepTab && gameToCategory[deepTab]) {
+            setTimeout(function () { switchCasinoGame(deepTab); }, 80);
+        }
         try {
             window.dispatchEvent(new CustomEvent('casino:ready'));
         } catch (e) { /* optional */ }
@@ -1670,7 +1763,7 @@
         el.innerHTML = '<span>⭐ ' + (data.badge_label || 'Slot of the Day') + '</span>' +
             '<span>' + (slot.icon || '🎰') + ' ' + (slot.label || slot.id) + '</span>';
         el.title = slot.blurb || 'Play today\'s featured slot';
-        el.onclick = function () { switchMainTab('slots'); };
+        el.onclick = function () { if (window.__casinoSwitchGame) window.__casinoSwitchGame('slots'); else switchMainTab('cat-slots'); };
     }
 
     async function refreshSeasonalBadge() {
@@ -1690,7 +1783,7 @@
             '<span>' + winLabel + '</span>' +
             '<span class="casino-seasonal-slots">' + slotLabels + '</span>';
         el.title = 'Limited-time slot reskins — same RTP, new look';
-        el.onclick = function () { switchMainTab('slots'); };
+        el.onclick = function () { if (window.__casinoSwitchGame) window.__casinoSwitchGame('slots'); else switchMainTab('cat-slots'); };
     }
 
     async function refreshVipLounge() {
@@ -1746,6 +1839,85 @@
         if (data.total_coins_earned) {
             el.innerHTML += '<p class="casino-ref-quest-total">Total quest coins earned: ' + data.total_coins_earned + '</p>';
         }
+    }
+
+    var casinoShopFilter = 'all';
+    var casinoShopItems = [];
+
+    async function refreshCasinoShop() {
+        var el = $('casino-shop');
+        var nav = $('casino-shop-subnav');
+        if (!el) return;
+        var data = await api('/api/casino/shop/catalog?user_id=' + encodeURIComponent(userId));
+        casinoShopItems = (data && data.items) || data.catalog || [];
+        if (!data || data.success === false) {
+            el.textContent = (data && data.error) || 'Casino shop catalog unavailable.';
+            return;
+        }
+        var cats = { all: casinoShopItems.length };
+        casinoShopItems.forEach(function (it) {
+            var k = it.category || 'other';
+            cats[k] = (cats[k] || 0) + 1;
+        });
+        var labels = {
+            all: 'All', avatar: 'Avatar', table_skin: 'Tables', card_back: 'Cards',
+            slot_theme: 'Slots', booster: 'Boosters', vip_flair: 'VIP', emote: 'Emotes',
+            celebration: 'Celebrations', token: 'Tokens', display: 'Display', banner: 'Banners'
+        };
+        if (nav) {
+            nav.innerHTML = Object.keys(cats).map(function (id) {
+                return '<a href="#casino-shop" data-cs-cat="' + id + '"' +
+                    (id === casinoShopFilter ? ' class="active"' : '') + '>' +
+                    (labels[id] || id) + ' (' + cats[id] + ')</a>';
+            }).join('');
+            nav.querySelectorAll('[data-cs-cat]').forEach(function (a) {
+                a.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    casinoShopFilter = a.getAttribute('data-cs-cat');
+                    renderCasinoShopGrid();
+                    nav.querySelectorAll('[data-cs-cat]').forEach(function (x) {
+                        x.classList.toggle('active', x === a);
+                    });
+                });
+            });
+        }
+        renderCasinoShopGrid();
+    }
+
+    function renderCasinoShopGrid() {
+        var el = $('casino-shop');
+        if (!el) return;
+        var rows = casinoShopFilter === 'all'
+            ? casinoShopItems
+            : casinoShopItems.filter(function (it) { return (it.category || 'other') === casinoShopFilter; });
+        if (!rows.length) {
+            el.innerHTML = '<p>No items in this subcategory.</p>';
+            return;
+        }
+        el.innerHTML = rows.map(function (it) {
+            var price = it.price_coins != null ? (it.price_coins + ' coins') : '';
+            if (it.price_mn2) price += (price ? ' · ' : '') + it.price_mn2 + ' MN2';
+            return '<div class="casino-shop-item' + (it.owned ? ' owned' : '') + '">' +
+                '<div class="casino-shop-icon">' + (it.icon || '🎁') + '</div>' +
+                '<strong>' + (it.name || it.id) + '</strong>' +
+                '<p>' + (it.description || '') + '</p>' +
+                '<div class="casino-shop-cat">' + (it.category || '') + '</div>' +
+                '<div class="casino-shop-price">' + price + '</div>' +
+                '<button type="button" class="casino-shop-buy" data-cs-buy="' + (it.id || '') + '"' +
+                (it.owned ? ' disabled' : '') + '>' + (it.owned ? 'Owned' : 'Buy') + '</button></div>';
+        }).join('');
+        el.querySelectorAll('[data-cs-buy]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var purchased = await api('/api/casino/shop/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, item_id: btn.getAttribute('data-cs-buy'), currency: activeCurrency }),
+                });
+                showToast(purchased.success ? 'Purchased' : (purchased.error || 'Purchase failed'));
+                refreshCasinoShop();
+                refreshBalance();
+            });
+        });
     }
 
     async function refreshCompeteTab() {
@@ -1843,6 +2015,7 @@
             }
         }
         await refreshAgentSpectator('casino-compete-spectator');
+        await refreshCasinoShop();
         await refreshMinesDuels();
         await refreshKenoSyndicates();
         await refreshBjTournament();
@@ -4579,6 +4752,7 @@
         safeRefresh('progression', refreshProgression);
         safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
+        safeRefresh('casinoShop', refreshCasinoShop);
         safeRefresh('crashCrewLobbies', refreshCrashCrewLobbies);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }

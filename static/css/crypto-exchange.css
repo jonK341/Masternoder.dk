@@ -527,6 +527,24 @@
 .cex-daemon-badge-daemon { background: rgba(167,139,250,0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; margin-left: 6px; }
 .cex-my-rentals { margin-top: 16px; }
 .cex-shop-active { font-size: 0.76rem; margin: 8px 0; color: rgba(255,255,255,0.65); }
+.cex-shop .shop-subnav, #cex-shop-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+.cex-shop .shop-subnav-btn, #cex-shop-subnav .shop-subnav-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.04);
+    color: #cfe;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.cex-shop .shop-subnav-btn.active { background: linear-gradient(135deg, #00d4ff, #0099cc); color: #000; border-color: transparent; }
+.cex-shop-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; margin: 6px 0; }
 
 /* Profit Path Protocol (PPP) research */
 .cex-profit-path-card { border: 1px solid rgba(0,255,136,0.18); margin-top: 16px; }
