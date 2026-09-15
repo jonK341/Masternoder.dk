@@ -329,6 +329,95 @@
             color: #000;
             border-color: var(--primary);
         }
+        .shop-subnav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 12px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-primary);
+            background: rgba(0,0,0,0.22);
+        }
+        .shop-subnav-btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-primary);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .shop-subnav-btn.active {
+            background: linear-gradient(135deg, var(--secondary, #00d4ff), #0099cc);
+            color: #000;
+            border-color: transparent;
+        }
+        .shop-order-table-wrap { overflow-x: auto; }
+        .shop-order-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .shop-order-table th,
+        .shop-order-table td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-primary);
+            vertical-align: top;
+        }
+        .shop-order-table thead th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .shop-order-meta { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .shop-order-group-title {
+            margin: 16px 0 6px;
+            color: var(--secondary);
+            font-size: 0.92rem;
+        }
+        .shop-order-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.08);
+        }
+        .shop-order-status.is-completed { background: rgba(0,255,136,0.16); color: #00ff88; }
+        .shop-order-status.is-pending { background: rgba(255,170,0,0.18); color: #ffaa00; }
+        .shop-order-status.is-refunded { background: rgba(255,136,0,0.18); color: #ff9944; }
+        .shop-order-status.is-cancelled { background: rgba(255,68,68,0.16); color: #ff7777; }
+        .shop-orders-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .shop-orders-easy {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 960px) {
+            .shop-orders-easy { grid-template-columns: 1fr; }
+        }
+        .shop-orders-panel {
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.18);
+            min-width: 0;
+        }
+        .shop-order-table th:first-child,
+        .shop-order-table td:first-child { width: 2.2rem; }
+        .shop-order-pdf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .shop-order-pdf-hint { font-size: 0.8rem; color: var(--text-secondary); }
         .shop-panel { display: none; animation: shopFade 0.2s ease; }
         .shop-panel.active { display: block; }
         @keyframes shopFade { from { opacity: 0.6; } to { opacity: 1; } }
@@ -985,16 +1074,48 @@
 
         <!-- My Inventory (Phase 4 migration) -->
         <div id="shop-panel-account" class="shop-panel" role="tabpanel" data-panel="account">
-        <div class="card" style="margin-top: var(--spacing-xl); border: 2px solid rgba(0,212,255,0.45);">
-            <div style="padding: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="card" id="purchase-history-card" style="margin-top: var(--spacing-xl); border: 2px solid var(--secondary);">
+            <div class="shop-orders-toolbar" style="padding: var(--spacing-md);">
                 <div>
-                    <h3 style="color: var(--secondary); margin: 0;">🏷️ My Stall</h3>
-                    <p style="margin:6px 0 0;color:var(--text-secondary);font-size:0.88rem;">List owned items for coins. Active listings reserve inventory until sold or cancelled.</p>
+                    <h3 style="color: var(--secondary); margin: 0;">🧾 My orders</h3>
+                    <p style="margin:6px 0 0;color:var(--text-secondary);font-size:0.88rem;">Your shop purchases (PayPal, coins, points, MN2, on-chain) and masternode hosting slots. Stall listings stay in their own list. Check rows, then download a PDF.</p>
                 </div>
-                <button type="button" id="my-stall-refresh-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">Refresh stall</button>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span id="shop-order-pdf-hint" class="shop-order-pdf-hint">Select orders first</span>
+                    <button type="button" id="shop-order-pdf-btn" class="btn-purchase shop-order-pdf-btn" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;" disabled>Download PDF</button>
+                    <button type="button" id="my-stall-refresh-btn" class="btn-purchase" style="width:auto;">Refresh</button>
+                </div>
             </div>
-            <div style="padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
-                <div id="my-stall-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
+            <div id="shop-orders-easy-view" class="shop-orders-easy" style="padding: 0 var(--spacing-md) var(--spacing-md);">
+                <section class="shop-orders-panel" aria-labelledby="shop-purchases-heading">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <h4 id="shop-purchases-heading" style="margin:0;color:var(--secondary);">Shop orders</h4>
+                        <span id="purchases-count" style="color: var(--text-secondary);">0 orders</span>
+                    </div>
+                    <nav class="shop-subnav" id="shop-order-status-subnav" aria-label="Purchase status filters"></nav>
+                    <nav class="shop-subnav" id="shop-history-subnav" aria-label="Purchase subcategory filters"></nav>
+                    <div id="purchase-history-list" class="shop-order-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
+                </section>
+                <section class="shop-orders-panel" aria-labelledby="shop-hosting-heading">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <h4 id="shop-hosting-heading" style="margin:0;color:var(--secondary);">Masternode hosting</h4>
+                        <span id="hosting-orders-count" style="color: var(--text-secondary);">0 orders</span>
+                    </div>
+                    <p id="hosting-orders-site-hint" style="margin:0 0 8px;color:var(--text-secondary);font-size:0.8rem;">PayPal $4.99/slot, coins, MN2 balance, or on-chain. This list is your orders — not the whole site.</p>
+                    <nav class="shop-subnav" id="shop-hosting-status-subnav" aria-label="Hosting status filters"></nav>
+                    <nav class="shop-subnav" id="shop-hosting-subnav" aria-label="Hosting subcategory filters"></nav>
+                    <div id="mn2-hosting-order-list" class="shop-order-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
+                </section>
+                <section class="shop-orders-panel" aria-labelledby="shop-stall-heading">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <h4 id="shop-stall-heading" style="margin:0;color:var(--secondary);">Stall listings</h4>
+                        <span id="stall-orders-count" style="color: var(--text-secondary);">0 listings</span>
+                    </div>
+                    <nav class="shop-subnav" id="shop-stall-status-subnav" aria-label="Stall status filters"></nav>
+                    <nav class="shop-subnav" id="shop-stall-subnav" aria-label="Stall subcategory filters"></nav>
+                    <div id="stall-order-list" class="shop-order-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
+                    <div id="my-stall-list" style="margin-top:12px;min-height:0;color:var(--text-secondary);"></div>
+                </section>
             </div>
         </div>
         <div class="card" style="margin-top: var(--spacing-xl); border: 2px solid var(--primary);">
@@ -1017,16 +1138,6 @@
             </div>
         </div>
         
-        <!-- Purchase History (Phase 4 migration) -->
-        <div class="card" style="margin-top: var(--spacing-md); border: 2px solid var(--secondary);">
-            <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('purchase-history-body').style.display = document.getElementById('purchase-history-body').style.display === 'none' ? 'block' : 'none';">
-                <h3 style="color: var(--secondary); margin: 0;">🕐 Purchase History</h3>
-                <span id="purchases-count" style="color: var(--text-secondary);">0 purchases</span>
-            </div>
-            <div id="purchase-history-body" style="display: none; padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
-                <div id="purchase-history-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
-            </div>
-        </div>
         </div><!-- end shop-panel-account -->
         
         <!-- Fallback content if JS fails -->
@@ -1056,6 +1167,8 @@
     </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260915-orders"></script>
+        <script src="/static/js/shop-order-list.js?v=20260915-hosting"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -1065,6 +1178,14 @@
         let currentCategory = '';
         let userInventory = [];
         let userPurchases = [];
+        let currentHistorySubcat = 'all';
+        let currentHistoryStatus = 'all';
+        let currentStallSubcat = 'all';
+        let currentStallStatus = 'all';
+        let userStallOrders = [];
+        let userHostingOrders = [];
+        let currentHostingSubcat = 'all';
+        let currentHostingStatus = 'all';
         let auctionListings = [];
         let myAuctionState = { selling: [], bought: [], sold: [] };
         let allShopItems = [];
@@ -1180,6 +1301,7 @@
                     { label: 'GET /api/mn2/balance', path_template: '/api/mn2/balance?user_id={{user_id}}', kind: 'success_true' },
                     { label: 'GET /api/shop/inventory', path_template: '/api/shop/inventory?user_id={{user_id}}', kind: 'success_not_false' },
                     { label: 'GET /api/shop/purchases', path_template: '/api/shop/purchases?user_id={{user_id}}&limit=5', kind: 'success_not_false' },
+                    { label: 'GET /api/shop/hosting-orders', path_template: '/api/shop/hosting-orders?user_id={{user_id}}&limit=5', kind: 'success_not_false' },
                     { label: 'GET /api/points/comprehensive', path_template: '/api/points/comprehensive?user_id={{user_id}}', kind: 'success_not_false' }
                 ];
             },
@@ -1300,7 +1422,7 @@
                 btn.addEventListener('click', () => {
                     showShopTab(btn.dataset.tab);
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
-                    if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); }
+                    if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); loadStallOrders(); loadPurchases(); loadHostingOrders(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
                     if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
                 });
@@ -2173,10 +2295,113 @@
             }
         }
         
-        async function loadPurchases() {
+        function renderShopOrderList() {
+            const el = document.getElementById('purchase-history-list');
+            const countEl = document.getElementById('purchases-count');
+            if (countEl) {
+                countEl.textContent = userPurchases.length + ' order' + (userPurchases.length !== 1 ? 's' : '');
+            }
+            if (!window.ShopOrderList || !el) return;
+            ShopOrderList.render({
+                rows: userPurchases,
+                listEl: el,
+                statusNavEl: document.getElementById('shop-order-status-subnav'),
+                subnavEl: document.getElementById('shop-history-subnav'),
+                subcategory: currentHistorySubcat,
+                status: currentHistoryStatus,
+                emptyMessage: 'No shop orders yet. Catalog, PayPal, coins, points, and MN2 purchases appear here.',
+                onSubcategory: (id) => {
+                    currentHistorySubcat = id;
+                    renderShopOrderList();
+                },
+                onStatus: (id) => {
+                    currentHistoryStatus = id;
+                    renderShopOrderList();
+                },
+            });
+        }
+
+        function renderStallOrderList() {
+            const el = document.getElementById('stall-order-list');
+            const countEl = document.getElementById('stall-orders-count');
+            if (countEl) {
+                countEl.textContent = userStallOrders.length + ' listing' + (userStallOrders.length !== 1 ? 's' : '');
+            }
+            if (!window.ShopOrderList || !el) return;
+            ShopOrderList.render({
+                rows: userStallOrders,
+                listEl: el,
+                statusNavEl: document.getElementById('shop-stall-status-subnav'),
+                subnavEl: document.getElementById('shop-stall-subnav'),
+                subcategory: currentStallSubcat,
+                status: currentStallStatus,
+                emptyMessage: 'No stall listings yet. Use Sell in My Inventory.',
+                filterEmptyMessage: 'No listings match this filter.',
+                onSubcategory: (id) => {
+                    currentStallSubcat = id;
+                    renderStallOrderList();
+                },
+                onStatus: (id) => {
+                    currentStallStatus = id;
+                    renderStallOrderList();
+                },
+            });
+        }
+
+        function renderHostingOrderList() {
+            const el = document.getElementById('mn2-hosting-order-list');
+            const countEl = document.getElementById('hosting-orders-count');
+            if (countEl) {
+                countEl.textContent = userHostingOrders.length + ' order' + (userHostingOrders.length !== 1 ? 's' : '');
+            }
+            if (!window.ShopOrderList || !el) return;
+            ShopOrderList.render({
+                rows: userHostingOrders,
+                listEl: el,
+                statusNavEl: document.getElementById('shop-hosting-status-subnav'),
+                subnavEl: document.getElementById('shop-hosting-subnav'),
+                subcategory: currentHostingSubcat,
+                status: currentHostingStatus,
+                emptyMessage: 'No masternode hosting orders for this account yet.',
+                filterEmptyMessage: 'No hosting orders match this filter.',
+                onSubcategory: (id) => {
+                    currentHostingSubcat = id;
+                    renderHostingOrderList();
+                },
+                onStatus: (id) => {
+                    currentHostingStatus = id;
+                    renderHostingOrderList();
+                },
+            });
+        }
+
+        async function loadStallOrders() {
+            const el = document.getElementById('stall-order-list');
             try {
-                const response = await fetch(`${BASE_URL}/api/shop/purchases?user_id=${userId}&limit=20`);
+                const response = await fetch(`${BASE_URL}/api/shop/stall-orders?user_id=${encodeURIComponent(userId)}&limit=200`);
                 const data = await response.json();
+                userStallOrders = (data && Array.isArray(data.listings)) ? data.listings : [];
+                renderStallOrderList();
+            } catch (e) {
+                userStallOrders = [];
+                const countEl = document.getElementById('stall-orders-count');
+                if (countEl) countEl.textContent = '0 listings';
+                if (window.ShopOrderList) {
+                    ShopOrderList.renderError(el, 'Could not load stall listings.');
+                } else if (el) {
+                    el.innerHTML = '<p style="margin:0;">Could not load stall listings.</p>';
+                }
+            }
+        }
+
+        async function loadPurchases() {
+            const el = document.getElementById('purchase-history-list');
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/purchases?user_id=${encodeURIComponent(userId)}&limit=200`);
+                const data = await response.json();
+                if (!data.success && !(data.purchases || []).length) {
+                    throw new Error(data.error || 'Could not load shop orders.');
+                }
                 let apiPur = (data.success && data.purchases) ? data.purchases : [];
                 const shadow = (window.ShopV9 && ShopV9.readShadow) ? ShopV9.readShadow().purchases : [];
                 if (shadow && shadow.length) {
@@ -2186,31 +2411,47 @@
                         if (!seen.has(k)) { apiPur = apiPur.concat([p]); seen.add(k); }
                     });
                 }
-                userPurchases = apiPur.slice(0, 30);
-                const el = document.getElementById('purchase-history-list');
-                const countEl = document.getElementById('purchases-count');
-                if (countEl) countEl.textContent = userPurchases.length + ' purchase' + (userPurchases.length !== 1 ? 's' : '');
-                if (el) {
-                    if (userPurchases.length === 0) el.innerHTML = '<p style="margin:0;">No purchases yet.</p>';
-                    else el.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + userPurchases.map(p => {
-                        const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
-                        let price = '';
-                        if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
-                        else if (p.price_type === 'paypal_mn2_hosting') {
-                            const usd = (p.price_paid_points && p.price_paid_points.usd != null) ? Number(p.price_paid_points.usd).toFixed(2) : '';
-                            price = usd ? ('$' + usd + ' PayPal') : 'PayPal hosting';
-                            if (p.purchase_status) price += ' · ' + p.purchase_status;
-                        } else if (p.price_type === 'mn2' || p.price_type === 'mn2_onchain') {
-                            const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
-                            price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
-                        } else if (p.price_paid_points) price = 'points';
-                        return `<li><strong>${p.item_name || p.item_id}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
-                    }).join('') + '</ul>';
-                }
+                userPurchases = apiPur.slice(0, 200);
+                renderShopOrderList();
             } catch (e) {
                 userPurchases = [];
-                const el = document.getElementById('purchase-history-list');
-                if (el) el.innerHTML = '<p style="margin:0;">Could not load purchase history.</p>';
+                const countEl = document.getElementById('purchases-count');
+                if (countEl) countEl.textContent = '0 orders';
+                if (window.ShopOrderList) {
+                    ShopOrderList.renderError(el, 'Could not load shop orders.');
+                } else if (el) {
+                    el.innerHTML = '<p style="margin:0;">Could not load shop orders.</p>';
+                }
+            }
+        }
+
+        async function loadHostingOrders() {
+            const el = document.getElementById('mn2-hosting-order-list');
+            const hint = document.getElementById('hosting-orders-site-hint');
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/hosting-orders?user_id=${encodeURIComponent(userId)}&limit=200`);
+                const data = await response.json();
+                userHostingOrders = (data && Array.isArray(data.hosting)) ? data.hosting : [];
+                if (hint) {
+                    const sitePaid = Number(data && data.site_paid_orders) || 0;
+                    const methods = (data && data.site_paid_by_payment_method) || {};
+                    const methodBits = Object.keys(methods).filter(function (k) { return methods[k]; }).map(function (k) {
+                        return (k || 'unknown') + ' ' + methods[k];
+                    });
+                    hint.textContent = 'Your hosting orders (PayPal $4.99/slot, coins, MN2, or on-chain). Site-wide paid: ' +
+                        sitePaid + (methodBits.length ? ' (' + methodBits.join(', ') + ')' : '') +
+                        '. This list is yours only — not every paid slot on the site.';
+                }
+                renderHostingOrderList();
+            } catch (e) {
+                userHostingOrders = [];
+                const countEl = document.getElementById('hosting-orders-count');
+                if (countEl) countEl.textContent = '0 orders';
+                if (window.ShopOrderList) {
+                    ShopOrderList.renderError(el, 'Could not load hosting orders.');
+                } else if (el) {
+                    el.innerHTML = '<p style="margin:0;">Could not load hosting orders.</p>';
+                }
             }
         }
 
@@ -2280,30 +2521,30 @@
             const root = document.getElementById('my-stall-list');
             if (!root) return;
             const selling = myAuctionState.selling || [];
-            const sold = myAuctionState.sold || [];
-            const bought = myAuctionState.bought || [];
             const active = selling.filter(l => l.status === 'active');
-            const sections = [];
-            if (active.length) {
-                sections.push('<h4 style="margin:0 0 8px;color:var(--secondary);">Active listings</h4>' + active.map(l => `
+            const bidActions = [];
+            active.forEach(l => {
+                const bids = (l.bids || []).filter(b => b.status === 'active').slice(-3);
+                if (!bids.length) {
+                    bidActions.push(`
                     <div class="stall-row">
-                        <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(l.listing_id)}</div></div>
-                        <div>× ${Number(l.quantity || 1)}</div>
+                        <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">Active listing</div></div>
                         <div>${Number(l.price_coins || 0).toLocaleString()} 🪙</div>
                         <button type="button" class="btn-purchase btn-cancel-auction" data-listing-id="${shopEscape(l.listing_id)}" style="width:auto;padding:8px 12px;background:rgba(255,170,0,0.18);border:1px solid rgba(255,170,0,0.45);">Cancel</button>
-                        ${(l.bids || []).filter(b => b.status === 'active').slice(-3).map(b => `<button type="button" class="btn-purchase btn-accept-auction-bid" data-listing-id="${shopEscape(l.listing_id)}" data-bid-id="${shopEscape(b.bid_id)}" style="width:auto;padding:8px 12px;background:rgba(0,255,136,0.18);">Accept ${Number(b.bid_coins || 0).toLocaleString()} 🪙</button>`).join('')}
-                    </div>
-                `).join(''));
-            }
-            sections.push(`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px;">
-                <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Active</div><strong>${active.length}</strong></div>
-                <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Sold</div><strong>${sold.length}</strong></div>
-                <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Bought</div><strong>${bought.length}</strong></div>
-            </div>`);
-            if (!active.length && !sold.length && !bought.length) {
-                sections.unshift('<p style="margin:0;color:var(--text-secondary);">No auction activity yet. Use the Sell buttons in My Inventory below.</p>');
-            }
-            root.innerHTML = sections.join('');
+                    </div>`);
+                    return;
+                }
+                bidActions.push(`
+                    <div class="stall-row">
+                        <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(l.listing_id)}</div></div>
+                        <div>${Number(l.price_coins || 0).toLocaleString()} 🪙</div>
+                        <button type="button" class="btn-purchase btn-cancel-auction" data-listing-id="${shopEscape(l.listing_id)}" style="width:auto;padding:8px 12px;background:rgba(255,170,0,0.18);border:1px solid rgba(255,170,0,0.45);">Cancel</button>
+                        ${bids.map(b => `<button type="button" class="btn-purchase btn-accept-auction-bid" data-listing-id="${shopEscape(l.listing_id)}" data-bid-id="${shopEscape(b.bid_id)}" style="width:auto;padding:8px 12px;background:rgba(0,255,136,0.18);">Accept ${Number(b.bid_coins || 0).toLocaleString()} 🪙</button>`).join('')}
+                    </div>`);
+            });
+            root.innerHTML = bidActions.length
+                ? ('<h4 style="margin:8px 0;color:var(--text-secondary);font-size:0.82rem;">Stall actions</h4>' + bidActions.join(''))
+                : '';
             root.querySelectorAll('.btn-cancel-auction').forEach(btn => {
                 btn.addEventListener('click', () => cancelAuctionListing(btn.dataset.listingId));
             });
@@ -2327,6 +2568,7 @@
                 myAuctionState = { selling: [], bought: [], sold: [] };
             }
             renderMyAuctionState();
+            loadStallOrders();
         }
 
         async function createAuctionListing(itemId, quantity) {
@@ -3548,6 +3790,13 @@
                 if (typeof toast !== 'undefined') toast.info('On-ramp bundle: reserve hosting — promo HOSTMN5 applies when eligible.');
             }
             initShopTabs();
+            if (window.ShopOrderList) {
+                ShopOrderList.bindPdfControls({
+                    button: document.getElementById('shop-order-pdf-btn'),
+                    hintEl: document.getElementById('shop-order-pdf-hint'),
+                    userId: userId,
+                });
+            }
             initPostPurchaseUpsellModal();
             initShopBoostersPanel();
             syncProfileBar();
@@ -3558,7 +3807,12 @@
             loadPaymentHealth();
             document.getElementById('auction-search-input')?.addEventListener('input', renderAuctionListings);
             document.getElementById('auction-refresh-btn')?.addEventListener('click', loadAuctionListings);
-            document.getElementById('my-stall-refresh-btn')?.addEventListener('click', loadMyAuctionState);
+            document.getElementById('my-stall-refresh-btn')?.addEventListener('click', () => {
+                loadMyAuctionState();
+                loadStallOrders();
+                loadPurchases();
+                loadHostingOrders();
+            });
             document.getElementById('shop-product-line-toggle')?.addEventListener('click', () => {
                 const d = document.getElementById('shop-product-line-details');
                 const b = document.getElementById('shop-product-line-toggle');
@@ -3624,7 +3878,7 @@
                     if (status) status.textContent = 'Could not apply code.';
                 }
             });
-            await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads()]);
+            await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads(), loadStallOrders(), loadHostingOrders()]);
             loadAuctionListings();
             loadMyAuctionState();
             loadShopItems();

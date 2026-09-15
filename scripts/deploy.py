@@ -602,6 +602,12 @@ MANIFESTS = {
         "backend/routes/battle_routes.py",
         "backend/routes/hunters_game.py",
         "backend/routes/shop_routes.py",
+        "backend/services/shop_db_service.py",
+        "backend/services/shop_taxonomy_service.py",
+        "backend/services/shop_order_list_service.py",
+        "backend/services/shop_order_pdf_service.py",
+        "static/js/shop-taxonomy.js",
+        "static/js/shop-order-list.js",
         "backend/routes/generator_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/routes/monetization_expansion_routes.py",
@@ -926,7 +932,15 @@ def _resolve_restart_services(manifest_names, upload_only):
 
 def run(files, upload_only=False, restart_services=None, manifest_name=None, manifest_names=None, server_pass=None):
     if not server_pass:
-        server_pass = require_deploy_pass()
+        from deploy_ssh_env import default_key_paths, _load_deploy_env_from_dotenv
+        _load_deploy_env_from_dotenv()
+        env_pass = (os.environ.get("DEPLOY_PASS") or "").strip()
+        keys = default_key_paths()
+        if env_pass:
+            server_pass = env_pass
+        elif not keys:
+            server_pass = require_deploy_pass()
+        # else keys exist — leave server_pass unset so connect_deploy_ssh uses key auth.
     _manifests = set(manifest_names or ([] if manifest_name is None else [manifest_name]))
     ssh = None
     sftp = None
@@ -1335,7 +1349,20 @@ def main():
     if list_files:
         _print_file_list(files, manifest_names)
         sys.exit(0)
-    server_pass = require_deploy_pass(force_prompt=ask_pass)
+    if ask_pass:
+        server_pass = require_deploy_pass(force_prompt=True)
+    else:
+        from deploy_ssh_env import default_key_paths, _load_deploy_env_from_dotenv
+        _load_deploy_env_from_dotenv()
+        env_pass = (os.environ.get("DEPLOY_PASS") or "").strip()
+        keys = default_key_paths()
+        if env_pass:
+            server_pass = env_pass
+        elif keys:
+            # Key files exist — do not require a password (stale DEPLOY_PASS is a common fail).
+            server_pass = None
+        else:
+            server_pass = require_deploy_pass()
     if args and args[0].lower() == "server_prune":
         ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
         sys.exit(0 if ok else 1)

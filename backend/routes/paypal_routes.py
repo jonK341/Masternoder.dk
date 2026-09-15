@@ -153,6 +153,20 @@ def paypal_capture():
                         "item_name": item_name or pack.get("name"),
                     },
                 )
+            try:
+                from backend.services.shop_db_service import record_purchase
+
+                record_purchase(
+                    user_id=user_id,
+                    item_id=item_id,
+                    item_name=item_name or pack.get("name") or item_id,
+                    quantity=1,
+                    price_type="paypal",
+                    price_paid_coins=0,
+                    price_paid_points={"usd": amount, "coins_granted": coins_granted},
+                )
+            except Exception:
+                pass
         elif shop_item:
             # Direct PayPal purchase: add item to inventory
             try:
@@ -165,7 +179,7 @@ def paypal_capture():
                     quantity=1,
                     price_type="paypal",
                     price_paid_coins=0,
-                    price_paid_points=None,
+                    price_paid_points={"usd": amount},
                 )
                 item_granted = item_id
                 full_item = next((i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id), {"id": item_id, "name": item_display_name})
