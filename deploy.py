@@ -404,7 +404,13 @@ FILES_TO_DEPLOY = [
     "data/shop_v4_api_line_checks.json",
     # Shop v5.0 marketplace / Auction House
     "backend/services/shop_auction_service.py",
+    "backend/services/shop_taxonomy_service.py",
     "shop/index.html",
+    "static/js/shop-taxonomy.js",
+    "static/css/crypto-exchange.css",
+    "static/css/profile-hub.css",
+    "static/js/agent-marketplace.js",
+    "exchange/index.html",
     "scripts/cogs_metering_report.py",
     "scripts/scr_usage_export.py",
     "docs/MONETIZATION_PAYPAL.md",

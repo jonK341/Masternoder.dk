@@ -14,6 +14,7 @@ Usage:
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
+  python scripts/deploy.py shop_taxonomy   # shop/profile/exchange/casino subcategory grouping
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
@@ -371,6 +372,23 @@ MANIFESTS = {
         "backend/services/user_engagement.py",
         "backend/routes/trophies_routes.py",
         "backend/register_blueprints.py",
+    ],
+    # Shop catalog parents + inventory/auction/history subcategory chips
+    # (shop, profile, exchange, casino shops). Restarts uwsgi so shop_routes
+    # picks up taxonomy enrichment on inventory/purchases/auction APIs.
+    "shop_taxonomy": [
+        "backend/routes/shop_routes.py",
+        "backend/services/shop_taxonomy_service.py",
+        "shop/index.html",
+        "profile/index.html",
+        "exchange/index.html",
+        "casino/index.html",
+        "static/js/shop-taxonomy.js",
+        "static/js/agent-marketplace.js",
+        "static/js/casino.js",
+        "static/css/casino.css",
+        "static/css/crypto-exchange.css",
+        "static/css/profile-hub.css",
     ],
     "casino": [
         "backend/register_blueprints.py",
@@ -814,6 +832,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "trophies",
     "compendium",
     "game_hub",
+    "shop_taxonomy",
     "casino",
     "config",
     "agent_daemon_env",
