@@ -23,6 +23,8 @@ _AGENT_MAP = {
     "reconcile": "security_agent",
     "activity": "ai_intelligence_agent",
     "masternodes": "monitoring_agent",
+    "shop": "workflow_agent",
+    "micro": "monitoring_agent",
 }
 
 _CRON_ACTIONS = (
@@ -346,6 +348,46 @@ def _settle_battle_crypto(*, dry_run: bool = False, max_claims: int = 50) -> Dic
     return out
 
 
+def _settle_shop_agents(*, dry_run: bool = False, max_purchases: int = 6) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"purchases": 0, "errors": []}
+    try:
+        from backend.services.agent_shop_tick_service import run_agent_shop_tick
+        res = run_agent_shop_tick(max_purchases=max_purchases, dry_run=dry_run)
+        out.update(res)
+        if res.get("purchases"):
+            _record_agent_activity(
+                "shop",
+                "agent_shop_tick",
+                metadata={"purchases": res.get("purchases"), "dry_run": dry_run},
+                xp=4,
+            )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_micro_transactions(*, dry_run: bool = False, max_txs: int = 80) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"attempted": 0, "on_chain": 0, "errors": []}
+    try:
+        from backend.services.mn2_micro_transactions_service import run_micro_transaction_burst
+        res = run_micro_transaction_burst(max_txs=max_txs, dry_run=dry_run)
+        out.update(res)
+        if res.get("on_chain") or res.get("in_app_only"):
+            _record_agent_activity(
+                "chain",
+                "micro_transaction_burst",
+                metadata={
+                    "attempted": res.get("attempted"),
+                    "on_chain": res.get("on_chain"),
+                    "dry_run": dry_run,
+                },
+                xp=6,
+            )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
 def _scan_chain_payout_queue(*, max_payouts: int = 25) -> Dict[str, Any]:
     out: Dict[str, Any] = {"payouts": 0, "skipped": 0, "errors": []}
     try:
@@ -408,14 +450,14 @@ def run_mn2_ecosystem_settlement(
     systems: Optional[List[str]] = None,
     dry_run: bool = False,
     max_battle_claims: int = 50,
-    max_chain_payouts: int = 25,
+    max_chain_payouts: int = 60,
 ) -> Dict[str, Any]:
     """Run settlement across named systems. Intended for agent cron and ops endpoints."""
     active = [s.strip().lower() for s in (systems or ["all"])]
     if "all" in active:
         active = [
             "daemon", "battle", "aggregator", "generator", "casino", "staking",
-            "chain", "scan", "reconcile", "activity", "masternodes",
+            "shop", "micro", "chain", "scan", "reconcile", "activity", "masternodes",
         ]
 
     result: Dict[str, Any] = {
@@ -478,6 +520,18 @@ def run_mn2_ecosystem_settlement(
             result["results"]["activity"] = _burst_agent_activity()
         except Exception as e:
             result["errors"]["activity"] = str(e)[:300]
+
+    if "shop" in active and not dry_run:
+        try:
+            result["results"]["shop"] = _settle_shop_agents(dry_run=False)
+        except Exception as e:
+            result["errors"]["shop"] = str(e)[:300]
+
+    if "micro" in active:
+        try:
+            result["results"]["micro"] = _settle_micro_transactions(dry_run=dry_run, max_txs=80)
+        except Exception as e:
+            result["errors"]["micro"] = str(e)[:300]
 
     if "chain" in active:
         try:

@@ -17,6 +17,7 @@ Use this skill when automating MN2 reward settlement, battle auto-claims, deposi
 | `reconcile` | Staking conservation check |
 | `activity` | Burst agent activity feed events |
 | `shop` | Agent shop finish ticks |
+| `micro` | Dust on-chain micro-transaction burst (`sendtoaddress`) |
 | `masternodes` | Restore paid rentals + `startmasternode` (bring rented nodes online) |
 
 ## Daemon health
@@ -73,6 +74,15 @@ Activity burst (profile feed):
 curl -X POST -H "X-Agent-Cron-Token: $AGENT_CRON_SECRET" \
   "http://127.0.0.1:5000/api/agent/mn2/activity/burst?max_events=12"
 ```
+
+Micro-transaction burst (maximize on-chain txs):
+
+```bash
+curl -X POST -H "X-Agent-Cron-Token: $AGENT_CRON_SECRET" \
+  "http://127.0.0.1:5000/api/agent/mn2/micro/burst?max_txs=80"
+```
+
+Preset: `mn2_micro` → `mn2_micro_burst` (cron every minute via `cron/mn2_micro_transactions.sh`).
 
 ## Run via agent cron presets
 
