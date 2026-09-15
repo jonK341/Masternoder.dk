@@ -23,15 +23,22 @@
 
   function fetchJson(url, opts) {
     opts = opts || {};
+    var method = (opts.method || 'GET').toUpperCase();
+    var headers = Object.assign({}, opts.headers || {});
+    var body = opts.body ? JSON.stringify(opts.body) : undefined;
+    // Flask rejects GET requests that send Content-Type: application/json (400 Bad Request).
+    if (body && !headers['Content-Type'] && !headers['content-type']) {
+      headers['Content-Type'] = 'application/json';
+    }
     var ctrl = new AbortController();
     var timer = setTimeout(function () {
       ctrl.abort();
     }, opts.timeout || TIMEOUT_MS);
     return fetch(url, {
-      method: opts.method || 'GET',
+      method: method,
       credentials: 'same-origin',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {}),
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      headers: headers,
+      body: body,
       signal: ctrl.signal,
     })
       .then(function (r) {
@@ -71,7 +78,7 @@
     if (!balData || !balData.success) {
       if (balanceEl) balanceEl.textContent = '—';
       var showcaseErr = document.getElementById('profile-mn2-showcase-balance');
-      if (showcaseErr) showcaseErr.textContent = (balData && balData.error) ? balData.error : '—';
+      if (showcaseErr) showcaseErr.textContent = '—';
       return;
     }
     var balNum = Number(balData.mn2_balance) || 0;
