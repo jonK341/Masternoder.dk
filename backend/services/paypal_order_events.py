@@ -19,6 +19,16 @@ _ORDER_EVENTS = {
     "PAYMENT.CAPTURE.REVERSED",
 }
 
+# create_order() also writes these rails into the shop pending file. Do not fulfill
+# them as shop coins/points — dedicated collectors/webhooks own the grant.
+_SHOP_FALLBACK_RAILS = {
+    "exchange_mn2",
+    "exchange_crypto",
+    "exchange_controller",
+    "camgirls",
+    "casino",
+}
+
 
 def is_order_event(event_type: str) -> bool:
     return str(event_type or "").strip().upper() in _ORDER_EVENTS
@@ -40,6 +50,30 @@ def _order_id_from_event(event: Dict[str, Any]) -> str:
     return ""
 
 
+def _rail_from_shop_row(row: Dict[str, Any]) -> str:
+    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    source = str(meta.get("source") or "").strip().lower()
+    product = str(meta.get("product") or "").strip().lower()
+    item = str(row.get("item_id") or meta.get("item_id") or "").strip()
+    if meta.get("casino_deposit") or source == "casino":
+        return "casino"
+    if source in ("exchange", "exchange_mn2"):
+        return "exchange_mn2"
+    if source == "exchange_crypto" or item.startswith("crypto:"):
+        return "exchange_crypto"
+    if source == "exchange_controller":
+        return "exchange_controller"
+    if product == "camgirls" or source == "camgirls" or item.startswith("camgirls_"):
+        return "camgirls"
+    if product == "mn2_masternode_hosting":
+        return "hosting"
+    if item == "mn2_onramp" or meta.get("onramp_quote_id"):
+        return "onramp"
+    if item == "mn2_p2p" or meta.get("p2p_order_id"):
+        return "p2p"
+    return "shop"
+
+
 def dispatch_order_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
     """Send checkout/capture events to every PayPal rail. Signature already verified upstream."""
     event_type = str((event or {}).get("event_type") or "").upper()
@@ -50,6 +84,9 @@ def dispatch_order_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[st
         ("onramp", "backend.services.mn2_onramp_service"),
         ("p2p", "backend.services.mn2_p2p_service"),
         ("camgirls", "backend.services.camgirls_paypal_service"),
+        ("exchange", "backend.services.crypto_exchange_service"),
+        ("exchange_controller", "backend.services.exchange_user_controller_service"),
+        ("casino", "backend.services.casino_service"),
     )
     for name, mod_name in handlers:
         try:
@@ -76,6 +113,8 @@ def _finish_shop_from_event(event: Dict[str, Any], event_type: str) -> Optional[
     pending = get_pending_shop_order(oid)
     if not pending:
         return {"success": True, "ignored": True, "reason": "no_shop_pending"}
+    if _rail_from_shop_row(pending) != "shop":
+        return {"success": True, "ignored": True, "reason": "non_shop_rail"}
     if str(pending.get("status") or "").lower() in ("captured", "fulfilled"):
         return {"success": True, "already_fulfilled": True, "order_id": oid}
     if event_type in ("CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED", "PAYMENT.CAPTURE.COMPLETED"):
@@ -101,27 +140,15 @@ def collect_pending_paypal_jobs(extra_order_ids: Optional[List[str]] = None) -> 
         seen.add(ppid)
         jobs.append(job)
 
-    try:
-        from backend.services.paypal_service import list_pending_shop_orders
-
-        for row in list_pending_shop_orders():
-            _add({
-                "rail": "shop",
-                "local_id": row.get("order_id"),
-                "paypal_order_id": row.get("order_id"),
-                "user_id": row.get("user_id"),
-                "item_id": row.get("item_id"),
-                "item_name": row.get("item_name"),
-            })
-    except Exception:
-        pass
-
+    # Dedicated rails first so shop remember_shop_order copies do not steal fulfillment.
     for spec in (
         ("backend.services.mn2_masternode_hosting_service", "list_pending_paypal_payments"),
         ("backend.services.mn2_onramp_service", "list_pending_paypal_payments"),
         ("backend.services.mn2_p2p_service", "list_pending_paypal_payments"),
         ("backend.services.camgirls_paypal_service", "list_pending_paypal_payments"),
         ("backend.services.casino_service", "list_pending_paypal_deposits"),
+        ("backend.services.crypto_exchange_service", "list_pending_paypal_payments"),
+        ("backend.services.exchange_user_controller_service", "list_pending_paypal_payments"),
     ):
         try:
             mod = __import__(spec[0], fromlist=[spec[1]])
@@ -132,25 +159,65 @@ def collect_pending_paypal_jobs(extra_order_ids: Optional[List[str]] = None) -> 
             pass
 
     try:
-        from backend.services.exchange_user_controller_service import _PAYPAL_ORDERS
-        from backend.services import crypto_exchange_service as ex
+        from backend.services.paypal_service import list_pending_shop_orders
 
-        rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
-        for oid, row in (rows.get("pending") or {}).items():
-            if isinstance(row, dict):
+        for row in list_pending_shop_orders():
+            if not isinstance(row, dict):
+                continue
+            oid = str(row.get("order_id") or "").strip()
+            if not oid:
+                continue
+            rail = _rail_from_shop_row(row)
+            if rail == "shop":
                 _add({
-                    "rail": "exchange_controller",
+                    "rail": "shop",
                     "local_id": oid,
-                    "paypal_order_id": str(row.get("order_id") or oid),
+                    "paypal_order_id": oid,
                     "user_id": row.get("user_id"),
+                    "item_id": row.get("item_id"),
+                    "item_name": row.get("item_name"),
+                })
+            elif rail in _SHOP_FALLBACK_RAILS:
+                _add({
+                    "rail": rail,
+                    "local_id": oid,
+                    "paypal_order_id": oid,
+                    "user_id": row.get("user_id"),
+                    "item_id": row.get("item_id"),
+                    "item_name": row.get("item_name"),
                 })
     except Exception:
         pass
 
     for raw in extra_order_ids or []:
         oid = str(raw or "").strip()
-        if oid and oid not in seen:
-            _add({"rail": "shop", "local_id": oid, "paypal_order_id": oid, "user_id": "", "item_id": ""})
+        if not oid or oid in seen:
+            continue
+        job = {
+            "rail": "shop",
+            "local_id": oid,
+            "paypal_order_id": oid,
+            "user_id": "",
+            "item_id": "",
+        }
+        try:
+            from backend.services.paypal_service import get_pending_shop_order
+
+            row = get_pending_shop_order(oid) or {}
+            if row:
+                rail = _rail_from_shop_row(row)
+                if rail == "shop" or rail in _SHOP_FALLBACK_RAILS:
+                    job = {
+                        "rail": rail,
+                        "local_id": oid,
+                        "paypal_order_id": oid,
+                        "user_id": row.get("user_id") or "",
+                        "item_id": row.get("item_id") or "",
+                        "item_name": row.get("item_name") or "",
+                    }
+        except Exception:
+            pass
+        _add(job)
 
     return jobs
 
@@ -214,7 +281,21 @@ def _fulfill_job(job: Dict[str, Any]) -> Dict[str, Any]:
 
             cap = finish_checkout_order(ppid)
             ful = fulfill_paypal_order(user_id, ppid, cap)
-            return {**job, **cap, "fulfillment": ful}
+            return {**job, **cap, "fulfillment": ful, "success": bool(ful.get("success"))}
+        if rail == "exchange_mn2":
+            from backend.services.paypal_service import finish_checkout_order
+            from backend.services.crypto_exchange_service import fulfill_paypal_mn2_order
+
+            cap = finish_checkout_order(ppid)
+            ful = fulfill_paypal_mn2_order(user_id, ppid, cap)
+            return {**job, **cap, "fulfillment": ful, "success": bool(ful.get("success"))}
+        if rail == "exchange_crypto":
+            from backend.services.paypal_service import finish_checkout_order
+            from backend.services.crypto_exchange_service import fulfill_paypal_crypto_order
+
+            cap = finish_checkout_order(ppid)
+            ful = fulfill_paypal_crypto_order(user_id, ppid, cap)
+            return {**job, **cap, "fulfillment": ful, "success": bool(ful.get("success"))}
     except Exception as exc:
         return {**job, "success": False, "error": str(exc), "outcome": "fulfill_failed"}
 

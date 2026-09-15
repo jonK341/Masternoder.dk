@@ -395,6 +395,37 @@ def _parse_iso(ts: str) -> Optional[datetime]:
         return None
 
 
+def paypal_buyer_id(requested: str, pending_user: str) -> Tuple[str, str]:
+    """Resolve the paying user. Empty/default_user falls back to the stored buyer."""
+    req = str(requested or "").strip()
+    pending = str(pending_user or "").strip()
+    if not req or req.lower() == "default_user":
+        uid = pending or req
+        if not uid or uid.lower() == "default_user":
+            return "", "user_id required"
+        return uid, ""
+    if pending and pending != req:
+        return "", "user_mismatch"
+    return req, ""
+
+
+def _paypal_event_order_id(event: Dict[str, Any]) -> str:
+    resource = event.get("resource") if isinstance(event.get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    event_type = str(event.get("event_type") or "")
+    for candidate in (
+        related.get("order_id"),
+        resource.get("id") if event_type.upper().startswith("CHECKOUT.ORDER.") else None,
+        resource.get("custom_id"),
+    ):
+        val = str(candidate or "").strip()
+        if val:
+            return val
+    return ""
+
+
 def _validate_paypal_capture(capture: Dict[str, Any], expected_usd: float, *, expected_currency: str = "USD") -> Optional[str]:
     if not capture.get("success"):
         return capture.get("error") or "PayPal capture failed"
@@ -540,10 +571,7 @@ def record_paypal_crypto_order(order_id: str, quote: Dict[str, Any], *, approve_
 
 
 def fulfill_paypal_crypto_order(user_id: str, order_id: str, capture: Dict[str, Any]) -> Dict[str, Any]:
-    uid = (user_id or "").strip()
     order_id = (order_id or "").strip()
-    if not uid:
-        return {"success": False, "error": "user_id required"}
     if not order_id:
         return {"success": False, "error": "order_id required"}
     if not capture.get("success"):
@@ -558,16 +586,16 @@ def fulfill_paypal_crypto_order(user_id: str, order_id: str, capture: Dict[str, 
         if not pending:
             return {"success": False, "error": "pending_order_not_found"}
         quote = pending.get("quote") or {}
+        uid, buyer_err = paypal_buyer_id(user_id, str(quote.get("user_id") or ""))
+        if buyer_err:
+            return {
+                "success": False,
+                "error": "order_user_mismatch" if buyer_err == "user_mismatch" else buyer_err,
+            }
         sym = quote.get("symbol")
         amount = float(quote.get("asset_amount") or 0)
         usd_value = float(quote.get("usd_amount") or 0)
         fee_usd = float(quote.get("fee_usd") or 0)
-        quote_user = str(quote.get("user_id") or "").strip()
-        if quote_user and quote_user != uid:
-            return {"success": False, "error": "order_user_mismatch"}
-        expires = _parse_iso(quote.get("expires_at"))
-        if expires and expires < datetime.now(timezone.utc):
-            return {"success": False, "error": "quote_expired"}
         capture_error = _validate_paypal_capture(capture, usd_value)
         if capture_error:
             return {"success": False, "error": capture_error}
@@ -662,10 +690,7 @@ def record_paypal_mn2_order(order_id: str, user_id: str, pack: Dict[str, Any], *
 
 
 def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any]) -> Dict[str, Any]:
-    uid = (user_id or "").strip()
     order_id = (order_id or "").strip()
-    if not uid:
-        return {"success": False, "error": "user_id required"}
     if not order_id:
         return {"success": False, "error": "order_id required"}
     with _LOCK:
@@ -676,10 +701,14 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
         pending = (rows.get("pending") or {}).get(order_id)
         if not pending:
             return {"success": False, "error": "pending_order_not_found"}
-        if str(pending.get("user_id") or "").strip() != uid:
-            return {"success": False, "error": "order_user_mismatch"}
+        uid, buyer_err = paypal_buyer_id(user_id, str(pending.get("user_id") or ""))
+        if buyer_err:
+            return {
+                "success": False,
+                "error": "order_user_mismatch" if buyer_err == "user_mismatch" else buyer_err,
+            }
         expires = _parse_iso(pending.get("expires_at"))
-        if expires and expires < datetime.now(timezone.utc):
+        if expires and expires < datetime.now(timezone.utc) and not capture.get("success"):
             return {"success": False, "error": "order_expired"}
         pack = pending.get("pack") or {}
         capture_error = _validate_paypal_capture(capture, float(pack.get("price_usd") or 0))
@@ -737,6 +766,72 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
         _write_json(_PAYPAL_MN2_ORDERS_PATH, rows)
     _audit("paypal_mn2_capture", user_id=uid, amount_usd=float(capture.get("amount") or pack.get("price_usd") or 0), pack_id=pack_id, mn2_granted=float(grant.get("mn2_granted") or 0), order_id=order_id, capture_id=capture_id)
     return {"success": True, "order_id": order_id, **captured}
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    """Pending exchange MN2 packs and crypto buys that still need capture/fulfill."""
+    out: List[Dict[str, Any]] = []
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (mn2.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "exchange_mn2",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+            "item_id": ((row.get("pack") or {}).get("id") or ""),
+        })
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (crypto.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        quote = row.get("quote") if isinstance(row.get("quote"), dict) else {}
+        out.append({
+            "rail": "exchange_crypto",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": quote.get("user_id") or row.get("user_id"),
+            "item_id": f"crypto:{quote.get('symbol') or ''}",
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED exchange checkouts without browser return or pack_id."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    oid = _paypal_event_order_id(event or {})
+    if not oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    if oid in (mn2.get("captured") or {}) or oid in (crypto.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": oid}
+    rail = None
+    pending_user = ""
+    if isinstance((mn2.get("pending") or {}).get(oid), dict):
+        rail = "exchange_mn2"
+        pending_user = str(((mn2["pending"][oid] or {}).get("user_id") or ""))
+    elif isinstance((crypto.get("pending") or {}).get(oid), dict):
+        rail = "exchange_crypto"
+        quote = (crypto["pending"][oid] or {}).get("quote") or {}
+        pending_user = str(quote.get("user_id") or "")
+    if not rail:
+        return {"success": True, "ignored": True, "reason": "no matching exchange order"}
+    from backend.services.paypal_service import finish_checkout_order
+
+    cap = finish_checkout_order(oid)
+    if rail == "exchange_mn2":
+        return fulfill_paypal_mn2_order(pending_user, oid, cap)
+    return fulfill_paypal_crypto_order(pending_user, oid, cap)
 
 
 def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str = "MN2") -> Dict[str, Any]:

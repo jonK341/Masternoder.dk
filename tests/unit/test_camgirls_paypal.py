@@ -82,6 +82,18 @@ def test_dispatch_order_webhook_calls_camgirls(monkeypatch):
         "backend.services.camgirls_paypal_service.handle_webhook",
         lambda ev, signature_ok: seen.setdefault("camgirls", {"ok": signature_ok, "type": ev.get("event_type")}),
     )
+    monkeypatch.setattr(
+        "backend.services.crypto_exchange_service.handle_webhook",
+        lambda ev, signature_ok: {"success": True, "ignored": True},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_user_controller_service.handle_webhook",
+        lambda ev, signature_ok: {"success": True, "ignored": True},
+    )
+    monkeypatch.setattr(
+        "backend.services.casino_service.handle_webhook",
+        lambda ev, signature_ok: {"success": True, "ignored": True},
+    )
     out = events.dispatch_order_webhook(
         {"event_type": "CHECKOUT.ORDER.APPROVED", "resource": {"id": "PP-CG"}},
         True,
