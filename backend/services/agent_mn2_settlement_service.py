@@ -366,6 +366,28 @@ def _settle_shop_agents(*, dry_run: bool = False, max_purchases: int = 6) -> Dic
     return out
 
 
+def _settle_agent_peer_mesh(*, dry_run: bool = False, max_txs: int = 50) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"attempted": 0, "on_chain": 0, "errors": []}
+    try:
+        from backend.services.agent_peer_transactions_service import run_agent_peer_mesh
+        res = run_agent_peer_mesh(max_txs=max_txs, dry_run=dry_run)
+        out.update(res)
+        if res.get("on_chain"):
+            _record_agent_activity(
+                "micro",
+                "agent_peer_mesh",
+                metadata={
+                    "agents": res.get("agents"),
+                    "on_chain": res.get("on_chain"),
+                    "dry_run": dry_run,
+                },
+                xp=8,
+            )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
 def _settle_micro_transactions(*, dry_run: bool = False, max_txs: int = 80) -> Dict[str, Any]:
     out: Dict[str, Any] = {"attempted": 0, "on_chain": 0, "errors": []}
     try:
@@ -457,7 +479,7 @@ def run_mn2_ecosystem_settlement(
     if "all" in active:
         active = [
             "daemon", "battle", "aggregator", "generator", "casino", "staking",
-            "shop", "micro", "chain", "scan", "reconcile", "activity", "masternodes",
+            "shop", "micro", "agent_peers", "chain", "scan", "reconcile", "activity", "masternodes",
         ]
 
     result: Dict[str, Any] = {
@@ -532,6 +554,12 @@ def run_mn2_ecosystem_settlement(
             result["results"]["micro"] = _settle_micro_transactions(dry_run=dry_run, max_txs=80)
         except Exception as e:
             result["errors"]["micro"] = str(e)[:300]
+
+    if "agent_peers" in active:
+        try:
+            result["results"]["agent_peers"] = _settle_agent_peer_mesh(dry_run=dry_run, max_txs=50)
+        except Exception as e:
+            result["errors"]["agent_peers"] = str(e)[:300]
 
     if "chain" in active:
         try:

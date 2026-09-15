@@ -25,6 +25,13 @@
       "shop_agent_nibble"
     ]
   },
+  "agent_peer_transactions": {
+    "enabled": true,
+    "amount_mn2": 0.00001,
+    "max_per_run": 50,
+    "max_per_pair_per_day": 48,
+    "user_id_prefix": "agent:"
+  },
   "withdrawal_fee": 0.001,
   "min_withdrawal": 0.001,
   "max_withdrawal": 100000,

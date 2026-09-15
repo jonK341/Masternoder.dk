@@ -138,6 +138,9 @@ def run_agent_cron_jobs(
             elif job == 'mn2_micro_burst':
                 from backend.services.mn2_micro_transactions_service import run_micro_transaction_burst
                 out['results'][job] = run_micro_transaction_burst()
+            elif job == 'mn2_agent_peer_mesh':
+                from backend.services.agent_peer_transactions_service import run_agent_peer_mesh
+                out['results'][job] = run_agent_peer_mesh()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -183,4 +186,8 @@ def expand_preset(name: str) -> List[str]:
         return ['mn2_ecosystem_settlement_fast']
     if n in ('mn2_micro', 'micro_tx', 'micro_transactions'):
         return ['mn2_micro_burst']
+    if n in ('mn2_peers', 'agent_peers', 'agent_peer_mesh'):
+        return ['mn2_agent_peer_mesh']
+    if n in ('mn2_mesh', 'mn2_chain_activity'):
+        return ['mn2_micro_burst', 'mn2_agent_peer_mesh']
     return []

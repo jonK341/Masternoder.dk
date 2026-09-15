@@ -34,6 +34,7 @@ def _parse_jobs() -> list:
             'daily', 'weekly', 'monthly', 'knowledge',
             'blueprint_route', 'api_service', 'routes',
             'mn2', 'mn2_settlement', 'game_battle_mn2', 'mn2_transactions', 'mn2_fast',
+            'mn2_micro', 'mn2_peers', 'mn2_mesh', 'agent_peer_mesh',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)

@@ -18,6 +18,7 @@ Use this skill when automating MN2 reward settlement, battle auto-claims, deposi
 | `activity` | Burst agent activity feed events |
 | `shop` | Agent shop finish ticks |
 | `micro` | Dust on-chain micro-transaction burst (`sendtoaddress`) |
+| `agent_peers` | Agent-to-agent on-chain mesh (`agent` → `agent` dust transfers) |
 | `masternodes` | Restore paid rentals + `startmasternode` (bring rented nodes online) |
 
 ## Daemon health
@@ -83,6 +84,17 @@ curl -X POST -H "X-Agent-Cron-Token: $AGENT_CRON_SECRET" \
 ```
 
 Preset: `mn2_micro` → `mn2_micro_burst` (cron every minute via `cron/mn2_micro_transactions.sh`).
+
+Agent peer mesh (agents pay each other on-chain):
+
+```bash
+curl -X POST -H "X-Agent-Cron-Token: $AGENT_CRON_SECRET" \
+  "http://127.0.0.1:5000/api/agent/mn2/peers/mesh?max_txs=50"
+```
+
+Presets: `mn2_peers` / `agent_peer_mesh` → `mn2_agent_peer_mesh`; `mn2_mesh` runs micro burst + peer mesh.
+
+Cron: `cron/mn2_agent_peer_mesh.sh` every minute (`masternoder-mn2-agent-peer-mesh.cron.d`).
 
 ## Run via agent cron presets
 
