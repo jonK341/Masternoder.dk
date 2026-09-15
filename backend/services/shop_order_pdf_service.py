@@ -37,6 +37,23 @@ def format_price_label(row: Dict[str, Any]) -> str:
             return f"{int(coins or 0)} coins"
         except (TypeError, ValueError):
             return f"{coins} coins"
+    if source in ("masternode_hosting", "hosting"):
+        method = str(row.get("payment_method") or row.get("price_type") or "").lower()
+        if method in ("coins", "credits") and row.get("coins_total"):
+            return f"{int(row.get('coins_total') or 0)} coins"
+        if method in ("mn2", "mn2_onchain") and row.get("mn2_total"):
+            suffix = " (on-chain)" if method == "mn2_onchain" else ""
+            try:
+                return f"{float(row.get('mn2_total') or 0):.4f} MN2{suffix}"
+            except (TypeError, ValueError):
+                return f"{row.get('mn2_total')} MN2{suffix}"
+        usd = row.get("usd_total")
+        try:
+            if usd is not None:
+                return f"${float(usd):.2f} PayPal"
+        except (TypeError, ValueError):
+            pass
+        return "PayPal"
     price_type = str(row.get("price_type") or "").lower()
     points = row.get("price_paid_points")
     if price_type == "coins":
@@ -59,6 +76,12 @@ def format_price_label(row: Dict[str, Any]) -> str:
             mn2_text = str(mn2_paid or "")
         suffix = " (on-chain)" if price_type == "mn2_onchain" else ""
         return f"{mn2_text} MN2{suffix}"
+    if price_type in ("points", "unified_points"):
+        if isinstance(points, dict) and points:
+            keys = list(points.keys())
+            if len(keys) == 1:
+                return f"{points[keys[0]]} {keys[0]}"
+        return "points"
     if row.get("price_paid_coins"):
         return f"{row.get('price_paid_coins')} coins"
     return "—"
@@ -190,6 +213,11 @@ def build_orders_pdf(
         source = str(row.get("source") or "purchase")
         if source == "listing":
             name = f"{name} (stall)"
+        elif source in ("masternode_hosting", "hosting"):
+            name = f"{name} (hosting)"
+        pay = str(row.get("payment_method_label") or row.get("payment_method") or "").strip()
+        if pay and pay.lower() not in name.lower():
+            name = f"{name} [{pay}]"
         qty = str(row.get("quantity") or 1)
         table_rows.append(
             [

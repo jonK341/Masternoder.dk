@@ -29,12 +29,15 @@
   function rowSource(row) {
     if (row && row.source) return String(row.source);
     if (row && row.listing_id) return 'listing';
+    if (row && (row.order_id || row.price_type === 'paypal_mn2_hosting')) return 'masternode_hosting';
     return 'purchase';
   }
 
   function rowId(row) {
     if (!row) return '';
-    if (rowSource(row) === 'listing') return String(row.listing_id || row.id || '');
+    var src = rowSource(row);
+    if (src === 'listing') return String(row.listing_id || row.id || '');
+    if (src === 'masternode_hosting') return String(row.order_id || row.id || '');
     return String(row.id || row.item_id || '');
   }
 
@@ -63,12 +66,42 @@
     return raw ? raw.replace(/_/g, ' ') : 'Completed';
   }
 
+  function formatPayment(row) {
+    row = row || {};
+    if (row.payment_method_label) return String(row.payment_method_label);
+    var method = String(row.payment_method || row.price_type || '').toLowerCase();
+    if (method === 'paypal' || method === 'paypal_mn2_hosting') return 'PayPal';
+    if (method === 'coins' || method === 'credits') return 'Coins';
+    if (method === 'mn2') return 'MN2 balance';
+    if (method === 'mn2_onchain') return 'MN2 on-chain';
+    if (method === 'points' || method === 'unified_points') return 'Points';
+    if (method === 'casino') return 'Casino';
+    if (method === 'exchange') return 'Exchange';
+    if (rowSource(row) === 'listing') return 'Coins';
+    if (rowSource(row) === 'masternode_hosting') return 'PayPal';
+    return method ? method.replace(/_/g, ' ') : '—';
+  }
+
   function formatPrice(row) {
     row = row || {};
     if (row.amount_label) return String(row.amount_label);
     if (rowSource(row) === 'listing' || row.listing_id) {
       var coins = row.price_paid_coins != null ? row.price_paid_coins : row.price_coins;
       return String(coins || 0) + ' coins';
+    }
+    if (rowSource(row) === 'masternode_hosting' || row.price_type === 'paypal_mn2_hosting') {
+      var hostMethod = String(row.payment_method || row.price_type || '').toLowerCase();
+      if ((hostMethod === 'coins' || hostMethod === 'credits') && row.coins_total) {
+        return String(row.coins_total) + ' coins';
+      }
+      if ((hostMethod === 'mn2' || hostMethod === 'mn2_onchain') && row.mn2_total != null) {
+        var hostMn2 = Number(row.mn2_total);
+        return (isNaN(hostMn2) ? String(row.mn2_total) : hostMn2.toFixed(4)) +
+          ' MN2' + (hostMethod === 'mn2_onchain' ? ' (on-chain)' : '');
+      }
+      var hostUsd = row.usd_total != null ? Number(row.usd_total) : null;
+      if (hostUsd != null && !isNaN(hostUsd)) return '$' + hostUsd.toFixed(2) + ' PayPal';
+      return 'PayPal';
     }
     var type = String(row.price_type || '').toLowerCase();
     var points = row.price_paid_points;
@@ -227,6 +260,9 @@
       escapeHtml(formatPrice(p)) +
       '</td>' +
       '<td>' +
+      escapeHtml(formatPayment(p)) +
+      '</td>' +
+      '<td>' +
       escapeHtml(formatDate(p)) +
       '</td>' +
       '<td><span class="shop-order-status is-' +
@@ -251,6 +287,7 @@
       '<th scope="col">Item</th>' +
       '<th scope="col">Qty</th>' +
       '<th scope="col">Price</th>' +
+      '<th scope="col">Payment</th>' +
       '<th scope="col">Date</th>' +
       '<th scope="col">Status</th>' +
       '</tr></thead><tbody>' +
@@ -473,6 +510,7 @@
     statusBucket: statusBucket,
     formatStatus: formatStatus,
     formatPrice: formatPrice,
+    formatPayment: formatPayment,
     formatDate: formatDate,
     classifyRow: classifyRow,
     filterOrders: filterOrders,

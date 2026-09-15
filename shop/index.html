@@ -401,7 +401,7 @@
         }
         .shop-orders-easy {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 16px;
         }
         @media (max-width: 960px) {
@@ -1078,7 +1078,7 @@
             <div class="shop-orders-toolbar" style="padding: var(--spacing-md);">
                 <div>
                     <h3 style="color: var(--secondary); margin: 0;">🧾 My orders</h3>
-                    <p style="margin:6px 0 0;color:var(--text-secondary);font-size:0.88rem;">Purchases and stall/auction listings in one view. Check rows, then download a PDF.</p>
+                    <p style="margin:6px 0 0;color:var(--text-secondary);font-size:0.88rem;">Your shop purchases (PayPal, coins, points, MN2, on-chain) and masternode hosting slots. Stall listings stay in their own list. Check rows, then download a PDF.</p>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <span id="shop-order-pdf-hint" class="shop-order-pdf-hint">Select orders first</span>
@@ -1089,12 +1089,22 @@
             <div id="shop-orders-easy-view" class="shop-orders-easy" style="padding: 0 var(--spacing-md) var(--spacing-md);">
                 <section class="shop-orders-panel" aria-labelledby="shop-purchases-heading">
                     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                        <h4 id="shop-purchases-heading" style="margin:0;color:var(--secondary);">Purchases</h4>
+                        <h4 id="shop-purchases-heading" style="margin:0;color:var(--secondary);">Shop orders</h4>
                         <span id="purchases-count" style="color: var(--text-secondary);">0 orders</span>
                     </div>
                     <nav class="shop-subnav" id="shop-order-status-subnav" aria-label="Purchase status filters"></nav>
                     <nav class="shop-subnav" id="shop-history-subnav" aria-label="Purchase subcategory filters"></nav>
                     <div id="purchase-history-list" class="shop-order-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
+                </section>
+                <section class="shop-orders-panel" aria-labelledby="shop-hosting-heading">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <h4 id="shop-hosting-heading" style="margin:0;color:var(--secondary);">Masternode hosting</h4>
+                        <span id="hosting-orders-count" style="color: var(--text-secondary);">0 orders</span>
+                    </div>
+                    <p id="hosting-orders-site-hint" style="margin:0 0 8px;color:var(--text-secondary);font-size:0.8rem;">PayPal $4.99/slot, coins, MN2 balance, or on-chain. This list is your orders — not the whole site.</p>
+                    <nav class="shop-subnav" id="shop-hosting-status-subnav" aria-label="Hosting status filters"></nav>
+                    <nav class="shop-subnav" id="shop-hosting-subnav" aria-label="Hosting subcategory filters"></nav>
+                    <div id="mn2-hosting-order-list" class="shop-order-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
                 </section>
                 <section class="shop-orders-panel" aria-labelledby="shop-stall-heading">
                     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -1158,7 +1168,7 @@
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/shop-taxonomy.js?v=20260915-orders"></script>
-        <script src="/static/js/shop-order-list.js?v=20260915-orders"></script>
+        <script src="/static/js/shop-order-list.js?v=20260915-hosting"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -1173,6 +1183,9 @@
         let currentStallSubcat = 'all';
         let currentStallStatus = 'all';
         let userStallOrders = [];
+        let userHostingOrders = [];
+        let currentHostingSubcat = 'all';
+        let currentHostingStatus = 'all';
         let auctionListings = [];
         let myAuctionState = { selling: [], bought: [], sold: [] };
         let allShopItems = [];
@@ -1288,6 +1301,7 @@
                     { label: 'GET /api/mn2/balance', path_template: '/api/mn2/balance?user_id={{user_id}}', kind: 'success_true' },
                     { label: 'GET /api/shop/inventory', path_template: '/api/shop/inventory?user_id={{user_id}}', kind: 'success_not_false' },
                     { label: 'GET /api/shop/purchases', path_template: '/api/shop/purchases?user_id={{user_id}}&limit=5', kind: 'success_not_false' },
+                    { label: 'GET /api/shop/hosting-orders', path_template: '/api/shop/hosting-orders?user_id={{user_id}}&limit=5', kind: 'success_not_false' },
                     { label: 'GET /api/points/comprehensive', path_template: '/api/points/comprehensive?user_id={{user_id}}', kind: 'success_not_false' }
                 ];
             },
@@ -1408,7 +1422,7 @@
                 btn.addEventListener('click', () => {
                     showShopTab(btn.dataset.tab);
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
-                    if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); loadStallOrders(); loadPurchases(); }
+                    if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); loadStallOrders(); loadPurchases(); loadHostingOrders(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
                     if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
                 });
@@ -2295,7 +2309,7 @@
                 subnavEl: document.getElementById('shop-history-subnav'),
                 subcategory: currentHistorySubcat,
                 status: currentHistoryStatus,
-                emptyMessage: 'No shop orders yet. Catalog purchases appear here.',
+                emptyMessage: 'No shop orders yet. Catalog, PayPal, coins, points, and MN2 purchases appear here.',
                 onSubcategory: (id) => {
                     currentHistorySubcat = id;
                     renderShopOrderList();
@@ -2334,10 +2348,37 @@
             });
         }
 
+        function renderHostingOrderList() {
+            const el = document.getElementById('mn2-hosting-order-list');
+            const countEl = document.getElementById('hosting-orders-count');
+            if (countEl) {
+                countEl.textContent = userHostingOrders.length + ' order' + (userHostingOrders.length !== 1 ? 's' : '');
+            }
+            if (!window.ShopOrderList || !el) return;
+            ShopOrderList.render({
+                rows: userHostingOrders,
+                listEl: el,
+                statusNavEl: document.getElementById('shop-hosting-status-subnav'),
+                subnavEl: document.getElementById('shop-hosting-subnav'),
+                subcategory: currentHostingSubcat,
+                status: currentHostingStatus,
+                emptyMessage: 'No masternode hosting orders for this account yet.',
+                filterEmptyMessage: 'No hosting orders match this filter.',
+                onSubcategory: (id) => {
+                    currentHostingSubcat = id;
+                    renderHostingOrderList();
+                },
+                onStatus: (id) => {
+                    currentHostingStatus = id;
+                    renderHostingOrderList();
+                },
+            });
+        }
+
         async function loadStallOrders() {
             const el = document.getElementById('stall-order-list');
             try {
-                const response = await fetch(`${BASE_URL}/api/shop/stall-orders?user_id=${encodeURIComponent(userId)}&limit=50`);
+                const response = await fetch(`${BASE_URL}/api/shop/stall-orders?user_id=${encodeURIComponent(userId)}&limit=200`);
                 const data = await response.json();
                 userStallOrders = (data && Array.isArray(data.listings)) ? data.listings : [];
                 renderStallOrderList();
@@ -2356,7 +2397,7 @@
         async function loadPurchases() {
             const el = document.getElementById('purchase-history-list');
             try {
-                const response = await fetch(`${BASE_URL}/api/shop/purchases?user_id=${encodeURIComponent(userId)}&limit=50`);
+                const response = await fetch(`${BASE_URL}/api/shop/purchases?user_id=${encodeURIComponent(userId)}&limit=200`);
                 const data = await response.json();
                 if (!data.success && !(data.purchases || []).length) {
                     throw new Error(data.error || 'Could not load shop orders.');
@@ -2370,7 +2411,7 @@
                         if (!seen.has(k)) { apiPur = apiPur.concat([p]); seen.add(k); }
                     });
                 }
-                userPurchases = apiPur.slice(0, 50);
+                userPurchases = apiPur.slice(0, 200);
                 renderShopOrderList();
             } catch (e) {
                 userPurchases = [];
@@ -2380,6 +2421,36 @@
                     ShopOrderList.renderError(el, 'Could not load shop orders.');
                 } else if (el) {
                     el.innerHTML = '<p style="margin:0;">Could not load shop orders.</p>';
+                }
+            }
+        }
+
+        async function loadHostingOrders() {
+            const el = document.getElementById('mn2-hosting-order-list');
+            const hint = document.getElementById('hosting-orders-site-hint');
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/hosting-orders?user_id=${encodeURIComponent(userId)}&limit=200`);
+                const data = await response.json();
+                userHostingOrders = (data && Array.isArray(data.hosting)) ? data.hosting : [];
+                if (hint) {
+                    const sitePaid = Number(data && data.site_paid_orders) || 0;
+                    const methods = (data && data.site_paid_by_payment_method) || {};
+                    const methodBits = Object.keys(methods).filter(function (k) { return methods[k]; }).map(function (k) {
+                        return (k || 'unknown') + ' ' + methods[k];
+                    });
+                    hint.textContent = 'Your hosting orders (PayPal $4.99/slot, coins, MN2, or on-chain). Site-wide paid: ' +
+                        sitePaid + (methodBits.length ? ' (' + methodBits.join(', ') + ')' : '') +
+                        '. This list is yours only — not every paid slot on the site.';
+                }
+                renderHostingOrderList();
+            } catch (e) {
+                userHostingOrders = [];
+                const countEl = document.getElementById('hosting-orders-count');
+                if (countEl) countEl.textContent = '0 orders';
+                if (window.ShopOrderList) {
+                    ShopOrderList.renderError(el, 'Could not load hosting orders.');
+                } else if (el) {
+                    el.innerHTML = '<p style="margin:0;">Could not load hosting orders.</p>';
                 }
             }
         }
@@ -3740,6 +3811,7 @@
                 loadMyAuctionState();
                 loadStallOrders();
                 loadPurchases();
+                loadHostingOrders();
             });
             document.getElementById('shop-product-line-toggle')?.addEventListener('click', () => {
                 const d = document.getElementById('shop-product-line-details');
@@ -3806,7 +3878,7 @@
                     if (status) status.textContent = 'Could not apply code.';
                 }
             });
-            await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads(), loadStallOrders()]);
+            await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads(), loadStallOrders(), loadHostingOrders()]);
             loadAuctionListings();
             loadMyAuctionState();
             loadShopItems();

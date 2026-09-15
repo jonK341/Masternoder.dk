@@ -4,6 +4,7 @@ API endpoints for shop functionality including currency and items.
 Uses account resolution: session > request > user_identification.
 """
 from flask import Blueprint, jsonify, request, send_file
+import json
 import os
 
 shop_bp = Blueprint('shop', __name__)
@@ -1962,13 +1963,18 @@ def shop_purchases():
     """Get shop purchase / order history for user (requires migration)."""
     try:
         user_id = request.args.get('user_id') or _resolve_user_id()
-        limit = min(int(request.args.get('limit', 50)), 100)
+        limit = min(int(request.args.get('limit', 50)), 300)
         try:
-            from backend.services.shop_db_service import get_purchases
-            purchases = get_purchases(user_id, limit=limit)
+            from backend.services.shop_order_list_service import collect_shop_purchases
+
+            purchases = collect_shop_purchases(user_id, limit=limit)
         except Exception:
-            purchases = []
-        purchases = _enrich_shop_owned_rows(purchases)
+            try:
+                from backend.services.shop_db_service import get_purchases
+                purchases = get_purchases(user_id, limit=limit)
+            except Exception:
+                purchases = []
+            purchases = _enrich_shop_owned_rows(purchases)
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1995,7 +2001,7 @@ def shop_stall_orders():
     """Stall/auction listings as order rows for the account order list."""
     try:
         user_id = request.args.get('user_id') or _resolve_user_id()
-        limit = min(int(request.args.get('limit', 50)), 100)
+        limit = min(int(request.args.get('limit', 50)), 300)
         from backend.services.shop_order_list_service import build_user_order_lists
 
         payload = build_user_order_lists(user_id, limit=limit)
@@ -2012,6 +2018,41 @@ def shop_stall_orders():
             'listings': [],
             'count': 0,
             'warning': 'Stall listings are temporarily unavailable',
+            'error': str(e),
+        }), 200
+
+
+@shop_bp.route('/api/shop/hosting-orders', methods=['GET'])
+def shop_hosting_orders():
+    """Current user's masternode hosting orders (PayPal / coins / MN2 / on-chain)."""
+    try:
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        limit = min(int(request.args.get('limit', 200)), 300)
+        from backend.services.shop_order_list_service import collect_hosting_orders
+
+        payload = collect_hosting_orders(user_id, limit=limit)
+        rows = payload.get('hosting') or []
+        site = payload.get('site') or {}
+        blob = json.dumps(rows)
+        if 'private_key' in blob or '"wif"' in blob:
+            rows = [{k: v for k, v in r.items() if k not in ('private_key', 'wif')} for r in rows]
+        return jsonify({
+            'success': True,
+            'user_id': payload.get('user_id') or user_id,
+            'hosting': rows,
+            'count': len(rows),
+            'site_paid_orders': site.get('paid_orders', 0),
+            'site_pending_orders': site.get('pending_orders', 0),
+            'site_paid_by_payment_method': site.get('by_payment_method') or {},
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': True,
+            'user_id': request.args.get('user_id') or 'default_user',
+            'hosting': [],
+            'count': 0,
+            'site_paid_orders': 0,
+            'warning': 'Hosting orders are temporarily unavailable',
             'error': str(e),
         }), 200
 
