@@ -382,6 +382,14 @@ def mn2_profile_monitor():
     }), 200
 
 
+@mn2_bp.route("/api/mn2/daemon/health", methods=["GET"])
+def mn2_daemon_health():
+    """Probe masternoder2d RPC health (block height, latency, optional wallet)."""
+    from backend.services.mn2_daemon_health_service import probe_daemon
+    extended = request.args.get("extended", "0") == "1"
+    return jsonify(probe_daemon(extended=extended)), 200
+
+
 @mn2_bp.route("/api/mn2/ops/settle-ecosystem", methods=["POST"])
 def mn2_ops_settle_ecosystem():
     """Run agent MN2 settlement (battle auto-claim, chain payouts, deposit scan). Ops auth required."""

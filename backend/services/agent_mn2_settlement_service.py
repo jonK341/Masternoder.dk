@@ -1,7 +1,6 @@
 """
-Agent-driven MN2 settlement across game, battle, quests, generator, aggregator, and casino.
-Runs on cron to reconcile pending rewards, auto-claim eligible battle crypto, and optionally
-push chain payouts for accumulated ledger events.
+Agent-driven MN2 settlement across game, battle, quests, generator, aggregator, casino,
+staking, exchange, and the masternoder2d daemon. Runs on cron; records agent activity.
 """
 from __future__ import annotations
 
@@ -11,6 +10,28 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+_AGENT_MAP = {
+    "daemon": "monitoring_agent",
+    "battle": "battle_strategy_agent",
+    "chain": "monitoring_agent",
+    "scan": "monitoring_agent",
+    "aggregator": "analytics_agent",
+    "generator": "content_generator_agent",
+    "casino": "workflow_agent",
+    "staking": "workflow_agent",
+    "reconcile": "security_agent",
+    "activity": "ai_intelligence_agent",
+    "masternodes": "monitoring_agent",
+}
+
+_CRON_ACTIONS = (
+    "monitor_move",
+    "progress_refresh",
+    "intel_loaded",
+    "monitor_battle_complete",
+    "interaction",
+)
 
 
 def _log_dir() -> str:
@@ -26,8 +47,222 @@ def _append_log(name: str, payload: Dict[str, Any]) -> str:
     return path
 
 
+def _record_agent_activity(
+    system: str,
+    action: str,
+    *,
+    user_id: str = "platform_mn2",
+    xp: int = 3,
+    points: float = 0.0,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    agent_id = _AGENT_MAP.get(system, "monitoring_agent")
+    try:
+        from backend.services.agent_db_service import agent_db_service
+        agent_db_service.record_agent_activity(
+            user_id=user_id,
+            agent_id=agent_id,
+            action=action,
+            skill="mn2_settlement",
+            xp_gained=xp,
+            points_gained=points,
+            metadata={"system": system, "cron": True, **(metadata or {})},
+        )
+    except Exception:
+        pass
+    try:
+        from backend.services.activity_events_service import emit
+        emit(
+            "agent_mn2_settlement",
+            user_id=user_id,
+            channel="agents",
+            text=f"{agent_id}: {action}",
+            payload={"system": system, "action": action, **(metadata or {})},
+        )
+    except Exception:
+        pass
+
+
+def _discover_active_user_ids(limit: int = 40) -> List[str]:
+    """Collect user_ids from battle, aggregator, ledger, and agent wallets."""
+    seen: set = set()
+    out: List[str] = []
+
+    def add(uid: Any) -> None:
+        u = str(uid or "").strip()
+        if not u or u.startswith("pool_") or u in ("agent_treasury", "platform_treasury"):
+            return
+        if u in seen:
+            return
+        seen.add(u)
+        out.append(u)
+
+    try:
+        from backend.routes.battle_routes import _load_battle_v2_state
+        data = _load_battle_v2_state()
+        for uid in (data.get("users") or {}).keys():
+            add(uid)
+    except Exception:
+        pass
+
+    try:
+        from backend.services.aggregator_mn2_service import _load_awards
+        users = (_load_awards().get("users") or {})
+        for uid in users.keys():
+            add(uid)
+    except Exception:
+        pass
+
+    try:
+        from backend.services.mn2_ledger import _load_entries
+        for e in reversed(_load_entries()):
+            add(e.get("user_id"))
+            if len(out) >= limit:
+                break
+    except Exception:
+        pass
+
+    if not out:
+        add("default_user")
+    return out[:limit]
+
+
+def _test_daemon(*, extended: bool = True) -> Dict[str, Any]:
+    from backend.services.mn2_daemon_health_service import probe_daemon
+    result = probe_daemon(extended=extended)
+    if result.get("healthy"):
+        _record_agent_activity("daemon", "daemon_health_ok", metadata=result.get("health"))
+    else:
+        _record_agent_activity("daemon", "daemon_health_fail", metadata={"error": result.get("error")})
+    return result
+
+
+def _settle_aggregator_rewards(*, max_users: int = 20) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"awards": 0, "users": 0, "errors": []}
+    try:
+        from backend.services.aggregator_mn2_service import award_for_action
+        users = _discover_active_user_ids(limit=max_users)
+        for uid in users:
+            for action in _CRON_ACTIONS[:2]:
+                res = award_for_action(uid, action, meta={"cron": True, "agent": "analytics_agent"})
+                if res.get("mn2_awarded", 0) > 0:
+                    out["awards"] += 1
+                    _record_agent_activity(
+                        "aggregator",
+                        f"aggregator_{action}",
+                        user_id=uid,
+                        points=float(res.get("mn2_awarded") or 0),
+                        metadata=res,
+                    )
+            out["users"] += 1
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_generator_rewards(*, max_users: int = 10) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"credits": 0, "errors": []}
+    try:
+        from backend.services.game_mn2_rewards import credit_mn2
+        from backend.services.generator_mn2_service import get_generator_config
+        cfg = get_generator_config()
+        if not cfg.get("enabled", True):
+            out["skipped"] = "disabled"
+            return out
+        earn = float(cfg.get("earn_on_finish_mn2") or 0.005)
+        day = datetime.now(timezone.utc).strftime("%Y%m%d")
+        for uid in _discover_active_user_ids(limit=max_users):
+            ref = f"gen-cron:{uid}:{day}"
+            cr = credit_mn2(
+                uid,
+                earn,
+                source="generator_mn2",
+                reference=ref,
+                metadata={"cron": True, "agent": "content_generator_agent"},
+            )
+            if cr.get("success") and not cr.get("duplicate"):
+                out["credits"] += 1
+                _record_agent_activity(
+                    "generator",
+                    "generator_finish_bonus",
+                    user_id=uid,
+                    points=earn,
+                    metadata=cr,
+                )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_casino_agents(*, dry_run: bool = False) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"ran": 0, "errors": []}
+    try:
+        from backend.services.casino_agents_service import run_all
+        res = run_all(dry_run=dry_run)
+        out.update(res)
+        if res.get("ran"):
+            _record_agent_activity(
+                "casino",
+                "casino_agents_run_all",
+                metadata={"ran": res.get("ran"), "dry_run": dry_run},
+                xp=5,
+            )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_staking_agents(*, dry_run: bool = False) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"ran": 0, "errors": []}
+    try:
+        from backend.services.mn2_staking_agents_service import run_all
+        res = run_all(dry_run=dry_run)
+        out.update(res)
+        if res.get("ran"):
+            _record_agent_activity(
+                "staking",
+                "staking_agents_run_all",
+                metadata={"ran": res.get("ran"), "dry_run": dry_run},
+                xp=4,
+            )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_reconcile() -> Dict[str, Any]:
+    out: Dict[str, Any] = {"ok": False, "errors": []}
+    try:
+        from backend.services.mn2_staking_reconcile_service import reconcile
+        res = reconcile()
+        out["ok"] = bool(res.get("ok", False))
+        out["result"] = res
+        _record_agent_activity("reconcile", "mn2_staking_reconcile", metadata=res)
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _burst_agent_activity(*, max_events: int = 12) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"events": 0}
+    systems = list(_AGENT_MAP.keys())
+    users = _discover_active_user_ids(limit=8)
+    for i, system in enumerate(systems):
+        if out["events"] >= max_events:
+            break
+        uid = users[i % len(users)] if users else "platform_mn2"
+        _record_agent_activity(
+            system,
+            f"mn2_tx_tick_{system}",
+            user_id=uid,
+            xp=2,
+            metadata={"tick": i, "burst": True},
+        )
+        out["events"] += 1
+    return out
+
+
 def _settle_battle_crypto(*, dry_run: bool = False, max_claims: int = 50) -> Dict[str, Any]:
-    """Auto-claim eligible battle crypto options for users with pending cooldowns cleared."""
     out: Dict[str, Any] = {"claims": 0, "users": 0, "errors": []}
     try:
         from backend.routes.battle_routes import (
@@ -93,27 +328,33 @@ def _settle_battle_crypto(*, dry_run: bool = False, max_claims: int = 50) -> Dic
                 )
                 out["claims"] += 1
                 claimed_for_user += 1
+                _record_agent_activity(
+                    "battle",
+                    "battle_crypto_auto_claim",
+                    user_id=user_id,
+                    points=amount,
+                    metadata={"option_id": option_id, "cron": True},
+                )
             if claimed_for_user:
                 out["users"] += 1
         if not dry_run and out["claims"]:
             _save_battle_v2_state(data)
+        if out["claims"]:
+            _record_agent_activity("battle", "battle_settlement_batch", metadata=out)
     except Exception as e:
         out["errors"].append(str(e)[:300])
     return out
 
 
 def _scan_chain_payout_queue(*, max_payouts: int = 25) -> Dict[str, Any]:
-    """Push pending in-app rewards to on-chain wallets when chain payouts are enabled."""
     out: Dict[str, Any] = {"payouts": 0, "skipped": 0, "errors": []}
     try:
         from backend.services.mn2_chain_rewards_service import chain_payouts_enabled, payout_reward_on_chain
-        from backend.services.mn2_ledger import get_entries_by_user
 
         if not chain_payouts_enabled():
             out["skipped"] = -1
             return out
 
-        # Collect recent reward entries not yet chain-paid (metadata.chain_paid != true)
         from backend.services.mn2_ledger import _load_entries
 
         reward_types = {
@@ -169,13 +410,13 @@ def run_mn2_ecosystem_settlement(
     max_battle_claims: int = 50,
     max_chain_payouts: int = 25,
 ) -> Dict[str, Any]:
-    """
-    Run settlement across named systems: battle, game, chain, all.
-    Intended for agent cron and ops endpoints.
-    """
+    """Run settlement across named systems. Intended for agent cron and ops endpoints."""
     active = [s.strip().lower() for s in (systems or ["all"])]
     if "all" in active:
-        active = ["battle", "chain", "scan"]
+        active = [
+            "daemon", "battle", "aggregator", "generator", "casino", "staking",
+            "chain", "scan", "reconcile", "activity", "masternodes",
+        ]
 
     result: Dict[str, Any] = {
         "success": True,
@@ -186,12 +427,57 @@ def run_mn2_ecosystem_settlement(
         "errors": {},
     }
 
+    if "daemon" in active:
+        try:
+            result["results"]["daemon"] = _test_daemon()
+            if not result["results"]["daemon"].get("healthy"):
+                result["warnings"] = result.get("warnings", {})
+                result["warnings"]["daemon"] = result["results"]["daemon"].get("error") or "unhealthy"
+        except Exception as e:
+            result["errors"]["daemon"] = str(e)[:300]
+
     if "battle" in active:
         try:
             result["results"]["battle"] = _settle_battle_crypto(dry_run=dry_run, max_claims=max_battle_claims)
         except Exception as e:
             result["errors"]["battle"] = str(e)[:300]
             result["success"] = False
+
+    if "aggregator" in active:
+        try:
+            result["results"]["aggregator"] = _settle_aggregator_rewards()
+        except Exception as e:
+            result["errors"]["aggregator"] = str(e)[:300]
+
+    if "generator" in active:
+        try:
+            result["results"]["generator"] = _settle_generator_rewards()
+        except Exception as e:
+            result["errors"]["generator"] = str(e)[:300]
+
+    if "casino" in active and not dry_run:
+        try:
+            result["results"]["casino"] = _settle_casino_agents(dry_run=False)
+        except Exception as e:
+            result["errors"]["casino"] = str(e)[:300]
+
+    if "staking" in active and not dry_run:
+        try:
+            result["results"]["staking"] = _settle_staking_agents(dry_run=False)
+        except Exception as e:
+            result["errors"]["staking"] = str(e)[:300]
+
+    if "reconcile" in active:
+        try:
+            result["results"]["reconcile"] = _settle_reconcile()
+        except Exception as e:
+            result["errors"]["reconcile"] = str(e)[:300]
+
+    if "activity" in active:
+        try:
+            result["results"]["activity"] = _burst_agent_activity()
+        except Exception as e:
+            result["errors"]["activity"] = str(e)[:300]
 
     if "chain" in active:
         try:
@@ -207,6 +493,19 @@ def run_mn2_ecosystem_settlement(
         except Exception as e:
             result["errors"]["scan"] = str(e)[:300]
             result["success"] = False
+
+    if "masternodes" in active:
+        try:
+            from backend.services.mn2_masternode_service import (
+                bring_rented_masternodes_online,
+                rented_masternodes_snapshot,
+            )
+            if dry_run:
+                result["results"]["masternodes"] = rented_masternodes_snapshot()
+            else:
+                result["results"]["masternodes"] = bring_rented_masternodes_online()
+        except Exception as e:
+            result["errors"]["masternodes"] = str(e)[:300]
 
     if result["errors"]:
         result["success"] = False

@@ -81,6 +81,34 @@ class TestSettlementService(unittest.TestCase):
         self.assertTrue(res.get("success"))
         self.assertIn("battle", res.get("results", {}))
 
+    def test_settle_reconcile_uses_ok_field(self):
+        from backend.services.agent_mn2_settlement_service import _settle_reconcile
+
+        with patch(
+            "backend.services.mn2_staking_reconcile_service.reconcile",
+            return_value={"success": True, "ok": False, "failed_checks": ["staked_matches_ledger"]},
+        ):
+            res = _settle_reconcile()
+        self.assertFalse(res.get("ok"))
+
+    def test_daemon_probe_never_raises(self):
+        from backend.services.mn2_daemon_health_service import probe_daemon
+
+        with patch(
+            "backend.services.mn2_rpc_client.health_check",
+            return_value={"status": "healthy", "block_height": 12345},
+        ):
+            res = probe_daemon(extended=False)
+        self.assertTrue(res.get("healthy"))
+
+
+class TestAgentCronPresets(unittest.TestCase):
+    def test_mn2_fast_preset(self):
+        from backend.services.agent_cron_service import expand_preset
+
+        self.assertEqual(expand_preset("mn2_fast"), ["mn2_ecosystem_settlement_fast"])
+        self.assertEqual(expand_preset("mn2_transactions"), ["mn2_ecosystem_settlement"])
+
 
 if __name__ == "__main__":
     unittest.main()
