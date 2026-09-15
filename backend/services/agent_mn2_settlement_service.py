@@ -23,6 +23,7 @@ _AGENT_MAP = {
     "reconcile": "security_agent",
     "activity": "ai_intelligence_agent",
     "masternodes": "monitoring_agent",
+    "shop": "workflow_agent",
 }
 
 _CRON_ACTIONS = (
@@ -415,7 +416,7 @@ def run_mn2_ecosystem_settlement(
     if "all" in active:
         active = [
             "daemon", "battle", "aggregator", "generator", "casino", "staking",
-            "chain", "scan", "reconcile", "activity", "masternodes",
+            "chain", "scan", "reconcile", "activity", "masternodes", "shop",
         ]
 
     result: Dict[str, Any] = {
@@ -506,6 +507,18 @@ def run_mn2_ecosystem_settlement(
                 result["results"]["masternodes"] = bring_rented_masternodes_online()
         except Exception as e:
             result["errors"]["masternodes"] = str(e)[:300]
+
+    if "shop" in active:
+        try:
+            from backend.services.agent_shop_tick_service import run_agent_shop_tick
+            result["results"]["shop"] = run_agent_shop_tick(dry_run=dry_run)
+            _record_agent_activity(
+                "shop",
+                "shop_finish_move",
+                metadata={"purchases": (result["results"]["shop"] or {}).get("purchases")},
+            )
+        except Exception as e:
+            result["errors"]["shop"] = str(e)[:300]
 
     if result["errors"]:
         result["success"] = False
