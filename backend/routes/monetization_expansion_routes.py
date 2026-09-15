@@ -194,7 +194,7 @@ def camgirls_paypal_create():
 @monetization_expansion_bp.route("/api/camgirls/paypal/capture", methods=["POST"])
 def camgirls_paypal_capture():
     data = request.get_json(silent=True) or {}
-    order_id = (data.get("order_id") or request.args.get("order_id") or "").strip()
+    order_id = (data.get("order_id") or request.args.get("order_id") or request.args.get("token") or "").strip()
     user_id = data.get("user_id") or _resolve_user_id()
     from backend.services.camgirls_paypal_service import fulfill_capture
 

@@ -2949,6 +2949,21 @@ def _save_paypal_deposits(data: Dict[str, Any]) -> None:
         pass
 
 
+def list_pending_paypal_deposits() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for oid, row in (_load_paypal_deposits().get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "casino",
+            "local_id": oid,
+            "paypal_order_id": oid,
+            "user_id": row.get("user_id"),
+            "pack_id": row.get("pack_id"),
+        })
+    return out
+
+
 def get_paypal_deposit_packs(user_id: str = "") -> Dict[str, Any]:
     try:
         from backend.services import casino_deposit_packs_service
