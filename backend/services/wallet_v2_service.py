@@ -175,6 +175,12 @@ def build_summary(user_id: str, sections_raw: Optional[str] = None) -> Dict[str,
                 payload["withdrawal_verified"] = is_verified(user_id or "")
             except Exception:
                 payload["withdrawal_verified"] = False
+        try:
+            from backend.services.wallet_upgrades_service import get_user_effects_summary
+
+            payload["upgrade_effects"] = get_user_effects_summary(user_id or "")
+        except Exception:
+            pass
 
     if "balance" in sections:
         from backend.services.mn2_wallet_service import get_balance

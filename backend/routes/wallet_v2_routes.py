@@ -8,6 +8,7 @@ from backend.services.wallet_upgrades_service import (
     build_masternode_map,
     get_progress,
     list_upgrades,
+    unlock_upgrade,
 )
 from backend.services.wallet_micro_earn_service import get_status as micro_earn_status
 from backend.services.wallet_micro_earn_service import record_click as micro_earn_click
@@ -52,6 +53,17 @@ def wallet_v2_upgrades_progress():
     """Per-user upgrade unlock progress — lazy-loaded."""
     user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
     return jsonify(get_progress(user_id)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/upgrades/unlock", methods=["POST"])
+def wallet_v2_upgrades_unlock():
+    """Unlock one upgrade when conditions are met; persists per-user progress."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    upgrade_id = body.get("upgrade_id") or request.args.get("upgrade_id")
+    result = unlock_upgrade(user_id, upgrade_id)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
 
 
 @wallet_v2_bp.route("/api/wallet/v2/network/masternodes", methods=["GET"])
