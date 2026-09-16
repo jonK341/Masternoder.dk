@@ -222,7 +222,7 @@
       ' unique addresses</div>' +
       rows
         .map(function (a) {
-          var addr = a.address || '—';
+          var addr = a.address || (a.address_pending ? 'pending (RPC)' : '—');
           var bal = Number(a.mn2_balance || 0).toFixed(4);
           var explorer = a.explorer_address_url
             ? ' <a href="' + a.explorer_address_url + '" target="_blank" rel="noopener" style="color:#00d4ff;font-size:0.72rem;">explorer</a>'

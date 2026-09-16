@@ -66,15 +66,21 @@ class TestAgentPeerTransactions(unittest.TestCase):
     def test_list_mesh_agent_wallets_distinct(self):
         from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
         fake = [
-            {"agent_id": "agent_a", "user_id": "agent:agent_a", "address": "addr_a", "source": "test"},
-            {"agent_id": "agent_b", "user_id": "agent:agent_b", "address": "addr_b", "source": "test"},
+            {"agent_id": "agent_a", "user_id": "agent:agent_a", "source": "test"},
+            {"agent_id": "agent_b", "user_id": "agent:agent_b", "source": "test"},
         ]
         with patch(
             "backend.services.agent_peer_transactions_service.discover_mesh_agents",
             return_value=fake,
         ), patch(
-            "backend.services.agent_peer_transactions_service._resolve_addresses",
-            return_value=fake,
+            "backend.services.mn2_wallet_service.list_user_addresses",
+            side_effect=lambda uid: {
+                "success": True,
+                "addresses": [{"address": f"addr_{uid.split(':')[-1]}", "label": "primary"}],
+            },
+        ), patch(
+            "backend.services.mn2_wallet_service.get_or_create_deposit_address",
+            return_value={"success": True},
         ), patch(
             "backend.services.mn2_wallet_service.get_balance",
             return_value={"success": True, "mn2_balance": 1.5},
@@ -82,10 +88,34 @@ class TestAgentPeerTransactions(unittest.TestCase):
             "backend.services.agent_wallet_service.get_balance",
             return_value=0.0,
         ):
-            res = list_mesh_agent_wallets(provision=True)
+            res = list_mesh_agent_wallets(provision=False)
         self.assertTrue(res.get("success"))
         self.assertEqual(res.get("count"), 2)
         self.assertEqual(res.get("unique_addresses"), 2)
+
+    def test_list_mesh_agent_wallets_pending_without_address(self):
+        from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
+        fake = [{"agent_id": "solo", "user_id": "agent:solo", "source": "test"}]
+        with patch(
+            "backend.services.agent_peer_transactions_service.discover_mesh_agents",
+            return_value=fake,
+        ), patch(
+            "backend.services.mn2_wallet_service.list_user_addresses",
+            return_value={"success": False, "addresses": []},
+        ), patch(
+            "backend.services.mn2_wallet_service.get_or_create_deposit_address",
+            return_value={"success": False, "error": "rpc down"},
+        ), patch(
+            "backend.services.mn2_wallet_service.get_balance",
+            return_value={"success": True, "mn2_balance": 0},
+        ), patch(
+            "backend.services.agent_wallet_service.get_balance",
+            return_value=0.0,
+        ):
+            res = list_mesh_agent_wallets(provision=True)
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("count"), 1)
+        self.assertTrue(res["agents"][0].get("address_pending"))
 
 
 if __name__ == "__main__":

@@ -166,26 +166,28 @@ def _resolve_addresses(agents: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 def list_mesh_agent_wallets(provision: bool = True) -> Dict[str, Any]:
     """Return mesh agents with distinct deposit addresses and in-app MN2 balances."""
-    from backend.services.mn2_wallet_service import get_balance, list_user_addresses
+    from backend.services.mn2_wallet_service import get_balance, list_user_addresses, get_or_create_deposit_address
 
     agents = discover_mesh_agents()
-    if provision:
-        agents = _resolve_addresses(agents)
-    else:
-        resolved: List[Dict[str, str]] = []
-        for row in agents:
-            uid = (row.get("user_id") or "").strip()
-            if not uid:
-                continue
+    resolved: List[Dict[str, str]] = []
+    for row in agents:
+        uid = (row.get("user_id") or "").strip()
+        if not uid:
+            continue
+        addr = (row.get("address") or "").strip()
+        if not addr:
             listed = list_user_addresses(uid)
             rows = listed.get("addresses") or []
-            addr = ""
             if rows and isinstance(rows[0], dict):
                 addr = (rows[0].get("address") or "").strip()
             if not addr:
-                continue
-            resolved.append({**row, "address": addr})
-        agents = resolved
+                primary = (listed.get("deposit_address") or "").strip() if isinstance(listed, dict) else ""
+                addr = primary
+        if not addr and provision:
+            created = get_or_create_deposit_address(uid)
+            addr = (created.get("deposit_address") or "").strip() if created.get("success") else ""
+        resolved.append({**row, "address": addr})
+    agents = resolved
 
     out_rows: List[Dict[str, Any]] = []
     seen_addrs: Dict[str, str] = {}
@@ -193,12 +195,13 @@ def list_mesh_agent_wallets(provision: bool = True) -> Dict[str, Any]:
         aid = row.get("agent_id") or ""
         uid = row.get("user_id") or ""
         addr = (row.get("address") or "").strip()
-        if not aid or not addr:
+        if not aid:
             continue
-        if addr in seen_addrs and seen_addrs[addr] != aid:
+        if addr and addr in seen_addrs and seen_addrs[addr] != aid:
             continue
-        seen_addrs[addr] = aid
-        bal = get_balance(uid)
+        if addr:
+            seen_addrs[addr] = aid
+        bal = get_balance(uid) if uid else {"success": False}
         mn2_balance = float(bal.get("mn2_balance") or 0) if bal.get("success") else 0.0
         try:
             from backend.services.agent_wallet_service import get_balance as agent_ledger_balance
@@ -208,7 +211,8 @@ def list_mesh_agent_wallets(provision: bool = True) -> Dict[str, Any]:
         out_rows.append({
             "agent_id": aid,
             "user_id": uid,
-            "address": addr,
+            "address": addr or None,
+            "address_pending": not bool(addr),
             "mn2_balance": mn2_balance,
             "internal_balance": internal,
             "source": row.get("source") or "",
