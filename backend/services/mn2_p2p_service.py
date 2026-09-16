@@ -38,6 +38,16 @@ _EVENTS_FILE = "mn2_p2p_events.jsonl"
 
 _OPEN_ORDER = ("pending_payment",)
 _FUNDED_ORDER = ("held", "cleared")
+_AGENT_USER_PREFIX = "p2p_agent_"
+
+
+def is_agent_user(user_id: str) -> bool:
+    """True for autonomous P2P demo traders (p2p_agent_01 … p2p_agent_99)."""
+    uid = str(user_id or "").strip()
+    if not uid.startswith(_AGENT_USER_PREFIX):
+        return False
+    suffix = uid[len(_AGENT_USER_PREFIX):]
+    return len(suffix) >= 2 and suffix[:2].isdigit()
 
 
 # ----------------------------------------------------------------- io helpers
@@ -484,6 +494,76 @@ def capture(order_id: str, buyer_id: str) -> Dict[str, Any]:
         _write(_LISTINGS_FILE, listings)
         _write(_ORDERS_FILE, orders)
     _audit("order", order_id, "held", {"paypal_capture_id": capture_id, "source": "capture"})
+    return out
+
+
+def agent_simulate_purchase(buyer_id: str, listing_id: str, mn2_amount: Any = None) -> Dict[str, Any]:
+    """
+    Internal agent/demo trade — reserve + settle without PayPal.
+    Restricted to p2p_agent_* buyers purchasing from p2p_agent_* sellers.
+    """
+    cfg = get_config()
+    bid = str(buyer_id or "").strip()
+    if not cfg.get("enabled"):
+        return {"success": False, "error": "P2P market is currently disabled"}
+    if not is_agent_user(bid):
+        return {"success": False, "error": "agent_simulate_purchase restricted to p2p_agent_* users"}
+    lid = str(listing_id or "").strip()
+    if not lid:
+        return {"success": False, "error": "listing_id required"}
+
+    with _LOCK:
+        listings = _read(_LISTINGS_FILE)
+        listing = listings.get(lid)
+        if not listing or listing.get("status") != "open":
+            return {"success": False, "error": "Listing not available"}
+        sid = str(listing.get("seller_id") or "").strip()
+        if not is_agent_user(sid):
+            return {"success": False, "error": "Listing seller is not a p2p_agent_* user"}
+        if sid == bid:
+            return {"success": False, "error": "Cannot buy your own listing"}
+        available = round(float(listing.get("mn2_available", 0) or 0), 8)
+        try:
+            want = round(float(mn2_amount), 8) if mn2_amount is not None else available
+        except (TypeError, ValueError):
+            return {"success": False, "error": "mn2_amount must be a number"}
+        if want <= 0:
+            return {"success": False, "error": "mn2_amount must be positive"}
+        if want > available:
+            return {"success": False, "error": f"Only {available} MN2 available in this listing"}
+
+        price = float(listing["price_usd_per_mn2"])
+        spread = float(cfg["buyer_spread_percent"]) / 100.0
+        usd_amount = round(want * price * (1.0 + spread), 2)
+        if usd_amount < 1.0:
+            return {"success": False, "error": "Order total must be at least $1.00"}
+        fee = round(usd_amount * float(cfg["platform_fee_percent"]) / 100.0, 2)
+        usd_seller = round(usd_amount - fee, 2)
+
+        listing["mn2_available"] = round(available - want, 8)
+        listing["mn2_reserved"] = round(float(listing.get("mn2_reserved", 0) or 0) + want, 8)
+        if listing["mn2_available"] <= 0 and listing["mn2_reserved"] <= 0:
+            listing["status"] = "sold_out"
+
+        order_id = "po_" + uuid.uuid4().hex[:16]
+        order = {
+            "order_id": order_id, "listing_id": lid, "buyer_id": bid,
+            "seller_id": sid, "mn2_amount": want,
+            "price_usd_per_mn2": price, "usd_amount": usd_amount,
+            "platform_fee_usd": fee, "usd_seller": usd_seller,
+            "status": "pending_payment", "paypal_order_id": None, "paypal_capture_id": None,
+            "buyer_hold_until": None, "payout_release_at": None,
+            "created_at": _iso(),
+            "expires_at": _iso(_now() + timedelta(seconds=int(cfg["order_ttl_seconds"]))),
+            "agent_simulated": True,
+        }
+        orders = _read(_ORDERS_FILE)
+        orders[order_id] = order
+        capture_id = "agent_sim_" + uuid.uuid4().hex[:16]
+        out = _settle_capture(orders, listings, order, capture_id, source="agent_simulate")
+        _write(_LISTINGS_FILE, listings)
+        _write(_ORDERS_FILE, orders)
+    _audit("order", order_id, "held", {"paypal_capture_id": capture_id, "source": "agent_simulate"})
     return out
 
 

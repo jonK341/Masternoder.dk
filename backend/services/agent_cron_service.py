@@ -135,6 +135,9 @@ def run_agent_cron_jobs(
                 out['results'][job] = run_mn2_ecosystem_settlement(
                     systems=['daemon', 'battle', 'activity', 'scan'],
                 )
+            elif job == 'p2p_market_agent':
+                from backend.services.p2p_market_agent_service import run_p2p_market_agent_job
+                out['results'][job] = run_p2p_market_agent_job()
             else:
                 out['errors'][job] = f'unknown_job:{job}'
                 out['success'] = False
@@ -178,4 +181,6 @@ def expand_preset(name: str) -> List[str]:
         return ['mn2_ecosystem_settlement']
     if n == 'mn2_fast':
         return ['mn2_ecosystem_settlement_fast']
+    if n in ('p2p_market', 'p2p', 'p2p_demo'):
+        return ['p2p_market_agent']
     return []

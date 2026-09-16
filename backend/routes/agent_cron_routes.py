@@ -34,6 +34,7 @@ def _parse_jobs() -> list:
             'daily', 'weekly', 'monthly', 'knowledge',
             'blueprint_route', 'api_service', 'routes',
             'mn2', 'mn2_settlement', 'game_battle_mn2', 'mn2_transactions', 'mn2_fast',
+            'p2p_market', 'p2p', 'p2p_demo',
         ):
             from backend.services.agent_cron_service import expand_preset
             return expand_preset(preset)
@@ -120,5 +121,8 @@ def agents_cron_presets():
             'mn2_transactions': expand_preset('mn2_transactions'),
             'mn2_fast': expand_preset('mn2_fast'),
             'game_battle_mn2': expand_preset('game_battle_mn2'),
+            'p2p_market': expand_preset('p2p_market'),
+            'p2p': expand_preset('p2p'),
+            'p2p_demo': expand_preset('p2p_demo'),
         },
     }), 200

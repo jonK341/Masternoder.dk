@@ -407,6 +407,12 @@ MANIFESTS = {
         "static/css/shop-taxonomy.css",
         "static/css/navigation-toolbar.css",
         "data/agent_marketplace_config.json",
+        "backend/services/mn2_p2p_service.py",
+        "backend/services/p2p_market_agent_service.py",
+        "backend/services/agent_cron_service.py",
+        "backend/routes/agent_cron_routes.py",
+        "cron/agents_p2p_market.sh",
+        "cron/masternoder-agents-p2p-market.cron.d",
     ],
     "casino": [
         "backend/register_blueprints.py",
@@ -803,12 +809,15 @@ MANIFESTS = {
         "cron/agents_blueprint_route_fixer.sh",
         "cron/agents_api_service_skill.sh",
         "cron/agents_trader.sh",
+        "cron/agents_p2p_market.sh",
         "cron/masternoder-agents-daily.cron.d",
         "cron/masternoder-agents-weekly.cron.d",
         "cron/masternoder-agents-monthly.cron.d",
         "cron/masternoder-agents-blueprint-route.cron.d",
         "cron/masternoder-agents-api-service.cron.d",
         "cron/masternoder-agents-trader.cron.d",
+        "cron/masternoder-agents-p2p-market.cron.d",
+        "backend/services/p2p_market_agent_service.py",
     ],
     # MN2 daemon config (masternoder2.conf); deploy config folder to server
     "config": [
@@ -1205,6 +1214,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 "agents_blueprint_route_fixer.sh",
                 "agents_api_service_skill.sh",
                 "agents_trader.sh",
+                "agents_p2p_market.sh",
             ):
                 ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/{sh} 2>/dev/null || true", timeout=5)
             for cd, remote_name in (
@@ -1214,6 +1224,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 ("masternoder-agents-blueprint-route.cron.d", "masternoder-agents-blueprint-route"),
                 ("masternoder-agents-api-service.cron.d", "masternoder-agents-api-service"),
                 ("masternoder-agents-trader.cron.d", "masternoder-agents-trader"),
+                ("masternoder-agents-p2p-market.cron.d", "masternoder-agents-p2p-market"),
             ):
                 ssh.exec_command(
                     f"cp {REMOTE_BASE}/cron/{cd} /etc/cron.d/{remote_name} && chmod 644 /etc/cron.d/{remote_name}",
@@ -1221,6 +1232,23 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 )
                 time.sleep(0.15)
             print("  [OK] /etc/cron.d/masternoder-agents-* (daily, weekly, monthly, blueprint-route, api-service, trader)")
+            print()
+
+        if "shop_taxonomy" in _manifests and not upload_only:
+            print("[2f] P2P market agent cron (every 2 min)...")
+            ssh.exec_command(f"chmod +x {REMOTE_BASE}/cron/agents_p2p_market.sh 2>/dev/null || true", timeout=5)
+            ssh.exec_command(
+                f"cp {REMOTE_BASE}/cron/masternoder-agents-p2p-market.cron.d "
+                f"/etc/cron.d/masternoder-agents-p2p-market && "
+                f"chmod 644 /etc/cron.d/masternoder-agents-p2p-market",
+                timeout=10,
+            )
+            stdin, stdout, stderr = ssh.exec_command(
+                "test -f /etc/cron.d/masternoder-agents-p2p-market && echo OK", timeout=5
+            )
+            out = (stdout.read() or b"").decode().strip()
+            print("  [OK] /etc/cron.d/masternoder-agents-p2p-market (every 2 min)" if out == "OK"
+                  else "  [WARN] P2P market cron.d install may have failed")
             print()
 
         if "camgirls" in _manifests and not upload_only:
