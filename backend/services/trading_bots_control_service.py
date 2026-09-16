@@ -532,6 +532,36 @@ def business_overview(*, light: bool = True) -> Dict[str, Any]:
     except Exception:
         pass
 
+    try:
+        import json
+        import os
+
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        hb_path = os.path.join(root, "logs", "daemon_all_profit_heartbeat.json")
+        hb = {}
+        if os.path.isfile(hb_path):
+            with open(hb_path, encoding="utf-8") as f:
+                hb = json.load(f)
+        from backend.services.portal_micro_chain_service import status as micro_st
+        from backend.services.exchange_stuck_inventory_service import ops_state
+
+        extras["unified_daemon"] = {
+            "heartbeat": hb,
+            "loops": hb.get("loops") if isinstance(hb.get("loops"), dict) else {},
+            "micro_chain": micro_st(),
+            "stuck_ops": ops_state(),
+            "entry": "scripts/unified_trading_daemon.py",
+        }
+    except Exception:
+        pass
+
+    try:
+        from backend.services.exchange_profit_orchestrator_service import pipeline_status
+
+        extras["profit_pipeline"] = pipeline_status(light=True)
+    except Exception:
+        pass
+
     if "paper_mode" not in extras:
         try:
             from backend.services.exchange_arbitrage_service import live_enabled
