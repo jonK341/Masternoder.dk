@@ -6,7 +6,7 @@
   "service_description": "Platform-hosted MasterNoder2 masternodes on shared infrastructure — one chain copy, 5,000 MN2 collateral per node (daemon requirement), 50% of block rewards to the masternode tier. Fleet cap 250 slots (conservative target before multi-ping daemon v1.3).",
   "hosting_fee_percent": 0,
   "min_hosting_term_days": 30,
-  "public_notes": "Reserve a slot from $4.99 — PayPal, coins, in-wallet MN2, or on-chain MN2. Provisioning is automatic (5,000 MN2 collateral lock + broadcast).",
+  "public_notes": "Reserve a slot from $4.99 — customers pay with their own PayPal account. Provisioning is automatic (5,000 MN2 collateral lock + broadcast).",
   "auto_provision": true,
   "stale_provisioning_hours": 6,
   "paypal": {
@@ -21,6 +21,8 @@
   "shop_payments": {
     "enabled": true,
     "payment_rails": ["paypal", "mn2", "credits", "mn2_onchain"],
+    "customer_payment_rails": ["paypal"],
+    "staff_user_ids": ["Sander Sahk"],
     "price_coins_per_slot": null,
     "comment": "null = derive from USD + coins_per_mn2 + live MN2/USD; override with fixed coin price per slot"
   },

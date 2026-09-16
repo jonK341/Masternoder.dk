@@ -95,10 +95,13 @@ def masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, Any]:
                     _CACHE.pop(key, None)
                 return result
             if not isinstance(rows, list):
-                result["rpc_error"] = "listmasternodes returned non-list"
-                if fresh:
-                    _CACHE.pop(key, None)
-                return result
+                if isinstance(rows, dict):
+                    rows = list(rows.values())
+                else:
+                    result["rpc_error"] = "listmasternodes returned non-list"
+                    if fresh:
+                        _CACHE.pop(key, None)
+                    return result
             enabled = 0
             parsed: List[Dict[str, Any]] = []
             for mn in rows:
