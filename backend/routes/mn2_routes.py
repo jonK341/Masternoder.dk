@@ -579,6 +579,64 @@ def _ops_authorized() -> bool:
     return token == secret
 
 
+@mn2_bp.route("/api/mn2/user-wallet-map", methods=["GET"])
+def mn2_user_wallet_map():
+    """Table of all users with wallet status and clone/copy flags. ?provision=1 assigns missing wallets."""
+    try:
+        limit = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        limit, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    provision = request.args.get("provision", "0") in ("1", "true", "yes")
+    from backend.services.user_wallet_map_service import build_user_wallet_table
+    result = build_user_wallet_table(
+        limit=limit,
+        offset=offset,
+        search=search,
+        provision=provision,
+    )
+    base = _explorer_base_url().rstrip("/")
+    for row in result.get("users") or []:
+        addr = (row.get("deposit_address") or "").strip()
+        if addr:
+            row["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+    return jsonify(result), 200
+
+
+@mn2_bp.route("/api/mn2/ops/provision-all-wallets", methods=["POST", "GET"])
+def mn2_ops_provision_all_wallets():
+    """Bulk-assign wallets to users missing one. Query: limit, offset, search."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        batch = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        batch, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    from backend.services.user_wallet_map_service import (
+        build_user_wallet_table,
+        collect_all_user_ids,
+        provision_wallets_batch,
+    )
+    all_uids = sorted(collect_all_user_ids(), reverse=True)
+    q = (search or "").strip().lower()
+    if q:
+        all_uids = [u for u in all_uids if q in u.lower()]
+    slice_ids = all_uids[offset: offset + batch]
+    prov = provision_wallets_batch(slice_ids, limit=batch)
+    table = build_user_wallet_table(limit=batch, offset=offset, search=search, provision=False)
+    return jsonify({
+        "success": True,
+        "total_users": len(all_uids),
+        "batch_offset": offset,
+        "batch_limit": batch,
+        **prov,
+        "table": table,
+    }), 200
+
+
 @mn2_bp.route("/api/mn2/ops/normalize-wallets", methods=["POST", "GET"])
 def mn2_ops_normalize_wallets():
     """Upgrade bare address strings to full wallet records (users + agents). Ops auth required."""

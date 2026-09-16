@@ -603,6 +603,7 @@ MANIFESTS = {
         "backend/services/agent_shop_tick_service.py",
         "backend/services/mn2_micro_transactions_service.py",
         "backend/services/agent_peer_transactions_service.py",
+        "backend/services/user_wallet_map_service.py",
         "backend/services/mn2_chain_rewards_service.py",
         "backend/services/game_mn2_rewards.py",
         "backend/services/mn2_daemon_health_service.py",

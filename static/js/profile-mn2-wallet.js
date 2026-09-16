@@ -205,6 +205,74 @@
       '</ul>';
   }
 
+  function renderUserWalletMap(data) {
+    var summary = document.getElementById('profile-mn2-user-wallet-map-summary');
+    var body = document.getElementById('profile-mn2-user-wallet-map-body');
+    if (!body) return;
+    if (!data || !data.success) {
+      if (summary) summary.textContent = 'Could not load user wallet map.';
+      body.innerHTML = '<tr><td colspan="5" style="padding:8px;opacity:0.7;">Unavailable</td></tr>';
+      return;
+    }
+    var rows = data.users || [];
+    if (summary) {
+      summary.textContent =
+        data.total +
+        ' users total · ' +
+        (data.wallet_ready_count || 0) +
+        ' with wallet on this page · ' +
+        (data.clone_copy_count || 0) +
+        ' clone/copy rows';
+    }
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="5" style="padding:8px;opacity:0.7;">No users found</td></tr>';
+      return;
+    }
+    body.innerHTML = rows
+      .map(function (r) {
+        var clone =
+          r.is_clone_copy
+            ? '<span style="color:#ffaa44;" title="' +
+              (r.clone_reasons || []).join(', ') +
+              '">copy ×' +
+              (r.clone_siblings || 2) +
+              '</span>'
+            : '—';
+        var addr = r.deposit_address || (r.wallet_ready ? '…' : 'pending');
+        var addrCell =
+          r.explorer_address_url && r.deposit_address
+            ? '<a href="' +
+              r.explorer_address_url +
+              '" target="_blank" rel="noopener" style="color:#00d4ff;word-break:break-all;">' +
+              addr +
+              '</a>'
+            : '<code style="word-break:break-all;">' + addr + '</code>';
+        var walletBadge = r.wallet_ready
+          ? '<span style="color:#00ff88;">✓ ' + (r.wallet_type || 'core') + '</span>'
+          : '<span style="color:#ffaa44;">missing</span>';
+        return (
+          '<tr style="border-top:1px solid rgba(255,255,255,0.06);">' +
+          '<td style="padding:5px 8px;max-width:120px;word-break:break-all;">' +
+          (r.user_id || '—') +
+          '</td>' +
+          '<td style="padding:5px 8px;">' +
+          walletBadge +
+          '</td>' +
+          '<td style="padding:5px 8px;max-width:180px;">' +
+          addrCell +
+          '</td>' +
+          '<td style="padding:5px 8px;">' +
+          (Number(r.mn2_balance || 0).toFixed(4)) +
+          '</td>' +
+          '<td style="padding:5px 8px;">' +
+          clone +
+          '</td>' +
+          '</tr>'
+        );
+      })
+      .join('');
+  }
+
   function renderAgentWallets(data) {
     var el = document.getElementById('profile-mn2-agent-wallets');
     if (!el) return;
@@ -556,6 +624,9 @@
     });
     fetchJson(base() + '/api/mn2/profile-monitor?user_id=' + q + '&days=5').then(function (res) {
       renderSystemMonitor(res.data);
+    });
+    fetchJson(base() + '/api/mn2/user-wallet-map?limit=200&provision=1', { timeout: 60000 }).then(function (res) {
+      renderUserWalletMap(res.data || {});
     });
     fetchJson(base() + '/api/mn2/agent-wallets?provision=0', { timeout: 18000 }).then(function (res) {
       if (!(res.data && res.data.success) || !(res.data.agents && res.data.agents.length)) {

@@ -1189,6 +1189,27 @@
                                 <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Each platform agent has its own MN2 deposit address for peer-mesh on-chain activity.</p>
                                 <div id="profile-mn2-agent-wallets" class="mn2-agent-wallets-list">Loading…</div>
                             </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">User wallet map</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">All users (clone/copy pairs shown separately, each with their own wallet). Clones share fingerprint, email, or username.</p>
+                                <div id="profile-mn2-user-wallet-map-summary" style="font-size:0.74rem;opacity:0.8;margin:4px 0 8px;">Loading…</div>
+                                <div style="overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid rgba(0,212,255,0.25);border-radius:8px;">
+                                    <table id="profile-mn2-user-wallet-map-table" style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+                                        <thead>
+                                            <tr style="background:rgba(0,212,255,0.12);text-align:left;">
+                                                <th style="padding:6px 8px;">User</th>
+                                                <th style="padding:6px 8px;">Wallet</th>
+                                                <th style="padding:6px 8px;">Address</th>
+                                                <th style="padding:6px 8px;">MN2</th>
+                                                <th style="padding:6px 8px;">Clone</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="profile-mn2-user-wallet-map-body">
+                                            <tr><td colspan="5" style="padding:8px;opacity:0.7;">Loading…</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1826,7 +1847,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/shop-taxonomy.js?v=20260915-orders"></script>
         <script src="/static/js/shop-order-list.js?v=20260915-hosting"></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260916-autowallet"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260916-walletmap"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
