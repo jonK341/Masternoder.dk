@@ -30,6 +30,67 @@
   }
   function msg(t) { var el = q('mn2-p2p-msg'); if (el) el.textContent = t || ''; }
 
+  var listingsCache = [];
+  var p2pPriceFilter = 'all';
+
+  function _p2pGroup(row) {
+    var tax = window.ShopTaxonomy;
+    return tax && tax.p2pPriceGroupFor ? tax.p2pPriceGroupFor(row) : 'other';
+  }
+
+  function _ensureP2pSubnav() {
+    var listEl = q('mn2-p2p-listings');
+    var nav = q('mn2-p2p-subnav');
+    if (!nav && listEl && listEl.parentNode) {
+      nav = document.createElement('nav');
+      nav.id = 'mn2-p2p-subnav';
+      nav.className = 'shop-subnav';
+      nav.setAttribute('aria-label', 'P2P price tiers');
+      listEl.parentNode.insertBefore(nav, listEl);
+    }
+    return nav;
+  }
+
+  function renderListings(rows) {
+    listingsCache = rows || [];
+    var el = q('mn2-p2p-listings');
+    if (!el) return;
+    var tax = window.ShopTaxonomy;
+    var nav = _ensureP2pSubnav();
+    if (nav && tax) {
+      tax.renderChips(
+        nav,
+        tax.countedTabs(tax.P2P_PRICE_GROUPS, listingsCache, _p2pGroup),
+        p2pPriceFilter,
+        function (id) {
+          p2pPriceFilter = id;
+          renderListings(listingsCache);
+        }
+      );
+    }
+    var filtered = p2pPriceFilter === 'all'
+      ? listingsCache
+      : listingsCache.filter(function (l) { return _p2pGroup(l) === p2pPriceFilter; });
+    if (!filtered.length) {
+      el.textContent = listingsCache.length ? 'No listings in this price tier.' : 'No open listings.';
+      return;
+    }
+    el.innerHTML = filtered.map(function (l) {
+      return '<div style="display:flex; gap:8px; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<span style="flex:1;">' + fmt(l.mn2_available, 4) + ' MN2 @ $' + fmt(l.price_usd_per_mn2, 4) + '/MN2 <span style="opacity:0.6;">(' + l.seller + ')</span></span>' +
+        '<input type="number" min="0" placeholder="qty" data-buy="' + l.listing_id + '" style="width:70px; padding:4px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">' +
+        '<button type="button" data-buybtn="' + l.listing_id + '" style="padding:5px 10px; border-radius:6px; border:none; background:#0070ba; color:#fff; cursor:pointer;">Buy</button>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('[data-buybtn]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-buybtn');
+        var input = el.querySelector('[data-buy="' + id + '"]');
+        buy(id, parseFloat(input && input.value));
+      });
+    });
+  }
+
   function loadConfig() {
     get('/api/mn2/p2p/config').then(function (cfg) {
       if (cfg && cfg.success && cfg.enabled) { panel.style.display = 'block'; loadListings(); }
@@ -38,25 +99,10 @@
 
   function loadListings() {
     get('/api/mn2/p2p/listings?limit=50').then(function (res) {
-      var el = q('mn2-p2p-listings');
-      if (!el) return;
-      var rows = (res && res.listings) || [];
-      if (!rows.length) { el.textContent = 'No open listings.'; return; }
-      el.innerHTML = rows.map(function (l) {
-        return '<div style="display:flex; gap:8px; align-items:center; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-          '<span style="flex:1;">' + fmt(l.mn2_available, 4) + ' MN2 @ $' + fmt(l.price_usd_per_mn2, 4) + '/MN2 <span style="opacity:0.6;">(' + l.seller + ')</span></span>' +
-          '<input type="number" min="0" placeholder="qty" data-buy="' + l.listing_id + '" style="width:70px; padding:4px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.3); color:#fff;">' +
-          '<button type="button" data-buybtn="' + l.listing_id + '" style="padding:5px 10px; border-radius:6px; border:none; background:#0070ba; color:#fff; cursor:pointer;">Buy</button>' +
-          '</div>';
-      }).join('');
-      el.querySelectorAll('[data-buybtn]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var id = btn.getAttribute('data-buybtn');
-          var input = el.querySelector('[data-buy="' + id + '"]');
-          buy(id, parseFloat(input && input.value));
-        });
-      });
-    }).catch(function () {});
+      renderListings((res && res.listings) || []);
+    }).catch(function () {
+      renderListings([]);
+    });
   }
 
   function listForSale() {

@@ -28,15 +28,54 @@
     });
   }
 
+  var catalogCategoryFilter = 'all';
+  var catalogCache = null;
+
   function renderCatalog(data) {
+    catalogCache = data;
     var grid = document.getElementById('agg-catalog-grid');
     if (!grid) return;
     var rows = (data && data.aggregators) || [];
-    if (!rows.length) {
-      grid.innerHTML = '<p class="agg-v2-muted">No aggregators found.</p>';
+    var nav = document.getElementById('agg-catalog-chips');
+    if (!nav) {
+      var toolbar = document.querySelector('.agg-v2-toolbar');
+      if (toolbar && toolbar.parentNode) {
+        nav = document.createElement('nav');
+        nav.id = 'agg-catalog-chips';
+        nav.className = 'shop-subnav';
+        nav.setAttribute('aria-label', 'Aggregator categories');
+        toolbar.parentNode.insertBefore(nav, toolbar.nextSibling);
+      }
+    }
+    if (nav && window.ShopTaxonomy) {
+      var counts = {};
+      rows.forEach(function (a) {
+        var c = String(a.category || 'other').toLowerCase();
+        counts[c] = (counts[c] || 0) + 1;
+      });
+      var tabs = [{ id: 'all', label: 'All', count: rows.length }];
+      Object.keys(counts).sort().forEach(function (c) {
+        tabs.push({ id: c, label: c, count: counts[c] });
+      });
+      window.ShopTaxonomy.renderChips(nav, tabs, catalogCategoryFilter, function (id) {
+        catalogCategoryFilter = id;
+        var sel = document.getElementById('agg-catalog-category');
+        if (sel) sel.value = id;
+        renderCatalog(catalogCache);
+      });
+    }
+    var filtered = catalogCategoryFilter === 'all'
+      ? rows
+      : rows.filter(function (a) {
+        return String(a.category || 'other').toLowerCase() === catalogCategoryFilter;
+      });
+    if (!filtered.length) {
+      grid.innerHTML = rows.length
+        ? '<p class="agg-v2-muted">No aggregators in this category.</p>'
+        : '<p class="agg-v2-muted">No aggregators found.</p>';
       return;
     }
-    grid.innerHTML = rows
+    grid.innerHTML = filtered
       .map(function (a) {
         return (
           '<article class="agg-v2-card">' +
@@ -73,15 +112,13 @@
     });
   }
 
-  function loadCatalog() {
-    if (loaded.catalog) return;
+  function loadCatalog(force) {
+    if (loaded.catalog && !force) return;
     var grid = document.getElementById('agg-catalog-grid');
     if (grid) grid.innerHTML = '<p class="agg-v2-muted">Loading catalog…</p>';
     var cat = document.getElementById('agg-catalog-category');
     var q = (document.getElementById('agg-catalog-search') || {}).value || '';
-    var category = cat ? cat.value : 'all';
     var url = '/api/aggregators/catalog?limit=75';
-    if (category && category !== 'all') url += '&category=' + encodeURIComponent(category);
     if (q) url += '&search=' + encodeURIComponent(q);
     fetchJson(url).then(function (data) {
       loaded.catalog = true;
@@ -217,7 +254,16 @@
     if (searchBtn) {
       searchBtn.addEventListener('click', function () {
         loaded.catalog = false;
-        loadCatalog();
+        catalogCategoryFilter = 'all';
+        loadCatalog(true);
+      });
+    }
+    var catSel = document.getElementById('agg-catalog-category');
+    if (catSel) {
+      catSel.addEventListener('change', function () {
+        catalogCategoryFilter = catSel.value || 'all';
+        if (catalogCache) renderCatalog(catalogCache);
+        else loadCatalog(true);
       });
     }
     loadProgress();

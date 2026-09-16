@@ -152,6 +152,29 @@ class TestShopTaxonomy(unittest.TestCase):
         self.assertIn("tx_subcategories", payload)
         self.assertIn("casino_parents", payload)
         self.assertIn("exchange_parents", payload)
+        self.assertIn("marketplace_tiers", payload)
+        self.assertIn("rental_groups", payload)
+        self.assertIn("p2p_price_groups", payload)
+        self.assertIn("digital_download_subcats", payload)
+
+    def test_marketplace_rental_p2p_digital_groups(self):
+        from backend.services.shop_taxonomy_service import (
+            digital_download_subcat_for,
+            marketplace_tier_for,
+            p2p_price_group_for,
+            rental_group_for,
+        )
+        self.assertEqual(marketplace_tier_for({"tier": "Starter", "price_mn2": 250}), "starter")
+        self.assertEqual(marketplace_tier_for({"tier": "Pro", "price_mn2": 750}), "pro")
+        self.assertEqual(marketplace_tier_for({"tier": "Elite", "price_mn2": 1800}), "elite")
+        self.assertEqual(marketplace_tier_for({"tier": "Quant", "price_mn2": 4000}), "elite")
+        self.assertEqual(rental_group_for({"daemon": True}), "daemons")
+        self.assertEqual(rental_group_for({"daemon": False}), "bots")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.05}), "budget")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.25}), "mid")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.75}), "premium")
+        self.assertEqual(digital_download_subcat_for({"name": "Neon Theme Pack"}), "themes")
+        self.assertEqual(digital_download_subcat_for({"name": "Prompt Pack Vol 2"}), "prompts")
 
 
 class TestNavToolbarGroupLayout(unittest.TestCase):

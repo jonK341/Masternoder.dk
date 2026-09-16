@@ -100,6 +100,33 @@
     { id: 'ops', label: 'Ops', ids: ['agent_support', 'debugger', 'aggregator', 'agents_control', 'hosting', 'profit', 'news'] },
   ];
 
+  var MARKETPLACE_TIERS = [
+    { id: 'all', label: 'All bots' },
+    { id: 'starter', label: 'Starter' },
+    { id: 'pro', label: 'Pro' },
+    { id: 'elite', label: 'Elite & Quant' },
+  ];
+
+  var RENTAL_GROUPS = [
+    { id: 'all', label: 'All rentals' },
+    { id: 'bots', label: 'Timed bots' },
+    { id: 'daemons', label: 'Daemons' },
+  ];
+
+  var P2P_PRICE_GROUPS = [
+    { id: 'all', label: 'All listings' },
+    { id: 'budget', label: 'Budget' },
+    { id: 'mid', label: 'Mid' },
+    { id: 'premium', label: 'Premium' },
+  ];
+
+  var DIGITAL_DOWNLOAD_SUBCATS = [
+    { id: 'all', label: 'All downloads' },
+    { id: 'themes', label: 'Themes' },
+    { id: 'prompts', label: 'Prompt packs' },
+    { id: 'other', label: 'Other' },
+  ];
+
   var PARENT_BY_CAT = {};
   CATALOG_PARENTS.forEach(function (p) {
     (p.categories || []).forEach(function (c) {
@@ -246,6 +273,41 @@
     return 'other';
   }
 
+  function marketplaceTierFor(row) {
+    row = row || {};
+    var tier = String(row.tier || '').toLowerCase();
+    var price = Number(row.price_mn2 || 0);
+    if (tier.indexOf('starter') !== -1 || (price > 0 && price < 500)) return 'starter';
+    if (tier.indexOf('pro') !== -1 || (price >= 500 && price < 1200)) return 'pro';
+    if (tier.indexOf('elite') !== -1 || tier.indexOf('quant') !== -1 || price >= 1200) return 'elite';
+    return 'starter';
+  }
+
+  function rentalGroupFor(row) {
+    row = row || {};
+    if (row.daemon) return 'daemons';
+    return 'bots';
+  }
+
+  function p2pPriceGroupFor(row) {
+    row = row || {};
+    var price = Number(row.price_usd_per_mn2 || 0);
+    if (price <= 0) return 'other';
+    if (price < 0.1) return 'budget';
+    if (price < 0.5) return 'mid';
+    return 'premium';
+  }
+
+  function digitalDownloadSubcatFor(row) {
+    row = row || {};
+    var blob = [row.id, row.name, row.category, row.kind].map(function (v) {
+      return String(v || '');
+    }).join(' ').toLowerCase();
+    if (/theme|skin|wallpaper/.test(blob)) return 'themes';
+    if (/prompt|pack|template/.test(blob)) return 'prompts';
+    return 'other';
+  }
+
   function classify(item) {
     item = item || {};
     var iid = item.item_id || item.id || '';
@@ -317,7 +379,12 @@
   }
 
   function subcatLabel(id) {
-    var pools = INVENTORY_SUBCATS.concat(TX_SUBCATS);
+    var pools = INVENTORY_SUBCATS.concat(TX_SUBCATS).concat(
+      MARKETPLACE_TIERS,
+      RENTAL_GROUPS,
+      P2P_PRICE_GROUPS,
+      DIGITAL_DOWNLOAD_SUBCATS
+    );
     Object.keys(SPECIAL_GROUPS).forEach(function (k) {
       pools = pools.concat(SPECIAL_GROUPS[k]);
     });
@@ -336,6 +403,10 @@
     EXCHANGE_PARENTS: EXCHANGE_PARENTS,
     PROFILE_HUB_PARENTS: PROFILE_HUB_PARENTS,
     NAV_GROUPS: NAV_GROUPS,
+    MARKETPLACE_TIERS: MARKETPLACE_TIERS,
+    RENTAL_GROUPS: RENTAL_GROUPS,
+    P2P_PRICE_GROUPS: P2P_PRICE_GROUPS,
+    DIGITAL_DOWNLOAD_SUBCATS: DIGITAL_DOWNLOAD_SUBCATS,
     parentForCategory: parentForCategory,
     casinoParentFor: casinoParentFor,
     exchangeParentFor: exchangeParentFor,
@@ -344,6 +415,10 @@
     subcategoryFor: subcategoryFor,
     specialSubcategoryFor: specialSubcategoryFor,
     txSubcategoryFor: txSubcategoryFor,
+    marketplaceTierFor: marketplaceTierFor,
+    rentalGroupFor: rentalGroupFor,
+    p2pPriceGroupFor: p2pPriceGroupFor,
+    digitalDownloadSubcatFor: digitalDownloadSubcatFor,
     classify: classify,
     enrich: enrich,
     renderChips: renderChips,

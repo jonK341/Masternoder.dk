@@ -42,12 +42,57 @@
     }).then(function (r) { return r.json().catch(function () { return {}; }); });
   }
 
+  var catalogTierFilter = "all";
+  var catalogCache = null;
+  var rentalGroupFilter = "all";
+  var rentalCache = null;
+
+  function _tierForTemplate(t) {
+    var tax = window.ShopTaxonomy;
+    return tax && tax.marketplaceTierFor ? tax.marketplaceTierFor(t) : "starter";
+  }
+
+  function _rentalGroup(r) {
+    var tax = window.ShopTaxonomy;
+    return tax && tax.rentalGroupFor ? tax.rentalGroupFor(r) : "bots";
+  }
+
+  function _ensureSubnav(id, label, beforeEl) {
+    var nav = $(id);
+    if (!nav && beforeEl && beforeEl.parentNode) {
+      nav = document.createElement("nav");
+      nav.id = id.slice(1);
+      nav.className = "shop-subnav";
+      nav.setAttribute("aria-label", label);
+      beforeEl.parentNode.insertBefore(nav, beforeEl);
+    }
+    return nav;
+  }
+
   function renderCatalog(data) {
+    catalogCache = data;
     var c = $("cex-market-catalog");
     if (!c) return;
-    if (!data || !data.templates || !data.templates.length) { c.textContent = "No agents available."; return; }
+    var templates = (data && data.templates) || [];
+    var tax = window.ShopTaxonomy;
+    var nav = _ensureSubnav("cex-market-tier-nav", "Agent marketplace tiers", c);
+    if (nav && tax) {
+      tax.renderChips(
+        nav,
+        tax.countedTabs(tax.MARKETPLACE_TIERS, templates, _tierForTemplate),
+        catalogTierFilter,
+        function (id) {
+          catalogTierFilter = id;
+          renderCatalog(catalogCache);
+        }
+      );
+    }
+    var rows = catalogTierFilter === "all"
+      ? templates
+      : templates.filter(function (t) { return _tierForTemplate(t) === catalogTierFilter; });
+    if (!rows.length) { c.textContent = templates.length ? "No bots in this tier." : "No agents available."; return; }
     c.innerHTML = "";
-    data.templates.forEach(function (t) {
+    rows.forEach(function (t) {
       var p = t.projection || {};
       var card = document.createElement("div");
       card.className = "cex-market-card";
@@ -396,9 +441,30 @@
   }
 
   function renderRentals(cat) {
+    rentalCache = cat;
     var c = $("cex-rental-catalog");
     if (!c || !cat) return;
-    c.innerHTML = (cat.rentals || []).map(function (r) {
+    var rentals = cat.rentals || [];
+    var tax = window.ShopTaxonomy;
+    var nav = _ensureSubnav("cex-rental-group-nav", "Rental types", c);
+    if (nav && tax) {
+      tax.renderChips(
+        nav,
+        tax.countedTabs(tax.RENTAL_GROUPS, rentals, _rentalGroup),
+        rentalGroupFilter,
+        function (id) {
+          rentalGroupFilter = id;
+          renderRentals(rentalCache);
+        }
+      );
+    }
+    var rows = rentalGroupFilter === "all"
+      ? rentals
+      : rentals.filter(function (r) { return _rentalGroup(r) === rentalGroupFilter; });
+    if (!rows.length) {
+      c.innerHTML = rentals.length ? "<p class=\"cex-market-sub\">No rentals in this group.</p>" : "";
+    } else {
+    c.innerHTML = rows.map(function (r) {
         return '<div class="cex-rental-card"><img src="' + (r.image || "") + '" alt="" class="cex-card-img" />' +
         "<h4>" + r.name + (r.daemon ? ' <span class="cex-daemon-badge-daemon">Daemon</span>' : "") +
         " " + skillSetBadge(r.skill_set) + "</h4><p>" + (r.description || "") + "</p>" +
@@ -408,6 +474,7 @@
         '<button type="button" class="cex-btn" data-rent="' + r.id + '">Rent now</button>' +
         '<button type="button" class="cex-btn cex-btn--ghost" data-ctrl-rent="' + r.id + '">Checkout</button></div>';
     }).join("");
+    }
     Array.prototype.forEach.call(c.querySelectorAll("[data-rent]"), function (b) {
       b.addEventListener("click", function () {
         api("/api/exchange/rental/rent", { method: "POST", body: { rental_id: b.getAttribute("data-rent"), auto_renew: !!document.getElementById("cex-rent-auto-new") && document.getElementById("cex-rent-auto-new").checked } })

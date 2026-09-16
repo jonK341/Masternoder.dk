@@ -106,6 +106,33 @@ PROFILE_HUB_PARENTS: List[Dict[str, Any]] = [
     {"id": "ops", "label": "Ops", "routes": ["security", "agents", "activity", "lab", "leaderboard"]},
 ]
 
+MARKETPLACE_TIERS: List[Dict[str, str]] = [
+    {"id": "all", "label": "All bots"},
+    {"id": "starter", "label": "Starter"},
+    {"id": "pro", "label": "Pro"},
+    {"id": "elite", "label": "Elite & Quant"},
+]
+
+RENTAL_GROUPS: List[Dict[str, str]] = [
+    {"id": "all", "label": "All rentals"},
+    {"id": "bots", "label": "Timed bots"},
+    {"id": "daemons", "label": "Daemons"},
+]
+
+P2P_PRICE_GROUPS: List[Dict[str, str]] = [
+    {"id": "all", "label": "All listings"},
+    {"id": "budget", "label": "Budget"},
+    {"id": "mid", "label": "Mid"},
+    {"id": "premium", "label": "Premium"},
+]
+
+DIGITAL_DOWNLOAD_SUBCATS: List[Dict[str, str]] = [
+    {"id": "all", "label": "All downloads"},
+    {"id": "themes", "label": "Themes"},
+    {"id": "prompts", "label": "Prompt packs"},
+    {"id": "other", "label": "Other"},
+]
+
 NAV_GROUPS: List[Dict[str, Any]] = [
     {"id": "all", "label": "All", "ids": []},
     {
@@ -295,6 +322,48 @@ def tx_subcategory_for(tx_type: Optional[str]) -> str:
     return "other"
 
 
+def marketplace_tier_for(row: Optional[Dict[str, Any]] = None) -> str:
+    item = row or {}
+    tier = str(item.get("tier") or "").strip().lower()
+    price = float(item.get("price_mn2") or 0)
+    if "starter" in tier or (0 < price < 500):
+        return "starter"
+    if "pro" in tier or (500 <= price < 1200):
+        return "pro"
+    if any(x in tier for x in ("elite", "quant")) or price >= 1200:
+        return "elite"
+    return "starter"
+
+
+def rental_group_for(row: Optional[Dict[str, Any]] = None) -> str:
+    item = row or {}
+    return "daemons" if item.get("daemon") else "bots"
+
+
+def p2p_price_group_for(row: Optional[Dict[str, Any]] = None) -> str:
+    item = row or {}
+    price = float(item.get("price_usd_per_mn2") or 0)
+    if price <= 0:
+        return "other"
+    if price < 0.1:
+        return "budget"
+    if price < 0.5:
+        return "mid"
+    return "premium"
+
+
+def digital_download_subcat_for(row: Optional[Dict[str, Any]] = None) -> str:
+    item = row or {}
+    blob = " ".join(
+        str(item.get(k) or "") for k in ("id", "name", "category", "kind")
+    ).lower()
+    if any(x in blob for x in ("theme", "skin", "wallpaper")):
+        return "themes"
+    if any(x in blob for x in ("prompt", "pack", "template")):
+        return "prompts"
+    return "other"
+
+
 def classify_item(
     *,
     item_id: Optional[str] = None,
@@ -344,4 +413,8 @@ def taxonomy_payload() -> Dict[str, Any]:
         "exchange_parents": EXCHANGE_PARENTS,
         "profile_hub_parents": PROFILE_HUB_PARENTS,
         "nav_groups": NAV_GROUPS,
+        "marketplace_tiers": MARKETPLACE_TIERS,
+        "rental_groups": RENTAL_GROUPS,
+        "p2p_price_groups": P2P_PRICE_GROUPS,
+        "digital_download_subcats": DIGITAL_DOWNLOAD_SUBCATS,
     }

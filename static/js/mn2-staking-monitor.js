@@ -126,15 +126,67 @@
       });
   }
 
+  var servicesCache = [];
+  var servicesFilter = 'all';
+
+  function _serviceSubcat(s) {
+    var tax = window.ShopTaxonomy;
+    if (tax && tax.specialSubcategoryFor) {
+      return tax.specialSubcategoryFor('mn2_services', {
+        service_id: s.id || s.service_id,
+        name: s.name,
+        category: s.category,
+        description: s.description
+      });
+    }
+    return 'wallet';
+  }
+
+  function _renderServicesGrid() {
+    var grid = q('services-grid');
+    if (!grid) return;
+    var tax = window.ShopTaxonomy;
+    var nav = q('services-subnav');
+    if (!nav && grid.parentNode) {
+      nav = document.createElement('nav');
+      nav.id = 'services-subnav';
+      nav.className = 'shop-subnav';
+      nav.setAttribute('aria-label', 'MN2 service groups');
+      grid.parentNode.insertBefore(nav, grid);
+    }
+    var rows = servicesCache || [];
+    if (nav && tax) {
+      tax.renderChips(
+        nav,
+        tax.countedTabs(tax.SPECIAL_GROUPS.mn2_services, rows, _serviceSubcat),
+        servicesFilter,
+        function (id) {
+          servicesFilter = id;
+          _renderServicesGrid();
+        }
+      );
+    }
+    var filtered = servicesFilter === 'all'
+      ? rows
+      : rows.filter(function (s) { return _serviceSubcat(s) === servicesFilter; });
+    if (!filtered.length) {
+      grid.innerHTML = rows.length
+        ? '<div class="hub-card"><div class="label">No services</div><div class="value">Try another group</div></div>'
+        : '<div class="hub-card"><div class="label">Services</div><div class="value">Unavailable</div></div>';
+      return;
+    }
+    grid.innerHTML = filtered.map(function (s) {
+      return hubCard(s.name || s.id, s.status || '—', s.category || s.id, s.status);
+    }).join('');
+  }
+
   function loadServicesGrid() {
     fetch('/api/mn2/services', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        var grid = q('services-grid');
-        if (!grid || !d || !d.services) return;
-        grid.innerHTML = d.services.map(function (s) {
-          return hubCard(s.name || s.id, s.status || '—', s.category || s.id, s.status);
-        }).join('');
+        if (!d || !d.services) return;
+        servicesCache = d.services;
+        _renderServicesGrid();
         var up = q('services-updated');
         if (up && d.summary) {
           up.textContent = 'Services: ' + (d.summary.overall || '—') + ' · ' +
@@ -142,6 +194,7 @@
         }
       })
       .catch(function () {
+        servicesCache = [];
         var grid = q('services-grid');
         if (grid) grid.innerHTML = '<div class="hub-card bad"><div class="label">Services</div><div class="value">Unavailable</div></div>';
       });

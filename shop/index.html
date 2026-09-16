@@ -1005,6 +1005,7 @@
                 <span id="digital-downloads-count" style="color: var(--text-secondary);">—</span>
             </div>
             <div id="digital-downloads-body" style="display: none; padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                <nav class="shop-subnav" id="digital-downloads-subnav" aria-label="Digital download types"></nav>
                 <div id="digital-downloads-list" style="min-height: 40px; color: var(--text-secondary);">Loading…</div>
             </div>
         </div>
@@ -1049,7 +1050,7 @@
     </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/shop-taxonomy.js?v=20260916b"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260916d"></script>
         <script src="/static/js/shop-subnav.js?v=20260916"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
@@ -1062,6 +1063,8 @@
         let currentInventorySubcat = 'all';
         let currentAuctionSubcat = 'all';
         let currentHistorySubcat = 'all';
+        let currentDigitalDownloadSubcat = 'all';
+        let digitalDownloadsCache = [];
         let currentCoinPackSubcat = 'all';
         let currentMn2ServiceSubcat = 'all';
         let currentBoosterSubcat = 'all';
@@ -2361,23 +2364,58 @@
             }
         }
         
-        async function loadDigitalDownloads() {
+        function digitalDownloadSubcat(g) {
+            const tax = window.ShopTaxonomy;
+            return tax && tax.digitalDownloadSubcatFor ? tax.digitalDownloadSubcatFor(g) : 'other';
+        }
+
+        function renderDigitalDownloads(rows) {
             const el = document.getElementById('digital-downloads-list');
             const countEl = document.getElementById('digital-downloads-count');
+            const nav = document.getElementById('digital-downloads-subnav');
+            if (!el) return;
+            digitalDownloadsCache = rows || [];
+            if (countEl) countEl.textContent = digitalDownloadsCache.length + ' file' + (digitalDownloadsCache.length === 1 ? '' : 's');
+            if (window.ShopTaxonomy && nav) {
+                window.ShopTaxonomy.renderChips(
+                    nav,
+                    window.ShopTaxonomy.countedTabs(
+                        window.ShopTaxonomy.DIGITAL_DOWNLOAD_SUBCATS,
+                        digitalDownloadsCache,
+                        digitalDownloadSubcat
+                    ),
+                    currentDigitalDownloadSubcat,
+                    (id) => {
+                        currentDigitalDownloadSubcat = id;
+                        renderDigitalDownloads(digitalDownloadsCache);
+                    }
+                );
+            }
+            const filtered = currentDigitalDownloadSubcat === 'all'
+                ? digitalDownloadsCache
+                : digitalDownloadsCache.filter(g => digitalDownloadSubcat(g) === currentDigitalDownloadSubcat);
+            if (!digitalDownloadsCache.length) {
+                el.innerHTML = '<p style="margin:0;">No downloadable digital goods yet. Theme packs and prompt packs appear here after purchase.</p>';
+                return;
+            }
+            if (!filtered.length) {
+                el.innerHTML = '<p style="margin:0;">No downloads in this subcategory.</p>';
+                return;
+            }
+            el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + filtered.map(g =>
+                `<li style="margin-bottom:8px;"><strong>${shopEscape(g.name || g.id)}</strong><br>
+                <a href="${shopEscape(g.download_url)}" class="btn-purchase" style="display:inline-block;margin-top:4px;padding:6px 12px;font-size:0.85rem;text-decoration:none;" download>Download</a></li>`
+            ).join('') + '</ul>';
+        }
+
+        async function loadDigitalDownloads() {
+            const el = document.getElementById('digital-downloads-list');
             if (!el) return;
             try {
                 const r = await fetch(`${BASE_URL}/api/shop/digital-goods?user_id=${encodeURIComponent(userId)}`);
                 const d = await r.json();
                 const rows = (d.digital_goods || []).filter(g => g.owned && g.download_url);
-                if (countEl) countEl.textContent = rows.length + ' file' + (rows.length === 1 ? '' : 's');
-                if (!rows.length) {
-                    el.innerHTML = '<p style="margin:0;">No downloadable digital goods yet. Theme packs and prompt packs appear here after purchase.</p>';
-                    return;
-                }
-                el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + rows.map(g =>
-                    `<li style="margin-bottom:8px;"><strong>${shopEscape(g.name || g.id)}</strong><br>
-                    <a href="${shopEscape(g.download_url)}" class="btn-purchase" style="display:inline-block;margin-top:4px;padding:6px 12px;font-size:0.85rem;text-decoration:none;" download>Download</a></li>`
-                ).join('') + '</ul>';
+                renderDigitalDownloads(rows);
             } catch (_) {
                 el.innerHTML = '<p style="margin:0;">Could not load digital downloads.</p>';
             }
