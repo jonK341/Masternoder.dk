@@ -4,57 +4,233 @@
     <script>window.APP_BASE = '';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MasterNoder wallet portal for MN2 balance, deposits, withdrawals, trusted addresses, and wallet downloads.">
-    <title>Wallets - MasterNoder</title>
+    <meta name="description" content="MasterNoder MN2 wallet — instant rewards, multi-wallet, deposits, withdrawals, monitoring, and on-chain transactions.">
+    <title>MN2 Wallet - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/mn2-wallet-hub.css?v=20260916">
     <style>
         body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, rgba(0,212,255,0.18), transparent 34%), #080b12; color: #fff; }
-        .wallet-page { max-width: 1100px; margin: 0 auto; padding: 42px 18px 64px; }
-        .wallet-hero, .wallet-card { border: 1px solid rgba(0,212,255,0.28); background: rgba(255,255,255,0.055); border-radius: 20px; }
-        .wallet-hero { padding: 34px; margin-bottom: 18px; }
-        .wallet-hero h1 { margin: 0 0 10px; color: #00d4ff; font-size: clamp(2rem, 5vw, 3.4rem); }
-        .wallet-muted { color: rgba(255,255,255,0.76); line-height: 1.55; }
-        .wallet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-        .wallet-card { padding: 22px; }
-        .wallet-card h2 { margin: 0 0 10px; color: #00ff88; font-size: 1.2rem; }
-        .wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-        .wallet-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
-        .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
-        code { color: #9be7ff; }
     </style>
 </head>
 <body class="layout-standard">
-    <main class="wallet-page">
-        <section class="wallet-hero">
-            <p class="wallet-muted">MN2 wallet portal</p>
-            <h1>Wallets</h1>
-            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
-            <div class="wallet-actions">
-                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
-                <a class="wallet-btn secondary" href="/exchange">Open exchange wallet</a>
-                <a class="wallet-btn secondary" href="/explorer">Explorer</a>
+    <main class="mn2-wallet-page">
+        <section class="mn2-wallet-hero">
+            <p class="mn2-wallet-muted">MN2 wallet portal</p>
+            <h1>MN2 Wallet</h1>
+            <p class="mn2-wallet-muted">Instant rewards &amp; bonuses, multi-wallet addresses, 5-day monitoring, agent cron settlement, and on-chain payouts to your deposit address.</p>
+            <div class="mn2-wallet-links">
+                <a href="/shop#shop-mn2"><i class="fas fa-shopping-cart"></i> Shop with MN2</a>
+                <a href="/exchange"><i class="fas fa-exchange-alt"></i> Exchange</a>
+                <a href="/explorer"><i class="fas fa-search"></i> Explorer</a>
+                <a href="/profile#profile-mn2-wallet-card"><i class="fas fa-user"></i> Profile wallet</a>
             </div>
         </section>
-        <section class="wallet-grid" aria-label="Wallet sections">
-            <article class="wallet-card">
-                <h2>Deposit & withdraw</h2>
-                <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>
-                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Manage MN2 wallet</a>
-            </article>
-            <article class="wallet-card">
-                <h2>Spend MN2</h2>
-                <p class="wallet-muted">Use the same balance for shop checkout, casino, exchange swaps, hosting, and creator tools.</p>
-                <a class="wallet-btn secondary" href="/shop#shop-mn2">Shop with MN2</a>
-            </article>
-            <article class="wallet-card">
-                <h2>Daemon & Qt wallet</h2>
-                <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Use the explorer and profile wallet for live app operations.</p>
-                <a class="wallet-btn secondary" href="/news">Read wallet updates</a>
-            </article>
+
+        <section class="mn2-wallet-card" id="profile-mn2-wallet-card">
+            <h2 class="section-title">Your MN2 Wallet</h2>
+            <p class="mn2-wallet-muted" style="margin-bottom:12px;font-size:0.9rem;">Deposit MN2, create labeled wallets, withdraw, and track every reward instantly. <strong>MN2-only</strong> — no other coin balances shown here.</p>
+
+            <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
+                <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
+                <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+            </div>
+
+            <nav id="profile-wallet-subnav" class="profile-wallet-subnav" role="tablist" aria-label="Wallet sections">
+                <button type="button" class="tab-btn active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
+                <button type="button" class="tab-btn" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
+                <button type="button" class="tab-btn" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
+                <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
+                <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
+                <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
+                <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
+            </nav>
+
+            <div data-wallet-panel="overview">
+                <strong style="color:#00d4ff;">Balance:</strong>
+                <span id="profile-mn2-balance" style="font-size:1.2rem;font-weight:700;">--</span> MN2
+                <span id="profile-mn2-balance-fiat" style="font-size:0.85rem;opacity:0.75;margin-left:6px;"></span>
+                <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:0.78rem;opacity:0.85;cursor:pointer;">
+                    <input type="checkbox" id="mn2-fiat-toggle"> Show USD
+                </label>
+
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">5-day wallet monitor (UTC)</strong>
+                    <p style="font-size:0.78rem;opacity:0.78;margin:4px 0 0;"><span style="color:#00ff88;">Green</span> = deposits &amp; rewards, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
+                    <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">Blockchain &amp; agent monitor</strong>
+                    <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Daemon health, chain payouts, and agent cron — rewards credit instantly to your wallet.</p>
+                    <div id="profile-mn2-daemon-monitor" class="mn2-system-monitor">Loading…</div>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">System monitor</strong>
+                    <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Game, battle, quests, generator, casino, staking, and on-chain payouts.</p>
+                    <div id="profile-mn2-system-monitor" class="mn2-system-monitor">Loading…</div>
+                </div>
+
+                <div id="profile-mn2-instant-toast" aria-live="polite"></div>
+
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">Agent mesh wallets</strong>
+                    <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Platform agents each have an MN2 address for peer-mesh on-chain activity.</p>
+                    <div id="profile-mn2-agent-wallets">Loading…</div>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">User wallet map</strong>
+                    <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">All users with wallet status and clone/copy detection.</p>
+                    <div id="profile-mn2-user-wallet-map-summary" style="font-size:0.74rem;opacity:0.8;margin:4px 0 8px;">Loading…</div>
+                    <div style="overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid rgba(0,212,255,0.25);border-radius:8px;">
+                        <table id="profile-mn2-user-wallet-map-table" style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+                            <thead>
+                                <tr style="background:rgba(0,212,255,0.12);text-align:left;">
+                                    <th style="padding:6px 8px;">User</th>
+                                    <th style="padding:6px 8px;">Wallet</th>
+                                    <th style="padding:6px 8px;">Address</th>
+                                    <th style="padding:6px 8px;">MN2</th>
+                                    <th style="padding:6px 8px;">Clone</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profile-mn2-user-wallet-map-body">
+                                <tr><td colspan="5" style="padding:8px;opacity:0.7;">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p class="mn2-wallet-muted" style="margin-top:14px;font-size:0.75rem;border-top:1px solid rgba(0,212,255,0.2);padding-top:10px;">MN2 value can be volatile. Not financial advice. <a href="/terms" style="color:#00d4ff;">Terms</a>.</p>
+            </div>
+
+            <div data-wallet-panel="deposit" style="display:none;">
+                <strong style="color:#00d4ff;">Deposit address</strong>
+                <p id="profile-mn2-deposit-error" style="display:none;font-size:0.85rem;color:#ffaa00;margin:6px 0;"></p>
+                <p id="profile-mn2-deposit-hint" style="display:none;font-size:0.8rem;opacity:0.85;margin:4px 0;">No address yet. Click <strong>Request address</strong> to get one.</p>
+                <div style="display:flex;align-items:flex-start;gap:12px;margin-top:6px;flex-wrap:wrap;">
+                    <div id="profile-mn2-qr" style="flex-shrink:0;width:192px;height:192px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.35);"></div>
+                    <div style="flex:1;min-width:0;">
+                        <code id="profile-mn2-deposit-address" style="word-break:break-all;padding:6px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.85rem;">--</code>
+                        <div style="margin-top:6px;">
+                            <button type="button" id="profile-mn2-copy" style="padding:6px 12px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.15);color:#00d4ff;cursor:pointer;font-size:0.85rem;"><i class="fas fa-copy"></i> Copy</button>
+                            <button type="button" id="profile-mn2-request-addr" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.85rem;margin-left:6px;"><i class="fas fa-plus-circle"></i> Request address</button>
+                            <button type="button" id="profile-mn2-deposit-retry" style="display:none;padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.85rem;margin-left:6px;"><i class="fas fa-sync-alt"></i> Retry</button>
+                            <a id="profile-mn2-explorer-link" href="#" target="_blank" rel="noopener" style="color:#00d4ff;font-size:0.85rem;margin-left:8px;">Explorer</a>
+                        </div>
+                    </div>
+                </div>
+                <div id="profile-mn2-wallets-list" style="margin-top:12px;font-size:0.82rem;"></div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                    <input type="text" id="profile-mn2-new-wallet-label" placeholder="New wallet label" style="min-width:140px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:0.82rem;">
+                    <button type="button" id="profile-mn2-create-wallet" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.82rem;"><i class="fas fa-wallet"></i> Create new wallet</button>
+                </div>
+                <p id="profile-mn2-deposit-instant-msg" style="font-size:0.8rem;opacity:0.8;margin-top:6px;">Credits appear instantly (0 confirmations).</p>
+            </div>
+
+            <div data-wallet-panel="withdraw" style="display:none;">
+                <strong style="color:#00d4ff;">Withdraw</strong>
+                <p id="profile-mn2-withdraw-verification-msg" style="display:none;margin:6px 0;color:#ffaa00;font-size:0.9rem;">Account verification required to withdraw.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+                    <input type="text" id="profile-mn2-withdraw-address" placeholder="MN2 address" style="min-width:240px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <input type="number" id="profile-mn2-withdraw-amount" placeholder="Amount" step="0.00000001" min="0" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <button type="button" id="profile-mn2-withdraw-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:600;cursor:pointer;"><i class="fas fa-paper-plane"></i> Withdraw</button>
+                </div>
+                <p style="font-size:0.8rem;opacity:0.8;margin-top:4px;">Fee 0.001 MN2 deducted.</p>
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">Send MN2 (internal gift)</strong>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+                        <input type="text" id="mn2-gift-to" placeholder="user_id or address" style="min-width:200px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                        <input type="number" id="mn2-gift-amount" placeholder="Amount" step="0.00000001" min="0" style="width:100px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                        <button type="button" id="mn2-gift-send" style="padding:6px 12px;border-radius:6px;border:none;background:linear-gradient(135deg,#00ff88,#00cc66);color:#000;font-weight:600;cursor:pointer;">Send</button>
+                    </div>
+                    <p id="mn2-gift-msg" style="font-size:0.78rem;margin:6px 0 0;color:#ffaa44;"></p>
+                </div>
+            </div>
+
+            <div data-wallet-panel="trusted" style="display:none;">
+                <strong style="color:#00d4ff;">Trusted addresses</strong>
+                <p style="font-size:0.76rem;opacity:0.75;margin:4px 0;">Save payout addresses for faster withdrawals.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+                    <input type="text" id="mn2-addrbook-address" placeholder="MN2 address" style="min-width:200px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <input type="text" id="mn2-addrbook-label" placeholder="Label" style="width:100px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <input type="password" id="mn2-addrbook-password" placeholder="Profile password" style="width:140px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <button type="button" id="mn2-addrbook-add" style="padding:6px 12px;border-radius:6px;border:1px solid #00d4ff;background:rgba(0,212,255,0.12);color:#00d4ff;cursor:pointer;">Add trusted</button>
+                </div>
+                <div id="mn2-addrbook-list" style="margin-top:8px;font-size:0.8rem;opacity:0.9;">Loading…</div>
+            </div>
+
+            <div data-wallet-panel="transactions" style="display:none;">
+                <div id="profile-mn2-revenue-block" style="margin-bottom:14px;display:none;">
+                    <strong style="color:#00d4ff;">Shop revenue address</strong>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                        <code id="profile-mn2-revenue-address" style="word-break:break-all;padding:6px;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.85rem;"></code>
+                        <button type="button" id="profile-mn2-copy-revenue" style="padding:6px 10px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.15);color:#00d4ff;cursor:pointer;font-size:0.85rem;"><i class="fas fa-copy"></i> Copy</button>
+                        <a id="profile-mn2-revenue-explorer" href="#" target="_blank" rel="noopener" style="color:#00d4ff;font-size:0.85rem;">Explorer</a>
+                    </div>
+                </div>
+                <strong style="color:#00d4ff;">Recent transactions</strong>
+                <div id="profile-mn2-transactions" style="margin-top:6px;max-height:240px;overflow-y:auto;font-size:0.85rem;opacity:0.9;">Loading…</div>
+                <div style="margin-top:14px;">
+                    <strong style="color:#00d4ff;">Statement &amp; tax export</strong>
+                    <select id="mn2-statement-year" style="margin-left:8px;background:rgba(0,0,0,0.3);color:#e8eefc;border:1px solid rgba(0,212,255,0.3);border-radius:6px;padding:2px 6px;font-size:0.8rem;">
+                        <option value="">All time</option>
+                    </select>
+                    <a id="mn2-statement-csv" href="/api/mn2/statement?format=csv" style="font-size:0.78rem;color:#00d4ff;margin-left:8px;">Export CSV</a>
+                    <div id="mn2-statement-summary" style="font-size:0.75rem;opacity:0.75;margin-top:4px;"></div>
+                    <div id="mn2-statement-rows" style="margin-top:6px;max-height:260px;overflow-y:auto;font-size:0.8rem;opacity:0.92;">Loading…</div>
+                </div>
+            </div>
+
+            <div data-wallet-panel="security" style="display:none;">
+                <div id="mn2-withdraw-security">
+                    <strong style="color:#00d4ff;">Withdrawal security</strong>
+                    <p id="mn2-whitelist-required" style="font-size:0.8rem;opacity:0.75;"></p>
+                    <p style="font-size:0.85rem;">2FA: <span id="mn2-2fa-status">—</span></p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;">
+                        <button type="button" id="mn2-2fa-setup" style="padding:6px 12px;border-radius:6px;border:1px solid #00d4ff;background:rgba(0,212,255,0.12);color:#00d4ff;cursor:pointer;">Setup 2FA</button>
+                        <input type="text" id="mn2-whitelist-address" placeholder="Whitelist MN2 address" style="min-width:200px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                        <button type="button" id="mn2-whitelist-add" style="padding:6px 12px;border-radius:6px;border:1px solid #00ff88;background:rgba(0,255,136,0.12);color:#00ff88;cursor:pointer;">Add whitelist</button>
+                    </div>
+                    <code id="mn2-2fa-secret" style="font-size:0.75rem;opacity:0.7;"></code>
+                    <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
+                </div>
+            </div>
+
+            <div data-wallet-panel="settings" style="display:none;">
+                <p style="font-size:0.85rem;opacity:0.85;">Fiat toggle is on the Overview tab. Rewards credit instantly; chain payouts send MN2 to your deposit address when enabled.</p>
+                <p style="margin-top:10px;font-size:0.82rem;"><a href="/shop#shop-mn2" style="color:#00ff88;">Shop MN2 tab</a> · <a href="/explorer/" style="color:#00d4ff;">Explorer</a> · <a href="/profile" style="color:#00d4ff;">Profile</a></p>
+            </div>
         </section>
     </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+    <script src="/static/js/user-identification.js?v=20260122020000"></script>
+    <script src="/static/js/profile-mn2-wallet.js?v=20260916-breakdown"></script>
+    <script src="/static/js/mn2-wallet-extras.js?v=20260916"></script>
+    <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
+    <script src="/static/js/mn2-activity-stream.js?v=20260916" defer></script>
+    <script>
+    (function () {
+      function tabFromHash() {
+        var h = (location.hash || '').replace(/^#/, '').toLowerCase();
+        var allowed = ['overview', 'deposit', 'withdraw', 'trusted', 'transactions', 'security', 'settings'];
+        return allowed.indexOf(h) >= 0 ? h : 'overview';
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.ProfileMn2Wallet) {
+          ProfileMn2Wallet.showWalletTab(tabFromHash());
+          ProfileMn2Wallet.load();
+        }
+        window.addEventListener('hashchange', function () {
+          if (window.ProfileMn2Wallet) ProfileMn2Wallet.showWalletTab(tabFromHash());
+        });
+      });
+    })();
+    </script>
 </body>
 </html>
