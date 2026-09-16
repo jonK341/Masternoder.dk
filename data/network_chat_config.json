@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "enabled": true,
+  "room_id": "wallet-network",
+  "engagement_disclaimer": "Network chat rewards are small MN2 micro-bonuses for active participation — capped daily.",
+  "presence_ttl_seconds": 120,
+  "max_message_length": 500,
+  "max_messages_fetch": 50,
+  "rewards": {
+    "message_post_mn2": 0.001,
+    "message_daily_cap_mn2": 0.01,
+    "max_messages_rewarded_per_day": 20,
+    "rating_given_mn2": 0.0005,
+    "rating_daily_cap_mn2": 0.005,
+    "max_ratings_rewarded_per_day": 15,
+    "heartbeat_mn2": 0.0003,
+    "heartbeat_daily_cap_mn2": 0.006,
+    "max_heartbeats_rewarded_per_day": 24,
+    "heartbeat_cooldown_seconds": 60,
+    "global_daily_cap_mn2": 0.02
+  },
+  "micro_earn_event_ids": {
+    "chat_message": "network_chat_message",
+    "chat_rating": "network_chat_rating",
+    "chat_heartbeat": "network_chat_heartbeat"
+  },
+  "stub_online_users": [
+    {"user_id": "network_peer_1", "display_name": "NodeRunner", "status": "online"},
+    {"user_id": "network_peer_2", "display_name": "StakeKing", "status": "online"},
+    {"user_id": "network_peer_3", "display_name": "TrophyHunter", "status": "away"},
+    {"user_id": "network_peer_4", "display_name": "EncoderFan", "status": "online"},
+    {"user_id": "network_peer_5", "display_name": "CasinoVIP", "status": "online"}
+  ]
+}
