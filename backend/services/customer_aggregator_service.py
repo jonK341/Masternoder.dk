@@ -61,11 +61,12 @@ def _control_for_user(
 
 def _load_ledger_index(limit: int = 20000) -> Dict[str, Dict[str, Any]]:
     try:
-        from backend.services.mn2_ledger import list_ledger_user_summaries
+        from backend.services.ledger_customer_aggregator_service import load_ledger_customer_rows
 
+        rows = load_ledger_customer_rows()[: max(1, int(limit or 20000))]
         return {
             str(row.get("user_id")): row
-            for row in list_ledger_user_summaries(limit=limit)
+            for row in rows
             if row.get("user_id")
         }
     except Exception:
@@ -308,9 +309,9 @@ def stats() -> Dict[str, Any]:
     discord_total = int(discord_stats.get("total") or 0)
     ledger_total = 0
     try:
-        from backend.services.mn2_ledger import count_ledger_users
+        from backend.services.ledger_customer_aggregator_service import ledger_customer_index_meta
 
-        ledger_total = count_ledger_users()
+        ledger_total = int(ledger_customer_index_meta().get("total") or 0)
     except Exception:
         pass
 

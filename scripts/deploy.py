@@ -403,6 +403,7 @@ MANIFESTS = {
         "data/discord_customer_index.json",
         "data/encoder_customer_fulfillment.json",
         "data/ledger_customer_controls.json",
+        "data/ledger_customer_index.json",
         "data/encoder_v2_catalog.json",
         "data/encoder_v2_progress.json",
         "scripts/build_encoder_v2_catalog.py",
@@ -1057,6 +1058,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 "data/discord_customer_index.json",
                 "data/encoder_customer_fulfillment.json",
                 "data/ledger_customer_controls.json",
+                "data/ledger_customer_index.json",
             ):
                 ssh.exec_command(
                     f"chown www-data:www-data {REMOTE_BASE}/{rel} "

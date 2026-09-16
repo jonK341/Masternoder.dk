@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _POINTS_DIR = os.path.join(_BASE, "logs", "unified_points")
+_INDEX_FILE = os.path.join(_BASE, "data", "ledger_customer_index.json")
 
 
 def _iso() -> str:
@@ -24,10 +25,82 @@ def _config() -> Dict[str, Any]:
         return {}
 
 
-def list_ledger_customers(*, limit: int = 500, offset: int = 0) -> Dict[str, Any]:
-    from backend.services.mn2_ledger import list_ledger_user_summaries
+def _ledger_path() -> str:
+    from backend.services.mn2_ledger import _ledger_path as path
 
-    rows = list_ledger_user_summaries(limit=max(limit + offset, 500))
+    return path()
+
+
+def _load_index_store() -> Dict[str, Any]:
+    if not os.path.isfile(_INDEX_FILE):
+        return {"version": 1, "built_at": None, "ledger_mtime": None, "total": 0, "customers": []}
+    try:
+        with open(_INDEX_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            data.setdefault("customers", [])
+            return data
+    except Exception:
+        pass
+    return {"version": 1, "built_at": None, "ledger_mtime": None, "total": 0, "customers": []}
+
+
+def _save_index_store(data: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_INDEX_FILE), exist_ok=True)
+    tmp = _INDEX_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, _INDEX_FILE)
+
+
+def load_ledger_customer_rows() -> List[Dict[str, Any]]:
+    """Fast read of pre-built ledger customer summaries."""
+    return list(_load_index_store().get("customers") or [])
+
+
+def ledger_customer_index_meta() -> Dict[str, Any]:
+    store = _load_index_store()
+    return {
+        "success": True,
+        "total": int(store.get("total") or 0),
+        "built_at": store.get("built_at"),
+        "ledger_mtime": store.get("ledger_mtime"),
+        "stale": _index_is_stale(store),
+    }
+
+
+def _index_is_stale(store: Dict[str, Any]) -> bool:
+    path = _ledger_path()
+    if not os.path.isfile(path):
+        return False
+    try:
+        current_mtime = os.path.getmtime(path)
+    except OSError:
+        return False
+    indexed_mtime = store.get("ledger_mtime")
+    return indexed_mtime is None or float(indexed_mtime) != float(current_mtime)
+
+
+def rebuild_ledger_customer_index() -> Dict[str, Any]:
+    """Scan MN2 ledger once and persist customer summaries for fast aggregator reads."""
+    from backend.services.mn2_ledger import _build_ledger_user_summaries
+
+    rows = _build_ledger_user_summaries()
+    path = _ledger_path()
+    ledger_mtime = os.path.getmtime(path) if os.path.isfile(path) else None
+    store = {
+        "version": 1,
+        "built_at": _iso(),
+        "ledger_mtime": ledger_mtime,
+        "total": len(rows),
+        "customers": rows,
+    }
+    _save_index_store(store)
+    return {"success": True, "total": len(rows), "built_at": store["built_at"]}
+
+
+def list_ledger_customers(*, limit: int = 500, offset: int = 0) -> Dict[str, Any]:
+    rows = load_ledger_customer_rows()
     page = rows[offset: offset + limit]
     return {"success": True, "customers": page, "total": len(rows), "limit": limit, "offset": offset}
 
@@ -71,13 +144,12 @@ def _ensure_points_stub(user_id: str, ledger_row: Dict[str, Any]) -> bool:
 
 def sync_ledger_customers_to_aggregator(*, limit: int = 500) -> Dict[str, Any]:
     """Import ledger user IDs into unified points / customer aggregator."""
-    from backend.services.mn2_ledger import list_ledger_user_summaries
-
     cfg = _config()
     if not cfg.get("enabled", True):
         return {"success": False, "error": "ledger_customer_control_disabled"}
 
-    rows = list_ledger_user_summaries(limit=limit)
+    index_build = rebuild_ledger_customer_index()
+    rows = load_ledger_customer_rows()[: max(1, int(limit or 500))]
     created = 0
     updated = 0
     errors: List[Dict[str, Any]] = []
@@ -105,7 +177,8 @@ def sync_ledger_customers_to_aggregator(*, limit: int = 500) -> Dict[str, Any]:
 
     return {
         "success": True,
-        "ledger_total": len(rows),
+        "index": index_build,
+        "ledger_total": int(index_build.get("total") or len(rows)),
         "stubs_created": created,
         "stubs_updated": updated,
         "errors": errors,
@@ -150,7 +223,6 @@ def assign_agents_to_ledger_customers(
 ) -> Dict[str, Any]:
     """Assign platform agents to ledger customers (round-robin over available agents)."""
     from backend.services.ledger_customer_control_service import assign_controller, get_assignment
-    from backend.services.mn2_ledger import list_ledger_user_summaries
 
     cfg = _config()
     if not cfg.get("enabled", True):
@@ -161,7 +233,7 @@ def assign_agents_to_ledger_customers(
     if not agents:
         agents = [str(cfg.get("default_agent_id") or "master_fix")]
 
-    rows = list_ledger_user_summaries(limit=limit)
+    rows = load_ledger_customer_rows()[: max(1, int(limit or 200))]
     assigned: List[Dict[str, Any]] = []
     skipped = 0
     idx = 0

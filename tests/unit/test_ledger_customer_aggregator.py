@@ -49,9 +49,10 @@ def test_sync_ledger_creates_points_stubs(tmp_path, monkeypatch):
     monkeypatch.setattr(lcc, "_CONTROLS_FILE", str(controls_file))
     monkeypatch.setattr(lcc, "_BASE", str(tmp_path))
     monkeypatch.setattr(cas, "_POINTS_DIR", str(points_dir))
+    monkeypatch.setattr(lca, "_INDEX_FILE", str(tmp_path / "ledger_customer_index.json"))
     monkeypatch.setattr(
-        "backend.services.mn2_ledger.list_ledger_user_summaries",
-        lambda limit=5000: _ledger_rows(),
+        "backend.services.mn2_ledger._build_ledger_user_summaries",
+        lambda: _ledger_rows(),
     )
 
     result = lca.sync_ledger_customers_to_aggregator(limit=10)
@@ -76,10 +77,12 @@ def test_assign_agents_round_robin(tmp_path, monkeypatch):
     monkeypatch.setattr(lca, "_BASE", str(tmp_path))
     monkeypatch.setattr(lcc, "_CONTROLS_FILE", str(controls_file))
     monkeypatch.setattr(lcc, "_BASE", str(tmp_path))
+    monkeypatch.setattr(lca, "_INDEX_FILE", str(tmp_path / "ledger_customer_index.json"))
     monkeypatch.setattr(
-        "backend.services.mn2_ledger.list_ledger_user_summaries",
-        lambda limit=5000: _ledger_rows(),
+        "backend.services.mn2_ledger._build_ledger_user_summaries",
+        lambda: _ledger_rows(),
     )
+    lca.rebuild_ledger_customer_index()
     monkeypatch.setattr(
         lca,
         "list_available_agents",
@@ -110,10 +113,13 @@ def test_list_customers_includes_ledger_source(tmp_path, monkeypatch):
 
     import backend.services.customer_aggregator_service as cas
     monkeypatch.setattr(cas, "_POINTS_DIR", str(points_dir))
+    import backend.services.ledger_customer_aggregator_service as lca
+    monkeypatch.setattr(lca, "_INDEX_FILE", str(tmp_path / "ledger_customer_index.json"))
     monkeypatch.setattr(
-        "backend.services.mn2_ledger.list_ledger_user_summaries",
-        lambda limit=5000: _ledger_rows(),
+        "backend.services.mn2_ledger._build_ledger_user_summaries",
+        lambda: _ledger_rows(),
     )
+    lca.rebuild_ledger_customer_index()
 
     c = _app().test_client()
     r = c.get("/api/customers?limit=10&source=ledger", environ_overrides={"REMOTE_ADDR": "127.0.0.1"})
@@ -142,9 +148,10 @@ def test_sync_ledger_agents_route(tmp_path, monkeypatch):
     monkeypatch.setattr(lca, "_BASE", str(tmp_path))
     monkeypatch.setattr(lcc, "_CONTROLS_FILE", str(controls_file))
     monkeypatch.setattr(lcc, "_BASE", str(tmp_path))
+    monkeypatch.setattr(lca, "_INDEX_FILE", str(tmp_path / "ledger_customer_index.json"))
     monkeypatch.setattr(
-        "backend.services.mn2_ledger.list_ledger_user_summaries",
-        lambda limit=5000: _ledger_rows(),
+        "backend.services.mn2_ledger._build_ledger_user_summaries",
+        lambda: _ledger_rows(),
     )
     monkeypatch.setattr(
         lca,

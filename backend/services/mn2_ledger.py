@@ -133,8 +133,13 @@ def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
 
 
 def count_ledger_users() -> int:
-    """Fast count of distinct ledger users (uses summary cache)."""
-    return len(list_ledger_user_summaries(limit=20000))
+    """Fast count of distinct ledger users (reads persisted index when available)."""
+    try:
+        from backend.services.ledger_customer_aggregator_service import ledger_customer_index_meta
+
+        return int(ledger_customer_index_meta().get("total") or 0)
+    except Exception:
+        return 0
 
 
 def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
