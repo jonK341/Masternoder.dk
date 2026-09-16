@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create App — Play Store + Podcast · Super Encoder nr. 1</title>
+    <title>Create App — Play Store + Podcast · Super Encoder v2</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
@@ -41,14 +41,20 @@
         .ca-enc-profile { padding: 8px; margin: 4px 0; border-radius: 6px; background: rgba(0,0,0,0.25); font-size: 0.85rem; }
         .ca-enc-profile.selected { border: 1px solid #00ff88; }
         .ca-mn2-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(255,215,0,0.15); color: #ffd700; font-size: 0.8rem; }
+        .ca-v2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 320px; overflow: auto; margin-top: 8px; }
+        .ca-v2-card { padding: 8px; border-radius: 8px; border: 1px solid rgba(168,85,247,0.35); background: rgba(0,0,0,0.25); font-size: 0.78rem; }
+        .ca-v2-card.unlocked { border-color: rgba(0,255,136,0.5); }
+        .ca-v2-meta { color: #9ab; font-size: 0.72rem; margin-top: 4px; }
+        .ca-v2-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+        .ca-v2-toolbar select { width: auto; min-width: 140px; }
     </style>
 </head>
 <body>
     <div class="ca-wrap">
         <header class="ca-hero">
-            <span class="ca-badge">New encoder nr. 1 · E1 hardware · AI API</span>
+            <span class="ca-badge">Super Encoder v2 · 250 upgrades · E1 hardware · AI API</span>
             <h1>Create App — Play Store + Podcast</h1>
-            <p>Ship TWA shells, podcast distribution, Super Encoder profiles, agent leaderboard MN2 rewards, and 100 product finish checks.</p>
+            <p>Ship TWA shells, podcast distribution, Super Encoder v2 (250 upgrade lanes), agent leaderboard MN2 rewards, and 100 product finish checks.</p>
         </header>
 
         <div class="ca-grid">
@@ -60,12 +66,27 @@
                     <button type="button" class="ca-enc-tab" data-enc-tab="audio">Podcast audio</button>
                     <button type="button" class="ca-enc-tab" data-enc-tab="ai">AI plan</button>
                     <button type="button" class="ca-enc-tab" data-enc-tab="package">Package</button>
+                    <button type="button" class="ca-enc-tab" data-enc-tab="v2">V2 upgrades</button>
                 </div>
                 <div id="ca-enc-panel-video" class="ca-enc-panel active"></div>
                 <div id="ca-enc-panel-audio" class="ca-enc-panel"></div>
                 <div id="ca-enc-panel-ai" class="ca-enc-panel"></div>
                 <div id="ca-enc-panel-package" class="ca-enc-panel"></div>
+                <div id="ca-enc-panel-v2" class="ca-enc-panel"></div>
                 <button type="button" class="ca-btn secondary" id="ca-hub-refresh">Refresh encoder hub</button>
+            </section>
+
+            <section class="ca-card ca-encoder-hub">
+                <h2>⬆️ Super Encoder v2 — 250 upgrades</h2>
+                <div id="ca-v2-summary" class="ca-v2-meta">Loading v2 status…</div>
+                <div class="ca-v2-toolbar">
+                    <select id="ca-v2-category">
+                        <option value="">All categories</option>
+                    </select>
+                    <button type="button" class="ca-btn secondary" id="ca-v2-load">Load upgrades</button>
+                    <button type="button" class="ca-btn secondary" id="ca-v2-refresh">Refresh status</button>
+                </div>
+                <div class="ca-v2-grid" id="ca-v2-grid"></div>
             </section>
 
             <section class="ca-card">
@@ -205,7 +226,13 @@
         }
 
         async function api(path, opts) {
-            const r = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
+            const options = Object.assign({}, opts || {});
+            const headers = Object.assign({}, options.headers || {});
+            if (options.body && !headers['Content-Type']) {
+                headers['Content-Type'] = 'application/json';
+            }
+            options.headers = headers;
+            const r = await fetch(path, options);
             return r.json();
         }
 
@@ -235,6 +262,62 @@
                 '<pre style="font-size:0.78rem;overflow:auto">' + esc(JSON.stringify(ai.plan || {}, null, 2)) + '</pre>';
             document.getElementById('ca-enc-panel-package').innerHTML =
                 '<pre style="font-size:0.78rem;overflow:auto">' + esc(JSON.stringify(pkg, null, 2)) + '</pre>';
+            const v2 = hub.encoder_v2 || {};
+            const v2sec = hub.sections && hub.sections.v2;
+            const tuning = (pkg.v2_tuning || (v2sec && v2sec.tuning) || {});
+            document.getElementById('ca-enc-panel-v2').innerHTML =
+                '<strong>v2:</strong> ' + esc((v2.status && v2.status.unlocked_count) || v2sec && v2sec.unlocked_count || 0) +
+                ' / ' + esc((v2.status && v2.status.upgrade_count) || v2sec && v2sec.upgrade_count || 250) + ' unlocked<br>' +
+                '<pre style="font-size:0.78rem;overflow:auto">' + esc(JSON.stringify(tuning, null, 2)) + '</pre>';
+        }
+
+        async function loadEncoderV2Status() {
+            const el = document.getElementById('ca-v2-summary');
+            try {
+            const d = await api('/api/create-app/encoder-v2/status?user_id=' + encodeURIComponent(uid));
+            if (!d || !d.success) { el.textContent = 'Encoder v2 unavailable'; return; }
+            el.innerHTML = '<span class="ca-mn2-badge">v2</span> ' + d.unlocked_count + ' / ' + d.upgrade_count +
+                ' unlocked (' + d.unlock_percent + '%) · free starters: ' + (d.free_starter_count || 0);
+            const sel = document.getElementById('ca-v2-category');
+            if (sel && d.categories && !sel.dataset.filled) {
+                sel.innerHTML = '<option value="">All categories</option>' +
+                    d.categories.map(function (c) {
+                        return '<option value="' + esc(c.id) + '">' + esc(c.label || c.id) + ' (' + c.count + ')</option>';
+                    }).join('');
+                sel.dataset.filled = '1';
+            }
+            } catch (err) {
+                el.textContent = 'Encoder v2 error: ' + (err && err.message ? err.message : String(err));
+            }
+        }
+
+        async function loadEncoderV2Upgrades() {
+            const cat = document.getElementById('ca-v2-category').value;
+            const path = '/api/create-app/encoder-v2/catalog?user_id=' + encodeURIComponent(uid) +
+                '&limit=48&offset=0' + (cat ? '&category=' + encodeURIComponent(cat) : '');
+            const d = await api(path);
+            const grid = document.getElementById('ca-v2-grid');
+            if (!d.success) { grid.textContent = 'Catalog unavailable'; return; }
+            grid.innerHTML = (d.upgrades || []).map(function (u) {
+                const cls = u.unlocked ? 'ca-v2-card unlocked' : 'ca-v2-card';
+                const cost = u.free ? 'FREE' : (u.mn2_cost + ' MN2');
+                const btn = u.unlocked ? '' : '<button type="button" class="ca-btn secondary" style="margin-top:6px;padding:4px 8px;font-size:0.72rem" data-v2-unlock="' + esc(u.id) + '">Unlock</button>';
+                return '<div class="' + cls + '"><strong>' + esc((u.icon || '') + ' ' + u.name) + '</strong><div class="ca-v2-meta">' +
+                    esc(u.category) + ' · ' + esc(u.tier) + ' · ' + cost + '</div>' + btn + '</div>';
+            }).join('');
+            grid.querySelectorAll('button[data-v2-unlock]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    const upId = btn.getAttribute('data-v2-unlock');
+                    const res = await api('/api/create-app/encoder-v2/unlock?user_id=' + encodeURIComponent(uid), {
+                        method: 'POST',
+                        body: JSON.stringify({ user_id: uid, upgrade_id: upId })
+                    });
+                    document.getElementById('ca-create-out').textContent = JSON.stringify(res, null, 2);
+                    loadEncoderV2Status();
+                    loadEncoderV2Upgrades();
+                    loadEncoderHub();
+                });
+            });
         }
 
         async function loadEncoderHub() {
@@ -377,6 +460,12 @@
             });
         });
         document.getElementById('ca-hub-refresh').addEventListener('click', loadEncoderHub);
+        document.getElementById('ca-v2-load').addEventListener('click', loadEncoderV2Upgrades);
+        document.getElementById('ca-v2-refresh').addEventListener('click', function () {
+            loadEncoderV2Status();
+            loadEncoderV2Upgrades();
+        });
+        document.getElementById('ca-v2-category').addEventListener('change', loadEncoderV2Upgrades);
         document.getElementById('ca-quality').addEventListener('change', loadEncoderHub);
 
         document.getElementById('ca-checks-btn').addEventListener('click', runFinishChecks);
@@ -388,11 +477,13 @@
             if (pre) sessionStorage.removeItem('create_app_prefill');
         } catch (e) { /* ignore */ }
 
-        loadCatalog().then(loadEncoderHub);
+        loadEncoderV2Status().then(loadEncoderV2Upgrades);
+        loadCatalog();
         loadClickQuote();
         loadMyApps();
-        runFinishChecks();
         loadLeaderboard();
+        setTimeout(function () { loadEncoderHub(); }, 300);
+        setTimeout(function () { runFinishChecks(); }, 1200);
     })();
     </script>
 </body>

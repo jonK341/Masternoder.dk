@@ -197,12 +197,23 @@ def gather_encoder_hub(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any
     cfg = dict(config or {})
     status = super_encoder_status()
     package = build_super_encode_package(cfg)
+    v2_block: Dict[str, Any] = {}
+    try:
+        from backend.services.encoder_v2_service import encoder_v2_status, gather_encoder_v2_hub
+
+        v2_block = gather_encoder_v2_hub(cfg)
+        if v2_block.get("success") and cfg.get("user_id"):
+            package = v2_block.get("package") or package
+    except Exception:
+        v2_block = {"success": False}
     return {
         "success": True,
         "hub_id": "encoder_hub_unified",
         "encoder_nr": 1,
+        "encoder_version": 2 if v2_block.get("success") else 1,
         "label": "New encoder nr. 1 — gathered in app",
         "status": status,
+        "encoder_v2": v2_block if v2_block.get("success") else None,
         "package": package,
         "sections": {
             "video": {
@@ -221,6 +232,12 @@ def gather_encoder_hub(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any
                 "configured": (status.get("ai_api") or {}).get("configured"),
                 "providers": (status.get("ai_api") or {}).get("providers") or [],
                 "plan": package.get("ai_plan"),
+            },
+            "v2": {
+                "title": "Super Encoder v2 — 250 upgrades",
+                "upgrade_count": (v2_block.get("status") or {}).get("upgrade_count"),
+                "unlocked_count": (v2_block.get("status") or {}).get("unlocked_count"),
+                "tuning": package.get("v2_tuning") or (v2_block.get("tuning") if v2_block.get("success") else None),
             },
         },
     }

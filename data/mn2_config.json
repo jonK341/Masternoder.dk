@@ -31,7 +31,13 @@
     "join_reward_mn2": 0.01,
     "finish_reward_mn2": 0.025,
     "agent_leaderboard_daily_cap_mn2": 0.1,
-    "super_encoder_ai_enabled": true
+    "super_encoder_ai_enabled": true,
+    "encoder_v2": {
+      "enabled": true,
+      "upgrade_count": 250,
+      "encoder_id": "encoder_v2",
+      "free_starter_unlocks": 12
+    }
   },
   "click_rewards": {
     "enabled": true,

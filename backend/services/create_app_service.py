@@ -81,6 +81,12 @@ def catalog() -> Dict[str, Any]:
             "label": "New encoder nr. 1",
             "features": ["E1_hardware_h264", "AI_profile_tuning", "podcast_audio_profiles"],
         },
+        "encoder_v2": {
+            "id": "encoder_v2",
+            "label": "Super Encoder v2",
+            "upgrade_count": 250,
+            "features": ["250_upgrade_lanes", "v2_tuning_stack", "mn2_unlock_shop"],
+        },
     }
 
 
@@ -102,14 +108,14 @@ def create_app(
     include_podcast: bool = True,
 ) -> Dict[str, Any]:
     """Create a new app project with Super Encoder AI plan."""
-    from backend.services.super_encoder_service import build_super_encode_package
+    from backend.services.encoder_v2_service import build_v2_encode_package
     from backend.services.create_app_finish_checks import run_finish_checks
 
     title = (title or "").strip()
     if len(title) < 2:
         return {"success": False, "error": "title_required"}
 
-    encode_pkg = build_super_encode_package({
+    encode_pkg = build_v2_encode_package({
         "target": "hybrid" if include_playstore and include_podcast else ("podcast" if include_podcast else "video"),
         "quality_goal": quality_goal,
         "duration_sec": duration_sec,
@@ -301,7 +307,7 @@ def get_app_encode_jobs(user_id: str, app_id: str) -> Dict[str, Any]:
 
 def super_encode_for_app(user_id: str, app_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
     """Re-run Super Encoder AI plan for an existing app."""
-    from backend.services.super_encoder_service import build_super_encode_package
+    from backend.services.encoder_v2_service import build_v2_encode_package
 
     data = _load_apps()
     app = next((a for a in (data.get("apps") or []) if a.get("id") == app_id and a.get("user_id") == user_id), None)
@@ -310,7 +316,7 @@ def super_encode_for_app(user_id: str, app_id: str, body: Dict[str, Any]) -> Dic
 
     cfg = dict(body or {})
     cfg["user_id"] = user_id
-    pkg = build_super_encode_package(cfg)
+    pkg = build_v2_encode_package(cfg)
     app["super_encoder"] = pkg
     if body.get("quality_goal"):
         app["quality_goal"] = str(body.get("quality_goal"))

@@ -120,6 +120,17 @@ def _llm_configured() -> Dict[str, Any]:
         return _fail("enc_llm_live", str(exc)[:80])
 
 
+def _encoder_v2_catalog_check() -> Dict[str, Any]:
+    data = _read_json("data/encoder_v2_catalog.json")
+    if not isinstance(data, dict):
+        return _fail("enc_v2_cat", "missing catalog")
+    count = int(data.get("upgrade_count") or 0)
+    upgrades = data.get("upgrades") or []
+    if count == 250 and len(upgrades) == 250:
+        return _ok("enc_v2_cat", "250 upgrades")
+    return _fail("enc_v2_cat", f"count={count} rows={len(upgrades)}")
+
+
 def _super_encoder_hub_smoke() -> Dict[str, Any]:
     try:
         from backend.services.super_encoder_service import gather_encoder_hub
@@ -261,7 +272,7 @@ def _build_check_list() -> List[Tuple[str, str, Callable[[], Dict[str, Any]]]]:
         "backend/routes/create_app_routes.py", "super-encode"))
     add("enc_60", "Encoder hub route", lambda: _file_contains(
         "backend/routes/create_app_routes.py", "encoder-hub"))
-    add("enc_61", "Finish checks module count", lambda: _ok("enc_finish_mod", "100 checks"))
+    add("enc_61", "Encoder v2 catalog 250 upgrades", lambda: _encoder_v2_catalog_check())
     add("enc_62", "Click MN2 rewards service", lambda: (
         _ok("enc_click_mn2") if _file_exists("backend/services/click_mn2_rewards_service.py") else _fail("enc_click_mn2", "missing")
     ))

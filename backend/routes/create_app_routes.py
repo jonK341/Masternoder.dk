@@ -98,6 +98,48 @@ def create_app_encoder_hub():
     return jsonify(gather_encoder_hub(cfg)), 200
 
 
+@create_app_bp.route("/api/create-app/encoder-v2/status", methods=["GET"])
+def encoder_v2_status_route():
+    from backend.services.encoder_v2_service import encoder_v2_status
+
+    return jsonify(encoder_v2_status(_uid())), 200
+
+
+@create_app_bp.route("/api/create-app/encoder-v2/catalog", methods=["GET"])
+def encoder_v2_catalog_route():
+    from backend.services.encoder_v2_service import list_upgrades_for_user
+
+    category = request.args.get("category")
+    limit = min(250, max(1, int(request.args.get("limit") or 50)))
+    offset = max(0, int(request.args.get("offset") or 0))
+    return jsonify(list_upgrades_for_user(_uid(), category=category, limit=limit, offset=offset)), 200
+
+
+@create_app_bp.route("/api/create-app/encoder-v2/unlock", methods=["POST"])
+def encoder_v2_unlock_route():
+    from backend.services.encoder_v2_service import purchase_upgrade
+
+    body = request.get_json(silent=True) or {}
+    upgrade_id = str(body.get("upgrade_id") or "").strip()
+    if not upgrade_id:
+        return jsonify({"success": False, "error": "upgrade_id_required"}), 400
+    result = purchase_upgrade(_uid(), upgrade_id)
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@create_app_bp.route("/api/create-app/encoder-v2/hub", methods=["GET", "POST"])
+def encoder_v2_hub_route():
+    from backend.services.encoder_v2_service import gather_encoder_v2_hub
+
+    body = request.get_json(silent=True) if request.method == "POST" else {}
+    cfg = dict(body or {})
+    cfg["user_id"] = _uid()
+    if request.args.get("quality_goal"):
+        cfg["quality_goal"] = request.args.get("quality_goal")
+    return jsonify(gather_encoder_v2_hub(cfg)), 200
+
+
 @create_app_bp.route("/api/create-app/super-encoder/status", methods=["GET"])
 def super_encoder_status_route():
     from backend.services.super_encoder_service import super_encoder_status

@@ -85,7 +85,8 @@ def test_create_app_flow(create_app_client, monkeypatch):
     assert data["success"] is True
     app = data["app"]
     assert app["id"].startswith("capp_")
-    assert app["super_encoder"]["encoder_id"] == "new_encoder_nr_1"
+    assert app["super_encoder"]["encoder_id"] in ("encoder_v2", "new_encoder_nr_1")
+    assert app["super_encoder"].get("encoder_version") == 2 or "v2_tuning" in app["super_encoder"]
     assert data["finish_checks"]["total_checks"] == 100
 
 
@@ -281,6 +282,51 @@ def test_encode_jobs_status_route(create_app_client, monkeypatch):
     assert data["encode_jobs"].get("podcast", {}).get("status") == "completed"
 
 
+def test_encoder_v2_catalog_count():
+    from backend.services.encoder_v2_service import load_catalog, catalog_upgrades
+
+    cat = load_catalog()
+    assert cat.get("upgrade_count") == 250
+    assert len(catalog_upgrades()) == 250
+
+
+def test_encoder_v2_status_and_free_unlocks():
+    from backend.services.encoder_v2_service import encoder_v2_status, ensure_free_unlocks
+
+    ensure_free_unlocks("_test_v2_user")
+    st = encoder_v2_status("_test_v2_user")
+    assert st["success"] is True
+    assert st["upgrade_count"] == 250
+    assert st["unlocked_count"] >= 12
+
+
+def test_encoder_v2_hub_route(create_app_client):
+    r = create_app_client.get("/api/create-app/encoder-v2/hub?user_id=_test_v2_hub&quality_goal=premium")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["success"] is True
+    assert data["hub_id"] == "encoder_v2_hub"
+    assert data["status"]["upgrade_count"] == 250
+
+
+def test_encoder_v2_catalog_route(create_app_client):
+    r = create_app_client.get("/api/create-app/encoder-v2/catalog?user_id=_test_v2_cat&limit=10")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["success"] is True
+    assert len(data["upgrades"]) == 10
+    assert data["total"] == 250
+
+
+def test_encoder_v2_build_package():
+    from backend.services.encoder_v2_service import build_v2_encode_package
+
+    pkg = build_v2_encode_package({"user_id": "_test_v2_pkg", "quality_goal": "premium"})
+    assert pkg.get("success") is True
+    assert pkg.get("encoder_version") == 2
+    assert "v2_tuning" in pkg
+
+
 def test_super_encode_rerun(create_app_client, monkeypatch):
     monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
     create_app_client.post(
@@ -294,4 +340,4 @@ def test_super_encode_rerun(create_app_client, monkeypatch):
     )
     data = r.get_json()
     assert data["success"] is True
-    assert data["super_encoder"]["encoder_id"] == "new_encoder_nr_1"
+    assert data["super_encoder"]["encoder_id"] in ("encoder_v2", "new_encoder_nr_1")
