@@ -319,6 +319,21 @@ def book_agent_profit(
         acct["realized_profit_usd"] = round(float(acct.get("realized_profit_usd") or 0) + profit, 6)
         acct["trade_count"] = int(acct.get("trade_count") or 0) + 1
         acct["notional_traded_usd"] = round(float(acct.get("notional_traded_usd") or 0) + float(opp.get("notional_usd") or 0), 2)
+        try:
+            from backend.services.exchange_agent_profit_learning_service import apply_profit_learning
+
+            agent_row = None
+            try:
+                cfg = conn.load_connectors_config()
+                for row in cfg.get("arbitrage_agents") or []:
+                    if isinstance(row, dict) and str(row.get("id") or "") == agent_id:
+                        agent_row = row
+                        break
+            except Exception:
+                pass
+            apply_profit_learning(acct, profit, agent_id=agent_id, agent_row=agent_row)
+        except Exception:
+            pass
         action = {"agent_id": agent_id, "executed": True, "mode": exec_res.get("mode"), **opp, "execution": exec_res}
         ex._audit(
             "arbitrage_live_trade" if exec_res.get("mode") == "live" else "arbitrage_paper_trade",

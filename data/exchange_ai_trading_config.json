@@ -1,5 +1,6 @@
 {
   "enabled": true,
+  "use_pair_search_symbols": true,
   "agent_id": "ai_market_trader",
   "name": "AI Multi-Venue Trader",
   "default_skills": [

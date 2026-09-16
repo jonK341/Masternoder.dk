@@ -486,6 +486,22 @@ def _prefund_action_for_short_leg(
     return None
 
 
+def apply_fund_hot_rotation_preset(*, enable_auto: bool = True) -> Dict[str, Any]:
+    from backend.services.exchange_profit_path_service import save_config_patch
+
+    patch = {
+        "rotation_auto_execute": bool(enable_auto),
+        "rotation_auto_max_usd_per_tick": 100,
+    }
+    if enable_auto and not rotation_live_enabled():
+        patch["rotation_live_enabled"] = False
+    return {
+        "success": True,
+        "config": save_config_patch(patch),
+        "env_hint": "Set EXCHANGE_ROTATION_LIVE=1 and EXCHANGE_ROTATION_AUTO=1 for live prefund/rotation.",
+    }
+
+
 def maybe_hot_pair_prefund(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     """After exchange tick: prefund exact hot symbol when spread qualifies but unfunded."""
     if not rotation_auto_execute_enabled():

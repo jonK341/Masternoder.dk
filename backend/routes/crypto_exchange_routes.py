@@ -337,6 +337,38 @@ def exchange_ai_trading_probe():
     return jsonify(vapi.probe_all_venues())
 
 
+@crypto_exchange_bp.route("/api/exchange/signal-stack/status", methods=["GET"])
+def exchange_signal_stack_status():
+    from backend.services.exchange_signal_stack_service import signal_stack_status
+
+    return jsonify(signal_stack_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/signal-stack/run", methods=["POST"])
+def exchange_signal_stack_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_signal_stack_service import run_unified_signal_stack
+
+    return jsonify(run_unified_signal_stack())
+
+
+@crypto_exchange_bp.route("/api/exchange/signal-stack/rank", methods=["GET"])
+def exchange_signal_stack_rank():
+    from backend.services.exchange_signal_stack_service import load_config, rank_search_hits
+    from backend.services.exchange_bot_skills_service import resolve_skill_set
+    from backend.services.exchange_profit_pair_search_service import read_index
+
+    cfg = load_config()
+    ss = cfg.get("skill_set")
+    skill_ids = list(cfg.get("default_skills") or [])
+    if ss:
+        skill_ids = list(resolve_skill_set(str(ss)).get("skills") or skill_ids)
+    hits = list(read_index().get("hits") or [])
+    ranked = rank_search_hits(hits[:32], skill_ids=skill_ids)
+    return jsonify({"success": True, "ranked": ranked[:16]})
+
+
 @crypto_exchange_bp.route("/api/exchange/treasury/status", methods=["GET"])
 def exchange_treasury_status():
     from backend.services.exchange_treasury_service import treasury_status
@@ -430,6 +462,210 @@ def exchange_grid_status():
     from backend.services.exchange_grid_bot_service import grid_status
 
     return jsonify(grid_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/stuck-inventory/scan", methods=["GET"])
+def exchange_stuck_inventory_scan():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_stuck_inventory_service import scan_stuck_assets, recalculate_options
+
+    scan = scan_stuck_assets()
+    rec = recalculate_options(stuck_assets=scan.get("stuck_assets"))
+    return jsonify({"success": True, "scan": scan, "recalculate": rec})
+
+
+@crypto_exchange_bp.route("/api/exchange/stuck-inventory/apply-grid", methods=["POST"])
+def exchange_stuck_inventory_apply_grid():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_stuck_inventory_service import recalculate_options, apply_plans_to_grid
+
+    data = request.get_json(silent=True) or {}
+    rec = recalculate_options()
+    return jsonify(apply_plans_to_grid(rec.get("plans"), top_n=int(data.get("top_n") or 6), apply=True))
+
+
+@crypto_exchange_bp.route("/api/exchange/portal-micro-chain/status", methods=["GET"])
+def exchange_portal_micro_chain_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.portal_micro_chain_service import status
+
+    return jsonify(status())
+
+
+@crypto_exchange_bp.route("/api/exchange/portal-micro-chain/config", methods=["POST"])
+def exchange_portal_micro_chain_config():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.portal_micro_chain_service import save_config
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_config(data))
+
+
+@crypto_exchange_bp.route("/api/exchange/portal-micro-chain/tick", methods=["POST"])
+def exchange_portal_micro_chain_tick():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.portal_micro_chain_service import ingest_recent_activity_events, process_queue_tick
+
+    ingest_recent_activity_events(limit=int(request.args.get("limit") or 80))
+    return jsonify(process_queue_tick())
+
+
+@crypto_exchange_bp.route("/api/exchange/agents/dormant", methods=["GET"])
+def exchange_agents_dormant():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_dormant_agents_service import scan_dormant_agents
+
+    return jsonify(scan_dormant_agents())
+
+
+@crypto_exchange_bp.route("/api/exchange/agents/activate-profit-stack", methods=["POST"])
+def exchange_agents_activate_profit_stack():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_dormant_agents_service import activate_profit_stack
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        activate_profit_stack(enable_rotation_auto=bool(data.get("enable_rotation_auto", True)))
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/rotation/preset-fund-hot", methods=["POST"])
+def exchange_rotation_preset_fund_hot():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_swap_rotation_service import apply_fund_hot_rotation_preset
+
+    return jsonify(apply_fund_hot_rotation_preset(enable_auto=True))
+
+
+@crypto_exchange_bp.route("/api/exchange/binance-spot/catalog", methods=["GET"])
+def exchange_binance_spot_catalog():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_binance_spot_catalog_service import refresh_binance_spot_catalog
+
+    force = request.args.get("refresh") in ("1", "true", "yes")
+    return jsonify(refresh_binance_spot_catalog(force=force))
+
+
+@crypto_exchange_bp.route("/api/exchange/binance-spot/coverage", methods=["GET"])
+def exchange_binance_spot_coverage():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import ops_state
+    from backend.services.exchange_binance_spot_catalog_service import coverage_snapshot
+
+    ops = ops_state()
+    assets = ops.get("assets") if isinstance(ops.get("assets"), dict) else {}
+    cov = coverage_snapshot(assets)
+    cov["catalog_offset"] = ops.get("binance_catalog_offset")
+    cov["last_tick_at"] = ops.get("last_tick_at")
+    cov["spot_reuse_config"] = ops.get("config")
+    return jsonify(cov)
+
+
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/status", methods=["GET"])
+def exchange_spot_reuse_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import status
+
+    return jsonify(status())
+
+
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/config", methods=["POST"])
+def exchange_spot_reuse_config():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import save_config
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_config(data))
+
+
+@crypto_exchange_bp.route("/api/exchange/spot-reuse/tick", methods=["POST"])
+def exchange_spot_reuse_tick():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_spot_reuse_service import run_spot_reuse_tick, spot_reuse_live_enabled
+
+    dry = request.args.get("paper") in ("1", "true", "yes")
+    if not dry:
+        dry = None if spot_reuse_live_enabled() else True
+    return jsonify(run_spot_reuse_tick(dry_run=dry))
+
+
+@crypto_exchange_bp.route("/api/exchange/unified-daemon/status", methods=["GET"])
+def exchange_unified_daemon_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    import json
+    import os
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(root, "logs", "daemon_all_profit_heartbeat.json")
+    hb = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                hb = json.load(f)
+        except Exception:
+            hb = {}
+    from backend.services.portal_micro_chain_service import status as micro_status
+    from backend.services.exchange_stuck_inventory_service import ops_state
+    from backend.services.exchange_spot_reuse_service import ops_state as spot_reuse_ops
+
+    return jsonify({
+        "success": True,
+        "heartbeat": hb,
+        "micro_chain": micro_status(),
+        "stuck_state": ops_state(),
+        "spot_reuse": spot_reuse_ops(),
+        "unified_entry": "scripts/unified_trading_daemon.py",
+    })
+
+
+@crypto_exchange_bp.route("/api/monitor/5d/pulse", methods=["GET"])
+def monitor_5d_pulse():
+    from backend.services.monitor_5d_pulse_service import recent
+
+    return jsonify(recent(limit=int(request.args.get("limit") or 24)))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-pipeline/status", methods=["GET"])
+def exchange_profit_pipeline_status():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_orchestrator_service import pipeline_status
+
+    light = request.args.get("full") not in ("1", "true", "yes")
+    return jsonify(pipeline_status(light=light))
+
+
+@crypto_exchange_bp.route("/api/exchange/profit-pipeline/run", methods=["POST"])
+def exchange_profit_pipeline_run():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_profit_orchestrator_service import run_profit_pipeline
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        run_profit_pipeline(
+            apply_grid_from_search=bool(data.get("apply_grid_from_search")),
+            apply_stuck_grid=bool(data.get("apply_stuck_grid")),
+            cross_scan=bool(data.get("cross_scan")),
+            spot_reuse_tick=bool(data.get("spot_reuse_tick")),
+            min_cross_bps=float(data.get("min_cross_bps") or 8),
+            min_profit_score=float(data.get("min_profit_score") or 3),
+        )
+    )
 
 
 @crypto_exchange_bp.route("/api/exchange/control-board/overview", methods=["GET"])

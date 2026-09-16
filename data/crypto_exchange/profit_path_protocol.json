@@ -39,5 +39,26 @@
     "agent_id": "arb_winnable_pairs",
     "refresh_search_each_tick": true
   },
+  "signal_stack_trader": {
+    "enabled": true,
+    "agent_id": "arb_signal_stack",
+    "skill_set": "ai_daemon",
+    "default_skills": [
+      "spatial_arbitrage",
+      "sentiment_alpha",
+      "ml_price_forecast",
+      "kelly_sizing"
+    ],
+    "min_search_score": 12,
+    "min_net_bps": 10,
+    "min_composite_score": 36,
+    "max_executions_per_tick": 2,
+    "notional_usd": 75,
+    "run_dedicated_agent": true,
+    "boost_winnable_with_skills": true,
+    "boost_ai_with_search_hits": true,
+    "boost_arb_paper_learning": true,
+    "sync_skills_each_tick": false
+  },
   "note": "Local profit-max defaults: rotation_auto_execute + rotation_live_enabled true. Production should set both false unless opted in. Env override: EXCHANGE_ROTATION_AUTO=1, EXCHANGE_ROTATION_LIVE=1."
 }
