@@ -665,10 +665,18 @@ Wallet surfaces existing repo Discord features — **no new OAuth stack**. Maps 
 | GET | `/api/wallet/v2/discord/fulfillment-status` | User's row on MN2 Discord community order list |
 | GET | `/api/discord/fulfillment/order-list` | Ops — full order list (`X-Ops-Secret`; `?refresh=1` rebuilds) |
 | POST | `/api/discord/fulfillment/fulfill` | Ops — fulfill one user or `{"all_pending": true}` batch |
+| GET | `/api/ledger/sales/queue` | Ops/camgirls — outreach queue with camgirl assignment |
+| POST | `/api/ledger/sales/offer` | Create MN2 sale offer (`rail`: paypal \| usdt \| usdc) |
+| POST | `/api/ledger/sales/fulfill` | Credit MN2 after payment capture |
+| POST | `/api/ledger/agent/chat` | Agent/camgirl message to ledger customer |
+| GET | `/api/ledger/agent/thread` | Fetch conversation thread by `ledger_row_id` |
+| GET | `/api/wallet/v2/camgirls/ledger/queue` | Camgirls hub — assigned leads |
 
 Link/unlink POSTs remain on `/api/discord/link*` (same as Profile) to avoid duplicating `discord_link_service`.
 
 **WR-DISCORD-4/5 triple-source population:** (A) `logs/user_identifiers/discord_*.json` linked accounts; (B) Discord API guild members + `DISCORD_MN2_CHANNEL_ID` channel authors when bot token + guild id set; (C) MN2 purchase intent from `payment_ledger.jsonl`, `discord_promo_codes.json` redemptions, `mn2_onramp_orders.json`, `mn2_ledger.json`, `discord_clicks.jsonl`. Merge dedupes by `discord_id`, marks `source` as `local_linked`, `discord_api`, `purchase_intent`, or combined (`local_linked+discord_api`, `all`). Sources A+C populate ledger when Discord API unavailable (403 / missing intent). Config: `data/discord_fulfillment_config.json`. // pragma: allowlist secret
+
+**WR-DISCORD-6 community ledger (25 sources + sales + agent chat):** `community_ledger_population.py` + `data/ledger_population_sources.json` catalog 25 population sources (Discord linked/API, YouTube/Facebook leads, purchase intent, shop abandoned, exchange wallet, referrals, P2P views, camgirl tips, network chat, podcast, newsletter, affiliate, trophy shop, wallet earn, hosting, masternode, support tickets, OAuth/waitlist/install). `build_order_list()` merges by `discord_id` / `youtube_id` / `facebook_id` / `user_id`, sorts by `priority_score`, `buyer_score`, `source_count`, `created_at`, assigns `ledger_rank`. Sync: `scripts/sync_community_ledger.py` (wrapper: `sync_discord_order_list.py`). Seed leads: `data/youtube_leads.json`, `data/facebook_leads.json`. Live API env: `YOUTUBE_API_KEY`, `FACEBOOK_PAGE_ACCESS_TOKEN`. Sales: `ledger_coin_sales_service.py` — `GET /api/ledger/sales/queue`, `POST /api/ledger/sales/offer`, `POST /api/ledger/sales/fulfill` (PayPal / USDT / USDC). Agent chat: `ledger_agent_service.py` — `POST /api/ledger/agent/chat`, `GET /api/ledger/agent/thread`; stub `scripts/ledger_agent_outreach.py`. Camgirls hub: wallet `GET /api/wallet/v2/camgirls/ledger/queue` + offer POST; Ledger outreach tab in `CamgirlsHub.tsx`.
 
 ### Assumptions (WR-DISCORD-1)
 

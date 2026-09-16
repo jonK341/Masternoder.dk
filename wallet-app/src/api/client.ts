@@ -825,6 +825,56 @@ export async function postNetworkChatHeartbeat(displayName?: string): Promise<{ 
   return res.json() as Promise<{ success: boolean }>;
 }
 
+export type LedgerOutreachLead = {
+  ledger_row_id: string;
+  ledger_rank?: number;
+  display_name?: string;
+  discord_id?: string;
+  youtube_id?: string;
+  facebook_id?: string;
+  user_id?: string;
+  priority_score?: number;
+  buyer_score?: number;
+  sources?: string[];
+  assigned_camgirl_id?: string;
+  mn2_coin_offer_status?: string;
+};
+
+export async function fetchCamgirlsLedgerQueue(limit = 25): Promise<{
+  success: boolean;
+  total: number;
+  queue: LedgerOutreachLead[];
+}> {
+  const res = await fetch(`/api/wallet/v2/camgirls/ledger/queue?limit=${limit}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Ledger queue failed (${res.status})`);
+  return res.json() as Promise<{ success: boolean; total: number; queue: LedgerOutreachLead[] }>;
+}
+
+export async function postCamgirlLedgerOffer(
+  ledgerRowId: string,
+  mn2Amount: number,
+  priceUsd: number,
+  rail: 'paypal' | 'usdt' | 'usdc',
+  performerId?: string,
+): Promise<{ success: boolean; offer?: unknown; error?: string }> {
+  const res = await fetch('/api/wallet/v2/camgirls/ledger/offer', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      ledger_row_id: ledgerRowId,
+      mn2_amount: mn2Amount,
+      price_usd: priceUsd,
+      rail,
+      performer_id: performerId,
+    }),
+  });
+  return res.json() as Promise<{ success: boolean; offer?: unknown; error?: string }>;
+}
+
 export async function fetchCamgirlsCatalog(): Promise<CamgirlsCatalog> {
   const res = await fetch('/api/wallet/v2/camgirls/catalog', {
     credentials: 'same-origin',

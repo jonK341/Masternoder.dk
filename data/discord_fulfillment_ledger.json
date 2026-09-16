@@ -1,20 +1,1960 @@
 {
-  "version": 1,
-  "updated_at": "2026-09-16T02:50:34.863067Z",
-  "rows": [],
+  "version": 3,
+  "updated_at": "2026-09-16T03:32:45.121067Z",
+  "rows": [
+    {
+      "ledger_row_id": "discord:111222333",
+      "discord_id": "111222333",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": "alpha",
+      "display_name": "alpha",
+      "user_id": "user-a",
+      "mn2_balance": 0.0,
+      "source": "local_linked+purchase_intent",
+      "sources": [
+        "local_linked",
+        "purchase_intent"
+      ],
+      "source_count": 2,
+      "buyer_signal": true,
+      "buyer_signals": [
+        "wallet_intent_register",
+        "payment_ledger"
+      ],
+      "buyer_score": 110.0,
+      "priority_score": 160,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:21.516553Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:21.516565Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0,
+            "buyer_signals": [
+              "wallet_intent_register",
+              "payment_ledger"
+            ]
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        },
+        {
+          "id": "coin_pack_offer",
+          "label": "MN2 coin pack offer",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "coin_pack_sku": "mn2-pack-s",
+            "buyer_signals": [
+              "wallet_intent_register",
+              "payment_ledger"
+            ]
+          }
+        },
+        {
+          "id": "mn2_onramp_nudge",
+          "label": "MN2 on-ramp nudge",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "onramp_url": "/exchange?tab=onramp"
+          }
+        },
+        {
+          "id": "paypal_mn2_bundle",
+          "label": "PayPal MN2 bundle offer",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "bundle_hint": "paypal_mn2"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:24:21.516593Z",
+      "updated_at": "2026-09-16T03:32:26.330679Z",
+      "ledger_rank": 1
+    },
+    {
+      "ledger_row_id": "discord:777888999",
+      "discord_id": "777888999",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-c",
+      "mn2_balance": 0.0,
+      "source": "local_linked+purchase_intent",
+      "sources": [
+        "local_linked",
+        "purchase_intent"
+      ],
+      "source_count": 2,
+      "buyer_signal": true,
+      "buyer_signals": [
+        "discord_promo_redeem"
+      ],
+      "buyer_score": 25.0,
+      "priority_score": 75,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:23.341302Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:23.341312Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0,
+            "buyer_signals": [
+              "discord_promo_redeem"
+            ]
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        },
+        {
+          "id": "coin_pack_offer",
+          "label": "MN2 coin pack offer",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "coin_pack_sku": "mn2-pack-s",
+            "buyer_signals": [
+              "discord_promo_redeem"
+            ]
+          }
+        },
+        {
+          "id": "mn2_onramp_nudge",
+          "label": "MN2 on-ramp nudge",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "onramp_url": "/exchange?tab=onramp"
+          }
+        },
+        {
+          "id": "paypal_mn2_bundle",
+          "label": "PayPal MN2 bundle offer",
+          "status": "skipped",
+          "fulfilled_at": null
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:24:23.341335Z",
+      "updated_at": "2026-09-16T03:32:28.227731Z",
+      "ledger_rank": 2
+    },
+    {
+      "ledger_row_id": "discord:121212121",
+      "discord_id": "121212121",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-shop-001",
+      "mn2_balance": 0.0,
+      "source": "shop_checkout_abandoned",
+      "sources": [
+        "shop_checkout_abandoned"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [
+        "shop_abandoned"
+      ],
+      "buyer_score": 12.0,
+      "priority_score": 24,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:01.588215Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:01.588228Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:01.588249Z",
+      "updated_at": "2026-09-16T03:32:31.581499Z",
+      "ledger_rank": 3
+    },
+    {
+      "ledger_row_id": "user:user-shop-002",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-shop-002",
+      "mn2_balance": 0.0,
+      "source": "shop_checkout_abandoned",
+      "sources": [
+        "shop_checkout_abandoned"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [
+        "shop_abandoned"
+      ],
+      "buyer_score": 12.0,
+      "priority_score": 24,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:02.544277Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:02.544290Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:02.544311Z",
+      "updated_at": "2026-09-16T03:32:32.555257Z",
+      "ledger_rank": 4
+    },
+    {
+      "ledger_row_id": "user:buyer_paypal",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "buyer_paypal",
+      "mn2_balance": 0.0,
+      "source": "exchange_wallet_created",
+      "sources": [
+        "exchange_wallet_created"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [
+        "exchange_wallet"
+      ],
+      "buyer_score": 11.0,
+      "priority_score": 22,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:03.465483Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:03.465495Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:03.465516Z",
+      "updated_at": "2026-09-16T03:32:33.472182Z",
+      "ledger_rank": 5
+    },
+    {
+      "ledger_row_id": "discord:444555666",
+      "discord_id": "444555666",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-b",
+      "mn2_balance": 0.0,
+      "source": "local_linked",
+      "sources": [
+        "local_linked"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 10,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:22.433902Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:24:22.433911Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:24:22.433931Z",
+      "updated_at": "2026-09-16T03:32:27.273901Z",
+      "ledger_rank": 6
+    },
+    {
+      "ledger_row_id": "user:codes",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "codes",
+      "mn2_balance": 0.0,
+      "source": "referral_signup",
+      "sources": [
+        "referral_signup"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 10,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:04.456116Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:04.456130Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:04.456151Z",
+      "updated_at": "2026-09-16T03:32:34.404506Z",
+      "ledger_rank": 7
+    },
+    {
+      "ledger_row_id": "discord:454545454",
+      "discord_id": "454545454",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-host-001",
+      "mn2_balance": 0.0,
+      "source": "hosting_inquiry",
+      "sources": [
+        "hosting_inquiry"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 10,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:07.898925Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:07.898936Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:07.898957Z",
+      "updated_at": "2026-09-16T03:32:37.733982Z",
+      "ledger_rank": 8
+    },
+    {
+      "ledger_row_id": "facebook:fb_msg_301",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": "fb_msg_301",
+      "discord_username": "Messenger Lead",
+      "display_name": "Messenger Lead",
+      "user_id": null,
+      "mn2_balance": 0.0,
+      "source": "facebook_messenger_lead",
+      "sources": [
+        "facebook_messenger_lead"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 9,
+      "fulfillment_status": "pending",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "none",
+      "created_at": "2026-09-16T03:32:00.634819Z",
+      "updated_at": "2026-09-16T03:32:30.634333Z",
+      "ledger_rank": 9
+    },
+    {
+      "ledger_row_id": "user:user-mn-001",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-mn-001",
+      "mn2_balance": 0.0,
+      "source": "masternode_interest",
+      "sources": [
+        "masternode_interest"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 9,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:08.920618Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:08.920631Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:08.920653Z",
+      "updated_at": "2026-09-16T03:32:38.802488Z",
+      "ledger_rank": 10
+    },
+    {
+      "ledger_row_id": "youtube:yt_sub_001",
+      "discord_id": null,
+      "youtube_id": "yt_sub_001",
+      "facebook_id": null,
+      "discord_username": "CryptoLearner42",
+      "display_name": "CryptoLearner42",
+      "user_id": "user-yt-001",
+      "mn2_balance": 0.0,
+      "source": "youtube_subscriber",
+      "sources": [
+        "youtube_subscriber"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 8,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:58.700575Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:58.700586Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:31:58.700608Z",
+      "updated_at": "2026-09-16T03:32:28.732767Z",
+      "ledger_rank": 11
+    },
+    {
+      "ledger_row_id": "discord:555666777",
+      "discord_id": "555666777",
+      "youtube_id": "yt_sub_002",
+      "facebook_id": null,
+      "discord_username": "MN2Fan",
+      "display_name": "MN2Fan",
+      "user_id": null,
+      "mn2_balance": 0.0,
+      "source": "youtube_subscriber",
+      "sources": [
+        "youtube_subscriber"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 8,
+      "fulfillment_status": "pending",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "skipped",
+          "fulfilled_at": null
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "none",
+      "created_at": "2026-09-16T03:31:58.700648Z",
+      "updated_at": "2026-09-16T03:32:28.732811Z",
+      "ledger_rank": 12
+    },
+    {
+      "ledger_row_id": "facebook:fb_fan_001",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": "fb_fan_001",
+      "discord_username": "FB Crypto Fan",
+      "display_name": "FB Crypto Fan",
+      "user_id": "user-fb-001",
+      "mn2_balance": 0.0,
+      "source": "facebook_page_fan",
+      "sources": [
+        "facebook_page_fan"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 8,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:00.136555Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:00.136568Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:00.136595Z",
+      "updated_at": "2026-09-16T03:32:30.157627Z",
+      "ledger_rank": 13
+    },
+    {
+      "ledger_row_id": "youtube:yt_cmt_101",
+      "discord_id": null,
+      "youtube_id": "yt_cmt_101",
+      "facebook_id": null,
+      "discord_username": "CommentKing",
+      "display_name": "CommentKing",
+      "user_id": "user-yt-002",
+      "mn2_balance": 0.0,
+      "source": "youtube_commenter",
+      "sources": [
+        "youtube_commenter"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 7,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:59.171570Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:59.171581Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:31:59.171603Z",
+      "updated_at": "2026-09-16T03:32:29.200518Z",
+      "ledger_rank": 14
+    },
+    {
+      "ledger_row_id": "discord:888999000",
+      "discord_id": "888999000",
+      "youtube_id": "yt_cmt_102",
+      "facebook_id": null,
+      "discord_username": "WalletWatcher",
+      "display_name": "WalletWatcher",
+      "user_id": "user-yt-003",
+      "mn2_balance": 0.0,
+      "source": "youtube_commenter",
+      "sources": [
+        "youtube_commenter"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 7,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:59.669688Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:31:59.669698Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:31:59.669719Z",
+      "updated_at": "2026-09-16T03:32:29.698497Z",
+      "ledger_rank": 15
+    },
+    {
+      "ledger_row_id": "discord:333444555",
+      "discord_id": "333444555",
+      "youtube_id": null,
+      "facebook_id": "fb_grp_201",
+      "discord_username": "GroupMember Alpha",
+      "display_name": "GroupMember Alpha",
+      "user_id": "user-fb-002",
+      "mn2_balance": 0.0,
+      "source": "facebook_group_member",
+      "sources": [
+        "facebook_group_member"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 7,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:00.634766Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:00.634777Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:00.634799Z",
+      "updated_at": "2026-09-16T03:32:30.634304Z",
+      "ledger_rank": 16
+    },
+    {
+      "ledger_row_id": "user:test_chat_hb_user",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": "HB User",
+      "display_name": "HB User",
+      "user_id": "test_chat_hb_user",
+      "mn2_balance": 0.0006,
+      "source": "network_chat_active",
+      "sources": [
+        "network_chat_active"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 7,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:04.949249Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:04.949260Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:04.949282Z",
+      "updated_at": "2026-09-16T03:32:34.882401Z",
+      "ledger_rank": 17
+    },
+    {
+      "ledger_row_id": "discord:232323232",
+      "discord_id": "232323232",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-nl-001",
+      "mn2_balance": 0.0,
+      "source": "newsletter_optin",
+      "sources": [
+        "newsletter_optin"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 5,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:05.931123Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:05.931136Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:05.931157Z",
+      "updated_at": "2026-09-16T03:32:35.827687Z",
+      "ledger_rank": 18
+    },
+    {
+      "ledger_row_id": "discord:343434343",
+      "discord_id": "343434343",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-trophy-001",
+      "mn2_balance": 0.0,
+      "source": "trophy_shop_view",
+      "sources": [
+        "trophy_shop_view"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 5,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:06.914041Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:06.914053Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:06.914074Z",
+      "updated_at": "2026-09-16T03:32:36.778331Z",
+      "ledger_rank": 19
+    },
+    {
+      "ledger_row_id": "user:user-oauth-g-001",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": "Google Pending User",
+      "display_name": "Google Pending User",
+      "user_id": "user-oauth-g-001",
+      "mn2_balance": 0.0,
+      "source": "oauth_google_pending",
+      "sources": [
+        "oauth_google_pending"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:09.404461Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:09.404472Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:09.404492Z",
+      "updated_at": "2026-09-16T03:32:39.283439Z",
+      "ledger_rank": 20
+    },
+    {
+      "ledger_row_id": "discord:676767676",
+      "discord_id": "676767676",
+      "youtube_id": null,
+      "facebook_id": "fb_oauth_001",
+      "discord_username": "FB Linked User",
+      "display_name": "FB Linked User",
+      "user_id": "user-oauth-f-001",
+      "mn2_balance": 0.0,
+      "source": "oauth_facebook_linked",
+      "sources": [
+        "oauth_facebook_linked"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:09.931117Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:09.931127Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:09.931149Z",
+      "updated_at": "2026-09-16T03:32:39.797853Z",
+      "ledger_rank": 21
+    },
+    {
+      "ledger_row_id": "youtube:yt_oauth_001",
+      "discord_id": null,
+      "youtube_id": "yt_oauth_001",
+      "facebook_id": null,
+      "discord_username": "YouTube OAuth User",
+      "display_name": "YouTube OAuth User",
+      "user_id": "user-oauth-yt-001",
+      "mn2_balance": 0.0,
+      "source": "youtube_oauth_linked",
+      "sources": [
+        "youtube_oauth_linked"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:10.459941Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:10.459955Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:10.459981Z",
+      "updated_at": "2026-09-16T03:32:40.264875Z",
+      "ledger_rank": 22
+    },
+    {
+      "ledger_row_id": "user:test_wallet_user",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": "test_wallet_user",
+      "display_name": "test_wallet_user",
+      "user_id": "test_wallet_user",
+      "mn2_balance": 0.0,
+      "source": "oauth_facebook_linked",
+      "sources": [
+        "oauth_facebook_linked"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:11.457258Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:11.457269Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:11.457290Z",
+      "updated_at": "2026-09-16T03:32:41.241047Z",
+      "ledger_rank": 23
+    },
+    {
+      "ledger_row_id": "user:user_cf8303ed1b6030fe",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": "user_cf8303ed1b6030fe",
+      "display_name": "user_cf8303ed1b6030fe",
+      "user_id": "user_cf8303ed1b6030fe",
+      "mn2_balance": 0.0,
+      "source": "oauth_facebook_linked",
+      "sources": [
+        "oauth_facebook_linked"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:12.435825Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:12.435835Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:12.435856Z",
+      "updated_at": "2026-09-16T03:32:42.217354Z",
+      "ledger_rank": 24
+    },
+    {
+      "ledger_row_id": "discord:787878787",
+      "discord_id": "787878787",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-install-mobile-001",
+      "mn2_balance": 0.0,
+      "source": "mobile_wallet_install",
+      "sources": [
+        "mobile_wallet_install"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:13.404588Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:13.404601Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:13.404623Z",
+      "updated_at": "2026-09-16T03:32:43.186182Z",
+      "ledger_rank": 25
+    },
+    {
+      "ledger_row_id": "user:user-install-desktop-001",
+      "discord_id": null,
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-install-desktop-001",
+      "mn2_balance": 0.0,
+      "source": "desktop_wallet_install",
+      "sources": [
+        "desktop_wallet_install"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:14.399535Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:14.399547Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:14.399568Z",
+      "updated_at": "2026-09-16T03:32:44.154082Z",
+      "ledger_rank": 26
+    },
+    {
+      "ledger_row_id": "discord:565656565",
+      "discord_id": "565656565",
+      "youtube_id": null,
+      "facebook_id": null,
+      "discord_username": null,
+      "display_name": null,
+      "user_id": "user-wl-001",
+      "mn2_balance": 0.0,
+      "source": "waitlist_register",
+      "sources": [
+        "waitlist_register"
+      ],
+      "source_count": 1,
+      "buyer_signal": false,
+      "buyer_signals": [],
+      "buyer_score": 0.0,
+      "priority_score": 0,
+      "fulfillment_status": "partial",
+      "order_lines": [
+        {
+          "id": "account_link",
+          "label": "Account link verified",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:15.396215Z"
+        },
+        {
+          "id": "role_sync",
+          "label": "Linked role metadata sync",
+          "status": "fulfilled",
+          "fulfilled_at": "2026-09-16T03:32:15.396228Z"
+        },
+        {
+          "id": "casino_vip_role",
+          "label": "Casino VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "hosting_vip_role",
+          "label": "Hosting VIP role",
+          "status": "pending",
+          "fulfilled_at": null
+        },
+        {
+          "id": "mn2_credit",
+          "label": "MN2 community credit",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "default_amount_mn2": 0.0
+          }
+        },
+        {
+          "id": "trophy_grant",
+          "label": "Community trophy grant",
+          "status": "pending",
+          "fulfilled_at": null,
+          "metadata": {
+            "trophy_sku": "discord-community"
+          }
+        }
+      ],
+      "mn2_coin_offer_status": "pending",
+      "created_at": "2026-09-16T03:32:15.396250Z",
+      "updated_at": "2026-09-16T03:32:45.120975Z",
+      "ledger_rank": 27
+    }
+  ],
   "meta": {
     "sources": {
-      "local_linked": 0,
-      "discord_api_guild": 0,
-      "discord_api_channel": 0
+      "local_linked": 3,
+      "purchase_intent": 2,
+      "youtube_subscriber": 2,
+      "youtube_commenter": 2,
+      "facebook_page_fan": 1,
+      "facebook_group_member": 1,
+      "facebook_messenger_lead": 1,
+      "shop_checkout_abandoned": 2,
+      "exchange_wallet_created": 1,
+      "casino_discord_play": 0,
+      "referral_signup": 1,
+      "p2p_listing_view": 0,
+      "camgirl_tip_intent": 0,
+      "network_chat_active": 1,
+      "podcast_subscriber": 0,
+      "newsletter_optin": 1,
+      "affiliate_click": 0,
+      "trophy_shop_view": 1,
+      "wallet_earn_click": 0,
+      "hosting_inquiry": 1,
+      "masternode_interest": 1,
+      "support_ticket_mn2": 0,
+      "oauth_social_linked": 13
     },
-    "discord_api_used": true,
-    "discord_api_notes": [
-      "guild_members: HTTP 403: {\"message\": \"Missing Access\", \"code\": 50001}",
-      "channel_authors: mn2_channel_or_bot_not_configured"
-    ],
+    "population_source_count": 23,
+    "overlaps": {
+      "local_and_api": 0,
+      "local_and_buyer": 2,
+      "api_and_buyer": 0,
+      "all_three": 0
+    },
+    "buyer_signal_count": 2,
+    "discord_api_used": false,
+    "discord_api_notes": [],
     "bot_configured": true,
     "guild_configured": true,
-    "mn2_channel_configured": false
+    "mn2_channel_configured": false,
+    "sources_enabled": {
+      "local": true,
+      "discord_api": false,
+      "buyer_signals": true,
+      "all_population_sources": true
+    }
   }
 }

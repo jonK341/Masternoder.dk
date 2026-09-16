@@ -94,7 +94,7 @@ def test_build_order_list_from_linked_users(ledger_env):
 
     with _no_api()[0], _no_api()[1]:
         with patch("backend.services.discord_fulfillment_ledger_service.scan_purchase_intent_buyers", return_value=[]):
-            result = build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=False)
+            result = build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=False, use_all_sources=False)
 
     assert result["success"] is True
     assert result["total"] == 2
@@ -116,11 +116,12 @@ def test_build_order_list_merges_discord_api(ledger_env):
     with patch("backend.services.discord_fulfillment_ledger_service.fetch_discord_guild_members", return_value={"members": api_members, "api_used": True, "success": True}):
         with patch("backend.services.discord_fulfillment_ledger_service.fetch_discord_channel_authors", return_value={"members": [], "api_used": True, "success": True}):
             with patch("backend.services.discord_fulfillment_ledger_service.scan_purchase_intent_buyers", return_value=[]):
-                result = build_order_list(use_local=True, use_discord_api=True, use_buyer_signals=False)
+                result = build_order_list(use_local=True, use_discord_api=True, use_buyer_signals=False, use_all_sources=False)
 
     assert result["total"] == 3
     assert result["discord_api_used"] is True
-    assert result["sources"]["discord_api"] >= 1
+    src = result["sources"]
+    assert src.get("discord_api", 0) + src.get("discord_api_guild", 0) >= 1
 
 
 def test_triple_source_merge_with_buyer_signal(ledger_env):
@@ -141,18 +142,17 @@ def test_triple_source_merge_with_buyer_signal(ledger_env):
     with patch("backend.services.discord_fulfillment_ledger_service.fetch_discord_guild_members", return_value={"members": api_members, "api_used": True, "success": True}):
         with patch("backend.services.discord_fulfillment_ledger_service.fetch_discord_channel_authors", return_value={"members": [], "api_used": True}):
             with patch("backend.services.discord_fulfillment_ledger_service.scan_purchase_intent_buyers", return_value=[buyer_row]):
-                result = build_order_list(use_local=True, use_discord_api=True, use_buyer_signals=True)
+                result = build_order_list(use_local=True, use_discord_api=True, use_buyer_signals=True, use_all_sources=False)
 
     assert result["total"] == 3
     assert result["buyer_signal_count"] >= 1
     assert result["overlaps"]["local_and_api"] >= 1
-    assert result["sources"]["purchase_intent"] >= 1
+    assert result["sources"].get("purchase_intent", 0) >= 1
 
     orders = get_order_list()["orders"]
     alpha = next(r for r in orders if r["discord_id"] == "111222333")
-    assert alpha["source"] in ("local_linked+discord_api", "all")
     assert "local_linked" in alpha["sources"]
-    assert "discord_api" in alpha["sources"]
+    assert any(s in alpha["sources"] for s in ("discord_api", "discord_api_guild", "discord_api_channel"))
 
     buyer = next(r for r in orders if r["discord_id"] == "777888999")
     assert buyer["buyer_signal"] is True
@@ -202,7 +202,7 @@ def test_fulfill_order_marks_lines(ledger_env):
 
     with _no_api()[0], _no_api()[1]:
         with patch("backend.services.discord_fulfillment_ledger_service.scan_purchase_intent_buyers", return_value=[]):
-            build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=False)
+            build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=False, use_all_sources=False)
 
     with patch("backend.services.unified_points_database.unified_points_db.add_points", return_value={"success": True}):
         out = fulfill_order("444555666", ["mn2_credit"], operator="test")

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import {
   fetchCamgirlsAiFeatures,
   fetchCamgirlsCatalog,
+  fetchCamgirlsLedgerQueue,
   fetchCamgirlsUpgrades,
   fetchCamgirlsUpgradesProgress,
+  postCamgirlLedgerOffer,
   postCamgirlTip,
   triggerCamgirlAiFeature,
   unlockCamgirlUpgrade,
@@ -11,9 +13,10 @@ import {
   type CamgirlPerformer,
   type CamgirlUpgrade,
   type CamgirlsUpgradesProgress,
+  type LedgerOutreachLead,
 } from '../api/client';
 
-type Panel = 'performers' | 'upgrades' | 'ai-features';
+type Panel = 'performers' | 'upgrades' | 'ai-features' | 'ledger-outreach';
 
 const CATEGORY_LABELS: Record<string, string> = {
   studio: 'Studio',
@@ -55,6 +58,7 @@ export function CamgirlsHub() {
     const p = new URLSearchParams(window.location.search).get('panel');
     if (p === 'upgrades') return 'upgrades';
     if (p === 'ai-features') return 'ai-features';
+    if (p === 'ledger-outreach') return 'ledger-outreach';
     return 'performers';
   };
 
@@ -79,6 +83,10 @@ export function CamgirlsHub() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [ledgerLeads, setLedgerLeads] = useState<LedgerOutreachLead[]>([]);
+  const [ledgerLoaded, setLedgerLoaded] = useState(false);
+  const [ledgerFlash, setLedgerFlash] = useState<string | null>(null);
+  const [offering, setOffering] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +121,17 @@ export function CamgirlsHub() {
       .catch((err: Error) => setError(err.message));
   }, [upgradesLoaded]);
 
+  const loadLedgerQueue = useCallback(() => {
+    if (ledgerLoaded) return Promise.resolve();
+    setError(null);
+    return fetchCamgirlsLedgerQueue(25)
+      .then((data) => {
+        setLedgerLeads(data.queue || []);
+        setLedgerLoaded(true);
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [ledgerLoaded]);
+
   const loadAiFeatures = useCallback(() => {
     if (aiLoaded) return Promise.resolve();
     setError(null);
@@ -130,7 +149,8 @@ export function CamgirlsHub() {
   useEffect(() => {
     if (panel === 'upgrades') loadUpgrades();
     if (panel === 'ai-features') loadAiFeatures();
-  }, [panel, loadUpgrades, loadAiFeatures]);
+    if (panel === 'ledger-outreach') loadLedgerQueue();
+  }, [panel, loadUpgrades, loadAiFeatures, loadLedgerQueue]);
 
   useEffect(() => {
     if (panel !== 'ai-features') return;
@@ -155,6 +175,38 @@ export function CamgirlsHub() {
       url.searchParams.set('panel', p);
     }
     window.history.replaceState({}, '', url.pathname + url.search);
+  };
+
+  const handleLedgerOffer = async (lead: LedgerOutreachLead, rail: 'paypal' | 'usdt' | 'usdc') => {
+    if (offering) return;
+    const mn2Raw = window.prompt(`MN2 amount for ${lead.display_name || lead.ledger_row_id}:`, '100');
+    if (mn2Raw == null) return;
+    const priceRaw = window.prompt('Price USD:', '9.99');
+    if (priceRaw == null) return;
+    const mn2 = parseFloat(mn2Raw);
+    const price = parseFloat(priceRaw);
+    if (!Number.isFinite(mn2) || !Number.isFinite(price) || mn2 <= 0 || price <= 0) {
+      setLedgerFlash('Invalid MN2 amount or price');
+      window.setTimeout(() => setLedgerFlash(null), 3000);
+      return;
+    }
+    setOffering(lead.ledger_row_id);
+    setLedgerFlash(null);
+    try {
+      const result = await postCamgirlLedgerOffer(
+        lead.ledger_row_id,
+        mn2,
+        price,
+        rail,
+        selectedPerformer || lead.assigned_camgirl_id,
+      );
+      setLedgerFlash(result.success ? `Offer created (${rail}) — ${mn2} MN2 @ $${price}` : (result.error || 'Offer failed'));
+    } catch (err: unknown) {
+      setLedgerFlash(err instanceof Error ? err.message : 'Offer failed');
+    } finally {
+      setOffering(null);
+      window.setTimeout(() => setLedgerFlash(null), 5000);
+    }
   };
 
   const unlocked = new Set(progress?.unlocked_ids || []);
@@ -298,6 +350,13 @@ export function CamgirlsHub() {
           onClick={() => switchPanel('ai-features')}
         >
           AI Features (100)
+        </button>
+        <button
+          type="button"
+          class={`wallet-discord-btn${panel === 'ledger-outreach' ? ' wallet-discord-btn-primary' : ''}`}
+          onClick={() => switchPanel('ledger-outreach')}
+        >
+          Ledger outreach
         </button>
       </div>
 
@@ -579,6 +638,71 @@ export function CamgirlsHub() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {panel === 'ledger-outreach' && (
+        <section class="wallet-panel" style={{ marginTop: '12px' }}>
+          <div class="wallet-panel-header">
+            <div>
+              <div class="wallet-panel-title">Ledger outreach</div>
+              <div class="wallet-panel-subtitle">
+                Community fulfillment leads — sell MN2 via PayPal, USDT, or USDC
+              </div>
+            </div>
+          </div>
+          {ledgerFlash && (
+            <div style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--wallet-accent)' }}>{ledgerFlash}</div>
+          )}
+          {!ledgerLoaded ? (
+            <div style={{ padding: '16px' }}>
+              <div class="wallet-skeleton" style={{ height: '120px' }} />
+            </div>
+          ) : ledgerLeads.length === 0 ? (
+            <div style={{ padding: '16px', color: 'var(--wallet-muted)' }}>No leads in queue — run community ledger sync.</div>
+          ) : (
+            <div class="wallet-shop-grid" style={{ padding: '12px' }}>
+              {ledgerLeads.map((lead) => (
+                <div key={lead.ledger_row_id} class="wallet-shop-card" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span class="wallet-shop-card-name">
+                    #{lead.ledger_rank ?? '—'} {lead.display_name || lead.ledger_row_id}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--wallet-muted)' }}>
+                    priority {lead.priority_score ?? 0} · buyer {lead.buyer_score ?? 0}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--wallet-muted)' }}>
+                    {(lead.sources || []).slice(0, 3).join(', ')}
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      class="wallet-discord-btn wallet-discord-btn-primary"
+                      disabled={offering === lead.ledger_row_id}
+                      onClick={() => handleLedgerOffer(lead, 'paypal')}
+                    >
+                      PayPal
+                    </button>
+                    <button
+                      type="button"
+                      class="wallet-discord-btn"
+                      disabled={offering === lead.ledger_row_id}
+                      onClick={() => handleLedgerOffer(lead, 'usdt')}
+                    >
+                      USDT
+                    </button>
+                    <button
+                      type="button"
+                      class="wallet-discord-btn"
+                      disabled={offering === lead.ledger_row_id}
+                      onClick={() => handleLedgerOffer(lead, 'usdc')}
+                    >
+                      USDC
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>

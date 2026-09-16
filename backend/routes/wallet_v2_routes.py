@@ -263,6 +263,31 @@ def wallet_v2_camgirls_ai_feature_trigger(feature_id: str):
     return jsonify(result), status
 
 
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/ledger/queue", methods=["GET"])
+def wallet_v2_camgirls_ledger_queue():
+    """Camgirls hub — ledger outreach queue (assigned leads)."""
+    from backend.services.ledger_coin_sales_service import get_sales_queue
+
+    limit = request.args.get("limit", 25, type=int)
+    return jsonify(get_sales_queue(limit=limit)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/ledger/offer", methods=["POST"])
+def wallet_v2_camgirls_ledger_offer():
+    """Create ledger MN2 sale offer from camgirls hub."""
+    from backend.services.ledger_coin_sales_service import create_offer
+
+    body = request.get_json(silent=True) or {}
+    result = create_offer(
+        ledger_row_id=(body.get("ledger_row_id") or "").strip(),
+        mn2_amount=float(body.get("mn2_amount") or body.get("amount_mn2") or 0),
+        price_usd=float(body.get("price_usd") or 0),
+        rail=(body.get("rail") or "paypal"),
+        performer_id=(body.get("performer_id") or body.get("camgirl_id") or "").strip() or None,
+    )
+    return jsonify(result), 200 if result.get("success") else 400
+
+
 @wallet_v2_bp.route("/api/wallet/v2/network-chat/status", methods=["GET"])
 def wallet_v2_network_chat_status():
     """Network chat room status — online users stub, recent messages, reward caps."""
