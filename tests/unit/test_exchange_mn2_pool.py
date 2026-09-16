@@ -25,6 +25,8 @@ def pool_env(tmp_path, monkeypatch):
         "enabled": True,
         "pool_user_id": pool_user,
         "agent_id": "exchange_agent_mn2_pool",
+        "reserve_user_id": f"{pool_user}_reserve",
+        "pool_swap_reserve_bps": 200,
         "paper_seed_on_empty": True,
         "paper_seed": {"MN2": 5000, "USDT": 2000, "USDC": 2000},
         "min_pool_by_asset": {"MN2": 1000, "USDT": 200, "USDC": 200},
@@ -49,6 +51,8 @@ def pool_env(tmp_path, monkeypatch):
     monkeypatch.setattr(pool, "_CFG_PATH", str(pool_cfg))
     monkeypatch.setattr(pool, "_STATE_PATH", str(data / "mn2_pool_state.json"))
     monkeypatch.setattr(pool, "_LEDGER_PATH", str(data / "mn2_pool_ledger.jsonl"))
+    monkeypatch.setattr(pool, "_RESERVE_PATH", str(data / "mn2_pool_reserve.json"))
+    monkeypatch.setattr(pool, "_RESERVE_LEDGER_PATH", str(data / "mn2_pool_reserve_ledger.jsonl"))
     monkeypatch.setattr("backend.services.activity_events_service.emit", lambda *a, **k: {"success": True})
 
     from backend.services import unified_points_database as upd
@@ -177,6 +181,36 @@ def test_mn2_pool_status_route(pool_env):
     body = res.get_json()
     assert body["success"] is True
     assert "MN2" in body["pool_assets"]
+
+
+def test_pool_swap_reserve_stashed_on_buy(pool_env, points_db):
+    ex = pool_env["ex"]
+    pool = pool_env["pool"]
+    pool.ensure_paper_seed()
+    points_db.add_points("reserve_buyer", "mn2_balance", 5000.0, source="seed", metadata={"reference": "seed"})
+    q = ex.quote_swap("reserve_buyer", "USDT", "buy", 10.0, "MN2")
+    assert q["success"] is True
+    assert q.get("pool_reserve_bps") == 200
+    assert float(q.get("pool_reserve_quote") or 0) > 0
+    res = ex.execute_swap("reserve_buyer", q["quote_id"], "USDT", "buy", 10.0, "MN2")
+    assert res["success"] is True, res.get("error")
+    reserve = pool.reserve_balances()
+    assert float(reserve.get("MN2") or 0) == pytest.approx(float(q["pool_reserve_quote"]), rel=1e-6)
+
+
+def test_pool_swap_reserve_stashed_on_sell_back(pool_env, points_db):
+    ex = pool_env["ex"]
+    pool = pool_env["pool"]
+    pool.ensure_paper_seed()
+    ex._adjust_balance("reserve_seller", "USDC", 25.0)
+    q = ex.quote_swap("reserve_seller", "USDC", "sell", 10.0, "MN2")
+    assert q["success"] is True
+    assert float(q.get("pool_reserve_quote") or 0) > 0
+    before = float(pool.reserve_balances().get("MN2") or 0)
+    res = ex.execute_swap("reserve_seller", q["quote_id"], "USDC", "sell", 10.0, "MN2")
+    assert res["success"] is True, res.get("error")
+    after = float(pool.reserve_balances().get("MN2") or 0)
+    assert after > before
 
 
 def test_pool_agent_tick_seeds_mn2(pool_env, monkeypatch):

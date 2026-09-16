@@ -15,6 +15,8 @@ from backend.services import crypto_exchange_service as ex
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_mn2_pool_config.json")
 _STATE_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_state.json")
 _LEDGER_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_ledger.jsonl")
+_RESERVE_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_reserve.json")
+_RESERVE_LEDGER_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_reserve_ledger.jsonl")
 _POOL_ASSETS = frozenset({"MN2", "USDT", "USDC"})
 
 
@@ -37,6 +39,24 @@ def pool_user_id() -> str:
 
 def pool_agent_id() -> str:
     return str(load_config().get("agent_id") or "exchange_agent_mn2_pool")
+
+
+def reserve_user_id() -> str:
+    return str(load_config().get("reserve_user_id") or "exchange_mn2_pool_reserve")
+
+
+def pool_swap_reserve_bps() -> int:
+    if not pool_enabled():
+        return 0
+    return int(load_config().get("pool_swap_reserve_bps") or 200)
+
+
+def compute_pool_reserve(amount: float, price_quote: float, reserve_bps: Optional[int] = None) -> float:
+    bps = int(reserve_bps if reserve_bps is not None else pool_swap_reserve_bps())
+    if bps <= 0:
+        return 0.0
+    gross = float(amount or 0) * float(price_quote or 0)
+    return round(gross * bps / 10000.0, 12)
 
 
 def is_pool_swap(symbol: str, quote: str) -> bool:
@@ -89,6 +109,105 @@ def _debit_pool(uid: str, symbol: str, amount: float, meta: Dict[str, Any]) -> N
         ex._adjust_quote_balance(uid, "MN2", -amt, "mn2_pool_pay", meta)
     else:
         ex._adjust_balance(uid, sym, -amt)
+
+
+def _credit_reserve(uid: str, symbol: str, amount: float, meta: Dict[str, Any]) -> None:
+    _credit_pool(uid, symbol, amount, meta)
+
+
+def _read_reserve_totals() -> Dict[str, Any]:
+    row = ex._read_json(_RESERVE_PATH, {"assets": {}, "swap_count": 0, "updated_at": None})
+    assets = row.get("assets") if isinstance(row.get("assets"), dict) else {}
+    return {
+        "assets": {str(k).upper(): round(float(v or 0), 12) for k, v in assets.items()},
+        "swap_count": int(row.get("swap_count") or 0),
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def reserve_balances() -> Dict[str, float]:
+    uid = reserve_user_id()
+    out = {sym: round(_pool_asset_balance(uid, sym), 8) for sym in sorted(_POOL_ASSETS)}
+    totals = _read_reserve_totals()
+    for sym, amt in (totals.get("assets") or {}).items():
+        out[sym] = round(max(float(out.get(sym) or 0), float(amt or 0)), 8)
+    return out
+
+
+def apply_pool_reserve_to_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Add the pool swap reserve (default 2%) to an existing quote payload."""
+    if not payload.get("success") or not pool_enabled():
+        return payload
+    sym = str(payload.get("symbol") or "").upper()
+    quote = str(payload.get("quote_currency") or "").upper()
+    if not is_pool_swap(sym, quote):
+        return payload
+
+    reserve_bps = pool_swap_reserve_bps()
+    reserve_quote = compute_pool_reserve(
+        float(payload.get("amount") or 0),
+        float(payload.get("price_quote") or 0),
+        reserve_bps,
+    )
+    if reserve_quote <= 0:
+        return payload
+
+    side = str(payload.get("side") or "").lower()
+    if side == "buy":
+        payload["quote_cost"] = round(float(payload.get("quote_cost") or 0) + reserve_quote, 8)
+    else:
+        payload["quote_received"] = round(max(0.0, float(payload.get("quote_received") or 0) - reserve_quote), 8)
+
+    payload["pool_reserve_quote"] = round(reserve_quote, 8)
+    payload["pool_reserve_bps"] = reserve_bps
+    payload["pool_reserve_currency"] = quote
+    return payload
+
+
+def stash_swap_reserve(quote_payload: Dict[str, Any], trade_ref: str) -> Dict[str, Any]:
+    """Move the pool swap reserve from the liquidity pool into the reserve account."""
+    reserve_quote = float(quote_payload.get("pool_reserve_quote") or 0)
+    if reserve_quote <= 0 or not pool_enabled():
+        return {"success": True, "skipped": True, "reason": "no_reserve"}
+
+    reserve_asset = str(quote_payload.get("pool_reserve_currency") or quote_payload.get("quote_currency") or "MN2").upper()
+    pool_uid = pool_user_id()
+    reserve_uid = reserve_user_id()
+    meta = {
+        "reference": trade_ref,
+        "quote_id": quote_payload.get("quote_id"),
+        "symbol": quote_payload.get("symbol"),
+        "side": quote_payload.get("side"),
+        "quote": quote_payload.get("quote_currency"),
+    }
+
+    _debit_pool(pool_uid, reserve_asset, reserve_quote, meta)
+    _credit_reserve(reserve_uid, reserve_asset, reserve_quote, meta)
+
+    totals = _read_reserve_totals()
+    assets = totals.get("assets") or {}
+    assets[reserve_asset] = round(float(assets.get(reserve_asset) or 0) + reserve_quote, 12)
+    totals_row = {
+        "assets": assets,
+        "swap_count": int(totals.get("swap_count") or 0) + 1,
+        "updated_at": _iso(),
+    }
+    ex._write_json(_RESERVE_PATH, totals_row)
+    ledger_row = {
+        "ts": _iso(),
+        "trade_ref": trade_ref,
+        "reserve_user_id": reserve_uid,
+        "pool_user_id": pool_uid,
+        "asset": reserve_asset,
+        "amount": reserve_quote,
+        "reserve_bps": int(quote_payload.get("pool_reserve_bps") or pool_swap_reserve_bps()),
+        "symbol": quote_payload.get("symbol"),
+        "side": quote_payload.get("side"),
+        "quote": quote_payload.get("quote_currency"),
+    }
+    ex._append_jsonl(_RESERVE_LEDGER_PATH, ledger_row)
+    ex._audit("mn2_pool_reserve_stash", user_id=reserve_uid, asset=reserve_asset, amount=reserve_quote, trade_ref=trade_ref)
+    return {"success": True, "stashed": ledger_row, "reserve_balances": reserve_balances()}
 
 
 def pool_balances() -> Dict[str, float]:
@@ -223,9 +342,13 @@ def mn2_pool_status() -> Dict[str, Any]:
         ],
         "swap_back_hint": "Sell USDT or USDC (quote MN2) to swap back into MN2 coins, or sell MN2 for USDT/USDC.",
         "min_pool_by_asset": cfg.get("min_pool_by_asset") or {},
+        "pool_swap_reserve_bps": pool_swap_reserve_bps(),
+        "reserve_user_id": reserve_user_id(),
+        "reserve_assets": reserve_balances(),
         "paper_seeded": bool(state.get("paper_seeded")),
         "last_tick_at": state.get("last_tick_at"),
         "tick_count": int(state.get("tick_count") or 0),
+        "cron_interval_minutes": int(cfg.get("cron_interval_minutes") or 3),
     }
 
 

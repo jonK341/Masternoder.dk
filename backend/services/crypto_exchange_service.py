@@ -832,10 +832,15 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         payload["quote_received"] = round(quote_out, 8)
 
     try:
-        from backend.services.exchange_mn2_pool_service import check_pool_liquidity, is_pool_swap
+        from backend.services.exchange_mn2_pool_service import (
+            apply_pool_reserve_to_quote,
+            check_pool_liquidity,
+            is_pool_swap,
+        )
 
         if is_pool_swap(sym, quote):
             payload["pool_backed"] = True
+            payload = apply_pool_reserve_to_quote(payload)
             pool_err = check_pool_liquidity(sym, side, quote, payload)
             if pool_err:
                 return {"success": False, "error": pool_err, "pool_backed": True}
@@ -903,6 +908,18 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
             except ImportError:
                 pass
 
+            try:
+                from backend.services.exchange_mn2_pool_service import pool_user_id, stash_swap_reserve
+
+                if uid != pool_user_id() and float(q.get("pool_reserve_quote") or 0) > 0:
+                    reserve_res = stash_swap_reserve(q, ref)
+                    if not reserve_res.get("success") and not reserve_res.get("skipped"):
+                        raise ValueError(reserve_res.get("error") or "pool_reserve_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
+
             fee_mn2 = _fee_quote_to_mn2(float(q.get("fee_quote") or 0), quote_cur, load_config())
             _collect_fee(fee_mn2)
             _add_volume(uid, float(q.get("usd_value") or 0))
@@ -912,6 +929,8 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
                 "ts": _iso(), "trade_id": ref, "user_id": uid, "type": "swap",
                 "symbol": sym, "side": side, "amount": amt, "quote": quote_cur,
                 "usd_value": q.get("usd_value"), "fee_bps": q.get("fee_bps"),
+                "pool_reserve_quote": q.get("pool_reserve_quote"),
+                "pool_reserve_bps": q.get("pool_reserve_bps"),
             }
             _append_jsonl(_TRADES_PATH, trade)
     except ValueError as e:

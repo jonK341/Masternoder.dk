@@ -104,11 +104,15 @@
     }
     var assets = data.pool_assets || {};
     var gaps = data.pool_gaps || {};
+    var reserve = data.reserve_assets || {};
+    var reserveBps = data.pool_swap_reserve_bps || 200;
     el.innerHTML = ['MN2', 'USDT', 'USDC'].map(function (sym) {
       var gap = gaps[sym];
       var note = gap ? ' · need ' + fmt(gap, 4) : '';
       return '<div class="cex-wallet-row"><span>' + sym + '</span><strong>' + fmt(assets[sym], 4) + note + '</strong></div>';
-    }).join('');
+    }).join('') +
+      '<div class="cex-muted">Reserve (' + (reserveBps / 100).toFixed(1) + '% per swap): MN2 ' +
+      fmt(reserve.MN2, 4) + ' · USDT ' + fmt(reserve.USDT, 4) + ' · USDC ' + fmt(reserve.USDC, 4) + '</div>';
   }
 
   function renderQuoteSelects(quotes) {

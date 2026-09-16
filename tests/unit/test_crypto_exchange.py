@@ -59,12 +59,16 @@ def ex_env(tmp_path, monkeypatch):
         "enabled": True,
         "pool_user_id": pool_user,
         "paper_seed_on_empty": True,
+        "reserve_user_id": f"{pool_user}_reserve",
+        "pool_swap_reserve_bps": 200,
         "paper_seed": {"MN2": 100000, "USDT": 100000, "USDC": 100000},
         "min_pool_by_asset": {"MN2": 0, "USDT": 0, "USDC": 0},
     }), encoding="utf-8")
     monkeypatch.setattr("backend.services.exchange_mn2_pool_service._CFG_PATH", str(pool_cfg))
     monkeypatch.setattr("backend.services.exchange_mn2_pool_service._STATE_PATH", str(data / "mn2_pool_state.json"))
     monkeypatch.setattr("backend.services.exchange_mn2_pool_service._LEDGER_PATH", str(data / "mn2_pool_ledger.jsonl"))
+    monkeypatch.setattr("backend.services.exchange_mn2_pool_service._RESERVE_PATH", str(data / "mn2_pool_reserve.json"))
+    monkeypatch.setattr("backend.services.exchange_mn2_pool_service._RESERVE_LEDGER_PATH", str(data / "mn2_pool_reserve_ledger.jsonl"))
     from backend.services import exchange_mn2_pool_service as pool_mod
     pool_mod.ensure_paper_seed()
     return ex
