@@ -60,6 +60,12 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "task_type": "reason",
         "description": "Quality / criticism evaluation",
     },
+    "casino_bet_plan": {
+        "agent_id": "casino_kelly_agent",
+        "skill_name": "kelly_sizing",
+        "task_type": "reason",
+        "description": "Casino bet sizing and game selection",
+    },
 }
 
 

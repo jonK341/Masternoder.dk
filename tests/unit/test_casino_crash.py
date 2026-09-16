@@ -860,3 +860,158 @@ def test_tournament_join_score_finalize_and_reconcile(tmp_path, monkeypatch):
 
         rec = casino_service.reconcile_tournaments()
         assert rec["ok"] is True
+
+
+# --------------------------------------------------------------------------- #
+# Cards engine + routes (blackjack, baccarat, video poker)
+# --------------------------------------------------------------------------- #
+
+def test_cards_blackjack_value_and_outcome():
+    from backend.services.engines import cards
+
+    assert cards.blackjack_value([0, 12]) == 21  # A + K
+    outcome, mult = cards.blackjack_outcome([0, 12], [1, 2])
+    assert outcome == "win"
+    assert mult == 2.5
+
+
+def test_cards_baccarat_deal_deterministic():
+    from backend.services.engines import cards
+
+    a = cards.baccarat_deal(0.12345)
+    b = cards.baccarat_deal(0.12345)
+    assert a["winner"] == b["winner"]
+    assert a["player_total"] == b["player_total"]
+
+
+def test_cards_video_poker_evaluate_pair():
+    from backend.services.engines import cards
+
+    deck = cards.shuffle_deck(0.42)
+    hand, _ = cards.draw_cards(deck, 5)
+    name, mult = cards.evaluate_video_poker(hand)
+    assert name in (
+        "royal_flush", "straight_flush", "four_kind", "full_house", "flush",
+        "straight", "three_kind", "two_pair", "jacks_or_better", "none",
+    )
+    assert mult >= 0
+
+
+def test_blackjack_start_stand_route(tmp_path, monkeypatch):
+    app = _crash_app(tmp_path, monkeypatch)
+    cfg = tmp_path / "casino_config.json"
+    cfg.write_text(
+        '{"currency":"coins","min_bet":5,"max_bet":500,"max_bets_per_day":50,'
+        '"games":{"blackjack":{"rtp_estimate":99.5,"blackjack_payout":1.5},'
+        '"crash":{"house_edge":0.03,"growth_per_second":0.13863,"max_round_seconds":60,"max_auto_cashout":100,"rtp_estimate":97.0}}}',
+        encoding="utf-8",
+    )
+    import backend.services.casino_service as casino
+    monkeypatch.setattr(casino, "_CONFIG_PATH", str(cfg))
+
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"points": {"coins": 1000}}
+    mock_points.add_points.return_value = {"success": True}
+    fake = {"float": 0.55, "server_seed_hash": "h", "client_seed": "c", "nonce": 1}
+
+    with app.test_client() as client:
+        with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+            with patch("backend.services.casino_rng.draw", return_value=fake):
+                start = client.post("/api/casino/play/blackjack", json={"user_id": "bj1", "bet": 10})
+                data = start.get_json()
+                if data.get("bet_id"):
+                    assert start.status_code == 200
+                    return
+                assert start.status_code == 200
+                assert data["success"] is True
+                stand = client.post(
+                    "/api/casino/play/blackjack/stand",
+                    json={"user_id": "bj1", "round_id": data["round_id"]},
+                )
+    assert stand.status_code == 200
+    assert stand.get_json()["success"] is True
+
+
+def test_baccarat_route(tmp_path, monkeypatch):
+    app = _crash_app(tmp_path, monkeypatch)
+    cfg = tmp_path / "casino_config.json"
+    cfg.write_text(
+        '{"currency":"coins","min_bet":5,"max_bet":500,'
+        '"games":{"baccarat":{"rtp_estimate":98.9}}}',
+        encoding="utf-8",
+    )
+    import backend.services.casino_service as casino
+    monkeypatch.setattr(casino, "_CONFIG_PATH", str(cfg))
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"points": {"coins": 1000}}
+    mock_points.add_points.return_value = {"success": True}
+    with app.test_client() as client:
+        with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+            with patch("backend.services.casino_rng.draw", return_value={"float": 0.5, "server_seed_hash": "h", "client_seed": "c", "nonce": 1}):
+                resp = client.post("/api/casino/play/baccarat", json={"user_id": "b1", "bet": 10, "side": "player"})
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["success"] is True
+    assert "winner" in data.get("details", {})
+
+
+def test_video_poker_deal_draw_route(tmp_path, monkeypatch):
+    app = _crash_app(tmp_path, monkeypatch)
+    cfg = tmp_path / "casino_config.json"
+    cfg.write_text(
+        '{"currency":"coins","min_bet":5,"max_bet":500,'
+        '"games":{"video_poker":{"rtp_estimate":99.5}}}',
+        encoding="utf-8",
+    )
+    import backend.services.casino_service as casino
+    monkeypatch.setattr(casino, "_CONFIG_PATH", str(cfg))
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"points": {"coins": 1000}}
+    mock_points.add_points.return_value = {"success": True}
+    fake = {"float": 0.33, "server_seed_hash": "h", "client_seed": "c", "nonce": 1}
+    with app.test_client() as client:
+        with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+            with patch("backend.services.casino_rng.draw", return_value=fake):
+                start = client.post("/api/casino/play/video-poker", json={"user_id": "vp1", "bet": 10})
+                start_data = start.get_json()
+                assert start.status_code == 200
+                draw = client.post(
+                    "/api/casino/play/video-poker/draw",
+                    json={"user_id": "vp1", "round_id": start_data["round_id"], "hold": [0]},
+                )
+    assert draw.status_code == 200
+    assert draw.get_json()["success"] is True
+
+
+def test_slots_five_reel_evaluate():
+    from backend.services.engines import slots
+
+    reels = ["ankh", "ankh", "ankh", "ankh", "ankh"]
+    paytable = {"default_five": 12.0, "five": {"ankh": 40.0}}
+    sym, mult, info = slots.evaluate_line(reels, paytable)
+    assert sym == "ankh"
+    assert mult == 40.0
+    assert info["match"] == "five"
+
+
+def test_pvp_duel_create_and_accept(tmp_path, monkeypatch):
+    app = _crash_app(tmp_path, monkeypatch)
+    import backend.services.casino_service as casino
+    mock_points = MagicMock()
+    mock_points.get_all_points.return_value = {"points": {"coins": 1000}}
+    mock_points.add_points.return_value = {"success": True}
+    with app.test_client() as client:
+        with patch("backend.services.unified_points_database.unified_points_db", mock_points):
+            with patch("backend.services.casino_rng.draw", return_value={"float": 0.1, "server_seed_hash": "h", "client_seed": "c", "nonce": 1}):
+                created = client.post(
+                    "/api/casino/duels/create",
+                    json={"user_id": "c1", "bet": 10, "game": "coin_flip", "choice": "heads"},
+                )
+                duel_id = created.get_json()["duel"]["duel_id"]
+                accepted = client.post(
+                    "/api/casino/duels/accept",
+                    json={"user_id": "c2", "duel_id": duel_id, "choice": "tails"},
+                )
+    assert created.status_code == 200
+    assert accepted.status_code == 200
+    assert accepted.get_json()["success"] is True

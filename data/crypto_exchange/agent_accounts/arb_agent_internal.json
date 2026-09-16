@@ -1,0 +1,35 @@
+{
+  "agent_id": "arb_agent_internal",
+  "realized_profit_usd": 210573.6052,
+  "trade_count": 502,
+  "notional_traded_usd": 125500.0,
+  "by_venue": {
+    "nonkyc": 125000.0,
+    "internal": 125500.0,
+    "binance": 500.0
+  },
+  "wallet_label": "arb_internal_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_internal",
+    "executed": false,
+    "reason": "below_threshold",
+    "best": {
+      "symbol": "ETH",
+      "buy_venue": "binance",
+      "buy_ask": 1793.6,
+      "sell_venue": "nonkyc",
+      "sell_bid": 1798.03,
+      "gross_bps": 24.7,
+      "fee_bps": 36.0,
+      "net_bps": -11.3,
+      "notional_usd": 10.0,
+      "est_profit_usd": -0.0113
+    },
+    "mode": "live",
+    "profit_path_id": "6b5fc11e"
+  },
+  "created_at": "2026-06-27T20:44:47.180255Z",
+  "ticks": 2268,
+  "game_time_sec": 8164800,
+  "agent_level": 46
+}

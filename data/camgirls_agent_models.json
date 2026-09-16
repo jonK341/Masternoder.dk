@@ -1,0 +1,44 @@
+{
+  "agents": [
+    {
+      "agent_id": "camgirl_agent_nova",
+      "performer_id": "performer_nova",
+      "display_name": "Nova Star Agent",
+      "task_kind": "creative",
+      "casino_skill_set": ["welcome_host", "odds_explainer", "exchange_onramp_nudge"],
+      "description": "Cosmic casino host for onboarding, MN2 wallet prompts, and playful retention."
+    },
+    {
+      "agent_id": "camgirl_agent_luna",
+      "performer_id": "performer_luna",
+      "display_name": "Luna Eclipse Agent",
+      "task_kind": "free",
+      "casino_skill_set": ["night_shift_host", "responsible_play_soft_nudge", "social_invite"],
+      "description": "Late-night lounge host focused on calm play, social containment, and low-pressure guidance."
+    },
+    {
+      "agent_id": "camgirl_agent_sage",
+      "performer_id": "performer_sage",
+      "display_name": "Sage Willow Agent",
+      "task_kind": "default",
+      "casino_skill_set": ["risk_sentinel", "mindful_breaks", "tax_record_explainer"],
+      "description": "Mindful responsible-play persona for risk notices, breaks, and exchange tax-record explanations."
+    },
+    {
+      "agent_id": "camgirl_agent_ember",
+      "performer_id": "performer_ember",
+      "display_name": "Ember Blaze Agent",
+      "task_kind": "speed",
+      "casino_skill_set": ["vip_host", "tournament_hype", "big_win_reactivation"],
+      "description": "High-energy VIP and contest host for tournaments, leaderboard pushes, and comeback offers."
+    },
+    {
+      "agent_id": "camgirl_agent_iris",
+      "performer_id": "performer_iris",
+      "display_name": "Iris Prism Agent",
+      "task_kind": "creative",
+      "casino_skill_set": ["fan_club_goal", "gift_recommendation", "cross_sell_casino_exchange"],
+      "description": "Fan-club and studio gift concierge that connects performer goals, casino events, and exchange balances."
+    }
+  ]
+}

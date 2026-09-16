@@ -1,0 +1,84 @@
+{
+  "enabled": true,
+  "venue": "binance",
+  "assets": [
+    "DOGE",
+    "BTC",
+    "ETH"
+  ],
+  "grid_levels": 5,
+  "grid_step_pct": 0.004,
+  "order_size_usd": 6.0,
+  "max_inventory_usd": 40.0,
+  "hard_loss_cap_usd": 5.0,
+  "min_spread_bps": 8.0,
+  "min_vol_pct": 0.5,
+  "min_notional_usd": 5.0,
+  "allow_sell_existing_inventory": true,
+  "taker_fee_bps": 10.0,
+  "maker_fee_bps": 10.0,
+  "min_edge_over_fee_bps": 2.0,
+  "enforce_fee_positive_step": true,
+  "require_spread_over_fee": true,
+  "venue_overrides": {
+    "binance": {
+      "_profile": "liquid_dense",
+      "grid_step_pct": 0.003,
+      "grid_levels": 6,
+      "order_size_usd": 6.0,
+      "max_inventory_usd": 60.0,
+      "hard_loss_cap_usd": 8.0,
+      "min_notional_usd": 5.0,
+      "min_spread_bps": 1.0,
+      "require_spread_over_fee": false,
+      "maker_fee_bps": 10.0
+    },
+    "nonkyc": {
+      "_profile": "illiquid_wide",
+      "grid_step_pct": 0.01,
+      "grid_levels": 3,
+      "order_size_usd": 6.0,
+      "max_inventory_usd": 30.0,
+      "hard_loss_cap_usd": 5.0,
+      "min_notional_usd": 5.0,
+      "min_spread_bps": 40.0,
+      "require_spread_over_fee": true,
+      "maker_fee_bps": 20.0
+    },
+    "xeggex": {
+      "_profile": "thin_conservative",
+      "grid_step_pct": 0.012,
+      "grid_levels": 2,
+      "order_size_usd": 5.0,
+      "max_inventory_usd": 15.0,
+      "hard_loss_cap_usd": 3.0,
+      "min_notional_usd": 5.0,
+      "min_spread_bps": 60.0,
+      "require_spread_over_fee": true,
+      "maker_fee_bps": 15.0
+    }
+  },
+  "circuit_breaker": {
+    "enabled": true,
+    "window_hours": 6.0,
+    "loss_threshold_usd": 3.0,
+    "cooldown_hours": 12.0
+  },
+  "tick_cooldown_seconds": 20,
+  "venues": {
+    "nonkyc": [
+      "DOGE",
+      "BTC",
+      "ETH",
+      "XRP",
+      "SOL"
+    ],
+    "xeggex": [
+      "DOGE",
+      "BTC",
+      "ETH",
+      "XRP",
+      "SOL"
+    ]
+  }
+}

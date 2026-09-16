@@ -318,17 +318,23 @@
         { href: '/generator', label: 'Generator', icon: '🎬', tags: ['create', 'morning'] },
         { href: '/game', label: 'Game', icon: '🎮', tags: ['play', 'evening'] },
         { href: '/battle', label: 'Battle', icon: '⚔️', tags: ['compete'] },
-        { href: '/starmap25/', label: 'Star Map 25', icon: '🗺️', tags: ['explore'] },
-        { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
+        { href: '/wallets', label: 'Wallets', icon: '💾', tags: ['economy', 'account'] },
+        { href: '/staking-leaderboard', label: 'Staking Rank', icon: '🌱', tags: ['economy', 'progress'] },
+        { href: '/staking-teams', label: 'Staking Teams', icon: '🤝', tags: ['economy', 'progress'] },
         { href: '/shop', label: 'Shop', icon: '🛒', tags: ['economy'] },
+        { href: '/explorer', label: 'Explorer', icon: '🔎', tags: ['economy', 'explore'] },
+        { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
         { href: '/quests', label: 'Quests', icon: '📜', tags: ['progress'] },
         { href: '/trophies', label: 'Trophies', icon: '🏆', tags: ['collect'] },
         { href: '/agents', label: 'AI Agents', icon: '🤖', tags: ['agents'] },
+        { href: '/podcast', label: 'Podcast', icon: '🎙️', tags: ['read'] },
+        { href: '/news', label: 'News', icon: '📰', tags: ['read'] },
+        { href: '/compendium/?calm=1', label: 'Library', icon: '📖', tags: ['read'] },
         { href: '/lab', label: 'Lab', icon: '🔬', tags: ['agents'] },
         { href: '/debugger', label: 'Debugger', icon: '🔧', tags: ['dev'] },
         { href: '/gallery', label: 'Gallery', icon: '🖼️', tags: ['create'] },
-        { href: '/chat', label: 'Chat', icon: '💬', tags: ['social'] },
-        { href: '/news', label: 'News page', icon: '📰', tags: ['read'] },
+        { href: '/starmap25/', label: 'Star Map 25', icon: '🗺️', tags: ['explore'] },
+        { href: '/profit/', label: 'Profit Daemon', icon: '⚡', tags: ['economy', 'evening'] },
     ];
 
     function hourTag() {
@@ -392,26 +398,31 @@
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const [platformRes, feedRes] = await Promise.all([
+            const [platformRes, profitRes, feedRes] = await Promise.all([
                 fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
             ]);
+            const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
+            const profitIds = new Set(profit.map((n) => n.id));
+            const platformFiltered = platform.filter((n) => !profitIds.has(n.id));
+            const mergedPlatform = [...profit, ...platformFiltered].slice(0, 6);
             const external = (feedRes && feedRes.news) || [];
-            if (!platform.length && !external.length) {
+            if (!mergedPlatform.length && !external.length) {
                 ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
                 return;
             }
             ul.textContent = '';
-            platform.forEach((n) => {
+            mergedPlatform.forEach((n) => {
                 const li = document.createElement('li');
-                li.className = 'fp-news-platform';
+                li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
                 const a = document.createElement('a');
                 a.href = n.href || '/news/';
                 a.textContent = (n.title || 'Platform update');
                 const meta = document.createElement('span');
                 meta.className = 'fp-news-meta';
-                meta.textContent = 'MasterNoder · ' + (n.date || '').slice(0, 10);
+                meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
                 li.appendChild(a);
                 li.appendChild(meta);
                 if (n.summary) {
@@ -422,7 +433,7 @@
                 }
                 ul.appendChild(li);
             });
-            if (platform.length && external.length) {
+            if (mergedPlatform.length && external.length) {
                 const sep = document.createElement('li');
                 sep.className = 'fp-news-divider';
                 sep.textContent = 'Tech feed';

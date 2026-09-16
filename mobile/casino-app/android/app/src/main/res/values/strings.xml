@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MasterNoder Casino Social</string>
+    <string name="title_activity_main">MasterNoder Casino Social</string>
+    <string name="package_name">dk.masternoder.casino</string>
+    <string name="custom_url_scheme">dk.masternoder.casino</string>
+</resources>

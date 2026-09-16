@@ -1,0 +1,685 @@
+#!/usr/bin/env python3
+"""Run every local profit daemon in one process (exchange + casino).
+
+Exchange tick (via exchange_master_daemon.run_once):
+  - Cross-venue arbitrage (6+ paper agents + live Binance/NonKYC)
+  - AI multi-venue trader (18 symbols)
+  - Internal cross-trade bots (7 rotation agents)
+  - Extended strategies (stablecoin peg, triangular, meme, defi, payments)
+  - User marketplace agents, sales pool, mesh matcher, treasury liquidity
+  - PayPal auto-sweep when profit pool is ready
+
+Casino tick (via casino_agent_daemon.run_once):
+  - Autonomous casino agents (Nova, Luna, Sage, Ember, Iris)
+
+Profiles (EXCHANGE_PROFIT_PROFILE env or --profile):
+  max       — all extended strategies + 120s fast rescan loop
+  standard  — core extended strategies (default)
+  fast      — shorter intervals, aggressive scans
+  live-only — exchange live farm only, no casino
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import threading
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+os.environ.setdefault("DAEMON_QUIET", "1")
+os.environ.setdefault("LITE_APP", "1")
+os.environ.setdefault("PYTHONUNBUFFERED", "1")
+
+from scripts.daemon_env import daemon_mode_label, load_dotenv
+
+PROFILE_INTERVALS = {
+    "max": {"exchange": 300, "casino": 300, "fast": 120},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120},
+}
+
+# Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
+_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60}
+
+
+def _resolve_intervals(profile: str, iv: dict) -> dict:
+    if os.environ.get("EXCHANGE_LIVE_PROFIT_MAX", "").strip().lower() in ("1", "true", "yes", "on"):
+        if profile in ("max", "fast", "live-only"):
+            return {**iv, **_LIVE_PROFIT_MAX_INTERVALS}
+    return iv
+
+
+def _exchange_once(auto_sweep: bool, profile: str) -> Dict[str, Any]:
+    os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
+    from scripts.exchange_master_daemon import run_once
+
+    return run_once(auto_sweep=auto_sweep)
+
+
+def _extended_once(profile: str) -> Dict[str, Any]:
+    from backend.services.exchange_extended_profit_service import run_extended_profit_tick
+
+    return run_extended_profit_tick(profile=profile)
+
+
+def _casino_dry_run(cli_dry_run: bool) -> bool:
+    if cli_dry_run:
+        return True
+    env = os.environ.get("CASINO_AGENT_DRY_RUN", "").strip().lower()
+    if env in ("1", "true", "yes", "on"):
+        return True
+    if env in ("0", "false", "no", "off"):
+        return False
+    # Default: dry-run in paper mode, live bets when profit daemons are live
+    from scripts.daemon_env import daemon_mode_label
+    return daemon_mode_label() != "live"
+
+
+def _casino_once(*, dry_run: bool) -> Dict[str, Any]:
+    from scripts.casino_agent_daemon import run_once
+
+    return run_once(dry_run=dry_run)
+
+
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _heartbeat_path() -> str:
+    return os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
+
+
+def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = None) -> None:
+    path = _heartbeat_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    existing: Dict[str, Any] = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            existing = {}
+    loops = existing.get("loops") if isinstance(existing.get("loops"), dict) else {}
+    loops[loop] = {"updated_at": _iso(), "summary": summary}
+    payload = {
+        "updated_at": _iso(),
+        "loop": loop,
+        "summary": summary,
+        "loops": loops,
+        "profile": os.environ.get("EXCHANGE_PROFIT_PROFILE", "max"),
+        "mode": daemon_mode_label(),
+    }
+    if extra:
+        payload.update(extra)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError:
+        pass
+
+
+def _best_arb_bps(arb: Dict[str, Any]) -> Optional[float]:
+    best: Optional[float] = None
+    for action in arb.get("actions") or []:
+        if not isinstance(action, dict):
+            continue
+        row = action.get("best") if isinstance(action.get("best"), dict) else {}
+        nb = row.get("net_bps")
+        if nb is None:
+            continue
+        val = float(nb)
+        if best is None or val > best:
+            best = val
+    return best
+
+
+def _classify_ai_skip(ai: Dict[str, Any]) -> Optional[str]:
+    """Classify why AI trader did not execute for daemon heartbeat."""
+    if ai.get("executed"):
+        return None
+    skip = ai.get("skip_reason")
+    if skip in ("no_signal", "below_threshold", "no_creds"):
+        return str(skip)
+    action = ai.get("action") if isinstance(ai.get("action"), dict) else {}
+    nested = str(action.get("skip_reason") or "")
+    if nested in ("no_signal", "below_threshold", "no_creds"):
+        return nested
+    reason = str(action.get("reason") or "")
+    if reason == "no_actionable_ai_signal":
+        best = action.get("best") if isinstance(action.get("best"), dict) else {}
+        if float(best.get("net_bps") or 0) > 0:
+            return "below_threshold"
+        return "no_signal"
+    if "credential" in reason.lower():
+        return "no_creds"
+    return "no_signal"
+
+
+def _classify_arb_block(arb: Dict[str, Any]) -> Optional[str]:
+    """When spatial arb executes 0 fills, classify dominant blocker for ops."""
+    if int(arb.get("executed_count") or 0) > 0:
+        return None
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("funded") and bq.get("qualifies"):
+        reason = str(bq.get("reason") or "")
+        if reason == "global_threshold_ready":
+            force = arb.get("force_attempt") or {}
+            if force.get("reason") == "force_attempt_exhausted":
+                return "funding"
+            return None
+        if reason not in ("below_threshold", "no_profitable_spread", "insufficient_venue_balance"):
+            return None
+    force = arb.get("force_attempt") or {}
+    if force.get("reason") == "force_attempt_exhausted" and bq.get("funded"):
+        return "funding"
+    min_margin = float(arb.get("min_margin_bps") or 14)
+    qualifying: List[Dict[str, Any]] = []
+    for action in arb.get("actions") or []:
+        if not isinstance(action, dict) or action.get("executed"):
+            continue
+        row = action.get("best") if isinstance(action.get("best"), dict) else {}
+        nb = float(row.get("net_bps") or -999)
+        if nb >= min_margin and float(row.get("est_profit_usd") or 0) > 0:
+            qualifying.append(action)
+    if qualifying:
+        top = max(
+            qualifying,
+            key=lambda a: float((a.get("best") or {}).get("net_bps") or 0),
+        )
+        r = str(
+            top.get("reason")
+            or (top.get("execution") or {}).get("error")
+            or "unknown"
+        )
+        if r in ("insufficient_venue_balance", "insufficient_balance"):
+            return "funding"
+        if r in ("below_threshold", "no_profitable_spread"):
+            return "threshold"
+        if "balance" in r or "fund" in r:
+            return "funding"
+        if r in ("execution_failed", "unknown") and top.get("max_funded_usd") is not None:
+            return "funding"
+        if "threshold" in r or "margin" in r:
+            return "threshold"
+        return "spread"
+    reasons: Dict[str, int] = {}
+    for action in arb.get("actions") or []:
+        if not isinstance(action, dict) or action.get("executed"):
+            continue
+        r = str(action.get("reason") or "unknown")
+        reasons[r] = reasons.get(r, 0) + 1
+    if not reasons:
+        return None
+    top = max(reasons, key=reasons.get)
+    if top in ("insufficient_venue_balance", "insufficient_balance"):
+        return "funding"
+    if top == "below_threshold":
+        return "threshold"
+    if top == "no_profitable_spread":
+        return "spread"
+    if "balance" in top or "fund" in top:
+        return "funding"
+    if "threshold" in top or "margin" in top:
+        return "threshold"
+    return "spread"
+
+
+def _format_pair_search(ps: Dict[str, Any]) -> str:
+    """One-line pair search status for daemon stdout."""
+    if not ps.get("success"):
+        return f"ok=no error={ps.get('error', '?')}"
+    hot = ps.get("hot_symbols") or []
+    parts = [f"ok=yes hits={ps.get('hit_count', len(hot))}"]
+    if hot:
+        parts.append(f"hot={','.join(hot[:4])}")
+        if len(hot) > 4:
+            parts.append(f"n={len(hot)}")
+    else:
+        parts.append("hot=none")
+    return " ".join(parts)
+
+
+_zero_fill_streak = 0
+_ZERO_FILL_WARN = int(os.environ.get("EXCHANGE_ZERO_FILL_WARN", "3") or "3")
+
+
+def _track_zero_fill_streak(res: Dict[str, Any]) -> int:
+    """Count consecutive hot exchange ticks with arb_exec=0."""
+    global _zero_fill_streak
+    plat = res.get("platform") or {}
+    arb = (plat.get("results") or {}).get("arbitrage") or {}
+    if int(arb.get("executed_count") or 0) > 0:
+        _zero_fill_streak = 0
+        return 0
+    bq = arb.get("best_qualifying") or {}
+    min_m = float(bq.get("min_margin_bps") or arb.get("min_margin_bps") or 14)
+    net = float(bq.get("net_bps") or 0)
+    hot_tick = bool(bq.get("qualifies") and net >= min_m)
+    if not hot_tick:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state()
+            state_net = float(state.get("best_net_bps") or 0)
+            hot_tick = bool(state.get("ready") and state_net >= min_m)
+        except Exception:
+            pass
+    if hot_tick:
+        _zero_fill_streak += 1
+        if _zero_fill_streak >= _ZERO_FILL_WARN:
+            sym = bq.get("symbol") or "?"
+            funded = "yes" if bq.get("funded") else "no"
+            print(
+                f"[all-profit] WARN zero_fill_streak={_zero_fill_streak} "
+                f"best_net={net:.1f} min={min_m:.0f} symbol={sym} funded={funded}",
+                flush=True,
+            )
+    else:
+        _zero_fill_streak = 0
+    return _zero_fill_streak
+
+
+def _summarize_exchange(res: Dict[str, Any]) -> str:
+    plat = res.get("platform") or {}
+    results = plat.get("results") or {}
+    arb = results.get("arbitrage") or {}
+    ai = results.get("ai_trading") or {}
+    cross = results.get("cross_trade") or {}
+    ext = results.get("extended_profit") or {}
+    pair_search = plat.get("profit_pair_search") or {}
+    best_bps = _best_arb_bps(arb)
+    parts = [
+        f"platform_ok={plat.get('success')}",
+        f"arb_exec={arb.get('executed_count', '?')}/{arb.get('agent_count', '?')}",
+    ]
+    if pair_search.get("success"):
+        hot = pair_search.get("hot_symbols") or []
+        hit_n = int(pair_search.get("hit_count") or len(hot))
+        if hot:
+            parts.append(f"pair_search={','.join(hot[:4])}")
+            if hit_n > 4:
+                parts.append(f"pair_search_n={hit_n}")
+    if best_bps is not None:
+        parts.append(f"best_bps={best_bps:.1f}")
+    bq = arb.get("best_qualifying") or {}
+    if bq.get("agent_id") is not None and bq.get("net_bps") is not None:
+        parts.append(f"best_agent={bq.get('agent_id')}")
+        parts.append(f"best_net={float(bq['net_bps']):.1f}")
+        parts.append(f"min_margin={bq.get('min_margin_bps', arb.get('min_margin_bps', '?'))}")
+        parts.append(f"funded={'yes' if bq.get('funded') else 'no'}")
+    elif arb.get("min_margin_bps") is not None:
+        parts.append(f"min_margin={arb.get('min_margin_bps')}")
+    arb_actions = arb.get("actions") or []
+    if arb_actions and int(arb.get("executed_count") or 0) == 0:
+        arb_block = _classify_arb_block(arb)
+        if arb_block:
+            parts.append(f"arb_block={arb_block}")
+        force = arb.get("force_attempt") or {}
+        if force.get("forced_global") and not force.get("executed"):
+            parts.append(f"force={force.get('reason', '?')}")
+        reasons: Dict[str, int] = {}
+        for a in arb_actions:
+            if a.get("executed"):
+                continue
+            r = str(a.get("reason") or "unknown")
+            reasons[r] = reasons.get(r, 0) + 1
+        if reasons:
+            top_reason = max(reasons, key=reasons.get)
+            parts.append(f"arb_skip={top_reason}x{reasons[top_reason]}")
+            if top_reason == "insufficient_venue_balance":
+                caps = [
+                    float(a.get("max_funded_usd") or 0)
+                    for a in arb_actions
+                    if a.get("reason") == "insufficient_venue_balance" and a.get("max_funded_usd")
+                ]
+                if caps:
+                    parts.append(f"max_funded=${min(caps):.0f}")
+    live_trades = sum(
+        1 for a in (arb.get("actions") or [])
+        if a.get("executed") and ((a.get("execution") or {}).get("mode") or a.get("mode")) == "live"
+    )
+    if live_trades:
+        parts.append(f"live_trades={live_trades}")
+    parts.extend([
+        f"ai_exec={ai.get('executed')}",
+    ])
+    ai_skip = _classify_ai_skip(ai)
+    if ai_skip and not ai.get("executed"):
+        parts.append(f"ai_skip={ai_skip}")
+    parts.extend([
+        f"cross_actions={len((cross.get('actions') or []))}",
+        f"ext_exec={ext.get('executed_count', '?')}",
+        f"user_agents={res.get('user_agent_ticks', 0)}",
+    ])
+    sweep_res = res.get("sweep")
+    if isinstance(sweep_res, dict) and sweep_res.get("success"):
+        swept = sweep_res.get("swept") or {}
+        mode = swept.get("mode") or ("live" if sweep_res.get("live") else "paper")
+        amt = swept.get("amount_usd")
+        if amt is not None:
+            parts.append(f"sweep=yes mode={mode} amount=${float(amt):.2f}")
+        else:
+            parts.append(f"sweep=yes mode={mode}")
+    else:
+        parts.append(f"sweep={'yes' if sweep_res else 'no'}")
+    return " ".join(parts)
+
+
+def _summarize_fast(res: Dict[str, Any]) -> str:
+    far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+    ready = far.get("ready")
+    best_bps = far.get("top_net_bps")
+    threshold = far.get("threshold_bps")
+    if ready is None or best_bps is None or threshold is None:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            state = read_arb_threshold_state()
+            if ready is None:
+                ready = state.get("ready")
+            if best_bps is None:
+                best_bps = state.get("best_net_bps")
+            if threshold is None:
+                threshold = state.get("threshold_bps")
+        except Exception:
+            pass
+    parts = [f"ext_exec={res.get('executed_count', 0)}"]
+    if ready is not None:
+        parts.append(f"ready={'yes' if ready else 'no'}")
+    if best_bps is not None:
+        parts.append(f"best_bps={float(best_bps):.1f}")
+    if threshold is not None:
+        parts.append(f"threshold={float(threshold):.0f}")
+        if best_bps is not None and float(threshold) - float(best_bps) <= 2.0:
+            parts.append("near_threshold=yes")
+            if not os.environ.get("EXCHANGE_FAST_MIN_BPS"):
+                parts.append("hint=EXCHANGE_FAST_MIN_BPS")
+    parts.append(f"strategies={res.get('strategy_count', 0)}")
+    far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+    ps = far.get("profit_pair_search") or {}
+    if ps.get("success"):
+        hot = ps.get("hot_symbols") or []
+        if hot:
+            parts.append(f"search_hot={','.join(hot[:4])}")
+            if len(hot) > 4:
+                parts.append(f"search_n={len(hot)}")
+    return " ".join(parts)
+
+
+def _summarize_casino(res: Dict[str, Any]) -> str:
+    skipped = res.get("skipped") or {}
+    skip_bits = [f"{k}={v}" for k, v in list(skipped.items())[:2]]
+    skip_str = f" skipped={','.join(skip_bits)}" if skip_bits else ""
+    return (
+        f"success={res.get('success')} ran={res.get('ran', res.get('agent_count', '?'))}"
+        f"/{res.get('agent_count', '?')}{skip_str}"
+    )
+
+
+def _maybe_hot_pair_prefund(res: Dict[str, Any]) -> None:
+    """Targeted prefund when hot pair qualifies but is unfunded."""
+    try:
+        from backend.services.exchange_swap_rotation_service import maybe_hot_pair_prefund
+
+        outcome = maybe_hot_pair_prefund(res)
+        if outcome.get("prefund_executed"):
+            label = outcome.get("action") or "?"
+            mode = outcome.get("mode") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            pair_info = f" venue={venue} pair={sym} market={market}"
+            if outcome.get("success"):
+                print(
+                    f"[all-profit] hot_prefund executed: {label}{pair_info} mode={mode} success=True",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[all-profit] hot_prefund skip: {label}{pair_info} reason={outcome.get('skip_reason') or 'failed'}",
+                    flush=True,
+                )
+    except Exception:
+        pass
+
+
+def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
+    """After arb_exec=0 ticks, auto-execute top rotation suggestion when enabled."""
+    try:
+        from backend.services.exchange_swap_rotation_service import maybe_auto_rotation
+
+        outcome = maybe_auto_rotation(res)
+        if outcome.get("auto_executed"):
+            label = outcome.get("action") or "?"
+            mode = outcome.get("mode") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            pair_info = f" venue={venue} pair={sym} market={market}"
+            success = outcome.get("success")
+            skip = outcome.get("skip_reason")
+            if success:
+                applied = " already_applied" if outcome.get("already_applied") else ""
+                print(
+                    f"[all-profit] rotation executed: {label}{pair_info} mode={mode} success=True{applied}",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[all-profit] rotation skip: {label}{pair_info} reason={skip or 'failed'}",
+                    flush=True,
+                )
+        elif outcome.get("skipped") and outcome.get("reason") not in ("auto_disabled", "arb_executed", "no_actions"):
+            label = outcome.get("action") or "?"
+            venue = outcome.get("venue_id") or "?"
+            sym = outcome.get("symbol") or "?"
+            market = outcome.get("market") or "?"
+            print(
+                f"[all-profit] rotation skip: {label} venue={venue} pair={sym} market={market} reason={outcome.get('reason')}",
+                flush=True,
+            )
+        elif outcome.get("skipped") and outcome.get("reason") == "auto_disabled":
+            top = outcome.get("suggested") or "?"
+            from backend.services.exchange_swap_rotation_service import suggest_swap_actions
+
+            rot = suggest_swap_actions(hours=6, limit=5)
+            actions = rot.get("actions") or []
+            extra = f" (+{len(actions) - 1} more)" if len(actions) > 1 else ""
+            print(f"[all-profit] rotation suggest: {top}{extra}", flush=True)
+    except Exception:
+        pass
+
+
+def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threading.Event) -> None:
+    print(f"[all-profit] exchange loop interval={interval}s profile={profile} mode={daemon_mode_label()}", flush=True)
+    while not stop.is_set():
+        try:
+            res = _exchange_once(auto_sweep, profile)
+            plat = res.get("platform") or {}
+            ps = plat.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+            summary = _summarize_exchange(res)
+            print(f"[all-profit] exchange {summary}", flush=True)
+            streak = _track_zero_fill_streak(res)
+            _maybe_hot_pair_prefund(res)
+            _maybe_auto_rotation(res)
+            _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
+            try:
+                from backend.services.profit_daemon_news_service import maybe_publish_tick_news
+                maybe_publish_tick_news("exchange", summary, res=res)
+            except Exception:
+                pass
+        except Exception as exc:
+            print(f"[all-profit] exchange error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
+def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
+    print(f"[all-profit] fast rescan loop interval={interval}s profile={profile}", flush=True)
+    while not stop.is_set():
+        try:
+            res = _extended_once(profile)
+            far = (res.get("results") or {}).get("fast_arb_rescan") or {}
+            ps = far.get("profit_pair_search")
+            if ps is not None:
+                print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+            summary = _summarize_fast(res)
+            print(f"[all-profit] fast {summary}", flush=True)
+            _write_heartbeat("fast", summary)
+        except Exception as exc:
+            print(f"[all-profit] fast error: {exc}", flush=True)
+        stop.wait(max(30, interval))
+
+
+def _casino_loop(interval: int, dry_run: bool, stop: threading.Event) -> None:
+    label = "dry_run" if dry_run else "live"
+    print(f"[all-profit] casino loop interval={interval}s {label}", flush=True)
+    while not stop.is_set():
+        try:
+            res = _casino_once(dry_run=dry_run)
+            summary = _summarize_casino(res)
+            print(f"[all-profit] casino {summary}", flush=True)
+            _write_heartbeat("casino", summary)
+        except Exception as exc:
+            print(f"[all-profit] casino error: {exc}", flush=True)
+        stop.wait(max(30, interval))
+
+
+def _warm_flask_for_daemons() -> None:
+    """Load Flask once before worker threads — avoids parallel blueprint registration."""
+    if os.environ.get("DAEMON_QUIET", "").strip().lower() not in ("1", "true", "yes", "on"):
+        return
+    from src.app import create_app
+
+    create_app()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="All profit daemons in one process")
+    parser.add_argument("--once", action="store_true", help="Single tick and exit")
+    parser.add_argument("--profile", choices=["max", "standard", "fast", "live-only"], default="max",
+                        help="Profit strategy profile (default: max = everything)")
+    parser.add_argument("--interval", type=int, default=0, help="Override main exchange interval")
+    parser.add_argument("--exchange-interval", type=int, default=0, help="Override exchange interval")
+    parser.add_argument("--casino-interval", type=int, default=0, help="Override casino interval")
+    parser.add_argument("--skip-casino", action="store_true", help="Exchange engines only")
+    parser.add_argument("--skip-exchange", action="store_true", help="Casino agents only")
+    parser.add_argument("--auto-sweep", action="store_true",
+                        help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
+                             "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
+    parser.add_argument("--casino-dry-run", action="store_true", help="Casino bets simulated only")
+    parser.add_argument("--skip-preflight", action="store_true", help="Skip startup health checks")
+    parser.add_argument("--json", action="store_true", help="With --once, dump full JSON instead of one-line summary")
+    args = parser.parse_args()
+
+    load_dotenv()
+    profile = os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile
+    os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
+    iv = _resolve_intervals(profile, PROFILE_INTERVALS.get(profile, PROFILE_INTERVALS["standard"]))
+    ex_iv = args.exchange_interval or args.interval or iv["exchange"]
+    cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
+    fast_iv = iv.get("fast") or 0
+    casino_dry_run = _casino_dry_run(args.casino_dry_run)
+
+    from scripts.exchange_master_daemon import _auto_sweep_default
+
+    auto_sweep = _auto_sweep_default(args.auto_sweep) or profile == "live-only"
+    skip_casino = args.skip_casino or profile == "live-only"
+
+    if args.once:
+        _warm_flask_for_daemons()
+        out: Dict[str, Any] = {}
+        if not args.skip_exchange:
+            out["exchange"] = _exchange_once(auto_sweep, profile)
+        if not skip_casino and not args.skip_exchange:
+            out["casino"] = _casino_once(dry_run=casino_dry_run)
+        if args.json:
+            print(json.dumps(out, indent=2, default=str))
+        else:
+            if "exchange" in out:
+                ex_res = out["exchange"]
+                ps = (ex_res.get("platform") or {}).get("profit_pair_search")
+                if ps is not None:
+                    print(f"[all-profit] pair_search {_format_pair_search(ps)}", flush=True)
+                print(f"[all-profit] exchange {_summarize_exchange(ex_res)}", flush=True)
+            if "casino" in out:
+                print(f"[all-profit] casino {_summarize_casino(out['casino'])}", flush=True)
+        return 0 if out else 1
+
+    stop = threading.Event()
+    threads: list[threading.Thread] = []
+
+    print("=" * 72)
+    print("MasterNoder — ALL profit daemons (single process)")
+    print(f"  profile={profile} mode={daemon_mode_label()} auto_sweep={auto_sweep}")
+    if not args.skip_exchange:
+        print("  exchange engines:")
+        print("    - 12 spatial arb agents (incl. meme, defi, live dual, triangular)")
+        print("    - AI trader (18 symbols, 10 venues)")
+        print("    - 7 internal cross-trade bots")
+        print("    - extended: stablecoin peg, triangular, meme, defi, payments")
+        print(f"    interval={ex_iv}s")
+        if fast_iv:
+            print(f"    fast rescan interval={fast_iv}s")
+    if not skip_casino and not args.skip_exchange:
+        dr = "dry_run" if casino_dry_run else "live"
+        print(f"  casino: Nova/Luna/Sage/Ember/Iris ({cas_iv}s, {dr})")
+    print("=" * 72)
+
+    if not args.skip_exchange:
+        threads.append(threading.Thread(
+            target=_exchange_loop, args=(ex_iv, auto_sweep, profile, stop), name="exchange", daemon=True,
+        ))
+        if fast_iv:
+            threads.append(threading.Thread(
+                target=_fast_loop, args=(fast_iv, profile, stop), name="fast", daemon=True,
+            ))
+    if not skip_casino and not args.skip_exchange:
+        threads.append(threading.Thread(
+            target=_casino_loop, args=(cas_iv, casino_dry_run, stop), name="casino", daemon=True,
+        ))
+
+    if not threads:
+        print("Nothing to run.")
+        return 1
+
+    if not args.skip_preflight:
+        from scripts.daemon_preflight import format_preflight, run_preflight
+        pf = run_preflight()
+        print(format_preflight(pf), flush=True)
+
+    _warm_flask_for_daemons()
+
+    for t in threads:
+        t.start()
+
+    print("[all-profit] running — Ctrl+C to stop", flush=True)
+    try:
+        while True:
+            stop.wait(timeout=30)
+            if stop.is_set():
+                break
+            dead = [t.name for t in threads if not t.is_alive()]
+            if dead:
+                print(f"[all-profit] ERROR worker thread(s) died: {', '.join(dead)}", flush=True)
+                stop.set()
+                break
+    except KeyboardInterrupt:
+        print("\n[all-profit] stopping...", flush=True)
+        stop.set()
+    for t in threads:
+        t.join(timeout=5)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
