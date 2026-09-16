@@ -1066,6 +1066,7 @@
                                 <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Rewards &amp; bonuses from game, battle, quests, generator, and on-chain payouts.</p>
                                 <div id="profile-mn2-system-monitor" class="mn2-system-monitor">Loading…</div>
                             </div>
+                            <div id="profile-mn2-instant-toast" aria-live="polite"></div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1712,6 +1713,7 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/profile-mn2-wallet.js?v=20260916-hub"></script>
+        <script src="/static/js/mn2-wallet-extras.js?v=20260916"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -3972,6 +3974,22 @@
             }
         }
 
+        var PROFILE_WALLET_TAB_HASHES = ['overview', 'deposit', 'withdraw', 'trusted', 'transactions', 'security', 'settings'];
+
+        function profileWalletTabFromHash() {
+            var h = (location.hash || '').replace(/^#/, '').toLowerCase();
+            return PROFILE_WALLET_TAB_HASHES.indexOf(h) >= 0 ? h : null;
+        }
+
+        function profileRouteFromUrl() {
+            var tab = (new URLSearchParams(window.location.search).get('tab') || '').toLowerCase();
+            if (tab) return tab;
+            var h = (location.hash || '').replace(/^#/, '').toLowerCase();
+            if (h === 'mn2-wallet' || h === 'profile-mn2-wallet-card') return 'wallet';
+            if (profileWalletTabFromHash()) return 'wallet';
+            return null;
+        }
+
         function applyFocusedProfileRoute(route) {
             var activeRoute = route || 'overview';
             document.body.classList.add('profile-route-focused');
@@ -3994,8 +4012,14 @@
                 x.classList.toggle('active', on);
                 x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-            if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
-                window.ProfileMn2Wallet.load();
+            if (activeRoute === 'wallet' && window.ProfileMn2Wallet) {
+                var walletTab = profileWalletTabFromHash();
+                if (walletTab && typeof window.ProfileMn2Wallet.showWalletTab === 'function') {
+                    window.ProfileMn2Wallet.showWalletTab(walletTab);
+                }
+                if (typeof window.ProfileMn2Wallet.load === 'function') {
+                    window.ProfileMn2Wallet.load();
+                }
             }
             if (activeRoute === 'security') {
                 if (window.profileManager) {
@@ -4075,8 +4099,9 @@
                     var sum = document.getElementById('profile-hub-summary');
                     if (sum) sum.textContent = 'Could not load unified overview.';
                 });
+            var resolvedRoute = profileRouteFromUrl();
             var tab = new URLSearchParams(window.location.search).get('tab');
-            if (tab) {
+            if (tab || resolvedRoute) {
                 var btnKey = {
                     account: 'account', user: 'account', avatar: 'avatar', skills: 'skills',
                     trophies: 'trophies', progress: 'progress', points: 'points',
@@ -4084,7 +4109,8 @@
                     inventory: 'shop', wallet: 'wallet', security: 'security', settings: 'settings',
                     agents: 'agents', lab: 'lab', battle: 'battle'
                 };
-                var ds = btnKey[tab] || (scrollMap[tab] ? tab : 'overview');
+                var raw = (tab || resolvedRoute || 'overview').toLowerCase();
+                var ds = btnKey[raw] || (scrollMap[raw] ? raw : 'overview');
                 setTimeout(function() {
                     var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + ds + '"]');
                     if (btn) btn.click();
@@ -4093,6 +4119,14 @@
             } else {
                 applyFocusedProfileRoute('overview');
             }
+            window.addEventListener('hashchange', function() {
+                var route = profileRouteFromUrl();
+                if (!route) return;
+                applyFocusedProfileRoute(route);
+                var scrollId = scrollMap[route] || 'profile-hub-overview';
+                var el = document.getElementById(scrollId);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         }
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initProfileHub);

@@ -139,5 +139,63 @@ class TestAgentCronPresets(unittest.TestCase):
         self.assertEqual(expand_preset("mn2_transactions"), ["mn2_ecosystem_settlement"])
 
 
+class TestWalletHtmlParity(unittest.TestCase):
+    """Shared profile-mn2-wallet.js elements must exist on /wallets and /profile wallet sections."""
+
+    CRITICAL_IDS = [
+        "profile-mn2-wallet-card",
+        "profile-wallet-subnav",
+        "profile-mn2-deposit-error",
+        "profile-mn2-deposit-hint",
+        "profile-mn2-deposit-address",
+        "profile-mn2-request-addr",
+        "profile-mn2-create-wallet",
+        "profile-mn2-new-wallet-label",
+        "profile-mn2-wallets-list",
+        "profile-mn2-withdraw-address",
+        "profile-mn2-withdraw-amount",
+        "profile-mn2-withdraw-totp",
+        "profile-mn2-withdraw-whitelist-hint",
+        "profile-mn2-withdraw-inline-msg",
+        "profile-mn2-withdraw-balance-hint",
+        "profile-mn2-withdraw-use-deposit",
+        "profile-mn2-withdraw-whitelist-quick",
+        "profile-mn2-withdraw-whitelist-add",
+        "mn2-withdraw-security",
+        "mn2-gift-send",
+        "mn2-addrbook-add",
+    ]
+
+    SCRIPT_MARKERS = {
+        "wallets/index.html": (
+            "profile-mn2-wallet.js",
+            "mn2-wallet-extras.js",
+            "mn2-withdrawal-security.js",
+        ),
+        "profile/index.html": (
+            "profile-mn2-wallet.js",
+            "mn2-wallet-extras.js",
+            "mn2-withdrawal-security.js",
+        ),
+    }
+
+    def _read(self, rel_path):
+        path = os.path.join(BASE, rel_path)
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+
+    def test_wallet_pages_share_critical_element_ids(self):
+        for rel in ("wallets/index.html", "profile/index.html"):
+            html = self._read(rel)
+            for el_id in self.CRITICAL_IDS:
+                self.assertIn('id="' + el_id + '"', html, msg=f"{rel} missing #{el_id}")
+
+    def test_wallet_pages_include_shared_scripts(self):
+        for rel, markers in self.SCRIPT_MARKERS.items():
+            html = self._read(rel)
+            for marker in markers:
+                self.assertIn(marker, html, msg=f"{rel} missing script {marker}")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -669,6 +669,18 @@
         });
       });
     }
+    var copyRevBtn = document.getElementById('profile-mn2-copy-revenue');
+    var revAddrEl = document.getElementById('profile-mn2-revenue-address');
+    if (copyRevBtn && !copyRevBtn._mn2Wired) {
+      copyRevBtn._mn2Wired = true;
+      copyRevBtn.addEventListener('click', function () {
+        var addr = revAddrEl && revAddrEl.textContent ? revAddrEl.textContent.trim() : '';
+        if (!addr) return;
+        navigator.clipboard.writeText(addr).then(function () {
+          if (typeof toast !== 'undefined') toast.success('Revenue address copied');
+        });
+      });
+    }
     var createWalletBtn = document.getElementById('profile-mn2-create-wallet');
     if (createWalletBtn && !createWalletBtn._mn2Wired) {
       createWalletBtn._mn2Wired = true;
@@ -865,13 +877,22 @@
       p.style.display = on ? 'block' : 'none';
     });
     try {
-      if (location.pathname.indexOf('/wallets') >= 0) {
+      var path = location.pathname || '';
+      if (path.indexOf('/wallets') >= 0) {
         if (active === 'overview') history.replaceState(null, '', location.pathname);
         else history.replaceState(null, '', location.pathname + '#' + active);
+      } else if (path.indexOf('/profile') >= 0) {
+        var url = new URL(location.href);
+        url.searchParams.set('tab', 'wallet');
+        url.hash = active === 'overview' ? 'mn2-wallet' : active;
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
       }
     } catch (e) { /* ignore */ }
     if (global.Mn2WalletHubPanels && global.Mn2WalletHubPanels.onTabShown) {
       global.Mn2WalletHubPanels.onTabShown(active);
+    }
+    if (active === 'security' && global.Mn2WithdrawalSecurity && global.Mn2WithdrawalSecurity.refresh) {
+      global.Mn2WithdrawalSecurity.refresh();
     }
     if (active === 'withdraw') {
       loadWithdrawSecurityHint();
@@ -1031,16 +1052,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var card = document.getElementById('profile-mn2-wallet-card');
-    if (!card || card.hidden) return;
-    if (isWalletHubPage()) return; // /wallets bootstraps load + tab from hash
-    var route = (new URLSearchParams(window.location.search).get('tab') || '').toLowerCase();
-    if (route === 'wallet' || !route) {
-      try {
-        load();
-      } catch (e) {
-        /* ignore */
-      }
-    }
+    if (isWalletHubPage()) return; // /wallets bootstraps load + tab from hash in page script
+    // /profile loads wallet JS when applyFocusedProfileRoute('wallet') runs (tab=wallet or #mn2-wallet).
   });
 })(window);
