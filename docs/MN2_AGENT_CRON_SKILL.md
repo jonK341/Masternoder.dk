@@ -8,6 +8,9 @@ Use this skill when automating MN2 reward settlement, battle auto-claims, deposi
 |--------|-------------------|
 | `daemon` | RPC health probe (`masternoder2d`) |
 | `battle` | Auto-claim eligible crypto options |
+| `quests` | Auto-claim completed progression quest MN2 |
+| `game_level` | Auto-claim hunter level milestone MN2 |
+| `compendium` | Daily cron study pulse rewards |
 | `aggregator` | Credit monitor-move / progress rewards |
 | `generator` | Daily finish-bonus credits |
 | `casino` | Run casino agent ticks |
@@ -108,7 +111,9 @@ Presets (see `GET /api/agents/cron/presets`):
 | Preset | Jobs |
 |--------|------|
 | `mn2`, `mn2_settlement`, `mn2_transactions`, `game_battle_mn2` | Full `mn2_ecosystem_settlement` |
-| `mn2_fast` | Light settlement: daemon, battle, activity, scan |
+| `mn2_fast` | Light: daemon, battle, quests, game_level, activity, scan, micro, chain |
+| `mn2_game`, `game_mn2`, `mn2_quests_battle` | battle + quests + game_level + compendium + generator + aggregator |
+| `mn2_all` | Full ecosystem settlement (alias) |
 | `daily` | Includes `mn2_ecosystem_settlement` |
 
 ## Shell cron

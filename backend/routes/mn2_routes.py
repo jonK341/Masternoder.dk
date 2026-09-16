@@ -376,9 +376,33 @@ def mn2_agent_wallets():
     }), 200
 
 
+def _last_settlement_snapshot() -> dict:
+    """Read the most recent agent settlement run from logs."""
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base, "logs", "mn2_settlement", "settlement_runs.jsonl")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        if not lines:
+            return {}
+        last = json.loads(lines[-1].strip())
+        systems = last.get("systems") or []
+        return {
+            "ran_at": last.get("ran_at"),
+            "success": last.get("success"),
+            "systems_count": len(systems),
+            "systems": systems[:20],
+            "dry_run": last.get("dry_run"),
+        }
+    except Exception:
+        return {}
+
+
 @mn2_bp.route("/api/mn2/profile-monitor", methods=["GET"])
 def mn2_profile_monitor():
-    """Unified MN2 monitor: ledger activity, system breakdown, wallet list."""
+    """Unified MN2 monitor: ledger activity, system breakdown, wallet list, daemon health."""
     user_id = resolve_user_id(from_body=False, from_query=True)
     try:
         days = int(request.args.get("days", 5))
@@ -402,10 +426,24 @@ def mn2_profile_monitor():
             bucket["total_mn2"] = round(bucket["total_mn2"] + float(e.get("amount") or 0), 8)
         except (TypeError, ValueError):
             pass
-        if (e.get("txid") or "").strip() and t in ("deposit", "withdrawal", "chain_reward"):
+        if (e.get("txid") or "").strip() or meta.get("chain_txid") or meta.get("chain_paid"):
             chain_txs += 1
 
     wallets = list_user_addresses(user_id)
+    daemon: dict = {"healthy": False}
+    try:
+        from backend.services.mn2_daemon_health_service import probe_daemon
+        probe = probe_daemon(extended=False)
+        health = probe.get("health") or {}
+        daemon = {
+            "healthy": bool(probe.get("healthy")),
+            "block_height": health.get("block_height"),
+            "latency_ms": health.get("latency_ms"),
+        }
+    except Exception:
+        pass
+
+    chain_payouts = (config.get("chain_reward_payouts") or {})
     return jsonify({
         "success": True,
         "user_id": user_id,
@@ -415,7 +453,11 @@ def mn2_profile_monitor():
         "chain_tx_count": chain_txs,
         "instant_rewards": bool(config.get("instant_rewards", True)),
         "instant_deposits": bool(config.get("instant_deposits", True)),
+        "instant_deposit_confirmations": int(config.get("instant_deposit_confirmations") or 0),
         "confirmations_required": int(config.get("confirmations") or 0),
+        "chain_payouts_enabled": bool(chain_payouts.get("enabled", False)),
+        "daemon": daemon,
+        "last_settlement": _last_settlement_snapshot(),
         "wallets": wallets.get("addresses") or [],
     }), 200
 
