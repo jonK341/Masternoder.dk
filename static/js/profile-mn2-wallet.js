@@ -5,8 +5,12 @@
   'use strict';
 
   var TIMEOUT_MS = 12000;
-  var POLL_MS = 15000;
+  var POLL_MS = 3000;
+  var QR_RENDER_PX = 256;
+  var QR_DISPLAY_PX = 192;
   var _pollTimer = null;
+  var _sse = null;
+  var _lastBalance = null;
 
   function uid() {
     return (
@@ -85,6 +89,10 @@
     if (balanceEl) balanceEl.textContent = balNum.toFixed(8);
     var showcase = document.getElementById('profile-mn2-showcase-balance');
     if (showcase) showcase.textContent = balNum.toFixed(4) + ' MN2';
+    if (_lastBalance !== null && balNum > _lastBalance) {
+      flashInstantCredit(balNum - _lastBalance);
+    }
+    _lastBalance = balNum;
     if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
       var usd = balData.mn2_usd_price;
       if (usd != null) {
@@ -155,10 +163,24 @@
         try {
           new QRCode(qrEl, {
             text: addrData.deposit_address,
-            width: 128,
-            height: 128,
+            width: QR_RENDER_PX,
+            height: QR_RENDER_PX,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.H : undefined,
           });
+          var canvas = qrEl.querySelector('canvas');
+          var img = qrEl.querySelector('img');
+          if (canvas) {
+            canvas.style.width = QR_DISPLAY_PX + 'px';
+            canvas.style.height = QR_DISPLAY_PX + 'px';
+            canvas.style.imageRendering = 'pixelated';
+          }
+          if (img) {
+            img.style.width = QR_DISPLAY_PX + 'px';
+            img.style.height = QR_DISPLAY_PX + 'px';
+            img.style.imageRendering = 'pixelated';
+          }
         } catch (e) {
           qrEl.innerHTML = '';
         }
@@ -192,6 +214,9 @@
         .map(function (t) {
           var type = t.type || '—';
           var amt = t.amount != null ? Number(t.amount).toFixed(4) : '—';
+          var instantBadge = (t.metadata && t.metadata.chain_paid) || t.txid
+            ? ' <span style="color:#00ff88;font-size:0.72rem;">⛓ on-chain</span>'
+            : ' <span style="color:#88ffcc;font-size:0.72rem;">⚡ instant</span>';
           var txLink = t.explorer_tx_url
             ? '<a href="' + t.explorer_tx_url + '" target="_blank" rel="noopener" style="color:#00d4ff;">Explorer tx</a>'
             : '';
@@ -199,7 +224,7 @@
             ? ' <a href="' + t.explorer_address_url + '" target="_blank" rel="noopener" style="color:#88ccff;">Explorer address</a>'
             : '';
           var date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-          return '<li>' + type + ': ' + amt + ' MN2 ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
+          return '<li>' + type + ': ' + amt + ' MN2' + instantBadge + ' ' + txLink + addrLink + (date ? ' (' + date + ')' : '') + '</li>';
         })
         .join('') +
       '</ul>';
@@ -341,20 +366,61 @@
       .join('');
   }
 
+  function flashInstantCredit(delta) {
+    var showcase = document.getElementById('profile-mn2-showcase');
+    if (!showcase) return;
+    showcase.classList.add('mn2-instant-flash');
+    var toast = document.getElementById('profile-mn2-instant-toast');
+    if (toast) {
+      toast.textContent = '+' + (Number(delta) || 0).toFixed(6) + ' MN2 credited instantly';
+      toast.style.opacity = '1';
+      setTimeout(function () { toast.style.opacity = '0'; }, 3200);
+    }
+    setTimeout(function () { showcase.classList.remove('mn2-instant-flash'); }, 900);
+  }
+
+  function renderDaemonMonitor(monData) {
+    var el = document.getElementById('profile-mn2-daemon-monitor');
+    if (!el) return;
+    if (!monData || !monData.success) {
+      el.innerHTML = '<span style="opacity:0.7;font-size:0.82rem;">Status unavailable.</span>';
+      return;
+    }
+    var daemon = monData.daemon || {};
+    var settlement = monData.last_settlement || {};
+    var chainOn = monData.chain_payouts_enabled ? 'on' : 'off';
+    var daemonOk = daemon.healthy;
+    el.innerHTML =
+      '<div class="mn2-monitor-chip"><span>Daemon</span><strong style="color:' +
+      (daemonOk ? '#00ff88' : '#ffaa44') +
+      ';">' +
+      (daemonOk ? 'online' : 'offline') +
+      '</strong><span style="opacity:0.7;">' +
+      (daemon.block_height != null ? 'block ' + daemon.block_height : 'RPC probe') +
+      '</span></div>' +
+      '<div class="mn2-monitor-chip"><span>Chain payouts</span><strong style="color:#00d4ff;">' +
+      chainOn +
+      '</strong><span style="opacity:0.7;">' +
+      (monData.chain_tx_count || 0) +
+      ' on-chain tx</span></div>' +
+      '<div class="mn2-monitor-chip"><span>Agent cron</span><strong style="color:#88ccff;">' +
+      (settlement.ran_at ? 'active' : 'pending') +
+      '</strong><span style="opacity:0.7;">' +
+      (settlement.systems_count != null ? settlement.systems_count + ' systems' : 'awaiting run') +
+      '</span></div>';
+  }
+
   function renderSystemMonitor(monData) {
     var el = document.getElementById('profile-mn2-system-monitor');
     if (!el) return;
+    renderDaemonMonitor(monData);
     if (!monData || !monData.success) {
       el.innerHTML = '<span style="opacity:0.7;font-size:0.82rem;">Monitor unavailable.</span>';
       return;
     }
     var systems = monData.by_system || {};
     var keys = Object.keys(systems);
-    if (!keys.length) {
-      el.innerHTML = '<span style="opacity:0.7;font-size:0.82rem;">No reward activity yet.</span>';
-      return;
-    }
-    el.innerHTML = keys
+    var chips = keys
       .map(function (k) {
         var s = systems[k] || {};
         var total = Number(s.total_mn2 || 0).toFixed(4);
@@ -369,13 +435,19 @@
         );
       })
       .join('');
+    el.innerHTML = chips || '<span style="opacity:0.7;font-size:0.82rem;">No reward activity yet — agents will credit instantly when systems run.</span>';
     var instantMsg = document.getElementById('profile-mn2-deposit-instant-msg');
     if (instantMsg) {
-      var conf = monData.confirmations_required != null ? monData.confirmations_required : 0;
-      instantMsg.textContent =
-        monData.instant_deposits
-          ? 'Credits appear instantly (' + conf + ' confirmations).'
-          : 'Credits appear after ' + conf + ' confirmations.';
+      var conf = monData.instant_deposit_confirmations != null
+        ? monData.instant_deposit_confirmations
+        : (monData.confirmations_required != null ? monData.confirmations_required : 0);
+      var rewardsNote = monData.instant_rewards ? 'Rewards &amp; bonuses credit instantly' : 'Rewards may batch';
+      instantMsg.innerHTML =
+        rewardsNote +
+        '. Deposits: ' +
+        (monData.instant_deposits
+          ? 'instant (' + conf + ' conf).'
+          : 'after ' + conf + ' confirmations.');
     }
   }
 
@@ -580,6 +652,51 @@
     });
   }
 
+  function refreshInstant() {
+    var user = uid();
+    var q = encodeURIComponent(user);
+    fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
+      renderBalance(res.data);
+    });
+    fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
+      renderTransactions(res.data);
+    });
+    fetchJson(base() + '/api/mn2/profile-monitor?user_id=' + q + '&days=5').then(function (res) {
+      renderSystemMonitor(res.data);
+    });
+    fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
+      renderActivity(res.data);
+    });
+  }
+
+  function connectInstantStream() {
+    if (_sse || typeof EventSource === 'undefined') return;
+    var user = uid();
+    _sse = new EventSource(base() + '/api/activity/stream?interval=3&sounds=0');
+    _sse.onmessage = function (ev) {
+      try {
+        var data = JSON.parse(ev.data);
+        if (data.type !== 'activity' || !data.events || !data.events.length) return;
+        var mine = data.events.some(function (e) {
+          var uidMatch = (e.user_id || e.payload && e.payload.user_id || '') === user;
+          var kind = (e.kind || e.type || '').toLowerCase();
+          return uidMatch && (
+            kind.indexOf('mn2') >= 0 ||
+            kind.indexOf('reward') >= 0 ||
+            kind === 'game_mn2_reward' ||
+            kind === 'mn2_ledger' ||
+            kind === 'deposit'
+          );
+        });
+        if (mine) refreshInstant();
+      } catch (e) { /* ignore */ }
+    };
+    _sse.onerror = function () {
+      if (_sse) { _sse.close(); _sse = null; }
+      setTimeout(connectInstantStream, 12000);
+    };
+  }
+
   function load() {
     var user = uid();
     var q = encodeURIComponent(user);
@@ -637,25 +754,23 @@
       renderAgentWallets(res.data);
     });
 
+    connectInstantStream();
+
     if (_pollTimer) clearInterval(_pollTimer);
-    _pollTimer = setInterval(function () {
-      fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
-        renderTransactions(res.data);
-      });
-      fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
-        renderBalance(res.data);
-      });
-      fetchJson(base() + '/api/mn2/profile-monitor?user_id=' + q + '&days=5').then(function (res) {
-        renderSystemMonitor(res.data);
-      });
-    }, POLL_MS);
+    _pollTimer = setInterval(refreshInstant, POLL_MS);
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress, showWalletTab: showWalletTab };
 
+  function isWalletHubPage() {
+    var path = (global.location.pathname || '').replace(/\/+$/, '');
+    return path === '/wallets' || path.endsWith('/wallets');
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     var card = document.getElementById('profile-mn2-wallet-card');
     if (!card || card.hidden) return;
+    if (isWalletHubPage()) return; // /wallets bootstraps load + tab from hash
     var route = (new URLSearchParams(window.location.search).get('tab') || '').toLowerCase();
     if (route === 'wallet' || !route) {
       try {

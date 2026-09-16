@@ -5,6 +5,12 @@
   "instant_deposits": true,
   "instant_deposit_confirmations": 0,
   "instant_rewards": true,
+  "profile": {
+    "poll_interval_ms": 3000,
+    "qr_render_px": 256,
+    "qr_display_px": 192,
+    "instant_page_updates": true
+  },
   "chain_reward_payouts": {
     "enabled": true,
     "min_amount_mn2": 1e-05,
