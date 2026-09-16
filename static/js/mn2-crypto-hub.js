@@ -536,8 +536,11 @@
   function payHostingPayPal(quote) {
     var msg = q('mn-checkout-msg');
     if (msg) msg.textContent = 'Opening PayPal…';
-    var returnUrl = window.location.origin + '/explorer?tab=masternodes&paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id);
-    var cancelUrl = window.location.origin + '/explorer?tab=masternodes&paypal=cancel';
+    var basePath = window.location.pathname || '/explorer';
+    var returnUrl = window.location.origin + basePath + '?paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id);
+    if (basePath.indexOf('/wallets') >= 0) returnUrl += '&wallet_tab=hosting';
+    var cancelUrl = window.location.origin + basePath + '?paypal=cancel';
+    if (basePath.indexOf('/wallets') >= 0) cancelUrl += '&wallet_tab=hosting';
     return fetch('/api/mn2/masternode/checkout/order', {
       method: 'POST',
       credentials: 'same-origin',
@@ -764,4 +767,12 @@
   }
 
   initTabs();
+
+  // Standalone hosting on /wallets (no explorer tab nav)
+  if (!q('mn2-hub-nav') && q('mn-checkout-card')) {
+    mnLoaded = true;
+    loadMasternodeHosting();
+    handleMasternodePayPalReturn();
+    window.Mn2WalletHosting = { refresh: loadMasternodeHosting };
+  }
 })();

@@ -643,12 +643,16 @@
           if (typeof toast !== 'undefined') toast.error('Enter amount');
           return;
         }
+        var totpEl = document.getElementById('profile-mn2-withdraw-totp');
+        var totp = totpEl ? totpEl.value.trim() : '';
         withdrawBtn.disabled = true;
         var origHtml = withdrawBtn.innerHTML;
         withdrawBtn.textContent = 'Sending…';
+        var body = { user_id: uid(), address: address, amount: amount };
+        if (totp) body.totp_code = totp;
         fetchJson(base() + '/api/mn2/withdraw', {
           method: 'POST',
-          body: { user_id: uid(), address: address, amount: amount },
+          body: body,
           timeout: 20000,
         })
           .then(function (res) {
@@ -657,6 +661,7 @@
               if (typeof toast !== 'undefined') toast.success('Withdrawal sent');
               document.getElementById('profile-mn2-withdraw-address').value = '';
               document.getElementById('profile-mn2-withdraw-amount').value = '';
+              if (totpEl) totpEl.value = '';
               load();
             } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
           })
@@ -683,6 +688,15 @@
       var on = p.getAttribute('data-wallet-panel') === active;
       p.style.display = on ? 'block' : 'none';
     });
+    try {
+      if (location.pathname.indexOf('/wallets') >= 0) {
+        if (active === 'overview') history.replaceState(null, '', location.pathname);
+        else history.replaceState(null, '', location.pathname + '#' + active);
+      }
+    } catch (e) { /* ignore */ }
+    if (global.Mn2WalletHubPanels && global.Mn2WalletHubPanels.onTabShown) {
+      global.Mn2WalletHubPanels.onTabShown(active);
+    }
   }
 
   function initWalletSubTabs() {
@@ -693,7 +707,8 @@
     nav.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-wallet-tab]');
       if (!btn) return;
-      showWalletTab(btn.getAttribute('data-wallet-tab'));
+      var tab = btn.getAttribute('data-wallet-tab');
+      showWalletTab(tab);
     });
   }
 

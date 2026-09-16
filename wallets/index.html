@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/mn2-wallet-hub.css?v=20260916">
+    <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
     <style>
         body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, rgba(0,212,255,0.18), transparent 34%), #080b12; color: #fff; }
     </style>
@@ -44,11 +45,30 @@
                 <button type="button" class="tab-btn" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
                 <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
                 <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
+                <button type="button" class="tab-btn" data-wallet-tab="stake" role="tab" aria-selected="false">Stake</button>
+                <button type="button" class="tab-btn" data-wallet-tab="trade" role="tab" aria-selected="false">Trade</button>
+                <button type="button" class="tab-btn" data-wallet-tab="hosting" role="tab" aria-selected="false">Hosting</button>
                 <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
                 <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Settings</button>
             </nav>
 
             <div data-wallet-panel="overview">
+                <div id="wh-hold-banner" class="wh-hold-banner ok" aria-live="polite">Checking clearance holds…</div>
+
+                <div class="wh-por-compact" id="wh-por-compact">
+                    <div class="wh-por-banner">
+                        <span id="wh-por-banner-icon">🛡️</span>
+                        <span id="wh-por-banner-text">Loading proof-of-reserves…</span>
+                        <a href="/proof-of-reserves" style="margin-left:auto;font-size:0.78rem;color:#00d4ff;">Full report →</a>
+                    </div>
+                    <div class="wh-por-tiles">
+                        <div class="wh-por-tile"><div class="label">Coverage</div><div class="value" id="wh-t-coverage">—</div></div>
+                        <div class="wh-por-tile"><div class="label">Assets</div><div class="value" id="wh-t-assets">—</div></div>
+                        <div class="wh-por-tile"><div class="label">Liabilities</div><div class="value" id="wh-t-liab">—</div></div>
+                        <div class="wh-por-tile"><div class="label">Surplus</div><div class="value" id="wh-t-surplus">—</div></div>
+                    </div>
+                </div>
+
                 <strong style="color:#00d4ff;">Balance:</strong>
                 <span id="profile-mn2-balance" style="font-size:1.2rem;font-weight:700;">--</span> MN2
                 <span id="profile-mn2-balance-fiat" style="font-size:0.85rem;opacity:0.75;margin-left:6px;"></span>
@@ -129,6 +149,18 @@
                     <button type="button" id="profile-mn2-create-wallet" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.82rem;"><i class="fas fa-wallet"></i> Create new wallet</button>
                 </div>
                 <p id="profile-mn2-deposit-instant-msg" style="font-size:0.8rem;opacity:0.8;margin-top:6px;">Credits appear instantly (0 confirmations).</p>
+
+                <div id="mn2-onramp-panel" style="display:none;margin-top:16px;padding:12px;border-radius:10px;background:rgba(0,112,186,0.10);border:1px solid rgba(0,112,186,0.4);">
+                    <strong style="color:#4fa8ff;">Buy MN2 with PayPal</strong>
+                    <p style="font-size:0.76rem;opacity:0.8;margin:4px 0 8px;">Pay USD and receive MN2 in-app at a locked quote. Purchased MN2 can be staked/spent immediately but is <strong>not withdrawable</strong> until its clearance window passes.</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                        <label style="font-size:0.8rem;">USD <input type="number" id="mn2-onramp-usd" value="10" min="1" step="1" style="width:90px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                        <button type="button" id="mn2-onramp-quote-btn" style="padding:7px 12px;border-radius:8px;border:1px solid #4fa8ff;background:rgba(0,112,186,0.18);color:#4fa8ff;cursor:pointer;">Get quote</button>
+                        <button type="button" id="mn2-onramp-pay-btn" disabled style="padding:7px 12px;border-radius:8px;border:none;background:#0070ba;color:#fff;font-weight:600;cursor:pointer;">Pay with PayPal</button>
+                    </div>
+                    <p id="mn2-onramp-quote-result" style="font-size:0.82rem;margin:8px 0 0;color:#4fa8ff;"></p>
+                    <p id="mn2-onramp-held" style="font-size:0.76rem;margin:4px 0 0;opacity:0.8;"></p>
+                </div>
             </div>
 
             <div data-wallet-panel="withdraw" style="display:none;">
@@ -137,6 +169,7 @@
                 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
                     <input type="text" id="profile-mn2-withdraw-address" placeholder="MN2 address" style="min-width:240px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
                     <input type="number" id="profile-mn2-withdraw-amount" placeholder="Amount" step="0.00000001" min="0" style="width:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                    <input type="text" id="profile-mn2-withdraw-totp" placeholder="2FA code" maxlength="6" style="width:90px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
                     <button type="button" id="profile-mn2-withdraw-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:600;cursor:pointer;"><i class="fas fa-paper-plane"></i> Withdraw</button>
                 </div>
                 <p style="font-size:0.8rem;opacity:0.8;margin-top:4px;">Fee 0.001 MN2 deducted.</p>
@@ -185,6 +218,176 @@
                 </div>
             </div>
 
+            <div data-wallet-panel="stake" style="display:none;">
+                <div class="section-card" id="profile-mn2-staking-card" style="border:2px solid rgba(0,255,136,0.4);background:linear-gradient(135deg,rgba(0,255,136,0.06),rgba(0,212,255,0.04));">
+                    <h2 class="section-title" style="color:#00ff88;">⚡ MN2 Staking</h2>
+                    <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Stake MN2 to earn pool yield. Run the optional browser <strong>staking rig</strong> to boost your share. Unstake any time.</p>
+                    <div id="mn2-staking-stats" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;">
+                        <div class="stat-card" style="padding:12px 16px;min-width:120px;"><div style="opacity:0.7;font-size:0.72rem;">Staked</div><div style="font-size:1.15rem;font-weight:700;"><span id="mn2-staking-staked">--</span> MN2</div></div>
+                        <div class="stat-card" style="padding:12px 16px;min-width:120px;"><div style="opacity:0.7;font-size:0.72rem;">Available</div><div style="font-size:1.15rem;font-weight:700;"><span id="mn2-staking-balance">--</span> MN2</div></div>
+                        <div class="stat-card" style="padding:12px 16px;min-width:120px;"><div style="opacity:0.7;font-size:0.72rem;">Effective APR</div><div style="font-size:1.15rem;font-weight:700;color:#00ff88;"><span id="mn2-staking-apr">--</span>%</div></div>
+                        <div class="stat-card" style="padding:12px 16px;min-width:120px;"><div style="opacity:0.7;font-size:0.72rem;">Total earned</div><div style="font-size:1.15rem;font-weight:700;"><span id="mn2-staking-earned">--</span> MN2</div></div>
+                        <div class="stat-card" style="padding:12px 16px;min-width:140px;"><div style="opacity:0.7;font-size:0.72rem;">Longevity</div><div style="font-size:1.05rem;font-weight:700;"><span id="mn2-staking-tier">--</span></div><div id="mn2-staking-tier-progress" style="font-size:0.7rem;opacity:0.7;"></div></div>
+                    </div>
+                    <div id="mn2-staking-consent" style="display:none;margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.35);">
+                        <strong style="color:#ffaa00;">Accept staking terms to begin</strong>
+                        <p id="mn2-staking-consent-text" style="font-size:0.78rem;opacity:0.85;margin:6px 0;">Loading terms…</p>
+                        <label style="display:flex;gap:8px;align-items:flex-start;font-size:0.8rem;">
+                            <input type="checkbox" id="mn2-staking-consent-check" style="margin-top:3px;">
+                            <span id="mn2-staking-consent-statement"></span>
+                        </label>
+                        <button type="button" id="mn2-staking-consent-accept" disabled style="margin-top:8px;padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;">Accept &amp; enable staking</button>
+                    </div>
+                    <div id="mn2-staking-controls" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+                        <input type="number" id="mn2-staking-amount" placeholder="Amount" step="0.00000001" min="0" style="width:130px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;">
+                        <button type="button" id="mn2-staking-stake-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00ff88,#00cc66);color:#000;font-weight:600;cursor:pointer;">Stake</button>
+                        <button type="button" id="mn2-staking-unstake-btn" style="padding:8px 14px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.15);color:#00d4ff;font-weight:600;cursor:pointer;">Unstake</button>
+                        <label style="display:flex;gap:6px;align-items:center;font-size:0.8rem;opacity:0.9;margin-left:6px;"><input type="checkbox" id="mn2-staking-autocompound"> Auto-compound</label>
+                        <span id="mn2-staking-msg" style="font-size:0.82rem;margin-left:6px;"></span>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);">
+                        <button type="button" id="mn2-staking-rig-toggle" style="padding:8px 14px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.12);color:#00ff88;cursor:pointer;font-weight:600;">▶ Start staking rig</button>
+                        <span style="font-size:0.82rem;">Rig: <strong id="mn2-staking-rig-status" style="color:#ffaa44;">off</strong> · uptime <span id="mn2-staking-uptime">0</span>%</span>
+                    </div>
+                    <div style="margin-bottom:12px;padding:10px;border-radius:10px;background:rgba(0,0,0,0.2);">
+                        <strong style="color:#00d4ff;font-size:0.85rem;">Reward calculator</strong>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+                            <label style="font-size:0.78rem;">Amount <input type="number" id="mn2-calc-amount" value="100" min="0" style="width:90px;padding:5px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                            <label style="font-size:0.78rem;">Days <input type="number" id="mn2-calc-days" value="30" min="1" style="width:70px;padding:5px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                            <label style="font-size:0.78rem;">Rig uptime <input type="range" id="mn2-calc-uptime" min="0" max="100" value="100" style="vertical-align:middle;"> <span id="mn2-calc-uptime-val">100</span>%</label>
+                        </div>
+                        <p id="mn2-calc-result" style="font-size:0.85rem;margin:8px 0 0;color:#00ff88;">—</p>
+                    </div>
+                    <div id="mn2-staking-charts-empty" style="font-size:0.78rem;opacity:0.7;margin-top:6px;">No reward intervals yet.</div>
+                    <div id="mn2-staking-charts" style="display:none;margin-top:8px;">
+                        <canvas id="mn2-chart-cumulative" height="150" style="width:100%;background:rgba(0,0,0,0.25);border-radius:8px;"></canvas>
+                        <canvas id="mn2-chart-intervals" height="150" style="width:100%;margin-top:8px;background:rgba(0,0,0,0.25);border-radius:8px;"></canvas>
+                    </div>
+                    <div id="mn2-staking-rewards-table" style="margin-top:10px;max-height:200px;overflow-y:auto;font-size:0.8rem;">No rewards yet.</div>
+                    <p style="margin-top:10px;font-size:0.75rem;opacity:0.75;"><a href="/staking-monitor" style="color:#00d4ff;">Live staking monitor →</a></p>
+                </div>
+
+                <div class="section-card" id="profile-trader-staking-card" style="margin-top:16px;border:2px solid rgba(0,212,255,0.35);background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(0,255,136,0.04));">
+                    <h2 class="section-title">🤖 Trader staking agents</h2>
+                    <p style="font-size:0.85rem;opacity:0.88;margin-bottom:12px;">Follow treasury-funded trader agents to mirror stake changes and earn proportional reward share.</p>
+                    <div style="margin-bottom:12px;"><span style="opacity:0.7;font-size:0.72rem;">Pool staked by traders</span> <strong id="trader-staking-pool-total">--</strong> MN2</div>
+                    <div id="trader-staking-agents-list" style="margin-bottom:14px;">Loading trader agents…</div>
+                    <div id="trader-staking-follower" style="margin-bottom:12px;"></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                        <label style="font-size:0.82rem;">Agent <select id="trader-staking-leader" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#161b22;color:#fff;"></select></label>
+                        <label style="font-size:0.82rem;">Scale <input type="number" id="trader-staking-scale" min="0.01" max="1" step="0.01" value="0.25" style="width:70px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                        <label style="font-size:0.82rem;">Max/step <input type="number" id="trader-staking-cap" min="0" step="0.01" value="25" style="width:80px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                        <button type="button" id="trader-staking-follow-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0088cc);color:#000;font-weight:600;cursor:pointer;">Follow agent</button>
+                        <button type="button" id="trader-staking-unfollow-btn" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid #ffaa44;background:rgba(255,170,0,0.12);color:#ffaa44;font-weight:600;cursor:pointer;">Unfollow</button>
+                        <span id="trader-staking-msg" style="font-size:0.82rem;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div data-wallet-panel="trade" style="display:none;">
+                <p style="font-size:0.85rem;opacity:0.85;margin:0 0 12px;">Internal coins order book, PayPal P2P listings (when enabled), and instant AMM swap.</p>
+
+                <div class="wh-swap-card">
+                    <strong style="color:#00d4ff;">AMM swap (MN2 ↔ coins)</strong>
+                    <div class="wh-swap-row">
+                        <label>Side <select id="wh-swap-side"><option value="sell">Sell MN2</option><option value="buy">Buy MN2</option></select></label>
+                        <label>Amount MN2 <input type="number" id="wh-swap-amount" min="0" step="0.0001" placeholder="10"></label>
+                        <button type="button" class="wh-btn wh-btn--ghost" id="wh-swap-quote-btn">Quote</button>
+                        <button type="button" class="wh-btn" id="wh-swap-execute-btn">Execute</button>
+                    </div>
+                    <p id="wh-swap-msg" class="wh-msg" aria-live="polite"></p>
+                </div>
+
+                <div class="mn2-market-card" id="mn2-internal-market" style="margin-top:16px;">
+                    <h2>📈 Internal order book — MN2 ↔ coins</h2>
+                    <p style="font-size:0.88rem;opacity:0.85;margin:0 0 12px;">Six trader agents post liquidity. Trade with unified <strong>coins</strong> (game currency).</p>
+                    <div id="im-trader-strip" class="im-trader-strip"></div>
+                    <div id="im-ticker" class="im-ticker"></div>
+                    <div class="im-balances">
+                        <span>Your coins: <strong id="im-user-coins">—</strong></span>
+                        <span>Your MN2: <strong id="im-user-mn2">—</strong></span>
+                        <button type="button" class="im-btn im-btn--ghost" id="im-refresh-btn">Refresh</button>
+                    </div>
+                    <div class="im-form-row">
+                        <label>Sell MN2 <input type="number" id="im-sell-amount" min="0" step="0.0001" placeholder="amount"></label>
+                        <label>Coins / MN2 <input type="number" id="im-sell-price" min="0" step="0.01" placeholder="100"></label>
+                        <button type="button" class="im-btn" id="im-sell-btn">List sell</button>
+                    </div>
+                    <p id="im-market-msg" class="im-msg" aria-live="polite"></p>
+                    <h3 class="im-subhead">Open sells</h3>
+                    <div id="im-sell-orders"></div>
+                    <h3 class="im-subhead">Recent trades</h3>
+                    <div id="im-recent-trades"></div>
+                </div>
+
+                <div id="mn2-p2p-panel" style="display:none;margin-top:16px;padding:12px;border-radius:10px;background:rgba(170,0,255,0.08);border:1px solid rgba(170,0,255,0.35);">
+                    <strong style="color:#c08cff;">MN2 marketplace (P2P PayPal)</strong>
+                    <p style="font-size:0.76rem;opacity:0.8;margin:4px 0 8px;">Buy MN2 from other users with PayPal, or sell your own cleared balance.</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px;">
+                        <label style="font-size:0.78rem;">Sell MN2 <input type="number" id="mn2-p2p-sell-amount" placeholder="amount" min="0" style="width:90px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                        <label style="font-size:0.78rem;">$/MN2 <input type="number" id="mn2-p2p-sell-price" placeholder="price" min="0" step="0.01" style="width:80px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;"></label>
+                        <button type="button" id="mn2-p2p-list-btn" style="padding:7px 12px;border-radius:8px;border:1px solid #c08cff;background:rgba(170,0,255,0.18);color:#c08cff;cursor:pointer;">List for sale</button>
+                    </div>
+                    <div id="mn2-p2p-listings" style="margin-top:6px;max-height:200px;overflow-y:auto;font-size:0.8rem;">Loading listings…</div>
+                    <p id="mn2-p2p-msg" style="font-size:0.8rem;margin:6px 0 0;color:#c08cff;"></p>
+                </div>
+            </div>
+
+            <div data-wallet-panel="hosting" style="display:none;" class="wh-hosting-wrap">
+                <p style="font-size:0.85rem;opacity:0.85;">Reserve masternode hosting slots — PayPal, coins, MN2 balance, or on-chain MN2.</p>
+                <div class="mn-slot-meter" aria-label="Platform slot capacity" style="margin:12px 0;">
+                    <div class="mn-slot-meter-label"><span id="mn-meter-label">— / — slots</span></div>
+                    <div class="mn-slot-meter-bar"><div class="mn-slot-meter-fill" id="mn-meter-fill"></div></div>
+                </div>
+                <p class="mn-rpc-banner" id="mn-rpc-banner" hidden aria-live="polite"></p>
+                <div class="ex-tiles mn-stat-tiles" id="mn-host-tiles">
+                    <div class="ex-tile"><div class="label">Live on network</div><div class="value" id="mn-net-enabled">--</div></div>
+                    <div class="ex-tile"><div class="label">Slots open</div><div class="value" id="mn-open-slots">--</div><div class="sub" id="mn-slots-cap">capacity</div></div>
+                    <div class="ex-tile"><div class="label">Platform fleet</div><div class="value" id="mn-slots">--</div><div class="sub" id="mn-collateral">registered</div></div>
+                    <div class="ex-tile"><div class="label">Daemon</div><div class="value" id="mn-daemon">--</div><div class="sub" id="mn-daemon-sub">status</div></div>
+                </div>
+                <div class="mn-checkout-card" id="mn-checkout-card">
+                    <h3>Reserve a slot</h3>
+                    <p class="mn-checkout-lead">10,000 MN2 collateral per node — automated provisioning after payment.</p>
+                    <div class="mn-checkout-row">
+                        <label>Slots <input type="number" id="mn-checkout-slots" min="1" max="5" value="1"></label>
+                        <div class="mn-checkout-price">
+                            <span id="mn-price-label">$4.99</span> <small>/ slot · 30 days</small>
+                            <div class="mn-checkout-alt" id="mn-price-alt">— coins · — MN2</div>
+                        </div>
+                    </div>
+                    <p class="mn-hosting-sold-out" id="mn-hosting-sold-out" hidden>Sold out — all slots reserved.</p>
+                    <div class="mn-checkout-actions" id="mn-checkout-actions">
+                        <button type="button" class="mn-checkout-btn mn-checkout-btn--paypal" data-mn-pay="paypal">Pay with PayPal</button>
+                        <button type="button" class="mn-checkout-btn mn-checkout-btn--coins" data-mn-pay="coins">Pay with coins</button>
+                        <button type="button" class="mn-checkout-btn mn-checkout-btn--mn2" data-mn-pay="mn2">Pay with MN2</button>
+                        <button type="button" class="mn-checkout-btn mn-checkout-btn--onchain" data-mn-pay="onchain">Pay on-chain</button>
+                    </div>
+                    <p class="mn-checkout-msg" id="mn-checkout-msg" aria-live="polite"></p>
+                </div>
+                <h3 style="color:#00d4ff;font-size:0.95rem;margin:16px 0 8px;">Your hosting orders</h3>
+                <table class="im-table" style="width:100%;">
+                    <thead><tr><th>Order</th><th>Status</th><th>Slots</th><th class="num">Total</th><th>When</th></tr></thead>
+                    <tbody id="mn-my-orders"><tr><td colspan="5">Loading…</td></tr></tbody>
+                </table>
+                <div class="mn-node-grid" id="mn-node-grid" style="margin-top:14px;"><div class="mn-node-card mn-node-card--empty">Loading fleet…</div></div>
+                <table class="mn-net-table" style="width:100%;margin-top:14px;">
+                    <thead><tr><th>Rank</th><th>Collateral</th><th>Status</th><th>Active time</th></tr></thead>
+                    <tbody id="mn-net-table"><tr><td colspan="4">Loading network…</td></tr></tbody>
+                </table>
+                <div id="mn2-onchain-modal" class="mn-onchain-modal" hidden aria-hidden="true">
+                    <div class="mn-onchain-dialog">
+                        <div class="mn-onchain-head"><strong>Pay with MN2 (on-chain)</strong><button type="button" id="mn2-onchain-close" aria-label="Close">&times;</button></div>
+                        <p id="mn2-onchain-message">Send the exact MN2 amount below.</p>
+                        <div id="mn2-onchain-qr"></div>
+                        <div id="mn2-onchain-address"></div>
+                        <button type="button" id="mn2-onchain-copy">Copy address</button>
+                        <p id="mn2-onchain-amount"></p>
+                        <p id="mn2-onchain-status"></p>
+                    </div>
+                </div>
+            </div>
+
             <div data-wallet-panel="security" style="display:none;">
                 <div id="mn2-withdraw-security">
                     <strong style="color:#00d4ff;">Withdrawal security</strong>
@@ -202,7 +405,19 @@
 
             <div data-wallet-panel="settings" style="display:none;">
                 <p style="font-size:0.85rem;opacity:0.85;">Fiat toggle is on the Overview tab. Rewards credit instantly; chain payouts send MN2 to your deposit address when enabled.</p>
-                <p style="margin-top:10px;font-size:0.82rem;"><a href="/shop#shop-mn2" style="color:#00ff88;">Shop MN2 tab</a> · <a href="/explorer/" style="color:#00d4ff;">Explorer</a> · <a href="/profile" style="color:#00d4ff;">Profile</a></p>
+                <div style="margin-top:14px;padding:12px;border-radius:10px;background:rgba(0,0,0,0.2);">
+                    <strong style="color:#00d4ff;">Preferences</strong>
+                    <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:0.85rem;cursor:pointer;">
+                        <input type="checkbox" id="wh-activity-sounds"> Play sounds for MN2 rewards &amp; wins
+                    </label>
+                </div>
+                <div style="margin-top:14px;padding:12px;border-radius:10px;background:rgba(0,0,0,0.2);">
+                    <strong style="color:#00d4ff;">Deposit scanner</strong>
+                    <p style="font-size:0.78rem;opacity:0.8;margin:6px 0;">Trigger an on-chain deposit scan now (normally runs every 5 min via cron).</p>
+                    <button type="button" class="wh-btn" id="wh-scan-deposits-btn">Scan for deposits</button>
+                    <p id="wh-scan-msg" class="wh-msg" aria-live="polite"></p>
+                </div>
+                <p style="margin-top:14px;font-size:0.82rem;"><a href="/shop#shop-mn2" style="color:#00ff88;">Shop MN2 tab</a> · <a href="/explorer/" style="color:#00d4ff;">Explorer</a> · <a href="/profile" style="color:#00d4ff;">Profile</a></p>
             </div>
         </section>
     </main>
@@ -210,15 +425,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
     <script src="/static/js/user-identification.js?v=20260122020000"></script>
-    <script src="/static/js/profile-mn2-wallet.js?v=20260916-breakdown"></script>
+    <script src="/static/js/profile-mn2-wallet.js?v=20260916-hub"></script>
     <script src="/static/js/mn2-wallet-extras.js?v=20260916"></script>
+    <script src="/static/js/mn2-wallet-hub-panels.js?v=20260916"></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
+    <script src="/static/js/mn2-onramp.js?v=20260614d" defer></script>
+    <script src="/static/js/mn2-p2p.js?v=20260614d" defer></script>
+    <script src="/static/js/mn2-internal-market.js?v=20260617" defer></script>
+    <script src="/static/js/mn2-staking.js?v=20260603a" defer></script>
+    <script src="/static/js/mn2-staking-agents.js?v=20260616a" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20260916-hosting" defer></script>
     <script src="/static/js/mn2-activity-stream.js?v=20260916" defer></script>
     <script>
     (function () {
       function tabFromHash() {
         var h = (location.hash || '').replace(/^#/, '').toLowerCase();
-        var allowed = ['overview', 'deposit', 'withdraw', 'trusted', 'transactions', 'security', 'settings'];
+        var params = new URLSearchParams(location.search);
+        var fromQuery = (params.get('wallet_tab') || '').toLowerCase();
+        var allowed = ['overview', 'deposit', 'withdraw', 'trusted', 'transactions', 'stake', 'trade', 'hosting', 'security', 'settings'];
+        if (fromQuery && allowed.indexOf(fromQuery) >= 0) return fromQuery;
         return allowed.indexOf(h) >= 0 ? h : 'overview';
       }
       document.addEventListener('DOMContentLoaded', function () {
