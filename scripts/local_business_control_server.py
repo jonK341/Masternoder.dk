@@ -33,8 +33,15 @@ _LOCK = threading.Lock()
 
 CMD_CATALOG: List[Dict[str, Any]] = [
     {
+        "id": "unified_trading",
+        "title": "Unified trading (all bots)",
+        "script": "scripts/run_unified_trading_daemon.cmd",
+        "args_default": [],
+        "log": "logs/local_unified_trading.log",
+    },
+    {
         "id": "grid_bot",
-        "title": "Grid bot daemon",
+        "title": "Grid only (legacy)",
         "script": "scripts/run_grid_bot_daemon.cmd",
         "args_default": ["--interval", "30"],
         "log": "logs/local_grid_bot_daemon.log",
@@ -48,8 +55,8 @@ CMD_CATALOG: List[Dict[str, Any]] = [
     },
     {
         "id": "profit_max",
-        "title": "ALL profit (max profile)",
-        "script": "scripts/run_all_profit_daemons.cmd",
+        "title": "ALL profit (max) — alias unified",
+        "script": "scripts/run_unified_trading_daemon.cmd",
         "args_default": [],
         "log": "logs/local_all_profit_max.log",
     },
