@@ -1569,8 +1569,33 @@
                 '<strong>' + mediaPct + '%</strong> · ' + (data.media_generated_count || 0) + '/' + (data.media_total_drops || 0) + ' generated · lazy ' + lazy + '</div>' +
                 '<div><div>Drops</div><strong>' + (data.total_drops || 0) + '</strong> indexed · ' + (data.claimed_drops || 0) + ' claimed · tip #' + (data.last_height || '—') +
                 (milestone ? '<br><span style="opacity:0.85;">Milestone block ' + milestone + '</span>' : '') +
-                '<br><button type="button" id="shop-block-gallery-media-batch" class="shop-hub-link" style="margin-top:8px;border:none;background:none;cursor:pointer;padding:0;">Generate next media batch →</button></div>' +
+                '<br><button type="button" id="shop-block-gallery-genesis-batch" class="shop-hub-link" style="margin-top:8px;margin-right:12px;border:none;background:none;cursor:pointer;padding:0;">Run genesis index batch →</button>' +
+                '<button type="button" id="shop-block-gallery-media-batch" class="shop-hub-link" style="margin-top:8px;border:none;background:none;cursor:pointer;padding:0;">Generate next media batch →</button></div>' +
                 '</div>';
+            const genesisBtn = document.getElementById('shop-block-gallery-genesis-batch');
+            if (genesisBtn) {
+                genesisBtn.addEventListener('click', async () => {
+                    genesisBtn.disabled = true;
+                    genesisBtn.textContent = 'Indexing…';
+                    try {
+                        const rr = await fetch(`${BASE_URL}/api/shop/block-mint/backfill/genesis`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ batches: 3 })
+                        });
+                        const rd = await rr.json();
+                        genesisBtn.textContent = rd.success
+                            ? `Indexed +${rd.blocks_added || 0} blocks · ${rd.genesis_index_percent || 0}%`
+                            : (rd.error || 'Genesis batch failed');
+                        loadBlockGalleryOps();
+                        loadBlockGallery();
+                    } catch (e) {
+                        genesisBtn.textContent = 'Genesis batch failed';
+                    } finally {
+                        setTimeout(() => { genesisBtn.disabled = false; genesisBtn.textContent = 'Run genesis index batch →'; }, 4000);
+                    }
+                });
+            }
             const batchBtn = document.getElementById('shop-block-gallery-media-batch');
             if (batchBtn) {
                 batchBtn.addEventListener('click', async () => {

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generated_at": "2026-09-16",
-  "total": 259,
+  "total": 261,
   "categories": [
     "speed",
     "network_visibility",
@@ -3120,6 +3120,30 @@
         "type": "mn2_spent",
         "value": 2475,
         "label": "Spend 2475 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-260",
+      "name": "Genesis auto-index worker",
+      "effect": "Block 1M genesis backfill runs in batches from block #1 with prewarm within 5000 blocks of milestone.",
+      "category": "trophies",
+      "tier": "legendary",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2500,
+        "label": "Spend 2500 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-261",
+      "name": "PayPal dispute clawback",
+      "effect": "PayPal dispute webhook auto-revokes trophy editions, cancels listings, and releases block claims.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2525,
+        "label": "Spend 2525 MN2 in wallet actions"
       }
     }
   ]

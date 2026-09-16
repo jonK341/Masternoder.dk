@@ -2268,6 +2268,20 @@ def shop_block_mint_backfill_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@shop_bp.route('/api/shop/block-mint/backfill/genesis', methods=['POST'])
+def shop_block_mint_backfill_genesis():
+    """Ops: run genesis block indexing batches (auto-worker at block 1M)."""
+    try:
+        data = request.get_json() or {}
+        max_batches = min(int(data.get('batches') or data.get('max_batches') or 5), 50)
+        force = str(data.get('force') or '').lower() in ('1', 'true', 'yes')
+        from backend.services.block_mint_service import run_genesis_backfill_batches
+
+        return jsonify(run_genesis_backfill_batches(max_batches=max_batches, force_milestone=force)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/block-mint/backfill/media', methods=['POST'])
 def shop_block_mint_backfill_media():
     """Ops: batch-generate missing block trophy GIFs (lazy worker)."""

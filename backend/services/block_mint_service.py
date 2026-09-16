@@ -180,15 +180,27 @@ def sync_block_height() -> Dict[str, Any]:
     drops = doc.setdefault("drops", {})
     last = int(doc.get("last_height") or 0)
 
+    prewarm = max(0, int(cfg.get("genesis_prewarm_within_blocks") or 0))
+    genesis_threshold = milestone
+    if prewarm > 0 and milestone > prewarm:
+        genesis_threshold = milestone - prewarm
+    force_genesis = bool(cfg.get("genesis_backfill_force", False))
+
     genesis_mode = (
-        milestone > 0
-        and height >= milestone
-        and cfg.get("backfill_from_genesis_at_milestone", True)
+        cfg.get("backfill_from_genesis_at_milestone", True)
+        and (
+            force_genesis
+            or (
+                milestone > 0
+                and height >= genesis_threshold
+            )
+        )
     )
     if genesis_mode and not doc.get("genesis_backfill_complete"):
         if not doc.get("genesis_backfill_started"):
             doc["genesis_backfill_started"] = True
             doc["genesis_backfill_cursor"] = genesis
+        if milestone > 0 and height >= milestone:
             try:
                 from backend.services.trophy_milestone_announcement_service import post_block_million_announcement
 
@@ -249,6 +261,89 @@ def sync_block_height() -> Dict[str, Any]:
         "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),
         "genesis_backfill_cursor": doc.get("genesis_backfill_cursor"),
     }
+
+
+def run_genesis_backfill_batches(*, max_batches: int = 10, force_milestone: bool = False) -> Dict[str, Any]:
+    """Auto-worker: run multiple genesis sync batches until complete or limit reached."""
+    cfg = get_config()
+    batches_run = 0
+    total_added = 0
+    last_sync: Dict[str, Any] = {}
+
+    if force_milestone:
+        with _LOCK:
+            cfg_doc = _read_json(_CONFIG_PATH, {})
+            cfg_doc["genesis_backfill_force"] = True
+            _write_json(_CONFIG_PATH, cfg_doc)
+
+    while batches_run < max(1, int(max_batches or 10)):
+        sync = sync_block_height()
+        last_sync = sync
+        if not sync.get("success"):
+            break
+        batches_run += 1
+        total_added += len(sync.get("added") or [])
+        if sync.get("genesis_backfill_complete"):
+            break
+        if not sync.get("genesis_backfill"):
+            break
+
+    if force_milestone:
+        with _LOCK:
+            cfg_doc = _read_json(_CONFIG_PATH, {})
+            cfg_doc.pop("genesis_backfill_force", None)
+            _write_json(_CONFIG_PATH, cfg_doc)
+
+    status = get_genesis_backfill_status()
+    return {
+        "success": True,
+        "batches_run": batches_run,
+        "blocks_added": total_added,
+        "genesis_backfill_complete": bool(status.get("genesis_backfill_complete")),
+        "last_sync": last_sync,
+        **{k: status[k] for k in ("genesis_backfill_cursor", "genesis_index_percent", "total_drops", "last_height") if k in status},
+    }
+
+
+def release_block_claim_for_edition(
+    item_id: str,
+    *,
+    edition_key: str = "",
+    user_id: str = "",
+) -> Dict[str, Any]:
+    """Clear manifest claim when a block trophy edition is revoked (PayPal clawback)."""
+    iid = (item_id or "").strip()
+    if not iid.startswith("block-"):
+        return {"skipped": True}
+    try:
+        h = int(iid.split("-", 1)[1])
+    except (IndexError, ValueError):
+        return {"success": False, "error": "invalid_block_item"}
+
+    doc = _read_json(_MANIFEST_PATH, {"drops": {}})
+    drops = doc.get("drops") or {}
+    key = str(h)
+    row = drops.get(key)
+    if not isinstance(row, dict):
+        return {"success": False, "error": "block_not_in_manifest"}
+    if user_id and (row.get("claimed_by") or "") != user_id:
+        return {"success": False, "error": "claim_owner_mismatch"}
+    if edition_key and row.get("edition_key") and row.get("edition_key") != edition_key:
+        return {"success": False, "error": "edition_key_mismatch"}
+
+    row["claimed_by"] = None
+    row["claimed_at"] = None
+    row["edition_no"] = None
+    row["edition_key"] = None
+    row["proof_hash"] = None
+    row["claimed_via"] = None
+    row["released_at"] = _iso()
+    row["release_reason"] = "paypal_clawback"
+    drops[key] = row
+    doc["drops"] = drops
+    doc["updated_at"] = _iso()
+    _write_json(_MANIFEST_PATH, doc)
+    return {"success": True, "height": h, "item_id": iid}
 
 
 def run_media_backfill_batch(*, from_height: int = 1, batch: int = 50, force: bool = False) -> Dict[str, Any]:
@@ -325,6 +420,12 @@ def get_genesis_backfill_status() -> Dict[str, Any]:
         "success": True,
         "milestone_block": milestone,
         "genesis_block": genesis,
+        "genesis_prewarm_within_blocks": max(0, int(cfg.get("genesis_prewarm_within_blocks") or 0)),
+        "genesis_active_at_height": (
+            max(1, milestone - max(0, int(cfg.get("genesis_prewarm_within_blocks") or 0)))
+            if milestone > 0
+            else None
+        ),
         "lazy_media_generation": bool(cfg.get("lazy_media_generation", True)),
         "genesis_backfill_started": bool(doc.get("genesis_backfill_started")),
         "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),

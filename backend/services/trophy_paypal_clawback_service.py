@@ -74,7 +74,38 @@ def clawback_trophy_edition(
 
     capture["clawed_back"] = True
     capture["clawback_reason"] = reason
+    capture["clawed_back_at"] = _iso()
     doc["captures"][ref] = capture
     _write_json(_CAPTURES_PATH, doc)
+
+    try:
+        from backend.services.trophy_fulfillment_service import release_edition_listing
+
+        eno = int(edition_no or capture.get("edition_no") or 0)
+        if eno:
+            release_edition_listing(uid, iid, eno)
+    except Exception:
+        pass
+
+    try:
+        if iid.startswith("block-"):
+            from backend.services.block_mint_service import release_block_claim_for_edition
+
+            release_block_claim_for_edition(iid, edition_key=edition_key, user_id=uid)
+    except Exception:
+        pass
+
+    try:
+        from backend.services.user_engagement import add_notification
+
+        add_notification(
+            uid,
+            "Trophy revoked",
+            f"PayPal dispute reversed trophy edition {edition_key}.",
+            category="trophy_clawback",
+            metadata={"edition_key": edition_key, "capture_id": cid, "reason": reason},
+        )
+    except Exception:
+        pass
 
     return {"success": True, "user_id": uid, "edition_key": edition_key, "reason": reason}

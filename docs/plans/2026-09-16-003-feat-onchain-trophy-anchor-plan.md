@@ -89,6 +89,18 @@ Global `data/trophy_provenance.jsonl` events: `minted`, `peer_transfer`, `auctio
 - `POST /api/shop/trophies/equip-profile` — feature owned edition on `/profile` header
 - Wallet Trophies tab **Feature** button (WR-UPG-258)
 
+### Genesis auto-backfill (WR-UPG-260)
+
+- Prewarm within 5,000 blocks of milestone (`genesis_prewarm_within_blocks`)
+- `run_genesis_backfill_batches()` + `POST /api/shop/block-mint/backfill/genesis`
+- Cron: `scripts/backfill_block_genesis.py`
+
+### PayPal dispute clawback webhook (WR-UPG-261)
+
+- `POST /api/paypal/trophy-webhook` — dispute/refund events revoke editions
+- `trophy_paypal_webhook_service.py` with idempotent event log
+- Cancels auction listings + releases block manifest claims on clawback
+
 ## L3 — Deferred
 
 Requires MN2 daemon: unique asset index, transfer RPC, wallet consensus. No user-facing “NFT” label until L3.

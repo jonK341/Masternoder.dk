@@ -346,3 +346,21 @@ def paypal_capture():
         pass
 
     return jsonify(payload), 500 if fulfillment_error else 200
+
+
+@paypal_bp.route("/api/paypal/trophy-webhook", methods=["POST"])
+def paypal_trophy_webhook():
+    """PayPal webhook: revoke trophy editions on dispute/chargeback (plan 001 Q6)."""
+    try:
+        body = request.get_json(silent=True) or {}
+        from backend.services.paypal_webhook_service import verify_paypal_webhook_signature
+
+        if not verify_paypal_webhook_signature(request.headers, body):
+            return jsonify({"success": False, "error": "invalid_signature"}), 401
+
+        from backend.services.trophy_paypal_webhook_service import process_trophy_paypal_webhook
+
+        payload, status = process_trophy_paypal_webhook(body)
+        return jsonify(payload), status
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
