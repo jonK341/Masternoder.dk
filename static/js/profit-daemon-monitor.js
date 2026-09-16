@@ -140,19 +140,69 @@
         }
     }
 
+    let rentalsCache = [];
+    let rentalTierFilter = 'all';
+
+    function rentalTierFor(row) {
+        const tax = window.ShopTaxonomy;
+        if (tax && tax.marketplaceTierFor) {
+            return tax.marketplaceTierFor({
+                tier: row.tier,
+                price_mn2: row.price_mn2,
+                name: row.name,
+            });
+        }
+        return 'starter';
+    }
+
+    function renderRentals(rows) {
+        const el = $('pdm-rentals');
+        if (!el) return;
+        rentalsCache = rows || [];
+        const tax = window.ShopTaxonomy;
+        let nav = $('pdm-rental-tier-nav');
+        if (!nav && el.parentNode) {
+            nav = document.createElement('nav');
+            nav.id = 'pdm-rental-tier-nav';
+            nav.className = 'shop-subnav';
+            nav.setAttribute('aria-label', 'Daemon rental tiers');
+            el.parentNode.insertBefore(nav, el);
+        }
+        if (nav && tax) {
+            tax.renderChips(
+                nav,
+                tax.countedTabs(tax.MARKETPLACE_TIERS, rentalsCache, rentalTierFor),
+                rentalTierFilter,
+                (id) => {
+                    rentalTierFilter = id;
+                    renderRentals(rentalsCache);
+                }
+            );
+        }
+        const filtered = rentalTierFilter === 'all'
+            ? rentalsCache
+            : rentalsCache.filter((r) => rentalTierFor(r) === rentalTierFilter);
+        if (!filtered.length) {
+            el.innerHTML = rentalsCache.length
+                ? '<p class="pdm-muted">No rentals in this tier.</p>'
+                : '<p class="pdm-muted">No daemon rentals available.</p>';
+            return;
+        }
+        el.innerHTML = filtered.map((r) =>
+            '<div class="pdm-rent-card"><strong>' + (r.name || r.id) + '</strong>' +
+            '<p class="pdm-muted">' + (r.description || '') + '</p>' +
+            '<p>' + (r.price_mn2 || '?') + ' MN2 · ' + (r.days || '?') + ' days · reward ' +
+            (r.completion_reward_mn2 || 0) + ' MN2</p></div>'
+        ).join('');
+    }
+
     async function loadRentals() {
         const el = $('pdm-rentals');
         if (!el) return;
         try {
             const res = await fetch(BASE + '/api/profit-daemon/rentals');
             const data = await res.json();
-            const rows = data.rentals || [];
-            el.innerHTML = rows.map((r) =>
-                '<div class="pdm-rent-card"><strong>' + (r.name || r.id) + '</strong>' +
-                '<p class="pdm-muted">' + (r.description || '') + '</p>' +
-                '<p>' + (r.price_mn2 || '?') + ' MN2 · ' + (r.days || '?') + ' days · reward ' +
-                (r.completion_reward_mn2 || 0) + ' MN2</p></div>'
-            ).join('');
+            renderRentals(data.rentals || []);
         } catch (_) {
             el.textContent = 'Rentals unavailable.';
         }

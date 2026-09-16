@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 AGENT_COUNT = 10
 AGENT_PREFIX = "p2p_agent_"
 TARGET_OPEN_LISTINGS = 10
-MIN_AGENT_MN2 = 250.0
+MIN_AGENT_MN2 = 500.0
 LISTING_MN2_CHOICES = (15.0, 20.0, 25.0, 30.0, 40.0, 50.0)
 TIER_TARGETS = {
     "budget": 0.05,

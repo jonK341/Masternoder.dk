@@ -127,6 +127,14 @@
     { id: 'other', label: 'Other' },
   ];
 
+  var STAKING_LONGEVITY_GROUPS = [
+    { id: 'all', label: 'All stakers' },
+    { id: 'bronze', label: 'Bronze' },
+    { id: 'silver', label: 'Silver' },
+    { id: 'gold', label: 'Gold' },
+    { id: 'platinum', label: 'Platinum' },
+  ];
+
   var PARENT_BY_CAT = {};
   CATALOG_PARENTS.forEach(function (p) {
     (p.categories || []).forEach(function (c) {
@@ -315,6 +323,15 @@
     return 'premium';
   }
 
+  function stakingLongevityGroupFor(row) {
+    row = row || {};
+    var tier = String(row.longevity_tier || row.tier || '').toLowerCase();
+    if (tier === 'bronze' || tier === 'silver' || tier === 'gold' || tier === 'platinum') {
+      return tier;
+    }
+    return 'bronze';
+  }
+
   function digitalDownloadSubcatFor(row) {
     row = row || {};
     var blob = [row.id, row.name, row.category, row.kind].map(function (v) {
@@ -424,6 +441,7 @@
     RENTAL_GROUPS: RENTAL_GROUPS,
     P2P_PRICE_GROUPS: P2P_PRICE_GROUPS,
     DIGITAL_DOWNLOAD_SUBCATS: DIGITAL_DOWNLOAD_SUBCATS,
+    STAKING_LONGEVITY_GROUPS: STAKING_LONGEVITY_GROUPS,
     parentForCategory: parentForCategory,
     casinoParentFor: casinoParentFor,
     exchangeParentFor: exchangeParentFor,
@@ -436,6 +454,7 @@
     rentalGroupFor: rentalGroupFor,
     setP2pCorridor: setP2pCorridor,
     p2pPriceGroupFor: p2pPriceGroupFor,
+    stakingLongevityGroupFor: stakingLongevityGroupFor,
     digitalDownloadSubcatFor: digitalDownloadSubcatFor,
     classify: classify,
     enrich: enrich,

@@ -5,22 +5,51 @@
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
   function q(id) { return document.getElementById(id); }
 
-  function render(data) {
-    if (!data || !data.success) return;
-    var a = data.aggregates || {};
-    q('t-total').textContent = fmt(a.total_staked, 2) + ' MN2';
-    q('t-stakers').textContent = a.active_stakers || 0;
-    q('t-rigs').textContent = a.active_rigs || 0;
-    q('t-apr').textContent = fmt(a.pool_apr_percent, 2) + '%';
-    q('t-paid').textContent = fmt(a.rewards_paid_lifetime_mn2, 4) + ' MN2';
-    q('t-reserve').textContent = fmt(a.reserve_mn2, 2) + ' MN2';
-    q('t-yield24').textContent = fmt(a.realized_yield_24h_mn2, 6) + ' MN2';
-    q('t-paid24').textContent = fmt(a.rewards_paid_24h_mn2, 6) + ' MN2';
+  var stakingProcessesCache = [];
+  var stakingTierFilter = 'all';
 
+  function _stakingTierFor(p) {
+    var tax = window.ShopTaxonomy;
+    return tax && tax.stakingLongevityGroupFor
+      ? tax.stakingLongevityGroupFor(p)
+      : String(p.longevity_tier || 'bronze').toLowerCase();
+  }
+
+  function _renderStakingTable(procs) {
     var body = q('sm-body');
-    var procs = data.processes || [];
-    if (!procs.length) { body.innerHTML = '<tr><td colspan="8">No active stakers yet.</td></tr>'; return; }
-    body.innerHTML = procs.map(function (p) {
+    if (!body) return;
+    stakingProcessesCache = procs || [];
+    var tax = window.ShopTaxonomy;
+    var table = body.closest('table');
+    var nav = q('staking-tier-subnav');
+    if (!nav && table && table.parentNode) {
+      nav = document.createElement('nav');
+      nav.id = 'staking-tier-subnav';
+      nav.className = 'shop-subnav';
+      nav.setAttribute('aria-label', 'Staking longevity tiers');
+      table.parentNode.insertBefore(nav, table);
+    }
+    if (nav && tax) {
+      tax.renderChips(
+        nav,
+        tax.countedTabs(tax.STAKING_LONGEVITY_GROUPS, stakingProcessesCache, _stakingTierFor),
+        stakingTierFilter,
+        function (id) {
+          stakingTierFilter = id;
+          _renderStakingTable(stakingProcessesCache);
+        }
+      );
+    }
+    var filtered = stakingTierFilter === 'all'
+      ? stakingProcessesCache
+      : stakingProcessesCache.filter(function (p) { return _stakingTierFor(p) === stakingTierFilter; });
+    if (!filtered.length) {
+      body.innerHTML = stakingProcessesCache.length
+        ? '<tr><td colspan="8">No stakers in this tier.</td></tr>'
+        : '<tr><td colspan="8">No active stakers yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = filtered.map(function (p) {
       var rig = p.rig_active
         ? '<span class="pill on">on</span>'
         : '<span class="pill off">off</span>';
@@ -35,6 +64,20 @@
         '<td>' + fmt(p.total_earned, 6) + '</td>' +
         '</tr>';
     }).join('');
+  }
+
+  function render(data) {
+    if (!data || !data.success) return;
+    var a = data.aggregates || {};
+    q('t-total').textContent = fmt(a.total_staked, 2) + ' MN2';
+    q('t-stakers').textContent = a.active_stakers || 0;
+    q('t-rigs').textContent = a.active_rigs || 0;
+    q('t-apr').textContent = fmt(a.pool_apr_percent, 2) + '%';
+    q('t-paid').textContent = fmt(a.rewards_paid_lifetime_mn2, 4) + ' MN2';
+    q('t-reserve').textContent = fmt(a.reserve_mn2, 2) + ' MN2';
+    q('t-yield24').textContent = fmt(a.realized_yield_24h_mn2, 6) + ' MN2';
+    q('t-paid24').textContent = fmt(a.rewards_paid_24h_mn2, 6) + ' MN2';
+    _renderStakingTable(data.processes || []);
   }
 
   function refresh() {

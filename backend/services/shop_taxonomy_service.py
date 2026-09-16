@@ -133,6 +133,14 @@ DIGITAL_DOWNLOAD_SUBCATS: List[Dict[str, str]] = [
     {"id": "other", "label": "Other"},
 ]
 
+STAKING_LONGEVITY_GROUPS: List[Dict[str, str]] = [
+    {"id": "all", "label": "All stakers"},
+    {"id": "bronze", "label": "Bronze"},
+    {"id": "silver", "label": "Silver"},
+    {"id": "gold", "label": "Gold"},
+    {"id": "platinum", "label": "Platinum"},
+]
+
 NAV_GROUPS: List[Dict[str, Any]] = [
     {"id": "all", "label": "All", "ids": []},
     {
@@ -375,6 +383,14 @@ def p2p_price_group_for(
     return "premium"
 
 
+def staking_longevity_group_for(row: Optional[Dict[str, Any]] = None) -> str:
+    item = row or {}
+    tier = str(item.get("longevity_tier") or item.get("tier") or "").strip().lower()
+    if tier in ("bronze", "silver", "gold", "platinum"):
+        return tier
+    return "bronze"
+
+
 def digital_download_subcat_for(row: Optional[Dict[str, Any]] = None) -> str:
     item = row or {}
     blob = " ".join(
@@ -440,4 +456,5 @@ def taxonomy_payload() -> Dict[str, Any]:
         "rental_groups": RENTAL_GROUPS,
         "p2p_price_groups": P2P_PRICE_GROUPS,
         "digital_download_subcats": DIGITAL_DOWNLOAD_SUBCATS,
+        "staking_longevity_groups": STAKING_LONGEVITY_GROUPS,
     }
