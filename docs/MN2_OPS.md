@@ -437,6 +437,8 @@ Trophies are **shop inventory editions**, not MN2 daemon NFTs. MN2 cannot mint u
 
 **Ledger events:** `trophy_edition_proof` (PayPal), `block_trophy_proof` (block claim), `trophy_transfer` (peer gift).
 
+**Chain anchor (L2, plan 003):** Editions queue `anchor_commitment` in `data/trophy_anchor_registry.json` — not on-chain mint. Ops: `POST /api/shop/trophies/anchor/process`. See `docs/plans/2026-09-16-003-feat-onchain-trophy-anchor-plan.md`.
+
 **Reconciliation:** Trophy MN2 spends use normal shop debit paths (`mn2_shop_purchase`, `block_trophy_claim`). PayPal trophy revenue is fiat — do not expect matching on-chain tx per edition.
 
 **Smoke:**

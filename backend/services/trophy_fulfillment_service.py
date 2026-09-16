@@ -436,6 +436,21 @@ def grant_platform_edition(
         return {"success": False, "error": f"inventory_failed: {exc}"}
 
     _append_edition_record(uid, edition)
+
+    try:
+        from backend.services.trophy_anchor_service import queue_edition_anchor
+
+        queue_edition_anchor(
+            user_id=uid,
+            item_id=iid,
+            edition_no=edition_no,
+            edition_key=edition_key,
+            proof_hash=proof_hash,
+            source=acquired_via,
+        )
+    except Exception:
+        pass
+
     return {
         "success": True,
         "edition_no": edition_no,
@@ -577,6 +592,20 @@ def fulfill_trophy_paypal(
             "edition": edition,
         },
     )
+
+    try:
+        from backend.services.trophy_anchor_service import queue_edition_anchor
+
+        queue_edition_anchor(
+            user_id=uid,
+            item_id=iid,
+            edition_no=edition_no,
+            edition_key=edition_key,
+            proof_hash=proof_hash,
+            source="paypal",
+        )
+    except Exception:
+        pass
 
     return {
         "success": True,

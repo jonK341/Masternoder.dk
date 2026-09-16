@@ -2122,6 +2122,34 @@ def shop_trophy_my_editions():
         return jsonify({'success': False, 'error': str(e), 'editions': []}), 500
 
 
+@shop_bp.route('/api/shop/trophies/anchor/status', methods=['GET'])
+def shop_trophy_anchor_status():
+    """Chain anchor status for a trophy edition (plan 003 L2 — not on-chain mint)."""
+    try:
+        edition_key = (request.args.get('edition_key') or '').strip()
+        from backend.services.trophy_anchor_service import get_anchor_status
+
+        result = get_anchor_status(edition_key)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/anchor/process', methods=['POST'])
+def shop_trophy_anchor_process():
+    """Ops: process pending trophy anchor queue (plan 003 A-U2)."""
+    try:
+        data = request.get_json() or {}
+        limit = min(int(data.get('limit') or 20), 100)
+        job_id = (data.get('job_id') or '').strip() or None
+        from backend.services.trophy_anchor_service import process_anchor_queue
+
+        return jsonify(process_anchor_queue(limit=limit, job_id=job_id)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/trophies/transfer', methods=['POST'])
 def shop_trophy_transfer():
     """Peer transfer of a specific trophy edition (plan 001 T-U2)."""
