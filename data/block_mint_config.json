@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "lookback_blocks": 5,
+  "base_price_usd": 2.99,
+  "floor_price_usd": 0.99,
+  "claim_methods": ["mn2", "paypal"],
+  "explorer_base_url": "/explorer?height="
+}

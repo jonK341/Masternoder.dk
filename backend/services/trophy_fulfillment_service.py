@@ -155,10 +155,16 @@ def _is_edition_held(edition: Dict[str, Any]) -> bool:
         return False
 
 
-def validate_edition_for_listing(user_id: str, item_id: str, edition_no: int) -> Dict[str, Any]:
-    """Ensure a specific trophy edition can be listed on the auction house."""
+def validate_edition_action(
+    user_id: str,
+    item_id: str,
+    edition_no: int,
+    action: str = "list",
+) -> Dict[str, Any]:
+    """Shared gate for listing, peer transfer, and other edition moves (plan 001 U6)."""
     uid = (user_id or "").strip()
     iid = (item_id or "").strip()
+    act = (action or "list").strip().lower()
     try:
         eno = int(edition_no)
     except (TypeError, ValueError):
@@ -171,10 +177,111 @@ def validate_edition_for_listing(user_id: str, item_id: str, edition_no: int) ->
     if _is_edition_held(edition):
         return {"success": False, "error": "edition_paypal_held", "hold_until": edition.get("hold_until")}
 
-    if edition.get("listed_listing_id"):
-        return {"success": False, "error": "edition_already_listed", "listed_listing_id": edition.get("listed_listing_id")}
+    if act in ("list", "transfer") and edition.get("listed_listing_id"):
+        return {
+            "success": False,
+            "error": "edition_already_listed",
+            "listed_listing_id": edition.get("listed_listing_id"),
+        }
 
-    return {"success": True, "edition": edition}
+    return {"success": True, "edition": edition, "action": act}
+
+
+def validate_edition_for_listing(user_id: str, item_id: str, edition_no: int) -> Dict[str, Any]:
+    """Ensure a specific trophy edition can be listed on the auction house."""
+    return validate_edition_action(user_id, item_id, edition_no, action="list")
+
+
+def validate_edition_for_transfer(user_id: str, item_id: str, edition_no: int) -> Dict[str, Any]:
+    """Ensure a specific trophy edition can be peer-transferred (plan 001 T-U2 / U6)."""
+    return validate_edition_action(user_id, item_id, edition_no, action="transfer")
+
+
+def transfer_edition_peer(
+    *,
+    sender_id: str,
+    recipient_id: str,
+    item_id: str,
+    edition_no: int,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Gift/trade a trophy edition to another profile (plan 001 T-U2)."""
+    sender = (sender_id or "").strip()
+    recipient = (recipient_id or "").strip()
+    iid = (item_id or "").strip()
+    if not sender or sender in ("default_user", "guest"):
+        return {"success": False, "error": "sender_not_authenticated"}
+    if not recipient or recipient in ("default_user", "guest"):
+        return {"success": False, "error": "recipient_required"}
+    if sender == recipient:
+        return {"success": False, "error": "cannot_transfer_to_self"}
+
+    check = validate_edition_for_transfer(sender, iid, edition_no)
+    if not check.get("success"):
+        return check
+
+    try:
+        eno = int(edition_no)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "invalid_edition_no"}
+
+    sender_path = _editions_file_path(sender)
+    sender_doc = _read_json(sender_path, {"editions": []})
+    sender_editions = sender_doc.setdefault("editions", [])
+    idx = _find_edition_index(sender_editions, iid, eno)
+    if idx is None:
+        return {"success": False, "error": "edition_not_found"}
+
+    edition = dict(sender_editions[idx])
+    transfer_event = {
+        "from_user_id": sender,
+        "to_user_id": recipient,
+        "transferred_at": _iso(),
+        "acquired_via": "peer_transfer",
+        "note": (note or "").strip() or None,
+    }
+    history = edition.get("transfer_history")
+    if not isinstance(history, list):
+        history = []
+    history.append(transfer_event)
+    edition["transfer_history"] = history[-20:]
+    edition["acquired_via"] = "peer_transfer"
+    edition["transferred_from"] = sender
+    edition["transferred_at"] = _iso()
+    edition.pop("listed_listing_id", None)
+    edition.pop("listed_at", None)
+
+    sender_editions.pop(idx)
+    sender_doc["updated_at"] = _iso()
+    if not _write_json(sender_path, sender_doc):
+        return {"success": False, "error": "sender_update_failed"}
+
+    buyer_path = _editions_file_path(recipient)
+    buyer_doc = _read_json(buyer_path, {"editions": []})
+    buyer_editions = buyer_doc.setdefault("editions", [])
+    buyer_editions.append(edition)
+    buyer_doc["updated_at"] = _iso()
+    if not _write_json(buyer_path, buyer_doc):
+        sender_editions.insert(idx, edition)
+        _write_json(sender_path, sender_doc)
+        return {"success": False, "error": "recipient_update_failed"}
+
+    try:
+        from backend.services.shop_db_service import add_to_inventory, reserve_inventory
+
+        reserve_inventory(sender, iid, 1)
+        add_to_inventory(recipient, iid, edition.get("item_name") or iid, 1)
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "edition": edition,
+        "edition_no": eno,
+        "edition_key": edition.get("edition_key"),
+        "sender_id": sender,
+        "recipient_id": recipient,
+    }
 
 
 def mark_edition_listed(user_id: str, item_id: str, edition_no: int, listing_id: str) -> bool:
@@ -278,6 +385,64 @@ def transfer_edition_to_buyer(
         return {"success": False, "error": "buyer_update_failed"}
 
     return {"success": True, "edition": edition, "edition_no": eno, "edition_key": edition.get("edition_key")}
+
+
+def grant_platform_edition(
+    user_id: str,
+    item_id: str,
+    item_name: str,
+    *,
+    acquired_via: str = "platform",
+    price_type: str = "mn2",
+    extra: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Grant a new trophy edition (block mint, ops grants, etc.)."""
+    uid = (user_id or "").strip()
+    iid = (item_id or "").strip()
+    if not uid or not iid:
+        return {"success": False, "error": "user_id and item_id required"}
+
+    edition_no = _next_edition_no(iid)
+    edition_key = _edition_key(iid, edition_no)
+    proof_hash = _proof_hash(uid, iid, edition_no, f"{acquired_via}:{edition_no}")
+    edition = {
+        "item_id": iid,
+        "item_name": item_name or iid,
+        "edition_no": edition_no,
+        "edition_key": edition_key,
+        "legacy_stack": False,
+        "acquired_via": acquired_via,
+        "price_type": price_type,
+        "proof_hash": proof_hash,
+        "on_chain_mint": False,
+        "granted_at": _iso(),
+    }
+    if extra:
+        edition.update(extra)
+
+    try:
+        from backend.services.shop_db_service import fulfill_shop_purchase
+
+        fulfill_shop_purchase(
+            user_id=uid,
+            item_id=iid,
+            item_name=edition["item_name"],
+            quantity=1,
+            price_type=price_type,
+            price_paid_coins=0,
+            price_paid_points=None,
+        )
+    except Exception as exc:
+        return {"success": False, "error": f"inventory_failed: {exc}"}
+
+    _append_edition_record(uid, edition)
+    return {
+        "success": True,
+        "edition_no": edition_no,
+        "edition_key": edition_key,
+        "edition": edition,
+        "proof_hash": proof_hash,
+    }
 
 
 def _append_edition_record(user_id: str, edition: Dict[str, Any]) -> None:

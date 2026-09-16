@@ -1537,6 +1537,15 @@ def _get_shop_items():
         if exchange_item.get("id") not in existing_ids:
             items.append(exchange_item)
             existing_ids.add(exchange_item.get("id"))
+    try:
+        from backend.services.block_mint_service import block_mint_shop_items
+
+        for block_item in block_mint_shop_items():
+            if block_item.get("id") not in existing_ids:
+                items.append(block_item)
+                existing_ids.add(block_item.get("id"))
+    except Exception:
+        pass
     # Add price_usd for items with coin price (enables direct PayPal purchase)
     for item in items or []:
         if item.get("id") in get_coin_pack_map() or item.get("id") in get_mn2_pack_map():
@@ -1572,6 +1581,10 @@ def _is_trophy_catalog_item(item: dict) -> bool:
     if "top25" in tags or "series_top25" in tags:
         return True
     if item.get("category") in ("top25", "trophies"):
+        return True
+    if item.get("series") == "block_mint" or "block_mint" in (item.get("tags") or []):
+        return True
+    if iid.startswith("block-") and iid[6:].isdigit():
         return True
     return False
 
@@ -2086,6 +2099,78 @@ def shop_trophies():
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'items': [], 'on_chain_mint': False}), 500
+
+
+@shop_bp.route('/api/shop/trophies/my-editions', methods=['GET'])
+def shop_trophy_my_editions():
+    """Edition rows for auction listing UI (plan 001 T-U3)."""
+    try:
+        user_id = (request.args.get('user_id') or '').strip() or _resolve_user_id()
+        item_id = (request.args.get('item_id') or '').strip() or None
+        if not user_id or user_id in ('default_user', 'guest'):
+            return jsonify({'success': True, 'guest': True, 'editions': []}), 200
+        from backend.services.trophy_fulfillment_service import get_trophy_editions
+
+        editions = get_trophy_editions(user_id, item_id)
+        return jsonify({'success': True, 'user_id': user_id, 'editions': editions}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'editions': []}), 500
+
+
+@shop_bp.route('/api/shop/trophies/transfer', methods=['POST'])
+def shop_trophy_transfer():
+    """Peer transfer of a specific trophy edition (plan 001 T-U2)."""
+    try:
+        data = request.get_json() or {}
+        sender_id = (data.get('user_id') or data.get('sender_id') or '').strip() or _resolve_user_id()
+        recipient_id = (data.get('recipient_id') or data.get('to_user_id') or '').strip()
+        item_id = (data.get('item_id') or '').strip()
+        edition_no = data.get('edition_no')
+        note = (data.get('note') or '').strip() or None
+        if edition_no is None:
+            return jsonify({'success': False, 'error': 'edition_no is required'}), 400
+        from backend.services.trophy_transfer_service import transfer_trophy_edition
+
+        result = transfer_trophy_edition(
+            sender_id,
+            recipient_id,
+            item_id,
+            int(edition_no),
+            note=note,
+        )
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/block-mint/drops', methods=['GET'])
+def shop_block_mint_drops():
+    """Latest block-height trophy drops (plan 001 BM-U1)."""
+    try:
+        limit = min(int(request.args.get('limit', 20)), 100)
+        from backend.services.block_mint_service import get_block_drops
+
+        return jsonify(get_block_drops(limit=limit)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'drops': []}), 500
+
+
+@shop_bp.route('/api/shop/block-mint/claim', methods=['POST'])
+def shop_block_mint_claim():
+    """Claim a block trophy with MN2 (plan 001 BM-U4)."""
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        height = int(data.get('height') or data.get('block_height') or 0)
+        method = (data.get('payment_method') or 'mn2').strip().lower()
+        from backend.services.block_mint_service import claim_block_trophy
+
+        result = claim_block_trophy(user_id, height, payment_method=method)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @shop_bp.route('/api/shop/auction/listings', methods=['GET'])

@@ -91,6 +91,14 @@ def _public_listing(row: Dict[str, Any]) -> Dict[str, Any]:
         out["edition_key"] = row.get("edition_key")
     if row.get("serial_key"):
         out["serial_key"] = row.get("serial_key")
+    try:
+        from backend.services.trophy_fulfillment_service import is_trophy_item
+
+        iid = str(row.get("item_id") or "")
+        if is_trophy_item(iid):
+            out["kind"] = "trophy"
+    except Exception:
+        pass
     return out
 
 

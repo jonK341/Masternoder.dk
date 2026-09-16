@@ -74,7 +74,7 @@ def _expand_editions(
                     "sound_url": media.get("sound_url"),
                     "trade_actions": {
                         "auction_list": "/shop?tab=auction",
-                        "peer_transfer": None,
+                        "peer_transfer": "/api/shop/trophies/transfer",
                         "shop_detail": f"/shop?tab=trophies&highlight={item_id}",
                     },
                 }
@@ -102,7 +102,7 @@ def _expand_editions(
                 "sound_url": media.get("sound_url"),
                 "trade_actions": {
                     "auction_list": "/shop?tab=auction",
-                    "peer_transfer": None,
+                    "peer_transfer": "/api/shop/trophies/transfer",
                     "shop_detail": f"/shop?tab=trophies&highlight={item_id}",
                 },
             }

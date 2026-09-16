@@ -1,0 +1,4 @@
+{
+  "max_transfers_per_day": 10,
+  "require_recipient_exists": false
+}

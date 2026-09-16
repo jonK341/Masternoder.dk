@@ -66,6 +66,15 @@ def wallet_v2_trophies():
     return jsonify(build_wallet_trophies(user_id, series=series)), 200
 
 
+@wallet_v2_bp.route("/api/wallet/v2/trophy-monitor/4d", methods=["GET"])
+def wallet_v2_trophy_monitor_4d():
+    """4D Trophy Monitor holodeck payload (plan 002 WR-G1)."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    from backend.services.wallet_v2_trophy_monitor_service import build_4d_trophy_monitor
+
+    return jsonify(build_4d_trophy_monitor(user_id)), 200
+
+
 @wallet_v2_bp.route("/api/wallet/v2/discord/status", methods=["GET"])
 def wallet_v2_discord_status():
     """Discord link state for wallet Settings panel."""
