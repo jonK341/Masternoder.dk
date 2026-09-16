@@ -1124,7 +1124,7 @@
         let mn2HostingCheckoutConfig = null;
         let useShopV3 = true;  // From GET /api/shop/config
 
-        let shopUiVersion = '9.3.0';
+        let shopUiVersion = '9.4.0';
 
         /**
          * Shop V.9: local shadow backup + merge with API so profile/shop stay useful if the server
@@ -1414,11 +1414,52 @@
             }
         }
 
+        function trophyShowPriceDebug() {
+            return location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+                || new URLSearchParams(location.search).has('debug');
+        }
+
+        function trophyPriceFactorsTitle(factors) {
+            if (!factors || !trophyShowPriceDebug()) return '';
+            const parts = [
+                'demand x' + (factors.demand_multiplier ?? 1),
+                'popularity x' + (factors.popularity_factor ?? 1),
+                'sales_7d=' + (factors.sales_7d ?? 0),
+                'owners=' + (factors.global_owners ?? 0),
+            ];
+            return parts.join(' · ');
+        }
+
         function renderTrophyCard(item) {
+            const factors = item.price_factors || {};
             const priceUsd = item.effective_price_usd != null ? item.effective_price_usd : item.price_usd;
-            const priceCoins = typeof item.price === 'number' ? item.price : 0;
+            const baseUsd = item.base_price_usd != null ? item.base_price_usd : null;
+            const priceCoins = item.effective_price_coins != null
+                ? Number(item.effective_price_coins)
+                : (typeof item.price === 'number' ? item.price : 0);
             const priceMn2 = coinsPerMn2 > 0 && priceCoins > 0 ? (priceCoins / coinsPerMn2) : 0;
+            const trending = Number(factors.demand_multiplier || 1) > 1.05;
             const owned = item.owned ? '<span style="display:inline-block;padding:2px 8px;border:1px solid var(--shop-accent,#00e5a0);color:var(--shop-accent,#00e5a0);font-size:0.7rem;margin-bottom:6px;border-radius:2px;">Owned</span>' : '';
+            const trendingBadge = trending
+                ? '<span style="display:inline-block;padding:2px 8px;border:1px solid rgba(255,120,0,0.6);color:#ffb347;font-size:0.7rem;margin-left:6px;border-radius:2px;">Trending</span>'
+                : '';
+            const priceTitle = trophyPriceFactorsTitle(factors);
+            const priceLine = baseUsd != null && priceUsd != null && Number(baseUsd) !== Number(priceUsd)
+                ? `<div class="shop-trophy-price item-price" style="text-align:left;margin:8px 0;" title="${shopEscape(priceTitle)}">
+                    <span style="text-decoration:line-through;color:var(--text-secondary);font-size:0.85rem;">$${Number(baseUsd).toFixed(2)}</span>
+                    <strong>$${Number(priceUsd).toFixed(2)}</strong> USD
+                    ${trendingBadge}
+                   </div>`
+                : `<div class="shop-trophy-price item-price" style="text-align:left;margin:8px 0;" title="${shopEscape(priceTitle)}">$${priceUsd != null ? Number(priceUsd).toFixed(2) : '—'} USD${trendingBadge}</div>`;
+            const coinMn2Line = (priceCoins > 0 || priceMn2 > 0)
+                ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">${priceCoins > 0 ? priceCoins.toLocaleString() + ' 🪙' : ''}${priceCoins > 0 && priceMn2 > 0 ? ' · ' : ''}${priceMn2 > 0 ? priceMn2.toFixed(4) + ' MN2' : ''}</div>`
+                : '';
+            const img = item.image_url || item.gif_url
+                ? `<img src="${shopEscape(item.image_url || item.gif_url)}" alt="" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" loading="lazy" />`
+                : '';
+            const explorer = item.explorer_url
+                ? `<a href="${shopEscape(item.explorer_url)}" class="shop-hub-link" style="font-size:0.78rem;">Block explorer →</a>`
+                : '';
             const payPalBtn = (priceUsd != null && priceUsd > 0)
                 ? `<button type="button" class="btn-purchase btn-paypal-item" data-item-id="${shopEscape(item.id)}" data-amount="${priceUsd}" data-name="${shopEscape(item.name || item.id)}" style="background:linear-gradient(135deg,#0070ba,#1546a0);">
                     <i class="fab fa-paypal"></i> Pay $${Number(priceUsd).toFixed(2)}
@@ -1432,11 +1473,14 @@
                 : '';
             return `<article class="shop-item shop-trophy-card" style="text-align:left;border:1px solid rgba(255,215,0,0.35);">
                 ${owned}
+                ${img}
                 <div class="item-icon">${item.icon || '🏆'}</div>
                 <div class="item-name">${shopEscape(item.name || item.id)}</div>
                 <div class="shop-trophy-edition">${shopEscape(item.serial_key || item.id)}</div>
-                <div class="shop-trophy-price item-price" style="text-align:left;margin:8px 0;">$${priceUsd != null ? Number(priceUsd).toFixed(2) : '—'} USD</div>
+                ${priceLine}
+                ${coinMn2Line}
                 <div style="font-size:0.82rem;color:var(--text-secondary);min-height:40px;margin-bottom:8px;">${shopEscape(item.description || '')}</div>
+                ${explorer}
                 <div class="shop-trophy-paypal-first">${payPalBtn}${coinBtn}${mn2Btn}</div>
             </article>`;
         }

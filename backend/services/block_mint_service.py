@@ -141,6 +141,12 @@ def sync_block_height() -> Dict[str, Any]:
                 "claimed_at": None,
             }
             added.append(h)
+            try:
+                from backend.services.block_trophy_media_service import ensure_block_media
+
+                ensure_block_media(h)
+            except Exception:
+                pass
     doc["last_height"] = height
     doc["updated_at"] = _iso()
     _write_json(_MANIFEST_PATH, doc)

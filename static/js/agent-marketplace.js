@@ -540,6 +540,11 @@
 
   var CEX_TROPHY_SERIES = "";
 
+  function cexTrophyDebug() {
+    return location.hostname === "localhost" || location.hostname === "127.0.0.1"
+      || (location.search || "").indexOf("debug") >= 0;
+  }
+
   function renderTrophyCatalog(data) {
     var c = $("cex-trophy-catalog");
     if (!c) return;
@@ -549,14 +554,28 @@
       return;
     }
     c.innerHTML = items.map(function (it) {
-      var price = it.effective_price_usd != null ? ("$" + Number(it.effective_price_usd).toFixed(2)) : "—";
-      var img = it.image_url ? ('<img src="' + it.image_url + '" alt="" width="56" height="56" style="border-radius:8px;object-fit:cover;" />') : "🏆";
-      var trending = (it.price_factors && it.price_factors.demand_multiplier > 1.05)
+      var usd = it.effective_price_usd != null ? Number(it.effective_price_usd) : null;
+      var base = it.base_price_usd != null ? Number(it.base_price_usd) : null;
+      var coins = it.effective_price_coins != null ? Number(it.effective_price_coins) : (it.price || 0);
+      var mn2 = coins > 0 ? (coins / 100).toFixed(4) : "—";
+      var price = usd != null ? ("$" + usd.toFixed(2)) : "—";
+      if (base != null && usd != null && base !== usd) {
+        price = '<s style="opacity:0.65">$' + base.toFixed(2) + '</s> $' + usd.toFixed(2);
+      }
+      var img = it.image_url || it.gif_url
+        ? ('<img src="' + (it.image_url || it.gif_url) + '" alt="" width="56" height="56" style="border-radius:8px;object-fit:cover;" />')
+        : "🏆";
+      var factors = it.price_factors || {};
+      var trending = factors.demand_multiplier > 1.05
         ? '<span class="cex-badge">Trending</span> ' : "";
-      return '<div class="cex-shop-card">' + img +
+      var title = cexTrophyDebug()
+        ? (' title="demand x' + (factors.demand_multiplier || 1) + ' · sales_7d=' + (factors.sales_7d || 0) + '"')
+        : "";
+      return '<div class="cex-shop-card"' + title + '>' + img +
         "<h4>" + trending + (it.name || it.id) + "</h4>" +
         '<p class="cex-muted">Platform trophy · not on-chain</p>' +
         '<div class="cex-market-price">' + price + '</div>' +
+        '<div class="cex-muted" style="font-size:0.8rem;">' + (coins ? (coins + " coins · " + mn2 + " MN2") : "") + '</div>' +
         '<a class="cex-btn" href="/shop?tab=trophies&highlight=' + encodeURIComponent(it.id) + '">Shop</a>' +
         '<a class="cex-btn cex-btn--ghost" href="/shop?tab=trophies&highlight=' + encodeURIComponent(it.id) + '">PayPal / MN2</a></div>';
     }).join("");

@@ -13,7 +13,7 @@ USE_SHOP_V3 = os.environ.get("USE_SHOP_V3", "true").strip().lower() in ("1", "tr
 
 # Shop front-end generation (bump when navigation/layout changes; exposed in /api/shop/config)
 # Product line: Shop V.9 tabbed UI + unified purchase/inventory APIs — keep in sync with shop/index.html.
-SHOP_UI_VERSION = "9.3.0"
+SHOP_UI_VERSION = "9.4.0"
 
 
 def _resolve_user_id():
@@ -1601,6 +1601,7 @@ def _enrich_trophy_listing(item: dict) -> dict:
         if pricing.get("success"):
             row["base_price_usd"] = pricing.get("base_price_usd")
             row["effective_price_usd"] = pricing.get("effective_price_usd")
+            row["effective_price_coins"] = pricing.get("effective_price_coins")
             row["price_factors"] = pricing.get("price_factors") or {}
         else:
             base = row.get("base_price_usd") or row.get("price_usd")
@@ -1608,14 +1609,18 @@ def _enrich_trophy_listing(item: dict) -> dict:
                 base = max(0.99, round(float(row["price"]) / 100, 2))
             row["base_price_usd"] = float(base) if base is not None else None
             row["effective_price_usd"] = row["base_price_usd"]
+            row["effective_price_coins"] = int(round((row["effective_price_usd"] or 0) * 100)) if row["effective_price_usd"] else None
             row["price_factors"] = {"demand_multiplier": 1.0, "popularity_factor": 1.0}
     except Exception:
         row["base_price_usd"] = row.get("price_usd")
         row["effective_price_usd"] = row.get("base_price_usd")
+        row["effective_price_coins"] = row.get("price")
         row["price_factors"] = {"demand_multiplier": 1.0, "popularity_factor": 1.0}
     row["on_chain_mint"] = False
     if row.get("effective_price_usd") is not None and row["effective_price_usd"] > 0:
         row["price_usd"] = row["effective_price_usd"]
+    if row.get("effective_price_coins") and not row.get("price"):
+        row["price"] = row["effective_price_coins"]
     return row
 
 
@@ -2154,6 +2159,22 @@ def shop_block_mint_drops():
         return jsonify(get_block_drops(limit=limit)), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'drops': []}), 500
+
+
+@shop_bp.route('/api/shop/block-mint/generate-media', methods=['POST'])
+def shop_block_mint_generate_media():
+    """Ops: generate PNG/GIF for a block trophy height (plan 001 BM-U2)."""
+    try:
+        data = request.get_json() or {}
+        height = int(data.get('height') or data.get('block_height') or 0)
+        force = str(data.get('force') or '').lower() in ('1', 'true', 'yes')
+        from backend.services.block_trophy_media_service import ensure_block_media
+
+        result = ensure_block_media(height, force=force)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @shop_bp.route('/api/shop/block-mint/claim', methods=['POST'])

@@ -420,6 +420,35 @@ python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.
 
+## 9. Trophy platform ledger (not on-chain mint)
+
+Trophies are **shop inventory editions**, not MN2 daemon NFTs. MN2 cannot mint unique trophy assets on-chain today (`on_chain_mint: false` on all trophy SKUs).
+
+| Component | Path / API |
+|-----------|------------|
+| Catalog | `GET /api/shop/trophies` — Top 25 + block-mint series |
+| Dynamic pricing | `backend/services/trophy_pricing_service.py`, `data/trophy_pricing_config.json` |
+| PayPal fulfillment | `fulfill_trophy_paypal()` — editions in `logs/shop_file_mode/trophy_editions/{user}.json` |
+| PayPal hold | `TROPHY_PAYPAL_HOLD_DAYS` (default 14) — blocks auction list + peer transfer |
+| Block drops | `GET /api/shop/block-mint/drops`, `POST /api/shop/block-mint/claim` (MN2) |
+| Block media | `scripts/generate_block_trophy_media.py`, `POST /api/shop/block-mint/generate-media` |
+| Peer transfer | `POST /api/shop/trophies/transfer` — rate limit in `data/trophy_transfer_config.json` |
+| Wallet hub | `GET /api/wallet/v2/trophies`, `GET /api/wallet/v2/trophy-monitor/4d` |
+
+**Ledger events:** `trophy_edition_proof` (PayPal), `block_trophy_proof` (block claim), `trophy_transfer` (peer gift).
+
+**Reconciliation:** Trophy MN2 spends use normal shop debit paths (`mn2_shop_purchase`, `block_trophy_claim`). PayPal trophy revenue is fiat — do not expect matching on-chain tx per edition.
+
+**Smoke:**
+
+```bash
+pytest tests/unit/test_trophy_paypal_u2.py tests/unit/test_trophy_transfer.py tests/unit/test_block_mint_service.py -q
+curl -s "$BASE/api/shop/trophies?series=top25" | jq '.count'
+curl -s "$BASE/api/shop/block-mint/drops?limit=3" | jq '.block_height'
+```
+
+---
+
 ## Waterfall merge order (split PRs #19–#29)
 
 **Status (2026-06-23):** All items below **merged or verified** — PR stack **#21–#27** on `main`; PR **#29** deploy `--ask-pass` + `apply_updates` **verified on prod** (branch `pr/deploy-ask-pass-fix` pending merge).

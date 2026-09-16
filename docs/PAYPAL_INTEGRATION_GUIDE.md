@@ -273,3 +273,21 @@ Before going live with real payments:
 ---
 
 **Summary:** With this setup, your shop can accept real dollars via PayPal. The agent can drive monetization by triggering premium actions that create PayPal orders. Your existing unified points and shop infrastructure stay in place; PayPal becomes an additional `price_type` alongside coins and unified points.
+
+---
+
+## 16. Trophy purchases (platform ledger — not on-chain NFTs)
+
+Product copy uses **Trophy**, not NFT. Trophies are **platform-ledger collectibles** stored in shop inventory with monotonic `edition_no` per SKU.
+
+| Topic | Behavior |
+|-------|----------|
+| **Pricing** | Server `effective_price_usd` from `trophy_pricing_service` — client PayPal amounts are ignored for trophy SKUs. |
+| **Capture** | Idempotent via `paypal:{capture_id}:{item_id}` in `data/trophy_paypal_captures.json`. |
+| **Edition** | `edition_key` = `TRO-{item_id}-{edition_no}`; proof in MN2 ledger as `trophy_edition_proof`. |
+| **Hold** | PayPal editions get `hold_until` (default 14 days, `TROPHY_PAYPAL_HOLD_DAYS`). Held editions cannot be auction-listed or peer-transferred until hold clears. |
+| **Return URLs** | `/shop?tab=trophies` and `/exchange` (trophy floor links to shop checkout). |
+
+**API:** `GET /api/shop/trophies`, `POST /api/paypal/create-order` (trophy item_id), capture in `paypal_routes.py` → `fulfill_trophy_paypal()`.
+
+**Ops:** Duplicate capture returns existing edition metadata without double-grant. Verify with `pytest tests/unit/test_trophy_paypal_u2.py`.
