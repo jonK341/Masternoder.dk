@@ -382,6 +382,57 @@ def mn2_profile_monitor():
     }), 200
 
 
+@mn2_bp.route("/api/mn2/address-book", methods=["GET"])
+def mn2_address_book_list():
+    """Trusted withdrawal addresses for the current user."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    from backend.services.mn2_address_book import list_addresses
+
+    return jsonify({"success": True, "user_id": user_id, "addresses": list_addresses(user_id)}), 200
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["POST"])
+def mn2_address_book_add():
+    """Add or update a trusted withdrawal address (password gate when configured)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or data.get("addr") or "").strip()
+    label = (data.get("label") or "").strip()
+    if not address:
+        return jsonify({"success": False, "error": "address is required"}), 400
+    try:
+        from backend.services.account_security_service import check_real_money_action
+
+        token = (data.get("verification_token") or data.get("password") or "").strip() or None
+        blocked = check_real_money_action(user_id, token)
+        if blocked:
+            return jsonify({"success": False, "error": blocked, "code": "password_verification_required"}), 403
+    except ImportError:
+        pass
+    from backend.services.mn2_address_book import add_address
+
+    return jsonify(add_address(user_id, address, label=label)), 200
+
+
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_internal_transfer():
+    """Gift / internal MN2 transfer to another user (in-app ledger only)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    to = (data.get("to") or data.get("recipient") or "").strip()
+    try:
+        amount = float(data.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    if not to:
+        return jsonify({"success": False, "error": "to is required"}), 400
+    from backend.services.mn2_gift_service import transfer
+
+    result = transfer(user_id, to, amount, note=(data.get("note") or "").strip())
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
 @mn2_bp.route("/api/mn2/copy-trading/follow", methods=["POST"])
 def mn2_copy_trading_follow():
     """Follow a trader agent for mirrored stake/reward share."""
