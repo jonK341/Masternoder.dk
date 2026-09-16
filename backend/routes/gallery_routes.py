@@ -71,6 +71,13 @@ def _list_videos_cached():
     return _gallery_list_cache
 
 
+def invalidate_gallery_cache() -> None:
+    """Clear gallery list cache so new generator videos appear immediately."""
+    global _gallery_list_cache, _gallery_list_cache_ts
+    _gallery_list_cache = None
+    _gallery_list_cache_ts = 0
+
+
 def _list_videos():
     """List all valid MP4s in VIDEOS_DIR (newest / largest first). Runs retention cleanup first."""
     try:
@@ -89,6 +96,13 @@ def _list_videos():
             meta = _read_video_metadata(VIDEOS_DIR, base)
             title = (meta.get("title") or "").strip() or base.replace("-", " ").replace("_", " ").title()
             desc = (meta.get("description") or meta.get("prompt") or "").strip()
+            thumb = ""
+            try:
+                from backend.services.generator_thumbnail_service import poster_path
+                if os.path.isfile(poster_path(base)):
+                    thumb = f"/api/documentary/thumbnail/{base}"
+            except Exception:
+                pass
             # Size-based score so sort-by-quality and filters behave sensibly
             qscore = min(1.0, max(0.0, float(size) / float(max_size))) if max_size else 0.5
             qlevel = "high" if qscore >= 0.85 else "medium" if qscore >= 0.45 else "low"
@@ -96,7 +110,7 @@ def _list_videos():
                 "id": base,
                 "title": title[:120],
                 "status": "completed",
-                "thumbnail_path": "",
+                "thumbnail_path": thumb,
                 "duration": 0,
                 "created_at": _mtime(path),
                 "quality_level": qlevel,
