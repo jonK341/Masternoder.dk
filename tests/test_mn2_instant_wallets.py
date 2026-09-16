@@ -27,6 +27,22 @@ class TestMN2WalletService(unittest.TestCase):
             self.assertEqual(res.get("deposit_address"), "MxTest123")
             self.assertEqual(res.get("label"), "savings")
 
+    def test_create_additional_wallet_pool_fallback(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"pool_1": "MxPoolAddr", "user_a": "MxPrimary"}, f)
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    with patch.object(ws, "_generate_valid_address", return_value={"success": False, "error": "rpc down"}):
+                        with patch.object(ws, "_address_validity", return_value=True):
+                            res = ws.create_additional_wallet("user_a", label="backup")
+            self.assertTrue(res.get("success"))
+            self.assertEqual(res.get("deposit_address"), "MxPoolAddr")
+
 
 class TestMN2LedgerRewards(unittest.TestCase):
     def test_reward_types_count_as_inflow(self):

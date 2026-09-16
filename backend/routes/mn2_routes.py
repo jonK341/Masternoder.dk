@@ -307,7 +307,8 @@ def mn2_wallet_create():
     label = (data.get("label") or request.args.get("label") or "wallet").strip()
     result = create_additional_wallet(user_id, label=label)
     if not result.get("success"):
-        return jsonify(result), 200
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(str(err))}), 200
     addr = (result.get("deposit_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
     return jsonify({
@@ -335,6 +336,33 @@ def mn2_wallet_refresh():
         "user_id": result.get("user_id"),
         "deposit_address": addr,
         "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/agent-wallets", methods=["GET"])
+def mn2_agent_wallets():
+    """List peer-mesh agent wallets with deposit addresses and balances."""
+    provision = request.args.get("provision", "1") != "0"
+    try:
+        from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
+        result = list_mesh_agent_wallets(provision=provision)
+    except Exception as e:
+        _log.exception("mn2_agent_wallets failed")
+        return jsonify({"success": False, "error": str(e), "agents": []}), 500
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("agents") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "agents": rows,
+        "count": result.get("count") or len(rows),
+        "unique_addresses": result.get("unique_addresses") or len({r.get("address") for r in rows if r.get("address")}),
+        "mesh_enabled": result.get("mesh_enabled"),
     }), 200
 
 

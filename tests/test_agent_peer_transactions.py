@@ -37,6 +37,9 @@ class TestAgentPeerTransactions(unittest.TestCase):
         ), patch(
             "backend.services.agent_peer_transactions_service._resolve_addresses",
             return_value=fake_agents,
+        ), patch(
+            "backend.services.agent_peer_transactions_service.provision_mesh_agent_wallets",
+            return_value={"success": True, "provisioned": 2},
         ):
             res = run_agent_peer_mesh(max_txs=2, dry_run=True)
         self.assertTrue(res.get("success"))
@@ -52,10 +55,37 @@ class TestAgentPeerTransactions(unittest.TestCase):
         ), patch(
             "backend.services.agent_peer_transactions_service._resolve_addresses",
             return_value=one,
+        ), patch(
+            "backend.services.agent_peer_transactions_service.provision_mesh_agent_wallets",
+            return_value={"success": True, "provisioned": 1},
         ):
             res = run_agent_peer_mesh(max_txs=2, dry_run=False)
         self.assertFalse(res.get("success"))
         self.assertEqual(res.get("skipped_reason"), "need_at_least_two_agents_with_addresses")
+
+    def test_list_mesh_agent_wallets_distinct(self):
+        from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
+        fake = [
+            {"agent_id": "agent_a", "user_id": "agent:agent_a", "address": "addr_a", "source": "test"},
+            {"agent_id": "agent_b", "user_id": "agent:agent_b", "address": "addr_b", "source": "test"},
+        ]
+        with patch(
+            "backend.services.agent_peer_transactions_service.discover_mesh_agents",
+            return_value=fake,
+        ), patch(
+            "backend.services.agent_peer_transactions_service._resolve_addresses",
+            return_value=fake,
+        ), patch(
+            "backend.services.mn2_wallet_service.get_balance",
+            return_value={"success": True, "mn2_balance": 1.5},
+        ), patch(
+            "backend.services.agent_wallet_service.get_balance",
+            return_value=0.0,
+        ):
+            res = list_mesh_agent_wallets(provision=True)
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("count"), 2)
+        self.assertEqual(res.get("unique_addresses"), 2)
 
 
 if __name__ == "__main__":

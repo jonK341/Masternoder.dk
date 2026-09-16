@@ -164,6 +164,78 @@ def _resolve_addresses(agents: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return out
 
 
+def list_mesh_agent_wallets(provision: bool = True) -> Dict[str, Any]:
+    """Return mesh agents with distinct deposit addresses and in-app MN2 balances."""
+    from backend.services.mn2_wallet_service import get_balance, list_user_addresses
+
+    agents = discover_mesh_agents()
+    if provision:
+        agents = _resolve_addresses(agents)
+    else:
+        resolved: List[Dict[str, str]] = []
+        for row in agents:
+            uid = (row.get("user_id") or "").strip()
+            if not uid:
+                continue
+            listed = list_user_addresses(uid)
+            rows = listed.get("addresses") or []
+            addr = ""
+            if rows and isinstance(rows[0], dict):
+                addr = (rows[0].get("address") or "").strip()
+            if not addr:
+                continue
+            resolved.append({**row, "address": addr})
+        agents = resolved
+
+    out_rows: List[Dict[str, Any]] = []
+    seen_addrs: Dict[str, str] = {}
+    for row in agents:
+        aid = row.get("agent_id") or ""
+        uid = row.get("user_id") or ""
+        addr = (row.get("address") or "").strip()
+        if not aid or not addr:
+            continue
+        if addr in seen_addrs and seen_addrs[addr] != aid:
+            continue
+        seen_addrs[addr] = aid
+        bal = get_balance(uid)
+        mn2_balance = float(bal.get("mn2_balance") or 0) if bal.get("success") else 0.0
+        try:
+            from backend.services.agent_wallet_service import get_balance as agent_ledger_balance
+            internal = float(agent_ledger_balance(aid) or 0)
+        except Exception:
+            internal = 0.0
+        out_rows.append({
+            "agent_id": aid,
+            "user_id": uid,
+            "address": addr,
+            "mn2_balance": mn2_balance,
+            "internal_balance": internal,
+            "source": row.get("source") or "",
+        })
+
+    out_rows.sort(key=lambda r: (r.get("agent_id") or "").lower())
+    unique_addrs = len({r["address"] for r in out_rows if r.get("address")})
+    return {
+        "success": True,
+        "agents": out_rows,
+        "count": len(out_rows),
+        "unique_addresses": unique_addrs,
+        "mesh_enabled": agent_peer_mesh_enabled(),
+    }
+
+
+def provision_mesh_agent_wallets() -> Dict[str, Any]:
+    """Ensure every mesh agent has its own deposit address (agent:{agent_id})."""
+    listed = list_mesh_agent_wallets(provision=True)
+    return {
+        "success": True,
+        "provisioned": listed.get("count") or 0,
+        "unique_addresses": listed.get("unique_addresses") or 0,
+        "agents": listed.get("agents") or [],
+    }
+
+
 def _pair_key(from_id: str, to_id: str) -> str:
     return f"{from_id}->{to_id}"
 
@@ -329,8 +401,10 @@ def run_agent_peer_mesh(
         out["success"] = False
         return out
 
+    provision_mesh_agent_wallets()
     agents = _resolve_addresses(discover_mesh_agents())
     out["agents"] = len(agents)
+    out["unique_addresses"] = len({a.get("address") for a in agents if a.get("address")})
     if len(agents) < 2:
         out["skipped_reason"] = "need_at_least_two_agents_with_addresses"
         out["success"] = False

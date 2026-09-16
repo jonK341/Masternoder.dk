@@ -112,6 +112,21 @@ def _first_pool_key(addresses: Dict[str, str]) -> Optional[str]:
     return pool_keys[0]
 
 
+def _pop_pool_address(addresses: Dict[str, Any]) -> Optional[str]:
+    """Take the next valid pre-generated pool address, or None."""
+    while True:
+        pool_key = _first_pool_key(addresses)
+        if not pool_key:
+            return None
+        raw = addresses.pop(pool_key)
+        addr = _entry_primary(raw) if not isinstance(raw, str) else raw.strip()
+        if not addr:
+            continue
+        if _address_validity(addr) is False:
+            continue
+        return addr
+
+
 def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     """
     Return the deposit address for the user. If none exists, use an existing pool address
@@ -132,18 +147,11 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
             return {"success": True, "deposit_address": existing, "user_id": user_id}
         addresses.pop(user_id, None)
 
-    # Use a pre-created pool address if available (reassign to this user),
-    # skipping any pool entries the daemon rejects as invalid.
-    while True:
-        pool_key = _first_pool_key(addresses)
-        if not pool_key:
-            break
-        addr = addresses.pop(pool_key)
-        if _address_validity(addr) is False:
-            continue  # discard invalid pool address, try the next one
-        addresses[user_id] = addr
+    pool_addr = _pop_pool_address(addresses)
+    if pool_addr:
+        addresses[user_id] = pool_addr
         _save_addresses(addresses)
-        return {"success": True, "deposit_address": addr, "user_id": user_id}
+        return {"success": True, "deposit_address": pool_addr, "user_id": user_id}
 
     gen = _generate_valid_address()
     if not gen.get("success"):
@@ -248,7 +256,14 @@ def list_user_addresses(user_id: str) -> Dict[str, Any]:
         created = get_or_create_deposit_address(uid)
         if not created.get("success"):
             return created
-        entry = addresses.get(uid) or created.get("deposit_address")
+        addresses = _load_addresses()
+        entry = addresses.get(uid)
+        if not entry:
+            addr = (created.get("deposit_address") or "").strip()
+            if addr:
+                entry = addr
+            else:
+                return {"success": False, "error": "could not resolve deposit address", "user_id": uid}
     rows = []
     if isinstance(entry, dict) and isinstance(entry.get("addresses"), list):
         rows = [r for r in entry["addresses"] if isinstance(r, dict)]
@@ -265,11 +280,16 @@ def create_additional_wallet(user_id: str, label: str = "wallet") -> Dict[str, A
         return {"success": False, "error": "user_id required"}
     uid = str(user_id).strip()
     lbl = (label or "wallet").strip()[:48] or "wallet"
-    gen = _generate_valid_address()
-    if not gen.get("success"):
-        return gen
-    new_addr = gen["deposit_address"]
     addresses = _load_addresses()
+    gen = _generate_valid_address()
+    if gen.get("success"):
+        new_addr = gen["deposit_address"]
+    else:
+        pool_addr = _pop_pool_address(addresses)
+        if not pool_addr:
+            return gen
+        new_addr = pool_addr
+        _save_addresses(addresses)
     entry = addresses.get(uid)
     if not isinstance(entry, dict):
         primary = _entry_primary(entry)
@@ -303,11 +323,16 @@ def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
     if not (user_id or "").strip():
         return {"success": False, "error": "user_id required"}
     uid = str(user_id).strip()
-    gen = _generate_valid_address()
-    if not gen.get("success"):
-        return gen
-    new_addr = gen["deposit_address"]
     addresses = _load_addresses()
+    gen = _generate_valid_address()
+    if gen.get("success"):
+        new_addr = gen["deposit_address"]
+    else:
+        pool_addr = _pop_pool_address(addresses)
+        if not pool_addr:
+            return gen
+        new_addr = pool_addr
+        _save_addresses(addresses)
     entry = addresses.get(uid)
     if isinstance(entry, dict):
         rows = entry.setdefault("addresses", [])
