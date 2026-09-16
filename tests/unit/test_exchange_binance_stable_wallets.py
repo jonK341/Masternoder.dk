@@ -50,6 +50,15 @@ def test_sync_stable_wallets_route_requires_admin(payout_client):
     assert res.status_code == 401
 
 
+def test_full_app_registers_crypto_exchange_blueprint():
+    import inspect
+    from backend.register_blueprints import _register_all_blueprints_impl, register_lite_blueprints
+
+    marker = "from backend.routes.crypto_exchange_routes import crypto_exchange_bp"
+    assert marker in inspect.getsource(_register_all_blueprints_impl)
+    assert marker in inspect.getsource(register_lite_blueprints)
+
+
 def test_sync_stable_wallets_route_admin(payout_client, monkeypatch):
     monkeypatch.setenv("EXCHANGE_ADMIN_KEY", "test-admin")
     res = payout_client.post(
