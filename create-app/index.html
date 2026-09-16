@@ -92,7 +92,9 @@
                 <label><input type="checkbox" id="ca-podcast" checked> Include Podcast app</label>
                 <button type="button" class="ca-btn" id="ca-create-btn">Create app + Super Encode</button>
                 <button type="button" class="ca-btn secondary" id="ca-reencode-btn" disabled>Re-run Super Encode</button>
+                <button type="button" class="ca-btn secondary" id="ca-encode-refresh-btn" disabled>Refresh encode jobs</button>
                 <button type="button" class="ca-btn secondary" id="ca-finish-btn" disabled>Finish product (100 checks)</button>
+                <div id="ca-encode-jobs" class="ca-out" style="max-height:140px;margin-top:8px;font-size:0.8rem;">Encode jobs: select or create an app.</div>
                 <div class="ca-out" id="ca-create-out">Ready.</div>
             </section>
 
@@ -124,6 +126,7 @@
             <a href="/agents/">Agents</a>
             <a href="/trophies/">Achievements</a>
             <a href="/mobile/podcast-twa/README.md">Podcast TWA docs</a>
+            <a href="/mobile/podcast-app/README.md">Podcast Capacitor app</a>
         </div>
     </div>
 
@@ -134,11 +137,57 @@
         let currentAppId = null;
         let lastFinishChecks = null;
 
+        function encodeJobsPayloadFromResponse(d) {
+            if (!d) return null;
+            if (d.encode_jobs && d.encode_jobs.encode_jobs) return d.encode_jobs;
+            if (d.encode_jobs && (d.encode_jobs.podcast || d.encode_jobs.video)) {
+                return { encode_jobs: d.encode_jobs, any_running: true };
+            }
+            if (d.app && d.app.encode_jobs && (d.app.encode_jobs.podcast || d.app.encode_jobs.video)) {
+                return { encode_jobs: d.app.encode_jobs };
+            }
+            return null;
+        }
+
+        function renderEncodeJobs(payload) {
+            const el = document.getElementById('ca-encode-jobs');
+            if (!el) return;
+            const jobs = (payload && payload.encode_jobs) ? payload.encode_jobs : null;
+            if (!jobs || (!jobs.podcast && !jobs.video)) {
+                el.textContent = 'Encode jobs: none yet.';
+                return;
+            }
+            const lines = [];
+            if (jobs.podcast) {
+                lines.push('Podcast: ' + (jobs.podcast.status || '?') +
+                    (jobs.podcast.encode_profile ? ' · ' + jobs.podcast.encode_profile : '') +
+                    (jobs.podcast.job_id ? ' · ' + jobs.podcast.job_id : ''));
+            }
+            if (jobs.video) {
+                lines.push('Video: ' + (jobs.video.status || '?') +
+                    (jobs.video.encode_profile ? ' · ' + jobs.video.encode_profile : '') +
+                    (jobs.video.documentary_id ? ' · ' + jobs.video.documentary_id.slice(0, 8) + '…' : ''));
+            }
+            if (payload.any_running) lines.push('⏳ encoding in progress…');
+            if (payload.all_completed) lines.push('✓ all encode jobs completed');
+            if (payload.any_failed) lines.push('✗ one or more jobs failed');
+            el.textContent = lines.length ? lines.join('\n') : 'Encode jobs: waiting to start…';
+        }
+
+        async function refreshEncodeJobs() {
+            if (!currentAppId) return;
+            const d = await api('/api/create-app/apps/' + currentAppId + '/encode-jobs?user_id=' + encodeURIComponent(uid));
+            renderEncodeJobs(d);
+            return d;
+        }
+
         function updateFinishButtonState() {
             const btn = document.getElementById('ca-finish-btn');
             const reBtn = document.getElementById('ca-reencode-btn');
+            const encBtn = document.getElementById('ca-encode-refresh-btn');
             const ready = !!(lastFinishChecks && lastFinishChecks.product_finished);
             if (reBtn) reBtn.disabled = !currentAppId;
+            if (encBtn) encBtn.disabled = !currentAppId;
             if (!btn) return;
             btn.disabled = !currentAppId || !ready;
             btn.title = ready
@@ -213,6 +262,7 @@
                     currentAppId = btn.getAttribute('data-app-id');
                     updateFinishButtonState();
                     document.getElementById('ca-create-out').textContent = 'Selected app: ' + currentAppId;
+                    refreshEncodeJobs();
                 });
             });
         }
@@ -276,11 +326,13 @@
             currentAppId = d.app && d.app.id;
             updateFinishButtonState();
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            renderEncodeJobs(encodeJobsPayloadFromResponse(d));
             if (d.finish_checks) {
                 lastFinishChecks = d.finish_checks;
                 runFinishChecks();
             }
             loadMyApps();
+            refreshEncodeJobs();
         });
 
         document.getElementById('ca-reencode-btn').addEventListener('click', async function () {
@@ -296,8 +348,12 @@
                 })
             });
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            renderEncodeJobs(encodeJobsPayloadFromResponse(d));
             loadEncoderHub();
+            refreshEncodeJobs();
         });
+
+        document.getElementById('ca-encode-refresh-btn').addEventListener('click', refreshEncodeJobs);
 
         document.getElementById('ca-finish-btn').addEventListener('click', async function () {
             if (!currentAppId || !(lastFinishChecks && lastFinishChecks.product_finished)) return;
@@ -306,8 +362,10 @@
                 body: JSON.stringify({ user_id: uid })
             });
             document.getElementById('ca-create-out').textContent = JSON.stringify(d, null, 2);
+            renderEncodeJobs(encodeJobsPayloadFromResponse(d));
             runFinishChecks();
             loadMyApps();
+            refreshEncodeJobs();
         });
 
         document.querySelectorAll('.ca-enc-tab').forEach(function (tab) {

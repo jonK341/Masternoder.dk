@@ -381,6 +381,7 @@ MANIFESTS = {
         "backend/services/click_mn2_rewards_service.py",
         "backend/services/create_app_finish_checks.py",
         "backend/services/create_app_service.py",
+        "backend/services/create_app_encode_service.py",
         "backend/services/super_encoder_service.py",
         "data/agent_leaderboard_rewards.json",
         "data/create_apps.json",
@@ -390,6 +391,9 @@ MANIFESTS = {
         "mobile/podcast-twa/PLAY_STORE_LISTING.md",
         "mobile/podcast-twa/README.md",
         "mobile/podcast-twa/twa-manifest.json",
+        "mobile/podcast-app/README.md",
+        "mobile/podcast-app/package.json",
+        "mobile/podcast-app/capacitor.config.ts",
         "scripts/audit_deploy_manifest.py",
     ],
     # Unified Game Hub: frontpage tabs + quest unification (Option C)

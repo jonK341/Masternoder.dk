@@ -151,8 +151,8 @@ def _build_check_list() -> List[Tuple[str, str, Callable[[], Dict[str, Any]]]]:
         "mobile/podcast-twa/twa-manifest.json",
         "mobile/podcast-twa/README.md",
         "mobile/podcast-twa/PLAY_STORE_LISTING.md",
-        "docs/CASINO_PLAY_STORE_TUESDAY.md",
-        "docs/CASINO_TODO.md",
+        "mobile/podcast-app/package.json",
+        "mobile/podcast-app/capacitor.config.ts",
     ], start=1):
         add(f"ps_{i:02d}", f"Play Store asset: {rel}", lambda r=rel: (
             _ok(f"ps_{rel}", "present") if _file_exists(r) else _fail(f"ps_{rel}", "missing")
@@ -180,8 +180,8 @@ def _build_check_list() -> List[Tuple[str, str, Callable[[], Dict[str, Any]]]]:
     add("ps_23", "Mobile install JS", lambda: (
         _ok("ps_mobile_install") if _file_exists("static/js/mobile-install.js") else _fail("ps_mobile_install", "missing")
     ))
-    add("ps_24", "Casino Capacitor config", lambda: _file_contains(
-        "mobile/casino-app/capacitor.config.ts", "appId"))
+    add("ps_24", "Podcast Capacitor config", lambda: _file_contains(
+        "mobile/podcast-app/capacitor.config.ts", "dk.masternoder.podcast"))
     add("ps_25", "Create App data store", lambda: (
         _ok("ps_create_apps") if _file_exists("data/create_apps.json") else _fail("ps_create_apps", "missing")
     ))
@@ -253,8 +253,8 @@ def _build_check_list() -> List[Tuple[str, str, Callable[[], Dict[str, Any]]]]:
         "backend/services/generator_encode_service.py", '"ultra"'))
     add("enc_56", "AI optimize function", lambda: _file_contains(
         "backend/services/super_encoder_service.py", "ai_optimize_encode_plan"))
-    add("enc_57", "Build encode package", lambda: _file_contains(
-        "backend/services/super_encoder_service.py", "build_super_encode_package"))
+    add("enc_57", "Create App encode jobs", lambda: _file_contains(
+        "backend/services/create_app_encode_service.py", "start_encode_jobs_for_app"))
     add("enc_58", "Encoder nr 1 id", lambda: _file_contains(
         "backend/services/super_encoder_service.py", "new_encoder_nr_1"))
     add("enc_59", "Create App super encode route", lambda: _file_contains(

@@ -57,6 +57,7 @@ def catalog() -> Dict[str, Any]:
                 "agents": ["google_play_agent", "podcast_producer_agent", "lab_create_agent"],
                 "mobile_paths": {
                     "podcast_twa": "mobile/podcast-twa/twa-manifest.json",
+                    "podcast_app": "mobile/podcast-app/",
                     "casino_twa": "mobile/casino-twa/twa-manifest.json",
                 },
             },
@@ -125,6 +126,9 @@ def create_app(
         "user_id": user_id,
         "title": title,
         "template_id": template_id,
+        "quality_goal": quality_goal,
+        "duration_sec": duration_sec,
+        "content_hint": content_hint,
         "status": "active",
         "progress": min(100, int(finish.get("finish_percent") or 0)),
         "product_finished": bool(finish.get("product_finished")),
@@ -133,6 +137,7 @@ def create_app(
             "podcast": include_podcast,
         },
         "super_encoder": encode_pkg,
+        "encode_jobs": {},
         "finish_summary": {
             "total_checks": finish.get("total_checks"),
             "passed": finish.get("passed"),
@@ -148,6 +153,16 @@ def create_app(
     apps: List[Dict[str, Any]] = list(data.get("apps") or [])
     apps.append(entry)
     data["apps"] = apps[-100:]
+    _save_apps(data)
+
+    from backend.services.create_app_encode_service import start_encode_jobs_for_app
+
+    encode_start = start_encode_jobs_for_app(user_id, entry)
+    entry["encode_jobs"] = encode_start.get("encode_jobs") or {}
+    for i, a in enumerate(data.get("apps") or []):
+        if a.get("id") == app_id:
+            data["apps"][i] = entry
+            break
     _save_apps(data)
 
     # Join reward for first create-app per user
@@ -170,6 +185,7 @@ def create_app(
         "app": entry,
         "finish_checks": finish,
         "join_reward": join_reward,
+        "encode_jobs": encode_start,
     }
 
 
@@ -207,6 +223,11 @@ def finish_product(user_id: str, app_id: str) -> Dict[str, Any]:
     app["progress"] = int(finish.get("finish_percent") or 0)
     app["updated_at"] = _now_iso()
 
+    from backend.services.create_app_encode_service import start_encode_jobs_for_app
+
+    encode_start = start_encode_jobs_for_app(user_id, app, force=False)
+    app["encode_jobs"] = encode_start.get("encode_jobs") or app.get("encode_jobs") or {}
+
     if not finish.get("product_finished"):
         app["product_finished"] = False
         for i, a in enumerate(apps):
@@ -221,6 +242,7 @@ def finish_product(user_id: str, app_id: str) -> Dict[str, Any]:
             "app": app,
             "finish_checks": finish,
             "finish_reward": {"success": False, "skipped": True},
+            "encode_jobs": encode_start,
         }
 
     app["status"] = "finished"
@@ -254,7 +276,27 @@ def finish_product(user_id: str, app_id: str) -> Dict[str, Any]:
         "app": app,
         "finish_checks": finish,
         "finish_reward": reward_result,
+        "encode_jobs": encode_start,
     }
+
+
+def get_app_encode_jobs(user_id: str, app_id: str) -> Dict[str, Any]:
+    """Return live encode job status for a Create App project."""
+    from backend.services.create_app_encode_service import encode_jobs_summary
+
+    data = _load_apps()
+    app = next((a for a in (data.get("apps") or []) if a.get("id") == app_id and a.get("user_id") == user_id), None)
+    if not app:
+        return {"success": False, "error": "app_not_found"}
+
+    summary = encode_jobs_summary(app.get("encode_jobs"))
+    app["encode_jobs"] = summary.get("encode_jobs") or {}
+    for i, a in enumerate(data.get("apps") or []):
+        if a.get("id") == app_id:
+            data["apps"][i] = app
+            break
+    _save_apps(data)
+    return {"success": True, "app_id": app_id, **summary}
 
 
 def super_encode_for_app(user_id: str, app_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
@@ -270,10 +312,27 @@ def super_encode_for_app(user_id: str, app_id: str, body: Dict[str, Any]) -> Dic
     cfg["user_id"] = user_id
     pkg = build_super_encode_package(cfg)
     app["super_encoder"] = pkg
+    if body.get("quality_goal"):
+        app["quality_goal"] = str(body.get("quality_goal"))
+    if body.get("content_hint") or body.get("prompt"):
+        app["content_hint"] = str(body.get("content_hint") or body.get("prompt"))
+    if body.get("duration_sec") is not None:
+        app["duration_sec"] = int(body.get("duration_sec") or 120)
     app["updated_at"] = _now_iso()
+
+    from backend.services.create_app_encode_service import start_encode_jobs_for_app
+
+    encode_start = start_encode_jobs_for_app(user_id, app, force=bool(body.get("restart_encode_jobs", True)))
+    app["encode_jobs"] = encode_start.get("encode_jobs") or app.get("encode_jobs") or {}
+
     for i, a in enumerate(data.get("apps") or []):
         if a.get("id") == app_id:
             data["apps"][i] = app
             break
     _save_apps(data)
-    return {"success": True, "app_id": app_id, "super_encoder": pkg}
+    return {
+        "success": True,
+        "app_id": app_id,
+        "super_encoder": pkg,
+        "encode_jobs": encode_start,
+    }

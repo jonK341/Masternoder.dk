@@ -52,6 +52,14 @@ def create_app_finish(app_id: str):
     return jsonify(result), code
 
 
+@create_app_bp.route("/api/create-app/apps/<app_id>/encode-jobs", methods=["GET"])
+def create_app_encode_jobs(app_id: str):
+    from backend.services.create_app_service import get_app_encode_jobs
+    result = get_app_encode_jobs(_uid(), app_id)
+    code = 200 if result.get("success") else 404
+    return jsonify(result), code
+
+
 @create_app_bp.route("/api/create-app/apps/<app_id>/super-encode", methods=["POST"])
 def create_app_super_encode(app_id: str):
     from backend.services.create_app_service import super_encode_for_app

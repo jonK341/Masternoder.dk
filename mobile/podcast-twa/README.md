@@ -23,5 +23,6 @@ See `PLAY_STORE_LISTING.md`. Link **Digital Asset Links** SHA-256 after first si
 
 - Create App wizard: `/create-app/`
 - Podcast hub: `/podcast/`
+- Podcast Capacitor (full native shell): `../podcast-app/`
 - Casino TWA (sibling app): `../casino-twa/`
 - Lab seed project: `data/lab_projects_seed.json` → `lseed_create_app_super_encoder`

@@ -186,6 +186,101 @@ def test_template_agents_assigned(create_app_client, monkeypatch):
     assert "content_generator_agent" in agents
 
 
+def test_create_app_starts_encode_jobs(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+
+    podcast_calls = []
+    video_calls = []
+
+    def fake_podcast(user_id, app, **kwargs):
+        podcast_calls.append(app.get("super_encoder", {}).get("audio_profile"))
+        return {
+            "success": True,
+            "job_id": "pod-test123",
+            "status": "queued",
+            "encode_profile": "ultra",
+        }
+
+    def fake_video(user_id, app, **kwargs):
+        video_calls.append(app.get("super_encoder", {}).get("video_profile"))
+        return {
+            "success": True,
+            "documentary_id": "doc-test-uuid",
+            "status": "processing",
+            "encode_profile": "premium",
+        }
+
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.start_podcast_encode_job",
+        fake_podcast,
+    )
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.start_video_encode_job",
+        fake_video,
+    )
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.refresh_encode_jobs",
+        lambda jobs: jobs or {},
+    )
+
+    r = create_app_client.post(
+        "/api/create-app/apps",
+        json={
+            "user_id": "_test_encode_jobs",
+            "title": "Encode Jobs App",
+            "quality_goal": "premium",
+            "content_hint": "podcast + play store encode",
+        },
+    )
+    data = r.get_json()
+    assert data["success"] is True
+    assert "encode_jobs" in data
+    assert podcast_calls
+    assert video_calls
+    assert data["app"]["encode_jobs"].get("podcast", {}).get("job_id") == "pod-test123"
+
+
+def test_encode_jobs_status_route(create_app_client, monkeypatch):
+    monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.refresh_podcast_job_status",
+        lambda job: {**job, "status": "completed", "episode_id": "gen-abc"},
+    )
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.refresh_video_job_status",
+        lambda job: {**job, "status": "processing", "progress": 42},
+    )
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.start_podcast_encode_job",
+        lambda user_id, app, **kw: {
+            "success": True,
+            "job_id": "pod-enc001",
+            "status": "queued",
+            "encode_profile": "ultra",
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.create_app_encode_service.start_video_encode_job",
+        lambda user_id, app, **kw: {
+            "success": True,
+            "documentary_id": "00000000-0000-0000-0000-000000000099",
+            "status": "processing",
+            "encode_profile": "premium",
+        },
+    )
+
+    create_app_client.post(
+        "/api/create-app/apps",
+        json={"user_id": "_test_encode_status", "title": "Status App", "include_playstore": True},
+    )
+    app_id = create_app_client.get("/api/create-app/apps?user_id=_test_encode_status").get_json()["apps"][0]["id"]
+    r = create_app_client.get(f"/api/create-app/apps/{app_id}/encode-jobs?user_id=_test_encode_status")
+    data = r.get_json()
+    assert data["success"] is True
+    assert "encode_jobs" in data
+    assert data["encode_jobs"].get("podcast", {}).get("status") == "completed"
+
+
 def test_super_encode_rerun(create_app_client, monkeypatch):
     monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
     create_app_client.post(
