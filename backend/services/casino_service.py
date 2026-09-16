@@ -2949,6 +2949,21 @@ def _save_paypal_deposits(data: Dict[str, Any]) -> None:
         pass
 
 
+def list_pending_paypal_deposits() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for oid, row in (_load_paypal_deposits().get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "casino",
+            "local_id": oid,
+            "paypal_order_id": oid,
+            "user_id": row.get("user_id"),
+            "pack_id": row.get("pack_id"),
+        })
+    return out
+
+
 def get_paypal_deposit_packs(user_id: str = "") -> Dict[str, Any]:
     try:
         from backend.services import casino_deposit_packs_service
@@ -3141,8 +3156,13 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
             "amount_usd": captured.get("amount_usd"),
         }
     pending = (deposits.get("pending") or {}).get(order_id)
-    if pending and pending.get("user_id") != user_id:
-        return {"success": False, "error": "Order does not belong to this user"}
+    if pending:
+        pending_uid = str(pending.get("user_id") or "").strip()
+        req = str(user_id or "").strip()
+        if not req or req.lower() == "default_user":
+            user_id = pending_uid or req
+        elif pending_uid and pending_uid != req:
+            return {"success": False, "error": "Order does not belong to this user"}
     pack = _deposit_pack((pack_id or (pending or {}).get("pack_id") or "").strip())
     if not pack:
         return {"success": False, "error": "Unknown deposit pack"}
@@ -3213,6 +3233,41 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
         "fiat_balance": _user_fiat_balance(user_id),
         "capture_id": result.get("capture_id"),
     }
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED casino deposits without depending on the return URL flag."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    resource = event.get("resource") if isinstance((event or {}).get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    pp_oid = str(
+        related.get("order_id")
+        or (resource.get("id") if event_type.startswith("CHECKOUT.ORDER.") else "")
+        or ""
+    ).strip()
+    if not pp_oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    deposits = _load_paypal_deposits()
+    if pp_oid in (deposits.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": pp_oid}
+    pending = (deposits.get("pending") or {}).get(pp_oid)
+    if not isinstance(pending, dict):
+        return {"success": True, "ignored": True, "reason": "no matching casino deposit"}
+    return capture_paypal_deposit(
+        str(pending.get("user_id") or ""),
+        pp_oid,
+        pending.get("pack_id"),
+    )
 
 
 def _slot_payout(reels: list, paytable: dict, bet_amount: float, currency: str, wild_symbols: Optional[list] = None) -> tuple:

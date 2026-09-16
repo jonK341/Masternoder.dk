@@ -176,20 +176,29 @@
 
   function handlePayPalReturn() {
     var params = new URLSearchParams(window.location.search);
-    if (params.get('paypal') !== 'success') return;
-    var orderId = '';
+    if (params.get('paypal') === 'cancel') {
+      try { sessionStorage.removeItem('cg_paypal_order'); } catch (e) {}
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', '/camgirls/');
+      }
+      return;
+    }
+    var orderId = params.get('token') || '';
     try {
-      orderId = sessionStorage.getItem('cg_paypal_order') || '';
+      orderId = orderId || sessionStorage.getItem('cg_paypal_order') || '';
       sessionStorage.removeItem('cg_paypal_order');
     } catch (e) {}
-    if (!orderId) {
-      msg('PayPal approved — refresh if unlock did not apply.');
+    var approved = params.get('paypal') === 'success' || !!(params.get('PayerID') || params.get('PayerId'));
+    if (!orderId || !approved) {
+      if (params.get('paypal') === 'success' && !orderId) {
+        msg('PayPal approved — capture will finish from the order webhook if unlock did not apply.');
+      }
       return;
     }
     fetch('/api/camgirls/paypal/capture', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: uid(), order_id: orderId }),
+      body: JSON.stringify({ user_id: uid() || params.get('user_id') || '', order_id: orderId }),
     })
       .then(function (r) {
         return r.json();

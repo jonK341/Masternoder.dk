@@ -1,3 +1,6 @@
+# Vendored coin source (clone separately; see docs/MN2_UPGRADE_PLAN_v123.md)
+external/
+
 # Deployment credentials - DO NOT COMMIT
 deploy_credentials.bat
 deploy_credentials.ps1
@@ -32,6 +35,8 @@ logs/
 # Local scrape/cache artifacts
 .firecrawl/
 .pytest_cache/
+node_modules/
+tests/.pytest-tmp/
 .pytest-tmp-local/
 .pytest-tmp/
 
@@ -68,8 +73,8 @@ tools/mn2-daemon/
 data/mn2_verified_users.json
 
 data/crypto_exchange/grid_bot_state.json
-
 # Per-user runtime state (created on server; do not commit from dev)
 data/click_game/
 data/trophy_income/
 data/trophy_quests/
+data/paypal_shop_orders.json

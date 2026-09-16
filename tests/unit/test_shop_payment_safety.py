@@ -99,9 +99,12 @@ def test_scanner_only_counts_orders_that_reach_fulfilled_status():
     assert result["orders_fulfilled"] == 0
 
 
-def test_paypal_direct_item_applies_shop_effects_after_fulfillment():
+def test_paypal_direct_item_applies_shop_effects_after_fulfillment(tmp_path, monkeypatch):
     from flask import Flask
     from backend.routes.paypal_routes import paypal_bp
+    from backend.services import paypal_service as svc
+
+    monkeypatch.setattr(svc, "_SHOP_ORDERS_PATH", str(tmp_path / "paypal_shop_orders.json"))
 
     app = Flask(__name__)
     app.config["TESTING"] = True

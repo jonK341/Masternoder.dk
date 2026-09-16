@@ -87,8 +87,6 @@ def is_txid_processed(txid: str) -> bool:
         (e.get("type") in credited_types and (e.get("txid") or "").strip() == txid)
         for e in entries
     )
-
-
 def is_treasury_deposit_recorded(txid: str) -> bool:
     """True if treasury_deposit ledger row exists for txid."""
     if not (txid or "").strip():
