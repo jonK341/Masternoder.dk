@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "enabled": true,
+  "engagement_disclaimer": "Micro-earn rewards are small engagement bonuses — not investment returns. Amounts are capped daily to prevent abuse.",
+  "global_daily_cap_mn2": 0.05,
+  "global_daily_cap_coins": 50,
+  "diminishing_factor": 0.85,
+  "min_amount_mn2": 0.0001,
+  "captcha_hook_enabled": false,
+  "captcha_hook_url": null,
+  "events": {
+    "network_pulse_click": {
+      "unit_id": "WR-EARN-1",
+      "name": "Network Pulse",
+      "description": "Tap when the chain pulses — lightweight network participation bonus.",
+      "category": "network",
+      "unit": "mn2",
+      "base_amount": 0.002,
+      "daily_cap_mn2": 0.01,
+      "max_clicks_per_day": 20,
+      "cooldown_seconds": 30
+    },
+    "wallet_daily_open": {
+      "unit_id": "WR-EARN-2",
+      "name": "Daily Wallet Open",
+      "description": "Once per UTC day for opening the wallet.",
+      "category": "wallet",
+      "unit": "mn2",
+      "base_amount": 0.005,
+      "daily_cap_mn2": 0.005,
+      "max_clicks_per_day": 1,
+      "cooldown_seconds": 86400
+    },
+    "game_tap": {
+      "unit_id": "WR-EARN-3",
+      "name": "Game Tap",
+      "description": "Quick tap mini-reward before diving into site games.",
+      "category": "play",
+      "unit": "mn2",
+      "base_amount": 0.001,
+      "daily_cap_mn2": 0.008,
+      "max_clicks_per_day": 30,
+      "cooldown_seconds": 15
+    },
+    "peer_heartbeat_view": {
+      "unit_id": "WR-EARN-4",
+      "name": "Peer Heartbeat",
+      "description": "Acknowledge peer network health — ties to Peers monitor.",
+      "category": "network",
+      "unit": "mn2",
+      "base_amount": 0.0015,
+      "daily_cap_mn2": 0.006,
+      "max_clicks_per_day": 12,
+      "cooldown_seconds": 60
+    },
+    "block_watch": {
+      "unit_id": "WR-EARN-5",
+      "name": "Block Watch",
+      "description": "Watch the latest block tick — complements block trophy drops.",
+      "category": "network",
+      "unit": "mn2",
+      "base_amount": 0.003,
+      "daily_cap_mn2": 0.009,
+      "max_clicks_per_day": 10,
+      "cooldown_seconds": 45
+    }
+  },
+  "game_links": [
+    {
+      "id": "battle",
+      "name": "Battle Arena",
+      "description": "Tournaments, quick battle, fantasy contests",
+      "path": "/battle",
+      "icon": "⚔️",
+      "embed": "deep_link"
+    },
+    {
+      "id": "casino",
+      "name": "Casino",
+      "description": "Mini-games and social casino rewards",
+      "path": "/casino/",
+      "icon": "🎰",
+      "embed": "deep_link"
+    },
+    {
+      "id": "generator",
+      "name": "Generator",
+      "description": "AI video and content generation tiers",
+      "path": "/generator",
+      "icon": "🎬",
+      "embed": "deep_link"
+    },
+    {
+      "id": "game",
+      "name": "Hunters Game",
+      "description": "Main game mode with MN2 progression",
+      "path": "/game",
+      "icon": "🎮",
+      "embed": "deep_link"
+    },
+    {
+      "id": "ptc",
+      "name": "Paid-to-Click",
+      "description": "PTC click quests and advertiser campaigns",
+      "path": "/shop?category=marketing",
+      "icon": "👆",
+      "embed": "deep_link"
+    },
+    {
+      "id": "quests",
+      "name": "Quests",
+      "description": "Quest MN2 rewards and streaks",
+      "path": "/quests",
+      "icon": "📜",
+      "embed": "deep_link"
+    }
+  ]
+}

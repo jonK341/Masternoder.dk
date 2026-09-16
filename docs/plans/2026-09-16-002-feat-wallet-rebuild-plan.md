@@ -86,16 +86,21 @@ The **main wallet interface** is a single shell with a **horizontal sub-tab navi
 | # | Tab label | Route slug | Module ID | Lazy API bundle |
 |---|-----------|------------|-----------|-----------------|
 | 1 | **Overview** | `overview` | `mod-overview` | `v2/summary` |
-| 2 | **Send** | `send` | `mod-send` | `v2/send`, `v2/send/preview` |
-| 3 | **Receive** | `receive` | `mod-receive` | `v2/deposit`, `v2/deposit/history` |
-| 4 | **Activity** | `activity` | `mod-activity` | `v2/transactions`, `v2/activity` |
-| 5 | **4D Monitor** | `monitor-4d` | `mod-trophy-4d` | `v2/trophy-monitor/4d` |
-| 6 | **5D Explorer** | `explorer-5d` | `mod-explorer-5d` | `v2/explorer/5d`, search proxy |
-| 7 | **Trophies** | `trophies` | `mod-trophies` | `v2/trophies` + plan 001 transfer |
-| 8 | **Battle** | `battle` | `mod-battle-contest` | `v2/battle/snapshot` |
-| 9 | **Peers** | `peers` | `mod-peers` | `v2/network/peers` |
-| 10 | **Staking** | `staking` | `mod-staking` | `v2/staking` |
-| 11 | **Settings** | `settings` | `mod-settings` | `v2/security/*`, `v2/discord/status` |
+| 2 | **Portal** | `portal` | `mod-portal` | `v2/site-features` |
+| 3 | **Rewards** | `rewards` | `mod-rewards` | `v2/rewards/snapshot` |
+| 4 | **Shop** | `shop` | `mod-shop` | deep-link `/shop` + trophy counts from summary |
+| 5 | **Exchange** | `exchange` | `mod-exchange` | `/api/exchange/wallet` + deep-link `/exchange` |
+| 6 | **Send** | `send` | `mod-send` | `v2/send`, `v2/send/preview` |
+| 7 | **Receive** | `receive` | `mod-receive` | `v2/deposit`, `v2/deposit/history` |
+| 8 | **Activity** | `activity` | `mod-activity` | `v2/transactions`, `v2/activity` |
+| 9 | **4D Monitor** | `monitor-4d` | `mod-trophy-4d` | `v2/trophy-monitor/4d` |
+| 10 | **5D Explorer** | `explorer-5d` | `mod-explorer-5d` | `v2/explorer/5d`, search proxy |
+| 11 | **Trophies** | `trophies` | `mod-trophies` | `v2/trophies` + plan 001 transfer |
+| 12 | **Battle** | `battle` | `mod-battle-contest` | `v2/battle/snapshot` |
+| 13 | **Peers** | `peers` | `mod-peers` | `v2/network/peers` |
+| 14 | **Staking** | `staking` | `mod-staking` | `v2/staking` |
+| 15 | **Upgrades** | `upgrades` | `mod-upgrades` | `v2/upgrades`, `v2/upgrades/progress` |
+| 16 | **Settings** | `settings` | `mod-settings` | `v2/security/*`, `v2/discord/status` |
 
 **Settings sub-panels:** **General** (2FA, whitelist, fiat — WR-U9) · **Discord** (`?tab=settings&panel=discord`) — link/unlink, roles, notifications, server invite.
 
@@ -122,8 +127,8 @@ flowchart LR
 ┌──────────────────────────────────────────────────────────────────┐
 │ BalanceHero (liquid · held · fiat toggle)          [fun mode 🔊] │
 ├──────────────────────────────────────────────────────────────────┤
-│ Overview │ Send │ Receive │ Activity │ 4D Monitor │ 5D Explorer │
-│ Trophies │ Battle │ Peers │ Staking │ Settings                   │
+│ Overview │ **Portal** │ **Rewards** │ Shop │ Exchange │ Send │ Receive │
+│ Activity │ 4D Monitor │ 5D Explorer │ Trophies │ Battle │ Peers │ …   │
 ├──────────────────────────────────────────────────────────────────┤
 │                     [ active tab panel ]                         │
 └──────────────────────────────────────────────────────────────────┘
@@ -395,7 +400,229 @@ The **Overview** tab is the wallet’s main face: network KPIs render on first p
 | 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
 | 26 | **Discord Settings panel** — link/unlink, roles, invite, notification opt-in | Social | `v2/discord/status`, `discord_link_service`, `discord_linked_roles_service` |
 
-**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test.
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API.
+
+---
+
+## Micro-earn & click-through events
+
+Small engagement bonuses (0.001–0.01 MN2 per action) — **not investment returns**. Users spend time clicking lightweight events in the wallet; deeper earn surfaces deep-link to existing site games.
+
+### Network micro-tx (wallet-native clicks)
+
+| Unit | Event ID | Trigger | Base MN2 | Daily cap | Cooldown |
+|------|----------|---------|----------|-----------|----------|
+| **WR-EARN-1** | `network_pulse_click` | Tap Network Pulse button on Earn tab | 0.002 | 0.01 | 30s |
+| **WR-EARN-2** | `wallet_daily_open` | First wallet open per UTC day | 0.005 | 0.005 | 24h |
+| **WR-EARN-3** | `game_tap` | Quick tap before game deep-links | 0.001 | 0.008 | 15s |
+| **WR-EARN-4** | `peer_heartbeat_view` | Acknowledge peer health (Peers tab tie-in) | 0.0015 | 0.006 | 60s |
+| **WR-EARN-5** | `block_watch` | Block height tick — complements block trophy drops | 0.003 | 0.009 | 45s |
+
+**Global daily cap:** 0.05 MN2 per user (configurable in `data/wallet_micro_earn_config.json`).
+
+**Diminishing returns:** each repeat click within a day multiplies base amount by `diminishing_factor` (default 0.85), floored at `min_amount_mn2` (0.0001).
+
+### Click-to-earn UX (Earn tab)
+
+- **Network Pulse** — primary CTA with live cooldown display
+- **Today's earnings** — earned / remaining / cap KPI row
+- **Per-event rows** — next amount, clicks used, cooldown timer
+- **Overview chip** — hero CTA “Earn · Micro MN2 clicks” links to Earn tab
+
+### Embed existing games / click-through (deep links)
+
+Configured in `wallet_micro_earn_config.json` → `game_links[]` (iframe/deep-link only — no combat embed in wallet MVP):
+
+| Surface | Path | Notes |
+|---------|------|-------|
+| Battle | `/battle` | Tournaments, quick battle |
+| Casino | `/casino/` | Mini-games, social casino |
+| Generator | `/generator` | Tiered content generation |
+| Hunters Game | `/game` | Main game MN2 progression |
+| PTC | `/shop?category=marketing` | Paid-to-click quests |
+| Quests | `/quests` | Quest MN2 rewards |
+
+### Abuse controls
+
+| Control | Implementation |
+|---------|----------------|
+| Per-event cooldown | `cooldown_seconds` in config; `cooldown_remaining_sec` in status API |
+| Per-event daily cap | `daily_cap_mn2` + `max_clicks_per_day` |
+| Global daily cap | `global_daily_cap_mn2` (0.05 default) |
+| Diminishing returns | `diminishing_factor` per repeat click |
+| Auth gate | `mn2_earn_auth.require_earn_user` — guests blocked |
+| Idempotent credits | `game_mn2_rewards.credit_mn2` + ledger reference per click |
+| Captcha hook | `captcha_hook_enabled` + `captcha_hook_url` (off by default; wire when abuse spikes) |
+
+**Engagement disclaimer** shown on Earn tab: micro amounts are platform engagement, not pay-to-win or investment.
+
+### API
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/wallet/v2/earn/status` | Today earned, caps, per-event availability + game links |
+| POST | `/api/wallet/v2/earn/click` | Body `{ event_id }` → credit micro MN2 via ledger |
+
+**Service:** `backend/services/wallet_micro_earn_service.py`  
+**Config:** `data/wallet_micro_earn_config.json`  
+**State:** `data/wallet_micro_earn_state.json` (per-user daily click tallies)  
+**Tests:** `tests/unit/test_wallet_micro_earn.py` **WR-PORTAL / WR-REWARDS / WR-SHOP / WR-EXCH** shipped: Portal + Rewards tier-1 tabs and Overview hero CTAs; Shop + Exchange hub tabs; `SiteFeaturesHub` matrix via `GET /api/wallet/v2/site-features`; rewards snapshot via `GET /api/wallet/v2/rewards/snapshot`.
+
+---
+
+## Site Features Hub (WR-PORTAL)
+
+The wallet exposes **all major site sections** as a lazy-loaded feature matrix. **Portal** (Command Center) and **Rewards** (unified points) are **tier-1** — bold tab labels, accent-bordered Overview hero CTAs, and top row in the hub grid.
+
+### Site feature map (canonical paths)
+
+| Feature | Path | Category |
+|---------|------|----------|
+| **Command Center (Portal)** | `/command-center` | portal |
+| **Rewards & Points** | `/profile?tab=points` | rewards |
+| Shop | `/shop` | commerce |
+| Exchange | `/exchange` | commerce |
+| Wallets | `/wallets` | wallet |
+| Generator | `/generator` | create |
+| Game | `/game` | play |
+| Battle | `/battle` | play |
+| Trophies | `/trophies` | collect |
+| Quests | `/quests` | rewards |
+| Explorer | `/explorer` | network |
+| Staking Monitor | `/staking-monitor` | network |
+| Staking Leaderboard | `/staking-leaderboard` | network |
+| Masternode Hosting | `/hosting` | network |
+| Proof of Reserves | `/proof-of-reserves` | network |
+| P2P Market | `/market` | commerce |
+| Casino | `/casino/` | play |
+| Battlegrounds | `/battlegrounds` | play |
+| Star Map 25 | `/starmap25` | play |
+| Aggregator | `/aggregator` | agents |
+| AI Agents | `/agents` | agents |
+| Agents Control | `/dashboard/agents_control` | agents |
+| Podcast | `/podcast` | social |
+| Social | `/social` | social |
+| Profile | `/profile` | account |
+| Compendium | `/compendium/?calm=1` | library |
+| Lab | `/lab` | create |
+| Gallery | `/gallery` | create |
+| News | `/news` | social |
+| Profit Daemon | `/profit/` | commerce |
+| Business Control | `/business-control` | admin |
+| Debugger | `/debugger` | tools |
+| Agent Support | `/agent_support` | tools |
+| Customers | `/customers` | admin |
+
+**API:** `GET /api/wallet/v2/site-features` — returns `features[]` with `primary: true` on portal + rewards.
+
+**UI:** `SiteFeaturesHub.tsx` on Portal tab; Shop/Exchange tabs deep-link to full site pages with wallet-native category cards.
+
+---
+
+## Trophy + Masternode Map layout (Overview expansion)
+
+The **Overview** tab is expanded into three vertical zones below the compact `NetworkFace` KPI strip:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ NetworkFace — 6 compact KPIs (height, peers, mempool, price…)    │
+├──────────────────────────────┬─────────────────────────────────────┤
+│ TROPHY CAROUSEL SLOT       │ MASTERNODE ONLINE MAP (grid)        │
+│ horizontal edition cards   │ enabled/total + rank grid cells     │
+│ placeholder → WR-G1 GIFs   │ lazy GET /v2/network/masternodes    │
+├──────────────────────────────┴─────────────────────────────────────┤
+│ RICH NETWORK STATS LIST — exhaustive KPI rows from summary.network │
+├──────────────────────────────────────────────────────────────────┤
+│ CTA → Upgrades tab (250 catalog lazy-loaded)                     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+| Zone | Component | Data source | First paint? |
+|------|-----------|-------------|--------------|
+| Trophy carousel | `TrophySlot.tsx` | `summary.trophy_counts` | ✓ (counts only; GIFs lazy in 4D tab) |
+| Masternode map | `MasternodeMap.tsx` | `GET /api/wallet/v2/network/masternodes` | Lazy after Overview mount |
+| Rich stats | `NetworkStatsRichList.tsx` | `summary.network` (expanded snapshot) | ✓ |
+
+**Perf contract:** Summary still **never** calls deposit RPC or full masternode list. Masternode grid and upgrades catalog load **after** summary paint.
+
+---
+
+## Rich Network Stats List (KPI spec)
+
+`wallet_v2_service._network_snapshot()` exposes every stat the backend can surface without blocking RPC beyond cached `mn2_chainz.network_overview()`:
+
+| KPI key | Label | Source |
+|---------|-------|--------|
+| `block_height` | Block height | `mn2_chainz.network_overview` |
+| `headers` | Headers | `daemon.headers` |
+| `connections` | Peer connections | `daemon.connections` / `getconnectioncount` |
+| `mempool_tx` | Mempool transactions | `daemon.mempool_tx` |
+| `mempool_bytes` | Mempool bytes | `daemon.mempool_bytes` |
+| `mn2_usd_price` | MN2 / USD | Chainz median / overview |
+| `pool_apr_percent` | Staking pool APR | `mn2_staking_service.dynamic_apr()` |
+| `pool_total_staked` | Pool total staked | `mn2_staking_service.total_staked()` |
+| `masternode_count` | Masternode count | RPC `getmasternodecount` / Chainz |
+| `masternode_enabled` | Masternodes enabled | `mn2_explorer_data.masternodes` (cached head) |
+| `difficulty` | Difficulty | RPC `getmininginfo` / Chainz |
+| `network_hashps` | Network hash rate | RPC `getmininginfo` |
+| `staking_weight` | Staking weight | RPC `getstakinginfo` |
+| `expected_stake_time_sec` | Expected stake time | RPC `getstakinginfo` |
+| `circulating_supply` | Circulating supply | iquidus / `money_supply` |
+| `chain` | Chain name | `getblockchaininfo` |
+| `daemon_version` | Daemon version | `getnetworkinfo` |
+| `daemon_subversion` | Daemon subversion | `getnetworkinfo` |
+| `verification_progress` | Verification progress | `getblockchaininfo` |
+| `median_time` | Median block time | `getblockchaininfo` |
+| `sync_ok` | Daemon reachable | `daemon.reachable` |
+| `rpc_degraded` | RPC failover active | `mn2_rpc_failover.status_summary` |
+| `peer_health` | Peer health summary | `mn2_network_peers_service.peer_health_from_overview` |
+| `staking_health` | Staking health | `mn2_rpc_client.staking_health()` |
+| `source` | Per-field data provenance | overview `source` map |
+
+`NetworkStatsRichList.tsx` renders all rows; null values show `—`.
+
+---
+
+## 250 Wallet Upgrades catalog
+
+**Data file:** `data/wallet_upgrades_catalog.json` — **WR-UPG-001…250** with schema:
+
+```json
+{
+  "id": "WR-UPG-001",
+  "name": "Deposit address cache",
+  "effect": "Enables deposit address cache — Cuts wait time vs legacy profile wallet load.",
+  "category": "speed",
+  "tier": "common",
+  "unlock": { "type": "default", "value": 0, "label": "Available at wallet launch" }
+}
+```
+
+**Categories (30 each except fun/desktop/discord/security = 25):**
+
+| Category | Count | Grounded pain point |
+|----------|-------|---------------------|
+| `speed` | 30 | Profile wallet blocked 12–20s on deposit RPC at load |
+| `network_visibility` | 30 | Old card had balance only — no chain context |
+| `trophies` | 30 | Trophies buried in shop/profile tabs |
+| `send_receive` | 30 | No fee preview, address book, or receive lazy-load |
+| `monitors` | 30 | 4D/5D/peers only on separate site pages |
+| `fun` | 25 | No sound/GIF/battle hooks in wallet |
+| `desktop` | 25 | No Tauri tray/deep-link parity |
+| `discord` | 25 | Discord only on Profile card |
+| `security` | 25 | 2FA/whitelist scattered in profile JS |
+
+**Unlock types:** `default` (first 10), `level` (wallet level 2–50), `achievement` (`wallet_<category>_<nnn>`), `mn2_spent` (escalating MN2 spent threshold).
+
+**API (lazy — not on summary):**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/wallet/v2/upgrades` | Full catalog; `?category=speed` filter |
+| GET | `/api/wallet/v2/upgrades/progress` | Per-user unlocked/locked IDs |
+| GET | `/api/wallet/v2/network/masternodes` | Masternode grid for map strip |
+
+**Generator:** `scripts/generate_wallet_upgrades_catalog.py` regenerates JSON.
 
 ---
 
@@ -551,6 +778,8 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 | GET | `/api/wallet/v2/battle/snapshot` | Battle contest widget data | `battle_social_store` tournaments + user progress + season leaderboard top 5 |
 | GET/POST | `/api/wallet/v2/security/*` | 2FA, whitelist | delegate `mn2_withdrawal_security` routes |
 | GET | `/api/wallet/v2/discord/status` | Discord link state + OAuth URLs + invite | `discord_link_service.link_status`, `discord_linked_roles_service`, `casino_config` |
+| GET | `/api/wallet/v2/site-features` | Site feature matrix for Site Features Hub | `wallet_v2_service.build_site_features` |
+| GET | `/api/wallet/v2/rewards/snapshot` | Unified points snapshot for Rewards tab | `unified_points_database.get_all_points` |
 
 **`trophy-monitor/4d` response shape (sketch):**
 
@@ -812,6 +1041,99 @@ flowchart LR
 
 - Overview renders balance without deposit call (network tab in DevTools).
 - Skeleton → data within 1.5s on warm cache (manual smoke).
+
+---
+
+### WR-U-MAP. Trophy slot + masternode map strip — **partial ✓ (2026-09-16)**
+
+**Goal:** Overview zones for trophy carousel placeholder and masternode online grid.
+
+**Dependencies:** WR-U2
+
+**Files:**
+
+- `wallet-app/src/components/TrophySlot.tsx`
+- `wallet-app/src/components/MasternodeMap.tsx`
+- `wallet-app/src/tabs/Overview.tsx` — two-column row
+- `backend/services/wallet_upgrades_service.py` — `build_masternode_map`
+- `backend/routes/wallet_v2_routes.py` — `GET /api/wallet/v2/network/masternodes`
+
+**Test:** Masternode endpoint returns `nodes[]` with `online` flag; map lazy-loads after summary.
+
+---
+
+### WR-U-STATS. Rich network stats list — **partial ✓ (2026-09-16)**
+
+**Goal:** Exhaustive KPI list on Overview from expanded `summary.network`.
+
+**Dependencies:** WR-U1
+
+**Files:**
+
+- `wallet-app/src/components/NetworkStatsRichList.tsx`
+- `backend/services/wallet_v2_service.py` — expanded `_network_snapshot`
+
+**Test:** Summary network block includes `pool_total_staked`, `masternode_enabled`, `staking_health` keys (nullable).
+
+---
+
+### WR-PORTAL. Portal tab + Site Features Hub — **partial ✓ (2026-09-16)**
+
+**Goal:** Command Center portal and full site feature matrix from wallet.
+
+**Files:** `wallet-app/src/tabs/PortalHub.tsx`, `wallet-app/src/components/SiteFeaturesHub.tsx`, `wallet_v2_service.build_site_features`, `GET /api/wallet/v2/site-features`, `tests/unit/test_wallet_v2_site_features.py`
+
+**Test:** Site features returns ≥30 entries; portal path is `/command-center`; primary_ids includes portal + rewards.
+
+---
+
+### WR-REWARDS. Rewards tab + unified points snapshot — **partial ✓ (2026-09-16)**
+
+**Goal:** Bold Rewards tab with unified points KPIs and profile/quests deep links.
+
+**Files:** `wallet-app/src/tabs/RewardsHub.tsx`, `wallet_v2_service.build_rewards_snapshot`, `GET /api/wallet/v2/rewards/snapshot`
+
+**Test:** Guest returns `guest: true` without DB call; signed-in user gets level + xp_total from `unified_points_db`.
+
+---
+
+### WR-SHOP. Shop hub tab — **partial ✓ (2026-09-16)**
+
+**Goal:** Shop category cards (trophies, boosts, digital goods, PayPal) + link to `/shop`.
+
+**Files:** `wallet-app/src/tabs/ShopHub.tsx`, Overview hero CTA, TabNav Shop tab.
+
+**Test:** Shop tab renders category grid; trophy count from summary when present.
+
+---
+
+### WR-EXCH. Exchange hub tab — **partial ✓ (2026-09-16)**
+
+**Goal:** Exchange wallet balance snippet + swap/staking/tax deep links to `/exchange`.
+
+**Files:** `wallet-app/src/tabs/ExchangeHub.tsx`, client `fetchExchangeWallet` → `/api/exchange/wallet`
+
+**Test:** Exchange tab loads wallet API without blocking summary.
+
+---
+
+### WR-U-UPG250. Wallet upgrades catalog + tab — **partial ✓ (2026-09-16)**
+
+**Goal:** 250 numbered upgrades with lazy list/progress APIs and Upgrades tab.
+
+**Dependencies:** WR-U0
+
+**Files:**
+
+- `data/wallet_upgrades_catalog.json` (WR-UPG-001…250)
+- `scripts/generate_wallet_upgrades_catalog.py`
+- `backend/services/wallet_upgrades_service.py`
+- `backend/routes/wallet_v2_routes.py` — upgrades + progress routes
+- `wallet-app/src/tabs/Upgrades.tsx`
+- `wallet-app/src/components/TabNav.tsx` — Upgrades tab
+- `tests/unit/test_wallet_v2_upgrades.py`
+
+**Test:** Catalog returns 250 entries; progress returns `unlocked_count` + `by_category`; not called from summary.
 
 ---
 
