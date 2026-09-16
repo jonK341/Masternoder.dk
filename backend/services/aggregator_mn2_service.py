@@ -31,6 +31,8 @@ _DEFAULTS = {
         "explorer_chat": 0.0004,
         "interaction": 0.00005,
         "discord_welcome": 0.001,
+        "encoder_fulfillment": 0.0005,
+        "customer_onboard": 0.0003,
     },
     "default_reward_mn2": 0.00005,
 }

@@ -35,11 +35,11 @@ def test_fulfill_single_customer(tmp_path, monkeypatch):
     def _fake_onboard(uid, username=""):
         return {"success": True, "user_id": uid, "actions": ["stub"]}
 
-    def _fake_award(uid, action, meta=None):
-        return {"success": True, "mn2_awarded": 0.001, "action": action}
+    def _fake_micro(uid, actions=None, meta=None):
+        return {"success": True, "total_mn2_awarded": 0.002, "awarded_count": 2, "results": []}
 
     monkeypatch.setattr("backend.services.ai_user_controller.onboard_new_user", _fake_onboard)
-    monkeypatch.setattr("backend.services.aggregator_mn2_service.award_for_action", _fake_award)
+    monkeypatch.setattr("backend.services.encoder_micro_rewards_service.attach_micro_rewards", _fake_micro)
 
     res = ecf.fulfill_single_customer(
         "discord_123",

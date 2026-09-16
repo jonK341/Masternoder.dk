@@ -177,25 +177,49 @@ def get_customer(user_id: str) -> Dict[str, Any]:
 
 
 def stats() -> Dict[str, Any]:
-    listing = list_customers(limit=10000, offset=0)
-    customers = listing.get("customers") or []
-    now = datetime.now(timezone.utc).date().isoformat()
-    active_today = sum(
-        1 for c in customers
-        if str(c.get("last_active") or "").startswith(now)
-    )
-    discord_stats = {}
+    """Fast stats — avoid scanning the full customer directory."""
+    points_count = 0
+    with_mn2 = 0
+    if os.path.isdir(_POINTS_DIR):
+        for name in os.listdir(_POINTS_DIR):
+            if not name.endswith(".json"):
+                continue
+            points_count += 1
+            if with_mn2 < 5000:
+                try:
+                    with open(os.path.join(_POINTS_DIR, name), "r", encoding="utf-8") as f:
+                        raw = json.load(f) or {}
+                    bal = float(raw.get("mn2_balance") or (raw.get("systems") or {}).get("mn2_balance") or 0)
+                    if bal > 0:
+                        with_mn2 += 1
+                except Exception:
+                    pass
+
+    discord_stats: Dict[str, Any] = {}
     try:
         from backend.services.discord_customer_ingest_service import discord_customer_stats
 
         discord_stats = discord_customer_stats()
     except Exception:
         discord_stats = {}
+
+    fulfillment_stats: Dict[str, Any] = {}
+    try:
+        from backend.services.encoder_customer_fulfillment_service import fulfillment_stats as enc_stats
+
+        fulfillment_stats = enc_stats()
+    except Exception:
+        fulfillment_stats = {}
+
+    discord_total = int(discord_stats.get("total") or 0)
+    total = max(points_count, discord_total)
     return {
         "success": True,
-        "total": listing.get("total", 0),
-        "active_today": active_today,
-        "with_mn2": sum(1 for c in customers if float(c.get("mn2_balance") or 0) > 0),
+        "total": total,
+        "points_files": points_count,
+        "active_today": int(discord_stats.get("total") or 0),
+        "with_mn2": with_mn2,
         "discord": discord_stats,
-        "discord_sourced": sum(1 for c in customers if c.get("source") == "discord_channel"),
+        "discord_sourced": discord_total,
+        "fulfillment": fulfillment_stats,
     }

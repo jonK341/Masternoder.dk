@@ -27,6 +27,8 @@
         pre.json { background: #0a0a12; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 200px; }
         .status-ok { color: #6f6; }
         .status-warn { color: #fc6; }
+        .micro-rewards { max-width: 1100px; margin: 0 auto 16px; padding: 12px 16px; background: rgba(30,30,50,0.7); border: 1px solid rgba(170,0,255,0.25); border-radius: 10px; }
+        .micro-rewards label { display: inline-flex; align-items: center; gap: 6px; margin: 4px 10px 4px 0; font-size: 0.85rem; }
     </style>
 </head>
 <body class="layout-standard">
@@ -37,6 +39,10 @@
         <button class="btn" id="btnRefresh">Refresh</button>
     </div>
     <p class="customers-stats" id="stats">Loading…</p>
+    <div class="micro-rewards" id="microRewardsBox" hidden>
+        <strong>Attach micro rewards on fulfill:</strong>
+        <span id="microRewardsList"></span>
+    </div>
     <p class="customers-stats" id="fulfillStatus"></p>
     <div class="page-grid page-grid-tight" id="grid"></div>
     </div>
@@ -80,6 +86,25 @@
         const hdr = secret ? {'X-Ops-Secret': secret, 'Content-Type': 'application/json'} : {'Content-Type': 'application/json'};
         const hdrGet = secret ? {'X-Ops-Secret': secret} : {};
         let currentUserId = null;
+        let microRewardCatalog = [];
+
+        function selectedMicroRewards() {
+            return Array.from(document.querySelectorAll('#microRewardsList input[type=checkbox]:checked'))
+                .map(el => el.value);
+        }
+
+        async function loadMicroRewards() {
+            try {
+                const r = await fetch('/api/customers/fulfill/micro-rewards', {headers: hdrGet}).then(x => x.json());
+                if (!r.success) return;
+                microRewardCatalog = r.rewards || [];
+                const box = document.getElementById('microRewardsList');
+                box.innerHTML = microRewardCatalog.map(row => `
+                    <label><input type="checkbox" value="${row.action}" ${row.selected_default ? 'checked' : ''}>
+                    ${row.action} (${Number(row.mn2 || 0).toFixed(6)} MN2)</label>`).join('');
+                document.getElementById('microRewardsBox').hidden = false;
+            } catch (e) {}
+        }
 
         async function loadStats() {
             try {
@@ -165,7 +190,11 @@
             try {
                 const r = await fetch('/api/customers/fulfill/discord', {
                     method: 'POST', headers: hdr,
-                    body: JSON.stringify({sync_first: true, limit: 50})
+                    body: JSON.stringify({
+                        sync_first: true,
+                        limit: 50,
+                        micro_rewards: selectedMicroRewards()
+                    })
                 }).then(x => x.json());
                 status.textContent = r.success
                     ? `Fulfilled ${r.fulfilled_count || 0}, skipped ${r.skipped_count || 0}, errors ${r.error_count || 0}`
@@ -212,6 +241,7 @@
             document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
         });
 
+        loadMicroRewards();
         loadStats();
         loadCustomers();
     })();

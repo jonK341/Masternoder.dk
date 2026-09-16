@@ -490,7 +490,13 @@ def _dispatch_fulfillment(order: Dict[str, Any]) -> Dict[str, Any]:
                 if row.get("user_id") == user_id:
                     discord_meta = row
                     break
-        res = fulfill_single_customer(user_id, discord_meta=discord_meta, skip_if_done=False)
+        micro = cfg.get("micro_rewards")
+        res = fulfill_single_customer(
+            user_id,
+            discord_meta=discord_meta,
+            skip_if_done=False,
+            micro_rewards=micro if isinstance(micro, list) else None,
+        )
         if not res.get("success"):
             return res
         return {"success": True, "customer_fulfillment": res, "order_fulfilled": True}

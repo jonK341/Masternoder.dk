@@ -53,15 +53,25 @@ def customers_fulfill_discord():
     from backend.services.encoder_customer_fulfillment_service import fulfill_discord_customers_via_encoder
 
     data = request.get_json(silent=True) or {}
+    micro = data.get("micro_rewards")
     result = fulfill_discord_customers_via_encoder(
         sync_first=bool(data.get("sync_first", True)),
         include_guild_members=bool(data.get("include_guild_members", False)),
         message_limit=int(data.get("message_limit") or 100),
         limit=int(data.get("limit") or 50),
         force=bool(data.get("force", False)),
+        micro_rewards=micro if isinstance(micro, list) else None,
     )
     code = 200 if result.get("success") else 400
     return jsonify(result), code
+
+
+@customer_aggregator_bp.route("/api/customers/fulfill/micro-rewards", methods=["GET"])
+def customers_fulfill_micro_rewards():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.encoder_micro_rewards_service import list_attachable_micro_rewards
+    return jsonify(list_attachable_micro_rewards()), 200
 
 
 @customer_aggregator_bp.route("/api/customers/fulfill/stats", methods=["GET"])

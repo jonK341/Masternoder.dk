@@ -5,7 +5,7 @@ import json
 import os
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _FULFILLMENT_FILE = os.path.join(_BASE, "data", "encoder_customer_fulfillment.json")
@@ -83,6 +83,7 @@ def fulfill_single_customer(
     *,
     discord_meta: Optional[Dict[str, Any]] = None,
     skip_if_done: bool = True,
+    micro_rewards: Optional[List[Union[str, Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
     """Onboard a Discord prospect into the aggregator via encoder fulfillment."""
     uid = str(user_id or "").strip()
@@ -95,7 +96,9 @@ def fulfill_single_customer(
     if skip_if_done and is_fulfilled(uid):
         return {"success": True, "skipped": True, "user_id": uid, "record": fulfillment_record(uid)}
 
-    cfg = _config()
+    cfg = dict(_config())
+    if micro_rewards:
+        cfg["micro_rewards"] = micro_rewards
     actions: List[str] = []
 
     # Ensure points stub exists for discord prospects
@@ -119,15 +122,24 @@ def fulfill_single_customer(
     except Exception:
         pass
 
-    # Aggregator MN2 welcome credit
-    award_action = str(cfg.get("aggregator_action") or "discord_welcome")
-    award_meta = {"source": "encoder_customer_fulfillment", "discord_id": (discord_meta or {}).get("discord_id")}
+    # Attach configured micro MN2 rewards (aggregator + encoder bonus)
+    award_meta = {
+        "source": "encoder_customer_fulfillment",
+        "discord_id": (discord_meta or {}).get("discord_id"),
+    }
+    micro_actions = cfg.get("micro_rewards")
     try:
-        from backend.services.aggregator_mn2_service import award_for_action
+        from backend.services.encoder_micro_rewards_service import attach_micro_rewards
 
-        award = award_for_action(uid, award_action, meta=award_meta)
-        if award.get("mn2_awarded", 0) > 0:
-            actions.append("aggregator_award")
+        award = attach_micro_rewards(
+            uid,
+            actions=micro_actions if isinstance(micro_actions, list) and micro_actions else None,
+            meta=award_meta,
+        )
+        if float(award.get("total_mn2_awarded") or 0) > 0:
+            actions.append("micro_rewards")
+        elif award.get("awarded_count", 0) > 0:
+            actions.append("micro_rewards")
     except Exception:
         award = {"success": False}
 
@@ -142,7 +154,7 @@ def fulfill_single_customer(
         "actions": actions,
         "discord_id": (discord_meta or {}).get("discord_id"),
         "username": username,
-        "aggregator_award": award if isinstance(award, dict) else {},
+        "micro_rewards": award if isinstance(award, dict) else {},
     })
     return {"success": True, "user_id": uid, "fulfillment": record, "actions": actions}
 
@@ -177,6 +189,7 @@ def fulfill_discord_customers_via_encoder(
     message_limit: int = 100,
     limit: int = 50,
     force: bool = False,
+    micro_rewards: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Sync Discord channel, then encoder-fulfill prospects into the aggregator."""
     if not fulfillment_enabled():
@@ -220,10 +233,16 @@ def fulfill_discord_customers_via_encoder(
             from backend.services.encoder_order_service import create_balance_order, encoder_orders_enabled
 
             if encoder_orders_enabled():
+                order_cfg = {
+                    "discord_id": row.get("discord_id"),
+                    "source": "discord_channel",
+                }
+                if micro_rewards:
+                    order_cfg["micro_rewards"] = micro_rewards
                 order_result = create_balance_order(
                     uid,
                     "customer_fulfillment",
-                    {"discord_id": row.get("discord_id"), "source": "discord_channel"},
+                    order_cfg,
                     auto_fulfill=True,
                 )
         except Exception as exc:
