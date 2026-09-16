@@ -1,7 +1,16 @@
 /**
  * Navigation Toolbar - Universal navigation system for all pages
  * Provides consistent navigation across the entire application
+ *
+ * Single source of truth for fixed top nav height — import this before
+ * page-layout-metrics.css / page-shell.css on every page.
  */
+
+:root {
+    --nav-toolbar-height: 52px;
+    --nav-toolbar-height-mobile: 44px;
+    --header-height: var(--nav-toolbar-height);
+}
 
 /* Toolbar Container — Purple background, light neon green text */
 .nav-toolbar {
@@ -10,6 +19,8 @@
     left: 0;
     right: 0;
     z-index: 10000;
+    min-height: var(--nav-toolbar-height);
+    box-sizing: border-box;
     background: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 50%, #3d2463 100%);
     backdrop-filter: blur(20px);
     border-bottom: 2px solid rgba(0, 255, 136, 0.4);
@@ -211,9 +222,9 @@
     border-color: rgba(57, 255, 20, 0.4);
 }
 
-/* Page Content Offset — compact so all content is visible and not blocked */
-body {
-    padding-top: 48px;
+/* Page content offset — only when site nav is present (see navigation-toolbar.js) */
+body.has-site-nav:not(.layout-standard):not(.no-site-nav) {
+    padding-top: var(--nav-toolbar-height);
 }
 
 /* Responsive Design */
@@ -256,8 +267,12 @@ body {
         font-size: 0.8rem;
     }
     
-    body {
-        padding-top: 44px;
+    body.has-site-nav:not(.layout-standard):not(.no-site-nav) {
+        padding-top: var(--nav-toolbar-height-mobile);
+    }
+
+    .nav-toolbar {
+        min-height: var(--nav-toolbar-height-mobile);
     }
 }
 
@@ -437,7 +452,7 @@ body {
     position: fixed;
     left: 0;
     right: 0;
-    top: 48px;
+    top: var(--nav-toolbar-height);
     max-height: min(78vh, 640px);
     overflow-y: auto;
     z-index: 9998;

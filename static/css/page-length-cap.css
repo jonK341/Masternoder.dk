@@ -6,7 +6,7 @@
 
 :root {
     --page-max-viewports: 3;
-    --page-nav-offset: var(--header-height, 64px);
+    --page-nav-offset: var(--header-height, var(--nav-toolbar-height, 52px));
     --page-scroll-max-height: calc(var(--page-max-viewports) * 100dvh - var(--page-nav-offset) - 12px);
 }
 

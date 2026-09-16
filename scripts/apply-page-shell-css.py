@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAGE_SHELL = '<link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">'
 MODERN_DS = '<link rel="stylesheet" href="/static/css/modern-design-system.css">'
-NAV_TOOLBAR = '<link rel="stylesheet" href="/static/css/navigation-toolbar.css">'
+NAV_TOOLBAR = '<link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260910">'
 
 SKIP_DIRS = {
     "market",
