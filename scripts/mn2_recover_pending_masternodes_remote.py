@@ -67,8 +67,16 @@ echo ""
 echo "== provision recover API =="
 # shellcheck source=/dev/null
 source cron/mn2_read_ops_secret.sh
-curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
-  "http://127.0.0.1:5000/api/mn2/masternode/recover?limit=${LIMIT}&restart_daemon=0" | python3 -m json.tool
+RECOVER_URL="http://127.0.0.1:5000/api/mn2/masternode/recover?limit=${LIMIT}&restart_daemon=0"
+RECOVER_RESP=$(curl -s -w "\n%{http_code}" -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" "$RECOVER_URL")
+RECOVER_CODE=$(echo "$RECOVER_RESP" | tail -1)
+RECOVER_BODY=$(echo "$RECOVER_RESP" | sed '$d')
+if [ "$RECOVER_CODE" = "404" ] || [ "$RECOVER_CODE" = "000" ]; then
+  curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
+    "http://127.0.0.1:5000/api/mn2/staking/ops/masternode-recover?limit=${LIMIT}&restart_daemon=0" | python3 -m json.tool
+else
+  echo "$RECOVER_BODY" | python3 -m json.tool
+fi
 echo ""
 echo "== service status =="
 curl -s "http://127.0.0.1:5000/api/mn2/masternode/service?fresh=1" | python3 -c "
