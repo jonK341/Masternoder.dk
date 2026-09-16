@@ -411,6 +411,7 @@ MANIFESTS = {
         "data/ledger_customer_index.json",
         "data/encoder_v2_catalog.json",
         "data/encoder_v2_progress.json",
+        "data/encoder_v2_ops_metrics.json",
         "scripts/build_encoder_v2_catalog.py",
         "data/agent_leaderboard_rewards.json",
         "data/create_apps.json",
@@ -1059,6 +1060,7 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             print("[2aa] Create App writable data permissions...")
             for rel in (
                 "data/encoder_v2_progress.json",
+                "data/encoder_v2_ops_metrics.json",
                 "data/encoder_orders.json",
                 "data/discord_customer_index.json",
                 "data/encoder_customer_fulfillment.json",

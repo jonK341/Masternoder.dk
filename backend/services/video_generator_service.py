@@ -2869,36 +2869,47 @@ def generate_rich_video_sync(
     try:
         import gc
         from backend.services.generator_encode_service import resolve_encode_profile, ENCODE_CRF, moviepy_write_kwargs
-        from backend.services.encoder_v2_service import write_kwargs_with_v2
+        from backend.services.encoder_v2_service import v2_encode_profile_attempts, write_kwargs_with_v2
         gc.collect()
         prof = str(encode_profile or "fast_ai").strip().lower()
         if prof not in ENCODE_CRF:
             prof = resolve_encode_profile({"encode_profile": encode_profile, "user_id": user_id})
-        write_kwargs = write_kwargs_with_v2(doc_id, prof, user_id=user_id, add_audio=add_audio, videos_dir=VIDEOS_DIR)
-        if metrics_out is not None:
-            metrics_out["encode_profile"] = prof
-            v2_tune = write_kwargs.get("encoder_v2_tuning") or {}
-            base_crf = ENCODE_CRF.get(prof, 28)
-            metrics_out["encode_crf"] = base_crf + int(v2_tune.get("crf_delta") or 0)
-            metrics_out["encoder_v2_tuning"] = v2_tune
-            if write_kwargs.get("hw_encode"):
-                metrics_out["hw_encode"] = write_kwargs.get("hw_encode")
-        final.write_videofile(out_path, **moviepy_write_kwargs(write_kwargs))
-    except Exception as e1:
-        _cleanup_partial(out_path)
-        try:
-            import gc
-            from backend.services.encoder_v2_service import write_kwargs_with_v2
-            from backend.services.generator_encode_service import moviepy_write_kwargs
-            gc.collect()
-            fallback = write_kwargs_with_v2(doc_id, "fast_ai", user_id=user_id, add_audio=False, videos_dir=VIDEOS_DIR)
-            final.write_videofile(out_path, **moviepy_write_kwargs(fallback))
-        except Exception as e2:
-            _cleanup_partial(out_path)
+        profiles = v2_encode_profile_attempts(user_id, prof)
+        last_err: Optional[Exception] = None
+        for attempt_idx, attempt_prof in enumerate(profiles):
+            try:
+                write_kwargs = write_kwargs_with_v2(
+                    doc_id, attempt_prof, user_id=user_id, add_audio=add_audio, videos_dir=VIDEOS_DIR,
+                )
+                if metrics_out is not None:
+                    metrics_out["encode_profile"] = attempt_prof
+                    metrics_out["encode_attempt"] = attempt_idx + 1
+                    metrics_out["encode_attempts_max"] = len(profiles)
+                    v2_tune = write_kwargs.get("encoder_v2_tuning") or {}
+                    base_crf = ENCODE_CRF.get(attempt_prof, 28)
+                    metrics_out["encode_crf"] = base_crf + int(v2_tune.get("crf_delta") or 0)
+                    metrics_out["encoder_v2_tuning"] = v2_tune
+                    if write_kwargs.get("hw_encode"):
+                        metrics_out["hw_encode"] = write_kwargs.get("hw_encode")
+                    if write_kwargs.get("mobile_resolution"):
+                        metrics_out["mobile_resolution"] = write_kwargs.get("mobile_resolution")
+                final.write_videofile(out_path, **moviepy_write_kwargs(write_kwargs))
+                last_err = None
+                break
+            except Exception as e_attempt:
+                last_err = e_attempt
+                _cleanup_partial(out_path)
+        if last_err is not None:
             for c in clips_to_concat:
                 if hasattr(c, "close"):
                     c.close()
-            return (None, _normalize_write_error(e2))
+            return (None, _normalize_write_error(last_err))
+    except Exception as e_outer:
+        _cleanup_partial(out_path)
+        for c in clips_to_concat:
+            if hasattr(c, "close"):
+                c.close()
+        return (None, _normalize_write_error(e_outer))
     try:
         if not os.path.isfile(out_path) or os.path.getsize(out_path) < _MIN_VALID_MP4_BYTES:
             _cleanup_partial(out_path)
@@ -3415,15 +3426,18 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         prompt = config.get('prompt', config.get('title', config.get('description', 'Untitled')))
         title = config.get('title', prompt[:80] if prompt else 'Documentary')
         duration = int(config.get('duration', 180))
-        res = config.get('resolution', '1280x768')
+        user_id = config.get('user_id', 'default_user')
+        try:
+            from backend.services.encoder_v2_service import resolve_v2_mobile_resolution
+            res = resolve_v2_mobile_resolution(user_id, config.get('resolution', '1280x768'))
+        except Exception:
+            res = config.get('resolution', '1280x768')
         try:
             parts = res.split('x')
             w = int(parts[0]) if len(parts) > 0 else 1280
             h = int(parts[1]) if len(parts) > 1 else 768
         except (ValueError, TypeError):
             w, h = 1280, 768
-
-        user_id = config.get('user_id', 'default_user')
         path = None
         error_message = None
         num_segments = 1  # fallback single-clip counts as one "mark"/segment
@@ -3681,6 +3695,19 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                     duration_config_sec=int(duration),
                     num_segments=num_segments,
                 )
+                try:
+                    from backend.services.encoder_v2_service import emit_v2_ops_metric
+                    emit_v2_ops_metric(
+                        user_id,
+                        "video_encode_complete",
+                        {
+                            "doc_id": doc_id,
+                            "encode_profile": enc_prof,
+                            "metrics": config.get("_video_cogs_metrics"),
+                        },
+                    )
+                except Exception:
+                    pass
             except Exception:
                 pass
             try:

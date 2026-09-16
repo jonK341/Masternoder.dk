@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional, Set
+import threading
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from backend.services.encoder_upgrade_service import (
     bulk_unlock_free,
@@ -27,6 +29,35 @@ _CATALOG_CACHE: Optional[Dict[str, Any]] = None
 _CATALOG_MTIME: float = 0.0
 
 _PRESET_LADDER = ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow")
+_PROFILE_LADDER = ("ultra", "premium", "standard", "fast_ai")
+_MOBILE_RESOLUTIONS = ("640x360", "854x480", "1280x720")
+_OPS_METRICS_FILE = os.path.join(_BASE, "data", "encoder_v2_ops_metrics.json")
+_OPS_LOCK = threading.RLock()
+
+_PODCAST_META_TEMPLATES: Dict[int, Dict[str, Any]] = {
+    0: {
+        "tags": ["ai-generated"],
+        "description_suffix": "",
+        "platform_links": {},
+    },
+    1: {
+        "tags": ["ai-generated", "super-encoder-v2"],
+        "description_suffix": " · Super Encoder v2",
+        "platform_links": {},
+    },
+    2: {
+        "tags": ["ai-generated", "podcast", "masternoder"],
+        "description_suffix": " · MasterNoder podcast feed",
+        "platform_links": {"spotify": "", "apple_podcasts": "", "youtube": ""},
+    },
+    3: {
+        "tags": ["ai-generated", "podcast", "broadcast", "masternoder"],
+        "description_suffix": " · Broadcast-ready episode",
+        "platform_links": {"spotify": "", "apple_podcasts": "", "youtube": "", "rss": "/podcast/"},
+        "season": 1,
+        "chapters_enabled": True,
+    },
+}
 
 
 def _create_app_cfg() -> Dict[str, Any]:
@@ -191,6 +222,11 @@ def aggregate_tuning(user_id: str) -> Dict[str, Any]:
     hw_rank = 0
     quality_bias = 0
     qa_strictness = 0
+    shortcut_rank = -1
+    episode_template = -1
+    retry_policy = 0
+    mn2_rebate_bps = 0
+    ops_metrics: List[str] = []
 
     for uid in unlocked:
         u = by_id.get(uid)
@@ -211,6 +247,24 @@ def aggregate_tuning(user_id: str) -> Dict[str, Any]:
             quality_bias += int(eff.get("quality_bias") or 0)
         elif etype == "qa_gate":
             qa_strictness += int(eff.get("strictness") or 0)
+        elif etype == "mobile_surface":
+            shortcut_rank = max(shortcut_rank, int(eff.get("shortcut_rank") or 0))
+        elif etype == "podcast_meta":
+            episode_template = max(episode_template, int(eff.get("episode_template") or 0))
+        elif etype == "workflow":
+            retry_policy = max(retry_policy, int(eff.get("retry_policy") or 0))
+        elif etype == "mn2_rebate":
+            mn2_rebate_bps += int(eff.get("bps") or 0)
+        elif etype == "ops_hook":
+            metric = str(eff.get("metric") or "").strip()
+            if metric and metric not in ops_metrics:
+                ops_metrics.append(metric)
+
+    mobile_resolution = (
+        _MOBILE_RESOLUTIONS[min(shortcut_rank, len(_MOBILE_RESOLUTIONS) - 1)]
+        if shortcut_rank >= 0
+        else None
+    )
 
     return {
         "unlocked_count": len(unlocked),
@@ -220,6 +274,13 @@ def aggregate_tuning(user_id: str) -> Dict[str, Any]:
         "hw_rank": hw_rank,
         "quality_bias": quality_bias,
         "qa_strictness": qa_strictness,
+        "shortcut_rank": shortcut_rank if shortcut_rank >= 0 else None,
+        "mobile_resolution": mobile_resolution,
+        "episode_template": episode_template if episode_template >= 0 else None,
+        "retry_policy": retry_policy,
+        "encode_max_attempts": 1 + retry_policy,
+        "mn2_rebate_bps": mn2_rebate_bps,
+        "ops_metrics": ops_metrics,
     }
 
 
@@ -265,6 +326,21 @@ def apply_v2_to_package(package: Dict[str, Any], user_id: Optional[str]) -> Dict
         "effective_preset": preset,
         "audio_lufs_target": tuning.get("lufs_target") or -16,
         "hardware": hardware_encode_status(),
+        "mobile_surface": {
+            "shortcut_rank": tuning.get("shortcut_rank"),
+            "resolution": tuning.get("mobile_resolution"),
+        },
+        "podcast_meta": {
+            "episode_template": tuning.get("episode_template"),
+        },
+        "workflow": {
+            "retry_policy": tuning.get("retry_policy"),
+            "encode_max_attempts": tuning.get("encode_max_attempts"),
+        },
+        "mn2_rebate": {
+            "bps": tuning.get("mn2_rebate_bps"),
+        },
+        "ops_hooks": tuning.get("ops_metrics") or [],
     }
     return out
 
@@ -286,10 +362,15 @@ def apply_v2_write_kwargs(kwargs: Dict[str, Any], user_id: Optional[str], profil
     params = list(out.get("ffmpeg_params") or [])
     params = [p for i, p in enumerate(params) if not (p == "-crf" or (i > 0 and params[i - 1] == "-crf"))]
     params = ["-crf", str(crf)] + [p for p in params if p != str(base_crf)]
+    mobile_res = tuning.get("mobile_resolution")
+    if mobile_res:
+        params = _inject_mobile_scale(params, str(mobile_res))
     out["ffmpeg_params"] = params
     if "preset" in out:
         out["preset"] = preset
     out["encoder_v2_tuning"] = tuning
+    if mobile_res:
+        out["mobile_resolution"] = mobile_res
     return out
 
 
@@ -359,6 +440,141 @@ def apply_v2_audio_filter_chain(filter_chain: str, user_id: Optional[str]) -> st
         return chain
     target = int(lufs) if float(lufs).is_integer() else float(lufs)
     return re.sub(r"(loudnorm=I=)-?\d+(?:\.\d+)?", rf"\g<1>{target}", chain)
+
+
+def _inject_mobile_scale(params: List[str], resolution: str) -> List[str]:
+    """Append -vf scale=W:H for mobile_surface unlocks (skip if scale already present)."""
+    if any(p == "-vf" for p in params):
+        return params
+    try:
+        w, h = str(resolution).lower().split("x", 1)
+        scale = f"scale={int(w)}:{int(h)}"
+    except Exception:
+        return params
+    return params + ["-vf", scale]
+
+
+def resolve_v2_mobile_resolution(user_id: Optional[str], default: str = "1280x768") -> str:
+    if not user_id:
+        return default
+    tuning = aggregate_tuning(str(user_id))
+    return str(tuning.get("mobile_resolution") or default)
+
+
+def v2_encode_profile_attempts(user_id: Optional[str], base_profile: str) -> List[str]:
+    """Profile ladder for workflow retry_policy — more unlocks = more downgrade retries."""
+    prof = str(base_profile or "fast_ai").strip().lower()
+    if prof not in VALID_PROFILES:
+        prof = "fast_ai"
+    attempts = [prof]
+    if not user_id:
+        return attempts
+    tuning = aggregate_tuning(str(user_id))
+    extra = int(tuning.get("retry_policy") or 0)
+    if extra <= 0:
+        return attempts
+    try:
+        idx = _PROFILE_LADDER.index(prof)
+    except ValueError:
+        idx = 0
+    for step in range(1, extra + 1):
+        next_idx = min(len(_PROFILE_LADDER) - 1, idx + step)
+        candidate = _PROFILE_LADDER[next_idx]
+        if candidate not in attempts:
+            attempts.append(candidate)
+    if "fast_ai" not in attempts:
+        attempts.append("fast_ai")
+    return attempts
+
+
+def apply_mn2_rebate(user_id: Optional[str], price_mn2: float) -> Dict[str, Any]:
+    """Apply stacked mn2_rebate bps from v2 unlocks."""
+    base = max(0.0, float(price_mn2 or 0))
+    if not user_id or base <= 0:
+        return {
+            "price_mn2": round(base, 8),
+            "rebate_bps": 0,
+            "rebate_mn2": 0.0,
+            "original_price_mn2": round(base, 8),
+        }
+    bps = int(aggregate_tuning(str(user_id)).get("mn2_rebate_bps") or 0)
+    bps = max(0, min(500, bps))
+    rebate = round(base * bps / 10000.0, 8)
+    final = round(max(0.0, base - rebate), 8)
+    return {
+        "price_mn2": final,
+        "rebate_bps": bps,
+        "rebate_mn2": rebate,
+        "original_price_mn2": round(base, 8),
+    }
+
+
+def build_podcast_episode_meta(user_id: Optional[str], episode: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge podcast_meta template fields from v2 unlocks into episode dict."""
+    out = dict(episode)
+    if not user_id:
+        return out
+    tuning = aggregate_tuning(str(user_id))
+    template_id = tuning.get("episode_template")
+    if template_id is None:
+        return out
+    tpl = _PODCAST_META_TEMPLATES.get(int(template_id) % len(_PODCAST_META_TEMPLATES), _PODCAST_META_TEMPLATES[0])
+    tags = list(out.get("tags") or [])
+    for tag in tpl.get("tags") or []:
+        if tag not in tags:
+            tags.append(tag)
+    out["tags"] = tags
+    suffix = str(tpl.get("description_suffix") or "")
+    if suffix:
+        out["description"] = str(out.get("description") or "").rstrip() + suffix
+    links = dict(out.get("platform_links") or {})
+    for k, v in (tpl.get("platform_links") or {}).items():
+        links.setdefault(k, v)
+    out["platform_links"] = links
+    if tpl.get("season") is not None:
+        out["season"] = tpl["season"]
+    if tpl.get("chapters_enabled"):
+        out["chapters_enabled"] = True
+    out["encoder_v2_episode_template"] = int(template_id)
+    return out
+
+
+def emit_v2_ops_metric(
+    user_id: Optional[str],
+    event: str,
+    payload: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Record ops_hook metrics from unlocked v2 upgrades."""
+    if not user_id:
+        return
+    tuning = aggregate_tuning(str(user_id))
+    metrics = tuning.get("ops_metrics") or []
+    if not metrics:
+        return
+    row = {
+        "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "user_id": str(user_id),
+        "event": str(event or "encode"),
+        "metrics": metrics,
+        "payload": dict(payload or {}),
+    }
+    try:
+        with _OPS_LOCK:
+            if os.path.isfile(_OPS_METRICS_FILE):
+                with open(_OPS_METRICS_FILE, "r", encoding="utf-8") as f:
+                    store = json.load(f)
+            else:
+                store = {"version": 1, "events": []}
+            events = list(store.get("events") or [])
+            events.append(row)
+            store["events"] = events[-500:]
+            os.makedirs(os.path.dirname(_OPS_METRICS_FILE), exist_ok=True)
+            tmp = _OPS_METRICS_FILE + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(store, f, indent=2)
+            os.replace(tmp, _OPS_METRICS_FILE)
+    except Exception:
+        pass
 
 
 def resolve_v2_encode_profile(config: Optional[Dict[str, Any]]) -> str:

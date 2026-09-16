@@ -151,30 +151,60 @@ def encode_audio_file(
         cmd.extend(["-movflags", "+faststart"])
     cmd.append(output_path)
 
+    max_attempts = 2
+    if user_id:
+        try:
+            from backend.services.encoder_v2_service import aggregate_tuning
+            max_attempts = max(2, int(aggregate_tuning(str(user_id)).get("encode_max_attempts") or 2))
+        except Exception:
+            pass
+
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        if proc.returncode != 0 or not os.path.isfile(output_path):
-            # Fallback: simpler chain without optional filters (stereotools/deesser)
-            simple = cfg.get("filter_chain", "").split(",")
-            simple = [f for f in simple if "stereotools" not in f and "deesser" not in f]
-            fallback_chain = ",".join(simple) if simple else "loudnorm=I=-16:TP=-1.5:LRA=11"
-            cmd2 = [ff, "-y", "-i", input_path, "-af", fallback_chain,
-                    "-acodec", codec, "-b:a", cfg["bitrate"],
-                    "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path]
-            proc2 = subprocess.run(cmd2, capture_output=True, text=True, timeout=600)
-            if proc2.returncode != 0 or not os.path.isfile(output_path):
+        if proc.returncode == 0 and os.path.isfile(output_path):
+            return {
+                "success": True,
+                "output_path": output_path,
+                "profile": prof,
+                "codec": codec,
+                "format": fmt,
+                "size_bytes": os.path.getsize(output_path),
+            }
+
+        attempts: List[List[str]] = []
+        simple = cfg.get("filter_chain", "").split(",")
+        simple = [f for f in simple if "stereotools" not in f and "deesser" not in f]
+        fallback_chain = ",".join(simple) if simple else "loudnorm=I=-16:TP=-1.5:LRA=11"
+        attempts.append([ff, "-y", "-i", input_path, "-af", fallback_chain,
+                         "-acodec", codec, "-b:a", cfg["bitrate"],
+                         "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+        if max_attempts >= 3:
+            attempts.append([ff, "-y", "-i", input_path, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+                             "-acodec", codec, "-b:a", cfg["bitrate"],
+                             "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+        if max_attempts >= 4:
+            attempts.append([ff, "-y", "-i", input_path,
+                             "-acodec", codec, "-b:a", cfg["bitrate"],
+                             "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+
+        last_stderr = proc.stderr or ""
+        for cmd_try in attempts:
+            proc2 = subprocess.run(cmd_try, capture_output=True, text=True, timeout=600)
+            last_stderr = proc2.stderr or last_stderr
+            if proc2.returncode == 0 and os.path.isfile(output_path):
                 return {
-                    "success": False,
-                    "error": "encode_failed",
-                    "stderr": (proc.stderr or proc2.stderr or "")[-500:],
+                    "success": True,
+                    "output_path": output_path,
+                    "profile": prof,
+                    "codec": codec,
+                    "format": fmt,
+                    "size_bytes": os.path.getsize(output_path),
                 }
         return {
-            "success": True,
-            "output_path": output_path,
-            "profile": prof,
-            "codec": codec,
-            "format": fmt,
-            "size_bytes": os.path.getsize(output_path),
+            "success": False,
+            "error": "encode_failed",
+            "stderr": last_stderr[-500:],
+            "encode_attempts": max_attempts,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}

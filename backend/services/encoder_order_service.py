@@ -72,23 +72,27 @@ def quote_order(kind: str, config: Optional[Dict[str, Any]] = None) -> Dict[str,
 
     if k == "encoder_v2_unlock":
         upgrade_id = str(cfg.get("upgrade_id") or "").strip()
-        from backend.services.encoder_v2_service import catalog_by_id
+        from backend.services.encoder_v2_service import apply_mn2_rebate, catalog_by_id
 
         row = catalog_by_id().get(upgrade_id)
         if not row:
             return {"success": False, "error": "unknown_upgrade", "upgrade_id": upgrade_id}
         unlock = row.get("unlock") or {}
         cost = 0.0 if unlock.get("free") else float(unlock.get("mn2_cost") or 0)
+        rebate = apply_mn2_rebate(str(cfg.get("user_id") or ""), cost)
+        final = float(rebate.get("price_mn2") or 0)
         return {
             "success": True,
             "kind": k,
             "upgrade_id": upgrade_id,
-            "price_mn2": cost,
+            "price_mn2": final,
             "currency": "MN2",
-            "charged": cost > 0,
+            "charged": final > 0,
+            "mn2_rebate": rebate,
         }
 
     if k == "generator_encode":
+        from backend.services.encoder_v2_service import apply_mn2_rebate
         from backend.services.generator_mn2_service import quote_generation
 
         tier = str(cfg.get("tier") or cfg.get("mn2_tier") or "standard").strip().lower()
@@ -98,10 +102,19 @@ def quote_order(kind: str, config: Optional[Dict[str, Any]] = None) -> Dict[str,
             tier=tier,
             config=cfg,
         )
-        return {**q, "success": True, "kind": k, "currency": "MN2"}
+        base = float(q.get("price_mn2") or 0)
+        rebate = apply_mn2_rebate(str(cfg.get("user_id") or ""), base)
+        return {
+            **q,
+            "success": True,
+            "kind": k,
+            "currency": "MN2",
+            "price_mn2": rebate.get("price_mn2"),
+            "mn2_rebate": rebate,
+        }
 
     if k in ("create_app_encode", "super_encode"):
-        from backend.services.encoder_v2_service import build_v2_encode_package
+        from backend.services.encoder_v2_service import apply_mn2_rebate, build_v2_encode_package
 
         quality = str(cfg.get("quality_goal") or "balanced")
         pkg = build_v2_encode_package({**cfg, "quality_goal": quality})
@@ -116,14 +129,17 @@ def quote_order(kind: str, config: Optional[Dict[str, Any]] = None) -> Dict[str,
         base = float(q.get("price_mn2") or 0)
         podcast = 0.02 if (cfg.get("include_podcast") or pkg.get("targets", {}).get("podcast")) else 0.0
         price = round(base + podcast, 8)
+        rebate = apply_mn2_rebate(str(cfg.get("user_id") or ""), price)
+        final = float(rebate.get("price_mn2") or 0)
         return {
             "success": True,
             "kind": k,
-            "price_mn2": price,
+            "price_mn2": final,
             "currency": "MN2",
-            "charged": price > 0,
+            "charged": final > 0,
             "encode_package": pkg,
             "tier": tier,
+            "mn2_rebate": rebate,
         }
 
     if k == "customer_fulfillment":

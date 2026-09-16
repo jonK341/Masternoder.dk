@@ -342,6 +342,17 @@ def _run_generate_job(
         "platform_links": {},
         "job_id": job_id,
     }
+    try:
+        from backend.services.encoder_v2_service import build_podcast_episode_meta, emit_v2_ops_metric
+
+        episode = build_podcast_episode_meta(user_id, episode)
+        emit_v2_ops_metric(
+            user_id,
+            "podcast_encode_complete",
+            {"job_id": job_id, "episode_id": eid, "encode_profile": encode_profile},
+        )
+    except Exception:
+        pass
 
     with _LOCK:
         data = _read_json(_EPISODES_FILE)
