@@ -46,8 +46,10 @@
   },
   "discord_customers": {
     "enabled": true,
+    "label": "MasterNoder chat channel",
     "channel_id": "",
-    "guild_id": ""
+    "guild_id": "",
+    "channel_url": ""
   },
   "click_rewards": {
     "enabled": true,
