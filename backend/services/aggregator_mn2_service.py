@@ -30,6 +30,7 @@ _DEFAULTS = {
         "progress_refresh": 0.0001,
         "explorer_chat": 0.0004,
         "interaction": 0.00005,
+        "discord_welcome": 0.001,
     },
     "default_reward_mn2": 0.00005,
 }

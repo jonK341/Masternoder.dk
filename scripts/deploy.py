@@ -391,8 +391,14 @@ MANIFESTS = {
         "backend/services/encoder_upgrade_service.py",
         "backend/services/encoder_order_service.py",
         "backend/services/discord_customer_ingest_service.py",
+        "backend/services/encoder_customer_fulfillment_service.py",
+        "backend/services/ledger_customer_control_service.py",
+        "backend/services/customer_aggregator_service.py",
+        "customers/index.html",
         "data/encoder_orders.json",
         "data/discord_customer_index.json",
+        "data/encoder_customer_fulfillment.json",
+        "data/ledger_customer_controls.json",
         "data/encoder_v2_catalog.json",
         "data/encoder_v2_progress.json",
         "scripts/build_encoder_v2_catalog.py",
@@ -1045,6 +1051,8 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 "data/encoder_v2_progress.json",
                 "data/encoder_orders.json",
                 "data/discord_customer_index.json",
+                "data/encoder_customer_fulfillment.json",
+                "data/ledger_customer_controls.json",
             ):
                 ssh.exec_command(
                     f"chown www-data:www-data {REMOTE_BASE}/{rel} "

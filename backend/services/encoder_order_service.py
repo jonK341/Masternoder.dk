@@ -17,6 +17,7 @@ _VALID_KINDS = frozenset({
     "create_app_encode",
     "encoder_v2_unlock",
     "super_encode",
+    "customer_fulfillment",
 })
 
 
@@ -123,6 +124,16 @@ def quote_order(kind: str, config: Optional[Dict[str, Any]] = None) -> Dict[str,
             "charged": price > 0,
             "encode_package": pkg,
             "tier": tier,
+        }
+
+    if k == "customer_fulfillment":
+        return {
+            "success": True,
+            "kind": k,
+            "price_mn2": 0.0,
+            "currency": "MN2",
+            "charged": False,
+            "label": "Discord customer aggregator fulfillment",
         }
 
     return {"success": False, "error": "unhandled_kind"}
@@ -460,5 +471,28 @@ def _dispatch_fulfillment(order: Dict[str, Any]) -> Dict[str, Any]:
                 break
         _save_apps(data)
         return {"success": True, "app_id": app_id, **enc}
+
+    if kind == "customer_fulfillment":
+        from backend.services.encoder_customer_fulfillment_service import fulfill_single_customer
+        from backend.services.discord_customer_ingest_service import list_discord_customers
+
+        discord_meta = None
+        discord_id = str(cfg.get("discord_id") or "")
+        if discord_id:
+            try:
+                from backend.services.discord_customer_ingest_service import _load_index
+
+                discord_meta = (_load_index().get("customers") or {}).get(discord_id)
+            except Exception:
+                pass
+        if not discord_meta:
+            for row in (list_discord_customers(limit=5000).get("customers") or []):
+                if row.get("user_id") == user_id:
+                    discord_meta = row
+                    break
+        res = fulfill_single_customer(user_id, discord_meta=discord_meta, skip_if_done=False)
+        if not res.get("success"):
+            return res
+        return {"success": True, "customer_fulfillment": res, "order_fulfilled": True}
 
     return {"success": False, "error": "unhandled_fulfillment", "kind": kind}

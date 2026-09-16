@@ -51,6 +51,15 @@
     "guild_id": "",
     "channel_url": ""
   },
+  "encoder_customer_fulfillment": {
+    "enabled": true,
+    "batch_limit": 50,
+    "aggregator_action": "discord_welcome"
+  },
+  "ledger_customer_control": {
+    "enabled": true,
+    "default_controller": "ai"
+  },
   "click_rewards": {
     "enabled": true,
     "instant": true,
@@ -85,7 +94,8 @@
       "intel_loaded": 0.0002,
       "progress_refresh": 0.0001,
       "explorer_chat": 0.0004,
-      "interaction": 0.00005
+      "interaction": 0.00005,
+      "discord_welcome": 0.001
     }
   },
   "callbacks": {

@@ -132,11 +132,48 @@ def list_customers(
 
 def get_customer(user_id: str) -> Dict[str, Any]:
     path = os.path.join(_POINTS_DIR, f"{user_id}.json")
-    if not os.path.isfile(path):
-        return {"success": False, "error": "not_found"}
-    with open(path, "r", encoding="utf-8") as f:
-        raw = json.load(f) or {}
-    return {"success": True, "customer": _customer_row(user_id, raw)}
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f) or {}
+        customer = _customer_row(user_id, raw)
+    else:
+        discord = _discord_meta_for_user(user_id)
+        if not discord:
+            return {"success": False, "error": "not_found"}
+        customer = {
+            "user_id": user_id,
+            "level": 1,
+            "xp_total": 0,
+            "coins": 0,
+            "mn2_balance": 0,
+            "last_active": discord.get("last_seen_at"),
+            "avatar_url": _avatar_url(user_id),
+            "identifiers": _load_identifiers(user_id),
+            "source": "discord_channel",
+            "discord": discord,
+        }
+
+    control = {}
+    fulfillment = None
+    try:
+        from backend.services.ledger_customer_control_service import get_assignment
+
+        control = get_assignment(user_id) or {}
+    except Exception:
+        pass
+    try:
+        from backend.services.encoder_customer_fulfillment_service import fulfillment_record
+
+        fulfillment = fulfillment_record(user_id)
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "customer": customer,
+        "control": control,
+        "fulfillment": fulfillment,
+    }
 
 
 def stats() -> Dict[str, Any]:

@@ -10,39 +10,210 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <style>
         body { background: #0a0a12; color: #eee; min-height: 100vh; }
-        .customers-stats { max-width: 1100px; margin: 0 auto 20px; opacity: 0.85; }
-        .card { background: rgba(30,30,50,0.9); border: 1px solid rgba(170,0,255,0.3); border-radius: 12px; padding: 16px; text-align: center; }
+        .customers-toolbar { max-width: 1100px; margin: 0 auto 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+        .customers-stats { max-width: 1100px; margin: 0 auto 20px; opacity: 0.85; text-align: center; }
+        .card { background: rgba(30,30,50,0.9); border: 1px solid rgba(170,0,255,0.3); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .2s; }
+        .card:hover { border-color: rgba(170,0,255,0.7); }
         .card img { width: 64px; height: 64px; border-radius: 12px; }
+        .card .tag { font-size: 10px; opacity: .7; margin-top: 4px; }
+        .btn { background: rgba(170,0,255,0.25); border: 1px solid rgba(170,0,255,0.5); color: #eee; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+        .btn:disabled { opacity: .5; cursor: wait; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.open { display: flex; }
+        .modal-panel { background: #14141f; border: 1px solid rgba(170,0,255,0.4); border-radius: 14px; max-width: 720px; width: 100%; max-height: 90vh; overflow: auto; padding: 20px; }
+        .modal-panel h2 { margin-top: 0; }
+        .control-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        .control-row select, .control-row input { background: #0a0a12; color: #eee; border: 1px solid #444; border-radius: 6px; padding: 6px 8px; }
+        pre.json { background: #0a0a12; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 200px; }
+        .status-ok { color: #6f6; }
+        .status-warn { color: #fc6; }
     </style>
 </head>
 <body class="layout-standard">
     <div class="page-container page-shell-wide">
     <h1 style="text-align:center;">Customers</h1>
+    <div class="customers-toolbar">
+        <button class="btn" id="btnSyncFulfill">Sync Discord + Encoder Fulfill</button>
+        <button class="btn" id="btnRefresh">Refresh</button>
+    </div>
     <p class="customers-stats" id="stats">Loading…</p>
+    <p class="customers-stats" id="fulfillStatus"></p>
     <div class="page-grid page-grid-tight" id="grid"></div>
     </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-panel">
+            <h2 id="modalTitle">Customer</h2>
+            <p id="modalMeta"></p>
+            <div class="control-row">
+                <label>Controller</label>
+                <select id="ctrlType">
+                    <option value="ai">AI Agent</option>
+                    <option value="agent">Platform Agent</option>
+                    <option value="camgirl">Camgirl</option>
+                </select>
+                <input id="ctrlId" placeholder="agent/performer id (optional)" />
+                <button class="btn" id="btnAssign">Assign</button>
+                <button class="btn" id="btnClearCtrl">Clear</button>
+            </div>
+            <div class="control-row">
+                <select id="actionPick">
+                    <option value="control_panel">AI Control Panel</option>
+                    <option value="onboard">Onboard</option>
+                    <option value="nudge">Engagement Nudge</option>
+                    <option value="health">Health Check</option>
+                    <option value="boost">AI Boost</option>
+                    <option value="catalog">Camgirl Catalog</option>
+                    <option value="status">Agent Status</option>
+                </select>
+                <button class="btn" id="btnRunAction">Run Action</button>
+            </div>
+            <pre class="json" id="modalJson">Loading ledger view…</pre>
+            <button class="btn" id="btnClose">Close</button>
+        </div>
+    </div>
+
     <script src="/static/js/navigation-toolbar.js"></script>
     <script>
-    (async function() {
+    (function() {
         const secret = new URLSearchParams(location.search).get('ops_secret') || '';
-        const hdr = secret ? {'X-Ops-Secret': secret} : {};
-        try {
-            const s = await fetch('/api/customers/stats', {headers: hdr}).then(r => r.json());
-            if (s.success) document.getElementById('stats').textContent = `Total: ${s.total || 0} · Active: ${s.active || 0}`;
-        } catch (e) {}
-        try {
-            const r = await fetch('/api/customers?limit=48', {headers: hdr}).then(r => r.json());
-            const grid = document.getElementById('grid');
-            if (!r.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
-            grid.innerHTML = (r.customers || []).map(c => `
-                <div class="card">
-                    <img src="${c.avatar_url || '/static/img/agents/default.svg'}" alt="">
-                    <div>${c.user_id}</div>
-                    <small>${(c.mn2_balance || 0).toFixed(4)} MN2</small>
-                </div>`).join('');
-        } catch (e) {
-            document.getElementById('grid').textContent = 'Failed to load customers.';
+        const hdr = secret ? {'X-Ops-Secret': secret, 'Content-Type': 'application/json'} : {'Content-Type': 'application/json'};
+        const hdrGet = secret ? {'X-Ops-Secret': secret} : {};
+        let currentUserId = null;
+
+        async function loadStats() {
+            try {
+                const s = await fetch('/api/customers/stats', {headers: hdrGet}).then(r => r.json());
+                const f = await fetch('/api/customers/fulfill/stats', {headers: hdrGet}).then(r => r.json()).catch(() => ({}));
+                const c = await fetch('/api/customers/control/stats', {headers: hdrGet}).then(r => r.json()).catch(() => ({}));
+                if (s.success) {
+                    const discord = s.discord || {};
+                    document.getElementById('stats').textContent =
+                        `Total: ${s.total || 0} · Active today: ${s.active_today || 0} · Discord: ${discord.total || s.discord_sourced || 0}` +
+                        (f.total_fulfilled != null ? ` · Encoder fulfilled: ${f.total_fulfilled}` : '') +
+                        (c.total_assigned != null ? ` · Controlled: ${c.total_assigned}` : '');
+                }
+            } catch (e) {}
         }
+
+        async function loadCustomers() {
+            const grid = document.getElementById('grid');
+            try {
+                const r = await fetch('/api/customers?limit=48&source=discord_channel', {headers: hdrGet}).then(x => x.json());
+                if (!r.success) {
+                    const r2 = await fetch('/api/customers?limit=48', {headers: hdrGet}).then(x => x.json());
+                    if (!r2.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
+                    renderGrid(r2.customers || []);
+                    return;
+                }
+                renderGrid(r.customers || []);
+            } catch (e) {
+                grid.textContent = 'Failed to load customers.';
+            }
+        }
+
+        function renderGrid(customers) {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = (customers || []).map(c => `
+                <div class="card" data-uid="${c.user_id}">
+                    <img src="${c.avatar_url || '/static/img/agents/default.svg'}" alt="">
+                    <div>${c.discord?.username || c.user_id}</div>
+                    <small>${(c.mn2_balance || 0).toFixed(4)} MN2</small>
+                    <div class="tag">${c.source || 'site'}${c.fulfillment ? ' · fulfilled' : ''}</div>
+                </div>`).join('');
+            grid.querySelectorAll('.card').forEach(el => el.addEventListener('click', () => openCustomer(el.dataset.uid)));
+        }
+
+        async function openCustomer(userId) {
+            currentUserId = userId;
+            document.getElementById('modal').classList.add('open');
+            document.getElementById('modalTitle').textContent = userId;
+            document.getElementById('modalJson').textContent = 'Loading…';
+            try {
+                const r = await fetch(`/api/customers/${encodeURIComponent(userId)}/ledger`, {headers: hdrGet}).then(x => x.json());
+                if (!r.success) {
+                    document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+                    return;
+                }
+                const assign = r.control?.assignment;
+                document.getElementById('modalMeta').innerHTML =
+                    `Source: <span class="status-ok">${r.customer?.source || '?'}</span> · ` +
+                    `MN2: ${(r.customer?.mn2_balance || 0).toFixed(4)} · ` +
+                    (assign ? `Controller: <span class="status-warn">${assign.controller_type}/${assign.controller_id || 'default'}</span>` : 'No controller assigned');
+                if (assign) {
+                    document.getElementById('ctrlType').value = assign.controller_type || 'ai';
+                    document.getElementById('ctrlId').value = assign.controller_id || '';
+                }
+                document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+            } catch (e) {
+                document.getElementById('modalJson').textContent = String(e);
+            }
+        }
+
+        document.getElementById('btnClose').addEventListener('click', () => {
+            document.getElementById('modal').classList.remove('open');
+            currentUserId = null;
+        });
+
+        document.getElementById('btnRefresh').addEventListener('click', () => { loadStats(); loadCustomers(); });
+
+        document.getElementById('btnSyncFulfill').addEventListener('click', async () => {
+            const btn = document.getElementById('btnSyncFulfill');
+            const status = document.getElementById('fulfillStatus');
+            btn.disabled = true;
+            status.textContent = 'Syncing Discord and running encoder fulfillment…';
+            try {
+                const r = await fetch('/api/customers/fulfill/discord', {
+                    method: 'POST', headers: hdr,
+                    body: JSON.stringify({sync_first: true, limit: 50})
+                }).then(x => x.json());
+                status.textContent = r.success
+                    ? `Fulfilled ${r.fulfilled_count || 0}, skipped ${r.skipped_count || 0}, errors ${r.error_count || 0}`
+                    : (r.error || 'Fulfillment failed');
+                await loadStats();
+                await loadCustomers();
+            } catch (e) {
+                status.textContent = String(e);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('btnAssign').addEventListener('click', async () => {
+            if (!currentUserId) return;
+            const body = {
+                controller_type: document.getElementById('ctrlType').value,
+                controller_id: document.getElementById('ctrlId').value
+            };
+            const r = await fetch(`/api/customers/${encodeURIComponent(currentUserId)}/control`, {
+                method: 'POST', headers: hdr, body: JSON.stringify(body)
+            }).then(x => x.json());
+            document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+            if (r.success) openCustomer(currentUserId);
+        });
+
+        document.getElementById('btnClearCtrl').addEventListener('click', async () => {
+            if (!currentUserId) return;
+            const r = await fetch(`/api/customers/${encodeURIComponent(currentUserId)}/control`, {
+                method: 'DELETE', headers: hdrGet
+            }).then(x => x.json());
+            document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+            openCustomer(currentUserId);
+        });
+
+        document.getElementById('btnRunAction').addEventListener('click', async () => {
+            if (!currentUserId) return;
+            const action = document.getElementById('actionPick').value;
+            const approved = ['catalog', 'status', 'control_panel', 'health', 'nudge', 'onboard'].includes(action);
+            const r = await fetch(`/api/customers/${encodeURIComponent(currentUserId)}/control/action`, {
+                method: 'POST', headers: hdr,
+                body: JSON.stringify({action, approved})
+            }).then(x => x.json());
+            document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+        });
+
+        loadStats();
+        loadCustomers();
     })();
     </script>
 </body>
