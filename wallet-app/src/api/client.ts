@@ -150,18 +150,51 @@ export type UpgradesCatalog = {
   upgrades: WalletUpgrade[];
 };
 
+export type UpgradeEffectsSummary = {
+  summary_cache_ttl_bonus?: number;
+  network_kpi_refresh_bonus?: number;
+  trophy_preview_bonus?: number;
+  send_preview_cache_bonus?: number;
+  monitor_refresh_bonus?: number;
+  desktop_tray_poll_bonus?: number;
+  discord_notify_bonus?: number;
+  security_checklist_bonus?: number;
+  earn_cap_bonus_pct?: number;
+  fun_mode_unlock?: boolean;
+  unlocked_effect_count?: number;
+};
+
 export type UpgradesProgress = {
   success: boolean;
   user_id: string;
   guest?: boolean;
   wallet_level: number;
   mn2_spent: number;
+  trophy_count?: number;
+  clicks_today?: number;
+  upgrade_count?: number;
   unlocked_count: number;
+  available_count?: number;
   locked_count: number;
   total: number;
   unlocked_ids: string[];
+  available_ids?: string[];
   locked_ids: string[];
-  by_category: Record<string, { unlocked: number; total: number }>;
+  progress_hints?: Record<string, string>;
+  by_category: Record<string, { unlocked: number; available?: number; locked?: number; total: number }>;
+  effects_summary?: UpgradeEffectsSummary;
+};
+
+export type UnlockUpgradeResult = {
+  success: boolean;
+  upgrade_id?: string;
+  name?: string;
+  effects?: Record<string, unknown>;
+  unlocked_at?: string;
+  progress?: UpgradesProgress;
+  error?: string;
+  message?: string;
+  progress_hint?: string;
 };
 
 export type MasternodeNode = {
@@ -198,6 +231,20 @@ export async function fetchUpgradesProgress(): Promise<UpgradesProgress> {
   });
   if (!res.ok) throw new Error(`Upgrades progress failed (${res.status})`);
   return res.json() as Promise<UpgradesProgress>;
+}
+
+export async function unlockWalletUpgrade(upgradeId: string): Promise<UnlockUpgradeResult> {
+  const res = await fetch('/api/wallet/v2/upgrades/unlock', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ upgrade_id: upgradeId }),
+  });
+  const data = (await res.json()) as UnlockUpgradeResult;
+  if (!res.ok && !data.message && !data.error) {
+    return { success: false, error: `Unlock failed (${res.status})` };
+  }
+  return data;
 }
 
 export async function fetchMasternodeMap(limit = 48): Promise<MasternodeMapData> {
