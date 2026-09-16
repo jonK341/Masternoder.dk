@@ -401,7 +401,7 @@ The **Overview** tab is the wallet’s main face: network KPIs render on first p
 | 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
 | 26 | **Discord Settings panel** — link/unlink, roles, invite, notification opt-in | Social | `v2/discord/status`, `discord_link_service`, `discord_linked_roles_service` |
 
-**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API. **WR-MOBILE-1** scaffold shipped: `mobile/wallet-twa/`, `mobile/wallet-app/`, PWA manifest, download docs, CI workflow stub, Settings download links. **WR-CASINO-1** shipped: Casino hub tab, `GET /api/wallet/v2/casino/snapshot`, Overview hero CTA, Site Features Hub primary emphasis, unit test.
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API. **WR-CASINO-1** shipped: Casino hub tab, `GET /api/wallet/v2/casino/snapshot`, Overview hero CTA, Site Features Hub primary emphasis, unit test. **WR-MOBILE-1** scaffold shipped: `mobile/wallet-twa/`, `mobile/wallet-app/`, PWA manifest, download docs, CI workflow stub, Settings download links.
 
 ---
 
@@ -781,6 +781,7 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 | GET | `/api/wallet/v2/discord/status` | Discord link state + OAuth URLs + invite | `discord_link_service.link_status`, `discord_linked_roles_service`, `casino_config` |
 | GET | `/api/wallet/v2/site-features` | Site feature matrix for Site Features Hub | `wallet_v2_service.build_site_features` |
 | GET | `/api/wallet/v2/rewards/snapshot` | Unified points snapshot for Rewards tab | `unified_points_database.get_all_points` |
+| GET | `/api/wallet/v2/casino/snapshot` | Casino hub: balance, VIP, featured games, Discord VIP | `casino_service.get_balance`, `get_vip_lounge`, `discord_link_service.link_status` |
 | GET | `/api/wallet/v2/casino/snapshot` | Casino hub: balance, VIP, featured games, Discord VIP | `casino_service.get_balance`, `get_vip_lounge`, `discord_link_service.link_status` |
 
 **`trophy-monitor/4d` response shape (sketch):**

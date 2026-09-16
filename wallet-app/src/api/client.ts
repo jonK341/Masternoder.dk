@@ -410,6 +410,56 @@ export async function postEarnClick(eventId: string): Promise<EarnClickResult> {
   return data;
 }
 
+export type CasinoFeaturedGame = {
+  id: string;
+  label?: string;
+  icon?: string;
+  tag?: string;
+  blurb?: string;
+};
+
+export type CasinoVipStatus = {
+  unlocked?: boolean;
+  enabled?: boolean;
+  level?: number | null;
+  vip_tier?: string | null;
+  user_xp?: number;
+  xp_to_unlock?: number;
+  title?: string;
+};
+
+export type CasinoSnapshot = {
+  success: boolean;
+  user_id?: string;
+  guest?: boolean;
+  message?: string;
+  casino_url?: string;
+  casino_lobby_url?: string;
+  mn2_balance?: number;
+  casino_coins?: number;
+  fiat_balance?: number;
+  bets_today?: number;
+  max_bets_per_day?: number;
+  featured_games?: CasinoFeaturedGame[];
+  featured_games_count?: number;
+  vip?: CasinoVipStatus;
+  discord_vip_eligible?: boolean;
+  discord_linked?: boolean;
+  min_mn2_for_vip?: number | null;
+  responsible_gaming_disclaimer?: string;
+  real_money_enabled?: boolean;
+  casino_error?: string;
+};
+
+export async function fetchCasinoSnapshot(): Promise<CasinoSnapshot> {
+  const res = await fetch('/api/wallet/v2/casino/snapshot', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Casino snapshot failed (${res.status})`);
+  return res.json() as Promise<CasinoSnapshot>;
+}
+
 export async function fetchExchangeWallet(): Promise<ExchangeWallet> {
   const res = await fetch('/api/exchange/wallet', {
     credentials: 'same-origin',

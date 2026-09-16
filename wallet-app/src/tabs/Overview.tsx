@@ -12,6 +12,7 @@ type Props = {
   onOpenPortal?: () => void;
   onOpenRewards?: () => void;
   onOpenEarn?: () => void;
+  onOpenCasino?: () => void;
   onOpenShop?: () => void;
   onOpenExchange?: () => void;
 };
@@ -24,6 +25,7 @@ export function Overview({
   onOpenPortal,
   onOpenRewards,
   onOpenEarn,
+  onOpenCasino,
   onOpenShop,
   onOpenExchange,
 }: Props) {
@@ -48,6 +50,11 @@ export function Overview({
           <span class="wallet-hero-cta-icon" aria-hidden="true">⚡</span>
           <span class="wallet-hero-cta-label">Earn</span>
           <span class="wallet-hero-cta-sub">Micro MN2 clicks</span>
+        </button>
+        <button type="button" class="wallet-hero-cta wallet-hero-cta--casino" onClick={onOpenCasino}>
+          <span class="wallet-hero-cta-icon" aria-hidden="true">🎰</span>
+          <span class="wallet-hero-cta-label">Casino</span>
+          <span class="wallet-hero-cta-sub">Slots &amp; VIP lounge</span>
         </button>
         <button type="button" class="wallet-hero-cta" onClick={onOpenShop}>
           <span class="wallet-hero-cta-icon" aria-hidden="true">🛒</span>

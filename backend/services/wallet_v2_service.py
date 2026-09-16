@@ -374,7 +374,7 @@ _SITE_FEATURES: List[Dict[str, Any]] = [
     {"id": "hosting", "name": "Masternode Hosting", "icon": "🖥️", "path": "/hosting", "category": "network", "description": "Hosted masternode status and payouts"},
     {"id": "proof-of-reserves", "name": "Proof of Reserves", "icon": "🔐", "path": "/proof-of-reserves", "category": "network", "description": "Treasury transparency"},
     {"id": "market", "name": "P2P Market", "icon": "📈", "path": "/market", "category": "commerce", "description": "Peer MN2 marketplace"},
-    {"id": "casino", "name": "Casino", "icon": "🎰", "path": "/casino/", "category": "play", "description": "Casino games and VIP rewards"},
+    {"id": "casino", "name": "Casino", "icon": "🎰", "path": "/casino/", "category": "play", "primary": True, "description": "MN2 casino — slots, crash, VIP lounge, Discord rewards"},
     {"id": "battlegrounds", "name": "Battlegrounds", "icon": "🗺️", "path": "/battlegrounds", "category": "play", "description": "Large-scale battle maps"},
     {"id": "starmap25", "name": "Star Map 25", "icon": "🌌", "path": "/starmap25", "category": "play", "description": "Investigation rewards and invasion events"},
     {"id": "aggregator", "name": "Aggregator", "icon": "📡", "path": "/aggregator", "category": "agents", "description": "75 AI aggregators — catalog and control panel"},
@@ -406,6 +406,88 @@ def build_site_features() -> Dict[str, Any]:
         "categories": categories,
         "features": _SITE_FEATURES,
     }
+
+
+def build_casino_snapshot(user_id: str) -> Dict[str, Any]:
+    """Casino hub snapshot for wallet — wraps casino_service and discord VIP tie-in."""
+    user_id = (user_id or "").strip() or "default_user"
+    guest = user_id in ("", "default_user", "guest")
+    payload: Dict[str, Any] = {
+        "success": True,
+        "user_id": user_id,
+        "guest": guest,
+        "casino_url": "/casino/",
+        "casino_lobby_url": "/casino/?tab=lobby",
+        "mn2_balance": 0.0,
+        "casino_coins": 0.0,
+        "fiat_balance": 0.0,
+        "featured_games": [],
+        "featured_games_count": 0,
+        "vip": {
+            "unlocked": False,
+            "enabled": False,
+            "level": None,
+            "vip_tier": None,
+        },
+        "discord_vip_eligible": False,
+        "min_mn2_for_vip": None,
+        "responsible_gaming_disclaimer": (
+            "Play responsibly. Casino games use virtual coins and optional MN2 — "
+            "set limits and never bet more than you can afford to lose."
+        ),
+        "real_money_enabled": False,
+    }
+
+    try:
+        from backend.services import casino_service
+
+        bal = casino_service.get_balance(user_id) or {}
+        if bal.get("success"):
+            payload["mn2_balance"] = float(bal.get("mn2_balance") or 0)
+            payload["casino_coins"] = float(bal.get("balance") or 0)
+            payload["fiat_balance"] = float(bal.get("fiat_balance") or 0)
+            payload["bets_today"] = bal.get("bets_today")
+            payload["max_bets_per_day"] = bal.get("max_bets_per_day")
+            rm = bal.get("real_money") if isinstance(bal.get("real_money"), dict) else {}
+            payload["real_money_enabled"] = bool(rm.get("enabled"))
+            disclaimer = (bal.get("disclaimer") or "").strip()
+            if disclaimer:
+                payload["responsible_gaming_disclaimer"] = disclaimer
+        featured = bal.get("featured_games") if isinstance(bal.get("featured_games"), list) else []
+        if not featured:
+            cfg = casino_service.get_public_config() or {}
+            featured = cfg.get("featured_games") if isinstance(cfg.get("featured_games"), list) else []
+        payload["featured_games"] = featured[:6]
+        payload["featured_games_count"] = len(featured)
+
+        vip = casino_service.get_vip_lounge(user_id) or {}
+        payload["vip"] = {
+            "unlocked": bool(vip.get("unlocked")),
+            "enabled": bool(vip.get("enabled")),
+            "level": vip.get("level"),
+            "vip_tier": vip.get("vip_tier"),
+            "user_xp": vip.get("user_xp"),
+            "xp_to_unlock": vip.get("xp_to_unlock"),
+            "title": vip.get("title"),
+        }
+    except Exception as exc:
+        payload["casino_error"] = str(exc)
+
+    if not guest:
+        try:
+            from backend.services.discord_link_service import link_status
+
+            status = link_status(user_id) or {}
+            payload["discord_vip_eligible"] = bool(status.get("casino_vip_eligible"))
+            payload["min_mn2_for_vip"] = status.get("min_mn2_for_vip")
+            payload["discord_linked"] = bool(status.get("linked"))
+        except Exception:
+            pass
+
+    if guest:
+        payload["message"] = "Sign in to play casino games with your MN2 balance."
+
+    return payload
 
 
 def build_rewards_snapshot(user_id: str) -> Dict[str, Any]:

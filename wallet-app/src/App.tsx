@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { fetchSummary, type WalletSummary } from './api/client';
 import { BalanceHero } from './components/BalanceHero';
 import { TabNav, type TabId } from './components/TabNav';
+import { CasinoHub } from './tabs/CasinoHub';
 import { Earn } from './tabs/Earn';
 import { ExchangeHub } from './tabs/ExchangeHub';
 import { Overview } from './tabs/Overview';
@@ -14,7 +15,7 @@ import { Upgrades } from './tabs/Upgrades';
 function tabFromQuery(): TabId {
   const tab = new URLSearchParams(window.location.search).get('tab');
   const valid: TabId[] = [
-    'overview', 'portal', 'rewards', 'earn', 'shop', 'exchange',
+    'overview', 'portal', 'rewards', 'earn', 'casino', 'shop', 'exchange',
     'send', 'receive', 'activity', 'monitor-4d', 'explorer-5d',
     'trophies', 'battle', 'peers', 'staking', 'upgrades', 'settings',
   ];
@@ -71,6 +72,7 @@ export function App() {
             onOpenPortal={() => onTabChange('portal')}
             onOpenRewards={() => onTabChange('rewards')}
             onOpenEarn={() => onTabChange('earn')}
+            onOpenCasino={() => onTabChange('casino')}
             onOpenShop={() => onTabChange('shop')}
             onOpenExchange={() => onTabChange('exchange')}
           />
@@ -80,12 +82,15 @@ export function App() {
           <PortalHub
             onOpenShop={() => onTabChange('shop')}
             onOpenExchange={() => onTabChange('exchange')}
+            onOpenCasino={() => onTabChange('casino')}
           />
         );
       case 'rewards':
         return <RewardsHub />;
       case 'earn':
         return <Earn />;
+      case 'casino':
+        return <CasinoHub />;
       case 'shop':
         return <ShopHub trophyCounts={summary?.trophy_counts} />;
       case 'exchange':

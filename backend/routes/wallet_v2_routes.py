@@ -13,6 +13,7 @@ from backend.services.wallet_upgrades_service import (
 from backend.services.wallet_micro_earn_service import get_status as micro_earn_status
 from backend.services.wallet_micro_earn_service import record_click as micro_earn_click
 from backend.services.wallet_v2_service import (
+    build_casino_snapshot,
     build_discord_status,
     build_rewards_snapshot,
     build_site_features,
@@ -88,6 +89,13 @@ def wallet_v2_rewards_snapshot():
     """Unified points snapshot for wallet Rewards tab — lazy-loaded."""
     user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
     return jsonify(build_rewards_snapshot(user_id)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/casino/snapshot", methods=["GET"])
+def wallet_v2_casino_snapshot():
+    """Casino hub snapshot — balance, VIP, featured games, Discord VIP eligibility."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    return jsonify(build_casino_snapshot(user_id)), 200
 
 
 @wallet_v2_bp.route("/api/wallet/v2/earn/status", methods=["GET"])

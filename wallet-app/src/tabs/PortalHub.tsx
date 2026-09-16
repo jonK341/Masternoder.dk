@@ -3,9 +3,10 @@ import { SiteFeaturesHub } from '../components/SiteFeaturesHub';
 type Props = {
   onOpenShop?: () => void;
   onOpenExchange?: () => void;
+  onOpenCasino?: () => void;
 };
 
-export function PortalHub({ onOpenShop, onOpenExchange }: Props) {
+export function PortalHub({ onOpenShop, onOpenExchange, onOpenCasino }: Props) {
   return (
     <div class="wallet-tab-panel">
       <section class="wallet-panel wallet-portal-hero">
@@ -35,6 +36,7 @@ export function PortalHub({ onOpenShop, onOpenExchange }: Props) {
             emphasizePrimary
             onOpenShop={onOpenShop}
             onOpenExchange={onOpenExchange}
+            onOpenCasino={onOpenCasino}
           />
         </div>
       </section>

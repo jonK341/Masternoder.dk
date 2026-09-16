@@ -5,6 +5,7 @@ type Props = {
   emphasizePrimary?: boolean;
   onOpenShop?: () => void;
   onOpenExchange?: () => void;
+  onOpenCasino?: () => void;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -24,7 +25,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   tools: 'Tools',
 };
 
-export function SiteFeaturesHub({ emphasizePrimary = true, onOpenShop, onOpenExchange }: Props) {
+export function SiteFeaturesHub({ emphasizePrimary = true, onOpenShop, onOpenExchange, onOpenCasino }: Props) {
   const [features, setFeatures] = useState<SiteFeature[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,11 @@ export function SiteFeaturesHub({ emphasizePrimary = true, onOpenShop, onOpenExc
     if (feature.id === 'exchange' && onOpenExchange) {
       e.preventDefault();
       onOpenExchange();
+      return;
+    }
+    if (feature.id === 'casino' && onOpenCasino) {
+      e.preventDefault();
+      onOpenCasino();
       return;
     }
   };
@@ -106,7 +112,7 @@ export function SiteFeaturesHub({ emphasizePrimary = true, onOpenShop, onOpenExc
     <div class="wallet-site-features-hub">
       {primary.length > 0 && (
         <section class="wallet-features-primary" aria-label="Primary site features">
-          <h3 class="wallet-features-section-title">Portal &amp; Rewards</h3>
+          <h3 class="wallet-features-section-title">Portal, Rewards &amp; Casino</h3>
           <div class="wallet-features-grid wallet-features-grid--primary">
             {primary.map(renderCard)}
           </div>

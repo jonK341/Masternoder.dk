@@ -3,6 +3,7 @@ export type TabId =
   | 'portal'
   | 'rewards'
   | 'earn'
+  | 'casino'
   | 'shop'
   | 'exchange'
   | 'send'
@@ -22,6 +23,7 @@ export const TABS: { id: TabId; label: string; primary?: boolean }[] = [
   { id: 'portal', label: 'Portal', primary: true },
   { id: 'rewards', label: 'Rewards', primary: true },
   { id: 'earn', label: 'Earn', primary: true },
+  { id: 'casino', label: 'Casino', primary: true },
   { id: 'shop', label: 'Shop' },
   { id: 'exchange', label: 'Exchange' },
   { id: 'send', label: 'Send' },

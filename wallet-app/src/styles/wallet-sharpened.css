@@ -644,6 +644,142 @@ body {
   background: rgba(245, 197, 66, 0.12);
 }
 
+.wallet-hero-cta--casino {
+  border-color: #ff6b9d;
+  background: rgba(255, 107, 157, 0.12);
+}
+
+.wallet-casino-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.wallet-casino-cta {
+  font-weight: 700;
+}
+
+.wallet-casino-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wallet-casino-balance-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  min-width: 120px;
+}
+
+.wallet-casino-balance-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wallet-muted);
+}
+
+.wallet-casino-balance-value {
+  font-family: var(--wallet-font-mono);
+  font-size: 0.95rem;
+  color: var(--wallet-accent);
+}
+
+.wallet-casino-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wallet-casino-status-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  min-width: 100px;
+}
+
+.wallet-casino-status-label {
+  font-size: 0.68rem;
+  color: var(--wallet-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wallet-casino-status-on {
+  font-weight: 700;
+  color: var(--wallet-accent);
+  font-size: 0.85rem;
+}
+
+.wallet-casino-status-off {
+  font-weight: 600;
+  color: var(--wallet-muted);
+  font-size: 0.85rem;
+}
+
+.wallet-casino-games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.wallet-casino-game-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-panel);
+  color: var(--wallet-text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.wallet-casino-game-card:hover {
+  border-color: #ff6b9d;
+}
+
+.wallet-casino-game-icon {
+  font-size: 1.4rem;
+}
+
+.wallet-casino-game-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.wallet-casino-game-tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ff6b9d;
+  font-weight: 700;
+}
+
+.wallet-casino-game-desc {
+  font-size: 0.72rem;
+  color: var(--wallet-muted);
+  line-height: 1.35;
+}
+
+.wallet-casino-hero {
+  border-color: #ff6b9d;
+  background: rgba(255, 107, 157, 0.06);
+}
+
+.wallet-casino-disclaimer {
+  border-style: dashed;
+}
+
 .wallet-earn-title {
   font-weight: 800;
   font-size: 1.15rem;
