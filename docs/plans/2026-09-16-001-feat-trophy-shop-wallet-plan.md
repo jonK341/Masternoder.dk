@@ -9,7 +9,8 @@ execution: code
 deepened: 2026-09-16
 block_mint_research: 2026-09-16
 trophy_rebrand: 2026-09-16
-revision: Renamed from 2026-09-16-001-feat-paypal-nft-purchase-plan.md; product language NFT→Trophy; added dynamic pricing, per-edition trading, wallet hub redesign, and wallet load optimization.
+revision: Renamed from 2026-09-16-001-feat-paypal-nft-purchase-plan.md; product language NFT→Trophy; added dynamic pricing, per-edition trading, wallet hub redesign, and wallet load optimization. Wallet hub UI superseded by greenfield rebuild — see companion plan 002.
+companion_plan: docs/plans/2026-09-16-002-feat-wallet-rebuild-plan.md
 ---
 
 # Trophy Shop, Wallet Hub, and Exchange - Plan
@@ -19,6 +20,8 @@ No upstream brainstorm existed.
 This file was first written for shop PayPal NFT sections, then enriched for Exchange, chain capability, Block Mint companion scope, and **revised in place (2026-09-16)** for the Trophy rebrand: platform-ledger trophies with edition numbering, shop + marketplace selling with adjustable/dynamic pricing, per-edition trading, a new wallet hub UI, and shorter wallet load times.
 
 **Previous filename:** `docs/plans/2026-09-16-001-feat-paypal-nft-purchase-plan.md`
+
+**Wallet rebuild (2026-09-16):** Incremental hub units **W-U2** (vanilla `wallet-hub.js`) and **W-U5** (profile/shop JS defer) are **superseded** by the greenfield SPA plan [`docs/plans/2026-09-16-002-feat-wallet-rebuild-plan.md`](2026-09-16-002-feat-wallet-rebuild-plan.md). **W-U1** summary API intent lives on as `GET /api/wallet/v2/summary`. **W-U3, W-U4, W-U6, W-U12** merge into WR-U8–WR-U12. Execute wallet UI from plan 002; keep trophy/trading units here.
 
 Product Contract preservation: R1–R18 meaning unchanged where applicable (renamed NFT→Trophy in IDs and copy).
 Added R19–R26, KD8–KD10, KTD13–KTD18, P-U1–P-U2, T-U1–T-U3, W-U1–W-U6 for pricing, trading, and wallet hub.
