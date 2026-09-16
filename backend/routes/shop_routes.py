@@ -2203,6 +2203,19 @@ def shop_block_mint_drops():
         return jsonify({'success': False, 'error': str(e), 'drops': []}), 500
 
 
+@shop_bp.route('/api/shop/block-mint/registry', methods=['GET'])
+def shop_block_mint_registry():
+    """Per-block trophy registry with license numbers and trading metadata."""
+    try:
+        limit = min(int(request.args.get('limit', 48)), 200)
+        include_claimed = str(request.args.get('include_claimed', '1')).lower() not in ('0', 'false', 'no')
+        from backend.services.block_mint_service import get_block_registry
+
+        return jsonify(get_block_registry(limit=limit, include_claimed=include_claimed)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'entries': []}), 500
+
+
 @shop_bp.route('/api/shop/block-mint/generate-media', methods=['POST'])
 def shop_block_mint_generate_media():
     """Ops: generate PNG/GIF for a block trophy height (plan 001 BM-U2)."""

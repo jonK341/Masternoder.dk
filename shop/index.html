@@ -543,6 +543,7 @@
 
         <nav class="shop-site-hub" aria-label="Commerce and wallet hubs" id="shop-site-hub">
             <a href="/shop?tab=trophies" class="shop-hub-link shop-hub-link--primary" data-hub="trophies">🏆 Trophies</a>
+            <a href="/shop?tab=block-gallery" class="shop-hub-link" data-hub="block-gallery">⛓ Block Gallery</a>
             <a href="/shop" class="shop-hub-link shop-hub-link--active" data-hub="shop" aria-current="page">🛍️ Shop</a>
             <a href="/exchange" class="shop-hub-link" data-hub="exchange">💱 Exchange</a>
             <a href="/command-center" class="shop-hub-link" data-hub="portal">🌀 Portal</a>
@@ -604,6 +605,7 @@
 
         <div class="shop-tabs" role="tablist" aria-label="Shop sections">
             <button type="button" class="shop-tab-btn" data-tab="trophies" role="tab" aria-selected="false">🏆 Trophies</button>
+            <button type="button" class="shop-tab-btn" data-tab="block-gallery" role="tab" aria-selected="false">⛓ Block Gallery</button>
             <button type="button" class="shop-tab-btn active" data-tab="catalog" role="tab" aria-selected="true">Catalog</button>
             <button type="button" class="shop-tab-btn" data-tab="auction" role="tab" aria-selected="false">Auction House</button>
             <button type="button" class="shop-tab-btn" data-tab="coins" role="tab" aria-selected="false">PayPal &amp; coins</button>
@@ -628,6 +630,18 @@
                 <div id="shop-trophy-status" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;" aria-live="polite">Loading trophies…</div>
                 <div id="shop-block-mint-teaser" class="card" style="display:none;margin-bottom:var(--spacing-md);padding:var(--spacing-md);border:1px solid rgba(0,212,255,0.35);background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,255,136,0.05));"></div>
                 <div id="shop-trophy-grid" class="shop-grid">Loading…</div>
+            </section>
+        </div>
+
+        <div id="shop-panel-block-gallery" class="shop-panel" role="tabpanel" data-panel="block-gallery">
+            <section class="shop-sharpened-panel" aria-labelledby="shop-block-gallery-heading">
+                <h2 id="shop-block-gallery-heading">⛓ Block Gallery</h2>
+                <p class="shop-sharpened-disclaimer">
+                    <strong>One unique trophy per MN2 block</strong> — AI smiley .gif, license number, battle stats,
+                    and full trading support (auction, peer transfer, exchange). Platform ledger; not on-chain mint.
+                </p>
+                <div id="shop-block-gallery-status" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;" aria-live="polite">Syncing chain blocks…</div>
+                <div id="shop-block-gallery-grid" class="shop-grid shop-block-gallery-grid">Loading…</div>
             </section>
         </div>
 
@@ -1331,7 +1345,9 @@
         function updateShopHubActive(tabName) {
             document.querySelectorAll('.shop-hub-link').forEach(link => {
                 const hub = link.dataset.hub || '';
-                const on = tabName === 'trophies' ? hub === 'trophies' : (hub === 'shop' && tabName !== 'trophies');
+                const on = (tabName === 'trophies' && hub === 'trophies')
+                    || (tabName === 'block-gallery' && hub === 'block-gallery')
+                    || (hub === 'shop' && tabName !== 'trophies' && tabName !== 'block-gallery');
                 link.classList.toggle('shop-hub-link--active', on);
                 if (on) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
@@ -1352,6 +1368,7 @@
             const strip = document.getElementById('shop-wallet-balance-strip');
             if (strip) strip.hidden = name !== 'mn2';
             if (name === 'trophies') loadTrophies();
+            if (name === 'block-gallery') loadBlockGallery();
             if (name === 'mn2') {
                 loadShopWalletStrip();
                 loadMn2Wallet();
@@ -1461,12 +1478,23 @@
                 ? `<img src="${shopEscape(gifFirst ? item.gif_url : (item.image_url || item.gif_url))}" alt="" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px;" loading="lazy" />`
                 : '';
             const stats = item.battle_stats || {};
+            const tp = item.trading_profile || {};
+            const lic = item.license_number || tp.license_number || '';
+            const licenseLine = isBlock && lic
+                ? `<div style="font-size:0.72rem;color:#9ad9ff;margin:2px 0 4px;font-family:monospace;">License ${shopEscape(lic)}</div>`
+                : '';
             const statsLine = isBlock && stats.power != null
                 ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin:4px 0 8px;font-family:monospace;">
                     Serial ${shopEscape(item.serial_number || stats.serial_number || item.id)}
                     · CR ${stats.combat_rating ?? '—'}
                     · PWR ${stats.power} DEF ${stats.defense} SPD ${stats.speed}
                     · <span style="color:#ffb347;text-transform:uppercase;">${shopEscape(stats.rarity || 'common')}</span>
+                   </div>`
+                : '';
+            const tradeLine = isBlock && tp.listing_status
+                ? `<div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:6px;">
+                    ${tp.listing_status === 'available' ? '🟢 Available' : '🔒 Claimed'}
+                    · Transfer · Auction · ${tp.royalty_bps != null ? (tp.royalty_bps / 100) + '% royalty' : '2.5% royalty'}
                    </div>`
                 : '';
             const trophyBadge = isBlock
@@ -1496,13 +1524,57 @@
                 <div class="item-icon">${item.icon || (isBlock ? '😊' : '🏆')}</div>
                 <div class="item-name">${shopEscape(item.name || item.id)}</div>
                 <div class="shop-trophy-edition">${shopEscape(item.serial_number || item.serial_key || item.id)}</div>
+                ${licenseLine}
                 ${statsLine}
+                ${tradeLine}
                 ${priceLine}
                 ${coinMn2Line}
                 <div style="font-size:0.82rem;color:var(--text-secondary);min-height:40px;margin-bottom:8px;">${shopEscape(item.description || '')}</div>
                 ${explorer}
                 <div class="shop-trophy-paypal-first">${payPalBtn}${coinBtn}${mn2Btn}</div>
             </article>`;
+        }
+
+        function renderBlockGalleryCard(item) {
+            const card = renderTrophyCard(item);
+            const highlight = (new URLSearchParams(location.search).get('highlight') || '').trim();
+            if (highlight && item.id === highlight) {
+                return card.replace('<article ', '<article id="block-highlight" style="box-shadow:0 0 0 2px #00d4ff;" ');
+            }
+            return card;
+        }
+
+        async function loadBlockGallery() {
+            const grid = document.getElementById('shop-block-gallery-grid');
+            const status = document.getElementById('shop-block-gallery-status');
+            if (!grid) return;
+            grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">Loading block gallery…</p>';
+            try {
+                const r = await fetch(`${BASE_URL}/api/shop/block-mint/registry?limit=48&include_claimed=1`);
+                const d = await r.json();
+                const entries = (d.success && d.entries) ? d.entries : [];
+                if (status) {
+                    status.textContent = (d.available_count != null ? d.available_count + ' available' : entries.length + ' blocks')
+                        + (d.claimed_count ? ` · ${d.claimed_count} claimed` : '')
+                        + (d.block_height ? ` · chain tip #${d.block_height}` : '');
+                }
+                if (!entries.length) {
+                    grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">No block trophies synced yet. New blocks appear automatically.</p>';
+                    return;
+                }
+                grid.innerHTML = entries.map(renderBlockGalleryCard).join('');
+                grid.querySelectorAll('.btn-paypal-item').forEach(btn => {
+                    btn.addEventListener('click', () => buyItemWithPayPal(btn.dataset.itemId, parseFloat(btn.dataset.amount), btn.dataset.name));
+                });
+                grid.querySelectorAll('.btn-mn2').forEach(btn => {
+                    btn.addEventListener('click', () => purchaseWithMN2(btn.dataset.itemId, parseInt(btn.dataset.priceCoins, 10), parseInt(btn.dataset.quantity, 10) || 1));
+                });
+                const hi = document.getElementById('block-highlight');
+                if (hi) hi.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) {
+                grid.innerHTML = '<p style="grid-column:1/-1;color:#f88;">Could not load block gallery.</p>';
+                if (status) status.textContent = '';
+            }
         }
 
         async function loadTrophies(seriesOverride) {

@@ -64,6 +64,14 @@ export type TrophyEdition = {
   anchor_txid?: string;
   anchor_explorer_url?: string;
   serial_number?: string;
+  license_number?: string;
+  trading_profile?: {
+    license_number?: string;
+    listing_status?: string;
+    royalty_bps?: number;
+    auction_listable?: boolean;
+    peer_transfer?: boolean;
+  };
   block_height?: number;
   platform_trophy?: boolean;
   battle_stats?: {

@@ -1,6 +1,7 @@
 {
   "enabled": true,
-  "lookback_blocks": 5,
+  "lookback_blocks": 30,
+  "one_per_block": true,
   "base_price_usd": 2.99,
   "floor_price_usd": 0.99,
   "claim_methods": ["mn2", "paypal"],

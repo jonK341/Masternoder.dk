@@ -45,7 +45,8 @@ def get_config() -> Dict[str, Any]:
         _CONFIG_PATH,
         {
             "enabled": True,
-            "lookback_blocks": 5,
+            "lookback_blocks": 30,
+            "one_per_block": True,
             "base_price_usd": 2.99,
             "floor_price_usd": 0.99,
             "claim_methods": ["mn2", "paypal"],
@@ -102,37 +103,49 @@ def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> 
     cfg = get_config()
     iid = block_item_id(height)
     media = _media_for_height(height)
-    claimed = bool((manifest_row or {}).get("claimed_by"))
-    stats = _battle_stats_preview(height)
+    manifest_row = manifest_row or {}
+    claimed = bool(manifest_row.get("claimed_by"))
+    stats = manifest_row.get("battle_stats") or _battle_stats_preview(height)
     serial = stats.get("serial_number") or f"BLK-{int(height):07d}-E0001"
-    return {
+    lic = manifest_row.get("license_number") or ""
+    row = {
         "id": iid,
         "name": f"Block Smiley Trophy #{height}",
         "kind": "trophy",
         "series": "block_mint",
-        "tags": ["block_mint", "trophy", "block_trophy", "battle"],
+        "tags": ["block_mint", "trophy", "block_trophy", "battle", "tradable"],
         "category": "trophies",
         "block_height": height,
         "supply": 1,
+        "max_supply": 1,
+        "one_per_block": True,
         "claimed": claimed,
-        "claimed_by": (manifest_row or {}).get("claimed_by"),
+        "claimed_by": manifest_row.get("claimed_by"),
         "base_price_usd": float(cfg.get("base_price_usd") or 2.99),
+        "floor_price_usd": float(cfg.get("floor_price_usd") or 0.99),
         "price": max(99, int(float(cfg.get("base_price_usd") or 2.99) * 100)),
         "on_chain_mint": False,
         "platform_trophy": True,
         "ai_generated": True,
         "serial_number": serial,
         "serial_key": serial,
+        "license_number": lic,
         "battle_stats": stats,
         "description": (
-            f"AI smiley .gif collectible minted for MN2 block #{height}. "
-            f"Serial {serial} · CR {stats.get('combat_rating', '—')} · {stats.get('rarity', 'common')} mood."
+            f"One unique AI smiley trophy per MN2 block #{height}. "
+            f"License {lic or 'pending'} · Serial {serial} · tradable on auction & peer transfer."
         ),
         "explorer_url": f"{cfg.get('explorer_base_url', '/explorer?height=')}{height}",
         "image_url": media.get("image_url"),
         "gif_url": media.get("gif_url"),
-        "shop_url": f"/shop?tab=trophies&series=block-mint&highlight={iid}",
+        "shop_url": f"/shop?tab=block-gallery&highlight={iid}",
     }
+    try:
+        from backend.services.block_trophy_registry_service import enrich_catalog_row
+
+        return enrich_catalog_row(row, manifest_row)
+    except Exception:
+        return row
 
 
 def sync_block_height() -> Dict[str, Any]:
@@ -154,13 +167,20 @@ def sync_block_height() -> Dict[str, Any]:
     for h in range(start, height + 1):
         key = str(h)
         if key not in drops:
-            drops[key] = {
+            entry = {
                 "height": h,
                 "item_id": block_item_id(h),
                 "detected_at": _iso(),
                 "claimed_by": None,
                 "claimed_at": None,
             }
+            try:
+                from backend.services.block_trophy_registry_service import manifest_fields_for_block
+
+                entry.update(manifest_fields_for_block(h))
+            except Exception:
+                pass
+            drops[key] = entry
             added.append(h)
             try:
                 from backend.services.block_trophy_media_service import ensure_block_media
@@ -203,16 +223,50 @@ def get_block_drops(limit: int = 20) -> Dict[str, Any]:
 
 
 def block_mint_shop_items() -> List[Dict[str, Any]]:
-    """Merge manifest drops into shop catalog."""
-    doc = _read_json(_MANIFEST_PATH, {"drops": {}})
-    items: List[Dict[str, Any]] = []
-    for key in sorted((doc.get("drops") or {}).keys(), key=lambda x: int(x), reverse=True)[:50]:
-        manifest_row = doc["drops"][key]
-        h = int(manifest_row.get("height") or key)
-        if manifest_row.get("claimed_by"):
+    """Merge unclaimed manifest drops into shop catalog."""
+    return [row for row in get_block_registry(limit=50).get("entries") or [] if not row.get("claimed")]
+
+
+def get_block_registry(*, limit: int = 48, include_claimed: bool = True) -> Dict[str, Any]:
+    """Full per-block trophy registry for shop gallery (one row per block)."""
+    sync_block_height()
+    doc = _read_json(_MANIFEST_PATH, {"drops": {}, "last_height": 0})
+    drops_map = doc.get("drops") or {}
+    entries: List[Dict[str, Any]] = []
+    for key in sorted(drops_map.keys(), key=lambda x: int(x), reverse=True):
+        manifest_row = drops_map[key]
+        if manifest_row.get("claimed_by") and not include_claimed:
             continue
-        items.append(_catalog_row(h, manifest_row))
-    return items
+        h = int(manifest_row.get("height") or key)
+        if not manifest_row.get("license_number"):
+            try:
+                from backend.services.block_trophy_registry_service import manifest_fields_for_block
+
+                manifest_row = {**manifest_row, **manifest_fields_for_block(h)}
+                drops_map[key] = manifest_row
+            except Exception:
+                pass
+        entries.append(_catalog_row(h, manifest_row))
+        if len(entries) >= max(1, min(limit, 200)):
+            break
+
+    if drops_map != doc.get("drops"):
+        doc["drops"] = drops_map
+        doc["updated_at"] = _iso()
+        _write_json(_MANIFEST_PATH, doc)
+
+    available = sum(1 for e in entries if not e.get("claimed"))
+    return {
+        "success": True,
+        "block_height": doc.get("last_height"),
+        "one_per_block": True,
+        "count": len(entries),
+        "available_count": available,
+        "claimed_count": len(entries) - available,
+        "entries": entries,
+        "series": "block_mint",
+        "on_chain_mint": False,
+    }
 
 
 def claim_block_trophy(
@@ -317,6 +371,8 @@ def claim_block_trophy(
     edition = grant.get("edition") or {}
 
     battle_stats: Dict[str, Any] = {}
+    lic = (drops.get(key) or {}).get("license_number") or catalog.get("license_number")
+    trading: Optional[Dict[str, Any]] = None
     try:
         from backend.services.block_trophy_battle_service import generate_battle_stats
         from backend.services.trophy_fulfillment_service import patch_edition_fields
@@ -326,6 +382,23 @@ def claim_block_trophy(
             edition_key or f"TRO-{iid}-{edition_no}",
             edition_no=int(edition_no or 1),
         )
+        try:
+            from backend.services.block_trophy_registry_service import build_trading_profile
+
+            trading = build_trading_profile(
+                h,
+                stats=battle_stats,
+                claimed=True,
+                claimed_by=uid,
+                edition_key=edition_key,
+                edition_no=int(edition_no or 1),
+                proof_hash=proof_hash,
+            )
+            if lic:
+                trading["license_number"] = lic
+        except Exception:
+            trading = None
+
         patch_edition_fields(
             uid,
             iid,
@@ -333,8 +406,11 @@ def claim_block_trophy(
             {
                 "battle_stats": battle_stats,
                 "serial_number": battle_stats.get("serial_number"),
+                "license_number": lic or (trading or {}).get("license_number"),
+                "trading_profile": trading,
                 "block_height": h,
                 "platform_trophy": True,
+                "one_per_block": True,
             },
         )
         edition = {**edition, "battle_stats": battle_stats, "serial_number": battle_stats.get("serial_number")}
@@ -345,6 +421,9 @@ def claim_block_trophy(
     row["claimed_at"] = _iso()
     row["edition_no"] = edition_no
     row["edition_key"] = edition_key
+    row["proof_hash"] = proof_hash
+    if trading:
+        row["trading_profile"] = trading
     drops[key] = row
     doc["updated_at"] = _iso()
     _write_json(_MANIFEST_PATH, doc)
@@ -378,6 +457,8 @@ def claim_block_trophy(
         "edition": edition,
         "battle_stats": battle_stats,
         "serial_number": (battle_stats or {}).get("serial_number"),
+        "license_number": lic or catalog.get("license_number"),
+        "trading_profile": trading or catalog.get("trading_profile"),
         "explorer_url": catalog.get("explorer_url"),
         "gif_url": catalog.get("gif_url"),
     }

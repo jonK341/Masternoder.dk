@@ -241,6 +241,9 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
           Edition #{edition.edition_no}
           {edition.serial_number ? ` · ${edition.serial_number}` : edition.serial_key ? ` · ${edition.serial_key}` : ''}
         </div>
+        {edition.license_number ? (
+          <div class="wallet-trophy-gallery-meta wallet-trophy-license">License {edition.license_number}</div>
+        ) : null}
         {stats ? (
           <div class="wallet-trophy-battle-stats" aria-label="Battle stats">
             <span>⚔ {stats.combat_rating ?? '—'}</span>

@@ -379,6 +379,11 @@ body {
   color: var(--wallet-accent);
 }
 
+.wallet-trophy-license {
+  color: #9ad9ff;
+  font-size: 0.68rem;
+}
+
 .wallet-trophy-gallery-price {
   font-size: 0.8rem;
   font-family: var(--wallet-font-mono);
