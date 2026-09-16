@@ -164,3 +164,21 @@ def p2p_clear_matured():
         return jsonify(p2p.clear_matured()), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_p2p_bp.route("/api/mn2/p2p/ops/agent-seed", methods=["POST", "GET"])
+def p2p_agent_seed():
+    """Ops: seed p2p_agent_* listings and optionally simulate trades (cron fallback)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services.p2p_market_agent_service import run_p2p_market_agent_job
+        data = _body()
+        target = int(data.get("target_listings") or request.args.get("target_listings") or 10)
+        trades = int(data.get("max_trades") or request.args.get("max_trades") or 2)
+        return jsonify(run_p2p_market_agent_job(
+            target_listings=max(1, min(target, 20)),
+            max_trades=max(0, min(trades, 5)),
+        )), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
