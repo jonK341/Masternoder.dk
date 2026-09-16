@@ -1,0 +1,62 @@
+{
+  "packageId": "dk.masternoder.wallet",
+  "host": "[REDACTED]",
+  "name": "MN2 Wallet",
+  "launcherName": "MN2 Wallet",
+  "display": "standalone",
+  "themeColor": "#080b10",
+  "navigationColor": "#080b10",
+  "backgroundColor": "#080b10",
+  "enableNotifications": false,
+  "startUrl": "/wallets/?app=wallet-twa&tab=overview",
+  "iconUrl": "[REDACTED]/static/img/wallet/icon-512.svg",
+  "maskableIconUrl": "[REDACTED]/static/img/wallet/icon-512.svg",
+  "monochromeIconUrl": "[REDACTED]/static/img/wallet/icon-192.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "masternoder-wallet"
+  },
+  "appVersionName": "0.1.0-preview",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Send",
+      "shortName": "Send",
+      "url": "/wallets/?app=wallet-twa&tab=send",
+      "chosenIconUrl": "[REDACTED]/static/img/wallet/icon-192.svg"
+    },
+    {
+      "name": "Receive",
+      "shortName": "Receive",
+      "url": "/wallets/?app=wallet-twa&tab=receive",
+      "chosenIconUrl": "[REDACTED]/static/img/wallet/icon-192.svg"
+    },
+    {
+      "name": "Overview",
+      "shortName": "Overview",
+      "url": "/wallets/?app=wallet-twa&tab=overview",
+      "chosenIconUrl": "[REDACTED]/static/img/wallet/icon-192.svg"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "[REDACTED]/wallets/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": false,
+    "locationDelegation": false
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "[REDACTED]/wallets/",
+  "minSdkVersion": 21,
+  "orientation": "portrait-primary",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "0.1.0-preview"
+}

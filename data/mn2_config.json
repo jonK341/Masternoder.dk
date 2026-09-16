@@ -62,5 +62,9 @@
   "order_payment_underpay_credit": true,
   "order_payment_combined_fulfill": true,
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
-  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
+  "wallet_v2_enabled": true,
+  "wallet_v2_default_tab": "overview",
+  "wallet_fun_mode": false,
+  "wallet_desktop_download_url": null
 }

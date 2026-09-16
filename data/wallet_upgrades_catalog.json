@@ -1,0 +1,3018 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-16",
+  "total": 250,
+  "categories": [
+    "speed",
+    "network_visibility",
+    "trophies",
+    "send_receive",
+    "monitors",
+    "fun",
+    "desktop",
+    "discord",
+    "security"
+  ],
+  "upgrades": [
+    {
+      "id": "WR-UPG-001",
+      "name": "Deposit address cache",
+      "effect": "Enables deposit address cache \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-002",
+      "name": "Summary prefetch",
+      "effect": "Enables summary prefetch \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-003",
+      "name": "Tab chunk preload",
+      "effect": "Enables tab chunk preload \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-004",
+      "name": "Stale-while-revalidate",
+      "effect": "Enables stale-while-revalidate \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-005",
+      "name": "Single-flight RPC",
+      "effect": "Enables single-flight rpc \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-006",
+      "name": "Balance debounce",
+      "effect": "Enables balance debounce \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-007",
+      "name": "Network KPI memo",
+      "effect": "Enables network kpi memo \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-008",
+      "name": "Lazy trophy media",
+      "effect": "Enables lazy trophy media \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-009",
+      "name": "Receive tab warm",
+      "effect": "Enables receive tab warm \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-010",
+      "name": "Send preview cache",
+      "effect": "Enables send preview cache \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-UPG-011",
+      "name": "Activity bucket cache",
+      "effect": "Enables activity bucket cache \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Reach wallet level 3"
+      }
+    },
+    {
+      "id": "WR-UPG-012",
+      "name": "Peer list throttle",
+      "effect": "Enables peer list throttle \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Reach wallet level 3"
+      }
+    },
+    {
+      "id": "WR-UPG-013",
+      "name": "Explorer block cache",
+      "effect": "Enables explorer block cache \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Reach wallet level 3"
+      }
+    },
+    {
+      "id": "WR-UPG-014",
+      "name": "Staking snapshot TTL",
+      "effect": "Enables staking snapshot ttl \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Reach wallet level 3"
+      }
+    },
+    {
+      "id": "WR-UPG-015",
+      "name": "4D monitor defer",
+      "effect": "Enables 4d monitor defer \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Reach wallet level 4"
+      }
+    },
+    {
+      "id": "WR-UPG-016",
+      "name": "GIF lazy load",
+      "effect": "Enables gif lazy load \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Reach wallet level 4"
+      }
+    },
+    {
+      "id": "WR-UPG-017",
+      "name": "Sound preload gate",
+      "effect": "Enables sound preload gate \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Reach wallet level 4"
+      }
+    },
+    {
+      "id": "WR-UPG-018",
+      "name": "SSE backoff",
+      "effect": "Enables sse backoff \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Reach wallet level 4"
+      }
+    },
+    {
+      "id": "WR-UPG-019",
+      "name": "History poll pause",
+      "effect": "Enables history poll pause \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Reach wallet level 4"
+      }
+    },
+    {
+      "id": "WR-UPG-020",
+      "name": "Overview skeleton skip",
+      "effect": "Enables overview skeleton skip \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Reach wallet level 5"
+      }
+    },
+    {
+      "id": "WR-UPG-021",
+      "name": "Bundle split",
+      "effect": "Enables bundle split \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Reach wallet level 5"
+      }
+    },
+    {
+      "id": "WR-UPG-022",
+      "name": "Font subset",
+      "effect": "Enables font subset \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Reach wallet level 5"
+      }
+    },
+    {
+      "id": "WR-UPG-023",
+      "name": "CSS critical path",
+      "effect": "Enables css critical path \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Reach wallet level 5"
+      }
+    },
+    {
+      "id": "WR-UPG-024",
+      "name": "API parallel cap",
+      "effect": "Enables api parallel cap \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Reach wallet level 5"
+      }
+    },
+    {
+      "id": "WR-UPG-025",
+      "name": "LocalStorage mirror",
+      "effect": "Enables localstorage mirror \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Reach wallet level 6"
+      }
+    },
+    {
+      "id": "WR-UPG-026",
+      "name": "Retry jitter",
+      "effect": "Enables retry jitter \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Reach wallet level 6"
+      }
+    },
+    {
+      "id": "WR-UPG-027",
+      "name": "Timeout tiering",
+      "effect": "Enables timeout tiering \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Reach wallet level 6"
+      }
+    },
+    {
+      "id": "WR-UPG-028",
+      "name": "Cold start hint",
+      "effect": "Enables cold start hint \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Reach wallet level 6"
+      }
+    },
+    {
+      "id": "WR-UPG-029",
+      "name": "Service worker hint",
+      "effect": "Enables service worker hint \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Reach wallet level 6"
+      }
+    },
+    {
+      "id": "WR-UPG-030",
+      "name": "Desktop tray poll",
+      "effect": "Enables desktop tray poll \u2014 Cuts wait time vs legacy profile wallet load.",
+      "category": "speed",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 7,
+        "label": "Reach wallet level 7"
+      }
+    },
+    {
+      "id": "WR-UPG-031",
+      "name": "Block height chip",
+      "effect": "Enables block height chip \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 7,
+        "label": "Reach wallet level 7"
+      }
+    },
+    {
+      "id": "WR-UPG-032",
+      "name": "Peer count badge",
+      "effect": "Enables peer count badge \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 7,
+        "label": "Reach wallet level 7"
+      }
+    },
+    {
+      "id": "WR-UPG-033",
+      "name": "Mempool gauge",
+      "effect": "Enables mempool gauge \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 7,
+        "label": "Reach wallet level 7"
+      }
+    },
+    {
+      "id": "WR-UPG-034",
+      "name": "MN2/USD ticker",
+      "effect": "Enables mn2/usd ticker \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 7,
+        "label": "Reach wallet level 7"
+      }
+    },
+    {
+      "id": "WR-UPG-035",
+      "name": "Staking APY strip",
+      "effect": "Enables staking apy strip \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 8,
+        "label": "Reach wallet level 8"
+      }
+    },
+    {
+      "id": "WR-UPG-036",
+      "name": "Masternode counter",
+      "effect": "Enables masternode counter \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 8,
+        "label": "Reach wallet level 8"
+      }
+    },
+    {
+      "id": "WR-UPG-037",
+      "name": "Sync status lamp",
+      "effect": "Enables sync status lamp \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 8,
+        "label": "Reach wallet level 8"
+      }
+    },
+    {
+      "id": "WR-UPG-038",
+      "name": "Difficulty readout",
+      "effect": "Enables difficulty readout \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 8,
+        "label": "Reach wallet level 8"
+      }
+    },
+    {
+      "id": "WR-UPG-039",
+      "name": "Hash rate display",
+      "effect": "Enables hash rate display \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 8,
+        "label": "Reach wallet level 8"
+      }
+    },
+    {
+      "id": "WR-UPG-040",
+      "name": "Supply snapshot",
+      "effect": "Enables supply snapshot \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 9,
+        "label": "Reach wallet level 9"
+      }
+    },
+    {
+      "id": "WR-UPG-041",
+      "name": "Daemon version tag",
+      "effect": "Enables daemon version tag \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 9,
+        "label": "Reach wallet level 9"
+      }
+    },
+    {
+      "id": "WR-UPG-042",
+      "name": "Chain name chip",
+      "effect": "Enables chain name chip \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 9,
+        "label": "Reach wallet level 9"
+      }
+    },
+    {
+      "id": "WR-UPG-043",
+      "name": "Headers vs blocks",
+      "effect": "Enables headers vs blocks \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 9,
+        "label": "Reach wallet level 9"
+      }
+    },
+    {
+      "id": "WR-UPG-044",
+      "name": "Verification progress",
+      "effect": "Enables verification progress \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 9,
+        "label": "Reach wallet level 9"
+      }
+    },
+    {
+      "id": "WR-UPG-045",
+      "name": "Median block time",
+      "effect": "Enables median block time \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 10,
+        "label": "Reach wallet level 10"
+      }
+    },
+    {
+      "id": "WR-UPG-046",
+      "name": "RPC failover flag",
+      "effect": "Enables rpc failover flag \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 10,
+        "label": "Reach wallet level 10"
+      }
+    },
+    {
+      "id": "WR-UPG-047",
+      "name": "Peer health score",
+      "effect": "Enables peer health score \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 10,
+        "label": "Reach wallet level 10"
+      }
+    },
+    {
+      "id": "WR-UPG-048",
+      "name": "On-ramp stats chip",
+      "effect": "Enables on-ramp stats chip \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 10,
+        "label": "Reach wallet level 10"
+      }
+    },
+    {
+      "id": "WR-UPG-049",
+      "name": "P2P market snippet",
+      "effect": "Enables p2p market snippet \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 10,
+        "label": "Reach wallet level 10"
+      }
+    },
+    {
+      "id": "WR-UPG-050",
+      "name": "Pool staked total",
+      "effect": "Enables pool staked total \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 11,
+        "label": "Reach wallet level 11"
+      }
+    },
+    {
+      "id": "WR-UPG-051",
+      "name": "Expected stake time",
+      "effect": "Enables expected stake time \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 11,
+        "label": "Reach wallet level 11"
+      }
+    },
+    {
+      "id": "WR-UPG-052",
+      "name": "Network alert dot",
+      "effect": "Enables network alert dot \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 11,
+        "label": "Reach wallet level 11"
+      }
+    },
+    {
+      "id": "WR-UPG-053",
+      "name": "SSE live indicator",
+      "effect": "Enables sse live indicator \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 11,
+        "label": "Reach wallet level 11"
+      }
+    },
+    {
+      "id": "WR-UPG-054",
+      "name": "Sparkline mini",
+      "effect": "Enables sparkline mini \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 11,
+        "label": "Reach wallet level 11"
+      }
+    },
+    {
+      "id": "WR-UPG-055",
+      "name": "Explorer deep link",
+      "effect": "Enables explorer deep link \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 12,
+        "label": "Reach wallet level 12"
+      }
+    },
+    {
+      "id": "WR-UPG-056",
+      "name": "Addnode helper",
+      "effect": "Enables addnode helper \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 12,
+        "label": "Reach wallet level 12"
+      }
+    },
+    {
+      "id": "WR-UPG-057",
+      "name": "Hosting capacity",
+      "effect": "Enables hosting capacity \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 12,
+        "label": "Reach wallet level 12"
+      }
+    },
+    {
+      "id": "WR-UPG-058",
+      "name": "Fleet online count",
+      "effect": "Enables fleet online count \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 12,
+        "label": "Reach wallet level 12"
+      }
+    },
+    {
+      "id": "WR-UPG-059",
+      "name": "Collateral tracker",
+      "effect": "Enables collateral tracker \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 12,
+        "label": "Reach wallet level 12"
+      }
+    },
+    {
+      "id": "WR-UPG-060",
+      "name": "Multi-ping status",
+      "effect": "Enables multi-ping status \u2014 Surfaces chain context missing from old wallet card.",
+      "category": "network_visibility",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 13,
+        "label": "Reach wallet level 13"
+      }
+    },
+    {
+      "id": "WR-UPG-061",
+      "name": "Trophy carousel slot",
+      "effect": "Enables trophy carousel slot \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 13,
+        "label": "Reach wallet level 13"
+      }
+    },
+    {
+      "id": "WR-UPG-062",
+      "name": "Edition badge glow",
+      "effect": "Enables edition badge glow \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 13,
+        "label": "Reach wallet level 13"
+      }
+    },
+    {
+      "id": "WR-UPG-063",
+      "name": "Top 25 progress",
+      "effect": "Enables top 25 progress \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 13,
+        "label": "Reach wallet level 13"
+      }
+    },
+    {
+      "id": "WR-UPG-064",
+      "name": "GIF hover preview",
+      "effect": "Enables gif hover preview \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 13,
+        "label": "Reach wallet level 13"
+      }
+    },
+    {
+      "id": "WR-UPG-065",
+      "name": "Sound on focus",
+      "effect": "Enables sound on focus \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 14,
+        "label": "Reach wallet level 14"
+      }
+    },
+    {
+      "id": "WR-UPG-066",
+      "name": "Block drop teaser",
+      "effect": "Enables block drop teaser \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 14,
+        "label": "Reach wallet level 14"
+      }
+    },
+    {
+      "id": "WR-UPG-067",
+      "name": "Auction quick-list",
+      "effect": "Enables auction quick-list \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 14,
+        "label": "Reach wallet level 14"
+      }
+    },
+    {
+      "id": "WR-UPG-068",
+      "name": "Transfer shortcut",
+      "effect": "Enables transfer shortcut \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 14,
+        "label": "Reach wallet level 14"
+      }
+    },
+    {
+      "id": "WR-UPG-069",
+      "name": "Hunter score chip",
+      "effect": "Enables hunter score chip \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 14,
+        "label": "Reach wallet level 14"
+      }
+    },
+    {
+      "id": "WR-UPG-070",
+      "name": "Series completion",
+      "effect": "Enables series completion \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 15,
+        "label": "Reach wallet level 15"
+      }
+    },
+    {
+      "id": "WR-UPG-071",
+      "name": "Price factor tooltip",
+      "effect": "Enables price factor tooltip \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 15,
+        "label": "Reach wallet level 15"
+      }
+    },
+    {
+      "id": "WR-UPG-072",
+      "name": "PayPal hold banner",
+      "effect": "Enables paypal hold banner \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 15,
+        "label": "Reach wallet level 15"
+      }
+    },
+    {
+      "id": "WR-UPG-073",
+      "name": "Share to Discord",
+      "effect": "Enables share to discord \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 15,
+        "label": "Reach wallet level 15"
+      }
+    },
+    {
+      "id": "WR-UPG-074",
+      "name": "Trophy count hero",
+      "effect": "Enables trophy count hero \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 15,
+        "label": "Reach wallet level 15"
+      }
+    },
+    {
+      "id": "WR-UPG-075",
+      "name": "Gallery grid density",
+      "effect": "Enables gallery grid density \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 16,
+        "label": "Reach wallet level 16"
+      }
+    },
+    {
+      "id": "WR-UPG-076",
+      "name": "Rarity frame",
+      "effect": "Enables rarity frame \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 16,
+        "label": "Reach wallet level 16"
+      }
+    },
+    {
+      "id": "WR-UPG-077",
+      "name": "Acquisition rail",
+      "effect": "Enables acquisition rail \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 16,
+        "label": "Reach wallet level 16"
+      }
+    },
+    {
+      "id": "WR-UPG-078",
+      "name": "Effective USD trend",
+      "effect": "Enables effective usd trend \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 16,
+        "label": "Reach wallet level 16"
+      }
+    },
+    {
+      "id": "WR-UPG-079",
+      "name": "Shop deep link",
+      "effect": "Enables shop deep link \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 16,
+        "label": "Reach wallet level 16"
+      }
+    },
+    {
+      "id": "WR-UPG-080",
+      "name": "Empty state CTA",
+      "effect": "Enables empty state cta \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 17,
+        "label": "Reach wallet level 17"
+      }
+    },
+    {
+      "id": "WR-UPG-081",
+      "name": "4D holodeck sync",
+      "effect": "Enables 4d holodeck sync \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_081",
+        "label": "Unlock achievement wallet_trophies_081"
+      }
+    },
+    {
+      "id": "WR-UPG-082",
+      "name": "Media manifest merge",
+      "effect": "Enables media manifest merge \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_082",
+        "label": "Unlock achievement wallet_trophies_082"
+      }
+    },
+    {
+      "id": "WR-UPG-083",
+      "name": "Reduced-motion static",
+      "effect": "Enables reduced-motion static \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_083",
+        "label": "Unlock achievement wallet_trophies_083"
+      }
+    },
+    {
+      "id": "WR-UPG-084",
+      "name": "Preload top 3 GIFs",
+      "effect": "Enables preload top 3 gifs \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_084",
+        "label": "Unlock achievement wallet_trophies_084"
+      }
+    },
+    {
+      "id": "WR-UPG-085",
+      "name": "Trophy filter tabs",
+      "effect": "Enables trophy filter tabs \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_085",
+        "label": "Unlock achievement wallet_trophies_085"
+      }
+    },
+    {
+      "id": "WR-UPG-086",
+      "name": "Edition sort",
+      "effect": "Enables edition sort \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_086",
+        "label": "Unlock achievement wallet_trophies_086"
+      }
+    },
+    {
+      "id": "WR-UPG-087",
+      "name": "Mint height link",
+      "effect": "Enables mint height link \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_087",
+        "label": "Unlock achievement wallet_trophies_087"
+      }
+    },
+    {
+      "id": "WR-UPG-088",
+      "name": "Collectible disclaimer",
+      "effect": "Enables collectible disclaimer \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_088",
+        "label": "Unlock achievement wallet_trophies_088"
+      }
+    },
+    {
+      "id": "WR-UPG-089",
+      "name": "Peer transfer modal",
+      "effect": "Enables peer transfer modal \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_089",
+        "label": "Unlock achievement wallet_trophies_089"
+      }
+    },
+    {
+      "id": "WR-UPG-090",
+      "name": "List edition wizard",
+      "effect": "Enables list edition wizard \u2014 Elevates trophies buried in shop/profile tabs.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_trophies_090",
+        "label": "Unlock achievement wallet_trophies_090"
+      }
+    },
+    {
+      "id": "WR-UPG-091",
+      "name": "Address book picker",
+      "effect": "Enables address book picker \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_091",
+        "label": "Unlock achievement wallet_send_receive_091"
+      }
+    },
+    {
+      "id": "WR-UPG-092",
+      "name": "Whitelist highlight",
+      "effect": "Enables whitelist highlight \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_092",
+        "label": "Unlock achievement wallet_send_receive_092"
+      }
+    },
+    {
+      "id": "WR-UPG-093",
+      "name": "Fee estimate chip",
+      "effect": "Enables fee estimate chip \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_093",
+        "label": "Unlock achievement wallet_send_receive_093"
+      }
+    },
+    {
+      "id": "WR-UPG-094",
+      "name": "Max minus fee",
+      "effect": "Enables max minus fee \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_094",
+        "label": "Unlock achievement wallet_send_receive_094"
+      }
+    },
+    {
+      "id": "WR-UPG-095",
+      "name": "Multi-step confirm",
+      "effect": "Enables multi-step confirm \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_095",
+        "label": "Unlock achievement wallet_send_receive_095"
+      }
+    },
+    {
+      "id": "WR-UPG-096",
+      "name": "2FA gate banner",
+      "effect": "Enables 2fa gate banner \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_096",
+        "label": "Unlock achievement wallet_send_receive_096"
+      }
+    },
+    {
+      "id": "WR-UPG-097",
+      "name": "Recent recipients",
+      "effect": "Enables recent recipients \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_097",
+        "label": "Unlock achievement wallet_send_receive_097"
+      }
+    },
+    {
+      "id": "WR-UPG-098",
+      "name": "Memo field",
+      "effect": "Enables memo field \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_098",
+        "label": "Unlock achievement wallet_send_receive_098"
+      }
+    },
+    {
+      "id": "WR-UPG-099",
+      "name": "Validate debounce",
+      "effect": "Enables validate debounce \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_099",
+        "label": "Unlock achievement wallet_send_receive_099"
+      }
+    },
+    {
+      "id": "WR-UPG-100",
+      "name": "QR request amount",
+      "effect": "Enables qr request amount \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_100",
+        "label": "Unlock achievement wallet_send_receive_100"
+      }
+    },
+    {
+      "id": "WR-UPG-101",
+      "name": "BIP21 URI builder",
+      "effect": "Enables bip21 uri builder \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_101",
+        "label": "Unlock achievement wallet_send_receive_101"
+      }
+    },
+    {
+      "id": "WR-UPG-102",
+      "name": "Deposit history",
+      "effect": "Enables deposit history \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_102",
+        "label": "Unlock achievement wallet_send_receive_102"
+      }
+    },
+    {
+      "id": "WR-UPG-103",
+      "name": "Copy toast",
+      "effect": "Enables copy toast \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_103",
+        "label": "Unlock achievement wallet_send_receive_103"
+      }
+    },
+    {
+      "id": "WR-UPG-104",
+      "name": "Share receive link",
+      "effect": "Enables share receive link \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_104",
+        "label": "Unlock achievement wallet_send_receive_104"
+      }
+    },
+    {
+      "id": "WR-UPG-105",
+      "name": "Explorer address link",
+      "effect": "Enables explorer address link \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_105",
+        "label": "Unlock achievement wallet_send_receive_105"
+      }
+    },
+    {
+      "id": "WR-UPG-106",
+      "name": "Stale address badge",
+      "effect": "Enables stale address badge \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_106",
+        "label": "Unlock achievement wallet_send_receive_106"
+      }
+    },
+    {
+      "id": "WR-UPG-107",
+      "name": "Withdrawable chip",
+      "effect": "Enables withdrawable chip \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_107",
+        "label": "Unlock achievement wallet_send_receive_107"
+      }
+    },
+    {
+      "id": "WR-UPG-108",
+      "name": "Held MN2 explain",
+      "effect": "Enables held mn2 explain \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_108",
+        "label": "Unlock achievement wallet_send_receive_108"
+      }
+    },
+    {
+      "id": "WR-UPG-109",
+      "name": "Liquid vs staked",
+      "effect": "Enables liquid vs staked \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_109",
+        "label": "Unlock achievement wallet_send_receive_109"
+      }
+    },
+    {
+      "id": "WR-UPG-110",
+      "name": "Send result tx link",
+      "effect": "Enables send result tx link \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_110",
+        "label": "Unlock achievement wallet_send_receive_110"
+      }
+    },
+    {
+      "id": "WR-UPG-111",
+      "name": "Preview without broadcast",
+      "effect": "Enables preview without broadcast \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_111",
+        "label": "Unlock achievement wallet_send_receive_111"
+      }
+    },
+    {
+      "id": "WR-UPG-112",
+      "name": "Invalid address inline",
+      "effect": "Enables invalid address inline \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_112",
+        "label": "Unlock achievement wallet_send_receive_112"
+      }
+    },
+    {
+      "id": "WR-UPG-113",
+      "name": "TOTP reminder",
+      "effect": "Enables totp reminder \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_113",
+        "label": "Unlock achievement wallet_send_receive_113"
+      }
+    },
+    {
+      "id": "WR-UPG-114",
+      "name": "Trusted only mode",
+      "effect": "Enables trusted only mode \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_114",
+        "label": "Unlock achievement wallet_send_receive_114"
+      }
+    },
+    {
+      "id": "WR-UPG-115",
+      "name": "Receive single-flight",
+      "effect": "Enables receive single-flight \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_115",
+        "label": "Unlock achievement wallet_send_receive_115"
+      }
+    },
+    {
+      "id": "WR-UPG-116",
+      "name": "Deposit refresh",
+      "effect": "Enables deposit refresh \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_116",
+        "label": "Unlock achievement wallet_send_receive_116"
+      }
+    },
+    {
+      "id": "WR-UPG-117",
+      "name": "Amount formatter",
+      "effect": "Enables amount formatter \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_117",
+        "label": "Unlock achievement wallet_send_receive_117"
+      }
+    },
+    {
+      "id": "WR-UPG-118",
+      "name": "Fiat toggle send",
+      "effect": "Enables fiat toggle send \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_118",
+        "label": "Unlock achievement wallet_send_receive_118"
+      }
+    },
+    {
+      "id": "WR-UPG-119",
+      "name": "Clipboard guard",
+      "effect": "Enables clipboard guard \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_119",
+        "label": "Unlock achievement wallet_send_receive_119"
+      }
+    },
+    {
+      "id": "WR-UPG-120",
+      "name": "Send cooldown hint",
+      "effect": "Enables send cooldown hint \u2014 Fixes slow deposit RPC blocking overview in v1.",
+      "category": "send_receive",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_send_receive_120",
+        "label": "Unlock achievement wallet_send_receive_120"
+      }
+    },
+    {
+      "id": "WR-UPG-121",
+      "name": "4D network strip",
+      "effect": "Enables 4d network strip \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_121",
+        "label": "Unlock achievement wallet_monitors_121"
+      }
+    },
+    {
+      "id": "WR-UPG-122",
+      "name": "5D explorer embed",
+      "effect": "Enables 5d explorer embed \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_122",
+        "label": "Unlock achievement wallet_monitors_122"
+      }
+    },
+    {
+      "id": "WR-UPG-123",
+      "name": "Peers sortable table",
+      "effect": "Enables peers sortable table \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_123",
+        "label": "Unlock achievement wallet_monitors_123"
+      }
+    },
+    {
+      "id": "WR-UPG-124",
+      "name": "Latency sparkline",
+      "effect": "Enables latency sparkline \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_124",
+        "label": "Unlock achievement wallet_monitors_124"
+      }
+    },
+    {
+      "id": "WR-UPG-125",
+      "name": "Mempool bytes KPI",
+      "effect": "Enables mempool bytes kpi \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_125",
+        "label": "Unlock achievement wallet_monitors_125"
+      }
+    },
+    {
+      "id": "WR-UPG-126",
+      "name": "Connection target",
+      "effect": "Enables connection target \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_126",
+        "label": "Unlock achievement wallet_monitors_126"
+      }
+    },
+    {
+      "id": "WR-UPG-127",
+      "name": "Inbound/outbound badge",
+      "effect": "Enables inbound/outbound badge \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_127",
+        "label": "Unlock achievement wallet_monitors_127"
+      }
+    },
+    {
+      "id": "WR-UPG-128",
+      "name": "Staking panel",
+      "effect": "Enables staking panel \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_128",
+        "label": "Unlock achievement wallet_monitors_128"
+      }
+    },
+    {
+      "id": "WR-UPG-129",
+      "name": "Wallet 5d bars",
+      "effect": "Enables wallet 5d bars \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_129",
+        "label": "Unlock achievement wallet_monitors_129"
+      }
+    },
+    {
+      "id": "WR-UPG-130",
+      "name": "Alert bell strip",
+      "effect": "Enables alert bell strip \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_130",
+        "label": "Unlock achievement wallet_monitors_130"
+      }
+    },
+    {
+      "id": "WR-UPG-131",
+      "name": "History 24h chart",
+      "effect": "Enables history 24h chart \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_131",
+        "label": "Unlock achievement wallet_monitors_131"
+      }
+    },
+    {
+      "id": "WR-UPG-132",
+      "name": "Stall detector",
+      "effect": "Enables stall detector \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_132",
+        "label": "Unlock achievement wallet_monitors_132"
+      }
+    },
+    {
+      "id": "WR-UPG-133",
+      "name": "Sync warning sound",
+      "effect": "Enables sync warning sound \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_133",
+        "label": "Unlock achievement wallet_monitors_133"
+      }
+    },
+    {
+      "id": "WR-UPG-134",
+      "name": "Monitor pause hidden",
+      "effect": "Enables monitor pause hidden \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_134",
+        "label": "Unlock achievement wallet_monitors_134"
+      }
+    },
+    {
+      "id": "WR-UPG-135",
+      "name": "Auto-refresh 30s",
+      "effect": "Enables auto-refresh 30s \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_135",
+        "label": "Unlock achievement wallet_monitors_135"
+      }
+    },
+    {
+      "id": "WR-UPG-136",
+      "name": "Peer copy addnode",
+      "effect": "Enables peer copy addnode \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_136",
+        "label": "Unlock achievement wallet_monitors_136"
+      }
+    },
+    {
+      "id": "WR-UPG-137",
+      "name": "Block list overlay",
+      "effect": "Enables block list overlay \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_137",
+        "label": "Unlock achievement wallet_monitors_137"
+      }
+    },
+    {
+      "id": "WR-UPG-138",
+      "name": "Search proxy",
+      "effect": "Enables search proxy \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_138",
+        "label": "Unlock achievement wallet_monitors_138"
+      }
+    },
+    {
+      "id": "WR-UPG-139",
+      "name": "User tx highlight",
+      "effect": "Enables user tx highlight \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_139",
+        "label": "Unlock achievement wallet_monitors_139"
+      }
+    },
+    {
+      "id": "WR-UPG-140",
+      "name": "Story strip optional",
+      "effect": "Enables story strip optional \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_140",
+        "label": "Unlock achievement wallet_monitors_140"
+      }
+    },
+    {
+      "id": "WR-UPG-141",
+      "name": "Battle widget embed",
+      "effect": "Enables battle widget embed \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_141",
+        "label": "Unlock achievement wallet_monitors_141"
+      }
+    },
+    {
+      "id": "WR-UPG-142",
+      "name": "Masternode map grid",
+      "effect": "Enables masternode map grid \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_142",
+        "label": "Unlock achievement wallet_monitors_142"
+      }
+    },
+    {
+      "id": "WR-UPG-143",
+      "name": "Rich stats expander",
+      "effect": "Enables rich stats expander \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_143",
+        "label": "Unlock achievement wallet_monitors_143"
+      }
+    },
+    {
+      "id": "WR-UPG-144",
+      "name": "KPI source tag",
+      "effect": "Enables kpi source tag \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_144",
+        "label": "Unlock achievement wallet_monitors_144"
+      }
+    },
+    {
+      "id": "WR-UPG-145",
+      "name": "Daemon reachable",
+      "effect": "Enables daemon reachable \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_145",
+        "label": "Unlock achievement wallet_monitors_145"
+      }
+    },
+    {
+      "id": "WR-UPG-146",
+      "name": "RPC degraded banner",
+      "effect": "Enables rpc degraded banner \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_146",
+        "label": "Unlock achievement wallet_monitors_146"
+      }
+    },
+    {
+      "id": "WR-UPG-147",
+      "name": "On-ramp pulse",
+      "effect": "Enables on-ramp pulse \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_147",
+        "label": "Unlock achievement wallet_monitors_147"
+      }
+    },
+    {
+      "id": "WR-UPG-148",
+      "name": "P2P volume chip",
+      "effect": "Enables p2p volume chip \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_148",
+        "label": "Unlock achievement wallet_monitors_148"
+      }
+    },
+    {
+      "id": "WR-UPG-149",
+      "name": "Hosting status",
+      "effect": "Enables hosting status \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_149",
+        "label": "Unlock achievement wallet_monitors_149"
+      }
+    },
+    {
+      "id": "WR-UPG-150",
+      "name": "Fleet map strip",
+      "effect": "Enables fleet map strip \u2014 Adds operator-grade monitors absent in profile-mn2-wallet.js.",
+      "category": "monitors",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_monitors_150",
+        "label": "Unlock achievement wallet_monitors_150"
+      }
+    },
+    {
+      "id": "WR-UPG-151",
+      "name": "Fun mode toggle",
+      "effect": "Enables fun mode toggle \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_151",
+        "label": "Unlock achievement wallet_fun_151"
+      }
+    },
+    {
+      "id": "WR-UPG-152",
+      "name": "Network chime",
+      "effect": "Enables network chime \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_152",
+        "label": "Unlock achievement wallet_fun_152"
+      }
+    },
+    {
+      "id": "WR-UPG-153",
+      "name": "Block tick sound",
+      "effect": "Enables block tick sound \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_153",
+        "label": "Unlock achievement wallet_fun_153"
+      }
+    },
+    {
+      "id": "WR-UPG-154",
+      "name": "Trophy hover sting",
+      "effect": "Enables trophy hover sting \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_154",
+        "label": "Unlock achievement wallet_fun_154"
+      }
+    },
+    {
+      "id": "WR-UPG-155",
+      "name": "Battle join animation",
+      "effect": "Enables battle join animation \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_155",
+        "label": "Unlock achievement wallet_fun_155"
+      }
+    },
+    {
+      "id": "WR-UPG-156",
+      "name": "Confetti on send",
+      "effect": "Enables confetti on send \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_156",
+        "label": "Unlock achievement wallet_fun_156"
+      }
+    },
+    {
+      "id": "WR-UPG-157",
+      "name": "Holodeck scanline",
+      "effect": "Enables holodeck scanline \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_157",
+        "label": "Unlock achievement wallet_fun_157"
+      }
+    },
+    {
+      "id": "WR-UPG-158",
+      "name": "Neon accent pulse",
+      "effect": "Enables neon accent pulse \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_158",
+        "label": "Unlock achievement wallet_fun_158"
+      }
+    },
+    {
+      "id": "WR-UPG-159",
+      "name": "Achievement toast",
+      "effect": "Enables achievement toast \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_159",
+        "label": "Unlock achievement wallet_fun_159"
+      }
+    },
+    {
+      "id": "WR-UPG-160",
+      "name": "Level-up fanfare",
+      "effect": "Enables level-up fanfare \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "achievement",
+        "value": "wallet_fun_160",
+        "label": "Unlock achievement wallet_fun_160"
+      }
+    },
+    {
+      "id": "WR-UPG-161",
+      "name": "Upgrade unlock FX",
+      "effect": "Enables upgrade unlock fx \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 25,
+        "label": "Spend 25 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-162",
+      "name": "Carousel autoplay",
+      "effect": "Enables carousel autoplay \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 50,
+        "label": "Spend 50 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-163",
+      "name": "Map node glow",
+      "effect": "Enables map node glow \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 75,
+        "label": "Spend 75 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-164",
+      "name": "Peer ping blip",
+      "effect": "Enables peer ping blip \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 100,
+        "label": "Spend 100 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-165",
+      "name": "Mempool bubble",
+      "effect": "Enables mempool bubble \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 125,
+        "label": "Spend 125 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-166",
+      "name": "Price flash green",
+      "effect": "Enables price flash green \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 150,
+        "label": "Spend 150 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-167",
+      "name": "Streak counter",
+      "effect": "Enables streak counter \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 175,
+        "label": "Spend 175 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-168",
+      "name": "Quest progress bar",
+      "effect": "Enables quest progress bar \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 200,
+        "label": "Spend 200 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-169",
+      "name": "Easter egg konami",
+      "effect": "Enables easter egg konami \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 225,
+        "label": "Spend 225 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-170",
+      "name": "Wallet mascot peek",
+      "effect": "Enables wallet mascot peek \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 250,
+        "label": "Spend 250 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-171",
+      "name": "Seasonal border",
+      "effect": "Enables seasonal border \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 275,
+        "label": "Spend 275 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-172",
+      "name": "Sound volume slider",
+      "effect": "Enables sound volume slider \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 300,
+        "label": "Spend 300 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-173",
+      "name": "Haptic desktop hint",
+      "effect": "Enables haptic desktop hint \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 325,
+        "label": "Spend 325 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-174",
+      "name": "GIF cap six",
+      "effect": "Enables gif cap six \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 350,
+        "label": "Spend 350 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-175",
+      "name": "Reduced motion respect",
+      "effect": "Enables reduced motion respect \u2014 Rewards engagement without blocking serious flows.",
+      "category": "fun",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 375,
+        "label": "Spend 375 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-176",
+      "name": "Tauri tray peek",
+      "effect": "Enables tauri tray peek \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 400,
+        "label": "Spend 400 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-177",
+      "name": "Deep link router",
+      "effect": "Enables deep link router \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 425,
+        "label": "Spend 425 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-178",
+      "name": "wallet:// tab map",
+      "effect": "Enables wallet:// tab map \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 450,
+        "label": "Spend 450 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-179",
+      "name": "Offline banner",
+      "effect": "Enables offline banner \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 475,
+        "label": "Spend 475 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-180",
+      "name": "Cookie bridge doc",
+      "effect": "Enables cookie bridge doc \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 500,
+        "label": "Spend 500 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-181",
+      "name": "Auto-update feed",
+      "effect": "Enables auto-update feed \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 525,
+        "label": "Spend 525 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-182",
+      "name": "System notify",
+      "effect": "Enables system notify \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 550,
+        "label": "Spend 550 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-183",
+      "name": "Title bar brand",
+      "effect": "Enables title bar brand \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 575,
+        "label": "Spend 575 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-184",
+      "name": "Window remember size",
+      "effect": "Enables window remember size \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 600,
+        "label": "Spend 600 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-185",
+      "name": "Minimize to tray",
+      "effect": "Enables minimize to tray \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 625,
+        "label": "Spend 625 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-186",
+      "name": "Balance tray poll",
+      "effect": "Enables balance tray poll \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 650,
+        "label": "Spend 650 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-187",
+      "name": "Open in browser",
+      "effect": "Enables open in browser \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 675,
+        "label": "Spend 675 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-188",
+      "name": "File protocol base",
+      "effect": "Enables file protocol base \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 700,
+        "label": "Spend 700 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-189",
+      "name": "Linux AppImage link",
+      "effect": "Enables linux appimage link \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 725,
+        "label": "Spend 725 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-190",
+      "name": "Windows NSIS link",
+      "effect": "Enables windows nsis link \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 750,
+        "label": "Spend 750 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-191",
+      "name": "macOS DMG link",
+      "effect": "Enables macos dmg link \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 775,
+        "label": "Spend 775 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-192",
+      "name": "Secure store hint",
+      "effect": "Enables secure store hint \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 800,
+        "label": "Spend 800 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-193",
+      "name": "Desktop fun default",
+      "effect": "Enables desktop fun default \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 825,
+        "label": "Spend 825 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-194",
+      "name": "Keyboard shortcuts",
+      "effect": "Enables keyboard shortcuts \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 850,
+        "label": "Spend 850 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-195",
+      "name": "Copy from tray",
+      "effect": "Enables copy from tray \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 875,
+        "label": "Spend 875 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-196",
+      "name": "Multi-monitor safe",
+      "effect": "Enables multi-monitor safe \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 900,
+        "label": "Spend 900 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-197",
+      "name": "HiDPI sharp edges",
+      "effect": "Enables hidpi sharp edges \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 925,
+        "label": "Spend 925 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-198",
+      "name": "Launch at login opt",
+      "effect": "Enables launch at login opt \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 950,
+        "label": "Spend 950 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-199",
+      "name": "Crash relaunch",
+      "effect": "Enables crash relaunch \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 975,
+        "label": "Spend 975 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-200",
+      "name": "Version pin display",
+      "effect": "Enables version pin display \u2014 Extends web wallet to Tauri shell parity.",
+      "category": "desktop",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1000,
+        "label": "Spend 1000 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-201",
+      "name": "Link status card",
+      "effect": "Enables link status card \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1025,
+        "label": "Spend 1025 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-202",
+      "name": "Linked role OAuth",
+      "effect": "Enables linked role oauth \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1050,
+        "label": "Spend 1050 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-203",
+      "name": "VIP eligibility chip",
+      "effect": "Enables vip eligibility chip \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1075,
+        "label": "Spend 1075 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-204",
+      "name": "Hosting VIP chip",
+      "effect": "Enables hosting vip chip \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1100,
+        "label": "Spend 1100 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-205",
+      "name": "Server invite CTA",
+      "effect": "Enables server invite cta \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1125,
+        "label": "Spend 1125 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-206",
+      "name": "Manual ID paste",
+      "effect": "Enables manual id paste \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1150,
+        "label": "Spend 1150 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-207",
+      "name": "Unlink confirm",
+      "effect": "Enables unlink confirm \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1175,
+        "label": "Spend 1175 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-208",
+      "name": "Avatar display",
+      "effect": "Enables avatar display \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1200,
+        "label": "Spend 1200 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-209",
+      "name": "Balance alert toggle",
+      "effect": "Enables balance alert toggle \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1225,
+        "label": "Spend 1225 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-210",
+      "name": "Trophy drop toggle",
+      "effect": "Enables trophy drop toggle \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1250,
+        "label": "Spend 1250 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-211",
+      "name": "Block mint toggle",
+      "effect": "Enables block mint toggle \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1275,
+        "label": "Spend 1275 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-212",
+      "name": "Battle result toggle",
+      "effect": "Enables battle result toggle \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1300,
+        "label": "Spend 1300 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-213",
+      "name": "Share trophy embed",
+      "effect": "Enables share trophy embed \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1325,
+        "label": "Spend 1325 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-214",
+      "name": "Profile deep link",
+      "effect": "Enables profile deep link \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1350,
+        "label": "Spend 1350 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-215",
+      "name": "OAuth login shortcut",
+      "effect": "Enables oauth login shortcut \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1375,
+        "label": "Spend 1375 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-216",
+      "name": "Guest banner",
+      "effect": "Enables guest banner \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1400,
+        "label": "Spend 1400 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-217",
+      "name": "Role chips row",
+      "effect": "Enables role chips row \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1425,
+        "label": "Spend 1425 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-218",
+      "name": "Notification note",
+      "effect": "Enables notification note \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1450,
+        "label": "Spend 1450 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-219",
+      "name": "Webhook share flag",
+      "effect": "Enables webhook share flag \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1475,
+        "label": "Spend 1475 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-220",
+      "name": "DM scope future",
+      "effect": "Enables dm scope future \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1500,
+        "label": "Spend 1500 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-221",
+      "name": "Casino VIP threshold",
+      "effect": "Enables casino vip threshold \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1525,
+        "label": "Spend 1525 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-222",
+      "name": "Connect button primary",
+      "effect": "Enables connect button primary \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1550,
+        "label": "Spend 1550 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-223",
+      "name": "Disconnect secondary",
+      "effect": "Enables disconnect secondary \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1575,
+        "label": "Spend 1575 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-224",
+      "name": "Prefs localStorage",
+      "effect": "Enables prefs localstorage \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1600,
+        "label": "Spend 1600 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-225",
+      "name": "Server join tracking",
+      "effect": "Enables server join tracking \u2014 Connects wallet events to Discord from Settings.",
+      "category": "discord",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1625,
+        "label": "Spend 1625 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-226",
+      "name": "2FA enroll CTA",
+      "effect": "Enables 2fa enroll cta \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1650,
+        "label": "Spend 1650 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-227",
+      "name": "Whitelist manager",
+      "effect": "Enables whitelist manager \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1675,
+        "label": "Spend 1675 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-228",
+      "name": "Withdraw verify gate",
+      "effect": "Enables withdraw verify gate \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1700,
+        "label": "Spend 1700 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-229",
+      "name": "TOTP on send",
+      "effect": "Enables totp on send \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1725,
+        "label": "Spend 1725 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-230",
+      "name": "Session timeout hint",
+      "effect": "Enables session timeout hint \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1750,
+        "label": "Spend 1750 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-231",
+      "name": "Trusted device note",
+      "effect": "Enables trusted device note \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1775,
+        "label": "Spend 1775 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-232",
+      "name": "Address checksum",
+      "effect": "Enables address checksum \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1800,
+        "label": "Spend 1800 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-233",
+      "name": "Phishing warning",
+      "effect": "Enables phishing warning \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1825,
+        "label": "Spend 1825 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-234",
+      "name": "Copy address verify",
+      "effect": "Enables copy address verify \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1850,
+        "label": "Spend 1850 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-235",
+      "name": "Fee sanity check",
+      "effect": "Enables fee sanity check \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1875,
+        "label": "Spend 1875 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-236",
+      "name": "Max send guard",
+      "effect": "Enables max send guard \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1900,
+        "label": "Spend 1900 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-237",
+      "name": "Hold window explain",
+      "effect": "Enables hold window explain \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1925,
+        "label": "Spend 1925 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-238",
+      "name": "PayPal hold lock",
+      "effect": "Enables paypal hold lock \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1950,
+        "label": "Spend 1950 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-239",
+      "name": "Audit log link",
+      "effect": "Enables audit log link \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 1975,
+        "label": "Spend 1975 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-240",
+      "name": "Ops token never client",
+      "effect": "Enables ops token never client \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2000,
+        "label": "Spend 2000 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-241",
+      "name": "RPC secret server",
+      "effect": "Enables rpc secret server \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2025,
+        "label": "Spend 2025 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-242",
+      "name": "No local keys banner",
+      "effect": "Enables no local keys banner \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2050,
+        "label": "Spend 2050 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-243",
+      "name": "Platform ledger disclaimer",
+      "effect": "Enables platform ledger disclaimer \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2075,
+        "label": "Spend 2075 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-244",
+      "name": "Explorer tx verify",
+      "effect": "Enables explorer tx verify \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2100,
+        "label": "Spend 2100 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-245",
+      "name": "Rate limit backoff",
+      "effect": "Enables rate limit backoff \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2125,
+        "label": "Spend 2125 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-246",
+      "name": "Failed attempt lock",
+      "effect": "Enables failed attempt lock \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2150,
+        "label": "Spend 2150 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-247",
+      "name": "Biometric future slot",
+      "effect": "Enables biometric future slot \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2175,
+        "label": "Spend 2175 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-248",
+      "name": "PIN future slot",
+      "effect": "Enables pin future slot \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2200,
+        "label": "Spend 2200 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-249",
+      "name": "Security checklist",
+      "effect": "Enables security checklist \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2225,
+        "label": "Spend 2225 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-250",
+      "name": "Upgrade tier lock",
+      "effect": "Enables upgrade tier lock \u2014 Hardens withdraw path from mn2-withdrawal-security.js patterns.",
+      "category": "security",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2250,
+        "label": "Spend 2250 MN2 in wallet actions"
+      }
+    }
+  ]
+}

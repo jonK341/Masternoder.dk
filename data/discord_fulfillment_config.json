@@ -1,0 +1,23 @@
+{
+  "mn2_channel_id": null,
+  "buyer_signal_weights": {
+    "payment_ledger": 30,
+    "discord_promo_redeem": 25,
+    "mn2_onramp_quote": 35,
+    "mn2_onramp_funded": 45,
+    "discord_click": 15,
+    "coin_pack_purchase": 20,
+    "casino_discord_play": 10
+  },
+  "buyer_signal_threshold": 20,
+  "default_coin_pack_sku": "mn2-pack-s",
+  "default_onramp_nudge_url": "/exchange?tab=onramp",
+  "discord_promo_codes": ["DISCORD-STARTER", "HOSTMN5", "MARKET-BONUS"],
+  "payment_item_id_hints": ["mn2", "coin", "pack", "onramp", "paypal"],
+  "priority_weights": {
+    "local_linked": 10,
+    "discord_api": 5,
+    "purchase_intent": 15,
+    "linked_and_buyer": 25
+  }
+}

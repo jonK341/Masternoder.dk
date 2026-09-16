@@ -1,0 +1,33 @@
+/* MN2 Wallet mobile shell — safe areas and standalone padding */
+
+html.wallet-mobile-active {
+  --wallet-safe-top: env(safe-area-inset-top, 0px);
+  --wallet-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html.wallet-mobile-active body {
+  padding-top: var(--wallet-safe-top);
+  padding-bottom: var(--wallet-safe-bottom);
+}
+
+html.wallet-mobile-active #wallet-root {
+  min-height: calc(100vh - var(--wallet-safe-top) - var(--wallet-safe-bottom));
+}
+
+html.wallet-mobile-active .wallet-tab-nav {
+  padding-bottom: calc(8px + var(--wallet-safe-bottom));
+}
+
+html.wallet-mobile-active.wallet-mobile-wallet_twa .wallet-tab-nav,
+html.wallet-mobile-active.wallet-mobile-wallet_capacitor .wallet-tab-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--wallet-bg, #080b10);
+}
+
+@media (max-width: 640px) {
+  html.wallet-mobile-active .wallet-overview-hero-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

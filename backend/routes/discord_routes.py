@@ -216,6 +216,47 @@ def discord_linked_role_schema():
     ), 200
 
 
+@discord_bp.route("/api/discord/fulfillment/order-list", methods=["GET"])
+def discord_fulfillment_order_list():
+    """Admin/ops — consolidated Discord community fulfillment order list."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services.discord_fulfillment_ledger_service import get_order_list
+
+    refresh = (request.args.get("refresh") or "").lower() in ("1", "true", "yes")
+    if refresh:
+        from backend.services.discord_fulfillment_ledger_service import build_order_list
+
+        build_order_list(
+            use_local=(request.args.get("use_local", "1") != "0"),
+            use_discord_api=(request.args.get("use_api", "1") != "0"),
+            use_buyer_signals=(request.args.get("use_buyers", request.args.get("use_intent", "1")) != "0"),
+        )
+    return jsonify(get_order_list()), 200
+
+
+@discord_bp.route("/api/discord/fulfillment/fulfill", methods=["POST"])
+def discord_fulfillment_fulfill():
+    """Fulfill one or all pending Discord order lines (ops)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    body = request.get_json(silent=True) or {}
+    batch = bool(body.get("all_pending") or body.get("batch"))
+    operator = (body.get("operator") or request.headers.get("X-Ops-User") or "ops").strip()
+    from backend.services.discord_fulfillment_ledger_service import fulfill_all_pending, fulfill_order
+
+    if batch:
+        limit = int(body.get("limit") or 100)
+        return jsonify(fulfill_all_pending(limit=limit, operator=operator)), 200
+    discord_id = (body.get("discord_id") or body.get("discord_user_id") or "").strip()
+    if not discord_id:
+        return jsonify({"success": False, "error": "discord_id required"}), 400
+    line_items = body.get("line_items") or body.get("line_item_ids")
+    if isinstance(line_items, str):
+        line_items = [line_items]
+    return jsonify(fulfill_order(discord_id, line_items, operator=operator)), 200
+
+
 @discord_bp.route("/api/ai/staking-advisor", methods=["GET"])
 def staking_advisor_get():
     user_id = request.args.get("user_id", "").strip()

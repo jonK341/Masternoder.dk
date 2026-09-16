@@ -1,0 +1,3017 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-16",
+  "total": 250,
+  "categories": [
+    "studio",
+    "chat",
+    "gifts",
+    "lighting",
+    "wardrobe",
+    "rewards",
+    "network",
+    "premium"
+  ],
+  "upgrades": [
+    {
+      "id": "WR-CAM-UPG-001",
+      "name": "Ring light boost",
+      "effect": "Studio upgrade: Ring light boost \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-002",
+      "name": "Backdrop swap",
+      "effect": "Studio upgrade: Backdrop swap \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-003",
+      "name": "Green screen edge",
+      "effect": "Studio upgrade: Green screen edge \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-004",
+      "name": "4K stream tier",
+      "effect": "Studio upgrade: 4K stream tier \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-005",
+      "name": "Dual camera angle",
+      "effect": "Studio upgrade: Dual camera angle \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-006",
+      "name": "Audio noise gate",
+      "effect": "Studio upgrade: Audio noise gate \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-007",
+      "name": "Mic warmth filter",
+      "effect": "Studio upgrade: Mic warmth filter \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-008",
+      "name": "Chat overlay skin",
+      "effect": "Studio upgrade: Chat overlay skin \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "default",
+        "value": 0,
+        "label": "Available at wallet launch"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-009",
+      "name": "Tip goal banner",
+      "effect": "Studio upgrade: Tip goal banner \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Wallet level 6"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-010",
+      "name": "Viewer counter chip",
+      "effect": "Studio upgrade: Viewer counter chip \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 2,
+        "label": "Wallet level 2"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-011",
+      "name": "Schedule slot +1",
+      "effect": "Studio upgrade: Schedule slot +1 \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Wallet level 3"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-012",
+      "name": "Private room key",
+      "effect": "Studio upgrade: Private room key \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Wallet level 4"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-013",
+      "name": "Lobby spotlight",
+      "effect": "Studio upgrade: Lobby spotlight \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Wallet level 5"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-014",
+      "name": "Thumbnail frame",
+      "effect": "Studio upgrade: Thumbnail frame \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Wallet level 6"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-015",
+      "name": "Bio card glow",
+      "effect": "Studio upgrade: Bio card glow \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 2,
+        "label": "Wallet level 2"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-016",
+      "name": "Tagline editor",
+      "effect": "Studio upgrade: Tagline editor \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 3,
+        "label": "Wallet level 3"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-017",
+      "name": "Avatar frame rare",
+      "effect": "Studio upgrade: Avatar frame rare \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 4,
+        "label": "Wallet level 4"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-018",
+      "name": "Status ping online",
+      "effect": "Studio upgrade: Status ping online \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "level",
+        "value": 5,
+        "label": "Wallet level 5"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-019",
+      "name": "Away message slot",
+      "effect": "Studio upgrade: Away message slot \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "level",
+        "value": 6,
+        "label": "Wallet level 6"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-020",
+      "name": "Welcome auto-reply",
+      "effect": "Studio upgrade: Welcome auto-reply \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "level",
+        "value": 2,
+        "label": "Wallet level 2"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-021",
+      "name": "Moderator slot",
+      "effect": "Studio upgrade: Moderator slot \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 113,
+        "label": "Spend 113 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-022",
+      "name": "Slow mode toggle",
+      "effect": "Studio upgrade: Slow mode toggle \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 116,
+        "label": "Spend 116 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-023",
+      "name": "Emote pack unlock",
+      "effect": "Studio upgrade: Emote pack unlock \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 119,
+        "label": "Spend 119 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-024",
+      "name": "Sticker wall tier",
+      "effect": "Studio upgrade: Sticker wall tier \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 122,
+        "label": "Spend 122 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-025",
+      "name": "Poll widget",
+      "effect": "Studio upgrade: Poll widget \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 125,
+        "label": "Spend 125 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-026",
+      "name": "Q&A queue",
+      "effect": "Studio upgrade: Q&A queue \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 128,
+        "label": "Spend 128 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-027",
+      "name": "Highlight reel slot",
+      "effect": "Studio upgrade: Highlight reel slot \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 131,
+        "label": "Spend 131 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-028",
+      "name": "Clip bookmark",
+      "effect": "Studio upgrade: Clip bookmark \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 134,
+        "label": "Spend 134 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-029",
+      "name": "Session timer extend",
+      "effect": "Studio upgrade: Session timer extend \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 137,
+        "label": "Spend 137 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-030",
+      "name": "Studio nameplate",
+      "effect": "Studio upgrade: Studio nameplate \u2014 enhances camgirl wallet experience.",
+      "category": "studio",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 140,
+        "label": "Spend 140 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-031",
+      "name": "Whisper priority",
+      "effect": "Studio upgrade: Whisper priority \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 143,
+        "label": "Spend 143 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-032",
+      "name": "Mention highlight",
+      "effect": "Studio upgrade: Mention highlight \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 146,
+        "label": "Spend 146 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-033",
+      "name": "Chat color tier",
+      "effect": "Studio upgrade: Chat color tier \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 149,
+        "label": "Spend 149 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-034",
+      "name": "Badge flair",
+      "effect": "Studio upgrade: Badge flair \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 152,
+        "label": "Spend 152 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-035",
+      "name": "Pinned note slot",
+      "effect": "Studio upgrade: Pinned note slot \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 155,
+        "label": "Spend 155 MN2 in shop"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-036",
+      "name": "Reaction pack",
+      "effect": "Studio upgrade: Reaction pack \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-037",
+      "name": "GIF reply unlock",
+      "effect": "Studio upgrade: GIF reply unlock \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-038",
+      "name": "Voice note stub",
+      "effect": "Studio upgrade: Voice note stub \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-039",
+      "name": "Translate assist",
+      "effect": "Studio upgrade: Translate assist \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-040",
+      "name": "Spam shield +1",
+      "effect": "Studio upgrade: Spam shield +1 \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-041",
+      "name": "Keyword alert",
+      "effect": "Studio upgrade: Keyword alert \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-042",
+      "name": "Fan nickname list",
+      "effect": "Studio upgrade: Fan nickname list \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-043",
+      "name": "VIP chat lane",
+      "effect": "Studio upgrade: VIP chat lane \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-044",
+      "name": "Mod highlight",
+      "effect": "Studio upgrade: Mod highlight \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-045",
+      "name": "Slow chat bypass",
+      "effect": "Studio upgrade: Slow chat bypass \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-046",
+      "name": "Emoji burst",
+      "effect": "Studio upgrade: Emoji burst \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-047",
+      "name": "Thread reply",
+      "effect": "Studio upgrade: Thread reply \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-048",
+      "name": "Quote reply",
+      "effect": "Studio upgrade: Quote reply \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-049",
+      "name": "Chat history export",
+      "effect": "Studio upgrade: Chat history export \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-050",
+      "name": "Mute list expand",
+      "effect": "Studio upgrade: Mute list expand \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-051",
+      "name": "Block list expand",
+      "effect": "Studio upgrade: Block list expand \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-052",
+      "name": "Auto-thank tip",
+      "effect": "Studio upgrade: Auto-thank tip \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-053",
+      "name": "Greeting macro",
+      "effect": "Studio upgrade: Greeting macro \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-054",
+      "name": "Farewell macro",
+      "effect": "Studio upgrade: Farewell macro \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-055",
+      "name": "Raid shout template",
+      "effect": "Studio upgrade: Raid shout template \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-056",
+      "name": "Collab invite slot",
+      "effect": "Studio upgrade: Collab invite slot \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-057",
+      "name": "Co-host badge",
+      "effect": "Studio upgrade: Co-host badge \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-058",
+      "name": "Chat raffle stub",
+      "effect": "Studio upgrade: Chat raffle stub \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-059",
+      "name": "Loyalty streak chip",
+      "effect": "Studio upgrade: Loyalty streak chip \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-060",
+      "name": "Chat XP multiplier",
+      "effect": "Studio upgrade: Chat XP multiplier \u2014 enhances camgirl wallet experience.",
+      "category": "chat",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-061",
+      "name": "Rose animation",
+      "effect": "Studio upgrade: Rose animation \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-062",
+      "name": "Heart shower",
+      "effect": "Studio upgrade: Heart shower \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-063",
+      "name": "Star burst",
+      "effect": "Studio upgrade: Star burst \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-064",
+      "name": "Diamond tier gift",
+      "effect": "Studio upgrade: Diamond tier gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-065",
+      "name": "Crown moment",
+      "effect": "Studio upgrade: Crown moment \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-066",
+      "name": "Fireworks overlay",
+      "effect": "Studio upgrade: Fireworks overlay \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-067",
+      "name": "Confetti burst",
+      "effect": "Studio upgrade: Confetti burst \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-068",
+      "name": "Neon sign gift",
+      "effect": "Studio upgrade: Neon sign gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-069",
+      "name": "Moonbeam gift",
+      "effect": "Studio upgrade: Moonbeam gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-070",
+      "name": "Sunrise gift",
+      "effect": "Studio upgrade: Sunrise gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-071",
+      "name": "Galaxy gift",
+      "effect": "Studio upgrade: Galaxy gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-072",
+      "name": "Crystal gift",
+      "effect": "Studio upgrade: Crystal gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-073",
+      "name": "Tip sound sting",
+      "effect": "Studio upgrade: Tip sound sting \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-074",
+      "name": "Gift combo x2",
+      "effect": "Studio upgrade: Gift combo x2 \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-075",
+      "name": "Gift combo x3",
+      "effect": "Studio upgrade: Gift combo x3 \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-076",
+      "name": "Milestone fanfare",
+      "effect": "Studio upgrade: Milestone fanfare \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-077",
+      "name": "Leaderboard gift",
+      "effect": "Studio upgrade: Leaderboard gift \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-078",
+      "name": "Anonymous gift mask",
+      "effect": "Studio upgrade: Anonymous gift mask \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-079",
+      "name": "Gift message expand",
+      "effect": "Studio upgrade: Gift message expand \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-080",
+      "name": "Gift schedule",
+      "effect": "Studio upgrade: Gift schedule \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-081",
+      "name": "Wishlist slot",
+      "effect": "Studio upgrade: Wishlist slot \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-082",
+      "name": "Goal stretch bonus",
+      "effect": "Studio upgrade: Goal stretch bonus \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-083",
+      "name": "Tip train starter",
+      "effect": "Studio upgrade: Tip train starter \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-084",
+      "name": "Tip train x5",
+      "effect": "Studio upgrade: Tip train x5 \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-085",
+      "name": "Rain gift mode",
+      "effect": "Studio upgrade: Rain gift mode \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-086",
+      "name": "Community pot",
+      "effect": "Studio upgrade: Community pot \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-087",
+      "name": "Sponsor slot",
+      "effect": "Studio upgrade: Sponsor slot \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-088",
+      "name": "Merch shoutout",
+      "effect": "Studio upgrade: Merch shoutout \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-089",
+      "name": "Charity tie-in badge",
+      "effect": "Studio upgrade: Charity tie-in badge \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-090",
+      "name": "Gift history pin",
+      "effect": "Studio upgrade: Gift history pin \u2014 enhances camgirl wallet experience.",
+      "category": "gifts",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-091",
+      "name": "Warm key light",
+      "effect": "Studio upgrade: Warm key light \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-092",
+      "name": "Cool fill light",
+      "effect": "Studio upgrade: Cool fill light \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-093",
+      "name": "Rim light accent",
+      "effect": "Studio upgrade: Rim light accent \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-094",
+      "name": "Color gel pack",
+      "effect": "Studio upgrade: Color gel pack \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-095",
+      "name": "Sunset preset",
+      "effect": "Studio upgrade: Sunset preset \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-096",
+      "name": "Midnight preset",
+      "effect": "Studio upgrade: Midnight preset \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-097",
+      "name": "Neon preset",
+      "effect": "Studio upgrade: Neon preset \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-098",
+      "name": "Softbox diffuse",
+      "effect": "Studio upgrade: Softbox diffuse \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-099",
+      "name": "Spotlight narrow",
+      "effect": "Studio upgrade: Spotlight narrow \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-100",
+      "name": "Bokeh background",
+      "effect": "Studio upgrade: Bokeh background \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-101",
+      "name": "Shadow soften",
+      "effect": "Studio upgrade: Shadow soften \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-102",
+      "name": "Brightness auto",
+      "effect": "Studio upgrade: Brightness auto \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-103",
+      "name": "Contrast curve",
+      "effect": "Studio upgrade: Contrast curve \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-104",
+      "name": "Skin tone balance",
+      "effect": "Studio upgrade: Skin tone balance \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-105",
+      "name": "HDR stream hint",
+      "effect": "Studio upgrade: HDR stream hint \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-106",
+      "name": "Flicker reduce",
+      "effect": "Studio upgrade: Flicker reduce \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-107",
+      "name": "Stage sweep",
+      "effect": "Studio upgrade: Stage sweep \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-108",
+      "name": "Pulse beat sync",
+      "effect": "Studio upgrade: Pulse beat sync \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-109",
+      "name": "Disco ball stub",
+      "effect": "Studio upgrade: Disco ball stub \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-110",
+      "name": "Candle preset",
+      "effect": "Studio upgrade: Candle preset \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-111",
+      "name": "Aurora preset",
+      "effect": "Studio upgrade: Aurora preset \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-112",
+      "name": "Studio dimmer",
+      "effect": "Studio upgrade: Studio dimmer \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-113",
+      "name": "Light map save",
+      "effect": "Studio upgrade: Light map save \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-114",
+      "name": "Scene recall A",
+      "effect": "Studio upgrade: Scene recall A \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-115",
+      "name": "Scene recall B",
+      "effect": "Studio upgrade: Scene recall B \u2014 enhances camgirl wallet experience.",
+      "category": "lighting",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-116",
+      "name": "Casual outfit slot",
+      "effect": "Studio upgrade: Casual outfit slot \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-117",
+      "name": "Formal outfit slot",
+      "effect": "Studio upgrade: Formal outfit slot \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-118",
+      "name": "Cosplay frame",
+      "effect": "Studio upgrade: Cosplay frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-119",
+      "name": "Seasonal border",
+      "effect": "Studio upgrade: Seasonal border \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-120",
+      "name": "Accessory pack",
+      "effect": "Studio upgrade: Accessory pack \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-121",
+      "name": "Hair variant",
+      "effect": "Studio upgrade: Hair variant \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-122",
+      "name": "Color palette swap",
+      "effect": "Studio upgrade: Color palette swap \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-123",
+      "name": "Logo watermark",
+      "effect": "Studio upgrade: Logo watermark \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-124",
+      "name": "Brand overlay",
+      "effect": "Studio upgrade: Brand overlay \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-125",
+      "name": "Outfit preview",
+      "effect": "Studio upgrade: Outfit preview \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-126",
+      "name": "Wardrobe favorites",
+      "effect": "Studio upgrade: Wardrobe favorites \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-127",
+      "name": "Quick change macro",
+      "effect": "Studio upgrade: Quick change macro \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-128",
+      "name": "Theme night tag",
+      "effect": "Studio upgrade: Theme night tag \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-129",
+      "name": "Holiday frame",
+      "effect": "Studio upgrade: Holiday frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-130",
+      "name": "Retro filter frame",
+      "effect": "Studio upgrade: Retro filter frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-131",
+      "name": "Minimalist card",
+      "effect": "Studio upgrade: Minimalist card \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-132",
+      "name": "Glamour card style",
+      "effect": "Studio upgrade: Glamour card style \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-133",
+      "name": "Sporty badge",
+      "effect": "Studio upgrade: Sporty badge \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-134",
+      "name": "Art deco frame",
+      "effect": "Studio upgrade: Art deco frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-135",
+      "name": "Pixel frame",
+      "effect": "Studio upgrade: Pixel frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-136",
+      "name": "Hologram frame stub",
+      "effect": "Studio upgrade: Hologram frame stub \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-137",
+      "name": "Collectible border",
+      "effect": "Studio upgrade: Collectible border \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-138",
+      "name": "Fan club frame",
+      "effect": "Studio upgrade: Fan club frame \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-139",
+      "name": "Milestone outfit",
+      "effect": "Studio upgrade: Milestone outfit \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-140",
+      "name": "Signature look save",
+      "effect": "Studio upgrade: Signature look save \u2014 enhances camgirl wallet experience.",
+      "category": "wardrobe",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-141",
+      "name": "Daily login bonus",
+      "effect": "Studio upgrade: Daily login bonus \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-142",
+      "name": "Chat streak +1",
+      "effect": "Studio upgrade: Chat streak +1 \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-143",
+      "name": "Tip back micro",
+      "effect": "Studio upgrade: Tip back micro \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-144",
+      "name": "Viewer loyalty chip",
+      "effect": "Studio upgrade: Viewer loyalty chip \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-145",
+      "name": "Rating star bonus",
+      "effect": "Studio upgrade: Rating star bonus \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-146",
+      "name": "Active hour badge",
+      "effect": "Studio upgrade: Active hour badge \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-147",
+      "name": "Weekend multiplier",
+      "effect": "Studio upgrade: Weekend multiplier \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 1,
+        "label": "Own 1 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-148",
+      "name": "Referral slot",
+      "effect": "Studio upgrade: Referral slot \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-149",
+      "name": "Collab bonus",
+      "effect": "Studio upgrade: Collab bonus \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-150",
+      "name": "Raid bonus",
+      "effect": "Studio upgrade: Raid bonus \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-151",
+      "name": "Goal smash bonus",
+      "effect": "Studio upgrade: Goal smash bonus \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-152",
+      "name": "New fan welcome",
+      "effect": "Studio upgrade: New fan welcome \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-153",
+      "name": "Returning fan ping",
+      "effect": "Studio upgrade: Returning fan ping \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-154",
+      "name": "Top fan spotlight",
+      "effect": "Studio upgrade: Top fan spotlight \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 2,
+        "label": "Own 2 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-155",
+      "name": "Leaderboard peek",
+      "effect": "Studio upgrade: Leaderboard peek \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-156",
+      "name": "MN2 micro drip",
+      "effect": "Studio upgrade: MN2 micro drip \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-157",
+      "name": "Points sync wallet",
+      "effect": "Studio upgrade: Points sync wallet \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-158",
+      "name": "Achievement toast",
+      "effect": "Studio upgrade: Achievement toast \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-159",
+      "name": "Level-up studio",
+      "effect": "Studio upgrade: Level-up studio \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-160",
+      "name": "Quest hook chat",
+      "effect": "Studio upgrade: Quest hook chat \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-161",
+      "name": "Discord cross-post",
+      "effect": "Studio upgrade: Discord cross-post \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 3,
+        "label": "Own 3 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-162",
+      "name": "News mention slot",
+      "effect": "Studio upgrade: News mention slot \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-163",
+      "name": "Podcast shout slot",
+      "effect": "Studio upgrade: Podcast shout slot \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-164",
+      "name": "Wallet tab pin",
+      "effect": "Studio upgrade: Wallet tab pin \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-165",
+      "name": "Upgrade bundle hint",
+      "effect": "Studio upgrade: Upgrade bundle hint \u2014 enhances camgirl wallet experience.",
+      "category": "rewards",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-166",
+      "name": "CDN edge boost",
+      "effect": "Studio upgrade: CDN edge boost \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-167",
+      "name": "Latency badge",
+      "effect": "Studio upgrade: Latency badge \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-168",
+      "name": "Reconnect grace",
+      "effect": "Studio upgrade: Reconnect grace \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-169",
+      "name": "Mobile layout opt",
+      "effect": "Studio upgrade: Mobile layout opt \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-170",
+      "name": "Low-bandwidth mode",
+      "effect": "Studio upgrade: Low-bandwidth mode \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-171",
+      "name": "Preview quality step",
+      "effect": "Studio upgrade: Preview quality step \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-172",
+      "name": "Thumbnail CDN",
+      "effect": "Studio upgrade: Thumbnail CDN \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-173",
+      "name": "Avatar CDN",
+      "effect": "Studio upgrade: Avatar CDN \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-174",
+      "name": "Presence heartbeat",
+      "effect": "Studio upgrade: Presence heartbeat \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-175",
+      "name": "Online roster slot",
+      "effect": "Studio upgrade: Online roster slot \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-176",
+      "name": "Network chat bridge",
+      "effect": "Studio upgrade: Network chat bridge \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-177",
+      "name": "Wallet deep link",
+      "effect": "Studio upgrade: Wallet deep link \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-178",
+      "name": "Exchange tip rail",
+      "effect": "Studio upgrade: Exchange tip rail \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-179",
+      "name": "Shop gift rail",
+      "effect": "Studio upgrade: Shop gift rail \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-180",
+      "name": "Casino cross-promo",
+      "effect": "Studio upgrade: Casino cross-promo \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-181",
+      "name": "Podcast embed",
+      "effect": "Studio upgrade: Podcast embed \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-182",
+      "name": "News ticker sync",
+      "effect": "Studio upgrade: News ticker sync \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-183",
+      "name": "Encoder clip share",
+      "effect": "Studio upgrade: Encoder clip share \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-184",
+      "name": "Peer discovery stub",
+      "effect": "Studio upgrade: Peer discovery stub \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-185",
+      "name": "Geo hint off",
+      "effect": "Studio upgrade: Geo hint off \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-186",
+      "name": "Privacy blur toggle",
+      "effect": "Studio upgrade: Privacy blur toggle \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-187",
+      "name": "Session token extend",
+      "effect": "Studio upgrade: Session token extend \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-188",
+      "name": "Rate limit cushion",
+      "effect": "Studio upgrade: Rate limit cushion \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-189",
+      "name": "Failover banner",
+      "effect": "Studio upgrade: Failover banner \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-190",
+      "name": "Health check chip",
+      "effect": "Studio upgrade: Health check chip \u2014 enhances camgirl wallet experience.",
+      "category": "network",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-191",
+      "name": "VIP lounge pass",
+      "effect": "Studio upgrade: VIP lounge pass \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-192",
+      "name": "Private show token",
+      "effect": "Studio upgrade: Private show token \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-193",
+      "name": "Extended session",
+      "effect": "Studio upgrade: Extended session \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-194",
+      "name": "HD priority lane",
+      "effect": "Studio upgrade: HD priority lane \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-195",
+      "name": "4K priority lane",
+      "effect": "Studio upgrade: 4K priority lane \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-196",
+      "name": "No-ad interstitial",
+      "effect": "Studio upgrade: No-ad interstitial \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 2,
+        "label": "Own 2 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-197",
+      "name": "Custom room theme",
+      "effect": "Studio upgrade: Custom room theme \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-198",
+      "name": "Branded overlay",
+      "effect": "Studio upgrade: Branded overlay \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-199",
+      "name": "Analytics peek",
+      "effect": "Studio upgrade: Analytics peek \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-200",
+      "name": "Revenue snapshot",
+      "effect": "Studio upgrade: Revenue snapshot \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-201",
+      "name": "Fan CRM export",
+      "effect": "Studio upgrade: Fan CRM export \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-202",
+      "name": "Schedule assistant",
+      "effect": "Studio upgrade: Schedule assistant \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-203",
+      "name": "Auto-clip highlight",
+      "effect": "Studio upgrade: Auto-clip highlight \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 3,
+        "label": "Own 3 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-204",
+      "name": "AI caption assist",
+      "effect": "Studio upgrade: AI caption assist \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-205",
+      "name": "Multi-language room",
+      "effect": "Studio upgrade: Multi-language room \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-206",
+      "name": "Co-stream slot",
+      "effect": "Studio upgrade: Co-stream slot \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-207",
+      "name": "Recording stub",
+      "effect": "Studio upgrade: Recording stub \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-208",
+      "name": "Archive slot",
+      "effect": "Studio upgrade: Archive slot \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-209",
+      "name": "Merch shelf",
+      "effect": "Studio upgrade: Merch shelf \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-210",
+      "name": "PayPal tip rail",
+      "effect": "Studio upgrade: PayPal tip rail \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 1,
+        "label": "Own 1 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-211",
+      "name": "MN2 hold explain",
+      "effect": "Studio upgrade: MN2 hold explain \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-212",
+      "name": "Wallet upgrade sync",
+      "effect": "Studio upgrade: Wallet upgrade sync \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-213",
+      "name": "Trophy gift link",
+      "effect": "Studio upgrade: Trophy gift link \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-214",
+      "name": "Battle promo tile",
+      "effect": "Studio upgrade: Battle promo tile \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-215",
+      "name": "Staking shout",
+      "effect": "Studio upgrade: Staking shout \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-216",
+      "name": "Masternode flair",
+      "effect": "Studio upgrade: Masternode flair \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-217",
+      "name": "Explorer link card",
+      "effect": "Studio upgrade: Explorer link card \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 2,
+        "label": "Own 2 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-218",
+      "name": "Generator teaser",
+      "effect": "Studio upgrade: Generator teaser \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-219",
+      "name": "Lab collab invite",
+      "effect": "Studio upgrade: Lab collab invite \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-220",
+      "name": "Compendium lore pin",
+      "effect": "Studio upgrade: Compendium lore pin \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-221",
+      "name": "Profit daemon nod",
+      "effect": "Studio upgrade: Profit daemon nod \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-222",
+      "name": "Aggregator badge",
+      "effect": "Studio upgrade: Aggregator badge \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-223",
+      "name": "Agent co-host stub",
+      "effect": "Studio upgrade: Agent co-host stub \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 18,
+        "label": "Unlock 18 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-224",
+      "name": "Social hub cross",
+      "effect": "Studio upgrade: Social hub cross \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 3,
+        "label": "Own 3 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-225",
+      "name": "Gallery pin",
+      "effect": "Studio upgrade: Gallery pin \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-226",
+      "name": "Debugger opt-out",
+      "effect": "Studio upgrade: Debugger opt-out \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-227",
+      "name": "Owner spotlight",
+      "effect": "Studio upgrade: Owner spotlight \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-228",
+      "name": "Season pass tier 1",
+      "effect": "Studio upgrade: Season pass tier 1 \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-229",
+      "name": "Season pass tier 2",
+      "effect": "Studio upgrade: Season pass tier 2 \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-230",
+      "name": "Founders frame",
+      "effect": "Studio upgrade: Founders frame \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 10,
+        "label": "Unlock 10 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-231",
+      "name": "Platinum border",
+      "effect": "Studio upgrade: Platinum border \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 1,
+        "label": "Own 1 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-232",
+      "name": "Diamond lounge",
+      "effect": "Studio upgrade: Diamond lounge \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-233",
+      "name": "Elite tip rail",
+      "effect": "Studio upgrade: Elite tip rail \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-234",
+      "name": "Concierge chat",
+      "effect": "Studio upgrade: Concierge chat \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-235",
+      "name": "Priority support",
+      "effect": "Studio upgrade: Priority support \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-236",
+      "name": "Custom emote upload",
+      "effect": "Studio upgrade: Custom emote upload \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 16,
+        "label": "Unlock 16 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-237",
+      "name": "Brand partnership slot",
+      "effect": "Studio upgrade: Brand partnership slot \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 17,
+        "label": "Unlock 17 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-238",
+      "name": "Sponsor overlay",
+      "effect": "Studio upgrade: Sponsor overlay \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 2,
+        "label": "Own 2 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-239",
+      "name": "Revenue share peek",
+      "effect": "Studio upgrade: Revenue share peek \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 19,
+        "label": "Unlock 19 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-240",
+      "name": "Tax export hook",
+      "effect": "Studio upgrade: Tax export hook \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 5,
+        "label": "Unlock 5 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-241",
+      "name": "Wallet tab badge",
+      "effect": "Studio upgrade: Wallet tab badge \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 6,
+        "label": "Unlock 6 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-242",
+      "name": "Cross-promo carousel",
+      "effect": "Studio upgrade: Cross-promo carousel \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 7,
+        "label": "Unlock 7 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-243",
+      "name": "Holiday mega pack",
+      "effect": "Studio upgrade: Holiday mega pack \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 8,
+        "label": "Unlock 8 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-244",
+      "name": "Anniversary frame",
+      "effect": "Studio upgrade: Anniversary frame \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 9,
+        "label": "Unlock 9 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-245",
+      "name": "Collab studio key",
+      "effect": "Studio upgrade: Collab studio key \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "trophy_count",
+        "value": 3,
+        "label": "Own 3 trophy edition(s)"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-246",
+      "name": "Network spotlight",
+      "effect": "Studio upgrade: Network spotlight \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 11,
+        "label": "Unlock 11 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-247",
+      "name": "Peer invite bonus",
+      "effect": "Studio upgrade: Peer invite bonus \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 12,
+        "label": "Unlock 12 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-248",
+      "name": "Raid defense shield",
+      "effect": "Studio upgrade: Raid defense shield \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "common",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 13,
+        "label": "Unlock 13 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-249",
+      "name": "Goal insurance stub",
+      "effect": "Studio upgrade: Goal insurance stub \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "rare",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 14,
+        "label": "Unlock 14 camgirl upgrades"
+      }
+    },
+    {
+      "id": "WR-CAM-UPG-250",
+      "name": "Fan club tier +1",
+      "effect": "Studio upgrade: Fan club tier +1 \u2014 enhances camgirl wallet experience.",
+      "category": "premium",
+      "tier": "epic",
+      "unlock": {
+        "type": "upgrade_count",
+        "value": 15,
+        "label": "Unlock 15 camgirl upgrades"
+      }
+    }
+  ]
+}

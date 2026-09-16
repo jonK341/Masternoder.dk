@@ -2,6 +2,10 @@
 deploy_credentials.bat
 deploy_credentials.ps1
 
+# Node (wallet-app)
+node_modules/
+wallet-app/node_modules/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -68,3 +72,6 @@ tools/mn2-daemon/
 data/mn2_verified_users.json
 
 data/crypto_exchange/grid_bot_state.json
+
+# Per-user wallet upgrade unlock state (runtime)
+data/wallet_upgrades_progress/*.json
