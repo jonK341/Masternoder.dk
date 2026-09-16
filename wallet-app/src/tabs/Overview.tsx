@@ -90,6 +90,9 @@ export function Overview({
           {summary?.explorer_base_url && (
             <a href="/explorer" class="wallet-link">Full explorer →</a>
           )}
+          <a href="/wallets?tab=settings#mobile-download" class="wallet-link">
+            Download mobile app →
+          </a>
         </div>
       </section>
     </div>

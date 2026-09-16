@@ -88,19 +88,20 @@ The **main wallet interface** is a single shell with a **horizontal sub-tab navi
 | 1 | **Overview** | `overview` | `mod-overview` | `v2/summary` |
 | 2 | **Portal** | `portal` | `mod-portal` | `v2/site-features` |
 | 3 | **Rewards** | `rewards` | `mod-rewards` | `v2/rewards/snapshot` |
-| 4 | **Shop** | `shop` | `mod-shop` | deep-link `/shop` + trophy counts from summary |
-| 5 | **Exchange** | `exchange` | `mod-exchange` | `/api/exchange/wallet` + deep-link `/exchange` |
-| 6 | **Send** | `send` | `mod-send` | `v2/send`, `v2/send/preview` |
-| 7 | **Receive** | `receive` | `mod-receive` | `v2/deposit`, `v2/deposit/history` |
-| 8 | **Activity** | `activity` | `mod-activity` | `v2/transactions`, `v2/activity` |
-| 9 | **4D Monitor** | `monitor-4d` | `mod-trophy-4d` | `v2/trophy-monitor/4d` |
-| 10 | **5D Explorer** | `explorer-5d` | `mod-explorer-5d` | `v2/explorer/5d`, search proxy |
-| 11 | **Trophies** | `trophies` | `mod-trophies` | `v2/trophies` + plan 001 transfer |
-| 12 | **Battle** | `battle` | `mod-battle-contest` | `v2/battle/snapshot` |
-| 13 | **Peers** | `peers` | `mod-peers` | `v2/network/peers` |
-| 14 | **Staking** | `staking` | `mod-staking` | `v2/staking` |
-| 15 | **Upgrades** | `upgrades` | `mod-upgrades` | `v2/upgrades`, `v2/upgrades/progress` |
-| 16 | **Settings** | `settings` | `mod-settings` | `v2/security/*`, `v2/discord/status` |
+| 4 | **Casino** | `casino` | `mod-casino` | `v2/casino/snapshot` + deep-link `/casino/` |
+| 5 | **Shop** | `shop` | `mod-shop` | deep-link `/shop` + trophy counts from summary |
+| 6 | **Exchange** | `exchange` | `mod-exchange` | `/api/exchange/wallet` + deep-link `/exchange` |
+| 7 | **Send** | `send` | `mod-send` | `v2/send`, `v2/send/preview` |
+| 8 | **Receive** | `receive` | `mod-receive` | `v2/deposit`, `v2/deposit/history` |
+| 9 | **Activity** | `activity` | `mod-activity` | `v2/transactions`, `v2/activity` |
+| 10 | **4D Monitor** | `monitor-4d` | `mod-trophy-4d` | `v2/trophy-monitor/4d` |
+| 11 | **5D Explorer** | `explorer-5d` | `mod-explorer-5d` | `v2/explorer/5d`, search proxy |
+| 12 | **Trophies** | `trophies` | `mod-trophies` | `v2/trophies` + plan 001 transfer |
+| 13 | **Battle** | `battle` | `mod-battle-contest` | `v2/battle/snapshot` |
+| 14 | **Peers** | `peers` | `mod-peers` | `v2/network/peers` |
+| 15 | **Staking** | `staking` | `mod-staking` | `v2/staking` |
+| 16 | **Upgrades** | `upgrades` | `mod-upgrades` | `v2/upgrades`, `v2/upgrades/progress` |
+| 17 | **Settings** | `settings` | `mod-settings` | `v2/security/*`, `v2/discord/status` |
 
 **Settings sub-panels:** **General** (2FA, whitelist, fiat — WR-U9) · **Discord** (`?tab=settings&panel=discord`) — link/unlink, roles, notifications, server invite.
 
@@ -217,7 +218,7 @@ Maps to existing v1 withdraw/deposit APIs via v2 BFF — **no new chain RPC path
 | Aggregator 5D monitor | `static/js/story-monitor-5d.js`, `aggregator/index.html` | Holodeck narrative monitor | Site-wide σ monitor, not wallet-specific |
 | Profile 5d wallet chart | `profile-mn2-5d-chart` in profile | `/api/mn2/wallet-activity?days=5` | **User 5-day ledger monitor** |
 | Withdraw security UI | `static/js/mn2-withdrawal-security.js` | Profile/settings hooks | 2FA, whitelist |
-| Mobile TWA | `mobile/casino-twa/`, `mobile/casino-app/` | Casino only | Wallet v2 responsive web first; optional `?app=wallet-twa` later mirroring casino pattern |
+| Mobile TWA | `mobile/casino-twa/`, `mobile/casino-app/` | Casino only | **`mobile/wallet-twa/`**, **`mobile/wallet-app/`** — wallet v2 at `/wallets` (WR-MOBILE-1) |
 | Battle page | `battle/index.html`, `static/js/battle-stats-display.js` | Tournaments, quick battle, story-monitor-5d | **Battle contest widget** source for wallet fun mode |
 | Battle shop bridge | `static/js/battle-shop-integration.js` | Shop deep links from battle | Wallet quick actions → shop trophies |
 | Shop media (GIF/sound) | `shop/index.html` `.shop-sound-btn`, `data/shop_item_media.json` | `gif_url`, `clip_url`, `sound_url` per SKU | Trophy card previews in 4D monitor |
@@ -400,7 +401,7 @@ The **Overview** tab is the wallet’s main face: network KPIs render on first p
 | 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
 | 26 | **Discord Settings panel** — link/unlink, roles, invite, notification opt-in | Social | `v2/discord/status`, `discord_link_service`, `discord_linked_roles_service` |
 
-**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API.
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API. **WR-MOBILE-1** scaffold shipped: `mobile/wallet-twa/`, `mobile/wallet-app/`, PWA manifest, download docs, CI workflow stub, Settings download links. **WR-CASINO-1** shipped: Casino hub tab, `GET /api/wallet/v2/casino/snapshot`, Overview hero CTA, Site Features Hub primary emphasis, unit test.
 
 ---
 
@@ -780,6 +781,7 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 | GET | `/api/wallet/v2/discord/status` | Discord link state + OAuth URLs + invite | `discord_link_service.link_status`, `discord_linked_roles_service`, `casino_config` |
 | GET | `/api/wallet/v2/site-features` | Site feature matrix for Site Features Hub | `wallet_v2_service.build_site_features` |
 | GET | `/api/wallet/v2/rewards/snapshot` | Unified points snapshot for Rewards tab | `unified_points_database.get_all_points` |
+| GET | `/api/wallet/v2/casino/snapshot` | Casino hub: balance, VIP, featured games, Discord VIP | `casino_service.get_balance`, `get_vip_lounge`, `discord_link_service.link_status` |
 
 **`trophy-monitor/4d` response shape (sketch):**
 
@@ -1107,6 +1109,16 @@ flowchart LR
 
 ---
 
+### WR-CASINO-1. Casino hub tab + snapshot API — **partial ✓ (2026-09-16)**
+
+**Goal:** First-class Casino tab in wallet — MN2 balance, VIP status, featured games, Discord VIP tie-in, responsible gaming disclaimer.
+
+**Files:** `wallet-app/src/tabs/CasinoHub.tsx`, `wallet_v2_service.build_casino_snapshot`, `GET /api/wallet/v2/casino/snapshot`, `TabNav` Casino tab (primary), Overview hero CTA, `SiteFeaturesHub` casino primary, `tests/unit/test_wallet_v2_casino.py`
+
+**Test:** Snapshot returns `casino_url`, `mn2_balance`, `featured_games_count`, `discord_vip_eligible`; guest gets `guest: true`; site features lists casino as primary.
+
+---
+
 ### WR-EXCH. Exchange hub tab — **partial ✓ (2026-09-16)**
 
 **Goal:** Exchange wallet balance snippet + swap/staking/tax deep links to `/exchange`.
@@ -1345,6 +1357,39 @@ flowchart LR
 - Send disabled when offline (banner).
 
 **Electron fallback (WR-D1b):** Only if Tauri blocked — duplicate structure under `desktop/wallet-electron/` with `electron-builder`; same `wallet-app` dist.
+
+---
+
+### WR-MOBILE-1. Mobile shell (Android TWA + Capacitor + PWA) — **partial ✓ (2026-09-16)**
+
+**Goal:** Downloadable Android APK scaffold, iOS TestFlight placeholder, and PWA install from `/wallets`.
+
+**Dependencies:** WR-U0 (wallet SPA at `/wallets`)
+
+**Files:**
+
+- `mobile/wallet-twa/` — Bubblewrap `twa-manifest.json`, README
+- `mobile/wallet-app/` — Capacitor package (Android + iOS), store listing drafts
+- `wallets/manifest.webmanifest` — PWA scope `/wallets/`
+- `static/js/wallet-mobile.js`, `static/css/wallet-mobile.css` — shell hooks, safe areas
+- `static/img/wallet/icon-*.svg` — launcher icons
+- `docs/WALLET_DOWNLOAD.md` — platform download matrix
+- `.github/workflows/wallet-mobile-build.yml` — APK build on tag `wallet-mobile-v0.1.0-preview`
+- `wallet-app/src/tabs/Settings.tsx` — “Download mobile app” links
+
+**Approach:**
+
+1. TWA (`?app=wallet-twa`) and Capacitor (`?app=wallet-capacitor`) load hosted `/wallets` — same session as web.
+2. PWA manifest enables Add to Home Screen on iOS/Android without store review.
+3. GitHub Release tag publishes preview APK; Play/TestFlight listings follow signing + assetlinks.
+4. Settings + Overview link to `docs/WALLET_DOWNLOAD.md#android`.
+
+**Test scenarios:**
+
+- `/wallets/manifest.webmanifest` returns valid JSON with icons.
+- `?app=wallet-twa` adds `wallet-mobile-active` class; tab deep links work via `?tab=send`.
+- Capacitor `npm run cap:sync` succeeds; Android debug APK builds in CI workflow.
+- Settings shows Android + iOS download links.
 
 ---
 

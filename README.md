@@ -25,7 +25,7 @@ python run.py
 ### Access URLs
 - **Local:** `/vidgenerator` via `python run.py`
 - **Deployed:** `/vidgenerator` on the live site
-- **MN2 Wallet (web):** [/wallets](/wallets) — desktop preview: [docs/WALLET_DOWNLOAD.md](docs/WALLET_DOWNLOAD.md)
+- **MN2 Wallet (web):** [/wallets](/wallets) — downloads (web, desktop, Android, iOS): [docs/WALLET_DOWNLOAD.md](docs/WALLET_DOWNLOAD.md)
 
 ---
 

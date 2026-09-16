@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MN2 Wallet">
+  <rect width="512" height="512" rx="64" fill="#080b10"/>
+  <rect x="96" y="160" width="320" height="224" rx="16" fill="#0f141c" stroke="#00e5a0" stroke-width="12"/>
+  <rect x="128" y="208" width="256" height="32" rx="4" fill="#00e5a0" opacity="0.35"/>
+  <circle cx="352" cy="272" r="28" fill="#00e5a0"/>
+  <text x="256" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="72" font-weight="700" fill="#00e5a0">MN2</text>
+</svg>

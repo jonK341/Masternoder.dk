@@ -447,6 +447,20 @@ MANIFESTS = {
         "static/.well-known/assetlinks.json",
         "static/.well-known/apple-app-site-association",
     ],
+    "wallet_mobile": [
+        "wallets/index.html",
+        "wallets/manifest.webmanifest",
+        "static/js/wallet-mobile.js",
+        "static/css/wallet-mobile.css",
+        "static/img/wallet/icon-192.svg",
+        "static/img/wallet/icon-512.svg",
+        "docs/WALLET_DOWNLOAD.md",
+        "mobile/wallet-twa/twa-manifest.json",
+        "mobile/wallet-twa/README.md",
+        "mobile/wallet-app/README.md",
+        "mobile/wallet-app/PLAY_STORE_LISTING.md",
+        "mobile/wallet-app/APP_STORE_LISTING.md",
+    ],
     # Fix production 404s: routes + fallbacks + blueprint registration (see logs/production_404_deploy_checklist.txt)
     "fix_404": [
         "backend/routes/missing_endpoints_routes.py",
