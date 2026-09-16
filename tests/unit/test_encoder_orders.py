@@ -95,8 +95,24 @@ def test_encoder_orders_routes(encoder_order_env):
     assert r2.get_json()["success"] is True
 
 
+def test_normalize_discord_channel_url():
+    from backend.services.discord_customer_ingest_service import normalize_discord_channel_ref
+
+    guild, channel = normalize_discord_channel_ref(
+        "https://discord.com/channels/1111111111111111111/2222222222222222222"
+    )
+    assert guild == "1111111111111111111"
+    assert channel == "2222222222222222222"
+    _, only = normalize_discord_channel_ref("2222222222222222222")
+    assert only == "2222222222222222222"
+
+
 def test_discord_sync_without_channel_returns_error(encoder_order_env, monkeypatch):
     monkeypatch.delenv("DISCORD_CUSTOMER_CHANNEL_ID", raising=False)
+    monkeypatch.setattr(
+        "backend.services.discord_customer_ingest_service._config",
+        lambda: {"enabled": True, "channel_id": "", "guild_id": "", "channel_url": ""},
+    )
     from backend.services.discord_customer_ingest_service import sync_customers_from_channel
 
     res = sync_customers_from_channel(channel_id="")

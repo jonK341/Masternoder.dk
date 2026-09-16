@@ -39,10 +39,10 @@ def _verify_discord_signature(raw_body: bytes) -> tuple[bool, str | None]:
 
 
 def _ops_ok() -> bool:
-    secret = os.environ.get("DISCORD_OPS_SECRET", "")
-    if not secret:
-        return False
-    return request.headers.get("X-Ops-Secret") == secret or request.args.get("ops_secret") == secret
+    from backend.services.ops_secret_service import ops_auth_ok
+
+    hdr = request.headers.get("X-Ops-Secret") or request.args.get("ops_secret")
+    return ops_auth_ok(hdr, remote_addr=request.environ.get("REMOTE_ADDR", ""))
 
 
 @discord_bp.route("/api/discord/interactions", methods=["POST"])

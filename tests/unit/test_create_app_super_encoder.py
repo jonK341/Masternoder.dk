@@ -327,6 +327,124 @@ def test_encoder_v2_build_package():
     assert "v2_tuning" in pkg
 
 
+def test_write_kwargs_with_v2_adjusts_crf():
+    from backend.services.encoder_v2_service import ensure_free_unlocks, write_kwargs_with_v2
+    from backend.services.generator_encode_service import ENCODE_CRF
+
+    uid = "_test_v2_write_kwargs"
+    ensure_free_unlocks(uid)
+    base_prof = "fast_ai"
+    kw = write_kwargs_with_v2("job-v2", base_prof, user_id=uid, add_audio=False, videos_dir="/tmp")
+    params = kw.get("ffmpeg_params") or []
+    crf_idx = params.index("-crf") if "-crf" in params else -1
+    assert crf_idx >= 0
+    effective_crf = int(params[crf_idx + 1])
+    assert effective_crf < ENCODE_CRF[base_prof]
+    assert kw.get("encoder_v2_tuning")
+    assert kw["encoder_v2_tuning"].get("crf_delta", 0) < 0
+
+
+def test_write_kwargs_without_user_id_is_unchanged():
+    from backend.services.encoder_v2_service import write_kwargs_with_v2
+    from backend.services.generator_encode_service import build_write_kwargs
+
+    base = build_write_kwargs("job-plain", "premium", add_audio=False, videos_dir="/tmp")
+    kw = write_kwargs_with_v2("job-plain", "premium", user_id=None, add_audio=False, videos_dir="/tmp")
+    assert kw.get("ffmpeg_params") == base.get("ffmpeg_params")
+    assert "encoder_v2_tuning" not in kw
+
+
+def test_apply_v2_audio_filter_chain_lufs():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import apply_v2_audio_filter_chain, ensure_free_unlocks
+
+    uid = "_test_v2_audio_lufs"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_aud_001")
+    chain = "highpass=f=80,loudnorm=I=-16:TP=-1.5:LRA=11"
+    out = apply_v2_audio_filter_chain(chain, uid)
+    assert "loudnorm=I=-17" in out
+    assert out != chain
+
+
+def test_aggregate_tuning_extended_effect_types():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import aggregate_tuning, ensure_free_unlocks
+
+    uid = "_test_v2_extended"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_mob_001")
+    unlock_upgrade(uid, "v2_pod_001")
+    unlock_upgrade(uid, "v2_wf_002")
+    unlock_upgrade(uid, "v2_mn2_001")
+    unlock_upgrade(uid, "v2_ops_001")
+    tuning = aggregate_tuning(uid)
+    assert tuning.get("shortcut_rank") is not None
+    assert tuning.get("mobile_resolution")
+    assert tuning.get("episode_template") is not None
+    assert tuning.get("retry_policy", 0) >= 2
+    assert tuning.get("encode_max_attempts", 1) >= 3
+    assert tuning.get("mn2_rebate_bps", 0) > 0
+    assert len(tuning.get("ops_metrics") or []) > 0
+
+
+def test_apply_mn2_rebate_reduces_price():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import apply_mn2_rebate, ensure_free_unlocks
+
+    uid = "_test_v2_rebate"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_mn2_005")
+    unlock_upgrade(uid, "v2_mn2_006")
+    res = apply_mn2_rebate(uid, 1.0)
+    assert res["rebate_bps"] > 0
+    assert res["price_mn2"] < res["original_price_mn2"]
+
+
+def test_build_podcast_episode_meta_template():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import build_podcast_episode_meta, ensure_free_unlocks
+
+    uid = "_test_v2_pod_meta"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_pod_003")
+    ep = build_podcast_episode_meta(uid, {"description": "Test episode", "tags": []})
+    assert "super-encoder-v2" in ep.get("tags", []) or "broadcast" in ep.get("tags", [])
+    assert ep.get("encoder_v2_episode_template") is not None
+
+
+def test_v2_encode_profile_attempts_workflow():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import ensure_free_unlocks, v2_encode_profile_attempts
+
+    uid = "_test_v2_wf_attempts"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_wf_002")
+    attempts = v2_encode_profile_attempts(uid, "premium")
+    assert attempts[0] == "premium"
+    assert len(attempts) >= 3
+    assert attempts[-1] == "fast_ai"
+
+
+def test_resolve_v2_mobile_resolution():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import ensure_free_unlocks, resolve_v2_mobile_resolution
+
+    uid = "_test_v2_mobile_res_isolated"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_mob_003")
+    assert resolve_v2_mobile_resolution(uid) == "640x360"
+
+
+def test_resolve_v2_encode_profile_quality_bias():
+    from backend.services.encoder_v2_service import ensure_free_unlocks, resolve_v2_encode_profile
+
+    uid = "_test_v2_profile"
+    ensure_free_unlocks(uid)
+    prof = resolve_v2_encode_profile({"encode_profile": "fast_ai", "user_id": uid})
+    assert prof in ("fast_ai", "standard", "premium", "ultra")
+
+
 def test_super_encode_rerun(create_app_client, monkeypatch):
     monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
     create_app_client.post(

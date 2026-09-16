@@ -3,11 +3,17 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+_DISCORD_CHANNEL_URL_RE = re.compile(
+    r"discord(?:app)?\.com/channels/(?P<guild>\d+)/(?P<channel>\d+)",
+    re.IGNORECASE,
+)
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _INDEX_FILE = os.path.join(_BASE, "data", "discord_customer_index.json")
@@ -33,17 +39,51 @@ def _bot_token() -> str:
     return (os.environ.get("DISCORD_BOT_TOKEN") or "").strip()
 
 
+def normalize_discord_channel_ref(value: str) -> Tuple[str, str]:
+    """Return (guild_id, channel_id) from snowflake or discord.com/channels/GUILD/CHANNEL URL."""
+    raw = str(value or "").strip()
+    if not raw:
+        return "", ""
+    m = _DISCORD_CHANNEL_URL_RE.search(raw)
+    if m:
+        return m.group("guild"), m.group("channel")
+    if raw.isdigit():
+        return "", raw
+    return "", ""
+
+
 def _guild_id() -> str:
     cfg = _config()
-    return (os.environ.get("DISCORD_GUILD_ID") or cfg.get("guild_id") or "").strip()
+    env_guild = (os.environ.get("DISCORD_GUILD_ID") or "").strip()
+    if env_guild and not env_guild.startswith("http"):
+        return env_guild
+    cfg_guild = str(cfg.get("guild_id") or "").strip()
+    if cfg_guild and not cfg_guild.startswith("http"):
+        return cfg_guild
+    for key in ("DISCORD_CUSTOMER_CHANNEL_ID", "DISCORD_CHANNEL_CUSTOMERS_ID"):
+        val = (os.environ.get(key) or cfg.get("channel_id") or cfg.get("channel_url") or "").strip()
+        guild, _ = normalize_discord_channel_ref(val)
+        if guild:
+            return guild
+    url = str(cfg.get("channel_url") or "").strip()
+    guild, _ = normalize_discord_channel_ref(url)
+    return guild
 
 
 def _customer_channel_id() -> str:
     cfg = _config()
     for key in ("DISCORD_CUSTOMER_CHANNEL_ID", "DISCORD_CHANNEL_CUSTOMERS_ID"):
-        val = (os.environ.get(key) or cfg.get("channel_id") or "").strip()
-        if val and not val.startswith("https://"):
-            return val
+        val = (os.environ.get(key) or "").strip()
+        if val:
+            _, channel = normalize_discord_channel_ref(val)
+            if channel:
+                return channel
+    for field in ("channel_id", "channel_url"):
+        val = str(cfg.get(field) or "").strip()
+        if val:
+            _, channel = normalize_discord_channel_ref(val)
+            if channel:
+                return channel
     return ""
 
 
