@@ -1,0 +1,21 @@
+[Unit]
+Description=MasterNoder profit daemons (exchange + casino + extended)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/html
+Environment=DAEMON_QUIET=1
+Environment=LITE_APP=1
+Environment=EXCHANGE_DAEMON_MODE=live
+Environment=EXCHANGE_PROFIT_PROFILE=max
+ExecStart=/var/www/html/scripts/run_profit_daemon_server.sh
+Restart=always
+RestartSec=15
+StandardOutput=append:/var/www/html/logs/profit_daemon_stdout.log
+StandardError=append:/var/www/html/logs/profit_daemon_stderr.log
+
+[Install]
+WantedBy=multi-user.target

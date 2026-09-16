@@ -38,7 +38,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
+    'gallery', 'battle', 'shop', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
@@ -46,9 +46,18 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'explorer', 'proof-of-reserves',
-    'market', 'casino',
+    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
+    'social-monitor', 'explorer', 'proof-of-reserves',
+    'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'profit',
+    'wallets', 'podcast', 'business-control',
 ]
+
+# Legacy page aliases that no longer have standalone index.html files.
+_PAGE_REDIRECTS = {
+    'achievements': '/trophies',
+    'chat': '/lab#discussion',
+}
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
 _CONSOLIDATED_PROFILE_TABS = {
@@ -75,6 +84,26 @@ def _register_profile_redirects():
 
 
 _register_profile_redirects()
+
+
+def _register_page_redirects():
+    """Register retired page URLs as deliberate redirects instead of fake 200 fallbacks."""
+
+    def _make_handler(target: str, name: str):
+        def _redirect():
+            return redirect(target, code=301)
+
+        _redirect.__name__ = name
+        return _redirect
+
+    for slug, target in _PAGE_REDIRECTS.items():
+        safe = slug.replace('-', '_')
+        handler = _make_handler(target, f'redirect_{safe}_page')
+        all_page_bp.add_url_rule(f'/{slug}', view_func=handler, strict_slashes=False)
+        all_page_bp.add_url_rule(f'/{slug}/index.html', view_func=handler)
+
+
+_register_page_redirects()
 
 
 @all_page_bp.route('/', methods=['GET'])
@@ -234,6 +263,63 @@ def casino_page():
     return 'Casino page not found', 404
 
 
+@all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
+def casino_manifest():
+    """PWA manifest for casino (Play TWA + installable web app)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino')
+        if os.path.isfile(os.path.join(page_dir, 'manifest.webmanifest')):
+            resp = send_from_directory(
+                page_dir,
+                'manifest.webmanifest',
+                mimetype='application/manifest+json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            return resp
+    except Exception:
+        pass
+    return 'Manifest not found', 404
+
+
+@all_page_bp.route('/.well-known/assetlinks.json', methods=['GET'])
+def well_known_assetlinks():
+    """Android Digital Asset Links for TWA / App Links."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'assetlinks.json')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'assetlinks.json',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
+@all_page_bp.route('/.well-known/apple-app-site-association', methods=['GET'])
+def well_known_aasa():
+    """Apple Universal Links association file (no file extension)."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'apple-app-site-association')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'apple-app-site-association',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
 @all_page_bp.route('/debugger/flask', methods=['GET'], endpoint='debugger_flask_template')
 @all_page_bp.route('/debugger/flask/', methods=['GET'], endpoint='debugger_flask_template_slash')
 def debugger_from_flask_template():
@@ -264,11 +350,30 @@ def debugger_from_flask_template():
 
 
 # Compendium (Rulebook V2.1) — page-1.html through page-10.html
+def _compendium_gate(page_number: int):
+    """Redirect to library paywall when premium page is locked."""
+    if not page_number or page_number <= 3:
+        return None
+    try:
+        from backend.services.account_resolution_service import resolve_user_id
+        from backend.services.compendium_access_service import can_access_page
+
+        uid = resolve_user_id(from_body=False, from_query=True)
+        if not can_access_page(uid, page_number):
+            return redirect(f"/compendium/?locked={page_number}", code=302)
+    except Exception:
+        pass
+    return None
+
+
 @all_page_bp.route('/compendium/page-<int:n>.html', methods=['GET'])
 @all_page_bp.route('/compendium/page-<int:n>', methods=['GET'])
 def compendium_page(n):
     if n < 1 or n > 10:
         return "Invalid compendium page", 404
+    blocked = _compendium_gate(n)
+    if blocked:
+        return blocked
     try:
         base_path = _base_path()
         page_path = os.path.join(base_path, 'compendium', f'page-{n}.html')
@@ -323,6 +428,12 @@ def compendium_rulebook_version(n):
     """Serve rulebook viewer for V1–V16."""
     if n < 1 or n > 16:
         return "Invalid rulebook version", 404
+    from backend.services.compendium_access_service import RULEBOOK_PAGE_MAP
+
+    page_num = RULEBOOK_PAGE_MAP.get(n)
+    blocked = _compendium_gate(page_num) if page_num else None
+    if blocked:
+        return blocked
     out = _serve_compendium_rulebook_viewer_html()
     if out:
         return out
@@ -333,6 +444,9 @@ def compendium_rulebook_version(n):
 @all_page_bp.route('/compendium/hunters-rulebook', methods=['GET'])
 def compendium_hunters_rulebook():
     """Serve Hunters Rulebook (Part II of unified compendium)."""
+    blocked = _compendium_gate(11)
+    if blocked:
+        return blocked
     try:
         base_path = _base_path()
         page_path = os.path.join(base_path, 'compendium', 'hunters-rulebook.html')
@@ -380,6 +494,23 @@ def dashboard_master_control():
     )
 
 
+@all_page_bp.route('/dashboard/agents_control', methods=['GET'])
+@all_page_bp.route('/dashboard/agents_control/', methods=['GET'])
+@all_page_bp.route('/dashboard/agents_control/index.html', methods=['GET'])
+def dashboard_agents_control():
+    """Serve dashboard/agents_control/index.html."""
+    try:
+        base_path = _base_path()
+        page_path = os.path.join(base_path, 'dashboard', 'agents_control', 'index.html')
+        if os.path.exists(page_path):
+            with open(page_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content, 200, {'Content-Type': 'text/html; charset=utf-8', 'X-Content-Version': CONTENT_VERSION}
+    except Exception:
+        pass
+    return '<html><body><h1>Agents Control</h1><p>Not found</p></body></html>', 404
+
+
 # Agents page — dedicated route to avoid endpoint-naming conflicts with create_page_route loop
 @all_page_bp.route('/agents', methods=['GET'])
 @all_page_bp.route('/agents/', methods=['GET'])
@@ -406,6 +537,58 @@ def agents_page():
         200,
         {'Content-Type': 'text/html; charset=utf-8'},
     )
+
+
+# --- SEO: sitemap + robots ---
+_SITEMAP_PATHS = (
+    '/',
+    '/generator/',
+    '/camgirls/',
+    '/exchange/',
+    '/casino/',
+    '/hosting/',
+    '/shop/',
+    '/game/',
+    '/explorer/',
+    '/compendium/',
+    '/profile/',
+)
+
+
+@all_page_bp.route('/robots.txt', methods=['GET'])
+def robots_txt():
+    base = (os.environ.get('BASE_URL') or 'https://masternoder.dk').rstrip('/')
+    body = '\n'.join([
+        'User-agent: *',
+        'Allow: /',
+        '',
+        f'Sitemap: {base}/sitemap.xml',
+        '',
+    ])
+    resp = make_response(body, 200)
+    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    return resp
+
+
+@all_page_bp.route('/sitemap.xml', methods=['GET'])
+def sitemap_xml():
+    base = (os.environ.get('BASE_URL') or 'https://masternoder.dk').rstrip('/')
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for path in _SITEMAP_PATHS:
+        loc = base + (path if path != '/' else '/')
+        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/') else '0.7')
+        lines.append('  <url>')
+        lines.append(f'    <loc>{loc}</loc>')
+        lines.append(f'    <changefreq>weekly</changefreq>')
+        lines.append(f'    <priority>{priority}</priority>')
+        lines.append('  </url>')
+    lines.append('</urlset>')
+    body = '\n'.join(lines)
+    resp = make_response(body, 200)
+    resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    return resp
 
 
 # --- /vidgenerator redirects (301 to root) ---

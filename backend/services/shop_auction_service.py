@@ -184,6 +184,7 @@ def cancel_listing(user_id: str, listing_id: str) -> Dict[str, Any]:
                 raise AuctionError("Only the seller can cancel this listing")
             if row.get("status") != "active":
                 raise AuctionError("Listing is not active")
+            _release_all_bid_escrows(row)
             if not add_to_inventory(uid, row.get("item_id") or "", row.get("item_name") or "", int(row.get("quantity") or 1)):
                 raise AuctionError("Could not restore item to inventory")
             row["status"] = "cancelled"
@@ -194,7 +195,13 @@ def cancel_listing(user_id: str, listing_id: str) -> Dict[str, Any]:
     raise AuctionError("Listing not found")
 
 
-def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins") -> Dict[str, Any]:
+def buy_listing(
+    buyer_id: str,
+    listing_id: str,
+    *,
+    payment_method: str = "coins",
+    escrow_bid_id: Optional[str] = None,
+) -> Dict[str, Any]:
     buyer = (buyer_id or "").strip()
     lid = (listing_id or "").strip()
     if not buyer or buyer == "default_user":
@@ -223,6 +230,8 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
             raise AuctionError("You cannot buy your own listing")
 
         method = (payment_method or "coins").strip().lower()
+        if escrow_bid_id and method != "coins":
+            raise AuctionError("escrow bids settle in coins only")
         if method not in ("coins", "mn2"):
             raise AuctionError("payment_method must be coins or mn2")
         price = int(row.get("price_coins") or 0)
@@ -233,6 +242,26 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
         fee = int(round(price * fee_rate))
         seller_payout = max(0, price - fee)
 
+        escrow_bid: Optional[Dict[str, Any]] = None
+        if escrow_bid_id:
+            bids = row.get("bids") if isinstance(row.get("bids"), list) else []
+            escrow_bid = next(
+                (
+                    b for b in bids
+                    if isinstance(b, dict)
+                    and (b.get("bid_id") or "") == escrow_bid_id
+                    and b.get("status") == "active"
+                    and b.get("escrowed")
+                ),
+                None,
+            )
+            if not escrow_bid:
+                raise AuctionError("Escrowed bid not found or already settled")
+            if (escrow_bid.get("bidder_id") or "") != buyer:
+                raise AuctionError("Bid does not belong to buyer")
+            if int(escrow_bid.get("bid_coins") or 0) != price:
+                raise AuctionError("Bid amount does not match listing price")
+
         points = unified_points_db.get_all_points(buyer)
         if not points.get("success"):
             raise AuctionError("Could not read buyer balance")
@@ -240,7 +269,9 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
         price_mn2 = 0.0
         fee_mn2 = 0.0
         seller_payout_mn2 = 0.0
-        if method == "mn2":
+        if escrow_bid:
+            debit = {"success": True}
+        elif method == "mn2":
             coins_per_mn2 = _coins_per_mn2()
             if coins_per_mn2 <= 0:
                 raise AuctionError("MN2 price is not configured")
@@ -274,7 +305,10 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
             raise AuctionError("Could not debit buyer balance")
 
         if not add_to_inventory(buyer, item_id, item_name, qty):
-            _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "buyer_inventory_failed")
+            if escrow_bid:
+                _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="buyer_inventory_failed")
+            else:
+                _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "buyer_inventory_failed")
             raise AuctionError("Could not attach item to buyer inventory; payment refunded")
 
         if method == "mn2":
@@ -295,8 +329,16 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
             )
         if not payout.get("success", True):
             reserve_inventory(buyer, item_id, qty)
-            _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "seller_payout_failed")
+            if escrow_bid:
+                _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="seller_payout_failed")
+            else:
+                _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "seller_payout_failed")
             raise AuctionError("Could not pay seller; purchase was rolled back")
+
+        if escrow_bid:
+            escrow_bid["status"] = "settled"
+            escrow_bid["escrowed"] = False
+            escrow_bid["settled_at"] = _now()
 
         row["status"] = "sold"
         row["buyer_id"] = buyer
@@ -324,6 +366,68 @@ def buy_listing(buyer_id: str, listing_id: str, *, payment_method: str = "coins"
         }
 
 
+def _highest_active_bid(bids: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    active = [b for b in bids if isinstance(b, dict) and b.get("status") == "active"]
+    if not active:
+        return None
+    return max(active, key=lambda b: int(b.get("bid_coins") or 0))
+
+
+def _release_bid_escrow(unified_points_db: Any, bid: Dict[str, Any], listing_id: str, *, reason: str) -> None:
+    if not bid.get("escrowed"):
+        return
+    amount = int(bid.get("bid_coins") or 0)
+    if amount <= 0:
+        bid["escrowed"] = False
+        return
+    unified_points_db.add_points(
+        user_id=str(bid.get("bidder_id") or ""),
+        point_type="coins",
+        amount=amount,
+        source="marketplace_bid_escrow_release",
+        metadata={"listing_id": listing_id, "bid_id": bid.get("bid_id"), "reason": reason},
+    )
+    bid["escrowed"] = False
+    if bid.get("status") == "active":
+        bid["status"] = "outbid" if reason == "outbid" else "released"
+
+
+def _release_all_bid_escrows(row: Dict[str, Any]) -> None:
+    from backend.services.unified_points_database import unified_points_db
+
+    bids = row.get("bids") if isinstance(row.get("bids"), list) else []
+    lid = row.get("listing_id") or ""
+    for bid in bids:
+        if isinstance(bid, dict) and bid.get("escrowed"):
+            _release_bid_escrow(unified_points_db, bid, lid, reason="listing_cancelled")
+
+
+def get_user_bid_escrow_summary(user_id: str) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
+    total = 0
+    rows = []
+    for listing in _load():
+        if (listing.get("status") or "") != "active":
+            continue
+        bids = listing.get("bids") if isinstance(listing.get("bids"), list) else []
+        for bid in bids:
+            if not isinstance(bid, dict) or not bid.get("escrowed"):
+                continue
+            if (bid.get("bidder_id") or "") != uid:
+                continue
+            amt = int(bid.get("bid_coins") or 0)
+            total += amt
+            rows.append({
+                "listing_id": listing.get("listing_id"),
+                "item_id": listing.get("item_id"),
+                "item_name": listing.get("item_name"),
+                "bid_id": bid.get("bid_id"),
+                "bid_coins": amt,
+                "created_at": bid.get("created_at"),
+            })
+    return {"success": True, "user_id": uid, "escrow_coins_total": total, "escrows": rows}
+
+
 def place_bid(user_id: str, listing_id: str, bid_coins: int) -> Dict[str, Any]:
     bidder = (user_id or "").strip()
     lid = (listing_id or "").strip()
@@ -332,6 +436,9 @@ def place_bid(user_id: str, listing_id: str, bid_coins: int) -> Dict[str, Any]:
         raise AuctionError("Create or log in to a profile before bidding")
     if bid <= 0:
         raise AuctionError("bid_coins must be greater than zero")
+
+    from backend.services.unified_points_database import unified_points_db
+
     with _LOCK:
         listings = _load()
         for idx, row in enumerate(listings):
@@ -342,21 +449,44 @@ def place_bid(user_id: str, listing_id: str, bid_coins: int) -> Dict[str, Any]:
             if (row.get("seller_id") or "") == bidder:
                 raise AuctionError("You cannot bid on your own listing")
             bids = row.get("bids") if isinstance(row.get("bids"), list) else []
-            highest = max((int(b.get("bid_coins") or 0) for b in bids if isinstance(b, dict) and b.get("status") == "active"), default=0)
-            if bid <= highest:
-                raise AuctionError(f"Bid must be higher than current highest bid ({highest})")
+            highest = _highest_active_bid(bids)
+            highest_amt = int(highest.get("bid_coins") or 0) if highest else 0
+            if bid <= highest_amt:
+                raise AuctionError(f"Bid must be higher than current highest bid ({highest_amt})")
+
+            points = unified_points_db.get_all_points(bidder)
+            if not points.get("success"):
+                raise AuctionError("Could not read bidder balance")
+            buyer_coins = int((points.get("points") or {}).get("coins") or 0)
+            if buyer_coins < bid:
+                raise AuctionError(f"Insufficient coins. Need {bid}, have {buyer_coins}")
+
+            if highest and highest.get("escrowed"):
+                _release_bid_escrow(unified_points_db, highest, lid, reason="outbid")
+
+            debit = unified_points_db.add_points(
+                user_id=bidder,
+                point_type="coins",
+                amount=-bid,
+                source="marketplace_bid_escrow",
+                metadata={"listing_id": lid, "bid_coins": bid},
+            )
+            if not debit.get("success", True):
+                raise AuctionError("Could not escrow bid coins")
+
             bid_row = {
                 "bid_id": str(uuid.uuid4())[:12],
                 "bidder_id": bidder,
                 "bid_coins": bid,
                 "status": "active",
+                "escrowed": True,
                 "created_at": _now(),
             }
             bids.append(bid_row)
             row["bids"] = bids[-50:]
             listings[idx] = row
             _save(listings)
-            return {"listing": _public_listing(row), "bid": bid_row}
+            return {"listing": _public_listing(row), "bid": bid_row, "escrow_coins": bid}
     raise AuctionError("Listing not found")
 
 
@@ -377,13 +507,20 @@ def accept_bid(user_id: str, listing_id: str, bid_id: str) -> Dict[str, Any]:
             bid = next((b for b in bids if isinstance(b, dict) and b.get("bid_id") == bid_ref and b.get("status") == "active"), None)
             if not bid:
                 raise AuctionError("Active bid not found")
+            if not bid.get("escrowed"):
+                raise AuctionError("Bid has no escrowed funds")
             original_price = int(row.get("price_coins") or 0)
             row["price_coins"] = int(bid.get("bid_coins") or 0)
             row["accepted_bid_id"] = bid_ref
             listings[idx] = row
             _save(listings)
             try:
-                result = buy_listing(str(bid.get("bidder_id") or ""), lid, payment_method="coins")
+                result = buy_listing(
+                    str(bid.get("bidder_id") or ""),
+                    lid,
+                    payment_method="coins",
+                    escrow_bid_id=bid_ref,
+                )
             except Exception:
                 restored = _load()
                 for r_idx, restored_row in enumerate(restored):

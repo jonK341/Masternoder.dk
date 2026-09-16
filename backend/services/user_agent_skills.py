@@ -94,6 +94,17 @@ class UserAgentSkills:
                 {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
                 {'agent_id': 'learning_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
             ]
+        elif 'podcast' in behavior_pattern or 'audio' in str(preferences).lower() or 'broadcast' in str(preferences).lower():
+            assigned_skills['skill_path'] = 'podcast'
+            assigned_skills['assigned_agents'] = ['podcast_producer_agent', 'content_generator_agent', 'reporter_agent']
+            assigned_skills['skills'] = [
+                {'agent_id': 'podcast_producer_agent', 'skill': 'generate_episode', 'level': 1},
+                {'agent_id': 'podcast_producer_agent', 'skill': 'encode_audio', 'level': 1},
+                {'agent_id': 'podcast_producer_agent', 'skill': 'distribute_episode', 'level': 1},
+                {'agent_id': 'content_generator_agent', 'skill': 'ai_podcast_script', 'level': 1},
+                {'agent_id': 'reporter_agent', 'skill': 'broadcast', 'level': 1},
+                {'agent_id': 'reporter_agent', 'skill': 'news_report_ingredients', 'level': 1},
+            ]
         else:
             # Balanced path — content, analytics, learning, reporter (broadcast + knowledge-sharing ingredients); 10 skills
             assigned_skills['skill_path'] = 'balanced'
