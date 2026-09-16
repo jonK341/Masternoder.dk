@@ -387,7 +387,11 @@
     api("/api/exchange/bot-skills").then(renderSkillSets);
   }
 
-  function loadCatalog() { api("/api/exchange/marketplace/catalog").then(renderCatalog); }
+  function loadCatalog() {
+    return api("/api/exchange/marketplace/catalog")
+      .then(renderCatalog)
+      .catch(function () { renderCatalog({ templates: [] }); });
+  }
   function loadPortfolio() { api("/api/exchange/marketplace/portfolio").then(renderPortfolio); }
   function loadRadar() { api("/api/exchange/profit-tools/radar?limit=8").then(renderRadar); }
 
@@ -1057,19 +1061,28 @@
     ]);
   }
 
+  function safeLoad(fn) {
+    try {
+      var p = fn();
+      return p && typeof p.then === "function" ? p.catch(function () {}) : Promise.resolve();
+    } catch (e) {
+      return Promise.resolve();
+    }
+  }
+
   function loadMarketplaceTab() {
     return Promise.all([
-      loadCatalog(),
-      loadSkillSets(),
-      loadPortfolio(),
-      loadRadar(),
-      loadLevel(),
-      loadTrust(),
-      loadRentalCatalog(),
-      loadMyRentals(),
-      loadShop(),
-      loadController(),
-      loadBridgeProduct(),
+      safeLoad(loadCatalog),
+      safeLoad(loadSkillSets),
+      safeLoad(loadPortfolio),
+      safeLoad(loadRadar),
+      safeLoad(loadLevel),
+      safeLoad(loadTrust),
+      safeLoad(loadRentalCatalog),
+      safeLoad(loadMyRentals),
+      safeLoad(loadShop),
+      safeLoad(loadController),
+      safeLoad(loadBridgeProduct),
     ]).then(function () {
       api("/api/exchange/leveling/daily", { method: "POST", body: {} }).then(loadLevel);
       calculate();
@@ -1113,6 +1126,8 @@
     if (window.ExchangeHub) {
       window.ExchangeHub.onTab("bots", loadBotsTab);
       window.ExchangeHub.onTab("marketplace", loadMarketplaceTab);
+      var hub = new URLSearchParams(window.location.search).get("hub");
+      if (hub === "marketplace") window.ExchangeHub.loadTab("marketplace", true);
     }
     var runBtn = $("cex-market-run-all"); if (runBtn) runBtn.addEventListener("click", runAll);
     var aiBtn = $("cex-ai-analyze-btn"); if (aiBtn) aiBtn.addEventListener("click", function () { runAiAnalyze(aiBtn); });
