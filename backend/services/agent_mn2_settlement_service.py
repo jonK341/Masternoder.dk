@@ -25,6 +25,10 @@ _AGENT_MAP = {
     "masternodes": "monitoring_agent",
     "shop": "workflow_agent",
     "micro": "monitoring_agent",
+    "quests": "workflow_agent",
+    "game_level": "content_generator_agent",
+    "compendium": "analytics_agent",
+    "agent_peers": "monitoring_agent",
 }
 
 _CRON_ACTIONS = (
@@ -348,6 +352,102 @@ def _settle_battle_crypto(*, dry_run: bool = False, max_claims: int = 50) -> Dic
     return out
 
 
+def _settle_quest_rewards(*, max_users: int = 25, max_claims_per_user: int = 3) -> Dict[str, Any]:
+    """Auto-claim completed progression quest levels with MN2 rewards."""
+    out: Dict[str, Any] = {"claims": 0, "users": 0, "errors": []}
+    try:
+        from backend.services.quest_system import claim_level_reward, get_user_quests
+
+        for uid in _discover_active_user_ids(limit=max_users):
+            claimed_for_user = 0
+            quests = get_user_quests(uid) or {}
+            levels = (quests.get("levels") or []) if isinstance(quests, dict) else []
+            for row in levels:
+                if claimed_for_user >= max_claims_per_user:
+                    break
+                if not row.get("completed") or row.get("claimed"):
+                    continue
+                level_num = int(row.get("level") or 0)
+                if level_num <= 0:
+                    continue
+                res = claim_level_reward(uid, level_num)
+                if res.get("success") and not res.get("already_claimed"):
+                    out["claims"] += 1
+                    claimed_for_user += 1
+                    credited = (res.get("credited") or {})
+                    mn2 = float(credited.get("mn2") or 0)
+                    _record_agent_activity(
+                        "quests",
+                        "quest_level_auto_claim",
+                        user_id=uid,
+                        points=mn2,
+                        metadata={"level": level_num, "cron": True},
+                    )
+            if claimed_for_user:
+                out["users"] += 1
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_game_level_rewards(*, max_users: int = 20) -> Dict[str, Any]:
+    """Auto-claim hunter level milestone MN2 rewards."""
+    out: Dict[str, Any] = {"claims": 0, "users": 0, "errors": []}
+    try:
+        from backend.services.game_level_crypto_service import level_rewards_status, claim_level_reward
+
+        for uid in _discover_active_user_ids(limit=max_users):
+            status = level_rewards_status(uid)
+            ready = [lv for lv in (status.get("levels") or []) if lv.get("ready")]
+            if not ready:
+                continue
+            claimed_for_user = 0
+            for lv in ready[:3]:
+                level = int(lv.get("level") or 0)
+                if level <= 0:
+                    continue
+                result, code = claim_level_reward(uid, level)
+                if result.get("success") and not result.get("duplicate"):
+                    out["claims"] += 1
+                    claimed_for_user += 1
+                    _record_agent_activity(
+                        "game_level",
+                        "game_level_auto_claim",
+                        user_id=uid,
+                        points=float(lv.get("reward_mn2") or 0),
+                        metadata={"level": level, "cron": True},
+                    )
+            if claimed_for_user:
+                out["users"] += 1
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
+def _settle_compendium_pulse(*, max_users: int = 15) -> Dict[str, Any]:
+    """Cron pulse: credit compendium study rewards for active users (idempotent per day)."""
+    out: Dict[str, Any] = {"awards": 0, "errors": []}
+    try:
+        from backend.services.compendium_crypto_rewards_service import award_theory_study_reward
+
+        day = datetime.now(timezone.utc).strftime("%Y%m%d")
+        for uid in _discover_active_user_ids(limit=max_users):
+            ref_theory = f"cron-study:{uid}:{day}"
+            res = award_theory_study_reward(uid, ref_theory)
+            if res.get("success") and not res.get("duplicate") and float(res.get("awarded_mn2") or 0) > 0:
+                out["awards"] += 1
+                _record_agent_activity(
+                    "compendium",
+                    "compendium_cron_study",
+                    user_id=uid,
+                    points=float(res.get("awarded_mn2") or 0),
+                    metadata={"cron": True},
+                )
+    except Exception as e:
+        out["errors"].append(str(e)[:300])
+    return out
+
+
 def _settle_shop_agents(*, dry_run: bool = False, max_purchases: int = 6) -> Dict[str, Any]:
     out: Dict[str, Any] = {"purchases": 0, "errors": []}
     try:
@@ -479,7 +579,8 @@ def run_mn2_ecosystem_settlement(
     if "all" in active:
         active = [
             "daemon", "battle", "aggregator", "generator", "casino", "staking",
-            "shop", "micro", "agent_peers", "chain", "scan", "reconcile", "activity", "masternodes",
+            "shop", "micro", "agent_peers", "chain", "scan", "reconcile", "activity",
+            "masternodes", "quests", "game_level", "compendium",
         ]
 
     result: Dict[str, Any] = {
@@ -588,6 +689,24 @@ def run_mn2_ecosystem_settlement(
                 result["results"]["masternodes"] = bring_rented_masternodes_online()
         except Exception as e:
             result["errors"]["masternodes"] = str(e)[:300]
+
+    if "quests" in active and not dry_run:
+        try:
+            result["results"]["quests"] = _settle_quest_rewards()
+        except Exception as e:
+            result["errors"]["quests"] = str(e)[:300]
+
+    if "game_level" in active and not dry_run:
+        try:
+            result["results"]["game_level"] = _settle_game_level_rewards()
+        except Exception as e:
+            result["errors"]["game_level"] = str(e)[:300]
+
+    if "compendium" in active and not dry_run:
+        try:
+            result["results"]["compendium"] = _settle_compendium_pulse()
+        except Exception as e:
+            result["errors"]["compendium"] = str(e)[:300]
 
     if result["errors"]:
         result["success"] = False

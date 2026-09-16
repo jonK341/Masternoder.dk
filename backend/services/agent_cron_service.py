@@ -133,7 +133,12 @@ def run_agent_cron_jobs(
             elif job == 'mn2_ecosystem_settlement_fast':
                 from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
                 out['results'][job] = run_mn2_ecosystem_settlement(
-                    systems=['daemon', 'battle', 'activity', 'scan', 'micro'],
+                    systems=['daemon', 'battle', 'quests', 'game_level', 'activity', 'scan', 'micro', 'chain'],
+                )
+            elif job == 'mn2_game_systems':
+                from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+                out['results'][job] = run_mn2_ecosystem_settlement(
+                    systems=['battle', 'quests', 'game_level', 'compendium', 'generator', 'aggregator'],
                 )
             elif job == 'mn2_micro_burst':
                 from backend.services.mn2_micro_transactions_service import run_micro_transaction_burst
@@ -180,10 +185,12 @@ def expand_preset(name: str) -> List[str]:
         return ['api_service_skill']
     if n == 'routes':
         return ['blueprint_route_fixer', 'api_service_skill']
-    if n in ('mn2', 'mn2_settlement', 'game_battle_mn2', 'mn2_transactions'):
+    if n in ('mn2', 'mn2_settlement', 'game_battle_mn2', 'mn2_transactions', 'mn2_all'):
         return ['mn2_ecosystem_settlement']
     if n == 'mn2_fast':
         return ['mn2_ecosystem_settlement_fast']
+    if n in ('mn2_game', 'game_mn2', 'mn2_quests_battle'):
+        return ['mn2_game_systems']
     if n in ('mn2_micro', 'micro_tx', 'micro_transactions'):
         return ['mn2_micro_burst']
     if n in ('mn2_peers', 'agent_peers', 'agent_peer_mesh'):
