@@ -8,10 +8,12 @@ customer_aggregator_bp = Blueprint("customer_aggregator", __name__)
 
 
 def _admin_ok() -> bool:
-    secret = os.environ.get("DISCORD_OPS_SECRET") or os.environ.get("ADMIN_OPS_SECRET", "")
-    if not secret:
-        return request.environ.get("REMOTE_ADDR") in ("127.0.0.1", "::1")
-    return request.headers.get("X-Ops-Secret") == secret
+    from backend.services.ops_secret_service import ops_auth_ok
+
+    return ops_auth_ok(
+        request.headers.get("X-Ops-Secret"),
+        remote_addr=request.environ.get("REMOTE_ADDR", ""),
+    )
 
 
 @customer_aggregator_bp.route("/api/customers", methods=["GET"])
