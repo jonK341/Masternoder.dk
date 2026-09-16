@@ -11,6 +11,7 @@ from typing import Dict, Any, List
 
 _LEDGER_LOCK = threading.Lock()
 _LEDGER_FILENAME = "mn2_ledger.json"
+_SUMMARY_CACHE: Dict[str, Any] = {"mtime": None, "rows": []}
 
 
 def _data_dir() -> str:
@@ -68,8 +69,8 @@ def append_entry(
     _save_entries(entries)
 
 
-def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
-    """Distinct ledger customers with activity summary, newest activity first."""
+def _build_ledger_user_summaries() -> List[Dict[str, Any]]:
+    """Build distinct ledger customer summaries (uncached)."""
     by_user: Dict[str, Dict[str, Any]] = {}
     for e in _load_entries():
         uid = str(e.get("user_id") or "").strip()
@@ -113,8 +114,27 @@ def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
             "entry_types": sorted(row["entry_types"]),
         })
     rows.sort(key=lambda r: str(r.get("last_activity") or ""), reverse=True)
+    return rows
+
+
+def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
+    """Distinct ledger customers with activity summary, newest activity first."""
+    path = _ledger_path()
+    mtime = os.path.getmtime(path) if os.path.exists(path) else None
+    with _LEDGER_LOCK:
+        if _SUMMARY_CACHE.get("mtime") == mtime and _SUMMARY_CACHE.get("rows") is not None:
+            rows = list(_SUMMARY_CACHE["rows"])
+        else:
+            rows = _build_ledger_user_summaries()
+            _SUMMARY_CACHE["mtime"] = mtime
+            _SUMMARY_CACHE["rows"] = rows
     lim = max(1, min(int(limit or 5000), 20000))
     return rows[:lim]
+
+
+def count_ledger_users() -> int:
+    """Fast count of distinct ledger users (uses summary cache)."""
+    return len(list_ledger_user_summaries(limit=20000))
 
 
 def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:

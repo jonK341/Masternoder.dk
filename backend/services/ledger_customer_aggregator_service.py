@@ -33,37 +33,40 @@ def list_ledger_customers(*, limit: int = 500, offset: int = 0) -> Dict[str, Any
 
 
 def _ensure_points_stub(user_id: str, ledger_row: Dict[str, Any]) -> bool:
-    os.makedirs(_POINTS_DIR, exist_ok=True)
-    path = os.path.join(_POINTS_DIR, f"{user_id}.json")
-    created = False
-    if os.path.isfile(path):
-        with open(path, "r", encoding="utf-8") as f:
-            raw = json.load(f) or {}
-    else:
-        raw = {
-            "user_id": user_id,
-            "level": 1,
-            "xp_total": 0,
-            "coins": 0,
-            "mn2_balance": 0,
-            "systems": {"mn2_balance": 0, "coins": 0},
-            "source": "ledger",
-            "updated_at": _iso(),
+    try:
+        os.makedirs(_POINTS_DIR, exist_ok=True)
+        path = os.path.join(_POINTS_DIR, f"{user_id}.json")
+        created = False
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f) or {}
+        else:
+            raw = {
+                "user_id": user_id,
+                "level": 1,
+                "xp_total": 0,
+                "coins": 0,
+                "mn2_balance": 0,
+                "systems": {"mn2_balance": 0, "coins": 0},
+                "source": "ledger",
+                "updated_at": _iso(),
+            }
+            created = True
+        raw["source"] = raw.get("source") or "ledger"
+        raw["ledger"] = {
+            "entry_count": ledger_row.get("entry_count"),
+            "last_activity": ledger_row.get("last_activity"),
+            "ledger_in_mn2": ledger_row.get("ledger_in_mn2"),
+            "ledger_out_mn2": ledger_row.get("ledger_out_mn2"),
+            "ledger_net_mn2": ledger_row.get("ledger_net_mn2"),
+            "entry_types": ledger_row.get("entry_types"),
         }
-        created = True
-    raw["source"] = raw.get("source") or "ledger"
-    raw["ledger"] = {
-        "entry_count": ledger_row.get("entry_count"),
-        "last_activity": ledger_row.get("last_activity"),
-        "ledger_in_mn2": ledger_row.get("ledger_in_mn2"),
-        "ledger_out_mn2": ledger_row.get("ledger_out_mn2"),
-        "ledger_net_mn2": ledger_row.get("ledger_net_mn2"),
-        "entry_types": ledger_row.get("entry_types"),
-    }
-    raw["updated_at"] = ledger_row.get("last_activity") or raw.get("updated_at") or _iso()
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(raw, f, indent=2)
-    return created
+        raw["updated_at"] = ledger_row.get("last_activity") or raw.get("updated_at") or _iso()
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(raw, f, indent=2)
+        return created
+    except OSError as exc:
+        raise RuntimeError(f"points_stub_write_failed:{user_id}:{exc}") from exc
 
 
 def sync_ledger_customers_to_aggregator(*, limit: int = 500) -> Dict[str, Any]:
@@ -77,20 +80,35 @@ def sync_ledger_customers_to_aggregator(*, limit: int = 500) -> Dict[str, Any]:
     rows = list_ledger_user_summaries(limit=limit)
     created = 0
     updated = 0
+    errors: List[Dict[str, Any]] = []
     for row in rows:
         uid = str(row.get("user_id") or "").strip()
         if not uid:
             continue
-        if _ensure_points_stub(uid, row):
-            created += 1
-        else:
-            updated += 1
+        try:
+            if _ensure_points_stub(uid, row):
+                created += 1
+            else:
+                updated += 1
+        except RuntimeError as exc:
+            errors.append({"user_id": uid, "error": str(exc)})
+            if len(errors) >= 5:
+                break
+
+    if errors and created == 0 and updated == 0:
+        return {
+            "success": False,
+            "error": "points_stub_write_failed",
+            "errors": errors,
+            "ledger_total": len(rows),
+        }
 
     return {
         "success": True,
         "ledger_total": len(rows),
         "stubs_created": created,
         "stubs_updated": updated,
+        "errors": errors,
         "preview": rows[:15],
     }
 

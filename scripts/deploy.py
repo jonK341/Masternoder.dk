@@ -396,6 +396,7 @@ MANIFESTS = {
         "backend/services/ops_secret_service.py",
         "backend/services/ledger_customer_control_service.py",
         "backend/services/ledger_customer_aggregator_service.py",
+        "backend/services/mn2_ledger.py",
         "backend/services/customer_aggregator_service.py",
         "customers/index.html",
         "data/encoder_orders.json",
@@ -1062,6 +1063,12 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                     f"&& chmod 664 {REMOTE_BASE}/{rel} 2>/dev/null || true",
                     timeout=10,
                 )
+            ssh.exec_command(
+                f"mkdir -p {REMOTE_BASE}/logs/unified_points "
+                f"&& chown -R www-data:www-data {REMOTE_BASE}/logs/unified_points "
+                f"&& chmod 775 {REMOTE_BASE}/logs/unified_points 2>/dev/null || true",
+                timeout=15,
+            )
             print("  [OK] encoder/discord writable data -> www-data")
             print()
 

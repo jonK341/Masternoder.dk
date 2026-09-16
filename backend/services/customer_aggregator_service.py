@@ -308,9 +308,9 @@ def stats() -> Dict[str, Any]:
     discord_total = int(discord_stats.get("total") or 0)
     ledger_total = 0
     try:
-        from backend.services.mn2_ledger import list_ledger_user_summaries
+        from backend.services.mn2_ledger import count_ledger_users
 
-        ledger_total = len(list_ledger_user_summaries(limit=20000))
+        ledger_total = count_ledger_users()
     except Exception:
         pass
 
