@@ -21,6 +21,7 @@
             '<strong id="mn2-global-balance">—</strong>' +
             '<span id="mn2-global-stables" class="mn2-global-rate"></span>' +
             '<span id="mn2-global-rate" class="mn2-global-rate"></span>' +
+            '<span id="mn2-global-health" class="mn2-global-rate" title="Pool health"></span>' +
             '<a href="/wallets">Wallets</a>' +
             '<a href="/exchange?swoop=USDT,MN2">Swoop</a>' +
             '<a href="/market">Market</a>' +
@@ -59,6 +60,15 @@
                 }
             }).catch(function () {});
         }
+        fetch('/api/exchange/ops/health', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+            var hEl = global.document.getElementById('mn2-global-health');
+            if (!hEl || !d || !d.health) return;
+            var score = Number(d.health.score || 0);
+            var band = d.health.band || 'green';
+            var colors = { green: '#3dd68c', yellow: '#f5c842', red: '#ff6b6b' };
+            hEl.textContent = '· Pool ' + score.toFixed(0);
+            hEl.style.color = colors[band] || '#7df9ff';
+        }).catch(function () {});
     }
 
     function loadScripts(cb) {

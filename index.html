@@ -55,7 +55,7 @@
             <div class="fp-mn2-band-copy">
                 <h2 id="fp-mn2-title">MN2 crypto ecosystem</h2>
                 <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Swoop USDT/USDC via the MN2 liquidity pool on the exchange desk.</p>
-                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span> <span id="fp-mn2-stables" style="opacity:0.75;"></span></p>
+                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span> <span id="fp-mn2-stables" style="opacity:0.75;"></span> <span id="fp-mn2-health" style="opacity:0.85;font-weight:700;"></span></p>
             </div>
             <div class="fp-mn2-band-actions">
                 <a class="fp-mn2-badge" href="/wallets">Wallets</a>
@@ -230,6 +230,17 @@
                     const pEl = document.getElementById('stat-mn2-price');
                     if (pEl && price.mn2_usd_price != null) {
                         pEl.textContent = '$' + Number(price.mn2_usd_price).toFixed(4);
+                    }
+                }
+                const healthRes = await fetch(`${BASE_URL || ''}/api/exchange/ops/health`);
+                if (healthRes.ok) {
+                    const health = await healthRes.json();
+                    const hEl = document.getElementById('fp-mn2-health');
+                    if (hEl && health.health) {
+                        const band = health.health.band || 'green';
+                        const colors = { green: '#3dd68c', yellow: '#f5c842', red: '#ff6b6b' };
+                        hEl.style.color = colors[band] || '#7df9ff';
+                        hEl.textContent = '· Pool health ' + Number(health.health.score || 0).toFixed(0) + '/100';
                     }
                 }
             } catch (e) {

@@ -117,6 +117,14 @@
           ' (' + pct + '% for later ops)</div>');
       }
     }
+    if (res.runway_warning && res.runway_warning.low_liquidity) {
+      lines.push('<div class="cex-swoop-warn">⚠ Low pool liquidity — ~' +
+        (res.runway_warning.estimated_swaps_remaining || 0) + ' swoops left at $' +
+        (res.runway_warning.sample_usd || 10) + ' each</div>');
+    }
+    if (res.circuit_breaker) {
+      lines.push('<div class="cex-swoop-warn">Pool circuit breaker active — swoops paused</div>');
+    }
     lines.push('<span class="cex-muted">~$' + fmt(res.usd_value, 2) + ' notional</span>');
     el.innerHTML = lines.join('<br>');
     var est = q('cex-swoop-to-est');
@@ -242,13 +250,61 @@
     var gaps = data.pool_gaps || {};
     var reserve = data.reserve_assets || {};
     var reserveBps = data.pool_swap_reserve_bps || 200;
-    el.innerHTML = ['MN2', 'USDT', 'USDC'].map(function (sym) {
+    var health = data.health || {};
+    var cb = data.circuit_breaker || {};
+    var healthHtml = '';
+    if (health.score != null) {
+      healthHtml = '<div class="cex-pool-health cex-pool-health--' + (health.band || 'green') + '">Pool health: ' +
+        Number(health.score).toFixed(0) + '/100' +
+        (cb.level && cb.level !== 'green' ? ' · ' + (cb.reason || cb.level) : '') + '</div>';
+    }
+    el.innerHTML = healthHtml + ['MN2', 'USDT', 'USDC'].map(function (sym) {
       var gap = gaps[sym];
       var note = gap ? ' · need ' + fmt(gap, 4) : '';
       return '<div class="cex-wallet-row"><span>' + sym + '</span><strong>' + fmt(assets[sym], 4) + note + '</strong></div>';
     }).join('') +
       '<div class="cex-muted">Reserve (' + (reserveBps / 100).toFixed(1) + '% per swap): MN2 ' +
-      fmt(reserve.MN2, 4) + ' · USDT ' + fmt(reserve.USDT, 4) + ' · USDC ' + fmt(reserve.USDC, 4) + '</div>';
+      fmt(reserve.MN2, 4) + ' · USDT ' + fmt(reserve.USDT, 4) + ' · USDC ' + fmt(reserve.USDC, 4) + '</div>' +
+      '<canvas id="cex-pool-depth-chart" height="80" style="width:100%;margin-top:8px;max-height:80px"></canvas>';
+    loadPoolDepthChart();
+  }
+
+  function loadPoolDepthChart() {
+    var canvas = q('cex-pool-depth-chart');
+    if (!canvas || !canvas.getContext) return;
+    fetch('/api/exchange/ops/depth-chart?hours=168').then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.success || !d.points || !d.points.length) return;
+      var ctx = canvas.getContext('2d');
+      var w = canvas.width = canvas.offsetWidth || 300;
+      var h = canvas.height = 80;
+      ctx.clearRect(0, 0, w, h);
+      var pts = d.points;
+      var maxY = 1;
+      pts.forEach(function (p) {
+        maxY = Math.max(maxY, Number(p.MN2 || 0), Number(p.USDT || 0), Number(p.USDC || 0));
+      });
+      var colors = { MN2: '#00d4ff', USDT: '#3dd68c', USDC: '#7df9ff' };
+      ['MN2', 'USDT', 'USDC'].forEach(function (sym) {
+        ctx.beginPath();
+        ctx.strokeStyle = colors[sym];
+        ctx.lineWidth = 1.5;
+        pts.forEach(function (p, i) {
+          var x = (i / Math.max(pts.length - 1, 1)) * w;
+          var y = h - (Number(p[sym] || 0) / maxY) * (h - 8) - 4;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+    }).catch(function () {});
+  }
+
+  function renderSwoopPresets(presets) {
+    var wrap = q('cex-swoop-presets');
+    if (!wrap || !presets || !presets.length) return;
+    wrap.innerHTML = presets.map(function (p) {
+      return '<button type="button" class="cex-swoop-chip cex-swoop-preset" data-from="' + p.from +
+        '" data-to="' + p.to + '" title="' + (p.label || '') + '">' + (p.label || (p.from + ' → ' + p.to)) + '</button>';
+    }).join('');
   }
 
   function renderQuoteSelects(quotes) {
@@ -470,6 +526,7 @@
       getJson('/api/exchange/binance/stable-wallets'),
       getJson('/api/exchange/mn2-pool/status'),
       getJson('/api/exchange/swoop/assets'),
+      getJson('/api/exchange/wallet-hub'),
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
@@ -493,6 +550,7 @@
       renderBinanceStables(res[4]);
       renderMn2Pool(res[5]);
       renderSwoopMeta(res[6]);
+      if (res[7] && res[7].swoop_presets) renderSwoopPresets(res[7].swoop_presets);
     }).catch(function () { msg('Could not load exchange data.'); });
   }
 
@@ -782,11 +840,15 @@
     q('cex-swoop-flip').addEventListener('click', flipSwoop);
     q('cex-swoop-max').addEventListener('click', doSwoopMax);
     q('cex-swoop-btn').addEventListener('click', doSwoop);
-    document.querySelectorAll('.cex-swoop-chip').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        setSwoopPair(chip.getAttribute('data-from'), chip.getAttribute('data-to'));
-      });
-    });
+    var chipsWrap = q('cex-swoop-chips');
+    var presetsWrap = q('cex-swoop-presets');
+    function onChipClick(e) {
+      var chip = e.target.closest('.cex-swoop-chip');
+      if (!chip) return;
+      setSwoopPair(chip.getAttribute('data-from'), chip.getAttribute('data-to'));
+    }
+    if (chipsWrap) chipsWrap.addEventListener('click', onChipClick);
+    if (presetsWrap) presetsWrap.addEventListener('click', onChipClick);
     setSwoopPair('USDT', 'MN2');
     applySwoopParams();
   }

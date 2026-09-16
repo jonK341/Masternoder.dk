@@ -45,6 +45,7 @@
         <div class="tab" data-tab="monitors">5D · Profit TV</div>
         <div class="tab" data-tab="agents">Agents hub</div>
         <div class="tab" data-tab="watch">Live Watch</div>
+        <div class="tab" data-tab="ops">Pool Ops</div>
       </div>
 
       <div class="tabpane active" id="pane-overview">
@@ -249,6 +250,39 @@
             <div class="bc-frame-head">Site users · profiles</div>
             <iframe title="Users" src="/user/" loading="lazy"></iframe>
           </div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-ops">
+        <div class="section">
+          <h2>Pool ops dashboard</h2>
+          <div id="opsDashboard" class="muted">Loading…</div>
+          <div class="bar" style="margin-top:8px">
+            <button class="btn small" id="opsRefresh">Refresh ops</button>
+            <button class="btn small" id="opsDigest">Run digest</button>
+            <button class="btn small" id="opsSellDry">Sell plan (dry-run)</button>
+            <button class="btn small primary" id="opsSellLive">Execute sell plan</button>
+            <button class="btn small" id="opsSweeper">Agent sweeper</button>
+            <button class="btn small" id="opsPoolLight">Light pool tick</button>
+            <button class="btn small" id="opsPoolFull">Full pool tick</button>
+          </div>
+          <div id="opsResult" class="muted" style="margin-top:8px"></div>
+        </div>
+        <div class="section">
+          <h2>Treasury waterfall</h2>
+          <div id="opsWaterfall" class="muted">—</div>
+        </div>
+        <div class="section">
+          <h2>Reserve spend ledger</h2>
+          <div id="opsReserveLedger" class="muted">—</div>
+        </div>
+        <div class="section">
+          <h2>Unified action feed</h2>
+          <div id="opsFeed" class="muted" style="max-height:320px;overflow:auto;font-size:12px">—</div>
+        </div>
+        <div class="section">
+          <h2>Pool depth (7d)</h2>
+          <canvas id="opsDepthChart" height="120" style="width:100%;max-height:120px"></canvas>
         </div>
       </div>
 

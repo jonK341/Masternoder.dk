@@ -10,10 +10,11 @@ from backend.services.exchange_mn2_pool_service import (
 )
 
 
-def tick(*, force: bool = False) -> Dict[str, Any]:
-    result = run_mn2_pool_agent_tick(force=force)
+def tick(*, force: bool = False, light: bool = False) -> Dict[str, Any]:
+    result = run_mn2_pool_agent_tick(force=force, light=light)
     result["agent_id"] = pool_agent_id()
     result["strategy"] = "mn2_pool"
+    result["tick_mode"] = "light" if light else "full"
     return result
 
 

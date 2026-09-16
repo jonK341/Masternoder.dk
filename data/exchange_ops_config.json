@@ -1,0 +1,57 @@
+{
+  "enabled": true,
+  "health": {
+    "circuit_breaker_min_pct": 0.2,
+    "runway_sample_usd": 10.0,
+    "recent_volume_hours": 24
+  },
+  "circuit_breaker": {
+    "enabled": true,
+    "pause_swoop_below_pct": 0.2,
+    "max_swoop_usd_when_yellow": 100.0
+  },
+  "treasury_waterfall": {
+    "priorities": [
+      {"id": "pool_mins", "label": "Pool minimums (MN2/USDT/USDC)"},
+      {"id": "pool_reserve", "label": "Swoop reserve wallet"},
+      {"id": "platform_treasury", "label": "Platform treasury"},
+      {"id": "agent_wallets", "label": "Agent wallets"}
+    ]
+  },
+  "sell_plan": {
+    "wallet_user_id": "exchange_sales_pool",
+    "excluded_assets": ["MN2", "USDT", "USDC"],
+    "target_quotes": ["USDT", "USDC"],
+    "min_sell_usd": 25.0,
+    "max_actions_per_run": 8
+  },
+  "prefill": {
+    "enabled": true,
+    "auto_execute": false,
+    "min_gap_usd": 50.0
+  },
+  "digest": {
+    "enabled": true,
+    "health_alert_below": 40,
+    "mn2_gap_alert_usd": 500,
+    "webhook_url": "",
+    "email_to": ""
+  },
+  "sweeper": {
+    "enabled": true,
+    "min_transfer_usd": 10.0
+  },
+  "external_bridge": {
+    "enabled": true,
+    "symbols": ["DOGE"],
+    "preferred_venue": "nonkyc"
+  },
+  "reconciliation": {
+    "tolerance_usd": 1.0
+  },
+  "swoop_presets": [
+    {"id": "topup_mn2", "label": "Top up MN2 pool", "from": "USDT", "to": "MN2", "amount_usd": 50},
+    {"id": "fees_usdc", "label": "Convert fees → USDC", "from": "USDT", "to": "USDC", "amount_usd": 25},
+    {"id": "mn2_cashout", "label": "MN2 → USDT", "from": "MN2", "to": "USDT", "pct": 0.25}
+  ]
+}

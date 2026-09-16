@@ -1250,7 +1250,10 @@ def exchange_wallet_hub():
 
     uid = _uid()
     wallet = ex.get_wallet(uid)
+    from backend.services.exchange_ops_service import load_config as load_ops_config, pool_health_score
+
     pool = mn2_pool_status()
+    ops_cfg = load_ops_config()
     return jsonify({
         "success": bool(wallet.get("success")),
         "user_id": uid,
@@ -1264,6 +1267,8 @@ def exchange_wallet_hub():
         "swoop_assets": swoop_assets(),
         "pool_swap_reserve_bps": pool_swap_reserve_bps(),
         "pool": pool if pool.get("success") else None,
+        "pool_health": pool_health_score(),
+        "swoop_presets": ops_cfg.get("swoop_presets") or [],
         "swap_back_hint": pool.get("swap_back_hint") if pool.get("success") else None,
         "swoop_urls": {
             "usdt_mn2": "/exchange?swoop=USDT,MN2",
@@ -1332,7 +1337,119 @@ def exchange_mn2_pool_tick():
     from backend.services.exchange_mn2_pool_agent_service import tick
 
     data = request.get_json(silent=True) or {}
-    return jsonify(tick(force=bool(data.get("force"))))
+    return jsonify(tick(force=bool(data.get("force")), light=bool(data.get("light"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/dashboard", methods=["GET"])
+def exchange_ops_dashboard():
+    from backend.services.exchange_ops_service import ops_dashboard
+    return jsonify(ops_dashboard())
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/health", methods=["GET"])
+def exchange_ops_health():
+    from backend.services.exchange_ops_service import circuit_breaker_status, liquidity_runway, pool_health_score
+    return jsonify({
+        "success": True,
+        "health": pool_health_score(),
+        "circuit_breaker": circuit_breaker_status(),
+        "runway": liquidity_runway(),
+    })
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/feed", methods=["GET"])
+def exchange_ops_feed():
+    from backend.services.exchange_ops_service import unified_action_feed
+    limit = int(request.args.get("limit") or 80)
+    source = (request.args.get("source") or "").strip() or None
+    return jsonify(unified_action_feed(limit=limit, source_filter=source))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/waterfall", methods=["GET"])
+def exchange_ops_waterfall():
+    from backend.services.exchange_ops_service import treasury_waterfall
+    return jsonify(treasury_waterfall())
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/reserve-ledger", methods=["GET"])
+def exchange_ops_reserve_ledger():
+    from backend.services.exchange_ops_service import reserve_spend_ledger
+    limit = int(request.args.get("limit") or 100)
+    return jsonify(reserve_spend_ledger(limit=limit))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/depth-chart", methods=["GET"])
+def exchange_ops_depth_chart():
+    from backend.services.exchange_ops_service import pool_depth_history
+    hours = int(request.args.get("hours") or 168)
+    return jsonify(pool_depth_history(hours=hours))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/reconcile", methods=["GET"])
+def exchange_ops_reconcile():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_ops_service import reconcile_wallets
+    return jsonify(reconcile_wallets())
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/sell-plan", methods=["GET", "POST"])
+def exchange_ops_sell_plan():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_ops_sell_service import build_sell_plan, execute_sell_plan
+    if request.method == "GET":
+        return jsonify(build_sell_plan())
+    data = request.get_json(silent=True) or {}
+    dry = data.get("dry_run")
+    return jsonify(execute_sell_plan(dry_run=bool(dry) if dry is not None else True))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/prefill", methods=["POST"])
+def exchange_ops_prefill():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_ops_sell_service import smart_prefill
+    data = request.get_json(silent=True) or {}
+    return jsonify(smart_prefill(
+        data.get("from_asset") or "USDT",
+        data.get("to_asset") or "MN2",
+        float(data.get("amount") or 0),
+        auto_execute=bool(data.get("auto_execute")) if data.get("auto_execute") is not None else None,
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/sweeper", methods=["POST"])
+def exchange_ops_sweeper():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_agent_sweeper_service import run_agent_sweeper
+    data = request.get_json(silent=True) or {}
+    return jsonify(run_agent_sweeper(force=bool(data.get("force"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/external-bridge", methods=["GET", "POST"])
+def exchange_ops_external_bridge():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_external_bridge_service import execute_external_bridge, suggest_external_bridge
+    if request.method == "GET":
+        sym = (request.args.get("symbol") or "DOGE").strip()
+        return jsonify(suggest_external_bridge(sym))
+    data = request.get_json(silent=True) or {}
+    return jsonify(execute_external_bridge(
+        data.get("symbol") or "DOGE",
+        dry_run=bool(data.get("dry_run", True)),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/ops/digest", methods=["POST"])
+def exchange_ops_digest():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_ops_digest_service import run_ops_digest
+    data = request.get_json(silent=True) or {}
+    return jsonify(run_ops_digest(force=bool(data.get("force"))))
 
 
 @crypto_exchange_bp.route("/api/exchange/binance/stable-wallets", methods=["GET"])

@@ -793,7 +793,11 @@
       var gaps = st.pool_gaps || {};
       var reserve = st.reserve_assets || {};
       var bps = st.pool_swap_reserve_bps || 200;
-      el.innerHTML = ["MN2", "USDT", "USDC"].map(function (sym) {
+      var health = st.health || {};
+      var healthLine = health.score != null
+        ? "<div><strong>Pool health: " + Number(health.score).toFixed(0) + "/100</strong> (" + (health.band || "green") + ")</div>"
+        : "";
+      el.innerHTML = healthLine + ["MN2", "USDT", "USDC"].map(function (sym) {
         var gap = gaps[sym];
         return sym + ": " + Number(assets[sym] || 0).toFixed(4) + (gap ? " (need " + Number(gap).toFixed(4) + ")" : "");
       }).join(" · ") +
@@ -801,6 +805,76 @@
         " · USDT " + Number(reserve.USDT || 0).toFixed(4) +
         " · USDC " + Number(reserve.USDC || 0).toFixed(4) +
         (st.swap_back_hint ? "<br><span class=\"muted\">" + st.swap_back_hint + "</span>" : "");
+    });
+  }
+
+  function renderOpsDepthChart(points) {
+    var canvas = $("opsDepthChart");
+    if (!canvas || !canvas.getContext || !points || !points.length) return;
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width = canvas.offsetWidth || 400;
+    var h = canvas.height = 120;
+    ctx.clearRect(0, 0, w, h);
+    var maxY = 1;
+    points.forEach(function (p) {
+      maxY = Math.max(maxY, Number(p.MN2 || 0), Number(p.USDT || 0), Number(p.USDC || 0));
+    });
+    var colors = { MN2: "#00d4ff", USDT: "#3dd68c", USDC: "#7df9ff" };
+    ["MN2", "USDT", "USDC"].forEach(function (sym) {
+      ctx.beginPath();
+      ctx.strokeStyle = colors[sym];
+      ctx.lineWidth = 2;
+      points.forEach(function (p, i) {
+        var x = (i / Math.max(points.length - 1, 1)) * w;
+        var y = h - (Number(p[sym] || 0) / maxY) * (h - 10) - 5;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function loadOpsPanel() {
+    api("/api/exchange/ops/dashboard").then(function (d) {
+      var el = $("opsDashboard");
+      if (!el) return;
+      if (!d || !d.success) { el.textContent = "Could not load ops dashboard."; return; }
+      var h = d.health || {};
+      var cb = d.circuit_breaker || {};
+      el.innerHTML =
+        "<div class='big'>Health " + Number(h.score || 0).toFixed(0) + "/100 <span class='muted'>(" + (h.band || "") + ")</span></div>" +
+        "<div class='muted'>Circuit breaker: " + (cb.level || "green") + (cb.reason ? " — " + cb.reason : "") + "</div>" +
+        "<div class='muted'>Reconciliation issues: " + ((d.reconciliation && d.reconciliation.issues || []).length) + "</div>";
+      var wf = $("opsWaterfall");
+      if (wf && d.waterfall) {
+        wf.innerHTML = "<p>" + (d.waterfall.recommendation_detail || "") + "</p>" +
+          (d.waterfall.priorities || []).map(function (p) {
+            return "<div>• " + p.label + (p.need_usd > 0 ? " — need $" + p.need_usd : "") + "</div>";
+          }).join("");
+      }
+      var rl = $("opsReserveLedger");
+      if (rl && d.reserve_ledger_summary) {
+        var entries = (d.reserve_ledger_summary.entries || []).slice(0, 8);
+        rl.innerHTML = entries.length
+          ? entries.map(function (e) {
+            return "<div>" + (e.ts || "") + " · " + (e.asset || "") + " +" + Number(e.amount || 0).toFixed(6) + "</div>";
+          }).join("")
+          : "No reserve entries yet.";
+      }
+    });
+    api("/api/exchange/ops/feed?limit=40").then(function (f) {
+      var feed = $("opsFeed");
+      if (!feed) return;
+      var items = (f && f.items) || [];
+      feed.innerHTML = items.length
+        ? items.map(function (it) {
+          return "<div style='border-bottom:1px solid rgba(255,255,255,0.06);padding:4px 0'>" +
+            (it.ts || "") + " · <strong>" + (it.source || "") + "</strong> · " + (it.action || "") +
+            (it.symbol ? " " + it.symbol : "") + "</div>";
+        }).join("")
+        : "No feed items.";
+    });
+    api("/api/exchange/ops/depth-chart?hours=168").then(function (ch) {
+      if (ch && ch.points) renderOpsDepthChart(ch.points);
     });
   }
 
@@ -935,6 +1009,7 @@
     });
     if (name === "predictions") loadPredictions();
     if (name === "payout") loadPayout();
+    if (name === "ops") loadOpsPanel();
     if (name === "boost") runBoost();
     if (name === "watch") loadOwnerWatch();
     if (name === "orchestration" || name === "livepack" || name === "fleet") {
@@ -994,6 +1069,43 @@
     var bsync = $("binSyncWallets"); if (bsync) bsync.addEventListener("click", syncBinanceWallets);
     var mpr = $("mn2PoolRefresh"); if (mpr) mpr.addEventListener("click", loadMn2Pool);
     var mpt = $("mn2PoolTick"); if (mpt) mpt.addEventListener("click", tickMn2Pool);
+    var orf = $("opsRefresh"); if (orf) orf.addEventListener("click", loadOpsPanel);
+    var odg = $("opsDigest"); if (odg) odg.addEventListener("click", function () {
+      api("/api/exchange/ops/digest", { method: "POST", body: {} }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = JSON.stringify(r).slice(0, 400);
+        loadOpsPanel();
+      });
+    });
+    var osd = $("opsSellDry"); if (osd) osd.addEventListener("click", function () {
+      api("/api/exchange/ops/sell-plan", { method: "POST", body: { dry_run: true } }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = "Dry-run: " + ((r.actions || []).length) + " sells · $" + (r.total_usd || 0);
+      });
+    });
+    var osl = $("opsSellLive"); if (osl) osl.addEventListener("click", function () {
+      if (!confirm("Execute tax-aware sell plan on sales pool?")) return;
+      api("/api/exchange/ops/sell-plan", { method: "POST", body: { dry_run: false } }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = JSON.stringify(r.executed || r).slice(0, 500);
+        loadOpsPanel();
+      });
+    });
+    var osw = $("opsSweeper"); if (osw) osw.addEventListener("click", function () {
+      api("/api/exchange/ops/sweeper", { method: "POST", body: {} }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = "Sweeper: " + (r.transfer_count || 0) + " transfers";
+        loadOpsPanel();
+      });
+    });
+    var opl = $("opsPoolLight"); if (opl) opl.addEventListener("click", function () {
+      api("/api/exchange/mn2-pool/tick", { method: "POST", body: { force: true, light: true } }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = "Light tick: " + JSON.stringify(r).slice(0, 300);
+        loadOpsPanel();
+      });
+    });
+    var opf = $("opsPoolFull"); if (opf) opf.addEventListener("click", function () {
+      api("/api/exchange/mn2-pool/tick", { method: "POST", body: { force: true } }).then(function (r) {
+        if ($("opsResult")) $("opsResult").textContent = "Full tick: " + JSON.stringify(r).slice(0, 300);
+        loadOpsPanel();
+      });
+    });
     bindLocalPanel();
 
     if (getKey()) { showApp(); load(); } else { showGate(); }

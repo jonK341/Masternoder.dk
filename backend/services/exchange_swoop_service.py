@@ -65,6 +65,18 @@ def quote_swoop(user_id: str, from_asset: str, to_asset: str, amount: float) -> 
     if not resolved.get("success"):
         return resolved
 
+    try:
+        from backend.services.exchange_ops_service import check_swoop_allowed, liquidity_runway
+        cb_err = check_swoop_allowed(from_asset, to_asset, amount)
+        if cb_err:
+            return {"success": False, "error": cb_err, "circuit_breaker": True}
+        runway = liquidity_runway(from_asset, to_asset)
+        low = [r for r in (runway.get("runways") or []) if r.get("low_liquidity")]
+        if low:
+            resolved["_runway_warning"] = low[0]
+    except Exception:
+        pass
+
     q = ex.quote_swap(
         user_id,
         resolved["symbol"],
@@ -80,6 +92,8 @@ def quote_swoop(user_id: str, from_asset: str, to_asset: str, amount: float) -> 
     q["to_asset"] = resolved["to_asset"]
     q["from_amount"] = resolved["amount"]
     q["to_amount"] = round(_receive_amount(q), 12)
+    if resolved.get("_runway_warning"):
+        q["runway_warning"] = resolved["_runway_warning"]
     return q
 
 
@@ -90,6 +104,14 @@ def execute_swoop(
     amount: float,
     quote_id: str = "",
 ) -> Dict[str, Any]:
+    try:
+        from backend.services.exchange_ops_service import check_swoop_allowed
+        cb_err = check_swoop_allowed(from_asset, to_asset, amount)
+        if cb_err:
+            return {"success": False, "error": cb_err, "circuit_breaker": True}
+    except Exception:
+        pass
+
     q = quote_swoop(user_id, from_asset, to_asset, amount)
     if not q.get("success"):
         return q

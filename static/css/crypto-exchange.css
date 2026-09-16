@@ -603,3 +603,11 @@
 }
 .cex-blocker-pri { font-size: 0.7rem; color: #ffd966; min-width: 28px; font-weight: 700; flex-shrink: 0; }
 .cex-blockers-card .cex-badge { vertical-align: middle; }
+
+.cex-swoop-warn { color: #f5c842; font-size: 0.82rem; margin-top: 4px; }
+.cex-swoop-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.cex-swoop-preset { font-size: 0.74rem; opacity: 0.95; }
+.cex-pool-health { font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; }
+.cex-pool-health--green { color: #3dd68c; background: rgba(61,214,140,0.1); }
+.cex-pool-health--yellow { color: #f5c842; background: rgba(245,200,66,0.1); }
+.cex-pool-health--red { color: #ff6b6b; background: rgba(255,107,107,0.12); }

@@ -330,6 +330,15 @@ def mn2_pool_status() -> Dict[str, Any]:
     ensure_paper_seed()
     balances = pool_balances()
     gaps = pool_gaps()
+    health_block: Dict[str, Any] = {}
+    try:
+        from backend.services.exchange_ops_service import circuit_breaker_status, pool_health_score
+        health_block = {
+            "health": pool_health_score(),
+            "circuit_breaker": circuit_breaker_status(),
+        }
+    except Exception:
+        health_block = {}
     return {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
@@ -337,6 +346,7 @@ def mn2_pool_status() -> Dict[str, Any]:
         "agent_id": pool_agent_id(),
         "pool_assets": balances,
         "pool_gaps": gaps,
+        **health_block,
         "tradeable_pairs": [
             "MN2/USDT", "MN2/USDC", "USDT/MN2", "USDC/MN2",
         ],
@@ -424,12 +434,13 @@ def _rebalance_stables(cfg: Dict[str, Any]) -> Dict[str, Any]:
     return {"success": True, "actions": actions}
 
 
-def run_mn2_pool_agent_tick(*, force: bool = False) -> Dict[str, Any]:
+def run_mn2_pool_agent_tick(*, force: bool = False, light: bool = False) -> Dict[str, Any]:
+    """Feature 12: light tick skips heavy agent sweep (pool seed + rebalance only)."""
     cfg = load_config()
     if not cfg.get("enabled", True) and not force:
         return {"success": True, "skipped": True, "reason": "disabled"}
 
-    if _cooldown_active(cfg, force=force):
+    if _cooldown_active(cfg, force=force) and not light:
         return {
             "success": True,
             "skipped": True,
@@ -441,12 +452,13 @@ def run_mn2_pool_agent_tick(*, force: bool = False) -> Dict[str, Any]:
     state = _read_state()
     gaps_before = pool_gaps()
 
-    sweep_result: Dict[str, Any] = {"skipped": True}
-    try:
-        from backend.services.exchange_sales_pool_service import transfer_to_sales_pool
-        sweep_result = transfer_to_sales_pool(force=force)
-    except Exception as exc:
-        sweep_result = {"success": False, "error": str(exc)}
+    sweep_result: Dict[str, Any] = {"skipped": True, "reason": "light_tick"}
+    if not light:
+        try:
+            from backend.services.exchange_sales_pool_service import transfer_to_sales_pool
+            sweep_result = transfer_to_sales_pool(force=force)
+        except Exception as exc:
+            sweep_result = {"success": False, "error": str(exc)}
 
     seed_result = _seed_pool_mn2(cfg, pool_gaps())
     rebalance_result = _rebalance_stables(cfg)
@@ -461,6 +473,7 @@ def run_mn2_pool_agent_tick(*, force: bool = False) -> Dict[str, Any]:
     return {
         "success": True,
         "agent_id": pool_agent_id(),
+        "light": bool(light),
         "gaps_before": gaps_before,
         "sweep": sweep_result,
         "seed": seed_result,

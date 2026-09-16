@@ -41,12 +41,13 @@
 
   var CHIP_STYLE = 'display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid rgba(125,249,255,0.35);color:#7df9ff;background:rgba(0,212,255,0.08);text-decoration:none;font-size:0.78rem;font-weight:700;margin:0 6px 6px 0;';
 
-  function chipHtml(from, to, activeFrom, activeTo) {
+  function chipHtml(from, to, activeFrom, activeTo, label) {
     var style = CHIP_STYLE;
     if (from === activeFrom && to === activeTo) {
       style += 'border-color:#00d4ff;background:rgba(0,212,255,0.2);';
     }
-    return '<a style="' + style + '" href="' + swoopUrl(from, to) + '">' + from + ' → ' + to + '</a>';
+    var text = label || (from + ' → ' + to);
+    return '<a style="' + style + '" href="' + swoopUrl(from, to) + '" title="' + text + '">' + text + '</a>';
   }
 
   function renderBalances(el, wallet) {
@@ -76,7 +77,13 @@
     var gaps = pool.pool_gaps || {};
     var reserve = pool.reserve_assets || {};
     var bps = pool.pool_swap_reserve_bps || 200;
-    var lines = ['MN2', 'USDT', 'USDC'].map(function (sym) {
+    var health = pool.health || {};
+    var healthLine = health.score != null
+      ? '<p class="wallet-muted" style="font-weight:700;color:' +
+        (health.band === 'red' ? '#ff6b6b' : health.band === 'yellow' ? '#f5c842' : '#3dd68c') +
+        '">Pool health ' + Number(health.score).toFixed(0) + '/100</p>'
+      : '';
+    var lines = healthLine + ['MN2', 'USDT', 'USDC'].map(function (sym) {
       var gap = gaps[sym];
       var note = gap ? ' · need ' + fmt(gap, 4) : '';
       return '<div class="wallet-balance-row"><span>Pool ' + sym + '</span><strong>' + fmt(assets[sym], 4) + note + '</strong></div>';
@@ -89,15 +96,22 @@
     el.innerHTML = lines;
   }
 
-  function renderSwoopChips(el, activeFrom, activeTo) {
+  function renderSwoopChips(el, activeFrom, activeTo, presets) {
     if (!el) return;
+    var html = '';
+    if (presets && presets.length) {
+      html += presets.map(function (p) {
+        return chipHtml(p.from, p.to, activeFrom, activeTo, p.label);
+      }).join('');
+    }
     var pairs = [
       ['USDT', 'MN2'], ['USDC', 'MN2'], ['MN2', 'USDT'], ['MN2', 'USDC'],
       ['USDT', 'USDC'], ['USDC', 'USDT'],
     ];
-    el.innerHTML = pairs.map(function (p) {
+    html += pairs.map(function (p) {
       return chipHtml(p[0], p[1], activeFrom, activeTo);
     }).join('');
+    el.innerHTML = html;
   }
 
   function mount(root, opts) {
@@ -109,7 +123,7 @@
     loadHub().then(function (hub) {
       renderBalances(balancesEl, hub.wallet);
       renderPool(poolEl, hub.pool);
-      renderSwoopChips(chipsEl, opts.activeFrom, opts.activeTo);
+      renderSwoopChips(chipsEl, opts.activeFrom, opts.activeTo, hub.swoop_presets);
       if (opts.onLoad) opts.onLoad(hub);
     }).catch(function () {
       if (balancesEl) balancesEl.innerHTML = '<p class="wallet-muted">Could not load wallet hub.</p>';
